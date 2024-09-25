@@ -317,7 +317,7 @@ class DockerHandler:
         props = [
             "name", "console", "aux", "console_type", "console_resolution",
             "console_http_port", "console_http_path", "start_command",
-            "environment", "adapters", "extra_hosts", "extra_volumes"
+            "environment", "adapters", "mac_address", "custom_adapters", "extra_hosts", "extra_volumes"
         ]
 
         changed = False
