@@ -1057,11 +1057,13 @@ class Project:
         assert self._status != "closed"
 
         try:
-            proj = await self._duplicate_fast(name, location, reset_mac_addresses)
+            proj = await self._fast_duplication(name, location, reset_mac_addresses)
             if proj:
                 if previous_status == "closed":
                     await self.close()
                 return proj
+            else:
+                log.info("Fast duplication failed, fallback to normal duplication")
         except Exception as e:
             raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
 
@@ -1251,13 +1253,11 @@ class Project:
     def __repr__(self):
         return "<gns3server.controller.Project {} {}>".format(self._name, self._id)
 
-    async def _duplicate_fast(self, name=None, location=None, reset_mac_addresses=True):
-        # remote replication is not supported
-        if not sys.platform.startswith("linux") and not sys.platform.startswith("win"):
-            return None
+    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+        # remote replication is not supported with remote computes
         for compute in self.computes:
             if compute.id != "local":
-                log.warning("Duplicate fast not support remote compute: '{}'".format(compute.id))
+                log.warning("Fast duplication is not support with remote compute: '{}'".format(compute.id))
                 return None
         # work dir
         p_work = pathlib.Path(location or self.path).parent.absolute()
@@ -1266,7 +1266,7 @@ class Project:
         new_project_path = p_work.joinpath(new_project_id)
         # copy dir
         await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix())
-        log.info("[FAST] Copy project: {} to: '{}', cost={}s".format(self.path, new_project_path, time.time() - t0))
+        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
         topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
         project_name = name or topology["name"]
         # If the project name is already used we generate a new one
@@ -1285,7 +1285,7 @@ class Project:
                 _move_node_file(new_project_path, node["node_id"], new_node_id)
             node["node_id"] = new_node_id
             if reset_mac_addresses:
-                if "properties" in node and node["node_type"] != "docker":
+                if "properties" in node:
                     for prop, value in node["properties"].items():
                         # reset the MAC address
                         if prop in ("mac_addr", "mac_address"):
@@ -1307,5 +1307,5 @@ class Project:
 
         os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
         project = await self.controller.load_project(dot_gns3_path, load=False)
-        log.info("[FAST] Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
+        log.info("Project '{}' fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
         return project

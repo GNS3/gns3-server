@@ -200,7 +200,7 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
                 if not keep_compute_ids:
                     node["compute_id"] = "local"  # To make project portable all node by default run on local
 
-                if "properties" in node and node["node_type"] != "docker":
+                if "properties" in node:
                     for prop, value in node["properties"].items():
 
                         # reset the MAC address
