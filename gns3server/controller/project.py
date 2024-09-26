@@ -46,8 +46,7 @@ from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
 from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
-from .import_project import import_project
-
+from .import_project import import_project, _move_node_file
 
 import logging
 log = logging.getLogger(__name__)
