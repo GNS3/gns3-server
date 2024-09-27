@@ -207,6 +207,9 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
                         if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
                             node["properties"][prop] = None
 
+                        if node["node_type"] == "docker":
+                            continue
+
                         if node["node_type"] == "iou":
                             if not prop == "path":
                                 continue
