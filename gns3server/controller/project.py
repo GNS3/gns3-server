@@ -1040,14 +1040,16 @@ class Project:
         """
         Duplicate a project
 
-        It's the save as feature of the 1.X. It's implemented on top of the
-        export / import features. It will generate a gns3p and reimport it.
-        It's a little slower but we have only one implementation to maintain.
+        Implemented on top of the export / import features. It will generate a gns3p and reimport it.
+
+        NEW: fast duplication is used if possible (when there are no remote computes).
+        If not, the project is exported and reimported as explained above.
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the new project
         """
+
         # If the project was not open we open it temporary
         previous_status = self._status
         if self._status == "closed":
@@ -1254,10 +1256,20 @@ class Project:
         return "<gns3server.controller.Project {} {}>".format(self._name, self._id)
 
     async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+        """
+        Fast duplication of a project.
+
+        Copy the project files directly rather than in an import-export fashion.
+
+        :param name: Name of the new project. A new one will be generated in case of conflicts
+        :param location: Parent directory of the new project
+        :param reset_mac_addresses: Reset MAC addresses for the new project
+        """
+
         # remote replication is not supported with remote computes
         for compute in self.computes:
             if compute.id != "local":
-                log.warning("Fast duplication is not support with remote compute: '{}'".format(compute.id))
+                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
                 return None
         # work dir
         p_work = pathlib.Path(location or self.path).parent.absolute()
