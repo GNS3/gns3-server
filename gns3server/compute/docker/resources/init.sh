@@ -26,9 +26,9 @@ PATH=/gns3/bin:/tmp/gns3/bin:/sbin:$PATH
 if [ ! -d /tmp/gns3/bin ]; then
 	busybox mkdir -p /tmp/gns3/bin
 	for applet in `busybox --list-full`
-  do
-    ln -s /gns3/bin/busybox "/tmp/gns3/bin/$applet"
-  done
+	do
+	  ln -s /gns3/bin/busybox "/tmp/gns3/bin/$applet"
+	done
 fi
 
 #  Restore file permission and mount volumes
