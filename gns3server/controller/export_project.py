@@ -70,14 +70,15 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
             files = [f for f in files if _is_exportable(os.path.join(root, f), include_snapshots)]
             for file in files:
                 path = os.path.join(root, file)
-                # check if we can export the file
-                try:
-                    open(path).close()
-                except OSError as e:
-                    msg = "Could not export file {}: {}".format(path, e)
-                    log.warning(msg)
-                    project.emit_notification("log.warning", {"message": msg})
-                    continue
+                if not os.path.islink(path):
+                    try:
+                        # check if we can export the file
+                        open(path).close()
+                    except OSError as e:
+                        msg = "Could not export file {}: {}".format(path, e)
+                        log.warning(msg)
+                        project.emit_notification("log.warning", {"message": msg})
+                        continue
                 # ignore the .gns3 file
                 if file.endswith(".gns3"):
                     continue
@@ -128,7 +129,7 @@ def _patch_mtime(path):
     if sys.platform.startswith("win"):
         # only UNIX type platforms
         return
-    st = os.stat(path)
+    st = os.stat(path, follow_symlinks=False)
     file_date = datetime.fromtimestamp(st.st_mtime)
     if file_date.year < 1980:
         new_mtime = file_date.replace(year=1980).timestamp()
@@ -142,10 +143,6 @@ def _is_exportable(path, include_snapshots=False):
 
     # do not export snapshots by default
     if include_snapshots is False and path.endswith("snapshots"):
-        return False
-
-    # do not export symlinks
-    if os.path.islink(path):
         return False
 
     # do not export directories of snapshots
