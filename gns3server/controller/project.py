@@ -1277,7 +1277,7 @@ class Project:
         new_project_id = str(uuid.uuid4())
         new_project_path = p_work.joinpath(new_project_id)
         # copy dir
-        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix())
+        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
         log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
         topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
         project_name = name or topology["name"]
