@@ -1,0 +1,104 @@
+{
+    "appliance_id": "8c19ccaa-a1d0-4473-94a2-a93b64924d88",
+    "name": "TrueNAS",
+    "category": "guest",
+    "description": "TrueNAS is a family of network-attached storage (NAS) products produced by iXsystems, incorporating both FOSS, as well as commercial offerings. Based on the OpenZFS file system, TrueNAS runs on FreeBSD as well as Linux and is available under the BSD License It is compatible with x86-64 hardware and is also available as turnkey appliances from iXsystems.",
+    "vendor_name": "iXsystems",
+    "vendor_url": "https://www.truenas.com/",
+    "documentation_url": "https://www.truenas.com/docs/",
+    "product_name": "TrueNAS",
+    "product_url": "https://www.truenas.com/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "To install TrueNAS SCALE you may have to select the Legacy BIOS option.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 8192,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "TrueNAS-13.0-U6.2.iso",
+            "version": "CORE 13.0 U6.2",
+            "md5sum": "8b2882b53af5e9f3ca905c6acdee1690",
+            "filesize": 1049112576,
+            "download_url": "https://www.truenas.com/download-truenas-core/",
+            "direct_download_url": "https://download-core.sys.truenas.net/13.0/STABLE/U6.2/x64/TrueNAS-13.0-U6.2.iso"
+        },
+        {
+            "filename": "TrueNAS-13.3-RELEASE.iso",
+            "version": "CORE 13.3 RELEASE",
+            "md5sum": "8bb16cfb06f3f1374a27cf6aebb14ed3",
+            "filesize": 995567616,
+            "download_url": "https://www.truenas.com/download-truenas-core/",
+            "direct_download_url": "https://download-core.sys.truenas.net/13.3/STABLE/RELEASE/x64/TrueNAS-13.3-RELEASE.iso"
+        },
+        {
+            "filename": "TrueNAS-SCALE-24.04.2.2.iso",
+            "version": "SCALE 24.04.2.2",
+            "md5sum": "47d9026254a0775800bb2b8ab6d874fd",
+            "filesize": 1630355456,
+            "download_url": "https://www.truenas.com/download-truenas-scale/",
+            "direct_download_url": "https://download.sys.truenas.net/TrueNAS-SCALE-Dragonfish/24.04.2.2/TrueNAS-SCALE-24.04.2.2.iso"
+        },
+        {
+            "filename": "TrueNAS-SCALE-24.10-BETA.1.iso",
+            "version": "SCALE 24.10-BETA.1",
+            "md5sum": "cc3d5758d1db3d55ae9c8716f5d43b88",
+            "filesize": 1491378176,
+            "download_url": "https://www.truenas.com/download-truenas-scale/",
+            "direct_download_url": "https://download.sys.truenas.net/TrueNAS-SCALE-ElectricEel-BETA/24.10-BETA.1/TrueNAS-SCALE-24.10-BETA.1.iso"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "CORE 13.0 U6.2",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "TrueNAS-13.0-U6.2.iso"
+            }
+        },
+        {
+            "name": "CORE 13.3 RELEASE",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "TrueNAS-13.3-RELEASE.iso"
+            }
+        },
+        {
+            "name": "SCALE 24.04.2.2",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "TrueNAS-SCALE-24.04.2.2.iso"
+            }
+        },
+        {
+            "name": "SCALE 24.10-BETA.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "TrueNAS-SCALE-24.10-BETA.1.iso"
+            }
+        }
+    ]
+}

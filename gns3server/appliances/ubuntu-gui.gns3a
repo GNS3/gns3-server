@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "Ubuntu 24.04 (64bit).vmdk",
+            "version": "24.04",
+            "md5sum": "7709a5a1cf888c7644d245c42d217918",
+            "filesize": 6432555008,
+            "download_url": "https://www.osboxes.org/ubuntu/"
+        },
+        {
             "filename": "Ubuntu 22.04 (64bit).vmdk",
             "version": "22.04",
             "md5sum": "208657d5c13fd1e041794794ada32581",
@@ -57,6 +64,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "24.04",
+            "images": {
+                "hda_disk_image": "Ubuntu 24.04 (64bit).vmdk"
+            }
+        },
         {
             "name": "22.04",
             "images": {
