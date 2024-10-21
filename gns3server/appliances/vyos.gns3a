@@ -1,181 +1,178 @@
 {
     "appliance_id": "f82b74c4-0f30-456f-a582-63daca528502",
-    "name": "VyOS",
+    "name": "VyOS Universal Router",
     "category": "router",
-    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality.",
-    "vendor_name": "Linux",
-    "vendor_url": "https://vyos.net/",
+    "description": "VyOS is an open-source network operating system that provides a comprehensive suite of features for routing, firewalling, and VPN functionality. VyOS offers a robust and flexible solution for both small-scale and large-scale network environments. It is designed to support enterprise-grade networking with the added benefits of community-driven development and continuous updates.\n\nThe VyOS Universal Router, when used in GNS3, brings the power and versatility of VyOS to network simulation and emulation. GNS3 users can deploy the VyOS Universal Router to create and test complex network topologies in a virtual environment. This appliance provides a rich set of features, including dynamic routing protocols, stateful firewall capabilities, various VPNs, as well as high availability configurations.\n\nThe seamless integration with GNS3 allows network engineers and architects to validate network designs, perform testing and troubleshooting, and enhance their skill sets in a controlled, risk-free environment.",
+    "vendor_name": "VyOS Inc.",
+    "vendor_url": "https://vyos.io/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/VyOS.png",
     "documentation_url": "https://docs.vyos.io/",
-    "product_name": "VyOS",
-    "product_url": "https://vyos.net/",
+    "product_name": "VyOS Universal Router",
+    "product_url": "https://vyos.io/vyos-universal-router",
     "registry_version": 4,
     "status": "stable",
-    "maintainer": "GNS3 Team",
-    "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password is vyos/vyos.\n\nThe -KVM versions are ready to use, no installation is required.\nThe other images will start the router from the CDROM on initial boot. Login and then type \"install image\" and follow the instructions.",
+    "availability": "service-contract",
+    "maintainer": "VyOS Inc.",
+    "maintainer_email": "support@vyos.io",
+    "usage": "\nDefault credentials:\nUser: vyos\nPassword: vyos",
     "symbol": "vyos.svg",
     "port_name_format": "eth{0}",
     "qemu": {
-        "adapter_type": "e1000",
-        "adapters": 3,
-        "ram": 512,
-        "hda_disk_interface": "scsi",
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 2048,
+        "cpus": 4,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
-        "boot_priority": "cd",
-        "kvm": "allow"
+        "boot_priority": "c",
+        "kvm": "require",
+        "on_close": "shutdown_signal"
     },
     "images": [
         {
-            "filename": "vyos-1.3.2-amd64.iso",
+            "filename": "vyos-1.4.0-kvm-amd64.qcow2",
+            "version": "1.4.0",
+            "md5sum": "a130e446bc5bf87391981f183ee3694b",
+            "filesize": 468320256,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
+            "filename": "vyos-1.3.7-qemu-amd64.qcow2",
+            "version": "1.3.7",
+            "md5sum": "f4663b1e2df115bfa5c7ec17584514d6",
+            "filesize": 359792640,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
+            "filename": "vyos-1.3.2-10G-qemu.qcow2",
             "version": "1.3.2",
-            "md5sum": "070743faac800f9e5197058a8b6b3ba1",
-            "filesize": 334495744,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-2-generic-iso-image"
+            "md5sum": "68ad3fb530213189ac9ed496d5fe7897",
+            "filesize": 326893568,
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "vyos-1.3.1-S1-amd64.iso",
+            "filename": "vyos-1.3.1-S1-10G-qemu.qcow2",
             "version": "1.3.1-S1",
-            "md5sum": "781f345e8a4ab9eb9e075ce5c87c8817",
-            "filesize": 351272960,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-1-s1-generic-iso-image"
+            "md5sum": "d8ed9f82a983295b94b07f8e37c48ed0",
+            "filesize": 343801856,
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "vyos-1.3.1-amd64.iso",
+            "filename": "vyos-1.3.1-10G-qemu.qcow2",
             "version": "1.3.1",
-            "md5sum": "b6f57bd0cf9b60cdafa337b08ba4f2bc",
-            "filesize": 350224384,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-1-generic-iso-image"
+            "md5sum": "482367c833990fb2b9350e3708d33dc9",
+            "filesize": 342556672,
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "vyos-1.3.0-amd64.iso",
+            "filename": "vyos-1.3.0-10G-qemu.qcow2",
             "version": "1.3.0",
-            "md5sum": "2019bd9c5efa6194e2761de678d0073f",
-            "filesize": 338690048,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-0-generic-iso-image"
-        },
-        {
-            "filename": "vyos-1.2.9-S1-amd64.iso",
-            "version": "1.2.9-S1",
-            "md5sum": "3fece6363f9766f862e26d292d0ed5a3",
-            "filesize": 430964736,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-s1-generic-iso-image",
-            "direct_download_url": "https://legacy-lts-images.vyos.io/1.2.9-S1/vyos-1.2.9-S1-amd64.iso"
+            "md5sum": "086e95e992e9b4d014c5f154cd01a6e6",
+            "filesize": 330956800,
+            "download_url": "https://support.vyos.io/"
         },
         {
             "filename": "vyos-1.2.9-S1-10G-qemu.qcow2",
-            "version": "1.2.9-S1-KVM",
+            "version": "1.2.9-S1",
             "md5sum": "0a70d78b80a3716d42487c02ef44f41f",
             "filesize": 426967040,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-s1-for-kvm",
-            "direct_download_url": "https://legacy-lts-images.vyos.io/1.2.9-S1/vyos-1.2.9-S1-10G-qemu.qcow2"
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "vyos-1.2.9-amd64.iso",
-            "version": "1.2.9",
-            "md5sum": "586be23b6256173e174c82d8f1f699a1",
-            "filesize": 430964736,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-generic-iso-image",
-            "direct_download_url": "https://legacy-lts-images.vyos.io/1.2.9/vyos-1.2.9-amd64.iso"
-        },
-        {
-            "filename": "vyos-1.2.9-10G-qemu.qcow2",
-            "version": "1.2.9-KVM",
-            "md5sum": "76871c7b248c32f75177c419128257ac",
-            "filesize": 427360256,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-10g-qemu-qcow2",
-            "direct_download_url": "https://legacy-lts-images.vyos.io/1.2.9/vyos-1.2.9-10G-qemu.qcow2"
-        },
-        {
-            "filename": "vyos-1.2.8-amd64.iso",
+            "filename": "vyos-1.2.8-10G-qemu.qcow2",
             "version": "1.2.8",
-            "md5sum": "0ad879db903efdbf1c39dc945e165931",
-            "filesize": 429916160,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-8-generic-iso-image"
+            "md5sum": "96c76f619d0f8ea11dc8a3a18ed67b98",
+            "filesize": 425852928,
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "vyos-1.1.8-amd64.iso",
-            "version": "1.1.8",
-            "md5sum": "95a141d4b592b81c803cdf7e9b11d8ea",
-            "filesize": 241172480,
-            "direct_download_url": "https://legacy-lts-images.vyos.io/vyos-1.1.8-amd64.iso"
+            "filename": "vyos-1.2.7-qemu.qcow2",
+            "version": "1.2.7",
+            "md5sum": "1be4674c970fcdd65067e504baea5d74",
+            "filesize": 424607744,
+            "download_url": "https://support.vyos.io/"
         },
         {
-            "filename": "empty8G.qcow2",
-            "version": "1.0",
-            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
-            "filesize": 197120,
-            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+            "filename": "vyos-1.2.6-qemu.qcow2",
+            "version": "1.2.6",
+            "md5sum": "d8010d79889ca0ba5cb2634665e548e3",
+            "filesize": 424607744,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
+            "filename": "vyos-1.2.5-amd64.qcow2",
+            "version": "1.2.5",
+            "md5sum": "110c22309ec480600446fd2fb4f27a0d",
+            "filesize": 411500544 ,
+            "download_url": "https://support.vyos.io/"
         }
     ],
     "versions": [
         {
+            "name": "1.4.0",
+            "images": {
+                "hda_disk_image": "vyos-1.4.0-kvm-amd64.qcow2"
+            }
+        },
+        {
+            "name": "1.3.7",
+            "images": {
+                "hda_disk_image": "vyos-1.3.7-qemu-amd64.qcow2"
+            }
+        },
+        {
             "name": "1.3.2",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3.2-amd64.iso"
+                "hda_disk_image": "vyos-1.3.2-10G-qemu.qcow2"
             }
         },
         {
             "name": "1.3.1-S1",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3.1-S1-amd64.iso"
+                "hda_disk_image": "vyos-1.3.1-S1-10G-qemu.qcow2"
             }
         },
         {
             "name": "1.3.1",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3.1-amd64.iso"
+                "hda_disk_image": "vyos-1.3.1-10G-qemu.qcow2"
             }
         },
         {
             "name": "1.3.0",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3.0-amd64.iso"
+                "hda_disk_image": "vyos-1.3.0-10G-qemu.qcow2"
             }
         },
         {
             "name": "1.2.9-S1",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.9-S1-amd64.iso"
-            }
-        },
-        {
-            "name": "1.2.9-S1-KVM",
-            "images": {
                 "hda_disk_image": "vyos-1.2.9-S1-10G-qemu.qcow2"
-            }
-        },
-        {
-            "name": "1.2.9",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.9-amd64.iso"
-            }
-        },
-        {
-            "name": "1.2.9-KVM",
-            "images": {
-                "hda_disk_image": "vyos-1.2.9-10G-qemu.qcow2"
             }
         },
         {
             "name": "1.2.8",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.8-amd64.iso"
+                "hda_disk_image": "vyos-1.2.8-10G-qemu.qcow2"
             }
         },
         {
-            "name": "1.1.8",
+            "name": "1.2.7",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.1.8-amd64.iso"
+                "hda_disk_image": "vyos-1.2.7-qemu.qcow2"
+            }
+        },
+        {
+            "name": "1.2.6",
+            "images": {
+                "hda_disk_image": "vyos-1.2.6-qemu.qcow2"
+            }
+        },
+        {
+            "name": "1.2.5",
+            "images": {
+                "hda_disk_image": "vyos-1.2.5-amd64.qcow2"
             }
         }
     ]

@@ -161,14 +161,17 @@ class ZipFile(zipfile.ZipFile):
         self._comment = comment
         self._didModify = True
 
-    async def data_generator(self, path):
+    async def data_generator(self, path, islink=False):
 
-        async with aiofiles.open(path, "rb") as f:
-            while True:
-                part = await f.read(self._chunksize)
-                if not part:
-                    break
-                yield part
+        if islink:
+            yield os.readlink(path).encode()
+        else:
+            async with aiofiles.open(path, "rb") as f:
+                while True:
+                    part = await f.read(self._chunksize)
+                    if not part:
+                        break
+                    yield part
         return
 
     async def _run_in_executor(self, task, *args, **kwargs):
@@ -224,12 +227,13 @@ class ZipFile(zipfile.ZipFile):
             raise ValueError("either (exclusively) filename or iterable shall be not None")
 
         if filename:
-            st = os.stat(filename)
+            st = os.stat(filename, follow_symlinks=False)
             isdir = stat.S_ISDIR(st.st_mode)
+            islink = stat.S_ISLNK(st.st_mode)
             mtime = time.localtime(st.st_mtime)
             date_time = mtime[0:6]
         else:
-            st, isdir, date_time = None, False, time.localtime()[0:6]
+            st, isdir, islink, date_time = None, False, False, time.localtime()[0:6]
         # Create ZipInfo instance to store file information
         if arcname is None:
             arcname = filename
@@ -282,7 +286,7 @@ class ZipFile(zipfile.ZipFile):
 
         file_size = 0
         if filename:
-            async for buf in self.data_generator(filename):
+            async for buf in self.data_generator(filename, islink):
                 file_size = file_size + len(buf)
                 CRC = zipfile.crc32(buf, CRC) & 0xffffffff
                 if cmpr:

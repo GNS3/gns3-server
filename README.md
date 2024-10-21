@@ -79,7 +79,7 @@ must be connected to the Internet in order to install the dependencies.
 
 Dependencies:
 
--   Python 3.6, setuptools and the ones listed
+-   Python >= 3.8, setuptools and the ones listed
     [here](https://github.com/GNS3/gns3-server/blob/master/requirements.txt)
 
 The following commands will install some of these dependencies:

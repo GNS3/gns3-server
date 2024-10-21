@@ -26,8 +26,8 @@ import os
 from .compute import ComputeConflict, ComputeError
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
+from ..utils import macaddress_to_int, int_to_macaddress
 from ..config import Config
-from ..utils.qt import qt_font_to_style
 
 
 import logging
@@ -663,7 +663,13 @@ class Node:
                         break
                 port_name = "eth{}".format(adapter_number)
                 port_name = custom_adapter_settings.get("port_name", port_name)
-                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name))
+                mac_address = custom_adapter_settings.get("mac_address")
+                if not mac_address and "mac_address" in self._properties:
+                    mac_address = int_to_macaddress(macaddress_to_int(self._properties["mac_address"]) + adapter_number)
+
+                port = PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name)
+                port.mac_address = mac_address
+                self._ports.append(port)
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0

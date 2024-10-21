@@ -85,6 +85,12 @@ DOCKER_CREATE_SCHEMA = {
             "minimum": 0,
             "maximum": 99,
         },
+        "mac_address": {
+            "description": "Docker container base MAC address",
+            "type": ["string", "null"],
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+        },
         "environment": {
             "description": "Docker environment variables",
             "type": ["string", "null"],
@@ -186,6 +192,12 @@ DOCKER_OBJECT_SCHEMA = {
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 99,
+        },
+        "mac_address": {
+            "description": "Docker container base MAC address",
+            "type": ["string", "null"],
+            "minLength": 1,
+            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
         },
         "usage": {
             "description": "How to use the Docker container",

@@ -13,10 +13,16 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
+        os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        #include:
+          # only test with Python 3.10 on Windows
+        #  - os: windows-latest
+        #    python-version: "3.10"
 
     steps:
     - uses: actions/checkout@v4
@@ -27,7 +33,15 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+        python -m pip install -r dev-requirements.txt
+
+    - name: Install Windows specific dependencies
+      if: runner.os == 'Windows'
+      run: |
+        python -m pip install -r win-requirements.txt
+        curl -O "http://www.win10pcap.org/download/Win10Pcap-v10.2-5002.msi"
+        msiexec /i "Win10Pcap-v10.2-5002.msi" /qn /norestart
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names

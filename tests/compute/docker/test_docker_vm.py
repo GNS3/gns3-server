@@ -48,6 +48,7 @@ async def vm(compute_project, manager):
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
     vm._cid = "e90e34656842"
     vm.allocate_aux = False
+    vm.mac_address = '02:42:3d:b7:93:00'
     return vm
 
 
@@ -60,6 +61,7 @@ def test_json(vm, compute_project):
         'project_id': compute_project.id,
         'node_id': vm.id,
         'adapters': 1,
+        'mac_address': '02:42:3d:b7:93:00',
         'console': vm.console,
         'console_type': 'telnet',
         'console_resolution': '1024x768',
@@ -107,6 +109,7 @@ async def test_create(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -145,6 +148,7 @@ async def test_create_with_tag(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -187,6 +191,7 @@ async def test_create_vnc(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -316,6 +321,7 @@ async def test_create_start_cmd(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/ls"],
@@ -414,6 +420,7 @@ async def test_create_image_not_available(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -457,6 +464,7 @@ async def test_create_with_user(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -540,6 +548,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -579,6 +588,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -618,6 +628,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -657,6 +668,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -695,6 +707,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -733,6 +746,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -779,6 +793,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
                         ],
                         "Privileged": True
                     },
+                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -1027,6 +1042,7 @@ async def test_update(vm):
             ],
             "Privileged": True
         },
+        "UsernsMode": "host",
         "Volumes": {},
         "NetworkDisabled": True,
         "Hostname": "test",
@@ -1095,6 +1111,7 @@ async def test_update_running(vm):
             ],
             "Privileged": True
         },
+        "UsernsMode": "host",
         "Volumes": {},
         "NetworkDisabled": True,
         "Hostname": "test",
@@ -1185,7 +1202,37 @@ async def test_add_ubridge_connection(vm):
         call.send('bridge start bridge0')
     ]
     assert 'bridge0' in vm._bridges
-    # We need to check any_order ortherwise mock is confused by asyncio
+    # We need to check any_order otherwise mock is confused by asyncio
+    vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
+
+
+async def test_add_ubridge_connections_with_base_mac_address(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    vm.adapters = 2
+    vm.mac_address = "02:42:42:42:42:00"
+
+    nio_params = {
+        "type": "nio_udp",
+        "lport": 4242,
+        "rport": 4343,
+        "rhost": "127.0.0.1"}
+
+    nio = vm.manager.create_nio(nio_params)
+    await vm._add_ubridge_connection(nio, 0)
+
+    nio = vm.manager.create_nio(nio_params)
+    await vm._add_ubridge_connection(nio, 1)
+
+    calls = [
+        call.send('bridge create bridge0'),
+        call.send('bridge create bridge1'),
+        call.send('docker set_mac_addr tap-gns3-e0 02:42:42:42:42:00'),
+        call.send('docker set_mac_addr tap-gns3-e0 02:42:42:42:42:01')
+    ]
+
+    # We need to check any_order otherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 

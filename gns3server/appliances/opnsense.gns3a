@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "OPNsense-24.7-nano-amd64.img",
+            "version": "24.7",
+            "md5sum": "4f75dc2c948b907cbf73763b1539677c",
+            "filesize": 3221225472,
+            "download_url": "https://opnsense.c0urier.net/releases/24.7/"
+        },
+        {
             "filename": "OPNsense-24.1-nano-amd64.img",
             "version": "24.1",
             "md5sum": "ea8472df2c272419b7834cddaf68048d",
@@ -69,6 +76,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "24.7",
+            "images": {
+                "hda_disk_image": "OPNsense-24.7-nano-amd64.img"
+            }
+        },
         {
             "name": "24.1",
             "images": {
