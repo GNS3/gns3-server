@@ -25,7 +25,7 @@ PATH=/gns3/bin:/tmp/gns3/bin:/sbin:$PATH
 # bootstrap busybox commands
 if [ ! -d /tmp/gns3/bin ]; then
 	busybox mkdir -p /tmp/gns3/bin
-	for applet in `busybox --list-full`
+	for applet in `busybox --list`
 	do
 	  ln -s /gns3/bin/busybox "/tmp/gns3/bin/$applet"
 	done
