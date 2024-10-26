@@ -107,9 +107,9 @@ async def test_create(compute_project, manager):
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -146,9 +146,9 @@ async def test_create_with_tag(compute_project, manager):
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -189,9 +189,9 @@ async def test_create_vnc(compute_project, manager):
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "/tmp/.X11-unix/X{0}:/tmp/.X11-unix/X{0}:ro".format(vm._display)
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -319,9 +319,9 @@ async def test_create_start_cmd(compute_project, manager):
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/ls"],
@@ -418,9 +418,9 @@ async def test_create_image_not_available(compute_project, manager):
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -462,9 +462,9 @@ async def test_create_with_user(compute_project, manager):
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -546,9 +546,9 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -586,9 +586,9 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -626,9 +626,9 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -666,9 +666,9 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -705,9 +705,9 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -744,9 +744,9 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                             "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -791,9 +791,9 @@ async def test_create_with_extra_volumes(compute_project, manager):
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                             "{}:/gns3volumes/vol/2".format(os.path.join(vm.working_dir, "vol", "2")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "UsernsMode": "host"
                     },
-                "UsernsMode": "host",
                 "Volumes": {},
                 "NetworkDisabled": True,
                 "Hostname": "test",
@@ -1040,9 +1040,9 @@ async def test_update(vm):
                 "{}:/gns3:ro".format(Docker.resources_path()),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
-            "Privileged": True
+            "Privileged": True,
+            "UsernsMode": "host"
         },
-        "UsernsMode": "host",
         "Volumes": {},
         "NetworkDisabled": True,
         "Hostname": "test",
@@ -1109,9 +1109,9 @@ async def test_update_running(vm):
                 "{}:/gns3:ro".format(Docker.resources_path()),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
-            "Privileged": True
+            "Privileged": True,
+            "UsernsMode": "host"
         },
-        "UsernsMode": "host",
         "Volumes": {},
         "NetworkDisabled": True,
         "Hostname": "test",

@@ -383,8 +383,8 @@ class DockerVM(BaseNode):
                 "CapAdd": ["ALL"],
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
+                "UsernsMode": "host",
             },
-            "UsernsMode": "host",
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
@@ -451,6 +451,7 @@ class DockerVM(BaseNode):
             if extra_hosts:
                 params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
 
+        print(params)
         result = await self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
         log.info("Docker container '{name}' [{id}] created".format(name=self._name, id=self._id))
