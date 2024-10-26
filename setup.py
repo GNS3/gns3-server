@@ -16,9 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import os
-import shutil
-import subprocess
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
@@ -67,8 +64,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms="any",
-    python_requires='>=3.8',
-    setup_requires=["setuptools>=17.1"],
+    python_requires=">=3.8",
+    setup_requires=["setuptools>=61.0"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -86,6 +83,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
 )
