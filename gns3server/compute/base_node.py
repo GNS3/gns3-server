@@ -662,6 +662,7 @@ class BaseNode:
         path = shutil.which(path)
         return path
 
+    @locking
     async def _ubridge_send(self, command):
         """
         Sends a command to uBridge hypervisor.
