@@ -35,7 +35,7 @@ DEFAULT_PORTS = [
 
 class EthernetHubTemplate(TemplateBase):
 
-    category: Optional[Category] = "switch"
+    category: Optional[Category] = Category.switch
     default_name_format: Optional[str] = "Hub{0}"
     symbol: Optional[str] = "hub"
     ports_mapping: Optional[List[EthernetHubPort]] = Field(DEFAULT_PORTS, description="Ports")

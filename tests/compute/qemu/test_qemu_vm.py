@@ -793,6 +793,7 @@ async def test_build_command_with_invalid_options(vm):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+@pytest.mark.asyncio
 async def test_build_command_with_forbidden_options(vm):
 
     vm.options = "-blockdev"

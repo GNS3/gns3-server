@@ -24,7 +24,7 @@ from typing import Optional, List
 
 class DockerTemplate(TemplateBase):
 
-    category: Optional[Category] = "guest"
+    category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "docker_guest"
     image: str = Field(..., description="Docker image name")
@@ -32,8 +32,8 @@ class DockerTemplate(TemplateBase):
     mac_address: Optional[str] = Field("", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$")
     start_command: Optional[str] = Field("", description="Docker CMD entry")
     environment: Optional[str] = Field("", description="Docker environment variables")
-    console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
-    aux_type: Optional[AuxType] = Field("none", description="Auxiliary console type")
+    console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
+    aux_type: Optional[AuxType] = Field(AuxType.none, description="Auxiliary console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )

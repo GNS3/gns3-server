@@ -122,6 +122,7 @@ async def write_file(path, z):
             f.write(chunk)
 
 
+@pytest.mark.asyncio
 async def test_import_project_containing_symlink(tmpdir, controller):
 
     project = Project(controller=controller, name="test")
