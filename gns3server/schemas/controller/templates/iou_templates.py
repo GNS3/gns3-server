@@ -24,7 +24,7 @@ from typing import Optional
 
 class IOUTemplate(TemplateBase):
 
-    category: Optional[Category] = "router"
+    category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
     path: str = Field(..., description="Path of IOU executable")
@@ -36,7 +36,7 @@ class IOUTemplate(TemplateBase):
     startup_config: Optional[str] = Field("iou_l3_base_startup-config.txt", description="Startup-config of IOU")
     private_config: Optional[str] = Field("", description="Private-config of IOU")
     l1_keepalives: Optional[bool] = Field(False, description="Always keep up Ethernet interface (does not always work)")
-    console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
+    console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )

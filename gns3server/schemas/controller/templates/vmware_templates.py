@@ -29,7 +29,7 @@ from typing import Optional, List
 
 class VMwareTemplate(TemplateBase):
 
-    category: Optional[Category] = "guest"
+    category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vmware_guest"
     vmx_path: str = Field(..., description="Path to the vmx file")
@@ -45,11 +45,11 @@ class VMwareTemplate(TemplateBase):
     adapters: Optional[int] = Field(
         1, ge=0, le=10, description="Number of adapters"
     )  # 10 is the maximum adapters support by VMware VMs
-    adapter_type: Optional[VMwareAdapterType] = Field("e1000", description="VMware adapter type")
+    adapter_type: Optional[VMwareAdapterType] = Field(VMwareAdapterType.e1000, description="VMware adapter type")
     use_any_adapter: Optional[bool] = Field(False, description="Allow GNS3 to use any VMware adapter")
     headless: Optional[bool] = Field(False, description="Headless mode")
-    on_close: Optional[VMwareOnCloseAction] = Field("power_off", description="Action to execute on the VM is closed")
-    console_type: Optional[VMwareConsoleType] = Field("none", description="Console type")
+    on_close: Optional[VMwareOnCloseAction] = Field(VMwareOnCloseAction.power_off, description="Action to execute on the VM is closed")
+    console_type: Optional[VMwareConsoleType] = Field(VMwareConsoleType.none, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )

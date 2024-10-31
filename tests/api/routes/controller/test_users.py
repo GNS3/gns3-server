@@ -284,6 +284,8 @@ class TestUserLogin:
             "username": username,
             "password": password,
         }
+        if password is None:
+            del login_data["password"]
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status_code
         assert "access_token" not in response.json()

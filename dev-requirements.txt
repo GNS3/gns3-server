@@ -1,7 +1,7 @@
 pytest==8.3.3
-flake8==7.1.0
+flake8==7.1.1
 pytest-timeout==2.3.1
 pytest-asyncio==0.21.2
 requests==2.32.3
-httpx==0.24.1 # version 0.24.1 is required by httpx_ws
-httpx_ws==0.4.2
+httpx==0.27.2 # version 0.24.1 is required by httpx_ws
+httpx_ws==0.6.2

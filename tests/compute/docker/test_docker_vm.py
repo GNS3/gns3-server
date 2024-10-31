@@ -1449,6 +1449,7 @@ async def test_add_ubridge_connection(vm):
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
+@pytest.mark.asyncio
 async def test_add_ubridge_connections_with_base_mac_address(vm):
 
     vm._ubridge_hypervisor = MagicMock()

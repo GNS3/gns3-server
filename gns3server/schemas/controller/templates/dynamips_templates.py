@@ -32,7 +32,7 @@ from enum import Enum
 
 class DynamipsTemplate(TemplateBase):
 
-    category: Optional[Category] = "router"
+    category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "R{0}"
     symbol: Optional[str] = "router"
     platform: DynamipsPlatform = Field(..., description="Cisco router platform")
@@ -51,11 +51,11 @@ class DynamipsTemplate(TemplateBase):
     disk0: Optional[int] = Field(0, description="Disk0 size in MB")
     disk1: Optional[int] = Field(0, description="Disk1 size in MB")
     auto_delete_disks: Optional[bool] = Field(False, description="Automatically delete nvram and disk files")
-    console_type: Optional[DynamipsConsoleType] = Field("telnet", description="Console type")
+    console_type: Optional[DynamipsConsoleType] = Field(DynamipsConsoleType.telnet, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )
-    aux_type: Optional[DynamipsConsoleType] = Field("none", description="Auxiliary console type")
+    aux_type: Optional[DynamipsConsoleType] = Field(DynamipsConsoleType.none, description="Auxiliary console type")
     slot0: Optional[DynamipsAdapters] = Field(None, description="Network module slot 0")
     slot1: Optional[DynamipsAdapters] = Field(None, description="Network module slot 1")
     slot2: Optional[DynamipsAdapters] = Field(None, description="Network module slot 2")
@@ -72,8 +72,8 @@ class C7200DynamipsTemplate(DynamipsTemplate):
 
     ram: Optional[int] = Field(512, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(512, description="Amount of NVRAM in KB")
-    npe: Optional[DynamipsNPE] = Field("npe-400", description="NPE model")
-    midplane: Optional[DynamipsMidplane] = Field("vxr", description="Midplane model")
+    npe: Optional[DynamipsNPE] = Field(DynamipsNPE.npe_400, description="NPE model")
+    midplane: Optional[DynamipsMidplane] = Field(DynamipsMidplane.vxr, description="Midplane model")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 

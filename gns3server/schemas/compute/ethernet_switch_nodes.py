@@ -43,7 +43,7 @@ class EthernetSwitchPort(BaseModel):
     port_number: int
     type: EthernetSwitchPortType = Field(..., description="Port type")
     vlan: int = Field(..., ge=1, le=4094, description="VLAN number")
-    ethertype: Optional[EthernetSwitchEtherType] = Field("0x8100", description="QinQ Ethertype")
+    ethertype: Optional[EthernetSwitchEtherType] = Field(EthernetSwitchEtherType.ethertype_8021q, description="QinQ Ethertype")
 
     @model_validator(mode="after")
     def check_ethertype(self) -> "EthernetSwitchPort":
