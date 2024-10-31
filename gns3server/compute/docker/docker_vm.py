@@ -451,7 +451,6 @@ class DockerVM(BaseNode):
             if extra_hosts:
                 params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
 
-        print(params)
         result = await self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
         log.info("Docker container '{name}' [{id}] created".format(name=self._name, id=self._id))
