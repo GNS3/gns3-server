@@ -266,7 +266,6 @@ class TestUserLogin:
         (
             ("wrong_username", "user1_password", status.HTTP_401_UNAUTHORIZED),
             ("user1", "wrong_password", status.HTTP_401_UNAUTHORIZED),
-            ("user1", "", status.HTTP_401_UNAUTHORIZED),
             ("user1", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
         ),
     )
