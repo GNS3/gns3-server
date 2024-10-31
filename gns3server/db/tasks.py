@@ -77,7 +77,7 @@ async def connect_to_db(app: FastAPI) -> None:
 
     db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
-    engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
+    engine = create_async_engine(db_url, connect_args={"check_same_thread": False, "timeout": 20}, future=True)
     alembic_cfg = config.Config()
     alembic_cfg.set_main_option("script_location", "gns3server:db_migrations")
     #alembic_cfg.set_main_option('sqlalchemy.url', db_url)
