@@ -203,7 +203,7 @@ def _create_symbolic_links(zip_file, path):
                 os.remove(symlink_path)
                 os.symlink(symlink_target, symlink_path)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict(text=f"Cannot create symbolic link: {e}")
+                raise ControllerError(f"Cannot create symbolic link: {e}")
 
 def _move_node_file(path, old_id, new_id):
     """
