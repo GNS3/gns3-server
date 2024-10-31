@@ -2,7 +2,7 @@ uvicorn==0.29.0
 fastapi==0.112.0
 python-multipart==0.0.9
 websockets==12.0
-aiohttp>=3.9.5,<3.10
+aiohttp>=3.10.10,<3.11
 async-timeout==4.0.3
 aiofiles>=24.1.0,<25.0
 Jinja2>=3.1.4,<3.2
