@@ -464,8 +464,8 @@ class DockerVM(BaseNode):
                 "Mounts": self._mount_binds(image_infos),
                 "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
                 "NanoCpus": int(self._cpus * 1e9),  # convert cpus to nano cpus
+                "UsernsMode": "host"
             },
-            "UsernsMode": "host",
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import re
 import os
 import json
@@ -26,6 +27,7 @@ import asyncio
 import aiofiles
 import tempfile
 import zipfile
+import pathlib
 
 from uuid import UUID, uuid4
 
@@ -41,8 +43,9 @@ from ..utils.application_id import get_next_application_id
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
+from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
-from .import_project import import_project
+from .import_project import import_project, _move_node_file
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 
 import logging
@@ -1062,13 +1065,15 @@ class Project:
         """
         Duplicate a project
 
-        It's the save as feature of the 1.X. It's implemented on top of the
-        export / import features. It will generate a gns3p and reimport it.
-        It's a little slower but we have only one implementation to maintain.
+        Implemented on top of the export / import features. It will generate a gns3p and reimport it.
+
+        NEW: fast duplication is used if possible (when there are no remote computes).
+        If not, the project is exported and reimported as explained above.
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param reset_mac_addresses: Reset MAC addresses for the new project
         """
+
         # If the project was not open we open it temporary
         previous_status = self._status
         if self._status == "closed":
@@ -1076,6 +1081,18 @@ class Project:
 
         self.dump()
         assert self._status != "closed"
+
+        try:
+            proj = await self._fast_duplication(name, location, reset_mac_addresses)
+            if proj:
+                if previous_status == "closed":
+                    await self.close()
+                return proj
+            else:
+                log.info("Fast duplication failed, fallback to normal duplication")
+        except Exception as e:
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
+
         try:
             begin = time.time()
 
@@ -1314,3 +1331,70 @@ class Project:
 
     def __repr__(self):
         return f"<gns3server.controller.Project {self._name} {self._id}>"
+
+    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+        """
+        Fast duplication of a project.
+
+        Copy the project files directly rather than in an import-export fashion.
+
+        :param name: Name of the new project. A new one will be generated in case of conflicts
+        :param location: Parent directory of the new project
+        :param reset_mac_addresses: Reset MAC addresses for the new project
+        """
+
+        # remote replication is not supported with remote computes
+        for compute in self.computes:
+            if compute.id != "local":
+                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
+                return None
+        # work dir
+        p_work = pathlib.Path(location or self.path).parent.absolute()
+        t0 = time.time()
+        new_project_id = str(uuid.uuid4())
+        new_project_path = p_work.joinpath(new_project_id)
+        # copy dir
+        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
+        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
+        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
+        project_name = name or topology["name"]
+        # If the project name is already used we generate a new one
+        project_name = self.controller.get_free_project_name(project_name)
+        topology["name"] = project_name
+        # To avoid unexpected behavior (project start without manual operations just after import)
+        topology["auto_start"] = False
+        topology["auto_open"] = False
+        topology["auto_close"] = False
+        # change node ID
+        node_old_to_new = {}
+        for node in topology["topology"]["nodes"]:
+            new_node_id = str(uuid.uuid4())
+            if "node_id" in node:
+                node_old_to_new[node["node_id"]] = new_node_id
+                _move_node_file(new_project_path, node["node_id"], new_node_id)
+            node["node_id"] = new_node_id
+            if reset_mac_addresses:
+                if "properties" in node:
+                    for prop, value in node["properties"].items():
+                        # reset the MAC address
+                        if prop in ("mac_addr", "mac_address"):
+                            node["properties"][prop] = None
+        # change link ID
+        for link in topology["topology"]["links"]:
+            link["link_id"] = str(uuid.uuid4())
+            for node in link["nodes"]:
+                node["node_id"] = node_old_to_new[node["node_id"]]
+        # Generate new drawings id
+        for drawing in topology["topology"]["drawings"]:
+            drawing["drawing_id"] = str(uuid.uuid4())
+
+        # And we dump the updated.gns3
+        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
+        topology["project_id"] = new_project_id
+        with open(dot_gns3_path, "w+") as f:
+            json.dump(topology, f, indent=4)
+
+        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
+        project = await self.controller.load_project(dot_gns3_path, load=False)
+        log.info("Project '{}' fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
+        return project

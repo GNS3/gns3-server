@@ -21,6 +21,7 @@ import json
 import pytest
 import pytest_asyncio
 import zipfile
+import stat
 
 from pathlib import Path
 from unittest.mock import patch
@@ -119,6 +120,8 @@ async def test_export(tmpdir, project):
     with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
         f.write("WORLD")
 
+    os.symlink("/tmp/anywhere", os.path.join(path, "vm-1", "dynamips", "symlink"))
+
     with aiozipstream.ZipFile() as z:
         with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
             await export_project(z, project, str(tmpdir), include_images=False)
@@ -134,8 +137,11 @@ async def test_export(tmpdir, project):
         assert 'vm-1/dynamips/empty-dir/' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
-
         assert 'images/IOS/test.image' not in myzip.namelist()
+
+        assert 'vm-1/dynamips/symlink' in myzip.namelist()
+        zip_info = myzip.getinfo('vm-1/dynamips/symlink')
+        assert stat.S_ISLNK(zip_info.external_attr >> 16)
 
         with myzip.open("project.gns3") as myfile:
             topo = json.loads(myfile.read().decode())["topology"]

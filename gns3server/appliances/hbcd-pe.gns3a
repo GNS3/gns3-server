@@ -1,0 +1,62 @@
+{
+    "appliance_id": "ac98ab6f-7966-444b-842f-9507c965b8b7",
+    "name": "HBCD-PE",
+    "category": "guest",
+    "description": "Hiren’s BootCD PE (Preinstallation Environment) is a restored edition of Hiren’s BootCD based on Windows 11 PE x64. ",
+    "vendor_name": "hirensbootcd.org",
+    "vendor_url": "https://www.hirensbootcd.org/",
+    "documentation_url": "https://www.hirensbootcd.org/howtos/",
+    "product_name": "Hiren’s BootCD PE",
+    "product_url": "https://www.hirensbootcd.org/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 4096,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "HBCD_PE_x64.iso",
+            "version": "1.0.8",
+            "md5sum": "45baab64b088431bdf3370292e9a74b0",
+            "filesize": 3291686912,
+            "download_url": "https://www.hirensbootcd.org/download/",
+            "direct_download_url": "https://www.hirensbootcd.org/files/HBCD_PE_x64.iso"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        },
+        {
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "1.0.8",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "HBCD_PE_x64.iso"
+            }
+        }
+    ]
+}

@@ -23,7 +23,11 @@ import zipfile
 
 from pathlib import Path
 from tests.utils import asyncio_patch, AsyncioMagicMock
+from unittest.mock import patch, MagicMock
 
+from gns3server.utils.asyncio import aiozipstream
+from gns3server.controller.project import Project
+from gns3server.controller.export_project import export_project
 from gns3server.controller.import_project import import_project, _move_files_to_compute
 from gns3server.version import __version__
 
@@ -109,6 +113,54 @@ async def test_import_project_override(projects_dir, controller):
         project = await import_project(controller, project_id, f, location=str(tmpdir))
     assert project.id == project_id
     assert project.name == "test"
+
+
+async def write_file(path, z):
+
+    with open(path, 'wb') as f:
+        async for chunk in z:
+            f.write(chunk)
+
+
+async def test_import_project_containing_symlink(tmpdir, controller):
+
+    project = Project(controller=controller, name="test")
+    project.dump = MagicMock()
+    path = project.path
+
+    project_id = str(uuid.uuid4())
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "auto_open": True,
+        "auto_start": True,
+        "topology": {
+        },
+        "version": "2.0.0"
+    }
+
+    with open(os.path.join(path, "project.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    os.makedirs(os.path.join(path, "vm1", "dynamips"))
+    symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
+    symlink_target = "/tmp/anywhere"
+    os.symlink(symlink_target, symlink_path)
+
+    zip_path = str(tmpdir / "project.zip")
+    with aiozipstream.ZipFile() as z:
+        with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+            await export_project(z, project, str(tmpdir), include_images=False)
+            await write_file(zip_path, z)
+
+    with open(zip_path, "rb") as f:
+        project = await import_project(controller, project_id, f)
+
+    assert project.name == "test"
+    assert project.id == project_id
+    symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
+    assert os.path.islink(symlink_path)
+    assert os.readlink(symlink_path) == symlink_target
 
 
 @pytest.mark.asyncio

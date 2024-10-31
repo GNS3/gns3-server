@@ -1,5 +1,19 @@
 # Change Log
 
+## 2.2.50 21/10/2024
+
+* Bundle web-ui v2.2.50
+* Symbolic links support for project export/import
+* Add comment to indicate sentry-sdk is optional. Ref https://github.com/GNS3/gns3-server/issues/2423
+* Fix issues with recent busybox versions
+* Support to reset MAC addresses for Docker nodes and some adjustments for fast duplication.
+* Update README.md to change the minimum required Python version.
+* Faster project duplication for local projects (no remote compute)
+* Improve error message when a project cannot be parsed.
+* Fix for running Docker containers with user namespaces enabled
+* Support for configuring MAC address in Docker containers
+* Upgrade aiohttp to v3.10.3
+
 ## 3.0.0rc1 11/08/2024
 
 * Bundle web-ui v3.0.0rc1

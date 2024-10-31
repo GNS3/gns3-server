@@ -30,24 +30,24 @@
             "version": "9.2",
             "md5sum": "c5bc76e8c95ac9f810a3482c80a54cc7",
             "filesize": 563347456,
-            "download_url": "https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/",
-            "direct_download_url": "https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-9.2-20230513.x86_64.qcow2"
+            "download_url": "https://vault.almalinux.org/9.2/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/9.2/cloud/x86_64/images/AlmaLinux-9-GenericCloud-9.2-20230513.x86_64.qcow2"
         },
         {
             "filename": "AlmaLinux-8-GenericCloud-8.8-20230524.x86_64.qcow2",
             "version": "8.8",
             "md5sum": "3958c5fc25770ef63cf97aa5d93f0a0b",
             "filesize": 565444608,
-            "download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/",
-            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.8-20230524.x86_64.qcow2"
+            "download_url": "https://vault.almalinux.org/8.8/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/8.8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.8-20230524.x86_64.qcow2"
         },
         {
             "filename": "AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2",
             "version": "8.7",
             "md5sum": "b2b8c7fd3b6869362f3f8ed47549c804",
             "filesize": 566231040,
-            "download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/",
-            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2"
+            "download_url": "https://vault.almalinux.org/8.7/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/8.7/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2"
         },
         {
             "filename": "almalinux-cloud-init-data.iso",
