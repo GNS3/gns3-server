@@ -1083,7 +1083,7 @@ class Project:
         assert self._status != "closed"
 
         try:
-            proj = await self._fast_duplication(name, location, reset_mac_addresses)
+            proj = await self._fast_duplication(name, reset_mac_addresses)
             if proj:
                 if previous_status == "closed":
                     await self.close()
@@ -1091,7 +1091,7 @@ class Project:
             else:
                 log.info("Fast duplication failed, fallback to normal duplication")
         except Exception as e:
-            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
+            raise ControllerError(f"Cannot duplicate project: {str(e)}")
 
         try:
             begin = time.time()
@@ -1332,7 +1332,7 @@ class Project:
     def __repr__(self):
         return f"<gns3server.controller.Project {self._name} {self._id}>"
 
-    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+    async def _fast_duplication(self, name=None, reset_mac_addresses=True):
         """
         Fast duplication of a project.
 
@@ -1349,7 +1349,7 @@ class Project:
                 log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
                 return None
         # work dir
-        p_work = pathlib.Path(location or self.path).parent.absolute()
+        p_work = pathlib.Path(self.path).parent.absolute()
         t0 = time.time()
         new_project_id = str(uuid.uuid4())
         new_project_path = p_work.joinpath(new_project_id)

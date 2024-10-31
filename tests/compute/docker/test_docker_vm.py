@@ -1812,10 +1812,10 @@ async def test_cpus(compute_project, manager):
                         ],
                         "Privileged": True,
                         "Memory": 0,
-                        "NanoCpus": 500000000
+                        "NanoCpus": 500000000,
+                        "UsernsMode": "host"
                     },
                 "Volumes": {},
-                "UsernsMode": "host",
                 "NetworkDisabled": True,
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
@@ -1863,10 +1863,10 @@ async def test_memory(compute_project, manager):
                         ],
                         "Privileged": True,
                         "Memory": 33554432,  # 32MB in bytes
-                        "NanoCpus": 0
+                        "NanoCpus": 0,
+                        "UsernsMode": "host",
                     },
                 "Volumes": {},
-                "UsernsMode": "host",
                 "NetworkDisabled": True,
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
