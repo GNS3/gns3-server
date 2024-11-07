@@ -447,9 +447,13 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
 async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
 
     vm._hda_disk_image = str(tmpdir / "test0.qcow2")
+    vm._hda_disk_interface = "ide"
     vm._hdb_disk_image = str(tmpdir / "test1.qcow2")
+    vm._hdb_disk_interface = "ide"
     vm._hdc_disk_image = str(tmpdir / "test2.qcow2")
+    vm._hdc_disk_interface = "ide"
     vm._hdd_disk_image = str(tmpdir / "test3.qcow2")
+    vm._hdd_disk_interface = "ide"
     open(vm._hda_disk_image, "w+").close()
     open(vm._hdb_disk_image, "w+").close()
     open(vm._hdc_disk_image, "w+").close()
