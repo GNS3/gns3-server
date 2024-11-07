@@ -710,7 +710,10 @@ class DockerVM(BaseNode):
         """
 
         # resize the container TTY.
-        await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+        try:
+            await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+        except DockerError as e:
+            log.warning(f"Could not resize the container TTY: {e}")
 
     async def _start_console(self):
         """
