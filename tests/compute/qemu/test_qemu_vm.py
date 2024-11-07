@@ -353,16 +353,23 @@ async def test_set_platform(compute_project, manager):
 async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
 
     vm._hda_disk_image = str(tmpdir / "test.qcow2")
+    vm._hda_disk_interface = "ide"
+    vm._hdb_disk_image = str(tmpdir / "test2.qcow2")
     open(vm._hda_disk_image, "w+").close()
+    open(vm._hdb_disk_image, "w+").close()
 
-    with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._find_disk_file_format", return_value="qcow2"):
+    with (asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._find_disk_file_format", return_value="qcow2")):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
             options = await vm._disk_options()
             assert process.called
             args, kwargs = process.call_args
-            assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-F", "qcow2", "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2"))
+            assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-F", "qcow2", "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2")) or \
+            args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hdb_disk_image), "-F", "qcow2", "-f", "qcow2", os.path.join(vm.working_dir, "hdb_disk.qcow2"))
 
-    assert options == ['-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0']
+    assert options == [
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=none,index=1,media=disk,id=drive1',
+    ]
 
 
 async def test_cdrom_option(vm, tmpdir, fake_qemu_img_binary):
@@ -440,9 +447,13 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
 async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
 
     vm._hda_disk_image = str(tmpdir / "test0.qcow2")
+    vm._hda_disk_interface = "ide"
     vm._hdb_disk_image = str(tmpdir / "test1.qcow2")
+    vm._hdb_disk_interface = "ide"
     vm._hdc_disk_image = str(tmpdir / "test2.qcow2")
+    vm._hdc_disk_interface = "ide"
     vm._hdd_disk_image = str(tmpdir / "test3.qcow2")
+    vm._hdd_disk_interface = "ide"
     open(vm._hda_disk_image, "w+").close()
     open(vm._hdb_disk_image, "w+").close()
     open(vm._hdc_disk_image, "w+").close()
