@@ -322,8 +322,8 @@ EOFI
 NEEDRESTART_MODE=a apt-get install -y net-tools
 NEEDRESTART_MODE=a apt-get install -y python3-pip
 NEEDRESTART_MODE=a apt-get install -y dialog
-pip install --no-input --upgrade pip
-pip install --no-input pythondialog
+pip install --no-input --upgrade pip --break-system-packages
+pip install --no-input pythondialog --break-system-packages
 
 #Pull down welcome script from repo
 curl https://raw.githubusercontent.com/GNS3/gns3-server/master/scripts/welcome.py > /usr/local/bin/welcome.py
