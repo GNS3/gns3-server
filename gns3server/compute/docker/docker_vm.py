@@ -383,8 +383,8 @@ class DockerVM(BaseNode):
                 "CapAdd": ["ALL"],
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
+                "UsernsMode": "host",
             },
-            "UsernsMode": "host",
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
@@ -710,7 +710,10 @@ class DockerVM(BaseNode):
         """
 
         # resize the container TTY.
-        await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+        try:
+            await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+        except DockerError as e:
+            log.warning(f"Could not resize the container TTY: {e}")
 
     async def _start_console(self):
         """

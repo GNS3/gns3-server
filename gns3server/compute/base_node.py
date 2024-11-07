@@ -406,13 +406,11 @@ class BaseNode:
         Stops the telnet proxy.
         """
 
-        if self._wrapper_telnet_server:
+        if self._wrap_console_writer:
             self._wrap_console_writer.close()
-            if sys.version_info >= (3, 7, 0):
-                try:
-                    await self._wrap_console_writer.wait_closed()
-                except ConnectionResetError:
-                    pass
+            await self._wrap_console_writer.wait_closed()
+            self._wrap_console_writer = None
+        if self._wrapper_telnet_server:
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
             self._wrapper_telnet_server = None
@@ -662,6 +660,7 @@ class BaseNode:
         path = shutil.which(path)
         return path
 
+    @locking
     async def _ubridge_send(self, command):
         """
         Sends a command to uBridge hypervisor.

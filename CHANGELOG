@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.2.51 07/11/2024
+
+* Catch error when cannot resize Docker container TTY.
+* Do not use "ide" if there is a disk image and no interface type has been explicitly configured.
+* Use @locking when sending uBridge commands. Ref https://github.com/GNS3/gns3-gui/issues/3651
+* Fix run Docker containers with user namespaces enabled. Fixes #2414
+* Python 3.13 support
+* Upgrade dependencies
+* Fix errors in init.sh. Fixes #2431
+
 ## 2.2.50 21/10/2024
 
 * Bundle web-ui v2.2.50

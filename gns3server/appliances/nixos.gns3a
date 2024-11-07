@@ -1,0 +1,52 @@
+{
+    "appliance_id": "00714342-14b2-4281-aa20-9043ca8dc26e",
+    "name": "NixOS",
+    "category": "guest",
+    "description": "NixOS QEMU Appliance for images created with nixos-generator.  Automatically sets hostname based on vmname.",
+    "vendor_name": "NixOS",
+    "vendor_url": "https://nixos.org/",
+    "vendor_logo_url": "https://avatars.githubusercontent.com/u/487568",
+    "documentation_url": "https://github.com/ob7/gns3-nixos-appliance",
+    "product_name": "NixOS",
+    "product_url": "https://github.com/NixOS/nixpkgs",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "ob7dev",
+    "maintainer_email": "dev@ob7.us",
+    "usage": "For custom NixOS images, create qcow2 VM with: nixos-generate -f qcow -c ./server.nix   Import it into GNS3 as image.  VM name is passed into QEMU guest with Advanced Options field entry: -fw_cfg name=opt/vm_hostname,string=%vm-name%",
+    "symbol": ":/symbols/affinity/circle/gray/template.svg",
+    "first_port_name": "eth0",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 256,
+        "cpus": 1,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow",
+        "options": "-fw_cfg name=opt/vm_hostname,string=%vm-name%",
+        "on_close": "power_off"
+    },
+    "images": [
+      {
+        "filename": "nixos-24-11.qcow2",
+        "version": "24.11",
+        "md5sum": "2459f05136836dd430402d75cba0f205",
+        "download_url": "https://github.com/nix-community/nixos-generators",
+        "filesize": 1749483520,
+        "download_url": "https://f.ob7.us/gns3/",
+        "direct_download_url": "http://ob7.us/nixos-24-11.qcow2"
+      }
+    ],
+    "versions": [
+        {
+            "name": "24.11",
+            "images": {
+              "hda_disk_image": "nixos-24-11.qcow2"
+            }
+        }
+    ]
+}
