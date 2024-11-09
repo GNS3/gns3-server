@@ -82,7 +82,7 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def builtin_appliances_path(self, delete_first=False):
+    def builtin_appliances_path(self):
         """
         Get the built-in appliance storage directory
         """
@@ -91,8 +91,6 @@ class ApplianceManager:
         appname = vendor = "GNS3"
         resources_path = os.path.expanduser(server_config.get("resources_path", platformdirs.user_data_dir(appname, vendor, roaming=True)))
         appliances_dir = os.path.join(resources_path, "appliances")
-        if delete_first:
-            shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
@@ -101,7 +99,7 @@ class ApplianceManager:
         At startup we copy the built-in appliances files.
         """
 
-        dst_path = self.builtin_appliances_path(delete_first=True)
+        dst_path = self.builtin_appliances_path()
         log.info(f"Installing built-in appliances in '{dst_path}'")
         from . import Controller
         try:
