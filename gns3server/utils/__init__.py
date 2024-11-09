@@ -23,6 +23,7 @@ import textwrap
 import posixpath
 import socket
 import errno
+import hashlib
 
 
 def force_unix_path(path):
@@ -120,3 +121,14 @@ def is_ipv6_enabled() -> bool:
         if e.errno == errno.EADDRINUSE:
             return True
         raise
+
+def md5sum(filename):
+    """
+    Calculate the MD5 checksum of a file.
+    """
+
+    hash_md5 = hashlib.md5()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
