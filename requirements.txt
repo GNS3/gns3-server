@@ -1,6 +1,6 @@
 uvicorn==0.32.0
 pydantic==2.9.2
-fastapi==0.113.0
+fastapi==0.115.5
 python-multipart==0.0.16
 websockets==13.1
 aiohttp>=3.10.10,<3.11
