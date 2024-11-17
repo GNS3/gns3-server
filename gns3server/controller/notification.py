@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import asyncio
 from contextlib import contextmanager
 
 from gns3server.utils.notification_queue import NotificationQueue
@@ -32,6 +32,7 @@ class Notification:
         self._controller = controller
         self._project_listeners = {}
         self._controller_listeners = set()
+        self._loop = asyncio.get_event_loop()
 
     @contextmanager
     def project_queue(self, project_id):
@@ -73,7 +74,7 @@ class Notification:
         """
 
         for controller_listener in self._controller_listeners:
-            controller_listener.put_nowait((action, event, {}))
+            self._loop.call_soon_threadsafe(controller_listener.put_nowait, (action, event, {}))
 
     def project_has_listeners(self, project_id):
         """
@@ -134,7 +135,7 @@ class Notification:
         except KeyError:
             return
         for listener in project_listeners:
-            listener.put_nowait((action, event, {}))
+            self._loop.call_soon_threadsafe(listener.put_nowait, (action, event, {}))
 
     def _send_event_to_all_projects(self, action, event):
         """
@@ -146,4 +147,4 @@ class Notification:
         """
         for project_listeners in self._project_listeners.values():
             for listener in project_listeners:
-                listener.put_nowait((action, event, {}))
+                self._loop.call_soon_threadsafe(listener.put_nowait, (action, event, {}))
