@@ -202,11 +202,11 @@ async def test_termination_callback_error(vm, tmpdir):
 
         await queue.get(1)  # Ping
 
-        (action, event, kwargs) = queue.get_nowait()
+        (action, event, kwargs) = await queue.get(1)
         assert action == "node.updated"
         assert event == vm
 
-        (action, event, kwargs) = queue.get_nowait()
+        (action, event, kwargs) = await queue.get(1)
         assert action == "log.error"
         assert event["message"] == "QEMU process has stopped, return code: 1\nBOOMM"
 

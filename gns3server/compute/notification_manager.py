@@ -28,7 +28,6 @@ class NotificationManager:
 
     def __init__(self):
         self._listeners = set()
-        self._loop = asyncio.get_event_loop()
 
     @contextmanager
     def queue(self):
@@ -55,7 +54,7 @@ class NotificationManager:
         """
 
         for listener in self._listeners:
-            self._loop.call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
+            asyncio.get_event_loop().call_soon(listener.put_nowait, (action, event, kwargs))
 
     @staticmethod
     def reset():
