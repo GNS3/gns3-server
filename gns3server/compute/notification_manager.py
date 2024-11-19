@@ -54,7 +54,7 @@ class NotificationManager:
         """
 
         for listener in self._listeners:
-            asyncio.get_event_loop().call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
+            asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
 
     @staticmethod
     def reset():

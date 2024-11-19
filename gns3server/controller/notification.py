@@ -73,7 +73,7 @@ class Notification:
         """
 
         for controller_listener in self._controller_listeners:
-            asyncio.get_event_loop().call_soon_threadsafe(controller_listener.put_nowait, (action, event, {}))
+            asyncio.get_running_loop().call_soon_threadsafe(controller_listener.put_nowait, (action, event, {}))
 
     def project_has_listeners(self, project_id):
         """
@@ -134,7 +134,7 @@ class Notification:
         except KeyError:
             return
         for listener in project_listeners:
-            asyncio.get_event_loop().call_soon_threadsafe(listener.put_nowait, (action, event, {}))
+            asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, {}))
 
     def _send_event_to_all_projects(self, action, event):
         """
@@ -146,4 +146,4 @@ class Notification:
         """
         for project_listeners in self._project_listeners.values():
             for listener in project_listeners:
-                asyncio.get_event_loop().call_soon_threadsafe(listener.put_nowait, (action, event, {}))
+                asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, {}))

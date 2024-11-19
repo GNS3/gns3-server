@@ -97,7 +97,7 @@ def get_vmware_node(node: VMwareVM = Depends(dep_node)) -> schemas.VMware:
     response_model=schemas.VMware,
     dependencies=[Depends(compute_authentication)]
 )
-def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = Depends(dep_node)) -> schemas.VMware:
+async def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = Depends(dep_node)) -> schemas.VMware:
     """
     Update a VMware node.
     """
