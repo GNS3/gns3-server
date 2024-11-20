@@ -25,7 +25,10 @@ PATH=/gns3/bin:/tmp/gns3/bin:/sbin:$PATH
 # bootstrap busybox commands
 if [ ! -d /tmp/gns3/bin ]; then
 	busybox mkdir -p /tmp/gns3/bin
-	/gns3/bin/busybox --install -s /tmp/gns3/bin
+	for applet in `busybox --list`
+	do
+	  ln -s /gns3/bin/busybox "/tmp/gns3/bin/$applet"
+	done
 fi
 
 #  Restore file permission and mount volumes
@@ -75,7 +78,7 @@ ip link set dev lo up
 while true 
 do
     grep $GNS3_MAX_ETHERNET /proc/net/dev > /dev/null && break
-    sleep 0.5
+    usleep 500000  # wait 0.5 seconds
 done  
 
 # activate eth interfaces

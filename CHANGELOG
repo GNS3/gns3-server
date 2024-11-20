@@ -1,5 +1,44 @@
 # Change Log
 
+## 3.0.0rc2 20/11/2024
+
+* Bundle web-ui v3.0.0rc2
+* Fix error 500 on PUT for cloud, nat, vmware and vpcs nodes. Fixes #2426
+* Add a duplicated project in the same resource pools as the original project if it is in any
+* Upgrade FastAPI to v0.115.5
+* Overwrite user resources when the originals have changed.
+* Relax setuptools requirement to allow for easier Debian packaging on Ubuntu Focal & Jammy
+* Increase SQLite timeout. Ref #2422
+* Fix test user with wrong creds
+* Upgrade dependencies and fix Pydantic warnings
+* Upgrade aiohttp to v3.10.10. Fixes #2411
+* Replace aiohttp.web.HTTPConflict()
+* Python 3.13 support
+
+## 2.2.51 07/11/2024
+
+* Catch error when cannot resize Docker container TTY.
+* Do not use "ide" if there is a disk image and no interface type has been explicitly configured.
+* Use @locking when sending uBridge commands. Ref https://github.com/GNS3/gns3-gui/issues/3651
+* Fix run Docker containers with user namespaces enabled. Fixes #2414
+* Python 3.13 support
+* Upgrade dependencies
+* Fix errors in init.sh. Fixes #2431
+
+## 2.2.50 21/10/2024
+
+* Bundle web-ui v2.2.50
+* Symbolic links support for project export/import
+* Add comment to indicate sentry-sdk is optional. Ref https://github.com/GNS3/gns3-server/issues/2423
+* Fix issues with recent busybox versions
+* Support to reset MAC addresses for Docker nodes and some adjustments for fast duplication.
+* Update README.md to change the minimum required Python version.
+* Faster project duplication for local projects (no remote compute)
+* Improve error message when a project cannot be parsed.
+* Fix for running Docker containers with user namespaces enabled
+* Support for configuring MAC address in Docker containers
+* Upgrade aiohttp to v3.10.3
+
 ## 3.0.0rc1 11/08/2024
 
 * Bundle web-ui v3.0.0rc1

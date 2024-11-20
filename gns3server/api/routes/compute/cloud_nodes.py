@@ -85,7 +85,7 @@ def get_cloud(node: Cloud = Depends(dep_node)) -> schemas.Cloud:
 
 
 @router.put("/{node_id}", response_model=schemas.Cloud)
-def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)) -> schemas.Cloud:
+async def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)) -> schemas.Cloud:
     """
     Update a cloud node.
     """

@@ -91,15 +91,21 @@ def get_vpcs_node(node: VPCSVM = Depends(dep_node)) -> schemas.VPCS:
     response_model=schemas.VPCS,
     dependencies=[Depends(compute_authentication)]
 )
-def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)) -> schemas.VPCS:
+async def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)) -> schemas.VPCS:
     """
     Update a VPCS node.
     """
 
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    node.name = node_data.get("name", node.name)
-    node.console = node_data.get("console", node.console)
-    node.console_type = node_data.get("console_type", node.console_type)
+    name = node_data.get("name", node.name)
+    if node.name != name:
+        node.name = name
+    console = node_data.get("console", node.console)
+    if node.console != console:
+        node.console = console
+    console_type = node_data.get("console_type", node.console_type)
+    if node.console_type != console_type:
+        node.console_type = console_type
     node.updated()
     return node.asdict()
 

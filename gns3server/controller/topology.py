@@ -194,7 +194,7 @@ def load_topology(path):
     try:
         _check_topology_schema(topo, path)
     except ControllerError as e:
-        log.error("Can't load the topology %s", path)
+        log.error("Can't load the topology %s, please check using the debug mode...", path)
         raise e
 
     if changed:

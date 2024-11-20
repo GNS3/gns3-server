@@ -17,6 +17,7 @@
 
 import os
 import sys
+import stat
 import json
 import uuid
 import shutil
@@ -95,6 +96,7 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     try:
         with zipfile_zstd.ZipFile(stream) as zip_file:
             await wait_run_in_executor(zip_file.extractall, path)
+            _create_symbolic_links(zip_file, path)
     except zipfile_zstd.BadZipFile:
         raise ControllerError("Cannot extract files from GNS3 project (invalid zip)")
 
@@ -184,6 +186,24 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     project = await controller.load_project(dot_gns3_path, load=False)
     return project
 
+def _create_symbolic_links(zip_file, path):
+    """
+    Manually create symbolic links (if any) because ZipFile does not support it.
+
+    :param zip_file: ZipFile instance
+    :param path: project location
+    """
+
+    for zip_info in zip_file.infolist():
+        if stat.S_ISLNK(zip_info.external_attr >> 16):
+            symlink_target = zip_file.read(zip_info.filename).decode()
+            symlink_path = os.path.join(path, zip_info.filename)
+            try:
+                # remove the regular file and replace it by a symbolic link
+                os.remove(symlink_path)
+                os.symlink(symlink_target, symlink_path)
+            except OSError as e:
+                raise ControllerError(f"Cannot create symbolic link: {e}")
 
 def _move_node_file(path, old_id, new_id):
     """
@@ -269,6 +289,7 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                 with open(snapshot_path, "rb") as f:
                     with zipfile_zstd.ZipFile(f) as zip_file:
                         await wait_run_in_executor(zip_file.extractall, tmpdir)
+                        _create_symbolic_links(zip_file, tmpdir)
             except OSError as e:
                 raise ControllerError(f"Cannot open snapshot '{os.path.basename(snapshot)}': {e}")
             except zipfile_zstd.BadZipFile:

@@ -33,17 +33,17 @@ from typing import Optional, List
 
 class QemuTemplate(TemplateBase):
 
-    category: Optional[Category] = "guest"
+    category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "qemu_guest"
     qemu_path: Optional[str] = Field("", description="Qemu executable path")
-    platform: Optional[QemuPlatform] = Field("x86_64", description="Platform to emulate")
+    platform: Optional[QemuPlatform] = Field(QemuPlatform.x86_64, description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
     ram: Optional[int] = Field(256, description="Amount of RAM in MB")
     cpus: Optional[int] = Field(1, ge=1, le=255, description="Number of vCPUs")
     maxcpus: Optional[int] = Field(1, ge=1, le=255, description="Maximum number of hotpluggable vCPUs")
     adapters: Optional[int] = Field(1, ge=0, le=275, description="Number of adapters")
-    adapter_type: Optional[QemuAdapterType] = Field("e1000", description="QEMU adapter type")
+    adapter_type: Optional[QemuAdapterType] = Field(QemuAdapterType.e1000, description="QEMU adapter type")
     mac_address: Optional[str] = Field(
         "", description="QEMU MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
     )
@@ -55,20 +55,20 @@ class QemuTemplate(TemplateBase):
         0,
         description="Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2",
     )
-    console_type: Optional[QemuConsoleType] = Field("telnet", description="Console type")
+    console_type: Optional[QemuConsoleType] = Field(QemuConsoleType.telnet, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )
-    aux_type: Optional[QemuConsoleType] = Field("none", description="Auxiliary console type")
-    boot_priority: Optional[QemuBootPriority] = Field("c", description="QEMU boot priority")
+    aux_type: Optional[QemuConsoleType] = Field(QemuConsoleType.none, description="Auxiliary console type")
+    boot_priority: Optional[QemuBootPriority] = Field(QemuBootPriority.c, description="QEMU boot priority")
     hda_disk_image: Optional[str] = Field("", description="QEMU hda disk image path")
-    hda_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hda interface")
+    hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hda interface")
     hdb_disk_image: Optional[str] = Field("", description="QEMU hdb disk image path")
-    hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdb interface")
+    hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdb interface")
     hdc_disk_image: Optional[str] = Field("", description="QEMU hdc disk image path")
-    hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdc interface")
+    hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdc interface")
     hdd_disk_image: Optional[str] = Field("", description="QEMU hdd disk image path")
-    hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdd interface")
+    hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdd interface")
     cdrom_image: Optional[str] = Field("", description="QEMU cdrom image path")
     initrd: Optional[str] = Field("", description="QEMU initrd path")
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
@@ -82,9 +82,9 @@ class QemuTemplate(TemplateBase):
     )
     tpm: Optional[bool] = Field(False, description="Enable Trusted Platform Module (TPM)")
     uefi: Optional[bool] = Field(False, description="Enable UEFI boot mode")
-    on_close: Optional[QemuOnCloseAction] = Field("power_off", description="Action to execute on the VM is closed")
+    on_close: Optional[QemuOnCloseAction] = Field(QemuOnCloseAction.power_off, description="Action to execute on the VM is closed")
     cpu_throttling: Optional[int] = Field(0, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
-    process_priority: Optional[QemuProcessPriority] = Field("normal", description="Process priority for QEMU")
+    process_priority: Optional[QemuProcessPriority] = Field(QemuProcessPriority.normal, description="Process priority for QEMU")
     options: Optional[str] = Field("", description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 

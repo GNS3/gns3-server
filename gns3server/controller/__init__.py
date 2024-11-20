@@ -30,7 +30,7 @@ except ImportError:
 
 
 from ..config import Config
-from ..utils import parse_version
+from ..utils import parse_version, md5sum
 from ..utils.images import default_images_directory
 
 from .project import Project
@@ -91,7 +91,7 @@ class Controller:
         if server_config.enable_ssl:
             self._ssl_context = self._create_ssl_context(server_config)
 
-        protocol = server_config.protocol
+        protocol = server_config.protocol.value
         if self._ssl_context and protocol != "https":
             log.warning(f"Protocol changed to 'https' for local compute because SSL is enabled")
             protocol = "https"
@@ -308,11 +308,20 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+
     @staticmethod
-    def install_resource_files(dst_path, resource_name):
+    def install_resource_files(dst_path, resource_name, upgrade_resources=True):
         """
         Install files from resources to user's file system
         """
+
+        def should_copy(src, dst, upgrade_resources):
+            if not os.path.exists(dst):
+                return True
+            if upgrade_resources is False:
+                return False
+            # copy the resource if it is different
+            return md5sum(src) != md5sum(dst)
 
         if hasattr(sys, "frozen") and sys.platform.startswith("win"):
             resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
@@ -322,7 +331,7 @@ class Controller:
         else:
             for entry in importlib_resources.files('gns3server').joinpath(resource_name).iterdir():
                 full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and not os.path.exists(full_path):
+                if entry.is_file() and should_copy(str(entry), full_path, upgrade_resources):
                     log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
                     shutil.copy(str(entry), os.path.join(dst_path, entry.name))
                 elif entry.is_dir():
@@ -338,7 +347,7 @@ class Controller:
         dst_path = self.configs_path()
         log.info(f"Installing base configs in '{dst_path}'")
         try:
-            Controller.install_resource_files(dst_path, "configs")
+            Controller.install_resource_files(dst_path, "configs", upgrade_resources=False)
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
 
@@ -351,7 +360,7 @@ class Controller:
         dst_path = self.disks_path()
         log.info(f"Installing built-in disks in '{dst_path}'")
         try:
-            Controller.install_resource_files(dst_path, "disks")
+            Controller.install_resource_files(dst_path, "disks", upgrade_resources=False)
         except OSError as e:
             log.error(f"Could not install disk files to {dst_path}: {e}")
 

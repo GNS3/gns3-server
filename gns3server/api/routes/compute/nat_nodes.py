@@ -80,7 +80,7 @@ def get_nat_node(node: Nat = Depends(dep_node)) -> schemas.NAT:
 
 
 @router.put("/{node_id}", response_model=schemas.NAT)
-def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)) -> schemas.NAT:
+async def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)) -> schemas.NAT:
     """
     Update a NAT node.
     """

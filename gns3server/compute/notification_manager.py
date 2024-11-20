@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import asyncio
 from contextlib import contextmanager
 from gns3server.utils.notification_queue import NotificationQueue
 
@@ -54,7 +54,7 @@ class NotificationManager:
         """
 
         for listener in self._listeners:
-            listener.put_nowait((action, event, kwargs))
+            asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
 
     @staticmethod
     def reset():

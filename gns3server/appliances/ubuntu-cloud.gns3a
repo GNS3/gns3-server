@@ -28,36 +28,44 @@
     },
     "images": [
         {
-            "filename": "ubuntu-23.04-server-cloudimg-amd64.img",
-            "version": "Ubuntu 23.04 (Lunar Lobster)",
-            "md5sum": "369e3b1f68416c39245a8014172406dd",
-            "filesize": 756678656,
-            "download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/",
-            "direct_download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/ubuntu-23.04-server-cloudimg-amd64.img"
+            "filename": "ubuntu-24.10-server-cloudimg-amd64.img",
+            "version": "Ubuntu 24.10 (Oracular Oriole)",
+            "md5sum": "f2960f8743efedd0a4968bfcd9451782",
+            "filesize": 627360256,
+            "download_url": "https://cloud-images.ubuntu.com/releases/oracular/release-20241009/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/oracular/release-20241009/ubuntu-24.10-server-cloudimg-amd64.img"
+        },
+        {
+            "filename": "ubuntu-24.04-server-cloudimg-amd64.img",
+            "version": "Ubuntu 24.04 LTS (Noble Numbat)",
+            "md5sum": "a1c8a01953578ad432cbef03db2f3161",
+            "filesize": 587241984,
+            "download_url": "https://cloud-images.ubuntu.com/releases/noble/release-20241004/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/noble/release-20241004/ubuntu-24.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-22.04-server-cloudimg-amd64.img",
             "version": "Ubuntu 22.04 LTS (Jammy Jellyfish)",
-            "md5sum": "3ce0b84f9592482fb645e8253b979827",
-            "filesize": 686096384,
-            "download_url": "https://cloud-images.ubuntu.com/releases/jammy/release",
-            "direct_download_url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img"
+            "md5sum": "8f9a70435dc5b0b86cf5d0d4716b6091",
+            "filesize": 653668352,
+            "download_url": "https://cloud-images.ubuntu.com/releases/jammy/release-20241002/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/jammy/release-20241002/ubuntu-22.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-20.04-server-cloudimg-amd64.img",
             "version": "Ubuntu 20.04 LTS (Focal Fossa)",
-            "md5sum": "044bc979b2238192ee3edb44e2bb6405",
-            "filesize": 552337408,
-            "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/",
-            "direct_download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/ubuntu-20.04-server-cloudimg-amd64.img"
+            "md5sum": "1dff90e16acb0167c27ff82e4ac1813a",
+            "filesize": 627310592,
+            "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20240821/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20240821/ubuntu-20.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-18.04-server-cloudimg-amd64.img",
             "version": "Ubuntu 18.04 LTS (Bionic Beaver)",
-            "md5sum": "f4134e7fa16d7fa766c7467cbe25c949",
-            "filesize": 336134144,
-            "download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/",
-            "direct_download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/ubuntu-18.04-server-cloudimg-amd64.img"
+            "md5sum": "62fa110eeb0459c1ff166f897aeb9f78",
+            "filesize": 405667840,
+            "download_url": "https://cloud-images.ubuntu.com/releases/bionic/release-20230607/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/bionic/release-20230607/ubuntu-18.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-cloud-init-data.iso",
@@ -70,9 +78,16 @@
     ],
     "versions": [
         {
-            "name": "Ubuntu 23.04 (Lunar Lobster)",
+            "name": "Ubuntu 24.10 (Oracular Oriole)",
             "images": {
-                "hda_disk_image": "ubuntu-23.04-server-cloudimg-amd64.img",
+                "hda_disk_image": "ubuntu-24.10-server-cloudimg-amd64.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "Ubuntu 24.04 LTS (Noble Numbat)",
+            "images": {
+                "hda_disk_image": "ubuntu-24.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },

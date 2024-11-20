@@ -45,11 +45,11 @@ class ConsoleType(str, Enum):
 
 class EthernetSwitchTemplate(TemplateBase):
 
-    category: Optional[Category] = "switch"
+    category: Optional[Category] = Category.switch
     default_name_format: Optional[str] = "Switch{0}"
     symbol: Optional[str] = "ethernet_switch"
     ports_mapping: Optional[List[EthernetSwitchPort]] = Field(DEFAULT_PORTS, description="Ports")
-    console_type: Optional[ConsoleType] = Field("none", description="Console type")
+    console_type: Optional[ConsoleType] = Field(ConsoleType.none, description="Console type")
 
 
 class EthernetSwitchTemplateUpdate(EthernetSwitchTemplate):

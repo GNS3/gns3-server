@@ -66,6 +66,7 @@ class DockerTemplate(Template):
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     image = Column(String)
     adapters = Column(Integer)
+    mac_address = Column(String)
     start_command = Column(String)
     environment = Column(String)
     console_type = Column(String)

@@ -54,7 +54,7 @@ async def login(
 ) -> schemas.Token:
     """
     Default user login method using forms (x-www-form-urlencoded).
-    Example: curl http://host:port/v3/users/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin"
+    Example: curl -X POST http://host:port/v3/access/users/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin"
     """
 
     user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
@@ -76,7 +76,7 @@ async def authenticate(
 ) -> schemas.Token:
     """
     Alternative authentication method using json.
-    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"}' -H "Content-Type: application/json"
+    Example: curl -X POST http://host:port/v3/access/users/authenticate -d '{"username": "admin", "password": "admin"}' -H "Content-Type: application/json"
     """
 
     user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)

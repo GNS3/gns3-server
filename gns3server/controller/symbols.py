@@ -45,7 +45,7 @@ class Symbols:
         self._symbol_size_cache = {}
 
         self._server_config = Config.instance().settings.Server
-        self._current_theme = self._server_config.default_symbol_theme
+        self._current_theme = self._server_config.default_symbol_theme.value
         self._themes = BUILTIN_SYMBOL_THEMES
 
     @property

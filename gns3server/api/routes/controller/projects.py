@@ -430,7 +430,8 @@ async def import_project(
 )
 async def duplicate_project(
         project_data: schemas.ProjectDuplicate,
-        project: Project = Depends(dep_project)
+        project: Project = Depends(dep_project),
+        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
 ) -> schemas.Project:
     """
     Duplicate a project.
@@ -442,6 +443,15 @@ async def duplicate_project(
     new_project = await project.duplicate(
         name=project_data.name, reset_mac_addresses=reset_mac_addresses
     )
+
+    # Add the new project in the same resource pools if the duplicated project is in any
+    pool_memberships = await pools_repo.get_resource_memberships(project.id)
+    if pool_memberships:
+        resource_create = schemas.ResourceCreate(resource_id=new_project.id, resource_type="project", name=new_project.name)
+        resource = await pools_repo.create_resource(resource_create)
+        for pool in pool_memberships:
+            await pools_repo.add_resource_to_pool(pool.resource_pool_id, resource)
+
     return new_project.asdict()
 
 

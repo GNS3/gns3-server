@@ -28,7 +28,21 @@
         "options": ""
     },
     "images": [
-        {
+		{
+            "filename": "MFG_CTVM_8_10_196_0.iso",
+            "version": "8.10.196.0",
+            "md5sum": "6093aca44dcf45c999f83e62dc9aeea2",
+            "filesize": 650809344,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284464214&flowid=&softwareid=280926587&release=8.10.196.0"
+        },
+		{
+            "filename": "MFG_CTVM_8_5_182_0.iso",
+            "version": "8.5.182.0",
+            "md5sum": "1cf3c57c2b123e739ab4662ea0abbc34",
+            "filesize": 388579328,
+            "download_url": "https://software.cisco.com/download/home/284464214/type/280926587/release/8.5.182.0"
+        },
+		{
             "filename": "MFG_CTVM_8_3_102_0.iso",
             "version": "8.3.102.0",
             "md5sum": "7f6b7968b5bed04b5ecc119b6ba4e41c",
@@ -73,6 +87,20 @@
         }
     ],
     "versions": [
+	{
+            "name": "8.10.196.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "MFG_CTVM_8_10_196_0.iso"
+            }
+        },
+		{
+            "name": "8.5.182.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "MFG_CTVM_8_5_182_0.iso"
+            }
+        },
         {
             "name": "8.3.102.0",
             "images": {

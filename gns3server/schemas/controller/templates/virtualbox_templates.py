@@ -28,7 +28,7 @@ from typing import Optional, List
 
 class VirtualBoxTemplate(TemplateBase):
 
-    category: Optional[Category] = "guest"
+    category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vbox_guest"
     vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
@@ -38,8 +38,7 @@ class VirtualBoxTemplate(TemplateBase):
         1, ge=0, le=36, description="Number of adapters"
     )  # 36 is the maximum given by the ICH9 chipset in VirtualBox
     use_any_adapter: Optional[bool] = Field(False, description="Allow GNS3 to use any VirtualBox adapter")
-    adapter_type: Optional[VirtualBoxAdapterType] = Field(
-        "Intel PRO/1000 MT Desktop (82540EM)", description="VirtualBox adapter type"
+    adapter_type: Optional[VirtualBoxAdapterType] = Field(VirtualBoxAdapterType.intel_pro_1000_mt_desktop, description="VirtualBox adapter type"
     )
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field(
@@ -51,9 +50,9 @@ class VirtualBoxTemplate(TemplateBase):
     )
     headless: Optional[bool] = Field(False, description="Headless mode")
     on_close: Optional[VirtualBoxOnCloseAction] = Field(
-        "power_off", description="Action to execute on the VM is closed"
+        VirtualBoxOnCloseAction.power_off, description="Action to execute on the VM is closed"
     )
-    console_type: Optional[VirtualBoxConsoleType] = Field("none", description="Console type")
+    console_type: Optional[VirtualBoxConsoleType] = Field(VirtualBoxConsoleType.none, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )
