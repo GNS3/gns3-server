@@ -1,5 +1,20 @@
 # Change Log
 
+## 3.0.0rc2 20/11/2024
+
+* Bundle web-ui v3.0.0rc2
+* Fix error 500 on PUT for cloud, nat, vmware and vpcs nodes. Fixes #2426
+* Add a duplicated project in the same resource pools as the original project if it is in any
+* Upgrade FastAPI to v0.115.5
+* Overwrite user resources when the originals have changed.
+* Relax setuptools requirement to allow for easier Debian packaging on Ubuntu Focal & Jammy
+* Increase SQLite timeout. Ref #2422
+* Fix test user with wrong creds
+* Upgrade dependencies and fix Pydantic warnings
+* Upgrade aiohttp to v3.10.10. Fixes #2411
+* Replace aiohttp.web.HTTPConflict()
+* Python 3.13 support
+
 ## 2.2.51 07/11/2024
 
 * Catch error when cannot resize Docker container TTY.
