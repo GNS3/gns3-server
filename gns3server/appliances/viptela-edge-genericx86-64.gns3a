@@ -10,8 +10,8 @@
     "product_url": "http://www.cisco.com/",
     "registry_version": 4,
     "status": "experimental",
-    "maintainer": "Laurent LEVIER",
-    "maintainer_email": "laurent.levier@orange.com",
+    "maintainer": "Christopher Uhrig",
+    "maintainer_email": "christopher.uhrig@telekom.de",
     "usage": "Initial username is admin, password is admin as well.",
     "first_port_name": "Management0/0",
     "port_name_format": "Ge0/{0}",
@@ -39,6 +39,20 @@
             "md5sum": "4aa487101d4cdc390f53a6e8b6f45ca7",
             "filesize": 328400896,
             "download_url": "http://www.cisco.com/"
+        },
+		{
+            "filename": "viptela-edge-20.9.5.1-genericx86-64.qcow2",
+            "version": "20.9.5.1",
+            "md5sum": "41d9e981908fd83695de78d6ca5794bd",
+            "filesize": 409468928,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321047/release/20.9.5.1"
+        },
+	{
+            "filename": "viptela-edge-20.12.4-genericx86-64.qcow2",
+            "version": "20.12.4",
+            "md5sum": "9f1aedada5e632c7bc29a51c004f4486",
+            "filesize": 411762688,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321047/release/20.12.4"
         }
     ],
     "versions": [
@@ -52,6 +66,18 @@
             "name": "18.3.7",
             "images": {
                 "hda_disk_image": "viptela-edge-genericx86-64.qcow2"
+            }
+        },
+		{
+            "name": "20.9.5.1",
+            "images": {
+                "hda_disk_image": "viptela-edge-20.9.5.1-genericx86-64.qcow2"
+            }
+        },
+  	{
+            "name": "20.12.4",
+            "images": {
+                "hda_disk_image": "viptela-edge-20.12.4-genericx86-64.qcow2"
             }
         }
     ]
