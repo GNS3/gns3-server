@@ -45,7 +45,7 @@ def list_images(emulator_type):
 
         # We limit recursion to path outside the default images directory
         # the reason is in the default directory manage file organization and
-        # it should be flatten to keep things simple
+        # it should be flat to keep things simple
         recurse = True
         if os.path.commonprefix([directory, general_images_directory]) == general_images_directory:
             recurse = False
@@ -53,37 +53,53 @@ def list_images(emulator_type):
         directory = os.path.normpath(directory)
         for root, _, filenames in _os_walk(directory, recurse=recurse):
             for filename in filenames:
-                if filename not in files:
-                    if filename.endswith(".md5sum") or filename.startswith("."):
+                if filename in files:
+                    log.debug("File {} has already been found, skipping...".format(filename))
+                    continue
+                if filename.endswith(".md5sum") or filename.startswith("."):
+                    continue
+
+                files.add(filename)
+
+                filesize = os.stat(os.path.join(root, filename)).st_size
+                if filesize < 7:
+                    log.debug("File {} is too small to be an image, skipping...".format(filename))
+                    continue
+
+                try:
+                    with open(os.path.join(root, filename), "rb") as f:
+                        # read the first 7 bytes of the file.
+                        elf_header_start = f.read(7)
+                    if emulator_type == "dynamips" and elf_header_start != b'\x7fELF\x01\x02\x01':
+                        # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
+                        log.warning("IOS image {} does not start with a valid ELF magic number, skipping...".format(filename))
                         continue
-                    elif ((filename.endswith(".image") or filename.endswith(".bin")) and emulator_type == "dynamips") \
-                            or ((filename.endswith(".bin") or filename.startswith("i86bi")) and emulator_type == "iou") \
-                            or (not filename.endswith(".bin") and not filename.endswith(".image") and emulator_type == "qemu"):
-                        files.add(filename)
+                    elif emulator_type == "iou" and elf_header_start != b'\x7fELF\x02\x01\x01' and elf_header_start != b'\x7fELF\x01\x01\x01':
+                        # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian and have an ELF version of 1
+                        log.warning("IOU image {} does not start with a valid ELF magic number, skipping...".format(filename))
+                        continue
+                    elif emulator_type == "qemu" and elf_header_start[:4] == b'\x7fELF':
+                        # QEMU images should not start with an ELF magic number
+                        log.warning("QEMU image {} starts with an ELF magic number, skipping...".format(filename))
+                        continue
 
-                        # It the image is located in the standard directory the path is relative
-                        if os.path.commonprefix([root, default_directory]) != default_directory:
-                            path = os.path.join(root, filename)
-                        else:
-                            path = os.path.relpath(os.path.join(root, filename), default_directory)
+                    # It the image is located in the standard directory the path is relative
+                    if os.path.commonprefix([root, default_directory]) != default_directory:
+                        path = os.path.join(root, filename)
+                    else:
+                        path = os.path.relpath(os.path.join(root, filename), default_directory)
 
-                        try:
-                            if emulator_type in ["dynamips", "iou"]:
-                                with open(os.path.join(root, filename), "rb") as f:
-                                    # read the first 7 bytes of the file.
-                                    elf_header_start = f.read(7)
-                                # valid IOU or IOS images must start with the ELF magic number, be 32-bit or 64-bit,
-                                # little endian and have an ELF version of 1
-                                if elf_header_start != b'\x7fELF\x02\x01\x01' and elf_header_start != b'\x7fELF\x01\x01\x01':
-                                    continue
+                    images.append(
+                        {
+                            "filename": filename,
+                            "path": force_unix_path(path),
+                            "md5sum": md5sum(os.path.join(root, filename)),
+                            "filesize": filesize
+                         }
+                    )
 
-                            images.append({
-                                "filename": filename,
-                                "path": force_unix_path(path),
-                                "md5sum": md5sum(os.path.join(root, filename)),
-                                "filesize": os.stat(os.path.join(root, filename)).st_size})
-                        except OSError as e:
-                            log.warning("Can't add image {}: {}".format(path, str(e)))
+                except OSError as e:
+                    log.warning("Can't add image {}: {}".format(path, str(e)))
     return images
 
 
