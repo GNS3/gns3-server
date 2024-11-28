@@ -54,7 +54,7 @@ def list_images(emulator_type):
         for root, _, filenames in _os_walk(directory, recurse=recurse):
             for filename in filenames:
                 if filename in files:
-                    log.warning("File {} has already been found, skipping...".format(filename))
+                    log.debug("File {} has already been found, skipping...".format(filename))
                     continue
                 if filename.endswith(".md5sum") or filename.startswith("."):
                     continue
@@ -63,7 +63,7 @@ def list_images(emulator_type):
 
                 filesize = os.stat(os.path.join(root, filename)).st_size
                 if filesize < 7:
-                    log.warning("File {} is too small to be an image, skipping...".format(filename))
+                    log.debug("File {} is too small to be an image, skipping...".format(filename))
                     continue
 
                 try:
