@@ -161,7 +161,7 @@ async def test_list_images(tmpdir, config):
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
 
-    assert list_images("dynamips") == [
+    assert await list_images("dynamips") == [
         {
             'filename': 'ios_image_1.image',
             'filesize': 7,
@@ -177,7 +177,7 @@ async def test_list_images(tmpdir, config):
     ]
 
     if sys.platform.startswith("linux"):
-        assert list_images("iou") == [
+        assert await list_images("iou") == [
             {
                 'filename': 'iou64.bin',
                 'filesize': 7,
@@ -192,7 +192,7 @@ async def test_list_images(tmpdir, config):
             }
         ]
 
-    assert list_images("qemu") == [
+    assert await list_images("qemu") == [
         {
             'filename': 'qemu_image.qcow2',
             'filesize': 7,

@@ -98,7 +98,6 @@ async def list_images(image_type):
                     else:
                         path = os.path.relpath(os.path.join(root, filename), default_directory)
 
-
                     images.append(
                         {
                             "filename": filename,

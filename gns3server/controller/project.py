@@ -1339,7 +1339,6 @@ class Project:
         Copy the project files directly rather than in an import-export fashion.
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
-        :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the new project
         """
 
@@ -1352,10 +1351,7 @@ class Project:
         p_work = pathlib.Path(self.path).parent.absolute()
         t0 = time.time()
         new_project_id = str(uuid.uuid4())
-        if location:
-            new_project_path = p_work.joinpath(location)
-        else:
-            new_project_path = p_work.joinpath(new_project_id)
+        new_project_path = p_work.joinpath(new_project_id)
         # copy dir
         await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
         log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
