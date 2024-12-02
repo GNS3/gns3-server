@@ -24,12 +24,26 @@
         "kvm": "require"
     },
     "images": [
+		{
+            "filename": "csr1000v-universalk9.17.03.08a-serial.qcow2",
+            "version": "17.03.08a",
+            "md5sum": "6abece87d6db99d9fd6917203e253f91",
+            "filesize": 1421410304,
+            "download_url": "https://software.cisco.com/download/home/286323714/type/282046477/release/Amsterdam-17.3.8a"
+        },
         {
             "filename": "csr1000v-universalk9.17.03.06-serial.qcow2",
             "version": "17.03.06",
             "md5sum": "086ab9bef6e66de847af0da3910c60e8",
             "filesize": 1422000128,
-            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.12.3"
+            "download_url": "https://software.cisco.com/download/home/286323714/type/282046477/release/Amsterdam-17.3.6"
+        },
+		{
+            "filename": "csr1000v-ucmk9.16.12.5-serial.qcow2",
+            "version": "16.12.05",
+            "md5sum": "5c0cc217f0f0648407b34b11a1dd5b8e",
+            "filesize": 844103680,
+            "download_url": "https://software.cisco.com/download/home/286323714/type/286321980/release/16.12.5"
         },
         {
             "filename": "csr1000v-universalk9.16.12.03-serial.qcow2",
@@ -166,13 +180,25 @@
         }
     ],
     "versions": [
+		{
+            "name": "17.03.08a",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.17.03.08a-serial.qcow2"
+            }
+        },
         {
             "name": "17.03.06",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.17.03.06-serial.qcow2"
             }
         },
-        {
+		{
+            "name": "16.12.05",
+            "images": {
+                "hda_disk_image": "csr1000v-ucmk9.16.12.5-serial.qcow2"
+            }
+        },
+		{
             "name": "16.12.3",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.12.03-serial.qcow2"

@@ -10,8 +10,8 @@
     "product_url": "http://www.cisco.com/",
     "registry_version": 4,
     "status": "experimental",
-    "maintainer": "Laurent LEVIER",
-    "maintainer_email": "laurent.levier@orange.com",
+    "maintainer": "Christopher Uhrig",
+    "maintainer_email": "christopher.uhrig@telekom.de",
     "usage": "Initial username is admin, password is admin as well.",
     "qemu": {
         "adapter_type": "vmxnet3",
@@ -25,14 +25,28 @@
         "options": "-cpu host -smp 2,maxcpus=2"
     },
     "images": [
-        {
+		{
+            "filename": "viptela-vmanage-20.12.4-genericx86-64.qcow2",
+            "version": "20.12.4",
+            "md5sum": "4e0d4c379623c495a0bb671a76a12f9f",
+            "filesize": 4951375872,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321039/release/20.12.4"
+        },
+		{
+            "filename": "viptela-vmanage-20.9.5.2-genericx86-64.qcow2",
+            "version": "20.9.5.2",
+            "md5sum": "a8a4ebee0274541200f4fe94a739d454",
+            "filesize": 3133865984,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321039/release/20.9.5.2"
+        },
+		{
             "filename": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
             "version": "19.2.0",
             "md5sum": "27ef126f178c6c929a36ad2cf6ed8db7",
             "filesize": 1185349632,
             "download_url": "http://www.cisco.com/"
         },
-        {
+		{
             "filename": "viptela-vmanage-genericx86-64-disk1.vmdk",
             "version": "18.3.7",
             "md5sum": "2290c6467c907d9ca9c65793fe898716",
@@ -53,6 +67,20 @@
             "name": "19.2.0",
             "images": {
                 "hda_disk_image": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+		{
+            "name": "20.12.4",
+            "images": {
+                "hda_disk_image": "viptela-vmanage-20.12.4-genericx86-64.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+		{
+            "name": "20.9.5.2",
+            "images": {
+                "hda_disk_image": "viptela-vmanage-20.9.5.2-genericx86-64.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

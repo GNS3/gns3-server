@@ -13,11 +13,17 @@
     "iou": {
         "ethernet_adapters": 2,
         "serial_adapters": 2,
-        "nvram": 128,
-        "ram": 256,
+        "nvram": 512,
+        "ram": 512,
         "startup_config": "iou_l3_base_startup-config.txt"
     },
     "images": [
+        {
+            "filename": "x86_64_crb_linux-adventerprisek9-ms.iol",
+            "version": "17.15.1",
+            "md5sum": "5d584f6cfbeaadc87d55f613da1049ed",
+            "filesize": 292001512
+        },
         {
             "filename": "x86_64_crb_linux-adventerprisek9-ms.bin",
             "version": "17.12.1",
@@ -44,6 +50,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.15.1",
+            "images": {
+                "image": "x86_64_crb_linux-adventerprisek9-ms.iol"
+            }
+        },
         {
             "name": "17.12.1",
             "images": {
