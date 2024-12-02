@@ -103,9 +103,9 @@ async def list_images(image_type):
                             "filename": filename,
                             "path": force_unix_path(path),
                             "md5sum": await wait_run_in_executor(md5sum, os.path.join(root, filename)),
-                            "filesize": filesize,
-                                }
-                            )
+                            "filesize": filesize
+                        }
+                    )
                 except OSError as e:
                     log.warning(f"Can't add image {path}: {str(e)}")
     return images
