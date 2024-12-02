@@ -24,6 +24,20 @@
         "options": "-smp 2,maxcpus=2 -cpu host"
     },
     "images": [
+		{
+            "filename": "viptela-smart-20.12.4-genericx86-64.qcow2",
+            "version": "20.12.4",
+            "md5sum": "0e7b6468498a89195ab815260bc4cfb6",
+            "filesize": 411762688,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321043/release/20.12.4"
+        },
+		{
+            "filename": "viptela-smart-20.9.5.1-genericx86-64.qcow2",
+            "version": "20.9.5.1",
+            "md5sum": "08e105778bb68f8f24f323dfd263a91a",
+            "filesize": 409468928,
+            "download_url": "https://software.cisco.com/download/home/286320995/type/286321043/release/20.9.5.1"
+        },
         {
             "filename": "viptela-smart-19.2.0-genericx86-64.qcow2",
             "version": "19.2.0",
@@ -31,7 +45,7 @@
             "filesize": 328400896,
             "download_url": "http://www.cisco.com/"
         },
-        {
+ 	    {
             "filename": "viptela-smart-genericx86-64-disk1.vmdk",
             "version": "18.3.7",
             "md5sum": "ab9b06c212319336810a4b336ec3dd96",
@@ -50,6 +64,18 @@
             "name": "19.2.0",
             "images": {
                 "hda_disk_image": "viptela-smart-19.2.0-genericx86-64.qcow2"
+            }
+        },
+		{
+            "name": "20.9.5.1",
+            "images": {
+                "hda_disk_image": "viptela-smart-20.9.5.1-genericx86-64.qcow2"
+            }
+        },
+		{
+            "name": "20.12.4",
+            "images": {
+                "hda_disk_image": "viptela-smart-20.12.4-genericx86-64.qcow2"
             }
         }
     ]

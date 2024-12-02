@@ -239,12 +239,12 @@ async def test_list_images(qemu, tmpdir):
     os.makedirs(tmp_images_dir, exist_ok=True)
     for image in fake_images:
         with open(os.path.join(tmp_images_dir, image), "w+") as f:
-            f.write("1")
+            f.write("1234567")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
         assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
-            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
+            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
+            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7}
         ]
 
 
@@ -255,19 +255,19 @@ async def test_list_images_recursives(qemu, tmpdir):
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
     for image in fake_images:
         with open(os.path.join(tmp_images_dir, image), "w+") as f:
-            f.write("1")
+            f.write("1234567")
     os.makedirs(os.path.join(tmp_images_dir, "c"))
     fake_images = ["c.qcow2", "c.qcow2.md5sum"]
     for image in fake_images:
         with open(os.path.join(tmp_images_dir, "c", image), "w+") as f:
-            f.write("1")
+            f.write("1234567")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
 
         assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
-            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
-            {"filename": "c.qcow2", "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
+            {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
+            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
+            {"filename": "c.qcow2", "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])), "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7}
         ]
 
 

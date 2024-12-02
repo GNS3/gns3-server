@@ -588,7 +588,7 @@ class Project:
 
         if node_type == "iou":
             async with self._iou_id_lock:
-                # wait for a IOU node to be completely created before adding a new one
+                # wait for an IOU node to be completely created before adding a new one
                 # this is important otherwise we allocate the same application ID (used
                 # to generate MAC addresses) when creating multiple IOU node at the same time
                 if "properties" in kwargs.keys():
@@ -1275,7 +1275,10 @@ class Project:
         p_work = pathlib.Path(location or self.path).parent.absolute()
         t0 = time.time()
         new_project_id = str(uuid.uuid4())
-        new_project_path = p_work.joinpath(new_project_id)
+        if location:
+            new_project_path = p_work.joinpath(location)
+        else:
+            new_project_path = p_work.joinpath(new_project_id)
         # copy dir
         await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
         log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
