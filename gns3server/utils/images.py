@@ -70,9 +70,15 @@ async def list_images(image_type):
 
                 files.add(filename)
 
+                # It the image is located in the standard directory the path is relative
+                if os.path.commonprefix([root, default_directory]) != default_directory:
+                    path = os.path.join(root, filename)
+                else:
+                    path = os.path.relpath(os.path.join(root, filename), default_directory)
+
                 filesize = os.stat(os.path.join(root, filename)).st_size
                 if filesize < 7:
-                    log.debug("File {} is too small to be an image, skipping...".format(filename))
+                    log.debug(f"File {filename} is too small to be an image, skipping...")
                     continue
 
                 try:
@@ -81,29 +87,23 @@ async def list_images(image_type):
                         elf_header_start = f.read(7)
                     if image_type == "dynamips" and elf_header_start != b'\x7fELF\x01\x02\x01':
                         # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
-                        log.warning("IOS image {} does not start with a valid ELF magic number, skipping...".format(filename))
+                        log.warning(f"IOS image {filename} does not start with a valid ELF magic number, skipping...")
                         continue
                     elif image_type == "iou" and elf_header_start != b'\x7fELF\x02\x01\x01' and elf_header_start != b'\x7fELF\x01\x01\x01':
                         # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian and have an ELF version of 1
-                        log.warning("IOU image {} does not start with a valid ELF magic number, skipping...".format(filename))
+                        log.warning(f"IOU image {filename} does not start with a valid ELF magic number, skipping...")
                         continue
                     elif image_type == "qemu" and elf_header_start[:4] == b'\x7fELF':
                         # QEMU images should not start with an ELF magic number
-                        log.warning("QEMU image {} starts with an ELF magic number, skipping...".format(filename))
+                        log.warning(f"QEMU image {filename} starts with an ELF magic number, skipping...")
                         continue
-
-                    # It the image is located in the standard directory the path is relative
-                    if os.path.commonprefix([root, default_directory]) != default_directory:
-                        path = os.path.join(root, filename)
-                    else:
-                        path = os.path.relpath(os.path.join(root, filename), default_directory)
 
                     images.append(
                         {
                             "filename": filename,
                             "path": force_unix_path(path),
                             "md5sum": await wait_run_in_executor(md5sum, os.path.join(root, filename)),
-                            "filesize": filesize
+                            "filesize": filesize,
                         }
                     )
                 except OSError as e:
@@ -165,23 +165,6 @@ async def discover_images(image_type: str, skip_image_paths: list = None) -> Lis
                 except InvalidImageError as e:
                     log.debug(str(e))
                     continue
-                    # It the image is located in the standard directory the path is relative
-                    if os.path.commonprefix([root, default_directory]) != default_directory:
-                        path = os.path.join(root, filename)
-                    else:
-                        path = os.path.relpath(os.path.join(root, filename), default_directory)
-
-                    images.append(
-                        {
-                            "filename": filename,
-                            "path": force_unix_path(path),
-                            "md5sum": md5sum(os.path.join(root, filename)),
-                            "filesize": filesize
-                         }
-                    )
-
-                except OSError as e:
-                    log.warning("Can't add image {}: {}".format(path, str(e)))
     return images
 
 
