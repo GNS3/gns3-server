@@ -114,64 +114,89 @@ def test_remove_checksum(tmpdir):
 @pytest.mark.asyncio
 async def test_list_images(tmpdir, config):
 
-    path1 = tmpdir / "images1" / "IOS" / "test1.image"
-    path1.write(b'\x7fELF\x01\x01\x01', ensure=True)
-    path1 = force_unix_path(str(path1))
+    # IOS image in the images directory
+    ios_image_1 = tmpdir / "images1" / "IOS" / "ios_image_1.image"
+    ios_image_1.write(b'\x7fELF\x01\x02\x01', ensure=True)
+    ios_image_1 = force_unix_path(str(ios_image_1))
 
-    path2 = tmpdir / "images2" / "test2.image"
-    path2.write(b'\x7fELF\x01\x01\x01', ensure=True)
-    path2 = force_unix_path(str(path2))
+    # IOS image in an additional images path
+    ios_image_2 = tmpdir / "images2" / "ios_image_2.image"
+    ios_image_2.write(b'\x7fELF\x01\x02\x01', ensure=True)
+    ios_image_2 = force_unix_path(str(ios_image_2))
 
-    # Invalid image because not a valid elf file
-    path = tmpdir / "images2" / "test_invalid.image"
-    path.write(b'NOTANELF', ensure=True)
+    # Not a valid elf file
+    not_elf_file = tmpdir / "images1" / "IOS" / "not_elf.image"
+    not_elf_file.write(b'NOTANELF', ensure=True)
+    not_elf_file = force_unix_path(str(not_elf_file))
+
+    # Invalid image because it is very small
+    small_file = tmpdir / "images1" / "too_small.image"
+    small_file.write(b'1', ensure=True)
 
     if sys.platform.startswith("linux"):
-        path3 = tmpdir / "images1" / "IOU" / "test3.bin"
-        path3.write(b'\x7fELF\x02\x01\x01', ensure=True)
-        path3 = force_unix_path(str(path3))
+        # 64-bit IOU image
+        iou_image_1 = tmpdir / "images1" / "IOU" / "iou64.bin"
+        iou_image_1.write(b'\x7fELF\x02\x01\x01', ensure=True)
+        iou_image_1 = force_unix_path(str(iou_image_1))
+        # 32-bit IOU image
+        iou_image_2 = tmpdir / "images1" / "IOU" / "iou32.bin"
+        iou_image_2.write(b'\x7fELF\x01\x01\x01', ensure=True) # 32-bit IOU image
+        iou_image_2 = force_unix_path(str(iou_image_2))
 
-    path4 = tmpdir / "images1" / "QEMU" / "test4.qcow2"
-    path4.write("1", ensure=True)
-    path4 = force_unix_path(str(path4))
 
-    path5 = tmpdir / "images1" / "QEMU" / "test4.qcow2.md5sum"
-    path5.write("1", ensure=True)
-    path5 = force_unix_path(str(path5))
+    # Qemu image
+    qemu_image_1 = tmpdir / "images1" / "QEMU" / "qemu_image.qcow2"
+    qemu_image_1.write("1234567", ensure=True)
+    qemu_image_1 = force_unix_path(str(qemu_image_1))
+
+    # ELF file inside the Qemu
+    elf_file = tmpdir / "images1" / "QEMU" / "elf_file.bin"
+    elf_file.write(b'\x7fELF\x02\x01\x01', ensure=True)  # ELF file
+    elf_file = force_unix_path(str(elf_file))
+
+    md5sum_file = tmpdir / "images1" / "QEMU" / "image.qcow2.md5sum"
+    md5sum_file.write("1", ensure=True)
+    md5sum_file = force_unix_path(str(md5sum_file))
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
 
-    assert await list_images("dynamips") == [
+    assert list_images("dynamips") == [
         {
-            'filename': 'test1.image',
+            'filename': 'ios_image_1.image',
             'filesize': 7,
-            'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
-            'path': 'test1.image'
+            'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+            'path': 'ios_image_1.image'
         },
         {
-            'filename': 'test2.image',
+            'filename': 'ios_image_2.image',
             'filesize': 7,
-            'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
-            'path': str(path2)
+            'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+            'path': str(ios_image_2)
         }
     ]
 
     if sys.platform.startswith("linux"):
-        assert await list_images("iou") == [
+        assert list_images("iou") == [
             {
-                'filename': 'test3.bin',
+                'filename': 'iou64.bin',
                 'filesize': 7,
                 'md5sum': 'c73626d23469519894d58bc98bee9655',
-                'path': 'test3.bin'
+                'path': 'iou64.bin'
+            },
+            {
+                'filename': 'iou32.bin',
+                'filesize': 7,
+                'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
+                'path': 'iou32.bin'
             }
         ]
 
-    assert await list_images("qemu") == [
+    assert list_images("qemu") == [
         {
-            'filename': 'test4.qcow2',
-            'filesize': 1,
-            'md5sum': 'c4ca4238a0b923820dcc509a6f75849b',
-            'path': 'test4.qcow2'
+            'filename': 'qemu_image.qcow2',
+            'filesize': 7,
+            'md5sum': 'fcea920f7412b5da7be0cf42b8c93759',
+            'path': 'qemu_image.qcow2'
         }
     ]

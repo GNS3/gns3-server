@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "There is no default password and enable password. A default configuration is present. ASAv goes through a double-boot before becoming active. This is normal and expected.",
+    "usage": "There is no default password and enable password. A default configuration is present. ASAv goes through a double-boot before becoming active. This is normal and expected. Switch to the Telnet console type after the first boot.",
     "symbol": ":/symbols/asa.svg",
     "first_port_name": "Management0/0",
     "port_name_format": "Gi0/{0}",
@@ -26,6 +26,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "asav9-22-1-1.qcow2",
+            "version": "9.22.1.1 CML",
+            "md5sum": "250a924cdc2370208eaac9d1dc8dc9e3",
+            "filesize": 379518976,
+            "download_url": "https://learningnetworkstore.cisco.com/cisco-modeling-labs-personal/cisco-modeling-labs-personal/CML-PERSONAL.html"
+        },
         {
             "filename": "asav9-18-2.qcow2",
             "version": "9.18.2 CML",
@@ -126,6 +133,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.22.1.1 CML",
+            "images": {
+                "hda_disk_image": "asav9-22-1-1.qcow2"
+            }
+        },
         {
             "name": "9.18.2 CML",
             "images": {

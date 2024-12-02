@@ -146,7 +146,7 @@ def fake_image(tmpdir) -> str:
 
     path = str(tmpdir / "7200.bin")
     with open(path, "wb+") as f:
-        f.write(b'\x7fELF\x01\x01\x01')
+        f.write(b'\x7fELF\x01\x02\x01')
     os.chmod(path, stat.S_IREAD)
     return path
 
@@ -170,7 +170,7 @@ async def test_images(app: FastAPI, compute_client: AsyncClient, tmpdir, fake_im
     assert response.json() == [{"filename": "7200.bin",
                                 "path": "7200.bin",
                                 "filesize": 7,
-                                "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c"}]
+                                "md5sum": "b0d5aa897d937aced5a6b1046e8f7e2e"}]
 
 
 async def test_upload_image(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
