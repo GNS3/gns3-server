@@ -568,6 +568,7 @@ class IOUVM(BaseNode):
             except OSError as e:
                 raise IOUError(f"Could not rename nvram files: {e}")
 
+            iourc_path = None
             if self._is_iou_licence_check_enabled():
                 iourc_path = self.iourc_path
                 if not iourc_path:
