@@ -161,7 +161,7 @@ async def test_list_images(tmpdir, config):
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
 
-    assert await list_images("dynamips") == [
+    assert sorted(await list_images("dynamips"), key=lambda k: k['filename']) == [
         {
             'filename': 'ios_image_1.image',
             'filesize': 7,
@@ -177,18 +177,18 @@ async def test_list_images(tmpdir, config):
     ]
 
     if sys.platform.startswith("linux"):
-        assert await list_images("iou") == [
-            {
-                'filename': 'iou64.bin',
-                'filesize': 7,
-                'md5sum': 'c73626d23469519894d58bc98bee9655',
-                'path': 'iou64.bin'
-            },
+        assert sorted(await list_images("iou"), key=lambda k: k['filename']) == [
             {
                 'filename': 'iou32.bin',
                 'filesize': 7,
                 'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
                 'path': 'iou32.bin'
+            },
+            {
+                'filename': 'iou64.bin',
+                'filesize': 7,
+                'md5sum': 'c73626d23469519894d58bc98bee9655',
+                'path': 'iou64.bin'
             }
         ]
 
