@@ -120,6 +120,7 @@ async def test_start_with_iourc(vm, tmpdir, config):
     mock_process = MagicMock()
 
     vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._is_iou_licence_check_enabled = AsyncioMagicMock(return_value=True)
     vm._check_iou_licence = AsyncioMagicMock(return_value=True)
     vm._start_ioucon = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
