@@ -390,9 +390,9 @@ class IOUVM(BaseNode):
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
                                                                                                                    ", ".join(missing_libs)))
 
-    def _is_iou_licence_check_enabled(self):
+    def _is_iou_license_check_enabled(self):
         """
-        Returns if IOU licence check is enabled.
+        Returns if IOU license check is enabled.
 
         :return: boolean
         """
@@ -413,7 +413,7 @@ class IOUVM(BaseNode):
 
         return True
 
-    async def _check_iou_licence(self):
+    async def _check_iou_license(self):
         """
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
@@ -521,13 +521,13 @@ class IOUVM(BaseNode):
                 raise IOUError("Could not rename nvram files: {}".format(e))
 
             iourc_path = None
-            if self._is_iou_licence_check_enabled():
+            if self._is_iou_license_check_enabled():
                 iourc_path = self.iourc_path
                 if not iourc_path:
                     raise IOUError("Could not find an iourc file (IOU license), please configure an IOU license")
                 if not os.path.isfile(iourc_path):
                     raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
-                await self._check_iou_licence()
+                await self._check_iou_license()
 
             await self._start_ubridge()
             self._create_netmap_config()
