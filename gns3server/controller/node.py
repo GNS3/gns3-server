@@ -572,17 +572,13 @@ class Node:
         Start a node
         """
         try:
-            # For IOU we need to send the licence everytime
+            # For IOU we need to send the licence everytime (if enabled)
             if self.node_type == "iou":
-                license_check = self._project.controller.iou_license.get("license_check", True)
-                iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                # if license_check and not iourc_content:
-                #    raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
-                await self.post(
-                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
-                )
-            else:
-                await self.post("/start", data=data, timeout=240)
+                license_check = self._project.controller.iou_license.get("license_check")
+                iourc_content = self._project.controller.iou_license.get("iourc_content")
+                if license_check:
+                    data = {"license_check": license_check, "iourc_content": iourc_content}
+            await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
             raise ControllerTimeoutError(f"Timeout when starting {self._name}")
 
