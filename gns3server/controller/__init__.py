@@ -134,7 +134,9 @@ class Controller:
             log.warning(str(e))
 
         await self.load_projects()
-        await self._project_auto_open()
+
+        # start to auto open projects (if configured) 5 seconds after the controller has started
+        asyncio.get_event_loop().call_later(5, asyncio.create_task, self._project_auto_open())
 
     def _create_ssl_context(self, server_config):
 
@@ -595,9 +597,12 @@ class Controller:
         Auto open the project with auto open enable
         """
 
-        for project in self._projects.values():
-            if project.auto_open:
-                await project.open()
+        try:
+            for project in self._projects.values():
+                if project.auto_open:
+                    await project.open()
+        except ControllerError as e:
+            log.error(f"Could not auto open projects: {e}")
 
     def get_free_project_name(self, base_name):
         """
