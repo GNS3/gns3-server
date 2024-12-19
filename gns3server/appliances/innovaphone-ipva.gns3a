@@ -1,0 +1,78 @@
+{
+    "appliance_id": "ddf8f7a4-60c0-4c9d-849c-ffc3c9d1d082",
+    "name": "Innovaphone IPVA",
+    "category": "guest",
+    "description": "The innovaphone PBX is a professional IP telephone system. The IPVA is a software-only solution. It appears as and performs as an innovaphone 'hard-box' excluding DSP-, ISDN-/AB-resources.",
+    "vendor_name": "Innovaphone",
+    "vendor_url": "https://www.innovaphone.com/",
+    "vendor_logo_url": "https://www.innovaphone.com/content/downloads/innovaphone-myapps-logo-short-without-background-screen.png",
+    "documentation_url": "https://wiki.innovaphone.com/index.php?title=Reference15r1:Concept_Innovaphone_Virtual_Appliance_(IPVA)",
+    "product_name": "IPVA",
+    "product_url": "https://www.innovaphone.com/en/products/innovaphone-pbx.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free-to-try",
+    "maintainer": "Thomas Marchsteiner",
+    "maintainer_email": "thomas.marchsteiner@acp.at",
+    "usage": "Default user admin/ipva \nDefault network configuration: DHCP client on eth0 with fallback to static address 192.168.0.1/24 after timeout. Static address 192.168.1.1/24 on eth1\n The ova in the zip file contains the disk images to run this appliance. Disableing the dhcp client and setting a static IP is possible with the following commands:\n> config change IP0 ETH0 /addr 192.168.0.1 /mask 255.255.255.0 \n> config change DHCP0 /mode off \n> config write \n> config activate \n> reset",
+    "symbol": "innovaphone-pbx-green.png",
+    "first_port_name": "eth0",
+    "port_name_format": "eth{port1}",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 2,
+        "ram": 256,
+        "cpus": 1,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "hdd_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "d",
+        "kvm": "allow",
+        "on_close": "power_off",
+        "process_priority": "normal"
+    },
+    "images": [
+        {
+            "filename": "ipva-qemu-disk1-14r2.vmdk",
+            "version": "14r2",
+            "md5sum": "aaa1c3885eee30ca6ffa3827619e8643",
+            "filesize": 6269952,
+            "download_url": "https://store.innovaphone.com/"
+        },
+        {
+            "filename": "ipva-qemu-disk2-14r2.vmdk",
+            "version": "14r2",
+            "md5sum": "008a8fc6b0b1e5f11a3e7fd6f22ba349",
+            "filesize": 72192,
+            "download_url": "https://store.innovaphone.com/"
+        },
+        {
+            "filename": "ipva-qemu-disk3-14r2.vmdk",
+            "version": "14r2",
+            "md5sum": "20516731c480e2112b3fb4a4d7f514f2",
+            "filesize": 68096,
+            "download_url": "https://store.innovaphone.com/"
+        },
+        {
+            "filename": "ipva-qemu-disk4-14r2.vmdk",
+            "version": "14r2",
+            "md5sum": "15d7d79ef8c28bd29b2eceac8405f964",
+            "filesize": 68096,
+            "download_url": "https://store.innovaphone.com/"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "ipva-qemu-disk1-14r2.vmdk",
+                "hdb_disk_image": "ipva-qemu-disk2-14r2.vmdk",
+                "hdc_disk_image": "ipva-qemu-disk3-14r2.vmdk",
+                "hdd_disk_image": "ipva-qemu-disk4-14r2.vmdk"
+            },
+            "name": "14r2"
+        }
+    ]
+}
