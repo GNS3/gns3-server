@@ -27,20 +27,20 @@ router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join("gns3server", "templates"))
 
 
-@router.get("/")
+@router.get("/", include_in_schema=False)
 async def root():
 
     return RedirectResponse("/static/web-ui/bundled", status_code=308)  # permanent redirect
 
 
-@router.get("/debug", response_class=HTMLResponse, deprecated=True)
+@router.get("/debug", response_class=HTMLResponse, deprecated=True, include_in_schema=False)
 def debug(request: Request):
 
     kwargs = {"request": request, "gns3_version": __version__, "gns3_host": request.client.host}
     return templates.TemplateResponse("index.html", kwargs)
 
 
-@router.get("/static/web-ui/{file_path:path}", description="Web user interface")
+@router.get("/static/web-ui/{file_path:path}", description="Web user interface", include_in_schema=False)
 async def web_ui(file_path: str):
 
     file_path = os.path.normpath(file_path).strip("/")
