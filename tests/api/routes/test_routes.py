@@ -52,7 +52,6 @@ async def test_controller_endpoints_require_authentication(app: FastAPI, unautho
         if isinstance(route, APIRoute):
             for method in list(route.methods):
                 if (route.path, method) not in ALLOWED_CONTROLLER_ENDPOINTS:
-                    print(f"Testing {route.path} {method}")
                     response = await getattr(unauthorized_client, method.lower())(route.path)
                     assert response.status_code == status.HTTP_401_UNAUTHORIZED
         elif isinstance(route, APIWebSocketRoute):
