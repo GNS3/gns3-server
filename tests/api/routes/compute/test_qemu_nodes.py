@@ -48,7 +48,7 @@ def fake_qemu_vm(images_dir) -> str:
     img_dir = os.path.join(images_dir, "QEMU")
     bin_path = os.path.join(img_dir, "linux载.img")
     with open(bin_path, "w+") as f:
-        f.write("1")
+        f.write("1234567")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
     return bin_path
 
@@ -127,7 +127,7 @@ async def test_qemu_create_with_params(app: FastAPI,
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["ram"] == 1024
     assert response.json()["hda_disk_image"] == "linux载.img"
-    assert response.json()["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
+    assert response.json()["hda_disk_image_md5sum"] == "fcea920f7412b5da7be0cf42b8c93759"
 
 
 @pytest.mark.parametrize(
@@ -387,7 +387,8 @@ async def test_images(app: FastAPI, compute_client: AsyncClient, fake_qemu_vm) -
 
     response = await compute_client.get(app.url_path_for("compute:get_qemu_images"))
     assert response.status_code == status.HTTP_200_OK
-    assert {"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1} in response.json()
+    print(response.json())
+    assert {"filename": "linux载.img", "path": "linux载.img", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7} in response.json()
 
 
 async def test_upload_image(app: FastAPI, compute_client: AsyncClient, tmpdir: str) -> None:

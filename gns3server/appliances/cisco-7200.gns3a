@@ -34,10 +34,22 @@
             "filesize": 87756936
         },
         {
+            "filename": "c7200-adventerprisek9-mz.152-4.M11.image",
+            "version": "152-4.M11",
+            "md5sum": "9a2005ad09ce1ec6fe7cf9af1e9b099e",
+            "filesize": 128487680
+        },
+        {
             "filename": "c7200-adventerprisek9-mz.124-24.T5.image",
             "version": "124-24.T5",
             "md5sum": "6b89d0d804e1f2bb5b8bda66b5692047",
             "filesize": 102345240
+        },
+        {
+            "filename": "c7200-a3jk9s-mz.124-25g.image",
+            "version": "124-25G",
+            "md5sum": "9c7cc9b3f3b3571411a7f62faaa2c036",
+            "filesize": 71528984
         }
     ],
     "versions": [
@@ -56,10 +68,24 @@
             }
         },
         {
+            "name": "152-4.M11",
+            "idlepc": "0x6062e5c0",
+            "images": {
+                "image": "c7200-adventerprisek9-mz.152-4.M11.image"
+            }
+        },
+        {
             "name": "124-24.T5",
             "idlepc": "0x606df838",
             "images": {
                 "image": "c7200-adventerprisek9-mz.124-24.T5.image"
+            }
+        },
+        {
+            "name": "124-25G",
+            "idlepc": "0x6066a998",
+            "images": {
+                "image": "c7200-a3jk9s-mz.124-25g.image"
             }
         }
     ]

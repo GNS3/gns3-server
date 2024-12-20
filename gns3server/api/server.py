@@ -19,14 +19,19 @@
 FastAPI app
 """
 
-import time
-
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 from uvicorn.main import Server as UvicornServer
+
+from fastapi.openapi.docs import (
+    get_redoc_html,
+    get_swagger_ui_html,
+    get_swagger_ui_oauth2_redirect_html,
+)
 
 from gns3server.controller.controller_error import (
     ControllerError,
@@ -51,7 +56,11 @@ log = logging.getLogger(__name__)
 def get_application() -> FastAPI:
 
     application = FastAPI(
-        title="GNS3 controller API", description="This page describes the public controller API for GNS3", version="v3"
+        title="GNS3 controller API",
+        description="This page describes the public controller API for GNS3",
+        version="v3",
+        docs_url=None,
+        redoc_url=None
     )
 
     application.add_middleware(
@@ -66,6 +75,7 @@ def get_application() -> FastAPI:
     application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
+    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')]), name="static")
     application.mount("/v3/compute", compute_api, name="compute")
 
     return application
@@ -85,6 +95,31 @@ def handle_exit(*args, **kwargs):
 
 UvicornServer.handle_exit = handle_exit
 
+# Configure self-hosting JavaScript and CSS for docs
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+        swagger_favicon_url="/static/favicon.ico"
+    )
+
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()
+
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url="/static/redoc.standalone.js",
+        redoc_favicon_url="/static/favicon.ico"
+    )
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):

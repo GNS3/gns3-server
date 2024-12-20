@@ -595,7 +595,7 @@ class Project:
 
         if node_type == "iou":
             async with self._iou_id_lock:
-                # wait for a IOU node to be completely created before adding a new one
+                # wait for an IOU node to be completely created before adding a new one
                 # this is important otherwise we allocate the same application ID (used
                 # to generate MAC addresses) when creating multiple IOU node at the same time
                 if "properties" in kwargs.keys():
@@ -1339,7 +1339,6 @@ class Project:
         Copy the project files directly rather than in an import-export fashion.
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
-        :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the new project
         """
 

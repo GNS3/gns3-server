@@ -426,26 +426,42 @@ async def import_project(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Audit"))]
 )
 async def duplicate_project(
         project_data: schemas.ProjectDuplicate,
         project: Project = Depends(dep_project),
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
         pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
 ) -> schemas.Project:
     """
     Duplicate a project.
 
-    Required privilege: Project.Allocate
+    Required privilege: Project.Audit
     """
+
+    pool_memberships = await pools_repo.get_resource_memberships(project.id)
+
+    # check if the project can be duplicated somewhere (either in a pool or in the root)
+    if not current_user.is_superadmin:
+        can_be_duplicated_somewhere = False
+        if pool_memberships:
+            for pool in pool_memberships:
+                if await rbac_repo.check_user_has_privilege(current_user.user_id, f"/pools/{pool.resource_pool_id}", "Project.Allocate"):
+                    can_be_duplicated_somewhere = True
+                    break
+
+        if not can_be_duplicated_somewhere and not await rbac_repo.check_user_has_privilege(current_user.user_id, "/projects", "Project.Allocate"):
+            log.warning(f"Project {project.name} cannot be duplicated anywhere")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     reset_mac_addresses = project_data.reset_mac_addresses
     new_project = await project.duplicate(
         name=project_data.name, reset_mac_addresses=reset_mac_addresses
     )
 
-    # Add the new project in the same resource pools if the duplicated project is in any
-    pool_memberships = await pools_repo.get_resource_memberships(project.id)
+    # Add the new project in the same resource pools if the duplicated project belongs to any
     if pool_memberships:
         resource_create = schemas.ResourceCreate(resource_id=new_project.id, resource_type="project", name=new_project.name)
         resource = await pools_repo.create_resource(resource_create)

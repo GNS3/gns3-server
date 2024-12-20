@@ -64,7 +64,7 @@ class Controller:
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
         self._appliance_manager = ApplianceManager()
-        self._iou_license_settings = {"iourc_content": "", "license_check": True}
+        self._iou_license_settings = {"iourc_content": "", "license_check": False}
         self._vars_loaded = False
         self._vars_file = Config.instance().controller_vars
         log.info(f'Loading controller vars file "{self._vars_file}"')
@@ -134,7 +134,9 @@ class Controller:
             log.warning(str(e))
 
         await self.load_projects()
-        await self._project_auto_open()
+
+        # start to auto open projects (if configured) 5 seconds after the controller has started
+        asyncio.get_event_loop().call_later(5, asyncio.create_task, self._project_auto_open())
 
     def _create_ssl_context(self, server_config):
 
@@ -208,19 +210,15 @@ class Controller:
         if self._vars_loaded:
             controller_vars = {
                 "appliances_etag": self._appliance_manager.appliances_etag,
+                "iou_license_check": self._iou_license_settings["license_check"],
                 "version": __version__
             }
 
             if self._iou_license_settings["iourc_content"]:
 
-                iou_config = Config.instance().settings.IOU
                 server_config = Config.instance().settings.Server
-
-                if iou_config.iourc_path:
-                    iourc_path = iou_config.iourc_path
-                else:
-                    os.makedirs(server_config.secrets_dir, exist_ok=True)
-                    iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
+                os.makedirs(server_config.secrets_dir, exist_ok=True)
+                iourc_path = os.path.join(server_config.secrets_dir, "iou_license")
 
                 try:
                     with open(iourc_path, "w+") as f:
@@ -251,15 +249,11 @@ class Controller:
             return []
 
         # load the IOU license settings
-        iou_config = Config.instance().settings.IOU
         server_config = Config.instance().settings.Server
 
-        if iou_config.iourc_path:
-            iourc_path = iou_config.iourc_path
-        else:
-            if not server_config.secrets_dir:
-                server_config.secrets_dir = os.path.dirname(Config.instance().server_config)
-            iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
+        if not server_config.secrets_dir:
+            server_config.secrets_dir = os.path.dirname(Config.instance().server_config)
+        iourc_path = os.path.join(server_config.secrets_dir, "iou_license")
 
         if os.path.exists(iourc_path):
             try:
@@ -268,7 +262,10 @@ class Controller:
                 log.info(f"iourc file '{iourc_path}' loaded")
             except OSError as e:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
-        self._iou_license_settings["license_check"] = iou_config.license_check
+
+        # IOU license check is disabled by default
+        self._iou_license_settings["license_check"] = controller_vars.get("iou_license_check", False)
+        log.info("IOU license check is {} on the controller".format("enabled" if self._iou_license_settings["license_check"] else "disabled"))
 
         # install the built-in appliances if needed
         if Config.instance().settings.Server.install_builtin_appliances:
@@ -600,9 +597,12 @@ class Controller:
         Auto open the project with auto open enable
         """
 
-        for project in self._projects.values():
-            if project.auto_open:
-                await project.open()
+        try:
+            for project in self._projects.values():
+                if project.auto_open:
+                    await project.open()
+        except ControllerError as e:
+            log.error(f"Could not auto open projects: {e}")
 
     def get_free_project_name(self, base_name):
         """

@@ -1,5 +1,23 @@
 # Change Log
 
+## 3.0.0 20/12/2024
+
+* Bundle web-ui v3.0.0
+* Use static favicon for API docs. Ref #3674
+* Configure self-hosting JavaScript and CSS for docs
+* Fix project auto open feature. Fixes #2455
+* Store IOU licence in the secrets directory and disable the check by default
+* Require "Project.Audit" permission to duplicate a project and check if "Project.Allocate" permission for the destination.
+
+## 2.2.52 02/12/2024
+
+* Bundle web-ui v2.2.52
+* Sync appliances
+* Remove restrictions based on file extension when listing images and fix ELF header checks
+* Fix use project name instead of ID for fast duplication when running local server. Fixes #2446
+* Overwrite user resources when the originals have changed.
+* Relax setuptools requirement to allow for easier Debian packaging on Ubuntu Focal & Jammy
+
 ## 3.0.0rc2 20/11/2024
 
 * Bundle web-ui v3.0.0rc2
