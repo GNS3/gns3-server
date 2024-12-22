@@ -110,7 +110,7 @@ UBUNTU_CODENAME=`lsb_release -c -s`
 
 log "Add GNS3 repository"
 
-if [ -f "/etc/apt/sources.list" ]
+if [ ! -f "/etc/apt/sources.list.d/ubuntu.sources" ]
 then
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B83AAABFFBD82D21B543C8EA86C22C2EC6A24D7F
     cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
