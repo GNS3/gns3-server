@@ -110,7 +110,17 @@ UBUNTU_CODENAME=`lsb_release -c -s`
 
 log "Add GNS3 repository"
 
-cat <<EOFLIST > /etc/apt/sources.list.d/gns3-ppa.sources
+if [ -f "/etc/apt/sources.list" ]
+then
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B83AAABFFBD82D21B543C8EA86C22C2EC6A24D7F
+    cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
+EOFLIST
+
+else
+
+    cat <<EOFLIST > /etc/apt/sources.list.d/gns3-ppa.sources
 Types: deb
 URIs: https://ppa.launchpadcontent.net/gns3/$REPOSITORY/ubuntu/
 Suites: $UBUNTU_CODENAME
@@ -145,6 +155,8 @@ Signed-By:
  =xnj5
  -----END PGP PUBLIC KEY BLOCK-----
 EOFLIST
+
+fi
 
 log "Updating system packages and installing curl"
 apt update
@@ -217,7 +229,7 @@ mkdir -p /etc/gns3
 cat <<EOFC > /etc/gns3/gns3_server.conf
 [Server]
 host = 0.0.0.0
-port = 3080 
+port = 3080
 images_path = /opt/gns3/images
 projects_path = /opt/gns3/projects
 appliances_path = /opt/gns3/appliances
