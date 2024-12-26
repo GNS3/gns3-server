@@ -344,6 +344,7 @@ class Controller:
         dst_path = self.configs_path()
         log.info(f"Installing base configs in '{dst_path}'")
         try:
+            # do not overwrite base configs because they may have been customized by the user
             Controller.install_resource_files(dst_path, "configs", upgrade_resources=False)
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
@@ -357,7 +358,7 @@ class Controller:
         dst_path = self.disks_path()
         log.info(f"Installing built-in disks in '{dst_path}'")
         try:
-            Controller.install_resource_files(dst_path, "disks", upgrade_resources=False)
+            Controller.install_resource_files(dst_path, "disks")
         except OSError as e:
             log.error(f"Could not install disk files to {dst_path}: {e}")
 
