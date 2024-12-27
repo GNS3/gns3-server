@@ -1,5 +1,13 @@
 # Change Log
 
+## 3.0.1 27/12/2024
+
+* Bundle web-ui v3.0.1
+* Allow for upgrading built-in disks
+* Fix config parsing when configuring server protocol. Fixes https://github.com/GNS3/gns3-gui/issues/3681
+* Update empty Qemu disks with correct MD5 checksums
+* Increase timeout to run compute HTTP queries. Fixes #3453
+
 ## 3.0.0 20/12/2024
 
 * Bundle web-ui v3.0.0
