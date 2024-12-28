@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2024 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,19 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Install GNS3 on a remote Ubuntu LTS server
-# This create a dedicated user and setup all the package
-# and optionnaly a VPN
+# Install GNS3 on a remote Ubuntu server
+# This creates a dedicated user and setup all the packages
+# and optionally a VPN
 #
 
 function help {
   echo "Usage:" >&2
   echo "--with-openvpn: Install OpenVPN" >&2
-  echo "--with-iou: Install IOU" >&2
-  echo "--with-i386-repository: Add the i386 repositories required by IOU if they are not already available on the system. Warning: this will replace your source.list in order to use the official Ubuntu mirror" >&2
+  echo "--with-iou: Install IOU support" >&2
+  echo "--with-i386-repository: Add the i386 repositories required by IOU i386 images. This is not needed for recent x86_64 IOU images." >&2
   echo "--with-welcome: Install GNS3-VM welcome.py script" >&2
   echo "--without-kvm: Disable KVM, required if system do not support it (limitation in some hypervisors and cloud providers). Warning: only disable KVM if strictly necessary as this will degrade performance" >&2
-  echo "--unstable: Use the GNS3 unstable repository"
+  echo "--unstable: Use the GNS3 unstable repository" >&2
+  echo "--custom-repository <repository>: Use a custom repository" >&2
   echo "--help: This help" >&2
 }
 
@@ -43,15 +44,17 @@ then
   exit 1
 fi
 
+# Default repository
+REPOSITORY="ppa"
+
 # Read the options
 USE_VPN=0
 USE_IOU=0
 I386_REPO=0
 DISABLE_KVM=0
-UNSTABLE=0
 WELCOME_SETUP=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,custom-repository:,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -83,8 +86,12 @@ while true ; do
           shift
           ;;
         --unstable)
-          UNSTABLE=1
+          REPOSITORY="unstable"
           shift
+          ;;
+        --custom-repository)
+          REPOSITORY="$2"
+          shift 2
           ;;
         -h|--help)
           help
@@ -103,91 +110,93 @@ UBUNTU_CODENAME=`lsb_release -c -s`
 
 log "Add GNS3 repository"
 
-if [ "$UBUNTU_CODENAME" == "trusty" ]
+if [ ! -f "/etc/apt/sources.list.d/ubuntu.sources" ]
 then
-    if [ $UNSTABLE == 1 ]
-    then
-        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
-deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
-deb http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main
-deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main
-EOFLIST
-    else
-        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B83AAABFFBD82D21B543C8EA86C22C2EC6A24D7F
+    cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
 deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
 deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-deb http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main 
-deb-src http://ppa.launchpad.net/gns3/qemu/ubuntu $UBUNTU_CODENAME main 
 EOFLIST
-    fi
+
 else
-    if [ $UNSTABLE == 1 ]
-    then
-        cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
-deb-src http://ppa.launchpad.net/gns3/unstable/ubuntu $UBUNTU_CODENAME main
+
+    cat <<EOFLIST > /etc/apt/sources.list.d/gns3-ppa.sources
+Types: deb
+URIs: https://ppa.launchpadcontent.net/gns3/$REPOSITORY/ubuntu/
+Suites: $UBUNTU_CODENAME
+Components: main
+Signed-By:
+ -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ mQINBGY0jSYBEADMH5CvX8ZVX4XzAxdQ2CmF7t86IjFnQgtI18Q19nVnpKEGNyB5
+ pgotDMzkhGnxuhvz2zE9PZhd8VgkodB81V607d/Dy8FfI7t1BVQhLvJDx0H/q6RE
+ n2y9WxiuBzTHitoQTCTY3hjcr7AUNFFI64gUqwbkQmYbCWWsYOlDpRSkWKg8P8WK
+ 08RetwTI0Iwoz8j+BkbPlubuImiVfh1TeH23FBuGIwL1r1Cps0wel6JAi+jaU9WG
+ j8MX3mQYFTAtk7f1lRubqWosB/A4xIu609pF1e1tAkWAGltYAeoFhDn+PfA9KgmV
+ fvxfVR7zmxp31imTJgXgUFCz+H0Xb3vpve8XsrsHZUP6StJ3+6cFXjNBV6PuO1FT
+ JWp86a+AYHg7+sUWcoJRZPCTbb/pOcCa0q1ch5qcLkiYEOGK+pYhbPptq6y8IsJW
+ N6EDNCVvVqVyTJy14FZWoOqxcpUiDOQ+su28j8++V+PMo+FO3SQqwEZwJXk7LF/4
+ wUipDCUh/WNjDqqgmYLoO+ttiiJPbEw3jtbO+zopbzYpyEC1f06Nz7uz1daOIN3J
+ etFPzSqWCE7Eq+hoVmAAm8gVmQir3rFJbIGBAvAaOLQEOkUlOlS7AezqUhdyhGER
+ Zrvc3eNqxY7G61SEHipEJ7/hpcDq0RRWCXHsoQqyHaPje826n2pGkJYt4QARAQAB
+ tBZMYXVuY2hwYWQgUFBBIGZvciBHTlMziQJOBBMBCgA4FiEEuDqqv/vYLSG1Q8jq
+ hsIsLsaiTX8FAmY0jSYCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQhsIs
+ LsaiTX9z9xAAq1uHmRgfYmELS0cr2YEnTWHPVE6s95Qx+0cr5zzNeWfmoAS9uSyl
+ z8bCm+Q2ZapzU/nOtkozU+RGjgcRRTKMVTyS0PjFX22965xHCRWnw79fPyrYouUw
+ H2cAT8WSGYEeVAbqhJSns0RnDpXuaxmWE1wT+iitY/QAjeXo22Z2mjv2bFTitKbY
+ hZbE5Eu8Olc5YHCVI0ofq84/Ii921iMibU6EDMmm/iOnMK2uHGbC59t0YG8Rm7mK
+ uk6+TpxOULjFeCWSkF2Dr33m8JQmtYZuFUnmqWPuSdBo3J0O1b0qTg+EP9FbDAtj
+ CoEKT/V1ccMBd3r77o23CGsvpV7bzEU60A+NsU8vb/AkOmouYiF+qaYDFGZDfWhK
+ p1HFmd1kt7YdgxsmoKoFJkbt1bBdcFJLV0Jcad5sfArg2aFDYf2giMxAw4iQ+9jc
+ MCuwWxiqWicPqJ5erNTzVfayBkjuZqBDVTO9wmG3DL4QmNosIBS7kq+NGrT8Ql22
+ FqYfdIZJDlKVtJKHK8eKJSB0dbFawV2h5p/CvQlIm6nthg5FzOyjvCkPkvxvveq+
+ SuNxFEscumFCgo7j7RMWHW9HWK3TUvMmYLMVjxL8kXyCwknp9GklBQHA/IPxRa/2
+ eFqqkmVbmNAoMzzw5wqa/BPcFEbgn+E+TFyZqbzp0F4QzPJZFkz16SA=
+ =xnj5
+ -----END PGP PUBLIC KEY BLOCK-----
 EOFLIST
-    else
-       cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-EOFLIST
-    fi
+
 fi
 
-if [ $I386_REPO == 1 ]
-then
-    cat <<EOFLIST2  >> /etc/apt/sources.list
-###### Ubuntu Main Repos
-deb http://archive.ubuntu.com/ubuntu/ $UBUNTU_CODENAME main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ $UBUNTU_CODENAME main universe multiverse 
+log "Updating system packages and installing curl"
+apt update
+apt install -y curl
 
-###### Ubuntu Update Repos
-deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main universe multiverse 
-deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main universe multiverse 
-deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main universe multiverse 
-EOFLIST2
-fi
+log "Upgrading packages"
+apt upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A2E3EF7B
+log "Installing the GNS3 server and its dependencies"
+apt install -y gns3-server
 
-log "Update system packages"
-apt-get update
-
-log "Upgrade packages"
-apt-get upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
-
-log "Install GNS3 packages"
-apt-get install -y gns3-server
-
-log "Create user GNS3 with /opt/gns3 as home directory"
+log "Creating user GNS3 with /opt/gns3 as home directory"
 if [ ! -d "/opt/gns3" ]
 then
   useradd -m -d /opt/gns3 gns3
 fi
 
-
-log "Add GNS3 to the ubridge group"
+log "Adding GNS3 to the ubridge group"
 usermod -aG ubridge gns3
 
-log "Install docker"
+log "Installing Docker"
 if [ ! -f "/usr/bin/docker" ]
 then
   curl -sSL https://get.docker.com | bash
 fi
 
-log "Add GNS3 to the docker group"
+log "Adding GNS3 to the docker group"
 usermod -aG docker gns3
 
 if [ $USE_IOU == 1 ]
 then
-    log "Setup IOU"
-    dpkg --add-architecture i386
-    apt-get update
+    log "Setting up IOU support"
+    if [ $I386_REPO == 1 ]
+    then
+        log "Enabling i386 architecture for IOU support"
+        dpkg --add-architecture i386
+        apt update
+    fi
 
-    apt-get install -y gns3-iou
+    apt install -y gns3-iou
 
     # Force the host name to gns3vm
     echo gns3vm > /etc/hostname
@@ -196,31 +205,18 @@ then
 
     # Force hostid for IOU
     dd if=/dev/zero bs=4 count=1 of=/etc/hostid
-
-    # Block potential IOU phone home call (xml.cisco.com is not in use at this time)
-    log "Block IOU phone home call"
-    if [ "$UBUNTU_CODENAME" == "focal" ]
-    then
-      iptables -I OUTPUT -p udp --dport 53 -m string --hex-string "|03|xml|05|cisco|03|com" --algo bm -j DROP
-      echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
-      echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-      apt-get install -y iptables-persistent
-    else
-      echo "127.0.0.254 xml.cisco.com" | tee --append /etc/hosts
-    fi
-
 fi
 
-log "Add gns3 to the kvm group"
+log "Adding gns3 to the kvm group"
 usermod -aG kvm gns3
 
-log "Setup GNS3 server"
+log "Setting up the GNS3 server configuration"
 
 mkdir -p /etc/gns3
 cat <<EOFC > /etc/gns3/gns3_server.conf
 [Server]
 host = 0.0.0.0
-port = 3080 
+port = 3080
 images_path = /opt/gns3/images
 projects_path = /opt/gns3/projects
 appliances_path = /opt/gns3/appliances
@@ -234,52 +230,15 @@ EOFC
 
 if [ $DISABLE_KVM == 1 ]
 then
-    log "Disable KVM support"
+    log "Disabling KVM support"
     sed -i 's/hardware_acceleration = True/hardware_acceleration = False/g' /etc/gns3/gns3_server.conf
 fi
 
 chown -R gns3:gns3 /etc/gns3
 chmod -R 700 /etc/gns3
 
-if [ "$UBUNTU_CODENAME" == "trusty" ]
-then
-cat <<EOFI > /etc/init/gns3.conf
-description "GNS3 server"
-author      "GNS3 Team"
-
-start on filesystem or runlevel [2345]
-stop on runlevel [016]
-respawn
-console log
-
-
-script
-    exec start-stop-daemon --start --make-pidfile --pidfile /var/run/gns3.pid --chuid gns3 --exec "/usr/bin/gns3server"
-end script
-
-pre-start script
-    echo "" > /var/log/upstart/gns3.log
-    echo "[`date`] GNS3 Starting"
-end script
-
-pre-stop script
-    echo "[`date`] GNS3 Stopping"
-end script
-EOFI
-
-chown root:root /etc/init/gns3.conf
-chmod 644 /etc/init/gns3.conf
-
-
-log "Start GNS3 service"
-set +e
-service gns3 stop
-set -e
-service gns3 start
-
-else
-    # Install systemd service
-    cat <<EOFI > /lib/systemd/system/gns3.service
+log "Installing the GNS3 systemd service"
+cat <<EOFI > /lib/systemd/system/gns3.service
 [Unit]
 Description=GNS3 server
 After=network-online.target
@@ -302,15 +261,15 @@ LimitNOFILE=16384
 [Install]
 WantedBy=multi-user.target
 EOFI
-    chmod 755 /lib/systemd/system/gns3.service
-    chown root:root /lib/systemd/system/gns3.service
 
-    log "Start GNS3 service"
-    systemctl enable gns3
-    systemctl start gns3
-fi
+chmod 755 /lib/systemd/system/gns3.service
+chown root:root /lib/systemd/system/gns3.service
 
-log "GNS3 installed with success"
+log "Starting the GNS3 service"
+systemctl enable gns3
+systemctl start gns3
+
+log "GNS3 has been installed with success"
 
 if [ $WELCOME_SETUP == 1 ]
 then
@@ -319,11 +278,9 @@ gns3   ALL = (ALL) NOPASSWD: /usr/bin/apt-key
 gns3   ALL = (ALL) NOPASSWD: /usr/bin/apt-get
 gns3   ALL = (ALL) NOPASSWD: /usr/sbin/reboot
 EOFI
-NEEDRESTART_MODE=a apt-get install -y net-tools
-NEEDRESTART_MODE=a apt-get install -y python3-pip
-NEEDRESTART_MODE=a apt-get install -y dialog
-pip install --no-input --upgrade pip
-pip install --no-input pythondialog
+NEEDRESTART_MODE=a apt install -y net-tools
+NEEDRESTART_MODE=a apt install -y dialog
+NEEDRESTART_MODE=a apt install -y python3-dialog
 
 #Pull down welcome script from repo
 curl https://raw.githubusercontent.com/GNS3/gns3-server/master/scripts/welcome.py > /usr/local/bin/welcome.py
@@ -350,19 +307,15 @@ fi
 
 if [ $USE_VPN == 1 ]
 then
-log "Setup VPN"
+log "Setting up OpenVPN"
 
-log "Change GNS3 to listen on VPN interface"
+log "Changing the GNS3 server configuration to listen on VPN interface"
 
 sed -i 's/host = 0.0.0.0/host = 172.16.253.1/' /etc/gns3/gns3_server.conf
 
-log "Install packages for OpenVPN"
+log "Installing the OpenVPN packages"
 
-apt-get install -y     \
-  openvpn              \
-  uuid                 \
-  dnsutils             \
-  nginx-light
+apt install -y openvpn uuid dnsutils nginx-light
 
 MY_IP_ADDR=$(dig @ns1.google.com -t txt o-o.myaddr.l.google.com +short -4 | sed 's/"//g')
 
@@ -370,7 +323,7 @@ log "IP detected: $MY_IP_ADDR"
 
 UUID=$(uuid)
 
-log "Update motd"
+log "Updating motd"
 
 cat <<EOFMOTD > /etc/update-motd.d/70-openvpn
 #!/bin/sh
@@ -381,7 +334,7 @@ echo "http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn"
 echo ""
 echo "And add it to your openvpn client."
 echo ""
-echo "apt-get remove nginx-light to disable the HTTP server."
+echo "apt remove nginx-light to disable the HTTP server."
 echo "And remove this file with rm /etc/update-motd.d/70-openvpn"
 EOFMOTD
 chmod 755 /etc/update-motd.d/70-openvpn
@@ -391,7 +344,7 @@ mkdir -p /etc/openvpn/
 [ -d /dev/net ] || mkdir -p /dev/net
 [ -c /dev/net/tun ] || mknod /dev/net/tun c 10 200
 
-log "Create keys"
+log "Creating OpenVPN keys"
 
 [ -f /etc/openvpn/dh.pem ] || openssl dhparam -out /etc/openvpn/dh.pem 2048
 [ -f /etc/openvpn/key.pem ] || openssl genrsa -out /etc/openvpn/key.pem 2048
@@ -399,7 +352,7 @@ chmod 600 /etc/openvpn/key.pem
 [ -f /etc/openvpn/csr.pem ] || openssl req -new -key /etc/openvpn/key.pem -out /etc/openvpn/csr.pem -subj /CN=OpenVPN/
 [ -f /etc/openvpn/cert.pem ] || openssl x509 -req -in /etc/openvpn/csr.pem -out /etc/openvpn/cert.pem -signkey /etc/openvpn/key.pem -days 24855
 
-log "Create client configuration"
+log "Creating OpenVPN client configuration"
 cat <<EOFCLIENT > /root/client.ovpn
 client
 nobind
@@ -441,7 +394,7 @@ status openvpn-status-1194.log
 log-append /var/log/openvpn-udp1194.log
 EOFUDP
 
-log "Setup HTTP server for serving client certificate"
+log "Setting up an HTTP server for serving client certificate"
 mkdir -p /usr/share/nginx/openvpn/$UUID
 cp /root/client.ovpn /usr/share/nginx/openvpn/$UUID/$HOSTNAME.ovpn
 touch /usr/share/nginx/openvpn/$UUID/index.html
@@ -458,7 +411,7 @@ EOFNGINX
 service nginx stop
 service nginx start
 
-log "Restart OpenVPN and GNS3"
+log "Restarting OpenVPN and GNS3"
 
 set +e
 service openvpn stop
@@ -466,15 +419,15 @@ service openvpn start
 service gns3 stop
 service gns3 start
 
-log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
+log "Please download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
 fi
 
 if [ $WELCOME_SETUP == 1 ]
 then
-NEEDRESTART_MODE=a apt-get update
-NEEDRESTART_MODE=a apt-get upgrade
-python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
-cd /opt/gns3
-su gns3
+  NEEDRESTART_MODE=a apt update
+  NEEDRESTART_MODE=a apt upgrade
+  python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
+  cd /opt/gns3
+  su gns3
 fi
