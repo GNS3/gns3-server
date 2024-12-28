@@ -205,19 +205,6 @@ then
 
     # Force hostid for IOU
     dd if=/dev/zero bs=4 count=1 of=/etc/hostid
-
-    # Block potential IOU phone home call (xml.cisco.com is not in use at this time)
-    log "Blocking IOU phone home call"
-    if [ "$UBUNTU_CODENAME" == "focal" ]
-    then
-      iptables -I OUTPUT -p udp --dport 53 -m string --hex-string "|03|xml|05|cisco|03|com" --algo bm -j DROP
-      echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
-      echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-      apt install -y iptables-persistent
-    else
-      echo "127.0.0.254 xml.cisco.com" | tee --append /etc/hosts
-    fi
-
 fi
 
 log "Adding gns3 to the kvm group"
