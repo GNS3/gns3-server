@@ -16,7 +16,7 @@ sqlalchemy==2.0.36
 aiosqlite==0.20.0
 alembic==1.14.0
 bcrypt==4.2.1
-python-jose[cryptography]==3.3.0
+joserfc==1.0.1
 email-validator==2.2.0
 watchfiles==1.0.3
 zstandard==0.23.0
