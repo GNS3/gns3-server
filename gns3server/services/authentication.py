@@ -24,6 +24,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from gns3server.schemas.controller.tokens import TokenData
 from gns3server.config import Config
+from pydantic import ValidationError
 
 import logging
 
@@ -80,6 +81,6 @@ class AuthService:
             if username is None:
                 raise credentials_exception
             token_data = TokenData(username=username)
-        except (JoseError, ValueError):
+        except (JoseError, ValidationError, ValueError):
             raise credentials_exception
         return token_data.username
