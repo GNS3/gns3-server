@@ -21,7 +21,8 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from sqlalchemy import update
 from httpx import AsyncClient
-from jose import jwt
+from joserfc import jwt
+from joserfc.jwk import OctKey
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
@@ -166,16 +167,23 @@ class TestAuthTokens:
 
         jwt_secret = config.settings.Controller.jwt_secret_key
         token = auth_service.create_access_token(test_user.username)
-        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
-        username = payload.get("sub")
+        key = OctKey.import_key(jwt_secret)
+        payload = jwt.decode(token, key, algorithms=["HS256"])
+        username = payload.claims.get("sub")
         assert username == test_user.username
 
-    async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
+    async def test_decode_token_with_wrong_algorithm(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            test_user: User,
+            config: Config
+    ) -> None:
 
         jwt_secret = config.settings.Controller.jwt_secret_key
-        token = auth_service.create_access_token(None)
-        with pytest.raises(jwt.JWTError):
-            jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        token = auth_service.create_access_token(test_user.username)
+        with pytest.raises(ValueError):
+            jwt.decode(token, jwt_secret, algorithms=["ES256"])
 
     async def test_can_retrieve_username_from_token(
             self,
@@ -236,9 +244,10 @@ class TestUserLogin:
 
         # check that token exists in response and has user encoded within it
         token = response.json().get("access_token")
-        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
-        assert "sub" in payload
-        username = payload.get("sub")
+        key = OctKey.import_key(jwt_secret)
+        payload = jwt.decode(token, key, algorithms=["HS256"])
+        assert "sub" in payload.claims
+        username = payload.claims.get("sub")
         assert username == test_user.username
 
         # check that token is proper type
