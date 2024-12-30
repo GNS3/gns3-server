@@ -97,18 +97,10 @@ async def wait_for_process_termination(process, timeout=10):
     :param timeout: Timeout in seconds
     """
 
-    if sys.version_info >= (3, 5):
-        try:
-            await asyncio.wait_for(process.wait(), timeout=timeout)
-        except ProcessLookupError:
-            return
-    else:
-        while timeout > 0:
-            if process.returncode is not None:
-                return
-            await asyncio.sleep(0.1)
-            timeout -= 0.1
-        raise asyncio.TimeoutError()
+    try:
+        await asyncio.wait_for(process.wait(), timeout=timeout)
+    except ProcessLookupError:
+        return
 
 
 async def _check_process(process, termination_callback):
