@@ -214,7 +214,7 @@ async def monitor_images_on_filesystem(app: FastAPI):
             # stop when the app is exiting
             if app.state.exiting:
                 observer.stop()
-                observer.join()
+                observer.join(10)
                 log.info(f"Stopping monitoring for new images in '{path}'")
                 loop.call_soon_threadsafe(queue.put_nowait, None)
                 break
