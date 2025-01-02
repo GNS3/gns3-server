@@ -18,6 +18,7 @@
 API routes for templates.
 """
 
+import os
 import hashlib
 import json
 
@@ -34,6 +35,8 @@ from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.controller.controller_error import ControllerError
+from gns3server.utils.images import get_builtin_disks
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.rbac import has_privilege
@@ -132,10 +135,28 @@ async def delete_template(
     Required privilege: Template.Allocate
     """
 
+    images = await templates_repo.get_template_images(template_id)
     await TemplatesService(templates_repo).delete_template(template_id)
     await rbac_repo.delete_all_ace_starting_with_path(f"/templates/{template_id}")
-    if prune_images:
-        await images_repo.prune_images()
+    if prune_images and images:
+        skip_images = get_builtin_disks()
+        for image in images:
+            if image.filename in skip_images:
+                continue
+            templates = await images_repo.get_image_templates(image.image_id)
+            if templates:
+                template_names = ", ".join([template.name for template in templates])
+                raise ControllerError(f"Image '{image.path}' is used by one or more templates: {template_names}")
+
+            try:
+                os.remove(image.path)
+            except OSError:
+                log.warning(f"Could not delete image file {image.path}")
+
+            print(f"Deleting image '{image.path}'")
+            success = await images_repo.delete_image(image.path)
+            if not success:
+                raise ControllerError(f"Image '{image.path}' could not removed from the database")
 
 
 @router.get(

@@ -35,7 +35,8 @@ from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.utils.images import discover_images, read_image_info, default_images_directory, InvalidImageError
+from gns3server.utils.images import md5sum, discover_images, read_image_info, InvalidImageError
+from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server import schemas
 
 from .models import Base
@@ -130,7 +131,7 @@ async def get_computes(app: FastAPI) -> List[dict]:
     return computes
 
 
-async def discover_images_on_filesystem(app: FastAPI):
+async def discover_images_on_filesystem(app: FastAPI) -> None:
 
     async with AsyncSession(app.state._db_engine) as db_session:
         images_repository = ImagesRepository(db_session)
@@ -154,6 +155,25 @@ async def discover_images_on_filesystem(app: FastAPI):
 
     # monitor if images have been manually added
     asyncio.create_task(monitor_images_on_filesystem(app))
+
+
+async def update_disk_checksums(updated_disks: List[str]) -> None:
+    """
+    Update the checksum of a list of disks in the database.
+
+    :param updated_disks: list of updated disks
+    """
+
+    from gns3server.api.server import app
+    async with AsyncSession(app.state._db_engine) as db_session:
+        images_repository = ImagesRepository(db_session)
+        for path in updated_disks:
+            image = await images_repository.get_image(path)
+            if image:
+                log.info(f"Updating image '{path}' in the database")
+                checksum = await wait_run_in_executor(md5sum, path, cache_to_md5file=False)
+                if image.checksum != checksum:
+                    await images_repository.update_image(path, checksum, "md5")
 
 class EventHandler(PatternMatchingEventHandler):
     """
@@ -227,7 +247,6 @@ async def monitor_images_on_filesystem(app: FastAPI):
 
     async for filesystem_event in EventIterator(queue):
         # read the file system event from the queue
-        print(filesystem_event)
         image_path = filesystem_event.src_path
         expected_image_type = None
         if "IOU" in image_path:

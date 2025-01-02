@@ -20,6 +20,11 @@ import stat
 import aiofiles
 import shutil
 
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 from typing import List, AsyncGenerator
 from ..config import Config
 from . import force_unix_path
@@ -111,6 +116,14 @@ async def list_images(image_type):
     return images
 
 
+def get_builtin_disks() -> List[str]:
+    builtin_disks = []
+    for entry in importlib_resources.files('gns3server').joinpath("disks").iterdir():
+        if entry.is_file():
+            builtin_disks.append(entry.name)
+    return builtin_disks
+
+
 async def read_image_info(path: str, expected_image_type: str = None) -> dict:
 
     header_magic_len = 7
@@ -118,7 +131,7 @@ async def read_image_info(path: str, expected_image_type: str = None) -> dict:
         async with aiofiles.open(path, "rb") as f:
             image_header = await f.read(header_magic_len)  # read the first 7 bytes of the file
             if len(image_header) >= header_magic_len:
-                detected_image_type = check_valid_image_header(image_header)
+                detected_image_type = check_valid_image_header(path, image_header)
                 if expected_image_type and detected_image_type != expected_image_type:
                     raise InvalidImageError(f"Detected image type for '{path}' is {detected_image_type}, "
                                             f"expected type is {expected_image_type}")
@@ -302,7 +315,7 @@ class InvalidImageError(Exception):
         return self._message
 
 
-def check_valid_image_header(data: bytes, allow_raw_image: bool = False) -> str:
+def check_valid_image_header(path: str, data: bytes, allow_raw_image: bool = False) -> str:
 
     if data[:7] == b'\x7fELF\x01\x02\x01':
         # for IOS images: file must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
@@ -317,7 +330,7 @@ def check_valid_image_header(data: bytes, allow_raw_image: bool = False) -> str:
     else:
         if allow_raw_image is True:
             return "qemu"
-        raise InvalidImageError("Could not detect image type, please make sure it is a valid image")
+        raise InvalidImageError(f"{path}: could not detect image type, please make sure it is a valid image")
 
 
 async def write_image(
@@ -342,7 +355,7 @@ async def write_image(
             async for chunk in stream:
                 if check_image_header and len(chunk) >= header_magic_len:
                     check_image_header = False
-                    image_type = check_valid_image_header(chunk, allow_raw_image)
+                    image_type = check_valid_image_header(image_path, chunk, allow_raw_image)
                 await f.write(chunk)
                 checksum.update(chunk)
 

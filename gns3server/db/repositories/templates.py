@@ -170,3 +170,14 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.commit()
             await self._db_session.refresh(template_in_db)
         return template_in_db
+
+    async def get_template_images(self, template_id: UUID) -> int:
+        """
+        Return all images attached to a template.
+        """
+
+        query = select(models.Image).\
+            join(models.Image.templates).\
+            filter(models.Template.template_id == template_id)
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
