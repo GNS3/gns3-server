@@ -34,8 +34,10 @@ class TestApplianceRoutes:
     #     controller.appliance_manager.install_builtin_appliances()
     #     controller.appliance_manager.load_appliances()
 
-    async def test_appliances_list(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_appliances_list(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
+        await controller.appliance_manager.install_builtin_appliances()
+        controller.appliance_manager.load_appliances()
         response = await client.get(app.url_path_for("get_appliances"))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) > 0
