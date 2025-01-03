@@ -192,6 +192,43 @@ async def prune_images(
     await images_repo.prune_images(skip_images)
 
 
+@router.post(
+    "/install",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
+async def install_images(
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+) -> None:
+    """
+    Attempt to automatically create templates based on image checksums.
+
+    Required privilege: Image.Allocate
+    """
+
+    skip_images = get_builtin_disks()
+    images = await images_repo.get_images()
+    for image in images:
+        if skip_images and image.filename in skip_images:
+            log.debug(f"Skipping image '{image.path}' for image installation")
+            continue
+        templates = await images_repo.get_image_templates(image.image_id)
+        if templates:
+            # the image is already used by a template
+            log.warning(f"Image '{image.path}' is used by one or more templates")
+            continue
+        await Controller.instance().appliance_manager.install_appliances_from_image(
+            image.path,
+            image.checksum,
+            images_repo,
+            templates_repo,
+            None,
+            None,
+            os.path.dirname(image.path)
+        )
+
+
 @router.get(
     "/{image_path:path}",
     response_model=schemas.Image,
