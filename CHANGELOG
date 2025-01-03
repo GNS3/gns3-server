@@ -1,5 +1,16 @@
 # Change Log
 
+## 3.0.2 03/01/2025
+
+* Bundle web-ui v3.0.2
+* Support to create templates based on image checksums.
+* Improvements for installing built-in disks.
+* Use watchdog instead of watchfiles to monitor for new images on the file system
+* Drop Python 3.8
+* Replace python-jose library by joserfc
+* Upgrade dependencies
+* Remove blocking IOU phone home call.
+
 ## 3.0.1 27/12/2024
 
 * Bundle web-ui v3.0.1
