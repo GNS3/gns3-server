@@ -171,7 +171,7 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.refresh(template_in_db)
         return template_in_db
 
-    async def get_template_images(self, template_id: UUID) -> int:
+    async def get_template_images(self, template_id: UUID) -> List[models.Image]:
         """
         Return all images attached to a template.
         """

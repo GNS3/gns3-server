@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
+
 import pytest
 import uuid
 import unittest.mock
@@ -145,21 +147,32 @@ class TestTemplateRoutes:
             tmpdir: str,
     ) -> None:
 
-        path = os.path.join(tmpdir, "test.qcow2")
-        with open(path, "wb+") as f:
+        image1 = os.path.join(tmpdir, "image1.qcow2")
+        with open(image1, "wb+") as f:
             f.write(b'\x42\x42\x42\x42')
+
+        image2 = os.path.join(tmpdir, "image2.qcow2")
+        with open(image2, "wb+") as f:
+            f.write(b'\x42\x42\x42\x42')
+
         images_repo = ImagesRepository(db_session)
-        await images_repo.add_image("test.qcow2", "qemu", 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
+        await images_repo.add_image("image1.qcow2", "qemu", 42, image1, "e342eb86c1229b6c154367a5476969b5", "md5")
+        await images_repo.add_image("image2.qcow2", "qemu", 42, image2, "e342eb86c1229b6c154367a5476969b5", "md5")
 
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,
                   "name": "QEMU_TEMPLATE",
                   "compute_id": "local",
-                  "hda_disk_image": "test.qcow2",
+                  "hda_disk_image": "image1.qcow2",
+                  "hdb_disk_image": "image2.qcow2",
                   "template_type": "qemu"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
+
+        templates_repo = TemplatesRepository(db_session)
+        images = await templates_repo.get_template_images(response.json().get("template_id"))
+        assert len(images) == 2
 
         response = await client.delete(
             app.url_path_for("delete_template", template_id=template_id),
@@ -167,7 +180,6 @@ class TestTemplateRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        images_repo = ImagesRepository(db_session)
         images = await images_repo.get_images()
         assert len(images) == 0
 

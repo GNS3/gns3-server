@@ -261,10 +261,13 @@ class TestImageRoutes:
 
     async def test_prune_images(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
+        images_repo = ImagesRepository(db_session)
+        images_in_db = await images_repo.get_images()
+        assert len(images_in_db) != 0
+
         response = await client.delete(app.url_path_for("prune_images"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        images_repo = ImagesRepository(db_session)
         images_in_db = await images_repo.get_images()
         assert len(images_in_db) == 0
 
