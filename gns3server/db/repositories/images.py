@@ -18,7 +18,7 @@
 import os
 
 from typing import Optional, List
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import BaseRepository
@@ -103,6 +103,22 @@ class ImagesRepository(BaseRepository):
         await self._db_session.refresh(db_image)
         return db_image
 
+    async def update_image(self, image_path: str, checksum: str, checksum_algorithm: str) -> models.Image:
+        """
+        Update an image.
+        """
+
+        query = update(models.Image).\
+            where(models.Image.path == image_path).\
+            values(checksum=checksum, checksum_algorithm=checksum_algorithm)
+
+        await self._db_session.execute(query)
+        await self._db_session.commit()
+        image_db = await self.get_image_by_checksum(checksum)
+        if image_db:
+            await self._db_session.refresh(image_db)  # force refresh of updated_at value
+        return image_db
+
     async def delete_image(self, image_path: str) -> bool:
         """
         Delete an image.
@@ -119,7 +135,7 @@ class ImagesRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
-    async def prune_images(self) -> int:
+    async def prune_images(self, skip_images: list[str] = None) -> int:
         """
         Prune images not attached to any template.
         """
@@ -130,12 +146,15 @@ class ImagesRepository(BaseRepository):
         images = result.scalars().all()
         images_deleted = 0
         for image in images:
+            if skip_images and image.filename in skip_images:
+                log.debug(f"Skipping image '{image.path}' for pruning")
+                continue
             try:
                 log.debug(f"Deleting image '{image.path}'")
                 os.remove(image.path)
             except OSError:
                 log.warning(f"Could not delete image file {image.path}")
-            if await self.delete_image(image.filename):
+            if await self.delete_image(image.path):
                 images_deleted += 1
         log.info(f"{images_deleted} image(s) have been deleted")
         return images_deleted

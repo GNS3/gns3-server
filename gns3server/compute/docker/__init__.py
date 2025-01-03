@@ -115,7 +115,7 @@ class Docker(BaseManager):
             dst_path = self.resources_path()
             log.info(f"Installing Docker resources in '{dst_path}'")
             from gns3server.controller import Controller
-            Controller.instance().install_resource_files(dst_path, "compute/docker/resources")
+            await Controller.instance().install_resource_files(dst_path, "compute/docker/resources")
             await self.install_busybox(dst_path)
         except OSError as e:
             raise DockerError(f"Could not install Docker resources to {dst_path}: {e}")

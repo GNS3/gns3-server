@@ -110,7 +110,7 @@ class ApplianceManager:
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
-    def install_builtin_appliances(self):
+    async def install_builtin_appliances(self):
         """
         At startup we copy the built-in appliances files.
         """
@@ -119,7 +119,7 @@ class ApplianceManager:
         log.info(f"Installing built-in appliances in '{dst_path}'")
         from . import Controller
         try:
-            Controller.instance().install_resource_files(dst_path, "appliances")
+            await Controller.instance().install_resource_files(dst_path, "appliances")
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 

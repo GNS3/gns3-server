@@ -245,7 +245,8 @@ async def test_start(controller):
     }
 
     #with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
-    await controller.start()
+    with asyncio_patch("gns3server.controller.Controller._install_builtin_disks", return_value=[]):
+        await controller.start()
     #assert mock.called
     assert len(controller.computes) == 1  # Local compute is created
     assert controller.computes["local"].name == f"{socket.gethostname()} (controller)"
@@ -266,8 +267,9 @@ async def test_start_vm(controller):
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
         with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
             with asyncio_patch("gns3server.controller.compute.Compute.connect"):
-                await controller.start()
-                assert mock.called
+                with asyncio_patch("gns3server.controller.Controller._install_builtin_disks", return_value=[]):
+                    await controller.start()
+                    assert mock.called
     assert "local" in controller.computes
     assert "vm" in controller.computes
     assert len(controller.computes) == 2  # Local compute and vm are created
@@ -356,7 +358,7 @@ async def test_install_base_configs(controller, config, tmpdir):
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
         f.write('test')
 
-    controller._install_base_configs()
+    await controller._install_base_configs()
     assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
 
     # Check is the file has not been overwritten
@@ -385,12 +387,13 @@ async def test_install_base_configs(controller, config, tmpdir):
 async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
 
     config.settings.Server.images_path = str(tmpdir)
-    controller._install_builtin_disks()
+    await controller._install_builtin_disks()
     # we only install Qemu empty disks at this time
     assert os.path.exists(str(tmpdir / "QEMU" / builtin_disk))
 
 
-def test_appliances(controller, config, tmpdir):
+@pytest.mark.asyncio
+async def test_appliances(controller, config, tmpdir):
 
     my_appliance = {
         "name": "My Appliance",
@@ -406,7 +409,7 @@ def test_appliances(controller, config, tmpdir):
         json.dump(my_appliance, f)
 
     config.settings.Server.appliances_path = str(tmpdir)
-    controller.appliance_manager.install_builtin_appliances()
+    await controller.appliance_manager.install_builtin_appliances()
     controller.appliance_manager.load_appliances()
     assert len(controller.appliance_manager.appliances) > 0
     for appliance in controller.appliance_manager.appliances.values():

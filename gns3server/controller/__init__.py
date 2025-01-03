@@ -28,10 +28,10 @@ try:
 except ImportError:
     from importlib import resources as importlib_resources
 
-
 from ..config import Config
 from ..utils import parse_version, md5sum
 from ..utils.images import default_images_directory
+from ..utils.asyncio import wait_run_in_executor
 
 from .project import Project
 from .appliance import Appliance
@@ -43,6 +43,7 @@ from .topology import load_topology
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
 from .controller_error import ControllerError, ControllerNotFoundError
+from ..db.tasks import update_disk_checksums
 from ..version import __version__
 
 import logging
@@ -72,8 +73,11 @@ class Controller:
     async def start(self, computes=None):
 
         log.info("Controller is starting")
-        self._install_base_configs()
-        self._install_builtin_disks()
+        await self._install_base_configs()
+        installed_disks = await self._install_builtin_disks()
+        if installed_disks:
+            await update_disk_checksums(installed_disks)
+
         server_config = Config.instance().settings.Server
         Config.instance().listen_for_config_changes(self._update_config)
         name = server_config.name
@@ -86,7 +90,7 @@ class Controller:
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        self._load_controller_vars()
+        await self._load_controller_vars()
 
         if server_config.enable_ssl:
             self._ssl_context = self._create_ssl_context(server_config)
@@ -190,7 +194,7 @@ class Controller:
     async def reload(self):
 
         log.info("Controller is reloading")
-        self._load_controller_vars()
+        await self._load_controller_vars()
 
         # remove all projects deleted from disk.
         for project in self._projects.copy().values():
@@ -234,7 +238,7 @@ class Controller:
         except OSError as e:
             log.error(f"Cannot write controller vars file '{self._vars_file}': {e}")
 
-    def _load_controller_vars(self):
+    async def _load_controller_vars(self):
         """
         Reload the controller vars from disk
         """
@@ -274,9 +278,9 @@ class Controller:
             builtin_appliances_path = self._appliance_manager.builtin_appliances_path()
             if not previous_version or \
                     parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
-                self._appliance_manager.install_builtin_appliances()
+                await self._appliance_manager.install_builtin_appliances()
             elif not os.listdir(builtin_appliances_path):
-                self._appliance_manager.install_builtin_appliances()
+                await self._appliance_manager.install_builtin_appliances()
             else:
                 log.info(f"Built-in appliances are installed in '{builtin_appliances_path}'")
 
@@ -307,18 +311,21 @@ class Controller:
 
 
     @staticmethod
-    def install_resource_files(dst_path, resource_name, upgrade_resources=True):
+    async def install_resource_files(dst_path, resource_name, upgrade_resources=True):
         """
         Install files from resources to user's file system
         """
 
-        def should_copy(src, dst, upgrade_resources):
+        installed_resources = []
+        async def should_copy(src, dst, upgrade_resources):
             if not os.path.exists(dst):
                 return True
             if upgrade_resources is False:
                 return False
             # copy the resource if it is different
-            return md5sum(src) != md5sum(dst)
+            src_md5 = await wait_run_in_executor(md5sum, src)
+            dst_md5 = await wait_run_in_executor(md5sum, dst)
+            return src_md5 != dst_md5
 
         if hasattr(sys, "frozen") and sys.platform.startswith("win"):
             resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
@@ -328,14 +335,16 @@ class Controller:
         else:
             for entry in importlib_resources.files('gns3server').joinpath(resource_name).iterdir():
                 full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and should_copy(str(entry), full_path, upgrade_resources):
+                if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
                     log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
-                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+                    shutil.copy(str(entry), os.path.join(full_path))
+                    installed_resources.append(full_path)
                 elif entry.is_dir():
                     os.makedirs(full_path, exist_ok=True)
-                    Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
+                    await Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
+        return installed_resources
 
-    def _install_base_configs(self):
+    async def _install_base_configs(self):
         """
         At startup we copy base configs to the user location to allow
         them to customize it
@@ -345,11 +354,11 @@ class Controller:
         log.info(f"Installing base configs in '{dst_path}'")
         try:
             # do not overwrite base configs because they may have been customized by the user
-            Controller.install_resource_files(dst_path, "configs", upgrade_resources=False)
+            await Controller.install_resource_files(dst_path, "configs", upgrade_resources=False)
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
 
-    def _install_builtin_disks(self):
+    async def _install_builtin_disks(self):
         """
         At startup we copy built-in Qemu disks to the user location to allow
         them to use with appliances
@@ -358,7 +367,7 @@ class Controller:
         dst_path = self.disks_path()
         log.info(f"Installing built-in disks in '{dst_path}'")
         try:
-            Controller.install_resource_files(dst_path, "disks")
+            return await Controller.install_resource_files(dst_path, "disks")
         except OSError as e:
             log.error(f"Could not install disk files to {dst_path}: {e}")
 

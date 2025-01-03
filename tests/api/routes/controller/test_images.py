@@ -261,10 +261,13 @@ class TestImageRoutes:
 
     async def test_prune_images(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
-        response = await client.post(app.url_path_for("prune_images"))
+        images_repo = ImagesRepository(db_session)
+        images_in_db = await images_repo.get_images()
+        assert len(images_in_db) != 0
+
+        response = await client.delete(app.url_path_for("prune_images"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        images_repo = ImagesRepository(db_session)
         images_in_db = await images_repo.get_images()
         assert len(images_in_db) == 0
 
@@ -275,7 +278,7 @@ class TestImageRoutes:
             controller: Controller
     ) -> None:
 
-        controller.appliance_manager.install_builtin_appliances()
+        await controller.appliance_manager.install_builtin_appliances()
         controller.appliance_manager.load_appliances()  # make sure appliances are loaded
         image_path = "tests/resources/empty30G.qcow2"
         image_name = os.path.basename(image_path)
