@@ -18,13 +18,18 @@
 import ipaddress
 import aiohttp
 import asyncio
-import async_timeout
 import socket
 import json
 import sys
 import io
+
 from fastapi import HTTPException
 from aiohttp import web
+
+if sys.version_info >= (3, 11):
+    from asyncio import timeout as asynctimeout
+else:
+    from async_timeout import timeout as asynctimeout
 
 from ..utils import parse_version
 from ..utils.asyncio import locking
@@ -502,8 +507,8 @@ class Compute:
         """ Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
-    async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
-        async with async_timeout.timeout(delay=timeout):
+    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False):
+        async with asynctimeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}
             chunked = None

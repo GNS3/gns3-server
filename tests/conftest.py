@@ -400,9 +400,11 @@ def run_around_tests(monkeypatch, config, port_manager):
     config.settings.VMware.vmrun_path = tmppath
     config.settings.Dynamips.dynamips_path = tmppath
 
-
     # Force turn off KVM because it's not available on CI
     config.settings.Qemu.enable_hardware_acceleration = False
+
+    # avoid monitoring for new images while testing
+    config.settings.Server.auto_discover_images = False
 
     monkeypatch.setattr("gns3server.utils.path.get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 

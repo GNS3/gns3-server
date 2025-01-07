@@ -27,11 +27,11 @@ from fastapi.encoders import jsonable_encoder
 from starlette.requests import ClientDisconnect
 from sqlalchemy.orm.exc import MultipleResultsFound
 from typing import List, Optional
-from gns3server import schemas
 
+from gns3server import schemas
 from gns3server.config import Config
 from gns3server.compute.qemu import Qemu
-from gns3server.utils.images import InvalidImageError, write_image, read_image_info, default_images_directory
+from gns3server.utils.images import InvalidImageError, write_image, read_image_info, default_images_directory, get_builtin_disks
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -50,7 +50,6 @@ from .dependencies.rbac import has_privilege
 log = logging.getLogger(__name__)
 
 router = APIRouter()
-
 
 @router.post(
     "/qemu/{image_path:path}",
@@ -175,6 +174,61 @@ async def upload_image(
     return image
 
 
+@router.delete(
+    "/prune",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
+async def prune_images(
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+) -> None:
+    """
+    Prune images not attached to any template.
+
+    Required privilege: Image.Allocate
+    """
+
+    skip_images = get_builtin_disks()
+    await images_repo.prune_images(skip_images)
+
+
+@router.post(
+    "/install",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
+async def install_images(
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+) -> None:
+    """
+    Attempt to automatically create templates based on image checksums.
+
+    Required privilege: Image.Allocate
+    """
+
+    skip_images = get_builtin_disks()
+    images = await images_repo.get_images()
+    for image in images:
+        if skip_images and image.filename in skip_images:
+            log.debug(f"Skipping image '{image.path}' for image installation")
+            continue
+        templates = await images_repo.get_image_templates(image.image_id)
+        if templates:
+            # the image is already used by a template
+            log.warning(f"Image '{image.path}' is used by one or more templates")
+            continue
+        await Controller.instance().appliance_manager.install_appliances_from_image(
+            image.path,
+            image.checksum,
+            images_repo,
+            templates_repo,
+            None,
+            None,
+            os.path.dirname(image.path)
+        )
+
+
 @router.get(
     "/{image_path:path}",
     response_model=schemas.Image,
@@ -218,7 +272,7 @@ async def delete_image(
         image = await images_repo.get_image(image_path)
     except MultipleResultsFound:
         raise ControllerBadRequestError(f"Image '{image_path}' matches multiple images. "
-                                        f"Please include the relative path of the image")
+                                        f"Please include the absolute path of the image")
 
     if not image:
         raise ControllerNotFoundError(f"Image '{image_path}' not found")
@@ -236,20 +290,3 @@ async def delete_image(
     success = await images_repo.delete_image(image_path)
     if not success:
         raise ControllerError(f"Image '{image_path}' could not be deleted")
-
-
-@router.post(
-    "/prune",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
-)
-async def prune_images(
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> None:
-    """
-    Prune images not attached to any template.
-
-    Required privilege: Image.Allocate
-    """
-
-    await images_repo.prune_images()

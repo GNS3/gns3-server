@@ -2,14 +2,14 @@
     "appliance_id": "c90f3ff3-4ed2-4437-9afb-21232fa92015",
     "name": "Arista vEOS",
     "category": "multilayer_switch",
-    "description": "Arista EOS\u00ae is the core of Arista cloud networking solutions for next-generation data centers and cloud networks. Cloud architectures built with Arista EOS scale to tens of thousands of compute and storage nodes with management and provisioning capabilities that work at scale. Through its programmability, EOS enables a set of software applications that deliver workflow automation, high availability, unprecedented network visibility and analytics and rapid integration with a wide range of third-party applications for virtualization, management, automation and orchestration services.\n\nArista Extensible Operating System (EOS) is a fully programmable and highly modular, Linux-based network operation system, using familiar industry standard CLI and runs a single binary software image across the Arista switching family. Architected for resiliency and programmability, EOS has a unique multi-process state sharing architecture that separates state information and packet forwarding from protocol processing and application logic.",
+    "description": "Arista EOS is the core of Arista cloud networking solutions for next-generation data centers and cloud networks. Cloud architectures built with Arista EOS scale to tens of thousands of compute and storage nodes with management and provisioning capabilities that work at scale. Through its programmability, EOS enables a set of software applications that deliver workflow automation, high availability, unprecedented network visibility and analytics and rapid integration with a wide range of third-party applications for virtualization, management, automation and orchestration services.\n\nArista Extensible Operating System (EOS) is a fully programmable and highly modular, Linux-based network operation system, using familiar industry standard CLI and runs a single binary software image across the Arista switching family. Architected for resiliency and programmability, EOS has a unique multi-process state sharing architecture that separates state information and packet forwarding from protocol processing and application logic.",
     "vendor_name": "Arista",
     "vendor_url": "http://www.arista.com/",
     "documentation_url": "https://www.arista.com/assets/data/docs/Manuals/EOS-4.17.2F-Manual.pdf",
     "product_name": "vEOS",
     "product_url": "https://eos.arista.com/",
     "registry_version": 4,
-    "status": "experimental",
+    "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "The login is admin, with no password by default",
@@ -29,87 +29,24 @@
     },
     "images": [
         {
-            "filename": "vEOS64-lab-4.32.0F.vmdk",
-            "version": "4.32.0F",
-            "md5sum": "851771260bb18ad3e90fa6956f0c6161",
-            "filesize": 591724544,
+            "filename": "vEOS-lab-4.33.1F.qcow2",
+            "version": "4.33.1F",
+            "md5sum": "8f662409c0732ed9f682edce63601e8a",
+            "filesize": 611909632,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
         {
-            "filename": "vEOS64-lab-4.31.3M.vmdk",
-            "version": "4.31.3M",
-            "md5sum": "7df107da137f4a4e752014d4f0e94cd3",
-            "filesize": 577961984,
+            "filename": "vEOS-lab-4.32.3M.qcow2",
+            "version": "4.32.3M",
+            "md5sum": "46fc46f5ed1da8752eed8396f08862f8",
+            "filesize": 605683712,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
         {
-            "filename": "vEOS64-lab-4.30.6M.vmdk",
-            "version": "4.30.6M",
-            "md5sum": "19721aace820b9ebf6d7ae6524803cf5",
-            "filesize": 553123840,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS64-lab-4.29.8M.vmdk",
-            "version": "4.29.8M",
-            "md5sum": "131888f74cd63a93894521d40eb4d0b6",
-            "filesize": 548405248,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS64-lab-4.28.11M.vmdk",
-            "version": "4.28.11M",
-            "md5sum": "6cac0e7b04a74ee0dc358327a00accfd",
-            "filesize": 513343488,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS64-lab-4.27.12M.vmdk",
-            "version": "4.27.12M",
-            "md5sum": "34c4f785c7fc054cda8754dd13c0d7c7",
-            "filesize": 496697344,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.32.0F.vmdk",
-            "version": "4.32.0F",
-            "md5sum": "584b901a1249717504050e48f74fb8dd",
-            "filesize": 591396864,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.31.3M.vmdk",
-            "version": "4.31.3M",
-            "md5sum": "a2e130697cdf8547006eebebde6eefca",
-            "filesize": 590086144,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.30.6M.vmdk",
-            "version": "4.30.6M",
-            "md5sum": "a4467648bcfa7b19640af8a4ad3153c6",
-            "filesize": 565968896,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.29.8M.vmdk",
-            "version": "4.29.8M",
-            "md5sum": "1952f6114a4376212c525db9ec8efd5f",
-            "filesize": 558039040,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.28.11M.vmdk",
-            "version": "4.28.11M",
-            "md5sum": "5502df24dfc231c45afb33d6018c16d0",
-            "filesize": 521338880,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.27.12M.vmdk",
-            "version": "4.27.12M",
-            "md5sum": "e08a97e7c1977993f947fedeb4c6ddd5",
-            "filesize": 504299520,
+            "filename": "vEOS-lab-4.31.6M.qcow2",
+            "version": "4.31.6M",
+            "md5sum": "7410110b77472f058322ec4681f8a356",
+            "filesize": 590479360,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
         {
@@ -118,459 +55,28 @@
             "md5sum": "8d7e754efebca1930a93a2587ff7606c",
             "filesize": 6291456,
             "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.26.2F.vmdk",
-            "version": "4.26.2F",
-            "md5sum": "de8ce9750fddb63bd3f71bccfcd7651e",
-            "filesize": 475332608,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.25.3M.vmdk",
-            "version": "4.25.3M",
-            "md5sum": "2f196969036b4d283e86f15118d59c26",
-            "filesize": 451543040,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.24.3M.vmdk",
-            "version": "4.24.3M",
-            "md5sum": "0a28e44c7ce4a8965f24a4a463a89b7d",
-            "filesize": 455213056,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.24.2.1F.vmdk",
-            "version": "4.24.2.1F",
-            "md5sum": "6bab8b59ce5230e243e56f4127448fc8",
-            "filesize": 455213056,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.23.4.2M.vmdk",
-            "version": "4.23.4.2M",
-            "md5sum": "d21cbef4e39f1e783b13a926cb54a242",
-            "filesize": 454295552,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.23.0.1F.vmdk",
-            "version": "4.23.0.1F",
-            "md5sum": "08d52154aa11a834aef9f42bbf29f977",
-            "filesize": 439484416,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.22.2.1F.vmdk",
-            "version": "4.22.2.1F",
-            "md5sum": "2a425bf8efe569a2bdf0e328f240cd16",
-            "filesize": 426377216,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.22.0F.vmdk",
-            "version": "4.22.0F",
-            "md5sum": "cfcc75c2b8176cfd819afcfd6799b74c",
-            "filesize": 414121984,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.21.1.1F.vmdk",
-            "version": "4.21.1F",
-            "md5sum": "02bfb7e53781fd44ff02357f201586d9",
-            "filesize": 358809600,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.20.10M-combined.vmdk",
-            "version": "4.20.10M-combined",
-            "md5sum": "d1f2d650f93dbf24e04fdd2c9d62bd62",
-            "filesize": 334626816,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.20.1F.vmdk",
-            "version": "4.20.1F",
-            "md5sum": "aadb6f3dbff28317f68cb4c4502d0db8",
-            "filesize": 662044672,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.19.10M-combined.vmdk",
-            "version": "4.19.10M-combined",
-            "md5sum": "103daa45c33be4584cbe6adc60de46a3",
-            "filesize": 324141056,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.19.10M.vmdk",
-            "version": "4.19.10M",
-            "md5sum": "665ed14389411ae5f16ba0a2ff84240a",
-            "filesize": 637337600,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.18.10M-combined.vmdk",
-            "version": "4.18.10M-combined",
-            "md5sum": "e33e0ef5b8cecc84c5bb57569b36b9c6",
-            "filesize": 317652992,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.18.10M.vmdk",
-            "version": "4.18.10M",
-            "md5sum": "1d87e9ace37fe3706dbf3e49c8d4d231",
-            "filesize": 624427008,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.18.5M.vmdk",
-            "version": "4.18.5M",
-            "md5sum": "b1ee6268dbaf2b2276fd7a5286c7ce2b",
-            "filesize": 623116288,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.18.1F.vmdk",
-            "version": "4.18.1F",
-            "md5sum": "9648c63185f3b793b47528a858ca4364",
-            "filesize": 620625920,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.17.8M.vmdk",
-            "version": "4.17.8M",
-            "md5sum": "afc79a06f930ea2cc0ae3e03cbfd3f23",
-            "filesize": 608829440,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.17.2F.vmdk",
-            "version": "4.17.2F",
-            "md5sum": "3b4845edfa77cf9aaeb9c0a005d3e277",
-            "filesize": 609615872,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.16.13M.vmdk",
-            "version": "4.16.13M",
-            "md5sum": "4d0facf90140fc3aab031f0f8f88a32f",
-            "filesize": 521404416,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.16.6M.vmdk",
-            "version": "4.16.6M",
-            "md5sum": "b3f7b7cee17f2e66bb38b453a4939fef",
-            "filesize": 519962624,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.15.10M.vmdk",
-            "version": "4.15.10M",
-            "md5sum": "98e08281a9c48ddf6f3c5d62a124a20f",
-            "filesize": 517079040,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.15.5M.vmdk",
-            "version": "4.15.5M",
-            "md5sum": "cd74bb69c7ee905ac3d33c4d109f3ab7",
-            "filesize": 516030464,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.14.14M.vmdk",
-            "version": "4.14.14M",
-            "md5sum": "d81ba0522f4d7838d96f7985e41cdc47",
-            "filesize": 422641664,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.13.16M.vmdk",
-            "version": "4.13.16M",
-            "md5sum": "5763b2c043830c341c8b1009f4ea9a49",
-            "filesize": 404684800,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "vEOS-lab-4.13.8M.vmdk",
-            "version": "4.13.8M",
-            "md5sum": "a47145b9e6e7a24171c0850f8755535e",
-            "filesize": 409010176,
-            "download_url": "https://www.arista.com/en/support/software-download"
-        },
-        {
-            "filename": "Aboot-veos-serial-8.0.0.iso",
-            "version": "8.0.0",
-            "md5sum": "488ad1c435d18c69bb8d69c7806457c9",
-            "filesize": 5242880,
-            "download_url": "https://www.arista.com/en/support/software-download"
         }
     ],
     "versions": [
         {
-            "name": "4.32.0F",
+            "name": "4.33.1F",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.32.0F.vmdk"
+                "hdb_disk_image": "vEOS-lab-4.33.1F.qcow2"
             }
         },
         {
-            "name": "4.31.3M",
+            "name": "4.32.3M",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.31.3M.vmdk"
+                "hdb_disk_image": "vEOS-lab-4.32.3M.qcow2"
             }
         },
         {
-            "name": "4.30.6M",
+            "name": "4.31.6M",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.30.6M.vmdk"
-            }
-        },
-        {
-            "name": "4.29.8M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.29.8M.vmdk"
-            }
-        },
-        {
-            "name": "4.28.11M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.28.11M.vmdk"
-            }
-        },
-        {
-            "name": "4.27.12M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS64-lab-4.27.12M.vmdk"
-            }
-        },
-        {
-            "name": "4.32.0F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.32.0F.vmdk"
-            }
-        },
-        {
-            "name": "4.31.3M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.31.3M.vmdk"
-            }
-        },
-        {
-            "name": "4.30.6M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.30.6M.vmdk"
-            }
-        },
-        {
-            "name": "4.29.8M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.29.8M.vmdk"
-            }
-        },
-        {
-            "name": "4.28.11M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.28.11M.vmdk"
-            }
-        },
-        {
-            "name": "4.27.12M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.27.12M.vmdk"
-            }
-        },
-        {
-            "name": "4.26.2F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.26.2F.vmdk"
-            }
-        },
-        {
-            "name": "4.25.3M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.25.3M.vmdk"
-            }
-        },
-        {
-            "name": "4.24.3M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.24.3M.vmdk"
-            }
-        },
-        {
-            "name": "4.24.2.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.24.2.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.23.4.2M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.23.4.2M.vmdk"
-            }
-        },
-        {
-            "name": "4.23.0.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.23.0.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.22.2.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.22.2.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.22.0F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.22.0F.vmdk"
-            }
-        },
-        {
-            "name": "4.21.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.21.1.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.20.10M-combined",
-            "images": {
-                "hda_disk_image": "vEOS-lab-4.20.10M-combined.vmdk"
-            }
-        },
-        {
-            "name": "4.20.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.20.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.19.10M-combined",
-            "images": {
-                "hda_disk_image": "vEOS-lab-4.19.10M-combined.vmdk"
-            }
-        },
-        {
-            "name": "4.19.10M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.19.10M.vmdk"
-            }
-        },
-        {
-            "name": "4.18.10M-combined",
-            "images": {
-                "hda_disk_image": "vEOS-lab-4.18.10M-combined.vmdk"
-            }
-        },
-        {
-            "name": "4.18.10M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.18.10M.vmdk"
-            }
-        },
-        {
-            "name": "4.18.5M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.18.5M.vmdk"
-            }
-        },
-        {
-            "name": "4.18.1F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.18.1F.vmdk"
-            }
-        },
-        {
-            "name": "4.17.8M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.17.8M.vmdk"
-            }
-        },
-        {
-            "name": "4.17.2F",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.17.2F.vmdk"
-            }
-        },
-        {
-            "name": "4.16.13M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.16.13M.vmdk"
-            }
-        },
-        {
-            "name": "4.16.6M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.16.6M.vmdk"
-            }
-        },
-        {
-            "name": "4.15.10M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.15.10M.vmdk"
-            }
-        },
-        {
-            "name": "4.15.5M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.15.5M.vmdk"
-            }
-        },
-        {
-            "name": "4.14.14M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.14.14M.vmdk"
-            }
-        },
-        {
-            "name": "4.13.16M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.13.16M.vmdk"
-            }
-        },
-        {
-            "name": "4.13.8M",
-            "images": {
-                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                "hdb_disk_image": "vEOS-lab-4.13.8M.vmdk"
+                "hdb_disk_image": "vEOS-lab-4.31.6M.qcow2"
             }
         }
     ]

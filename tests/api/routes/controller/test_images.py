@@ -19,6 +19,7 @@ import os
 import pytest
 import hashlib
 
+from tests.utils import asyncio_patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -261,10 +262,13 @@ class TestImageRoutes:
 
     async def test_prune_images(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
-        response = await client.post(app.url_path_for("prune_images"))
+        images_repo = ImagesRepository(db_session)
+        images_in_db = await images_repo.get_images()
+        assert len(images_in_db) != 0
+
+        response = await client.delete(app.url_path_for("prune_images"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        images_repo = ImagesRepository(db_session)
         images_in_db = await images_repo.get_images()
         assert len(images_in_db) == 0
 
@@ -275,7 +279,7 @@ class TestImageRoutes:
             controller: Controller
     ) -> None:
 
-        controller.appliance_manager.install_builtin_appliances()
+        await controller.appliance_manager.install_builtin_appliances()
         controller.appliance_manager.load_appliances()  # make sure appliances are loaded
         image_path = "tests/resources/empty30G.qcow2"
         image_name = os.path.basename(image_path)
@@ -292,3 +296,32 @@ class TestImageRoutes:
         assert len(templates) == 1
         assert templates[0].name == "Empty VM"
         assert templates[0].version == "30G"
+        await templates_repo.delete_template(templates[0].template_id)
+
+    async def test_install_all(
+            self, app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            controller: Controller
+    ) -> None:
+
+        image_path = "tests/resources/empty100G.qcow2"
+        image_name = os.path.basename(image_path)
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        response = await client.post(
+            app.url_path_for("upload_image", image_path=image_name),
+            content=image_data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        controller.appliance_manager.load_appliances()  # make sure appliances are loaded
+        with asyncio_patch("gns3server.api.routes.controller.images.get_builtin_disks", return_value=[]) as mock:
+            response = await client.post(app.url_path_for("install_images"))
+            assert mock.called
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        templates_repo = TemplatesRepository(db_session)
+        templates = await templates_repo.get_templates()
+        assert len(templates) == 1
+        assert templates[0].name == "Empty VM"
+        assert templates[0].version == "100G"

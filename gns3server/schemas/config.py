@@ -147,7 +147,7 @@ class ServerSettings(BaseModel):
     allow_remote_console: bool = False
     enable_builtin_templates: bool = True
     install_builtin_appliances: bool = True
-    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True, use_enum_values=True)
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
     @field_validator("additional_images_paths", mode="before")
     @classmethod

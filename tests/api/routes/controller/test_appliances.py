@@ -28,14 +28,16 @@ pytestmark = pytest.mark.asyncio
 
 class TestApplianceRoutes:
 
-    @pytest.fixture(autouse=True)
-    def _install_builtin_appliances(self, controller: Controller):
+    # @pytest.fixture(autouse=True)
+    # def _install_builtin_appliances(self, controller: Controller):
+    #
+    #     controller.appliance_manager.install_builtin_appliances()
+    #     controller.appliance_manager.load_appliances()
 
-        controller.appliance_manager.install_builtin_appliances()
+    async def test_appliances_list(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
+
+        await controller.appliance_manager.install_builtin_appliances()
         controller.appliance_manager.load_appliances()
-
-    async def test_appliances_list(self, app: FastAPI, client: AsyncClient) -> None:
-
         response = await client.get(app.url_path_for("get_appliances"))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) > 0

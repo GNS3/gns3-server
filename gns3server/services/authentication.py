@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from jose import JWTError, jwt
+from joserfc import jwt
+from joserfc.jwk import OctKey
+from joserfc.errors import JoseError
 from datetime import datetime, timedelta, timezone
 import bcrypt
 
@@ -56,7 +57,8 @@ class AuthService:
             secret_key = DEFAULT_JWT_SECRET_KEY
             log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
         algorithm = Config.instance().settings.Controller.jwt_algorithm
-        encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
+        key = OctKey.import_key(secret_key)
+        encoded_jwt = jwt.encode({"alg": algorithm}, to_encode, key)
         return encoded_jwt
 
     def get_username_from_token(self, token: str, secret_key: str = None) -> Optional[str]:
@@ -73,11 +75,12 @@ class AuthService:
                 secret_key = DEFAULT_JWT_SECRET_KEY
                 log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
             algorithm = Config.instance().settings.Controller.jwt_algorithm
-            payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-            username: str = payload.get("sub")
+            key = OctKey.import_key(secret_key)
+            payload = jwt.decode(token, key, algorithms=[algorithm])
+            username: str = payload.claims.get("sub")
             if username is None:
                 raise credentials_exception
             token_data = TokenData(username=username)
-        except (JWTError, ValidationError):
+        except (JoseError, ValidationError, ValueError):
             raise credentials_exception
         return token_data.username
