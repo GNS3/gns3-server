@@ -284,7 +284,7 @@ async def start_iou_node_capture(
     """
 
     pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await node.start_capture(adapter_number, pcap_file_path)
+    await node.start_capture(adapter_number, port_number, pcap_file_path)
     return {"pcap_file_path": str(pcap_file_path)}
 
 
