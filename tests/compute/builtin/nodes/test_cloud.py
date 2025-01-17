@@ -25,6 +25,8 @@ from gns3server.compute.nios.nio_udp import NIOUDP
 from tests.utils import asyncio_patch
 
 
+pytestmark = pytest.mark.asyncio
+
 @pytest.fixture
 def nio():
 
@@ -39,7 +41,6 @@ async def manager():
     return m
 
 
-@pytest.mark.asyncio
 async def test_json_with_ports(on_gns3vm, compute_project, manager):
 
     ports = [
@@ -78,7 +79,7 @@ async def test_json_with_ports(on_gns3vm, compute_project, manager):
     }
 
 
-def test_json_without_ports(on_gns3vm, compute_project, manager):
+async def test_json_without_ports(on_gns3vm, compute_project, manager):
     """
     If no interface is provide the cloud is pre-fill with non special interfaces
     """
@@ -117,7 +118,6 @@ def test_json_without_ports(on_gns3vm, compute_project, manager):
     }
 
 
-@pytest.mark.asyncio
 async def test_update_port_mappings(on_gns3vm, compute_project):
     """
     We don't allow an empty interface in the middle of port list
@@ -158,7 +158,6 @@ async def test_update_port_mappings(on_gns3vm, compute_project):
     assert cloud.ports_mapping == ports1
 
 
-@pytest.mark.asyncio
 async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
     ports = [
         {
@@ -186,7 +185,6 @@ async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
     ])
 
 
-@pytest.mark.asyncio
 async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project, nio):
     """
     Bridge can't be connected directly to a cloud we use a tap in the middle

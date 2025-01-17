@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 import pytest_asyncio
 import tempfile
 import shutil
@@ -13,6 +12,7 @@ import stat
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from httpx import AsyncClient
+from httpx_ws.transport import ASGIWebSocketTransport
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
@@ -34,25 +34,14 @@ sys._called_from_test = True
 sys.original_platform = sys.platform
 
 
-# https://github.com/pytest-dev/pytest-asyncio/issues/68
-# this event_loop is used by pytest-asyncio, and redefining it
-# is currently the only way of changing the scope of this fixture
-@pytest.fixture(scope="class")
-def event_loop(request):
-
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def app() -> FastAPI:
 
     from gns3server.api.server import app as gns3app
     yield gns3app
 
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def db_engine():
 
     db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
@@ -61,7 +50,7 @@ async def db_engine():
     #await engine.sync_engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def db_session(db_engine):
 
     # recreate database tables for each class
@@ -82,7 +71,7 @@ async def db_session(db_engine):
         await session.close()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 
     async def _get_test_db():
@@ -94,14 +83,14 @@ async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
     app.dependency_overrides[get_db_session] = _get_test_db
 
     async with AsyncClient(
-            app=app,
             base_url="http://test-api",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
+            transport=ASGIWebSocketTransport(app=app)
     ) as async_client:
         yield async_client
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def test_user(db_session: AsyncSession) -> User:
 
     new_user = schemas.UserCreate(
@@ -121,7 +110,7 @@ async def test_user(db_session: AsyncSession) -> User:
     return user
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def test_compute(db_session: AsyncSession) -> Compute:
 
     new_compute = schemas.ComputeCreate(
@@ -140,12 +129,12 @@ async def test_compute(db_session: AsyncSession) -> Compute:
     return await compute_repo.create_compute(new_compute)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 def unauthorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
     return base_client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
 
     access_token = auth_service.create_access_token(test_user.username)
@@ -156,7 +145,7 @@ def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
     return base_client
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def client(base_client: AsyncClient) -> AsyncClient:
 
     # The super admin is automatically created when the users table is created
@@ -169,7 +158,7 @@ async def client(base_client: AsyncClient) -> AsyncClient:
     return base_client
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def compute_client(base_client: AsyncClient) -> AsyncClient:
 
     # default compute username is 'gns3'

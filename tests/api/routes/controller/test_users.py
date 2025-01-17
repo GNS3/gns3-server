@@ -254,22 +254,6 @@ class TestUserLogin:
         assert "token_type" in response.json()
         assert response.json().get("token_type") == "bearer"
 
-    async def test_user_can_authenticate_using_json(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-            config: Config
-    ) -> None:
-
-        credentials = {
-            "username": test_user.username,
-            "password": "user1_password",
-        }
-        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json().get("access_token")
-
     @pytest.mark.parametrize(
         "username, password, status_code",
         (
@@ -299,7 +283,19 @@ class TestUserLogin:
         assert response.status_code == status_code
         assert "access_token" not in response.json()
 
-    async def test_user_can_use_token_as_url_param(
+
+class TestUnauthorizedUser:
+
+    async def test_user_cannot_access_own_data_if_not_authenticated(
+            self, app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_user_can_authenticate_using_json(
             self,
             app: FastAPI,
             unauthorized_client: AsyncClient,
@@ -311,14 +307,13 @@ class TestUserLogin:
             "username": test_user.username,
             "password": "user1_password",
         }
-
         response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
         assert response.status_code == status.HTTP_200_OK
-        token = response.json().get("access_token")
+        assert response.json().get("access_token")
 
+        token = response.json().get("access_token")
         response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
         assert response.status_code == status.HTTP_200_OK
-
 
 class TestUserMe:
 
@@ -335,15 +330,6 @@ class TestUserMe:
         assert user.username == test_user.username
         assert user.email == test_user.email
         assert user.user_id == test_user.user_id
-
-    async def test_user_cannot_access_own_data_if_not_authenticated(
-            self, app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-    ) -> None:
-
-        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_authenticated_user_can_update_own_data(
             self,

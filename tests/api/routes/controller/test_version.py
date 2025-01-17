@@ -25,38 +25,41 @@ from gns3server.version import __version__
 pytestmark = pytest.mark.asyncio
 
 
-async def test_version_output(app: FastAPI, client: AsyncClient) -> None:
-
-    response = await client.get(app.url_path_for("get_version"))
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {'controller_host': '127.0.0.1', 'local': False, 'version': __version__}
+class TestVersionRoutes:
 
 
-async def test_version_input(app: FastAPI, client: AsyncClient) -> None:
+    async def test_version_output(self, app: FastAPI, client: AsyncClient) -> None:
 
-    params = {'version': __version__}
-    response = await client.post(app.url_path_for("check_version"), json=params)
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {'version': __version__}
-
-
-async def test_version_invalid_input(app: FastAPI, client: AsyncClient) -> None:
-
-    params = {'version': "0.4.2"}
-    response = await client.post(app.url_path_for("check_version"), json=params)
-    assert response.status_code == status.HTTP_409_CONFLICT
-    assert response.json() == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__)}
-
-
-async def test_version_invalid_input_schema(app: FastAPI, client: AsyncClient) -> None:
-
-    params = {'version': "0.4.2", "bla": "blu"}
-    response = await client.post(app.url_path_for("check_version"), json=params)
-    assert response.status_code == status.HTTP_409_CONFLICT
-
-
-async def test_version_invalid_json(app: FastAPI, client: AsyncClient) -> None:
-
-    params = "BOUM"
-    response = await client.post(app.url_path_for("check_version"), json=params)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        response = await client.get(app.url_path_for("get_version"))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {'controller_host': '127.0.0.1', 'local': False, 'version': __version__}
+    
+    
+    async def test_version_input(self, app: FastAPI, client: AsyncClient) -> None:
+    
+        params = {'version': __version__}
+        response = await client.post(app.url_path_for("check_version"), json=params)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {'version': __version__}
+    
+    
+    async def test_version_invalid_input(self, app: FastAPI, client: AsyncClient) -> None:
+    
+        params = {'version': "0.4.2"}
+        response = await client.post(app.url_path_for("check_version"), json=params)
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json() == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__)}
+    
+    
+    async def test_version_invalid_input_schema(self, app: FastAPI, client: AsyncClient) -> None:
+    
+        params = {'version': "0.4.2", "bla": "blu"}
+        response = await client.post(app.url_path_for("check_version"), json=params)
+        assert response.status_code == status.HTTP_409_CONFLICT
+    
+    
+    async def test_version_invalid_json(self, app: FastAPI, client: AsyncClient) -> None:
+    
+        params = "BOUM"
+        response = await client.post(app.url_path_for("check_version"), json=params)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
