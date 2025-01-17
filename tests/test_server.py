@@ -21,6 +21,7 @@ import pytest
 import locale
 import tempfile
 
+from gns3server.main import parse_arguments as parse
 from gns3server.server import Server
 from gns3server.config import Config
 
@@ -35,12 +36,18 @@ def test_locale_check():
     assert locale.getlocale() == ('fr_FR', 'UTF-8')
 
 
+def parse_arguments(server, argv):
+
+    parser, args= parse(argv)
+    return server._load_config_and_set_defaults(parser, args, argv)
+
+
 def test_parse_arguments(capsys, config, tmpdir):
 
     server = Server()
     server_config = config.settings.Server
     with pytest.raises(SystemExit):
-        server._parse_arguments(["--fail"])
+        parse_arguments(server, ["--fail"])
     out, err = capsys.readouterr()
     assert "usage" in err
     assert "fail" in err
@@ -67,48 +74,49 @@ def test_parse_arguments(capsys, config, tmpdir):
     # assert __version__ in out
     # assert "optional arguments" in out
 
-    assert server._parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
-    assert server._parse_arguments([]).host == "0.0.0.0"
+    assert parse_arguments(server, ["--host", "192.168.1.1"]).host == "192.168.1.1"
+    assert parse_arguments(server, []).host == "0.0.0.0"
     server_config.host = "192.168.1.2"
-    assert server._parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
-    assert server._parse_arguments([]).host == "192.168.1.2"
 
-    assert server._parse_arguments(["--port", "8002"]).port == 8002
-    assert server._parse_arguments([]).port == 3080
+    assert parse_arguments(server, ["--host", "192.168.1.1"]).host == "192.168.1.1"
+    assert parse_arguments(server, []).host == "192.168.1.2"
+
+    assert parse_arguments(server, ["--port", "8002"]).port == 8002
+    assert parse_arguments(server, []).port == 3080
     server_config.port = 8003
-    assert server._parse_arguments([]).port == 8003
+    assert parse_arguments(server, []).port == 8003
 
-    assert server._parse_arguments(["--ssl"]).ssl
-    assert server._parse_arguments([]).ssl is False
+    assert parse_arguments(server, ["--ssl"]).ssl
+    assert parse_arguments(server,[]).ssl is False
     with tempfile.NamedTemporaryFile(dir=str(tmpdir)) as f:
         server_config.certfile = f.name
         server_config.certkey = f.name
         server_config.enable_ssl = True
-        assert server._parse_arguments([]).ssl
+        assert parse_arguments(server, []).ssl
 
-    assert server._parse_arguments(["--certfile", "bla"]).certfile == "bla"
-    assert server._parse_arguments(["--certkey", "blu"]).certkey == "blu"
+    assert parse_arguments(server, ["--certfile", "bla"]).certfile == "bla"
+    assert parse_arguments(server,["--certkey", "blu"]).certkey == "blu"
 
-    assert server._parse_arguments(["-L"]).local
-    assert server._parse_arguments(["--local"]).local
+    assert parse_arguments(server,["-L"]).local
+    assert parse_arguments(server,["--local"]).local
     server_config.local = False
-    assert server._parse_arguments([]).local is False
+    assert parse_arguments(server,[]).local is False
     server_config.local = True
-    assert server._parse_arguments([]).local
+    assert parse_arguments(server,[]).local
 
-    assert server._parse_arguments(["-A"]).allow
-    assert server._parse_arguments(["--allow"]).allow
-    assert server._parse_arguments([]).allow is False
+    assert parse_arguments(server,["-A"]).allow
+    assert parse_arguments(server,["--allow"]).allow
+    assert parse_arguments(server,[]).allow is False
     server_config.allow_remote_console = True
-    assert server._parse_arguments([]).allow
+    assert parse_arguments(server,[]).allow
 
-    assert server._parse_arguments(["-q"]).quiet
-    assert server._parse_arguments(["--quiet"]).quiet
-    assert server._parse_arguments([]).quiet is False
+    assert parse_arguments(server,["-q"]).quiet
+    assert parse_arguments(server,["--quiet"]).quiet
+    assert parse_arguments(server,[]).quiet is False
 
-    assert server._parse_arguments(["-d"]).debug
-    assert server._parse_arguments(["--debug"]).debug
-    assert server._parse_arguments([]).debug is False
+    assert parse_arguments(server,["-d"]).debug
+    assert parse_arguments(server,["--debug"]).debug
+    assert parse_arguments(server,[]).debug is False
 
 
 def test_set_config_with_args(tmpdir):
@@ -118,7 +126,7 @@ def test_set_config_with_args(tmpdir):
     with tempfile.NamedTemporaryFile(dir=str(tmpdir)) as f:
         certfile = f.name
         certkey = f.name
-        args = server._parse_arguments(["--host",
+        args = parse_arguments(server, ["--host",
                                         "192.168.1.1",
                                         "--local",
                                         "--allow",
