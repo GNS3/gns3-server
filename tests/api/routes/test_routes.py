@@ -44,40 +44,49 @@ ALLOWED_CONTROLLER_ENDPOINTS = [
     ("/v3/symbols/default_symbols", "GET")
 ]
 
+class TestRoutes:
 
-# Controller endpoints have a OAuth2 bearer token authentication
-async def test_controller_endpoints_require_authentication(app: FastAPI, unauthorized_client: AsyncClient) -> None:
+    # Controller endpoints have a OAuth2 bearer token authentication
+    async def test_controller_endpoints_require_authentication(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient
+    ) -> None:
 
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            for method in list(route.methods):
-                if (route.path, method) not in ALLOWED_CONTROLLER_ENDPOINTS:
-                    response = await getattr(unauthorized_client, method.lower())(route.path)
-                    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        elif isinstance(route, APIWebSocketRoute):
-            params = {"token": "wrong_token"}
-            async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app)) as client:
-                async with aconnect_ws(route.path, client, params=params) as ws:
-                    json_notification = await ws.receive_json()
-                    assert json_notification['event'] == {
-                        'message': 'Could not authenticate while connecting to controller WebSocket: Could not validate credentials'
-                    }
-
-
-# Compute endpoints have a basic HTTP authentication
-async def test_compute_endpoints_require_authentication(app: FastAPI, unauthorized_client: AsyncClient) -> None:
-
-    for route in app.routes:
-        if isinstance(route, Mount):
-            for compute_route in route.routes:
-                if isinstance(compute_route, APIRoute):
-                    for method in list(compute_route.methods):
-                        response = await getattr(unauthorized_client, method.lower())(route.path + compute_route.path)
+        for route in app.routes:
+            if isinstance(route, APIRoute):
+                for method in list(route.methods):
+                    if (route.path, method) not in ALLOWED_CONTROLLER_ENDPOINTS:
+                        response = await getattr(unauthorized_client, method.lower())(route.path)
                         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-                elif isinstance(compute_route, APIWebSocketRoute):
-                    async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app)) as client:
-                        async with aconnect_ws(route.path + compute_route.path, client, auth=("wrong_user", "password123")) as ws:
-                            json_notification = await ws.receive_json()
-                            assert json_notification['event'] == {
-                                'message': 'Could not authenticate while connecting to compute WebSocket: Could not validate credentials'
-                            }
+            elif isinstance(route, APIWebSocketRoute):
+                params = {"token": "wrong_token"}
+                async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as client:
+                    async with aconnect_ws(route.path, client, params=params) as ws:
+                        json_notification = await ws.receive_json()
+                        assert json_notification['event'] == {
+                            'message': 'Could not authenticate while connecting to controller WebSocket: Could not validate credentials'
+                        }
+
+
+    # Compute endpoints have a basic HTTP authentication
+    async def test_compute_endpoints_require_authentication(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient
+    ) -> None:
+
+        for route in app.routes:
+            if isinstance(route, Mount):
+                for compute_route in route.routes:
+                    if isinstance(compute_route, APIRoute):
+                        for method in list(compute_route.methods):
+                            response = await getattr(unauthorized_client, method.lower())(route.path + compute_route.path)
+                            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+                    elif isinstance(compute_route, APIWebSocketRoute):
+                        async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as client:
+                            async with aconnect_ws(route.path + compute_route.path, client, auth=("wrong_user", "password123")) as ws:
+                                json_notification = await ws.receive_json()
+                                assert json_notification['event'] == {
+                                    'message': 'Could not authenticate while connecting to compute WebSocket: Could not validate credentials'
+                                }
