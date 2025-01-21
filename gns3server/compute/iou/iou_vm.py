@@ -390,14 +390,16 @@ class IOUVM(BaseNode):
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
                                                                                                                    ", ".join(missing_libs)))
 
-    async def _check_iou_licence(self):
+    def _is_iou_license_check_enabled(self):
         """
-        Checks for a valid IOU key in the iourc file (paranoid mode).
+        Returns if IOU license check is enabled.
+
+        :return: boolean
         """
 
         # license check is sent by the controller
         if self.license_check is False:
-            return
+            return False
 
         try:
             # we allow license check to be disabled server wide
@@ -407,7 +409,14 @@ class IOUVM(BaseNode):
 
         if server_wide_license_check is False:
             log.warning("License check is explicitly disabled on this server")
-            return
+            return False
+
+        return True
+
+    async def _check_iou_license(self):
+        """
+        Checks for a valid IOU key in the iourc file (paranoid mode).
+        """
 
         config = configparser.ConfigParser()
         try:
@@ -511,15 +520,16 @@ class IOUVM(BaseNode):
             except OSError as e:
                 raise IOUError("Could not rename nvram files: {}".format(e))
 
-            iourc_path = self.iourc_path
-            if not iourc_path:
-                raise IOUError("Could not find an iourc file (IOU license), please configure an IOU license")
-            if not os.path.isfile(iourc_path):
-                raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
+            iourc_path = None
+            if self._is_iou_license_check_enabled():
+                iourc_path = self.iourc_path
+                if not iourc_path:
+                    raise IOUError("Could not find an iourc file (IOU license), please configure an IOU license")
+                if not os.path.isfile(iourc_path):
+                    raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
+                await self._check_iou_license()
 
-            await self._check_iou_licence()
             await self._start_ubridge()
-
             self._create_netmap_config()
             if self.use_default_iou_values:
                 # make sure we have the default nvram amount to correctly push the configs
@@ -531,7 +541,7 @@ class IOUVM(BaseNode):
 
             self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=2)
 
-            # created a environment variable pointing to the iourc file.
+            # created an environment variable pointing to the iourc file.
             env = os.environ.copy()
             if "IOURC" not in os.environ and iourc_path:
                 env["IOURC"] = iourc_path

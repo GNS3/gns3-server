@@ -1,0 +1,50 @@
+{
+    "appliance_id": "92dbd0e9-144e-4c59-a4a8-97b6a1661818",
+    "name": "Innovaphone App-Platform",
+    "category": "guest",
+    "description": "In addition to telephony, apps for Video Telephony, Chat, Conferencing, Application Sharing and many other functions have become indispensable UCC tools in the area of business communication. Based on the myApps platform and its various components, innovaphone provides a collaborative work and communication platform for enhanced corporate communications \u2013 regardless of the location and the device being used. The innovaphone platform myApps consists of many independent components that work well individually, yet unfold their remarkable performance when combined.",
+    "vendor_name": "Innovaphone",
+    "vendor_url": "https://www.innovaphone.com",
+    "vendor_logo_url": "https://www.innovaphone.com/content/downloads/innovaphone-myapps-logo-short-without-background-screen.png",
+    "documentation_url": "https://wiki.innovaphone.com/index.php?title=Reference14r2:Concept_App_Platform",
+    "product_name": "App-Platform",
+    "product_url": "https://www.innovaphone.com/en/products/myapps/myapps-platform.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free-to-try",
+    "maintainer": "Thomas Marchsteiner",
+    "maintainer_email": "thomas.marchsteiner@acp.at",
+    "usage": "Default users console:root/iplinux , ssh:admin/ipapps , Webinterface:pwd \nAfter first boot wait for automatic reboot.\nA static ip can be set via the setip utility. \nLoading another keymap can be done via the loadkeys command. \nThe app-platform-disk1.vmdk file is contained within an ova file. \nIt can be extraced with the tar utility, 7Zip or any other tool which can handle tar files.",
+    "symbol": "innovaphone-ap-icon.jpg",
+    "first_port_name": "eth0",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 1,
+        "ram": 512,
+        "cpus": 1,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "d",
+        "kvm": "allow",
+        "on_close": "power_off",
+        "process_priority": "normal"
+    },
+    "images": [
+        {
+            "filename": "app-platform-disk1_120010.vmdk",
+            "version": "12.0010",
+            "md5sum": "d5a5a77f682c2c988b0810935d79a787",
+            "filesize": 129474560,
+            "download_url": "https://store.innovaphone.com/"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "app-platform-disk1_120010.vmdk"
+            },
+            "name": "12.0010"
+        }
+    ]
+}

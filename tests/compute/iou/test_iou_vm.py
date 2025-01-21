@@ -96,7 +96,7 @@ async def test_start(vm):
 
     mock_process = MagicMock()
     vm._check_requirements = AsyncioMagicMock(return_value=True)
-    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
 
@@ -108,7 +108,7 @@ async def test_start(vm):
         assert vm.command_line == ' '.join(mock_exec.call_args[0])
 
     assert vm._check_requirements.called
-    assert vm._check_iou_licence.called
+    assert vm._check_iou_license.called
     assert vm._start_ubridge.called
     vm._ubridge_send.assert_any_call("iol_bridge delete IOL-BRIDGE-513")
     vm._ubridge_send.assert_any_call("iol_bridge create IOL-BRIDGE-513 513")
@@ -123,7 +123,8 @@ async def test_start_with_iourc(vm, tmpdir):
     mock_process = MagicMock()
 
     vm._check_requirements = AsyncioMagicMock(return_value=True)
-    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._is_iou_license_check_enabled = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
     vm._start_ioucon = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
@@ -158,7 +159,7 @@ async def test_stop(vm):
 
     process = MagicMock()
     vm._check_requirements = AsyncioMagicMock(return_value=True)
-    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
     vm._start_ioucon = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
@@ -183,7 +184,7 @@ async def test_reload(vm, fake_iou_bin):
 
     process = MagicMock()
     vm._check_requirements = AsyncioMagicMock(return_value=True)
-    vm._check_iou_licence = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
     vm._start_ioucon = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
@@ -376,42 +377,42 @@ def test_get_legacy_vm_workdir():
 async def test_invalid_iou_file(vm, iourc_file):
 
     hostname = socket.gethostname()
-    await vm._check_iou_licence()
+    await vm._check_iou_license()
 
     # Missing ;
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\n{} = aaaaaaaaaaaaaaaa".format(hostname))
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
     # Key too short
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\n{} = aaaaaaaaaaaaaa;".format(hostname))
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
     # Invalid hostname
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\nbla = aaaaaaaaaaaaaa;")
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
     # Missing licence section
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[licensetest]\n{} = aaaaaaaaaaaaaaaa;")
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
     # Broken config file
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[")
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
     # Missing file
     with pytest.raises(IOUError):
         os.remove(iourc_file)
-        await vm._check_iou_licence()
+        await vm._check_iou_license()
 
 
 def test_iourc_content(vm):

@@ -163,7 +163,7 @@ def test_list_images(tmpdir):
             "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
             "local": False}):
 
-        assert list_images("dynamips") == [
+        assert sorted(list_images("dynamips"), key=lambda k: k['filename']) == [
             {
                 'filename': 'ios_image_1.image',
                 'filesize': 7,
@@ -179,22 +179,22 @@ def test_list_images(tmpdir):
         ]
 
         if sys.platform.startswith("linux"):
-            assert list_images("iou") == [
+            assert sorted(list_images("iou"), key=lambda k: k['filename']) == [
+                {
+                    'filename': 'iou32.bin',
+                    'filesize': 7,
+                    'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
+                    'path': 'iou32.bin'
+                },
                 {
                     'filename': 'iou64.bin',
                     'filesize': 7,
                     'md5sum': 'c73626d23469519894d58bc98bee9655',
                     'path': 'iou64.bin'
                 },
-                {
-                    'filename': 'iou32.bin',
-                    'filesize': 7,
-                    'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
-                    'path': 'iou32.bin'
-                }
             ]
 
-        assert list_images("qemu") == [
+        assert sorted(list_images("qemu"), key=lambda k: k['filename']) == [
             {
                 'filename': 'qemu_image.qcow2',
                 'filesize': 7,
