@@ -25,7 +25,7 @@
             "filesize": 243251976
         },
         {
-            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.bin",
+            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms",
             "version": "17.12.1",
             "md5sum": "2b5055e4cef8fd257416d74a94adb626",
             "filesize": 240355720
@@ -59,7 +59,7 @@
         {
             "name": "17.12.1",
             "images": {
-                "image": "x86_64_crb_linux_l2-adventerprisek9-ms.bin"
+                "image": "x86_64_crb_linux_l2-adventerprisek9-ms"
             }
         },
         {

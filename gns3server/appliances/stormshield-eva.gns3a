@@ -1,0 +1,50 @@
+{
+    "appliance_id": "60801097-332e-4f40-a63e-8ad62047c01f",
+    "name": "Stormshield EVA",
+    "category": "firewall",
+    "description": "Stormshield EVA (Elastic Virtual Appliance) is a french virtual firewall designed to protect network infrastructures. It offers advanced features such as filtering, intrusion prevention (IPS), VPN management (IPSec/SSL), and access control.",
+    "vendor_name": "Stormshield",
+    "vendor_url": "https://www.stormshield.com/",
+    "vendor_logo_url": "https://www.stormshield.com/wp-content/uploads/stormshield-logo.png",
+    "documentation_url": "https://www.stormshield.com/fr/ressourcescenter/network-security-elastic-virtual-appliances/",
+    "product_name": "Stormshield EVA",
+    "product_url": "https://www.stormshield.com/fr/produits-et-services/produits/protection-des-reseaux/nos-produits/appliances-virtuelles/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "service-contract",
+    "maintainer": "Samy SCANNA",
+    "maintainer_email": "samy.scanna@outlook.com",
+    "usage": "After the first boot, the appliance automatically runs the configuration script to set up the password, and network interfaces.",
+    "symbol": "stormshield.png",
+    "port_name_format": "port{port1}",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 8,
+        "ram": 2048,
+        "cpus": 1,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow",
+        "options": "-serial stdio",
+        "on_close": "shutdown_signal",
+        "process_priority": "normal"
+    },
+    "images": [
+        {
+            "filename": "utm-SNS-EVA-4.3.33-kvm.qcow2",
+            "version": "4.3.33",
+            "md5sum": "21d94d0e20f2e270f06c5853fd750d5b",
+            "filesize": 284360704,
+            "download_url": "https://mystormshield.eu/product/download/"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "utm-SNS-EVA-4.3.33-kvm.qcow2"
+            },
+            "name": "4.3.33"
+        }
+    ]
+}
