@@ -1,5 +1,13 @@
 # Change Log
 
+## 3.0.3 22/01/2025
+
+* Bundle web-ui v3.0.3
+* Refactor command line arguments parsing
+* Fix capture on IOU/IOL links. Fixes #2477
+* Use Python 3.9 to publish API documentation
+* Upgrade dependencies
+
 ## 2.2.53 21/01/2025
 
 * Bundle web-ui v2.2.53
