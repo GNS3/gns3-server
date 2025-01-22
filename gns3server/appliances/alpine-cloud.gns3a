@@ -1,0 +1,56 @@
+{
+    "appliance_id": "edbaa01e-2032-4ee2-bb9f-dd5c4d84c270",
+    "name": "Alpine Cloud Guest",
+    "category": "guest",
+    "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.",
+    "vendor_name": "Alpine Linux Development Team",
+    "vendor_url": "http://alpinelinux.org",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Alpine Linux.png",
+    "documentation_url": "http://wiki.alpinelinux.org",
+    "product_name": "Alpine Linux",
+    "product_url": "https://www.alpinelinux.org/cloud/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "\nUsername: alpine\nPassword: alpine",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2",
+            "version": "3.21.2",
+            "md5sum": "b40825dff2867e0ffaffbc4c87674462",
+            "filesize": 189726720,
+            "download_url": "https://www.alpinelinux.org/cloud/",
+            "direct_download_url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2"
+        },
+        {
+            "filename": "alpine-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "b1b4b16cc3bf0250c0fa377c19c97683",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/alpine-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/alpine-cloud/alpine-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.21.2",
+            "images": {
+                "hda_disk_image": "generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2",
+                "cdrom_image": "alpine-cloud-init-data.iso"
+            }
+        }
+    ]
+}
