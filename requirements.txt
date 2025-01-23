@@ -1,6 +1,6 @@
 uvicorn==0.33.0  # uvicorn 0.33 is the last version supporting Python 3.8
 pydantic==2.10.4
-fastapi==0.115.6
+fastapi==0.115.7
 python-multipart==0.0.20
 websockets==14.1
 aiohttp>=3.10.10,<3.11
