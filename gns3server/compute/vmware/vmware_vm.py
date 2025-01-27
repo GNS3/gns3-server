@@ -352,6 +352,7 @@ class VMwareVM(BaseNode):
         vnet = self._get_vnet(adapter_number)
         await self._ubridge_send(f"bridge create {vnet}")
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
+        block_host_traffic = self.manager.config.settings.VMware.block_host_traffic
 
         if sys.platform.startswith("darwin"):
             if parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
@@ -360,13 +361,11 @@ class VMwareVM(BaseNode):
                 vmnet_interface = self.manager.find_bridge_interface(vmnet_interface)
                 if not vmnet_interface:
                     raise VMwareError(f"Could not find bridge interface linked with {vmnet_interface}")
-                block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
                 await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
             else:
                 # special case on macOS, we cannot bind VMnet interfaces using the libpcap
                 await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
-            block_host_traffic = self.manager.config.VMware.block_host_traffic
             await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):
