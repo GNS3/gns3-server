@@ -1,0 +1,3 @@
+Public Domain from GNS3 for the base symbol
+
+Docker logo Copyright Docker https://www.docker.com

@@ -1,0 +1,2 @@
+Based on qemu_guest_win7_bybaro symbol by Andrea Barontini (baro77@gmail.com)
+Edited by Adnan RIHAN (adnan@rihan.fr)

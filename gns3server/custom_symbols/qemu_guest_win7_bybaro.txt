@@ -1,0 +1,3 @@
+Based on qemu_guest GNS3 embedded symbol
+and Microsoft Windows 7 logo as shown on Wikipedia.
+Editing by Andrea Barontini (baro77@gmail.com)

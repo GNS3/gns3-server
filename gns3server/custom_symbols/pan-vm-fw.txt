@@ -1,0 +1,2 @@
+Based on Firewall logo Public Domain GNS3
+And Palo Alto logo from https://www.paloaltonetworks.com
