@@ -1,2 +1,0 @@
-Based on Juniper's Junos Router Icon.
-Editing by Andrea Barontini (baro77@gmail.com)
