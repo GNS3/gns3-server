@@ -74,6 +74,7 @@ class Controller:
 
         log.info("Controller is starting")
         await self._install_base_configs()
+        await self._install_custom_symbols()
         installed_disks = await self._install_builtin_disks()
         if installed_disks:
             await update_disk_checksums(installed_disks)
@@ -370,6 +371,19 @@ class Controller:
             return await Controller.install_resource_files(dst_path, "disks")
         except OSError as e:
             log.error(f"Could not install disk files to {dst_path}: {e}")
+
+    async def _install_custom_symbols(self):
+        """
+        At startup we copy custom symbols to the user location to allow
+        them to use with appliances
+        """
+
+        dst_path = self.symbols.symbols_path()
+        log.info(f"Installing custom symbols in '{dst_path}'")
+        try:
+            return await Controller.install_resource_files(dst_path, "custom_symbols", upgrade_resources=False)
+        except OSError as e:
+            log.error(f"Could not install custom symbols to {dst_path}: {e}")
 
     def images_path(self):
         """
