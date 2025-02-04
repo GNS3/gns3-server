@@ -43,8 +43,8 @@ class DockerBase(BaseModel):
     environment: Optional[str] = Field(None, description="Docker environment variables")
     extra_hosts: Optional[str] = Field(None, description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List[str]] = Field(None, description="Additional directories to make persistent")
-    memory: Optional[int] = Field(None, description="Maximum amount of memory the container can use in MB")
-    cpus: Optional[float] = Field(None, description="Maximum amount of CPU resources the container can use")
+    memory: Optional[int] = Field(None, ge=0, description="Maximum amount of memory the container can use in MB")
+    cpus: Optional[float] = Field(None, ge=0, description="Maximum amount of CPU resources the container can use")
     custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adapters")
 
 

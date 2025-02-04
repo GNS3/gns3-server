@@ -28,10 +28,10 @@ class IOUTemplate(TemplateBase):
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
     path: str = Field(..., description="Path of IOU executable")
-    ethernet_adapters: Optional[int] = Field(2, description="Number of ethernet adapters")
-    serial_adapters: Optional[int] = Field(2, description="Number of serial adapters")
-    ram: Optional[int] = Field(256, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(128, description="Amount of NVRAM in KB")
+    ethernet_adapters: Optional[int] = Field(2, ge=0, description="Number of ethernet adapters")
+    serial_adapters: Optional[int] = Field(2, ge=0, description="Number of serial adapters")
+    ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     use_default_iou_values: Optional[bool] = Field(True, description="Use default IOU values")
     startup_config: Optional[str] = Field("iou_l3_base_startup-config.txt", description="Startup-config of IOU")
     private_config: Optional[str] = Field("", description="Private-config of IOU")

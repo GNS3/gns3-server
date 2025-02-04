@@ -124,8 +124,8 @@ class DynamipsBase(BaseModel):
     name: Optional[str] = None
     dynamips_id: Optional[int] = Field(None, description="Dynamips internal ID")
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    ram: Optional[int] = Field(None, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(None, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(None, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(None, gt=0, description="Amount of NVRAM in KB")
     image: Optional[str] = Field(None, description="Path to the IOS image")
     image_md5sum: Optional[str] = Field(None, description="Checksum of the IOS image")
     usage: Optional[str] = Field(None, description="How to use the Dynamips VM")
@@ -139,8 +139,8 @@ class DynamipsBase(BaseModel):
     idlemax: Optional[int] = Field(None, description="Idlemax value")
     idlesleep: Optional[int] = Field(None, description="Idlesleep value")
     exec_area: Optional[int] = Field(None, description="Exec area value")
-    disk0: Optional[int] = Field(None, description="Disk0 size in MB")
-    disk1: Optional[int] = Field(None, description="Disk1 size in MB")
+    disk0: Optional[int] = Field(None, ge=0, description="Disk0 size in MB")
+    disk1: Optional[int] = Field(None, ge=0, description="Disk1 size in MB")
     auto_delete_disks: Optional[bool] = Field(None, description="Automatically delete nvram and disk files")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[DynamipsConsoleType] = Field(None, description="Console type")
@@ -176,7 +176,7 @@ class DynamipsCreate(DynamipsBase):
     name: str
     platform: str = Field(..., description="Cisco router platform", pattern="^c[0-9]{4}$")
     image: str = Field(..., description="Path to the IOS image")
-    ram: int = Field(..., description="Amount of RAM in MB")
+    ram: int = Field(..., gt=0, description="Amount of RAM in MB")
 
 
 class DynamipsUpdate(DynamipsBase):
