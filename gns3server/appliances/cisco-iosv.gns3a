@@ -5,8 +5,9 @@
     "description": "Cisco Virtual IOS allows user to run IOS on a standard computer.",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/iol/",
     "product_name": "IOSv",
-    "product_url": "http://virl.cisco.com/",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
@@ -25,12 +26,11 @@
     },
     "images": [
         {
-            "filename": "IOSv_startup_config.img",
-            "version": "1",
-            "md5sum": "bc605651c4688276f81fd59dcf5cc786",
-            "filesize": 1048576,
-            "download_url": "https://sourceforge.net/projects/gns-3/files",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/IOSv_startup_config.img/download"
+            "filename": "vios-adventerprisek9-m.spa.159-3.m9.qcow2",
+            "version": "15.9(3)M9",
+            "md5sum": "01b707a2e33185d6d33e0255ced45d23",
+            "filesize": 57323008,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m8.qcow2",
@@ -101,9 +101,24 @@
             "md5sum": "79f613ac3b179d5a64520730925130b2",
             "filesize": 127926272,
             "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        },
+        {
+            "filename": "IOSv_startup_config.img",
+            "version": "1",
+            "md5sum": "bc605651c4688276f81fd59dcf5cc786",
+            "filesize": 1048576,
+            "download_url": "https://sourceforge.net/projects/gns-3/files",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/IOSv_startup_config.img/download"
         }
     ],
     "versions": [
+        {
+            "name": "15.9(3)M9",
+            "images": {
+                "hda_disk_image": "vios-adventerprisek9-m.spa.159-3.m9.qcow2",
+                "hdb_disk_image": "IOSv_startup_config.img"
+            }
+        },
         {
             "name": "15.9(3)M8",
             "images": {
