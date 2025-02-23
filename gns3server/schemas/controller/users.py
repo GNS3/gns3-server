@@ -39,7 +39,7 @@ class UserCreate(UserBase):
     """
 
     username: str = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
-    password: SecretStr = Field(..., min_length=6, max_length=100)
+    password: SecretStr = Field(..., min_length=8, max_length=100)
 
 
 class UserUpdate(UserBase):
@@ -47,7 +47,7 @@ class UserUpdate(UserBase):
     Properties to update a user.
     """
 
-    password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
+    password: Optional[SecretStr] = Field(None, min_length=8, max_length=100)
 
 
 class LoggedInUserUpdate(BaseModel):
@@ -55,7 +55,7 @@ class LoggedInUserUpdate(BaseModel):
     Properties to update a logged-in user.
     """
 
-    password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
+    password: Optional[SecretStr] = Field(None, min_length=8, max_length=100)
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
 

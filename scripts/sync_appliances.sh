@@ -28,7 +28,7 @@ rm -Rf /tmp/gns3-registry
 git clone https://github.com/GNS3/gns3-registry.git /tmp/gns3-registry
 mv /tmp/gns3-registry/appliances gns3server/appliances
 mv /tmp/gns3-registry/symbols gns3server/custom_symbols
-rm gns3server/custom_symbols/*.{txt,rst,md}
+rm -f gns3server/custom_symbols/*.{txt,rst,md}
 
 git add gns3server/appliances/*
 git add gns3server/custom_symbols/*
