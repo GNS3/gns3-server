@@ -1,5 +1,15 @@
 # Change Log
 
+## 3.0.4 25/02/2025
+
+* Require minimum 8 characters for passwords
+* Bundle web-ui v3.0.4
+* Upgrade dependencies
+* Fix auto idle-pc for IOS templates
+* Update schemas to add constraints for values like ram, nvram etc.
+* Install custom symbols. Fixes #2492
+* Fix VMware add ubridge connection. Fixes #2490
+
 ## 3.0.3 22/01/2025
 
 * Bundle web-ui v3.0.3
