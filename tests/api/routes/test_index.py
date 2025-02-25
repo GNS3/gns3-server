@@ -29,55 +29,57 @@ from gns3server.utils.get_resource import get_resource
 pytestmark = pytest.mark.asyncio
 
 
-def get_static(filename):
+class TestIndexRoutes:
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(os.path.abspath(os.path.join(current_dir, '../..', '..', 'gns3server', 'static')), filename)
+    def get_static(self, filename):
 
-
-async def test_debug(app: FastAPI, client: AsyncClient) -> None:
-
-    response = await client.get(app.url_path_for("debug"))
-    assert response.status_code == status.HTTP_200_OK
-    html = response.read().decode()
-    assert "Website" in html
-    assert __version__ in html
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(os.path.abspath(os.path.join(current_dir, '../..', '..', 'gns3server', 'static')), filename)
 
 
-# @pytest.mark.asyncio
-# async def test_controller(http_client, controller):
-#
-#     await controller.add_project(name="test")
-#     response = await http_client.get('/controller')
-#     assert "test" in await response.text()
-#     assert response.status_code == 200
-#
-#
-# @pytest.mark.asyncio
-# async def test_compute(http_client):
-#
-#     response = await http_client.get('/compute')
-#     assert response.status_code == 200
+    async def test_debug(self, app: FastAPI, client: AsyncClient) -> None:
 
-
-# @pytest.mark.asyncio
-# async def test_project(http_client, controller):
-#
-#     project = await controller.add_project(name="test")
-#     response = await http_client.get('/projects/{}'.format(project.id))
-#     assert response.status_code == 200
-
-
-async def test_web_ui(app: FastAPI, client: AsyncClient) -> None:
-
-    response = await client.get(app.url_path_for("web_ui", file_path="index.html"))
-    assert response.status_code == status.HTTP_200_OK
-
-
-async def test_web_ui_not_found(app: FastAPI, client: AsyncClient, tmpdir: str) -> None:
-
-    with patch('gns3server.utils.get_resource.get_resource') as mock:
-        mock.return_value = str(tmpdir)
-        response = await client.get(app.url_path_for("web_ui", file_path="not-found.txt"))
-        # should serve web-ui/index.html
+        response = await client.get(app.url_path_for("debug"))
         assert response.status_code == status.HTTP_200_OK
+        html = response.read().decode()
+        assert "Website" in html
+        assert __version__ in html
+
+
+    # @pytest.mark.asyncio
+    # async def test_controller(http_client, controller):
+    #
+    #     await controller.add_project(name="test")
+    #     response = await http_client.get('/controller')
+    #     assert "test" in await response.text()
+    #     assert response.status_code == 200
+    #
+    #
+    # @pytest.mark.asyncio
+    # async def test_compute(http_client):
+    #
+    #     response = await http_client.get('/compute')
+    #     assert response.status_code == 200
+
+
+    # @pytest.mark.asyncio
+    # async def test_project(http_client, controller):
+    #
+    #     project = await controller.add_project(name="test")
+    #     response = await http_client.get('/projects/{}'.format(project.id))
+    #     assert response.status_code == 200
+
+
+    async def test_web_ui(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("web_ui", file_path="index.html"))
+        assert response.status_code == status.HTTP_200_OK
+
+
+    async def test_web_ui_not_found(self, app: FastAPI, client: AsyncClient, tmpdir: str) -> None:
+
+        with patch('gns3server.utils.get_resource.get_resource') as mock:
+            mock.return_value = str(tmpdir)
+            response = await client.get(app.url_path_for("web_ui", file_path="not-found.txt"))
+            # should serve web-ui/index.html
+            assert response.status_code == status.HTTP_200_OK

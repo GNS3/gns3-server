@@ -1,5 +1,33 @@
 # Change Log
 
+## 3.0.4 25/02/2025
+
+* Require minimum 8 characters for passwords
+* Bundle web-ui v3.0.4
+* Upgrade dependencies
+* Fix auto idle-pc for IOS templates
+* Update schemas to add constraints for values like ram, nvram etc.
+* Install custom symbols. Fixes #2492
+* Fix VMware add ubridge connection. Fixes #2490
+
+## 3.0.3 22/01/2025
+
+* Bundle web-ui v3.0.3
+* Refactor command line arguments parsing
+* Fix capture on IOU/IOL links. Fixes #2477
+* Use Python 3.9 to publish API documentation
+* Upgrade dependencies
+
+## 2.2.53 21/01/2025
+
+* Bundle web-ui v2.2.53
+* Add more information when patching .vbox file. Ref https://github.com/GNS3/gns3-gui/issues/3542
+* Increase timeout to run compute HTTP queries. Fixes #2461
+* Use 'allow_methods="*"' in aiohttp_cors.ResourceOptions(). Fixes #2459
+* Upgrade dependencies
+* Update remote-install.sh to support a custom repository and the deb822 source format
+* Fix: do not use the iourc file if IOU licence check is not enabled
+
 ## 3.0.2 03/01/2025
 
 * Bundle web-ui v3.0.2
@@ -31,7 +59,6 @@
 ## 2.2.52 02/12/2024
 
 * Bundle web-ui v2.2.52
-* Sync appliances
 * Remove restrictions based on file extension when listing images and fix ELF header checks
 * Fix use project name instead of ID for fast duplication when running local server. Fixes #2446
 * Overwrite user resources when the originals have changed.

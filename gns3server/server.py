@@ -23,7 +23,6 @@ Start the program. Use main.py to load it.
 import os
 import datetime
 import locale
-import argparse
 import psutil
 import sys
 import asyncio
@@ -33,13 +32,10 @@ import uvicorn
 import secrets
 import string
 
-from gns3server.controller import Controller
-from gns3server.compute.port_manager import PortManager
 from gns3server.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
-from gns3server.api.server import app
 from pydantic import ValidationError, SecretStr
 
 import logging
@@ -90,40 +86,13 @@ class Server:
         else:
             log.info(f"Current locale is {language}.{encoding}")
 
-    def _parse_arguments(self, argv):
+    def _setup_logging(self, args):
         """
-        Parse command line arguments and override local configuration
+        Setup logging.
 
-        :params args: Array of command line arguments
+        :param args: command line arguments
         """
 
-        parser = argparse.ArgumentParser(description=f"GNS3 server version {__version__}")
-        parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
-        parser.add_argument("--host", help="run on the given host/IP address")
-        parser.add_argument("--port", help="run on the given port", type=int)
-        parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
-        parser.add_argument("--config", help="Configuration file")
-        parser.add_argument("--certfile", help="SSL cert file")
-        parser.add_argument("--certkey", help="SSL key file")
-        parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
-        parser.add_argument(
-            "-A", "--allow", action="store_true", help="allow remote connections to local console ports"
-        )
-        parser.add_argument("-q", "--quiet", default=False, action="store_true", help="do not show logs on stdout")
-        parser.add_argument("-d", "--debug", default=False, action="store_true", help="show debug logs")
-        parser.add_argument("--logfile", "--log", help="send output to logfile instead of console")
-        parser.add_argument("--logmaxsize", default=10000000, help="maximum logfile size in bytes (default is 10MB)")
-        parser.add_argument(
-            "--logbackupcount", default=10, help="number of historical log files to keep (default is 10)"
-        )
-        parser.add_argument(
-            "--logcompression", default=False, action="store_true", help="compress inactive (historical) logs"
-        )
-        parser.add_argument("--daemon", action="store_true", help="start as a daemon")
-        parser.add_argument("--pid", help="store process pid")
-        parser.add_argument("--profile", help="Settings profile (blank will use default settings files)")
-
-        args = parser.parse_args(argv)
         level = logging.INFO
         if args.debug:
             level = logging.DEBUG
@@ -136,6 +105,15 @@ class Server:
             compression=args.logcompression,
             quiet=args.quiet,
         )
+
+    @staticmethod
+    def _load_config_and_set_defaults(parser, args, argv=None):
+        """
+        Parse command line arguments and override local configuration
+
+        :param parser: ArgumentParser instance
+        :param args: command line arguments
+        """
 
         try:
             if args.config:
@@ -157,7 +135,10 @@ class Server:
         }
 
         parser.set_defaults(**defaults)
-        return parser.parse_args(argv)
+        if argv is None:
+            argv = sys.argv[1:]
+        args = parser.parse_args(argv)
+        return args
 
     @staticmethod
     def _set_config_defaults_from_command_line(args):
@@ -174,6 +155,8 @@ class Server:
         config.Server.enable_ssl = args.ssl
 
     def _signal_handling(self):
+
+        from gns3server.controller import Controller
         def signal_handler(signame, *args):
 
             try:
@@ -239,9 +222,10 @@ class Server:
             log.critical("Can't write pid file %s: %s", path, str(e))
             sys.exit(1)
 
-    async def run(self):
+    async def run(self, parser, args):
 
-        args = self._parse_arguments(sys.argv[1:])
+        self._setup_logging(args)
+        args = self._load_config_and_set_defaults(parser, args)
 
         if args.pid:
             self._pid_lock(args.pid)
@@ -256,7 +240,6 @@ class Server:
 
         self._set_config_defaults_from_command_line(args)
         config = Config.instance().settings
-
         if not config.Server.compute_password.get_secret_value():
             alphabet = string.ascii_letters + string.digits + string.punctuation
             generated_password = ''.join(secrets.choice(alphabet) for _ in range(16))
@@ -297,11 +280,13 @@ class Server:
         host = config.Server.host
         port = config.Server.port
 
+        from gns3server.compute.port_manager import PortManager
         PortManager.instance().console_host = host
         self._signal_handling()
 
         try:
             log.info(f"Starting server on {host}:{port}")
+            from gns3server.api.server import app
 
             # only show uvicorn access logs in debug mode
             access_log = False

@@ -30,8 +30,29 @@
     },
     "images": [
         {
+            "filename": "FMG_VM64_KVM-v7.4.6.M-build2588-FORTINET.out.kvm.qcow2",
+            "version": "7.4.6",
+            "md5sum": "7cb219e1070d393f61cf750d818b23b1",
+            "filesize": 349122560,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FMG_VM64_KVM-v7.4.5.M-build2553-FORTINET.out.kvm.qcow2",
+            "version": "7.4.5",
+            "md5sum": "fa59ddce0cb933741f16866472026723",
+            "filesize": 349769728,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FMG_VM64_KVM-v7.4.4.F-build2550-FORTINET.out.kvm.qcow2",
+            "version": "7.4.4",
+            "md5sum": "770727bb30555e6938308bbf95f19555",
+            "filesize": 349847552,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FMG_VM64_KVM-v7.4.3-build2487-FORTINET.out.kvm.qcow2",
-            "version": "7.4.23",
+            "version": "7.4.3",
             "md5sum": "b01d9f86aa27c538407d518df1326863",
             "filesize": 346107904,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
@@ -277,6 +298,27 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.4.6",
+            "images": {
+                "hda_disk_image": "FMG_VM64_KVM-v7.4.6.M-build2588-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "7.4.5",
+            "images": {
+                "hda_disk_image": "FMG_VM64_KVM-v7.4.5.M-build2553-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "7.4.4",
+            "images": {
+                "hda_disk_image": "FMG_VM64_KVM-v7.4.4.F-build2550-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "7.4.3",
             "images": {

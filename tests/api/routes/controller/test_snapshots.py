@@ -30,47 +30,49 @@ from gns3server.controller.snapshot import Snapshot
 pytestmark = pytest.mark.asyncio
 
 
-@pytest_asyncio.fixture
-async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
+class TestSnapshotRoutes:
 
-    u = str(uuid.uuid4())
-    params = {"name": "test", "project_id": u}
-    await client.post(app.url_path_for("create_project"), json=params)
-    project = controller.get_project(u)
-    return project
-
-
-@pytest_asyncio.fixture
-async def snapshot(project: Project):
-
-    snapshot = await project.snapshot("test")
-    return snapshot
-
-
-async def test_list_snapshots(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
-
-    assert snapshot.name == "test"
-    response = await client.get(app.url_path_for("get_snapshots", project_id=project.id))
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 1
-
-
-async def test_delete_snapshot(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
-
-    response = await client.delete(app.url_path_for("delete_snapshot", project_id=project.id, snapshot_id=snapshot.id))
-    assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert not os.path.exists(snapshot.path)
-
-
-async def test_restore_snapshot(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
-
-    response = await client.post(app.url_path_for("restore_snapshot", project_id=project.id, snapshot_id=snapshot.id))
-    assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == project.name
-
-
-async def test_create_snapshot(app: FastAPI, client: AsyncClient, project: Project) -> None:
-
-    response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})
-    assert response.status_code == status.HTTP_201_CREATED
-    assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 1
+    @pytest_asyncio.fixture
+    async def project(self, app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
+    
+        u = str(uuid.uuid4())
+        params = {"name": "test", "project_id": u}
+        await client.post(app.url_path_for("create_project"), json=params)
+        controller_project = controller.get_project(u)
+        return controller_project
+    
+    
+    @pytest_asyncio.fixture
+    async def snapshot(self, project: Project):
+    
+        controller_snapshot = await project.snapshot("test")
+        return controller_snapshot
+    
+    
+    async def test_list_snapshots(self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
+    
+        assert snapshot.name == "test"
+        response = await client.get(app.url_path_for("get_snapshots", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == 1
+    
+    
+    async def test_delete_snapshot(self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
+    
+        response = await client.delete(app.url_path_for("delete_snapshot", project_id=project.id, snapshot_id=snapshot.id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not os.path.exists(snapshot.path)
+    
+    
+    async def test_restore_snapshot(self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
+    
+        response = await client.post(app.url_path_for("restore_snapshot", project_id=project.id, snapshot_id=snapshot.id))
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["name"] == project.name
+    
+    
+    async def test_create_snapshot(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+    
+        response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 1

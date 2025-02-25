@@ -28,41 +28,43 @@ from gns3server.controller import Controller
 pytestmark = pytest.mark.asyncio
 
 
-async def test_symbols(app: FastAPI, client: AsyncClient) -> None:
+class TestSymbolRoutes:
 
-    response = await client.get(app.url_path_for("get_symbols"))
-
-    assert response.status_code == status.HTTP_200_OK
-    assert {
-        'symbol_id': ':/symbols/classic/firewall.svg',
-        'filename': 'firewall.svg',
-        'builtin': True,
-        'theme': 'Classic'
-    } in response.json()
-
-
-async def test_get(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
-
-    controller.symbols.theme = "Classic"
-    url = app.url_path_for("get_symbol", symbol_id=urllib.parse.quote(':/symbols/classic/firewall.svg'))
-    response = await client.get(url)
-    assert response.status_code == status.HTTP_200_OK
-    assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
-    assert response.headers['CONTENT-LENGTH'] == '9381'
-    assert '</svg>' in response.text
-
-    # Reply with the default symbol
-    response = await client.get(app.url_path_for("get_symbol", symbol_id="404.png"))
-    assert response.status_code == status.HTTP_200_OK
-
-
-async def test_upload(app: FastAPI, client: AsyncClient, symbols_dir: str) -> None:
-
-    response = await client.post(app.url_path_for("upload_symbol", symbol_id="test2"), content=b"TEST")
-    assert response.status_code == status.HTTP_204_NO_CONTENT
-
-    with open(os.path.join(symbols_dir, "test2")) as f:
-        assert f.read() == "TEST"
-
-    response = await client.get(app.url_path_for("get_symbol", symbol_id="test2"))
-    assert response.status_code == status.HTTP_200_OK
+    async def test_symbols(self, app: FastAPI, client: AsyncClient) -> None:
+    
+        response = await client.get(app.url_path_for("get_symbols"))
+    
+        assert response.status_code == status.HTTP_200_OK
+        assert {
+            'symbol_id': ':/symbols/classic/firewall.svg',
+            'filename': 'firewall.svg',
+            'builtin': True,
+            'theme': 'Classic'
+        } in response.json()
+    
+    
+    async def test_get(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
+    
+        controller.symbols.theme = "Classic"
+        url = app.url_path_for("get_symbol", symbol_id=urllib.parse.quote(':/symbols/classic/firewall.svg'))
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
+        assert response.headers['CONTENT-LENGTH'] == '9381'
+        assert '</svg>' in response.text
+    
+        # Reply with the default symbol
+        response = await client.get(app.url_path_for("get_symbol", symbol_id="404.png"))
+        assert response.status_code == status.HTTP_200_OK
+    
+    
+    async def test_upload(self, app: FastAPI, client: AsyncClient, symbols_dir: str) -> None:
+    
+        response = await client.post(app.url_path_for("upload_symbol", symbol_id="test2"), content=b"TEST")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+    
+        with open(os.path.join(symbols_dir, "test2")) as f:
+            assert f.read() == "TEST"
+    
+        response = await client.get(app.url_path_for("get_symbol", symbol_id="test2"))
+        assert response.status_code == status.HTTP_200_OK

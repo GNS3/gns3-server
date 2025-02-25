@@ -5,9 +5,9 @@
     "description": "IOS XRv 9000 (aka Sunstone) is the 1st VM released running the 64-bit IOS XR operating system as used on the NCS-6xxx platform. This appliance requires 4 vCPUs and 16GB of memory to run!",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
-    "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/ios-xrv-9000/",
     "product_name": "IOS XRv 9000",
-    "product_url": "http://virl.cisco.com/",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
@@ -27,91 +27,34 @@
     },
     "images": [
         {
+            "filename": "xrv9k-fullk9-x-24.3.1.qcow2",
+            "version": "24.3.1",
+            "md5sum": "bd047c457e29952f265583f299bab845",
+            "filesize": 1704658432,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        },
+        {
             "filename": "xrv9k-fullk9-x-7.7.1.qcow2",
             "version": "7.7.1",
             "md5sum": "682fff40d2ff373d8da3342906553b54",
             "filesize": 1643905024,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/7.1.1"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "xrv9k-fullk9-x-7.1.1.qcow2",
             "version": "7.1.1",
             "md5sum": "dcf241e3f8df0151fec2c7bfac9d96ac",
             "filesize": 1443758080,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/7.1.1"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-7.0.1.qcow2",
-            "version": "7.0.1",
-            "md5sum": "ca2817767fa546e303c3c536e211d33e",
-            "filesize": 1446445056,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/7.0.1"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.6.2.qcow2",
-            "version": "6.6.2",
-            "md5sum": "fd630be3c449e625073286a3a66021ae",
-            "filesize": 1452998656,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.6.2"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.5.3.qcow2",
-            "version": "6.5.3",
-            "md5sum": "71f018e3ea895b663129090fb4f0ff40",
-            "filesize": 1205075968,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.5.3"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.5.2.qcow2",
-            "version": "6.5.2",
-            "md5sum": "506d9e23dda7365c99dd82b613859697",
-            "filesize": 1205010432,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.5.1"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.5.1.qcow2",
-            "version": "6.5.1",
-            "md5sum": "730868e7cd46de9aa2e950899c7f9498",
-            "filesize": 1208811520,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.5.1"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.4.2.qcow2",
-            "version": "6.4.2",
-            "md5sum": "6958763192c7bb59a1b8049d377de1b4",
-            "filesize": 1311703040,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.4.2"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.4.1.qcow2",
-            "version": "6.4.1",
-            "md5sum": "9c56b684e307706005a503e289cb9317",
-            "filesize": 1304887296,
-            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.4.1"
-        },
-        {
-            "filename": "xrv9k-fullk9-x-6.2.25.qcow2",
-            "version": "6.2.25",
-            "md5sum": "3f54e62b6f7cedfb2607233e5e465766",
-            "filesize": 1190723584,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
-        },
-        {
-            "filename": "xrv9k-fullk9-x.qcow2-6.0.1",
-            "version": "6.0.1",
-            "md5sum": "e20d046807075046c35b6ce7d6766a7f",
-            "filesize": 2109210624,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
-        },
-        {
-            "filename": "xrv9k-fullk9-x.qcow2-6.0.0",
-            "version": "6.0.0",
-            "md5sum": "64c538c34252aaeb4ed1ddb93d6803fd",
-            "filesize": 2572943360,
             "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         }
     ],
     "versions": [
+        {
+            "name": "24.3.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-24.3.1.qcow2"
+            }
+        },
         {
             "name": "7.7.1",
             "images": {
@@ -122,66 +65,6 @@
             "name": "7.1.1",
             "images": {
                 "hda_disk_image": "xrv9k-fullk9-x-7.1.1.qcow2"
-            }
-        },
-        {
-            "name": "7.0.1",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-7.0.1.qcow2"
-            }
-        },
-        {
-            "name": "6.6.2",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.6.2.qcow2"
-            }
-        },
-        {
-            "name": "6.5.3",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.5.3.qcow2"
-            }
-        },
-        {
-            "name": "6.5.2",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.5.2.qcow2"
-            }
-        },
-        {
-            "name": "6.5.1",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.5.1.qcow2"
-            }
-        },
-        {
-            "name": "6.4.2",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.4.2.qcow2"
-            }
-        },
-        {
-            "name": "6.4.1",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.4.1.qcow2"
-            }
-        },
-        {
-            "name": "6.2.25",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x-6.2.25.qcow2"
-            }
-        },
-        {
-            "name": "6.0.1",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.1"
-            }
-        },
-        {
-            "name": "6.0.0",
-            "images": {
-                "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.0"
             }
         }
     ]

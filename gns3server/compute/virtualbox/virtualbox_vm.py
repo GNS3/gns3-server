@@ -233,32 +233,36 @@ class VirtualBoxVM(BaseNode):
         """
         Fix the VM uuid in the case of linked clone
         """
-        if os.path.exists(self._linked_vbox_file()):
-            try:
-                tree = ET.parse(self._linked_vbox_file())
-            except ET.ParseError:
-                raise VirtualBoxError(
-                    "Cannot modify VirtualBox linked nodes file. "
-                    "File {} is corrupted.".format(self._linked_vbox_file())
+
+        linked_vbox_file = self._linked_vbox_file()
+        if not os.path.exists(linked_vbox_file):
+            raise VirtualBoxError("Cannot find VirtualBox linked node file: {}".format(linked_vbox_file))
+
+        try:
+            tree = ET.parse(linked_vbox_file)
+        except ET.ParseError:
+            raise VirtualBoxError(f"Cannot modify VirtualBox linked node file. "
+                                  "File {linked_vbox_file} is corrupted.")
+        except OSError as e:
+            raise VirtualBoxError(f"Cannot modify VirtualBox linked nodes file '{self._linked_vbox_file()}': {e}")
+
+        machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
+        if machine is not None and machine.get("uuid") != "{" + self.id + "}":
+
+            for image in tree.getroot().findall("{http://www.virtualbox.org/}Image"):
+                currentSnapshot = machine.get("currentSnapshot")
+                if currentSnapshot:
+                    newSnapshot = re.sub(r"\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
+                shutil.move(
+                    os.path.join(self.working_dir, self._vmname, "Snapshots", currentSnapshot) + ".vdi",
+                    os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi"
                 )
-            except OSError as e:
-                raise VirtualBoxError(f"Cannot modify VirtualBox linked nodes file '{self._linked_vbox_file()}': {e}")
+                log.info(f"VirtualBox VM '{self.name}' [{self.id}] snapshot file moved from '{currentSnapshot}' to '{newSnapshot}'")
+                image.set("uuid", newSnapshot)
 
-            machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
-            if machine is not None and machine.get("uuid") != "{" + self.id + "}":
-
-                for image in tree.getroot().findall("{http://www.virtualbox.org/}Image"):
-                    currentSnapshot = machine.get("currentSnapshot")
-                    if currentSnapshot:
-                        newSnapshot = re.sub(r"\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
-                    shutil.move(
-                        os.path.join(self.working_dir, self._vmname, "Snapshots", currentSnapshot) + ".vdi",
-                        os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi",
-                    )
-                    image.set("uuid", newSnapshot)
-
-                machine.set("uuid", "{" + self.id + "}")
-                tree.write(self._linked_vbox_file())
+            log.info(f"VirtualBox VM '{self.name}' [{self.id}] '{linked_vbox_file}' has been patched")
+            machine.set("uuid", "{" + self.id + "}")
+            tree.write(linked_vbox_file)
 
     async def check_hw_virtualization(self):
         """
@@ -488,7 +492,7 @@ class VirtualBoxVM(BaseNode):
 
     async def save_linked_hdds_info(self):
         """
-        Save linked cloned hard disks information.
+        Save linked cloned hard disk information.
 
         :returns: disk table information
         """

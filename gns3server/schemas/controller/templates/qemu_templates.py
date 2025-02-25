@@ -39,7 +39,7 @@ class QemuTemplate(TemplateBase):
     qemu_path: Optional[str] = Field("", description="Qemu executable path")
     platform: Optional[QemuPlatform] = Field(QemuPlatform.x86_64, description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
-    ram: Optional[int] = Field(256, description="Amount of RAM in MB")
+    ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     cpus: Optional[int] = Field(1, ge=1, le=255, description="Number of vCPUs")
     maxcpus: Optional[int] = Field(1, ge=1, le=255, description="Maximum number of hotpluggable vCPUs")
     adapters: Optional[int] = Field(1, ge=0, le=275, description="Number of adapters")

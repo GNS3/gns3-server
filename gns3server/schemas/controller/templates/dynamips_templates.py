@@ -37,7 +37,7 @@ class DynamipsTemplate(TemplateBase):
     symbol: Optional[str] = "router"
     platform: DynamipsPlatform = Field(..., description="Cisco router platform")
     image: str = Field(..., description="Path to the IOS image")
-    exec_area: Optional[int] = Field(64, description="Exec area value")
+    exec_area: Optional[int] = Field(64, ge=0, description="Exec area value")
     mmap: Optional[bool] = Field(True, description="MMAP feature")
     mac_addr: Optional[str] = Field(
         "", description="Base MAC address", pattern="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$"
@@ -46,10 +46,10 @@ class DynamipsTemplate(TemplateBase):
     startup_config: Optional[str] = Field("ios_base_startup-config.txt", description="IOS startup configuration file")
     private_config: Optional[str] = Field("", description="IOS private configuration file")
     idlepc: Optional[str] = Field("", description="Idle-PC value", pattern="^(0x[0-9a-fA-F]+)?$|^$")
-    idlemax: Optional[int] = Field(500, description="Idlemax value")
-    idlesleep: Optional[int] = Field(30, description="Idlesleep value")
-    disk0: Optional[int] = Field(0, description="Disk0 size in MB")
-    disk1: Optional[int] = Field(0, description="Disk1 size in MB")
+    idlemax: Optional[int] = Field(500, ge=0, description="Idlemax value")
+    idlesleep: Optional[int] = Field(30, ge=0, description="Idlesleep value")
+    disk0: Optional[int] = Field(0, ge=0, description="Disk0 size in MB")
+    disk1: Optional[int] = Field(0, ge=0, description="Disk1 size in MB")
     auto_delete_disks: Optional[bool] = Field(False, description="Automatically delete nvram and disk files")
     console_type: Optional[DynamipsConsoleType] = Field(DynamipsConsoleType.telnet, description="Console type")
     console_auto_start: Optional[bool] = Field(
@@ -70,8 +70,8 @@ class DynamipsTemplate(TemplateBase):
 
 class C7200DynamipsTemplate(DynamipsTemplate):
 
-    ram: Optional[int] = Field(512, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(512, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(512, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(512, gt=0, description="Amount of NVRAM in KB")
     npe: Optional[DynamipsNPE] = Field(DynamipsNPE.npe_400, description="NPE model")
     midplane: Optional[DynamipsMidplane] = Field(DynamipsMidplane.vxr, description="Midplane model")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
@@ -85,8 +85,8 @@ class C7200DynamipsTemplateUpdate(C7200DynamipsTemplate):
 
 class C3725DynamipsTemplate(DynamipsTemplate):
 
-    ram: Optional[int] = Field(128, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(256, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(128, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
@@ -99,8 +99,8 @@ class C3725DynamipsTemplateUpdate(C3725DynamipsTemplate):
 
 class C3745DynamipsTemplate(DynamipsTemplate):
 
-    ram: Optional[int] = Field(256, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(256, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
@@ -121,8 +121,8 @@ class C3600ChassisType(str, Enum):
 class C3600DynamipsTemplate(DynamipsTemplate):
 
     chassis: Optional[C3600ChassisType] = Field("c3660", description="Chassis type")
-    ram: Optional[int] = Field(192, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(128, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
@@ -135,8 +135,8 @@ class C3600DynamipsTemplateUpdate(C3600DynamipsTemplate):
 
 class C2691DynamipsTemplate(DynamipsTemplate):
 
-    ram: Optional[int] = Field(192, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(256, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
@@ -163,8 +163,8 @@ class C2600ChassisType(str, Enum):
 class C2600DynamipsTemplate(DynamipsTemplate):
 
     chassis: Optional[C2600ChassisType] = Field("2651XM", description="Chassis type")
-    ram: Optional[int] = Field(160, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(128, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(15, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
@@ -187,8 +187,8 @@ class C1700ChassisType(str, Enum):
 class C1700DynamipsTemplate(DynamipsTemplate):
 
     chassis: Optional[C1700ChassisType] = Field("1760", description="Chassis type")
-    ram: Optional[int] = Field(160, description="Amount of RAM in MB")
-    nvram: Optional[int] = Field(128, description="Amount of NVRAM in KB")
+    ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
+    nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(15, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(False, description="Sparse memory feature")
 
