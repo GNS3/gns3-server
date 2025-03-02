@@ -38,6 +38,13 @@ function log {
 }
 
 lsb_release -d | grep "LTS" > /dev/null
+
+if [ "$EUID" -ne 0 ]
+then
+  echo "This script must be run as root"
+  exit 1
+fi
+
 if [ $? != 0 ]
 then
   echo "This script can only be run on a Linux Ubuntu LTS release"
