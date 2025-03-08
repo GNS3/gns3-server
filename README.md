@@ -112,6 +112,12 @@ For development, you can run the GNS3 server in a container
 bash scripts/docker_dev_server.sh
 ```
 
+#### use Docker Compose
+
+``` {.bash}
+docker compose up -d
+```
+
 ### Run as daemon (Unix only)
 
 You will find init sample scripts for various systems inside the init
