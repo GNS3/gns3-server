@@ -1,6 +1,6 @@
 uvicorn==0.34.0  # uvicorn 0.33 is the last version supporting Python 3.8
 pydantic==2.10.6
-fastapi==0.115.8
+fastapi==0.115.11
 python-multipart==0.0.20
 websockets==15.0
 aiohttp>=3.11.13,<3.12
@@ -14,9 +14,9 @@ py-cpuinfo>=9.0.0,<10.0
 greenlet==3.1.1  # necessary to run sqlalchemy on Python 3.13
 sqlalchemy==2.0.38
 aiosqlite==0.21.0
-alembic==1.14.1
-bcrypt==4.2.1
-joserfc==1.0.3
+alembic==1.15.1
+bcrypt==4.3.0
+joserfc==1.0.4
 email-validator==2.2.0
 watchdog==6.0.0
 zstandard==0.23.0
