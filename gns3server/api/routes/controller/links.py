@@ -285,3 +285,56 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
             raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
+
+
+@router.get(
+    "/{link_id}/iface",
+    response_model=dict[str, schemas.UdpPort | schemas.EthernetPort],
+    dependencies=[Depends(has_privilege("Link.Audit"))]
+)
+async def get_iface(link: Link = Depends(dep_link)) -> dict[str, schemas.UdpPort | schemas.EthernetPort]:
+    """
+    Return iface info for links to Cloud or NAT devices.
+
+    Required privilege: Link.Audit
+    """
+    ifaces_info = {}
+    for node_data in link._nodes:
+        node = node_data["node"]
+        if node.node_type not in ("cloud", "nat"):
+            continue
+
+        port_number = node_data["port_number"]
+        
+        compute = node.compute
+        project_id = link.project.id
+        response = await compute.get(
+            f"/projects/{project_id}/{node.node_type}/nodes/{node.id}"
+        )
+        node_info = response.json
+        
+        if "ports_mapping" not in node_info:
+            continue
+        ports_mapping = node_info["ports_mapping"]
+        
+        for port in ports_mapping:
+            port_num = port.get("port_number")
+
+            if port_num and int(port_num) == int(port_number):
+                port_type = port.get("type", "")
+                if "udp" in port_type.lower():
+                    ifaces_info[node.id] = {
+                        "rhost": port["rhost"],
+                        "lport": port["lport"],
+                        "rport": port["rport"],
+                    }
+                else:
+                    ifaces_info[node.id] = {
+                        "interface": port["interface"],
+                    }
+    
+    if not ifaces_info:
+        raise ControllerError(
+            "Link not connected to Cloud/NAT with UDP tunnel"
+        )
+    return ifaces_info
