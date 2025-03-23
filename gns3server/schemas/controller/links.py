@@ -102,6 +102,7 @@ class UdpPort(BaseModel):
     lport: int
     rhost: str
     rport: int
+    type: str
 
 
 class EthernetPort(BaseModel):
@@ -110,3 +111,4 @@ class EthernetPort(BaseModel):
     """
 
     interface: str
+    type: str

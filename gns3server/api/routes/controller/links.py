@@ -324,17 +324,19 @@ async def get_iface(link: Link = Depends(dep_link)) -> dict[str, schemas.UdpPort
                 port_type = port.get("type", "")
                 if "udp" in port_type.lower():
                     ifaces_info[node.id] = {
+                        "type": f"{port_type}",
                         "rhost": port["rhost"],
                         "lport": port["lport"],
                         "rport": port["rport"],
                     }
                 else:
                     ifaces_info[node.id] = {
+                        "type": f"{port_type}",
                         "interface": port["interface"],
                     }
     
     if not ifaces_info:
         raise ControllerError(
-            "Link not connected to Cloud/NAT with UDP tunnel"
+            "Link not connected to Cloud/NAT"
         )
     return ifaces_info
