@@ -1,0 +1,60 @@
+{
+    "appliance_id": "4a1ffa4f-5e19-4e2d-aad8-772aadab5029",
+    "name": "vJunos-router",
+    "category": "router",
+    "description": "vJunos Router ",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Juniper vJunos-Router",
+    "product_url": "https://www.juniper.net/documentation/us/en/software/vjunos-router/vjunos-router-kvm/",
+    "registry_version": 6,
+    "status": "experimental",
+    "maintainer": "Sandeep Suresh",
+    "maintainer_email": "sandeepsuresh2006@gmail.com",
+    "usage": "Initial username is root, no password",
+    "symbol": "juniper-vmx.svg",
+    "first_port_name": "ge-0/0/0",
+    "port_name_format": "ge-0/0/{port0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 17,
+        "ram": 5120,
+        "cpus": 4,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-serial mon:stdio -nographic -smbios type=1,product=VM-VMX,family=lab -cpu host"
+    },
+    "images": [
+        {
+            "filename": "vJunos-router-23.2R1.15.qcow2",
+            "version": "23.2R1.15",
+            "md5sum": "18670fb67633822697fdd3cf982e7eb1",
+            "filesize": 3653566464,
+            "download_url": "https://support.juniper.net/support/downloads/?p=vjunos-router"
+        },
+        {
+            "filename": "vJunos-router-24.2R1-S2.qcow2",
+            "version": "24.2R1-S2",
+            "md5sum": "dd906b4d19463e22f3e1a297ff1a7464",
+            "filesize": 3675783168,
+            "download_url": "https://support.juniper.net/support/downloads/?p=vjunos-router"
+        }
+    ],
+    "versions": [
+        {
+            "name": "23.2R1.15",
+            "images": {
+                "hda_disk_image": "vJunos-router-23.2R1.15.qcow2"
+            }
+        },
+        {
+            "name": "24.2R1-S2",
+            "images": {
+                "hda_disk_image": "vJunos-router-24.2R1-S2.qcow2"
+            }
+        }
+    ]
+}
