@@ -267,12 +267,12 @@ class Docker(BaseManager):
             pass
 
         if progress_callback:
-            progress_callback(f"Pulling '{image}' from docker hub")
+            progress_callback(f"Pulling '{image}' from Docker repository")
         try:
             response = await self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
         except DockerError as e:
             raise DockerError(
-                f"Could not pull the '{image}' image from Docker Hub, "
+                f"Could not pull the '{image}' image from Docker repository, "
                 f"please check your Internet connection (original error: {e})"
             )
         # The pull api will stream status via an HTTP JSON stream
@@ -281,10 +281,10 @@ class Docker(BaseManager):
             try:
                 chunk = await response.content.read(CHUNK_SIZE)
             except aiohttp.ServerDisconnectedError:
-                log.error(f"Disconnected from server while pulling Docker image '{image}' from docker hub")
+                log.error(f"Disconnected from server while pulling Docker image '{image}' from Docker repository")
                 break
             except asyncio.TimeoutError:
-                log.error(f"Timeout while pulling Docker image '{image}' from docker hub")
+                log.error("Timeout while pulling Docker image '{}' from Docker repository".format(image))
                 break
             if not chunk:
                 break

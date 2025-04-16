@@ -437,7 +437,7 @@ class DockerVM(BaseNode):
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
-            log.info(f"Image '{self._image}' is missing, pulling it from Docker hub...")
+            log.info("Image '{}' is missing, pulling it from Docker repository...".format(self._image))
             await self.pull_image(self._image)
             image_infos = await self._get_image_information()
 
