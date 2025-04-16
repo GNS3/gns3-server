@@ -94,21 +94,22 @@ class Link(LinkBase):
     )
 
 
-class UdpPort(BaseModel):
+class UDPPortInfo(BaseModel):
     """
     UDP port information.
     """
 
+    node_id: UUID
     lport: int
     rhost: str
     rport: int
     type: str
 
-
-class EthernetPort(BaseModel):
+class EthernetPortInfo(BaseModel):
     """
     Ethernet port information.
     """
 
+    node_id: UUID
     interface: str
     type: str
