@@ -92,3 +92,23 @@ class Link(LinkBase):
         None,
         description="Read only property. The compute identifier where a capture is running"
     )
+
+
+class UdpPort(BaseModel):
+    """
+    UDP port information.
+    """
+
+    lport: int
+    rhost: str
+    rport: int
+    type: str
+
+
+class EthernetPort(BaseModel):
+    """
+    Ethernet port information.
+    """
+
+    interface: str
+    type: str
