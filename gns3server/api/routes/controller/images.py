@@ -148,11 +148,6 @@ async def upload_image(
     if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
-    image = await images_repo.get_image(image_path)
-    if image:
-        log.warning(f"Image '{image_path}' already exists")
-        return image
-
     try:
         allow_raw_image = Config.instance().settings.Server.allow_raw_images
         image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)
