@@ -458,10 +458,11 @@ class Compute:
                             # FIXME: slow down number of compute events
                             self._controller.notification.controller_emit("compute.updated", self.asdict())
                         else:
-                            if action == "log.error":
-                                log.error(event.pop("message"))
                             await self._controller.notification.dispatch(
-                                action, event, project_id=project_id, compute_id=self.id
+                                action,
+                                event,
+                                project_id=project_id,
+                                compute_id=self.id
                             )
                     else:
                         if response.type == aiohttp.WSMsgType.CLOSE:
