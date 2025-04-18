@@ -1202,7 +1202,7 @@ class DockerVM(BaseNode):
         """
 
         result = await self.manager.query("GET", "containers/{}/logs".format(self._cid), params={"stderr": 1, "stdout": 1})
-        return result
+        return result.decode('utf-8', errors='ignore').strip()
 
     async def delete(self):
         """
