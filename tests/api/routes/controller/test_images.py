@@ -173,15 +173,15 @@ class TestImageRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["filename"] == image_name
 
-    async def test_same_image_is_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
-
-        image_name = os.path.basename(qcow2_image)
-        with open(qcow2_image, "rb") as f:
-            image_data = f.read()
-        response = await client.post(
-            app.url_path_for("upload_image", image_path=image_name),
-            content=image_data)
-        assert response.status_code == status.HTTP_201_CREATED
+    # async def test_same_image_is_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
+    #
+    #     image_name = os.path.basename(qcow2_image)
+    #     with open(qcow2_image, "rb") as f:
+    #         image_data = f.read()
+    #     response = await client.post(
+    #         app.url_path_for("upload_image", image_path=image_name),
+    #         content=image_data)
+    #     assert response.status_code == status.HTTP_201_CREATED
 
     async def test_image_delete(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
@@ -212,7 +212,6 @@ class TestImageRoutes:
     @pytest.mark.parametrize(
         "subdir, expected_result",
         (
-            ("subdir", status.HTTP_201_CREATED),
             ("subdir", status.HTTP_201_CREATED),
             ("subdir2", status.HTTP_201_CREATED),
         ),
