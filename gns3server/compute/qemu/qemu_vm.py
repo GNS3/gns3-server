@@ -1203,7 +1203,7 @@ class QemuVM(BaseNode):
                         qemu_stdout += "\n\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor." \
                                         "Please try to execute the following commands on the server:\n\n" \
                                         "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n" \
-                                        "sudo service apparmor restart".format(os.path.dirname(self.project))
+                                        "sudo service apparmor restart".format(os.path.dirname(self.project.path))
                 self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, qemu_stdout)})
 
     async def stop(self):
