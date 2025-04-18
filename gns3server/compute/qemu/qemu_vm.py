@@ -2063,12 +2063,7 @@ class QemuVM(BaseNode):
                 # the node has its own UEFI variables store already, we must also use the old UEFI firmware
                 ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
             else:
-                # try to use the UEFI firmware from the system first
-                if "windows" in self.name.lower():
-                    #TODO: temporary & ugly workaround for Windows (we should allow users to select the UEFI firmware type)
-                    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.secboot.fd"
-                else:
-                    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+                system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
                 if os.path.exists(system_ovmf_firmware_path):
                     ovmf_firmware_path = system_ovmf_firmware_path
                 else:
