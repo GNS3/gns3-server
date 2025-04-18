@@ -2055,19 +2055,47 @@ class QemuVM(BaseNode):
                 else:
                     raise QemuError("bios image '{}' is not accessible".format(self._bios_image))
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
+
         elif self._uefi:
-            # get the OVMF firmware from the images directory
-            ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+
+            old_ovmf_vars_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if os.path.exists(old_ovmf_vars_path):
+                # the node has its own UEFI variables store already, we must also use the old UEFI firmware
+                ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            else:
+                # try to use the UEFI firmware from the system first
+                if "windows" in self.name.lower():
+                    #TODO: temporary & ugly workaround for Windows (we should allow users to select the UEFI firmware type)
+                    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.secboot.fd"
+                else:
+                    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+                if os.path.exists(system_ovmf_firmware_path):
+                    ovmf_firmware_path = system_ovmf_firmware_path
+                else:
+                    # otherwise, get the UEFI firmware from the images directory
+                    ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE_4M.fd")
+
             log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
             options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
 
+            # try to use the UEFI variables store from the system first
+            system_ovmf_vars_path = "/usr/share/OVMF/OVMF_VARS_4M.fd"
+            if os.path.exists(system_ovmf_vars_path):
+                ovmf_vars_path = system_ovmf_vars_path
+            else:
+                # otherwise, get the UEFI variables store from the images directory
+                ovmf_vars_path = self.manager.get_abs_image_path("OVMF_VARS_4M.fd")
+
             # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
-            ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
-            if not os.path.exists(ovmf_vars_node_path):
-                try:
-                    shutil.copyfile(self.manager.get_abs_image_path("OVMF_VARS.fd"), ovmf_vars_node_path)
-                except OSError as e:
-                    raise QemuError("Cannot copy OVMF_VARS.fd file to the node working directory: {}".format(e))
+            if os.path.exists(old_ovmf_vars_path):
+                ovmf_vars_node_path = old_ovmf_vars_path
+            else:
+                ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS_4M.fd")
+                if not os.path.exists(ovmf_vars_node_path):
+                    try:
+                        shutil.copyfile(ovmf_vars_path, ovmf_vars_node_path)
+                    except OSError as e:
+                        raise QemuError("Cannot copy OVMF_VARS_4M.fd file to the node working directory: {}".format(e))
             options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
         return options
 
