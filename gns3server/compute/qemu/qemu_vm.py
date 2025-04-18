@@ -33,6 +33,7 @@ import gns3server
 import subprocess
 import time
 import json
+import psutil
 
 from gns3server.utils import parse_version, shlex_quote
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
@@ -1166,6 +1167,21 @@ class QemuVM(BaseNode):
         except OSError as e:
             raise QemuError("Could not start Telnet QEMU console {}\n".format(e))
 
+    def _find_partition_for_path(self, path):
+        """
+        Finds the disk partition for a given path.
+        """
+
+        path = os.path.abspath(path)
+        partitions = psutil.disk_partitions()
+        # find the partition with the longest matching mount point
+        matching_partition = None
+        for partition in partitions:
+            if path.startswith(partition.mountpoint):
+                if matching_partition is None or len(partition.mountpoint) > len(matching_partition.mountpoint):
+                    matching_partition = partition
+        return matching_partition
+
     async def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
@@ -1178,7 +1194,17 @@ class QemuVM(BaseNode):
             await self.stop()
             # A return code of 1 seem fine on Windows
             if returncode != 0 and (not sys.platform.startswith("win") or returncode != 1):
-                self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
+                qemu_stdout = self.read_stdout()
+                # additional permissions need to be configured for swtpm in AppArmor if the working dir
+                # is located on a different partition than the partition for the root directory
+                if "TPM result for CMD_INIT: 0x9 operation failed" in qemu_stdout:
+                    partition = self._find_partition_for_path(self.project.path)
+                    if partition and partition.mountpoint != "/":
+                        qemu_stdout += "\n\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor." \
+                                        "Please try to execute the following commands on the server:\n\n" \
+                                        "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n" \
+                                        "sudo service apparmor restart".format(os.path.dirname(self.project))
+                self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, qemu_stdout)})
 
     async def stop(self):
         """
