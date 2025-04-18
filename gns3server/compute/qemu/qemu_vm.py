@@ -1197,7 +1197,7 @@ class QemuVM(BaseNode):
                 qemu_stdout = self.read_stdout()
                 # additional permissions need to be configured for swtpm in AppArmor if the working dir
                 # is located on a different partition than the partition for the root directory
-                if "TPM result for CMD_INIT: 0x9 operation failed" in qemu_stdout:
+                if "TPM result for CMD_INIT" in qemu_stdout:
                     partition = self._find_partition_for_path(self.project.path)
                     if partition and partition.mountpoint != "/":
                         qemu_stdout += "\n\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor." \
