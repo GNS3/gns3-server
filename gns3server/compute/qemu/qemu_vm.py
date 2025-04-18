@@ -1200,7 +1200,7 @@ class QemuVM(BaseNode):
                 if "TPM result for CMD_INIT" in qemu_stdout:
                     partition = self._find_partition_for_path(self.project.path)
                     if partition and partition.mountpoint != "/":
-                        qemu_stdout += "\n\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor." \
+                        qemu_stdout += "\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor.\n" \
                                         "Please try to execute the following commands on the server:\n\n" \
                                         "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n" \
                                         "sudo service apparmor restart".format(os.path.dirname(self.project.path))
