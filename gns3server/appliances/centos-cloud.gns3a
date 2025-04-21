@@ -27,44 +27,28 @@
     },
     "images": [
         {
-            "filename": "CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2",
-            "version": "Stream-9 (20230704.1)",
-            "md5sum": "e04511e019325a97837edd9eafe02b48",
-            "filesize": 1087868416,
+            "filename": "CentOS-Stream-GenericCloud-x86_64-10-20250331.0.x86_64.qcow2",
+            "version": "Stream-10 (20250331.0)",
+            "md5sum": "776033371ca346001dd6390f0cbaf0d0",
+            "filesize": 952041472,
+            "download_url": "https://cloud.centos.org/centos/10-stream/x86_64/images",
+            "direct_download_url": "https://cloud.centos.org/centos/10-stream/x86_64/images/CentOS-Stream-GenericCloud-x86_64-10-20250331.0.x86_64.qcow2"
+        },
+        {
+            "filename": "CentOS-Stream-GenericCloud-9-20250331.0.x86_64.qcow2",
+            "version": "Stream-9 (20250331.0)",
+            "md5sum": "4aaeddc6ca497065522c75a7471f9bfd",
+            "filesize": 1250625536,
             "download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images",
-            "direct_download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2"
+            "direct_download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20250331.0.x86_64.qcow2"
         },
         {
-            "filename": "CentOS-Stream-GenericCloud-8-20230710.0.x86_64.qcow2",
-            "version": "Stream-8 (20230710.0)",
-            "md5sum": "83e02ce98c29753c86fb7be7d802aa75",
-            "filesize": 1676164096,
+            "filename": "CentOS-Stream-GenericCloud-8-20240603.0.x86_64.qcow2",
+            "version": "Stream-8 (20240603.0)",
+            "md5sum": "77f3c9650785b8e977209796e09ee33e",
+            "filesize": 2003698688,
             "download_url": "https://cloud.centos.org/centos/8-stream/x86_64/images",
-            "direct_download_url": "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20230710.0.x86_64.qcow2"
-        },
-        {
-            "filename": "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2",
-            "version": "8.4 (2105)",
-            "md5sum": "032eed270415526546eac07628905a62",
-            "filesize": 1309652992,
-            "download_url": "https://cloud.centos.org/centos/8/x86_64/images",
-            "direct_download_url": "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2"
-        },
-        {
-            "filename": "CentOS-7-x86_64-GenericCloud-2111.qcow2",
-            "version": "7 (2111)",
-            "md5sum": "730b8662695831670721c8245be61dac",
-            "filesize": 897384448,
-            "download_url": "https://cloud.centos.org/centos/7/images",
-            "direct_download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-2111.qcow2"
-        },
-        {
-            "filename": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
-            "version": "7 (1809)",
-            "md5sum": "da79108d1324b27bd1759362b82fbe40",
-            "filesize": 914948096,
-            "download_url": "https://cloud.centos.org/centos/7/images",
-            "direct_download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1809.qcow2"
+            "direct_download_url": "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20240603.0.x86_64.qcow2"
         },
         {
             "filename": "centos-cloud-init-data.iso",
@@ -77,37 +61,23 @@
     ],
     "versions": [
         {
-            "name": "Stream-9 (20230704.1)",
+            "name": "Stream-10 (20250331.0)",
             "images": {
-                "hda_disk_image": "CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2",
+                "hda_disk_image": "CentOS-Stream-GenericCloud-x86_64-10-20250331.0.x86_64.qcow2",
                 "cdrom_image": "centos-cloud-init-data.iso"
             }
         },
         {
-            "name": "Stream-8 (20230710.0)",
+            "name": "Stream-9 (20250331.0)",
             "images": {
-                "hda_disk_image": "CentOS-Stream-GenericCloud-8-20230710.0.x86_64.qcow2",
+                "hda_disk_image": "CentOS-Stream-GenericCloud-9-20250331.0.x86_64.qcow2",
                 "cdrom_image": "centos-cloud-init-data.iso"
             }
         },
         {
-            "name": "8.4 (2105)",
+            "name": "Stream-8 (20240603.0)",
             "images": {
-                "hda_disk_image": "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2",
-                "cdrom_image": "centos-cloud-init-data.iso"
-            }
-        },
-        {
-            "name": "7 (2111)",
-            "images": {
-                "hda_disk_image": "CentOS-7-x86_64-GenericCloud-2111.qcow2",
-                "cdrom_image": "centos-cloud-init-data.iso"
-            }
-        },
-        {
-            "name": "7 (1809)",
-            "images": {
-                "hda_disk_image": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
+                "hda_disk_image": "CentOS-Stream-GenericCloud-8-20240603.0.x86_64.qcow2",
                 "cdrom_image": "centos-cloud-init-data.iso"
             }
         }

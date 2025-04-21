@@ -27,6 +27,14 @@
     },
     "images": [
         {
+            "filename": "OL9U5_x86_64-kvm-b259.qcow2",
+            "version": "9.5",
+            "md5sum": "05e9b62c408ab49a02d6833fc683d1ad",
+            "filesize": 652935168,
+            "download_url": "https://yum.oracle.com/oracle-linux-templates.html",
+            "direct_download_url": "https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/OL9U5_x86_64-kvm-b259.qcow2"
+        },
+        {
             "filename": "OL9U2_x86_64-kvm-b197.qcow",
             "version": "9.2",
             "md5sum": "2ff3d0bc8a243ad89c96215f303f1c73",
@@ -41,6 +49,14 @@
             "filesize": 539033600,
             "download_url": "https://yum.oracle.com/oracle-linux-templates.html",
             "direct_download_url": "https://yum.oracle.com/templates/OracleLinux/OL9/u1/x86_64/OL9U1_x86_64-kvm-b158.qcow"
+        },
+        {
+            "filename": "OL8U10_x86_64-kvm-b258.qcow2",
+            "version": "8.10",
+            "md5sum": "bb07581af5122515b6822595ded5deef",
+            "filesize": 1251672064,
+            "download_url": "https://yum.oracle.com/oracle-linux-templates.html",
+            "direct_download_url": "https://yum.oracle.com/templates/OracleLinux/OL8/u10/x86_64/OL8U10_x86_64-kvm-b258.qcow2"
         },
         {
             "filename": "OL8U8_x86_64-kvm-b198.qcow",
@@ -76,7 +92,14 @@
         }
     ],
     "versions": [
-{
+        {
+            "name": "9.5",
+            "images": {
+                "hda_disk_image": "OL9U5_x86_64-kvm-b259.qcow2",
+                "cdrom_image": "oracle-cloud-init-data.iso"
+            }
+        },
+        {
             "name": "9.2",
             "images": {
                 "hda_disk_image": "OL9U2_x86_64-kvm-b197.qcow",
@@ -87,6 +110,13 @@
             "name": "9.1",
             "images": {
                 "hda_disk_image": "OL9U1_x86_64-kvm-b158.qcow",
+                "cdrom_image": "oracle-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "8.10",
+            "images": {
+                "hda_disk_image": "OL8U10_x86_64-kvm-b258.qcow2",
                 "cdrom_image": "oracle-cloud-init-data.iso"
             }
         },

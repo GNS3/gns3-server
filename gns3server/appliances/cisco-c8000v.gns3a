@@ -5,9 +5,9 @@
     "description": "The Cisco Catalyst 8000V Edge Software is a virtual, form-factor router deployed on a virtual machine (VM) running on an x86 server hardware.",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
-    "documentation_url": "https://www.cisco.com/c/en/us/td/docs/routers/C8000V/Configuration/c8000v-installation-configuration-guide.html",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/cat-8000v/",
     "product_name": "c8000v",
-    "product_url": "https://www.cisco.com/c/en/us/support/routers/catalyst-8000v-edge-software/series.html",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
@@ -24,6 +24,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "c8000v-universalk9_8G_serial.17.15.01a.qcow2",
+            "version": "17.15.01a 8G",
+            "md5sum": "41efa0aedd67f1f57cde1263c79d9ff6",
+            "filesize": 1846280192,
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/IOSXE-17.15.1a"
+        },
         {
             "filename": "c8000v-universalk9_8G_serial.17.09.04a.qcow2",
             "version": "17.09.04a 8G",
@@ -68,6 +75,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.15.01a 8G",
+            "images": {
+                "hda_disk_image": "c8000v-universalk9_8G_serial.17.15.01a.qcow2"
+            }
+        },
         {
             "name": "17.09.04a 8G",
             "images": {

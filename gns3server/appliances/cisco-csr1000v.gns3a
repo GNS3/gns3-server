@@ -5,9 +5,9 @@
     "description": "The Cisco Cloud Services Router 1000V (CSR 1000V) is a router and network services platform in virtual form factor that is intended for deployment in cloud and virtual data centers. It is optimized to serve as a single-tenant or multitenant WAN gateway. Using proven, industry-leading Cisco IOS\u00ae XE Software networking and security features, the CSR 1000V enables enterprises to transparently extend their WANs into external provider-hosted clouds and cloud providers to offer their tenants enterprise-class networking services.",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
-    "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/csr-1000v/",
     "product_name": "CSR1000v",
-    "product_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/tsd-products-support-series-home.html",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
@@ -169,7 +169,7 @@
             "version": "16.4.1",
             "md5sum": "3428e0dcf5132a1b11ab7696d8c61b2e",
             "filesize": 1261961216,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "csr1000v-universalk9.16.6.1.qcow2",

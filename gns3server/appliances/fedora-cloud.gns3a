@@ -27,6 +27,22 @@
     },
     "images": [
         {
+            "filename": "Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2",
+            "version": "41-1.4",
+            "md5sum": "8efc9edc04f38775de72ce067166b2a1",
+            "filesize": 491716608,
+            "download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images",
+            "direct_download_url": "https://fedora.mirrorservice.org/fedora/linux/releases/41/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2"
+        },
+        {
+            "filename": "Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+            "version": "40-1.14",
+            "md5sum": "3eed4b1a9de35208ed30d9bb72c1522d",
+            "filesize": 397475840,
+            "download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/40/Cloud/x86_64/images",
+            "direct_download_url": "https://fedora.mirrorservice.org/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
+        },
+        {
             "filename": "Fedora-Cloud-Base-39-1.5.x86_64.qcow2",
             "version": "39-1.5",
             "md5sum": "800a10df2d369891ed65900bcacacd47",
@@ -52,6 +68,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "41-1.4",
+            "images": {
+                "hda_disk_image": "Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2",
+                "cdrom_image": "fedora-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "40-1.14",
+            "images": {
+                "hda_disk_image": "Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+                "cdrom_image": "fedora-cloud-init-data.iso"
+            }
+        },
         {
             "name": "39-1.5",
             "images": {
