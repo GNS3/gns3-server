@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2024 GNS3 Technologies Inc.
+# Copyright (C) 2025 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ function help {
   echo "--with-i386-repository: Add the i386 repositories required by IOU i386 images. This is not needed for recent x86_64 IOU images." >&2
   echo "--with-welcome: Install GNS3-VM welcome.py script" >&2
   echo "--without-kvm: Disable KVM, required if system do not support it (limitation in some hypervisors and cloud providers). Warning: only disable KVM if strictly necessary as this will degrade performance" >&2
+  echo "--without-system-upgrade: Do not upgrade the system" >&2
   echo "--unstable: Use the GNS3 unstable repository" >&2
   echo "--custom-repository <repository>: Use a custom repository" >&2
   echo "--help: This help" >&2
@@ -38,6 +39,13 @@ function log {
 }
 
 lsb_release -d | grep "LTS" > /dev/null
+
+if [ "$EUID" -ne 0 ]
+then
+  echo "This script must be run as root"
+  exit 1
+fi
+
 if [ $? != 0 ]
 then
   echo "This script can only be run on a Linux Ubuntu LTS release"
@@ -52,6 +60,7 @@ USE_VPN=0
 USE_IOU=0
 I386_REPO=0
 DISABLE_KVM=0
+NO_SYSTEM_UPGRADE=0
 WELCOME_SETUP=0
 
 TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,custom-repository:,help -n 'gns3-remote-install.sh' -- "$@"`
@@ -85,6 +94,10 @@ while true ; do
           DISABLE_KVM=1
           shift
           ;;
+        --without-system-upgrade)
+          NO_SYSTEM_UPGRADE=1
+          shift
+          ;;
         --unstable)
           REPOSITORY="unstable"
           shift
@@ -102,68 +115,33 @@ while true ; do
     esac
 done
 
+if [ "$REPOSITORY" == "ppa-v3" ]
+then
+  if ! python3 -c 'import sys; assert sys.version_info >= (3,9)' > /dev/null 2>&1; then
+    echo "GNS3 version >= 3.0 requires Python 3.9 or later"
+    exit 1
+  fi
+fi
+
 # Exit in case of error
 set -e
 
 export DEBIAN_FRONTEND="noninteractive"
 UBUNTU_CODENAME=`lsb_release -c -s`
 
-log "Add GNS3 repository"
+log "Updating system packages, installing curl and software-properties-common"
+apt update
+apt install -y curl software-properties-common
 
-if [ ! -f "/etc/apt/sources.list.d/ubuntu.sources" ]
+if [ $NO_SYSTEM_UPGRADE == 0 ]
 then
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B83AAABFFBD82D21B543C8EA86C22C2EC6A24D7F
-    cat <<EOFLIST > /etc/apt/sources.list.d/gns3.list
-deb http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-deb-src http://ppa.launchpad.net/gns3/ppa/ubuntu $UBUNTU_CODENAME main
-EOFLIST
-
-else
-
-    cat <<EOFLIST > /etc/apt/sources.list.d/gns3-ppa.sources
-Types: deb
-URIs: https://ppa.launchpadcontent.net/gns3/$REPOSITORY/ubuntu/
-Suites: $UBUNTU_CODENAME
-Components: main
-Signed-By:
- -----BEGIN PGP PUBLIC KEY BLOCK-----
- .
- mQINBGY0jSYBEADMH5CvX8ZVX4XzAxdQ2CmF7t86IjFnQgtI18Q19nVnpKEGNyB5
- pgotDMzkhGnxuhvz2zE9PZhd8VgkodB81V607d/Dy8FfI7t1BVQhLvJDx0H/q6RE
- n2y9WxiuBzTHitoQTCTY3hjcr7AUNFFI64gUqwbkQmYbCWWsYOlDpRSkWKg8P8WK
- 08RetwTI0Iwoz8j+BkbPlubuImiVfh1TeH23FBuGIwL1r1Cps0wel6JAi+jaU9WG
- j8MX3mQYFTAtk7f1lRubqWosB/A4xIu609pF1e1tAkWAGltYAeoFhDn+PfA9KgmV
- fvxfVR7zmxp31imTJgXgUFCz+H0Xb3vpve8XsrsHZUP6StJ3+6cFXjNBV6PuO1FT
- JWp86a+AYHg7+sUWcoJRZPCTbb/pOcCa0q1ch5qcLkiYEOGK+pYhbPptq6y8IsJW
- N6EDNCVvVqVyTJy14FZWoOqxcpUiDOQ+su28j8++V+PMo+FO3SQqwEZwJXk7LF/4
- wUipDCUh/WNjDqqgmYLoO+ttiiJPbEw3jtbO+zopbzYpyEC1f06Nz7uz1daOIN3J
- etFPzSqWCE7Eq+hoVmAAm8gVmQir3rFJbIGBAvAaOLQEOkUlOlS7AezqUhdyhGER
- Zrvc3eNqxY7G61SEHipEJ7/hpcDq0RRWCXHsoQqyHaPje826n2pGkJYt4QARAQAB
- tBZMYXVuY2hwYWQgUFBBIGZvciBHTlMziQJOBBMBCgA4FiEEuDqqv/vYLSG1Q8jq
- hsIsLsaiTX8FAmY0jSYCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQhsIs
- LsaiTX9z9xAAq1uHmRgfYmELS0cr2YEnTWHPVE6s95Qx+0cr5zzNeWfmoAS9uSyl
- z8bCm+Q2ZapzU/nOtkozU+RGjgcRRTKMVTyS0PjFX22965xHCRWnw79fPyrYouUw
- H2cAT8WSGYEeVAbqhJSns0RnDpXuaxmWE1wT+iitY/QAjeXo22Z2mjv2bFTitKbY
- hZbE5Eu8Olc5YHCVI0ofq84/Ii921iMibU6EDMmm/iOnMK2uHGbC59t0YG8Rm7mK
- uk6+TpxOULjFeCWSkF2Dr33m8JQmtYZuFUnmqWPuSdBo3J0O1b0qTg+EP9FbDAtj
- CoEKT/V1ccMBd3r77o23CGsvpV7bzEU60A+NsU8vb/AkOmouYiF+qaYDFGZDfWhK
- p1HFmd1kt7YdgxsmoKoFJkbt1bBdcFJLV0Jcad5sfArg2aFDYf2giMxAw4iQ+9jc
- MCuwWxiqWicPqJ5erNTzVfayBkjuZqBDVTO9wmG3DL4QmNosIBS7kq+NGrT8Ql22
- FqYfdIZJDlKVtJKHK8eKJSB0dbFawV2h5p/CvQlIm6nthg5FzOyjvCkPkvxvveq+
- SuNxFEscumFCgo7j7RMWHW9HWK3TUvMmYLMVjxL8kXyCwknp9GklBQHA/IPxRa/2
- eFqqkmVbmNAoMzzw5wqa/BPcFEbgn+E+TFyZqbzp0F4QzPJZFkz16SA=
- =xnj5
- -----END PGP PUBLIC KEY BLOCK-----
-EOFLIST
-
+  log "Upgrading system packages"
+  apt upgrade --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 fi
 
-log "Updating system packages and installing curl"
-apt update
-apt install -y curl
-
-log "Upgrading packages"
-apt upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+log "Adding GNS3 repository ppa:gns3/$REPOSITORY"
+# use sudo -E to preserve proxy config
+sudo -E apt-add-repository -y "ppa:gns3/$REPOSITORY"
 
 log "Installing the GNS3 server and its dependencies"
 apt install -y gns3-server
