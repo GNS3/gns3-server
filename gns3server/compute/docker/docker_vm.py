@@ -365,7 +365,7 @@ class DockerVM(BaseNode):
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
-            log.info("Image '{}' is missing, pulling it from Docker hub...".format(self._image))
+            log.info("Image '{}' is missing, pulling it from Docker repository...".format(self._image))
             await self.pull_image(self._image)
             image_infos = await self._get_image_information()
 
@@ -522,6 +522,7 @@ class DockerVM(BaseNode):
             await self._clean_servers()
 
             await self.manager.query("POST", "containers/{}/start".format(self._cid))
+            await asyncio.sleep(0.5)  # give the Docker container some time to start
             self._namespace = await self._get_namespace()
 
             await self._start_ubridge(require_privileged_access=True)

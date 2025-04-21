@@ -1,0 +1,44 @@
+{
+    "appliance_id": "bb9ff73a-701e-40e8-b68a-6a6efeb04e99",
+    "name": "NethSecurity",
+    "category": "firewall",
+    "description": "NethSecurity is an Unified Threat Management (UTM) solution that provides a comprehensive suite of security features, including firewall, content filtering, deep packet inspection (DPI) using Netifyd, Dedalo hotspot, OpenVPN, and an optional remote controller. It is designed to be easy to install and configure, making it a good choice for both small and medium-sized businesses (SMBs) as well as enterprise organizations.",
+    "vendor_name": "Nethesis",
+    "vendor_url": "https://www.nethesis.it/",
+    "documentation_url": "https://docs.nethsecurity.org/en/latest/",
+    "product_name": "NethSecurity",
+    "product_url": "https://nethsecurity.org/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link. The default username is root and the password is Nethesis,1234",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 1024,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "nethsecurity-8-24.10.0-ns.1.5.1-x86-64-generic-squashfs-combined-efi.img",
+            "version": "8-24.10.0-ns.1.5.1",
+            "md5sum": "be670218effca1b86dac6b8d95012791",
+            "filesize": 331644416,
+            "download_url": "https://nethsecurity.org/download",
+            "direct_download_url": "https://updates.nethsecurity.nethserver.org/stable/8-24.10.0-ns.1.5.1/targets/x86/64/nethsecurity-8-24.10.0-ns.1.5.1-x86-64-generic-squashfs-combined-efi.img.gz",
+            "compression": "gzip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "8-24.10.0-ns.1.5.1",
+            "images": {
+                "hda_disk_image": "nethsecurity-8-24.10.0-ns.1.5.1-x86-64-generic-squashfs-combined-efi.img"
+            }
+        }
+    ]
+}

@@ -1,0 +1,104 @@
+{
+    "appliance_id": "4d351078-c6f5-444c-ab30-0ef20e3d8c53",
+    "name": "Infix",
+    "category": "router",
+    "description": "Infix is a Network Operating System based on Linux. It can be set up both as a switch, with offloading using switchdev, and a router with firewalling.",
+    "vendor_name": "KernelKit",
+    "vendor_url": "https://github.com/kernelkit",
+    "vendor_logo_url": "https://kernelkit.org/assets/img/jack.png",
+    "product_name": "Infix",
+    "registry_version": 4,
+    "documentation_url": "https://github.com/kernelkit/infix/tree/main/doc",
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "KernelKit",
+    "maintainer_email": "kernelkit@googlegroups.com",
+    "usage": "Default login, user/pass: admin/admin\n\nType 'cli' (and Enter) followed by 'help' for an overview of commands and relevant configuration files.",
+    "port_name_format": "eth{0}",
+    "linked_clone": true,
+    "symbol": "router_red.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 512,
+        "cpus": 1,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "process_priority": "normal",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
+            "compression": "zip"
+	},
+	{
+            "filename": "infix-x86_64-disk-24.11.1.img",
+            "filesize": 536870912,
+            "md5sum": "673a123fe122d1c2f5724baf9965a19d",
+            "version": "24.11.1",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v24.11.1/infix-x86_64-24.11.1.tar.gz",
+            "compression": "gzip"
+	},
+	{
+            "filename": "infix-x86_64-disk-25.01.0.img",
+            "filesize": 536870912,
+            "md5sum": "a814d93b385116b4a35712c445b5f830",
+            "version": "25.01.0",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v25.01.0/infix-x86_64-25.01.0.tar.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.02.0.img",
+            "filesize": 536870912,
+            "md5sum": "8e29474c97df3486eb063a8af5043f50",
+            "version": "25.02.0",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v25.02.0/infix-x86_64-25.02.0.tar.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.03.0.img",
+            "filesize": 536870912,
+            "md5sum": "5e1ed1081cd1673bfed4a9b5b1c58e08",
+            "version": "25.03.0",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v25.03.0/infix-x86_64-25.03.0.tar.gz",
+            "compression": "gzip"
+        }
+    ],
+    "versions": [
+	{
+            "name": "25.03.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.03.0.img"
+            }
+        },
+	{
+            "name": "25.02.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.02.0.img"
+            }
+        },
+        {
+            "name": "25.01.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.01.0.img"
+            }
+        },
+        {
+            "name": "24.11.1",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-24.11.1.img"
+            }
+        }
+    ]
+}

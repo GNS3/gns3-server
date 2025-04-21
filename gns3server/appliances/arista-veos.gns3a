@@ -29,23 +29,23 @@
     },
     "images": [
         {
-            "filename": "vEOS-lab-4.33.1F.qcow2",
-            "version": "4.33.1F",
-            "md5sum": "8f662409c0732ed9f682edce63601e8a",
-            "filesize": 611909632,
+            "filename": "vEOS64-lab-4.33.2F.qcow2",
+            "version": "4.33.2F",
+            "md5sum": "fbe629a8342cd0b3b19566b9d7ef4f4f",
+            "filesize": 610992128,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
         {
-            "filename": "vEOS-lab-4.32.3M.qcow2",
-            "version": "4.32.3M",
-            "md5sum": "46fc46f5ed1da8752eed8396f08862f8",
-            "filesize": 605683712,
+            "filename": "vEOS64-lab-4.32.4.1M.qcow2",
+            "version": "4.32.4.1M",
+            "md5sum": "cd369b5ccfd87ccd83a34538681ba35f",
+            "filesize": 605159424,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
         {
-            "filename": "vEOS-lab-4.31.6M.qcow2",
+            "filename": "vEOS64-lab-4.31.6M.qcow2",
             "version": "4.31.6M",
-            "md5sum": "7410110b77472f058322ec4681f8a356",
+            "md5sum": "02fbd929de9416e1096cd2454507d6ce",
             "filesize": 590479360,
             "download_url": "https://www.arista.com/en/support/software-download"
         },
@@ -59,24 +59,24 @@
     ],
     "versions": [
         {
-            "name": "4.33.1F",
+            "name": "4.33.2F",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.33.1F.qcow2"
+                "hdb_disk_image": "vEOS64-lab-4.33.2F.qcow2"
             }
         },
         {
-            "name": "4.32.3M",
+            "name": "4.32.4.1M",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.32.3M.qcow2"
+                "hdb_disk_image": "vEOS64-lab-4.32.4.1M.qcow2"
             }
         },
         {
             "name": "4.31.6M",
             "images": {
                 "hda_disk_image": "Aboot-veos-serial-8.0.2.iso",
-                "hdb_disk_image": "vEOS-lab-4.31.6M.qcow2"
+                "hdb_disk_image": "vEOS64-lab-4.31.6M.qcow2"
             }
         }
     ]
