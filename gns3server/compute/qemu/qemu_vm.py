@@ -32,6 +32,7 @@ import subprocess
 import time
 import json
 import shlex
+import psutil
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
@@ -1225,6 +1226,21 @@ class QemuVM(BaseNode):
         except OSError as e:
             raise QemuError(f"Could not start Telnet QEMU console {e}\n")
 
+    def _find_partition_for_path(self, path):
+        """
+        Finds the disk partition for a given path.
+        """
+
+        path = os.path.abspath(path)
+        partitions = psutil.disk_partitions()
+        # find the partition with the longest matching mount point
+        matching_partition = None
+        for partition in partitions:
+            if path.startswith(partition.mountpoint):
+                if matching_partition is None or len(partition.mountpoint) > len(matching_partition.mountpoint):
+                    matching_partition = partition
+        return matching_partition
+
     async def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
@@ -1236,9 +1252,19 @@ class QemuVM(BaseNode):
             log.info("QEMU process has stopped, return code: %d", returncode)
             await self.stop()
             if returncode != 0:
+                qemu_stdout = self.read_stdout()
+                # additional permissions need to be configured for swtpm in AppArmor if the working dir
+                # is located on a different partition than the partition for the root directory
+                if "TPM result for CMD_INIT" in qemu_stdout:
+                    partition = self._find_partition_for_path(self.project.path)
+                    if partition and partition.mountpoint != "/":
+                        qemu_stdout += "\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor.\n" \
+                                        "Please try to execute the following commands on the server:\n\n" \
+                                        "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n" \
+                                        "sudo service apparmor restart".format(os.path.dirname(self.project.path))
                 self.project.emit(
                     "log.error",
-                    {"message": f"QEMU process has stopped, return code: {returncode}\n{self.read_stdout()}"},
+                    {"message": f"QEMU process has stopped, return code: {returncode}\n{qemu_stdout}"},
                 )
 
     async def stop(self):
@@ -2287,19 +2313,42 @@ class QemuVM(BaseNode):
                 else:
                     raise QemuError(f"bios image '{self._bios_image}' is not accessible")
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
+
         elif self._uefi:
-            # get the OVMF firmware from the images directory
-            ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+
+            old_ovmf_vars_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if os.path.exists(old_ovmf_vars_path):
+                # the node has its own UEFI variables store already, we must also use the old UEFI firmware
+                ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            else:
+                system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+                if os.path.exists(system_ovmf_firmware_path):
+                    ovmf_firmware_path = system_ovmf_firmware_path
+                else:
+                    # otherwise, get the UEFI firmware from the images directory
+                    ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE_4M.fd")
+
             log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
             options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
 
+            # try to use the UEFI variables store from the system first
+            system_ovmf_vars_path = "/usr/share/OVMF/OVMF_VARS_4M.fd"
+            if os.path.exists(system_ovmf_vars_path):
+                ovmf_vars_path = system_ovmf_vars_path
+            else:
+                # otherwise, get the UEFI variables store from the images directory
+                ovmf_vars_path = self.manager.get_abs_image_path("OVMF_VARS_4M.fd")
+
             # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
-            ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
-            if not os.path.exists(ovmf_vars_node_path):
-                try:
-                    shutil.copyfile(self.manager.get_abs_image_path("OVMF_VARS.fd"), ovmf_vars_node_path)
-                except OSError as e:
-                    raise QemuError("Cannot copy OVMF_VARS.fd file to the node working directory: {}".format(e))
+            if os.path.exists(old_ovmf_vars_path):
+                ovmf_vars_node_path = old_ovmf_vars_path
+            else:
+                ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS_4M.fd")
+                if not os.path.exists(ovmf_vars_node_path):
+                    try:
+                        shutil.copyfile(ovmf_vars_path, ovmf_vars_node_path)
+                    except OSError as e:
+                        raise QemuError("Cannot copy OVMF_VARS_4M.fd file to the node working directory: {}".format(e))
             options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
         return options
 

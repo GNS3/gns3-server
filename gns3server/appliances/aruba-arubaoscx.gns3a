@@ -33,6 +33,27 @@
     },
     "images": [
         {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20241115202521.vmdk",
+            "version": "10.15.0005",
+            "md5sum": "69b3675391c04c1a6e0fd0bf8d8bc2d9",
+            "filesize": 420049408,
+            "download_url": "https://networkingsupport.hpe.com"
+        },
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20240731173624.vmdk",
+            "version": "10.14.1000",
+            "md5sum": "01d6932fbc9c46180a4f41aee9e98301",
+            "filesize": 412140544,
+            "download_url": "https://networkingsupport.hpe.com"
+        },
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20240528190307.vmdk",
+            "version": "10.14.0001",
+            "md5sum": "83902dbaa74c37cdda3f066f79431933",
+            "filesize": 401023488,
+            "download_url": "https://networkingsupport.hpe.com"
+        },
+        {
             "filename": "arubaoscx-disk-image-genericx86-p4-20240129204649.vmdk",
             "version": "10.13.1000",
             "md5sum": "a1a24b15e3b8a09b0c0f14bdfacc4a75",
@@ -139,6 +160,24 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.15.0005",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20241115202521.vmdk"
+            }
+        },
+        {
+            "name": "10.14.1000",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20240731173624.vmdk"
+            }
+        },
+        {
+            "name": "10.14.0001",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20240528190307.vmdk"
+            }
+        },
         {
             "name": "10.13.1000",
             "images": {

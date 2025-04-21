@@ -99,6 +99,12 @@ Alternatively, you can run the GNS3 server in a container
 bash scripts/docker_dev_server.sh
 ```
 
+#### use Docker Compose
+
+``` {.bash}
+docker compose up -d
+```
+
 ### Running tests
 
 First, install the development dependencies:

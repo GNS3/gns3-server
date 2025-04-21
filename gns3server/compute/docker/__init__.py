@@ -175,11 +175,10 @@ class Docker(BaseManager):
         response = await self.http_query(method, path, data=data, params=params)
         body = await response.read()
         response.close()
-        if body and len(body):
-            if response.headers.get('CONTENT-TYPE') == 'application/json':
-                body = json.loads(body.decode("utf-8"))
-            else:
-                body = body.decode("utf-8")
+        if response.headers.get('CONTENT-TYPE') == 'application/json':
+            body = json.loads(body.decode("utf-8", errors="ignore"))
+        else:
+            body = body.decode("utf-8", errors="ignore")
         log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
         return body
 

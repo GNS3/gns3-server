@@ -617,6 +617,7 @@ class DockerVM(BaseNode):
             await self._clean_servers()
 
             await self.manager.query("POST", f"containers/{self._cid}/start")
+            await asyncio.sleep(0.5)  # give the Docker container some time to start
             self._namespace = await self._get_namespace()
 
             await self._start_ubridge(require_privileged_access=True)

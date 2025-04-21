@@ -249,6 +249,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return True
         return False
 
+
     async def list(self):
         """
         List all VirtualBox VMs
@@ -269,8 +270,8 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
 
         # get a NAT interface number
         nat_interface_number = await self._look_for_interface("nat")
-        if nat_interface_number < 0:
-            raise GNS3VMError(f'VM "{self.vmname}" must have a NAT interface configured in order to start')
+        if nat_interface_number < 0 and await self._look_for_interface("natnetwork") < 0:
+            raise GNS3VMError(f'VM "{self.vmname}" must have a NAT interface or NAT Network configured in order to start')
 
         if sys.platform.startswith("darwin") and parse_version(self._system_properties["API version"]) >= parse_version("7_0"):
             # VirtualBox 7.0+ on macOS requires a host-only network interface
@@ -339,42 +340,68 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         elif vm_state == "paused":
             args = [self._vmname, "resume"]
             await self._execute("controlvm", args)
-        ip_address = "127.0.0.1"
-        try:
-            # get a random port on localhost
-            with socket.socket() as s:
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                s.bind((ip_address, 0))
-                api_port = s.getsockname()[1]
-        except OSError as e:
-            raise GNS3VMError(f"Error while getting random port: {e}")
 
-        if await self._check_vbox_port_forwarding():
-            # delete the GNS3VM NAT port forwarding rule if it exists
-            log.info(f"Removing GNS3VM NAT port forwarding rule from interface {nat_interface_number}")
-            await self._execute("controlvm", [self._vmname, f"natpf{nat_interface_number}", "delete", "GNS3VM"])
+        log.info("Retrieving IP address from GNS3 VM...")
+        ip = await self._get_ip_from_guest_property()
+        if ip:
+            self.ip_address = ip
+        else:
+            # if we can't get the IP address from the guest property, we try to get it from the GNS3 server (a NAT interface is required)
+            if nat_interface_number < 0:
+                raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
+            log.warning("Could not find IP address from guest property, trying to get it from GNS3 server")
+            ip_address = "127.0.0.1"
+            try:
+                # get a random port on localhost
+                with socket.socket() as s:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    s.bind((ip_address, 0))
+                    api_port = s.getsockname()[1]
+            except OSError as e:
+                raise GNS3VMError("Error while getting random port: {}".format(e))
 
-        # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to the port in the VM
-        log.info(f"Adding GNS3VM NAT port forwarding rule with port {api_port} to interface {nat_interface_number}")
-        await self._execute(
-            "controlvm",
-            [self._vmname, f"natpf{nat_interface_number}", f"GNS3VM,tcp,{ip_address},{api_port},,{self.port}"],
-        )
+            if await self._check_vbox_port_forwarding():
+                # delete the GNS3VM NAT port forwarding rule if it exists
+                log.info("Removing GNS3VM NAT port forwarding rule from interface {}".format(nat_interface_number))
+                await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number), "delete", "GNS3VM"])
 
-        self.ip_address = await self._get_ip(interface_number, api_port)
-        log.info("GNS3 VM has been started with IP {}".format(self.ip_address))
+            # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to the port in the VM
+            log.info("Adding GNS3VM NAT port forwarding rule with port {} to interface {}".format(api_port, nat_interface_number))
+            await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number),
+                                                   "GNS3VM,tcp,{},{},,{}".format(ip_address, api_port, self.port)])
+
+            self.ip_address = await self._get_ip_from_server(interface_number, api_port)
+
+        log.info("GNS3 VM has been started with IP '{}'".format(self.ip_address))
         self.running = True
 
-    async def _get_ip(self, hostonly_interface_number, api_port):
+    async def _get_ip_from_guest_property(self):
         """
-        Get the IP from VirtualBox.
+        Get the IP from VirtualBox by retrieving the guest property (Guest Additions must be installed).
+        """
+
+        remaining_try = 180  # try for 3 minutes
+        while remaining_try > 0:
+            result = await self._execute("guestproperty", ["get", self._vmname, "/VirtualBox/GuestInfo/Net/0/V4/IP"])
+            for info in result.splitlines():
+                if ':' in info:
+                    name, value = info.split(':', 1)
+                    if name == "Value":
+                        return value.strip()
+            remaining_try -= 1
+            await asyncio.sleep(1)
+        return None
+
+    async def _get_ip_from_server(self, hostonly_interface_number, api_port):
+        """
+        Get the IP from VirtualBox by sending a request to the GNS3 server.
 
         Due to VirtualBox limitation the only way is to send request each
         second to a GNS3 endpoint in order to get the list of the interfaces and
         their IP and after that match it with VirtualBox host only.
         """
 
-        remaining_try = 300
+        remaining_try = 180  # try for 3 minutes
         while remaining_try > 0:
             try:
                 async with HTTPClient.get(f"http://127.0.0.1:{api_port}/v3/compute/network/interfaces") as resp:

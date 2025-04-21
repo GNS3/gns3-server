@@ -53,10 +53,39 @@
             "version": "25.01.0",
             "download_url": "https://github.com/kernelkit/infix/releases/download/v25.01.0/infix-x86_64-25.01.0.tar.gz",
             "compression": "gzip"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.02.0.img",
+            "filesize": 536870912,
+            "md5sum": "8e29474c97df3486eb063a8af5043f50",
+            "version": "25.02.0",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v25.02.0/infix-x86_64-25.02.0.tar.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.03.0.img",
+            "filesize": 536870912,
+            "md5sum": "5e1ed1081cd1673bfed4a9b5b1c58e08",
+            "version": "25.03.0",
+            "download_url": "https://github.com/kernelkit/infix/releases/download/v25.03.0/infix-x86_64-25.03.0.tar.gz",
+            "compression": "gzip"
         }
-
     ],
     "versions": [
+	{
+            "name": "25.03.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.03.0.img"
+            }
+        },
+	{
+            "name": "25.02.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.02.0.img"
+            }
+        },
         {
             "name": "25.01.0",
             "images": {

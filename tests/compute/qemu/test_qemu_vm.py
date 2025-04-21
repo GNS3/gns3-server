@@ -401,16 +401,20 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
     vm._uefi = True
 
     # create fake OVMF files
-    ovmf_code_path = os.path.join(images_dir, "OVMF_CODE.fd")
-    with open(ovmf_code_path, "w+") as f:
-        f.write('1')
-    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS.fd")
+    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+    if os.path.exists(system_ovmf_firmware_path):
+        ovmf_code_path = system_ovmf_firmware_path
+    else:
+        ovmf_code_path = os.path.join(images_dir, "OVMF_CODE_4M.fd")
+        with open(ovmf_code_path, "w+") as f:
+            f.write('1')
+    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS_4M.fd")
     with open(ovmf_vars_path, "w+") as f:
         f.write('1')
 
     options = await vm._build_command()
     assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
-    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]) in ' '.join(options)
 
 
 @pytest.mark.asyncio

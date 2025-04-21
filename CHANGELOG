@@ -1,5 +1,19 @@
 # Change Log
 
+## 2.2.54 21/04/2025
+
+* Bundle web-ui v2.2.54
+* Add new method to find the IP address of a VBox GNS3 VM + allow NAT Network
+* Add edk2-stable202502 UEFI firmwares and try to first use firmwares from the ovmf package if installed. Fixes #2494
+* Try to detect swtpm and AppArmor issue. Ref https://github.com/GNS3/gns3-gui/issues/3725
+* Fix Docker logs decoding. Ref #2522
+* Add delay after starting a Docker container and adding connections in uBridge. Ref #2522
+* Fix TypeError when reading Docker container logs. Ref #2522
+* Replace "Docker hub" by "Docker repository" because it is possible to use different repositories
+* Upgrade dependencies
+* Improvements for remote-install.sh
+
+
 ## 3.0.4 25/02/2025
 
 * Require minimum 8 characters for passwords
