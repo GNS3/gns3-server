@@ -2445,7 +2445,12 @@ class QemuVM(BaseNode):
         )  # we do not want any user networking back-end if no adapter is connected.
 
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
-        pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
+        # Reserve 32 devices on root pci_bridge,
+        # since the number of devices used by templates may differ significantly
+        # and pci_bridges also consume IDs.
+        # Move network devices to their own bridge
+        pci_devices_reserved = 32
+        pci_devices = pci_devices_reserved + len(self._ethernet_adapters)
         pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
         if pci_bridges >= 1:
@@ -2454,7 +2459,7 @@ class QemuVM(BaseNode):
                     "Qemu version 2.4 or later is required to run this VM with a large number of network adapters"
                 )
 
-        pci_device_id = 4 + pci_bridges  # Bridge consume PCI ports
+        pci_device_id = pci_devices_reserved
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
