@@ -2450,15 +2450,7 @@ class QemuVM(BaseNode):
         # and pci_bridges also consume IDs.
         # Move network devices to their own bridge
         pci_devices_reserved = 32
-        pci_devices = pci_devices_reserved + len(self._ethernet_adapters)
-        pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
-        if pci_bridges >= 1:
-            if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
-                raise QemuError(
-                    "Qemu version 2.4 or later is required to run this VM with a large number of network adapters"
-                )
-
         pci_device_id = pci_devices_reserved
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
@@ -2650,6 +2642,8 @@ class QemuVM(BaseNode):
         """
 
         self._qemu_version = await self.manager.get_qemu_version(self.qemu_path)
+        if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
+            raise QemuError("Qemu version 2.4 or later is required to run Qemu VMs")
         vm_name = self._name.replace(",", ",,")
         project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
