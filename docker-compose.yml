@@ -9,7 +9,7 @@ services:
     volumes:
       - ./gns3server:/server/
       - /var/run/docker.sock:/var/run/docker.sock
-    command: python3 -m gns3server --local --port 3080
+    command: python3.10 -m gns3server --local --port 3080
     ports:
       - 3080:3080
       - 5000-5100:5000-5100
