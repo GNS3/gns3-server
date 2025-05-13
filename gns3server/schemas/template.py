@@ -27,7 +27,7 @@ BASE_TEMPLATE_PROPERTIES = {
     },
     "template_type": {
         "description": "Type of node",
-        "enum": ["cloud", "ethernet_hub", "ethernet_switch", "docker", "dynamips", "vpcs", "traceng",
+        "enum": ["cloud", "nat", "ethernet_hub", "ethernet_switch", "docker", "dynamips", "vpcs", "traceng",
                  "virtualbox", "vmware", "iou", "qemu"]
     },
     "name": {
