@@ -776,7 +776,6 @@ async def test_build_command_with_virtio_net_pci_adapter(vm):
     vm._adapter_type = "virtio-net-pci"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-    print(cmd)
     assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
 
 
