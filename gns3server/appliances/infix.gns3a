@@ -37,16 +37,16 @@
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
             "compression": "zip"
-	},
-	{
+        },
+        {
             "filename": "infix-x86_64-disk-24.11.1.img",
             "filesize": 536870912,
             "md5sum": "673a123fe122d1c2f5724baf9965a19d",
             "version": "24.11.1",
             "download_url": "https://github.com/kernelkit/infix/releases/download/v24.11.1/infix-x86_64-24.11.1.tar.gz",
             "compression": "gzip"
-	},
-	{
+        },
+        {
             "filename": "infix-x86_64-disk-25.01.0.img",
             "filesize": 536870912,
             "md5sum": "a814d93b385116b4a35712c445b5f830",
@@ -69,17 +69,31 @@
             "version": "25.03.0",
             "download_url": "https://github.com/kernelkit/infix/releases/download/v25.03.0/infix-x86_64-25.03.0.tar.gz",
             "compression": "gzip"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.04.0.qcow2",
+            "filesize": 259723776,
+            "md5sum": "84bd999513325d0007d0e6587abc6140",
+            "version": "25.04.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.04.0/infix-x86_64-disk-25.04.0.qcow2"
         }
     ],
     "versions": [
-	{
+        {
+            "name": "25.04.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.04.0.qcow2"
+            }
+        },
+        {
             "name": "25.03.0",
             "images": {
                 "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "infix-x86_64-disk-25.03.0.img"
             }
         },
-	{
+        {
             "name": "25.02.0",
             "images": {
                 "bios_image": "OVMF-edk2-stable202305.fd",
