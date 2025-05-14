@@ -27,6 +27,14 @@
     },
     "images": [
         {
+            "filename": "Rocky-9-GenericCloud-Base-9.5-20241118.0.x86_64.qcow2",
+            "version": "9.5",
+            "md5sum": "880eccf788301bb9f34669faebe09276",
+            "filesize": 609812480,
+            "download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base-9.5-20241118.0.x86_64.qcow2"
+        },
+        {
             "filename": "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2",
             "version": "9.3",
             "md5sum": "48cdeb033364af5909e15ee48d0e144d",
@@ -68,6 +76,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.5",
+            "images": {
+                "hda_disk_image": "Rocky-9-GenericCloud-Base-9.5-20241118.0.x86_64.qcow2",
+                "cdrom_image": "rocky-cloud-init-data.iso"
+            }
+        },
         {
             "name": "9.3",
             "images": {

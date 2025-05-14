@@ -401,16 +401,20 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
     vm._uefi = True
 
     # create fake OVMF files
-    ovmf_code_path = os.path.join(images_dir, "OVMF_CODE.fd")
-    with open(ovmf_code_path, "w+") as f:
-        f.write('1')
-    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS.fd")
+    system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
+    if os.path.exists(system_ovmf_firmware_path):
+        ovmf_code_path = system_ovmf_firmware_path
+    else:
+        ovmf_code_path = os.path.join(images_dir, "OVMF_CODE_4M.fd")
+        with open(ovmf_code_path, "w+") as f:
+            f.write('1')
+    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS_4M.fd")
     with open(ovmf_vars_path, "w+") as f:
         f.write('1')
 
     options = await vm._build_command()
     assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
-    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]) in ' '.join(options)
 
 
 @pytest.mark.asyncio
@@ -566,7 +570,11 @@ async def test_build_command(vm, fake_qemu_binary):
             "-net",
             "none",
             "-device",
-            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "i82801b11-bridge,id=dmi_pci_bridge1",
+            "-device",
+            "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
+            "-device",
+            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
             "-netdev",
             "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
             "-display",
@@ -589,40 +597,16 @@ async def test_build_command_manual_uuid(vm):
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm(linux_platform, vm, fake_qemu_binary):
+async def test_build_command_kvm_below_2_4(linux_platform, vm, fake_qemu_binary):
     """
     Qemu 2.4 introduce an issue with KVM
     """
 
     vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.3.2")
-    os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-            cmd = await vm._build_command()
-            nio = vm._local_udp_tunnels[0][0]
-            assert cmd == [
-                fake_qemu_binary,
-                "-name",
-                "test",
-                "-m",
-                "256M",
-                "-smp",
-                "cpus=1,maxcpus=1,sockets=1",
-                "-enable-kvm",
-                "-boot",
-                "order=c",
-                "-uuid",
-                vm.id,
-                "-serial",
-                "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
-                "-net",
-                "none",
-                "-device",
-                "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
-                "-netdev",
-                "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
-                "-nographic"
-            ]
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+            with pytest.raises(QemuError):
+                await vm._build_command()
 
 
 @pytest.mark.asyncio
@@ -657,7 +641,11 @@ async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
                 "-net",
                 "none",
                 "-device",
-                "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+                "i82801b11-bridge,id=dmi_pci_bridge1",
+                "-device",
+                "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
+                "-device",
+                "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
                 "-netdev",
                 "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
                 "-nographic"
@@ -701,11 +689,15 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-net",
             "none",
             "-device",
-            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "i82801b11-bridge,id=dmi_pci_bridge1",
+            "-device",
+            "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
+            "-device",
+            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
             "-netdev",
             "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio1.rport, nio1.lport),
             "-device",
-            "e1000,mac={},netdev=gns3-1".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)),
+            "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)),
             "-netdev",
             "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport),
             "-nographic"
@@ -725,8 +717,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
+        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
+        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
 
     vm.mac_address = "00:42:ab:0e:0f:0a"
     mac_0 = vm._mac_address
@@ -735,8 +727,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
 
         cmd = await vm._build_command()
-        assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
+        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
+        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
 
 
 @pytest.mark.asyncio
@@ -758,28 +750,20 @@ async def test_build_command_large_number_of_adapters(vm):
     assert len([l for l in cmd if "e1000" in l ]) == 100
     assert len(vm._ethernet_adapters) == 100
 
-    assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
-    assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
     assert "pci-bridge,id=pci-bridge0,bus=dmi_pci_bridge0,chassis_nr=0x1,addr=0x0,shpc=off" not in cmd
     assert "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off" in cmd
     assert "pci-bridge,id=pci-bridge2,bus=dmi_pci_bridge2,chassis_nr=0x1,addr=0x2,shpc=off" in cmd
     assert "i82801b11-bridge,id=dmi_pci_bridge1" in cmd
 
     mac_29 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 29)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x04,netdev=gns3-29".format(mac_29) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x1d,netdev=gns3-29".format(mac_29) in cmd
     mac_30 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 30)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x05,netdev=gns3-30".format(mac_30) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x1e,netdev=gns3-30".format(mac_30) in cmd
     mac_74 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 74)
-    assert "e1000,mac={},bus=pci-bridge2,addr=0x11,netdev=gns3-74".format(mac_74) in cmd
+    assert "e1000,mac={},bus=pci-bridge3,addr=0x0a,netdev=gns3-74".format(mac_74) in cmd
 
-    # Qemu < 2.4 doesn't support large number of adapters
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.0.0")
-    with pytest.raises(QemuError):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            await vm._build_command()
-    vm.adapters = 5
-    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-        await vm._build_command()
 
 @pytest.mark.asyncio
 async def test_build_command_with_virtio_net_pci_adapter(vm):
@@ -792,7 +776,7 @@ async def test_build_command_with_virtio_net_pci_adapter(vm):
     vm._adapter_type = "virtio-net-pci"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-    assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,netdev=gns3-0" in cmd
+    assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
 
 
 @pytest.mark.asyncio

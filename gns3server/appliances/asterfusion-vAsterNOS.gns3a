@@ -13,7 +13,7 @@
     "status": "experimental",
     "maintainer": "Asterfusion",
     "maintainer_email": "bd@cloudswit.ch",
-    "usage": "The login is admin, passwd asteros",
+    "usage": "The login is admin and the password is asteros",
     "symbol": "asterfusion-vAsterNOS.svg",
     "first_port_name": "eth0",
     "port_name_format": "Ethernet{0}",

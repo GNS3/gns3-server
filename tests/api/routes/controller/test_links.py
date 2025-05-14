@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import uuid
 import pytest_asyncio
 
 from typing import Tuple
@@ -423,3 +424,84 @@ class TestLinkRoutes:
         assert mock.called
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == FILTERS
+
+
+    async def test_get_udp_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+        """
+        Test getting UDP tunnel interface information from a link.
+        """
+
+        link = Link(project)
+        project._links = {link.id: link}
+        
+        cloud_node = MagicMock()
+        cloud_node.node_type = "cloud"
+        cloud_node.id = str(uuid.uuid4())
+        cloud_node.name = "Cloud1"
+        
+        compute = MagicMock()
+        response = MagicMock()
+        response.json = {
+            "ports_mapping": [
+                {
+                    "port_number": 1,
+                    "type": "udp",
+                    "lport": 20000,
+                    "rhost": "127.0.0.1",
+                    "rport": 30000,
+                    "name": "UDP tunnel 1"
+                }
+            ]
+        }
+        compute.get = AsyncioMagicMock(return_value=response)
+        cloud_node.compute = compute
+        
+        link._nodes = [{"node": cloud_node, "port_number": 1}]
+        
+        response = await client.get(app.url_path_for("get_iface", project_id=project.id, link_id=link.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        result = response.json()
+        assert result["node_id"] == cloud_node.id
+        assert result["lport"] == 20000
+        assert result["rhost"] == "127.0.0.1"
+        assert result["rport"] == 30000
+        assert result["type"] == "udp"
+
+
+    async def test_get_ethernet_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+        """
+        Test getting ethernet interface information from a link.
+        """
+        link = Link(project)
+        project._links = {link.id: link}
+
+        cloud_node = MagicMock()
+        cloud_node.node_type = "cloud"
+        cloud_node.id = str(uuid.uuid4())
+        cloud_node.name = "Cloud1"
+
+        compute = MagicMock()
+        response = MagicMock()
+        response.json = {
+            "ports_mapping": [
+                {
+                    "port_number": 1,
+                    "type": "ethernet",
+                    "interface": "eth0",
+                    "name": "Ethernet 1"
+                }
+            ]
+        }
+        compute.get = AsyncioMagicMock(return_value=response)
+        cloud_node.compute = compute
+
+        link._nodes = [{"node": cloud_node, "port_number": 1}]
+
+        response = await client.get(app.url_path_for("get_iface", project_id=project.id, link_id=link.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        result = response.json()
+        assert result["node_id"] == cloud_node.id
+        assert result["interface"] == "eth0"
+        assert result["type"] == "ethernet"

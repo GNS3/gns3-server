@@ -24,7 +24,7 @@ import aiohttp
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import StreamingResponse
 from fastapi.encoders import jsonable_encoder
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -285,3 +285,54 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
             raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
+
+
+@router.get(
+    "/{link_id}/iface",
+    response_model=Union[schemas.UDPPortInfo, schemas.EthernetPortInfo],
+    dependencies=[Depends(has_privilege("Link.Audit"))]
+)
+async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo, schemas.EthernetPortInfo]:
+    """
+    Return iface info for links to Cloud or NAT devices.
+
+    Required privilege: Link.Audit
+    """
+
+    ifaces_info = {}
+    for node_data in link._nodes:
+        node = node_data["node"]
+        if node.node_type not in ("cloud", "nat"):
+            continue
+
+        port_number = node_data["port_number"]
+        compute = node.compute
+        project_id = link.project.id
+        response = await compute.get(f"/projects/{project_id}/{node.node_type}/nodes/{node.id}")
+        if "ports_mapping" not in response.json:
+            continue
+        ports_mapping = response.json["ports_mapping"]
+        
+        for port in ports_mapping:
+            port_num = port.get("port_number")
+
+            if port_num and int(port_num) == int(port_number):
+                port_type = port.get("type", "")
+                if "udp" in port_type.lower():
+                    ifaces_info = {
+                        "node_id": node.id,
+                        "type": f"{port_type}",
+                        "lport": port["lport"],
+                        "rhost": port["rhost"],
+                        "rport": port["rport"]
+                    }
+                else:
+                    ifaces_info = {
+                        "node_id": node.id,
+                        "type": f"{port_type}",
+                        "interface": port["interface"],
+                    }
+    
+    if not ifaces_info:
+        raise ControllerError("Link not connected to Cloud/NAT")
+    return ifaces_info

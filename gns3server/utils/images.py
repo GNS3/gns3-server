@@ -342,6 +342,12 @@ async def write_image(
         allow_raw_image=False
 ) -> models.Image:
 
+    db_image = await images_repo.get_image(image_path)
+    if db_image and os.path.exists(image_path):
+        # the image already exists in the database and on disk
+        log.info(f"Image {image_path} already exists")
+        return db_image
+
     image_dir, image_name = os.path.split(image_filename)
     log.info(f"Writing image file to '{image_path}'")
     # Store the file under its final name only when the upload is completed
@@ -380,6 +386,10 @@ async def write_image(
                 os.remove(tmp_path)
         except OSError:
             log.warning(f"Could not remove '{tmp_path}'")
+
+    if db_image:
+        # the image already exists in the database, no need to add it again
+        return db_image
 
     return await images_repo.add_image(
         image_name,

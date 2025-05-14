@@ -1,0 +1,50 @@
+{
+    "appliance_id": "9e934470-d898-4289-a5ed-50af094e629e",
+    "name": "Asterfusion vAsterNOS campus", 
+    "category": "multilayer_switch",
+    "description": "AsterNOS is the core technology of Asterfusion’s one-stop SONiC turnkey solution designed for cloud, enterprise, and AI-driven scenarios. AsterNOS v5.2 Campus is specifically designed for traditional campus networks, offering comprehensive L2/L3 capabilities suitable for various campus scenarios such as schools, office buildings, and hospitals. This version supports a fully cloud-integrated Layer 3 network architecture, providing rich routing and switching functionalities to ensure high-performance operation and ease of maintenance. It can also be deployed in the GNS3 simulation environment to experience a complete All-Layer 3 Cloud-Campus network. This version is ideal for enterprises and campus networks requiring high-performance multi-service transport, supporting cross-domain connectivity and providing nanosecond-level time synchronization. It is well-suited for applications with stringent time accuracy requirements, such as financial trading, industrial automation, and smart manufacturing. NOTICE: This appliance file is a virtualized version of AsterNOS and is intended to be used only to experience the basic functionality and industry standard CLI (Klish), not for official software testing. For more information about AsterNOS commercial version, please feel free to contact us via Email: bd@cloudswit.ch",
+    "vendor_name": "Asterfusion",
+    "vendor_url": "https://cloudswit.ch/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/asterfusion.png", 
+    "documentation_url": "https://help.cloudswit.ch/portal/en/kb/articles/vasternos", 
+    "product_name": "vAsterNOS",
+    "product_url": "https://cloudswit.ch/",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "Asterfusion",
+    "maintainer_email": "bd@cloudswit.ch",
+    "usage": "The login is admin and the password is asteros",
+    "symbol": "asterfusion-vAsterNOS.svg",
+    "first_port_name": "eth0",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 10,
+        "ram": 4096,
+        "cpus": 4,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "d",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "vAsterNOS-V5.2R012P01.img",
+            "version": "5.2-12-1",
+            "md5sum": "d18c0cfd786607ccc6dc1069a8f40465",
+            "filesize": 2823290880,
+            "download_url": "https://drive.cloudswitch.io/external/d29f6d0a6c8322fea42b3c08e95113d026b8ec6aafbe29193c338333077f3da7"
+        }
+
+    ],
+    "versions": [
+        {
+            "name": "5.2-12-1",
+            "images": {
+                "hda_disk_image": "vAsterNOS-V5.2R012P01.img"
+            }
+        }
+    ]
+}
+

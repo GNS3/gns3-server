@@ -1,0 +1,75 @@
+{
+    "appliance_id": "12394e0d-9ac5-4da5-8e91-94a462536b61",
+    "name": "vJunos-router",
+    "category": "router",
+    "description": "vJunos-router",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net",
+    "documentation_url": "https://www.juniper.net/documentation/product/us/en/vjunos-router/",
+    "product_name": "vJunos Router",
+    "registry_version": 6,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "AAm-kun",
+    "maintainer_email": "github@sugarpapa.mozmail.com",
+    "usage": "GNS3 SHOULD be a baremetal installation. Using the GNS3 VM MIGHT result in unwanted issues. Default user is root. No password is needed.",
+    "symbol": "juniper-vmx.svg",
+    "first_port_name": "ge-0/0/0",
+    "port_name_format": "ge-0/0/{port0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 17,
+        "ram": 5120,
+        "cpus": 4,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-serial mon:stdio -nographic -smbios type=1,product=VM-VMX,family=lab -cpu host",
+        "on_close": "power_off"
+    },
+    "images": [
+        {
+            "filename": "vJunos-router-24.2R1-S2.qcow2",
+            "version": "24.2R1-S2",
+            "md5sum": "dd906b4d19463e22f3e1a297ff1a7464",
+            "filesize": 3675783168,
+            "download_url": "https://support.juniper.net/support/downloads/?p=vjunos-router"
+        },
+        {
+            "filename": "vJunos-router-23.4R2-S2.1.qcow2",
+            "version": "23.4R2-S2.1",
+            "md5sum": "e25f5acdfc6c076d0023fd8289bcdd89",
+            "filesize": 3644063744,
+            "download_url": "https://support.juniper.net/support/downloads/?p=vjunos-router"
+        },
+        {
+            "filename": "vJunos-router-23.2R1.15.qcow2",
+            "version": "23.2R1.15",
+            "md5sum": "18670fb67633822697fdd3cf982e7eb1",
+            "filesize": 3653566464,
+            "download_url": "https://support.juniper.net/support/downloads/?p=vjunos-router"
+        }
+
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "vJunos-router-24.2R1-S2.qcow2"
+            },
+            "name": "24.2R1-S2"
+        },
+        {
+            "images": {
+                "hda_disk_image": "vJunos-router-23.4R2-S2.1.qcow2"
+            },
+            "name": "23.4R2-S2.1"
+        },
+        {
+            "images": {
+                "hda_disk_image": "vJunos-router-23.2R1.15.qcow2"
+            },
+            "name": "23.2R1.15"
+        }
+    ]
+}

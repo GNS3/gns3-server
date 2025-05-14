@@ -232,7 +232,7 @@ async def stop_cloud_capture(
     await node.stop_capture(port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap")
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(
         *,
         adapter_number: int = Path(..., ge=0, le=0),
