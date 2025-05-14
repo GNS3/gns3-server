@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:noble
 
 WORKDIR /gns3server
 
@@ -34,4 +34,4 @@ COPY . /gns3server
 RUN mkdir -p ~/.config/GNS3/3.0/
 RUN cp scripts/gns3_server.conf ~/.config/GNS3/3.0/
 
-RUN python3 -m pip install .
+RUN python3 -m pip install --break-system-packages .
