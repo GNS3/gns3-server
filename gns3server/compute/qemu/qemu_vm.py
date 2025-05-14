@@ -266,17 +266,10 @@ class QemuVM(BaseNode):
             if qemu_bin == "qemu":
                 self._platform = "i386"
             else:
-                self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, re.IGNORECASE)
-
-        try:
-            QemuPlatform(self._platform.split(".")[0])
-        except ValueError:
+                self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, flags=re.IGNORECASE)
+        if self._platform.split(".")[0] not in QEMU_PLATFORMS:
             raise QemuError(f"Platform {self._platform} is unknown")
-        log.info(
-            'QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(
-                name=self._name, id=self._id, qemu_path=qemu_path
-            )
-        )
+        log.info(f'QEMU VM "{self._name}" [{self._name}] has set the QEMU path to {qemu_path}')
 
     def _check_qemu_path(self, qemu_path):
 
