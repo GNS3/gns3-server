@@ -1,5 +1,30 @@
 # Change Log
 
+## 3.0.5 14/05/2025
+
+* Bundle web-ui v3.0.5
+* Sync appliances
+* Use Ubuntu 24.04 LTS in Dockerfile. Ref #2523
+* Fix tests and require Qemu version >= 2.4
+* Fix adding pci_bridges to qemu vms
+* Resolve deprecation warnings of regex library
+* Remove OVMF_CODE_4M.secboot.fd and associated code
+* Add edk2-stable202502 UEFI firmwares and try to first use firmwares from the ovmf package if installed. Fixes #2494
+* Prettify TPM error message
+* Fix bug in qemu_stdout message
+* Try to detect swtpm and AppArmor issue. Ref https://github.com/GNS3/gns3-gui/issues/3725
+* Fix Docker logs decoding. Ref #2522
+* Add delay after starting a Docker container and adding connections in uBridge. Ref #2522
+* Fix TypeError when reading Docker container logs. Ref #2522
+* Allow an image to be uploaded to the controller again even if it is already in the database
+* Fix controller not reporting an error if invalid options are passed to Qemu command line. Fixes #2517
+* Replace "Docker hub" by "Docker repository" because it is possible to use different repositories
+* Fix unable to add NAT cloud after configuring “allowed_interfaces” in configuration file. Fixes #2508
+* Fix interface information API endpoint for Cloud/NAT devices
+* Upgrade Jinja2 to v3.1.6. Fixes #2515
+* Fix packet capture for links connected to a cloud node. Fixes #2513
+* fix: check if remote-install.sh is being run as root
+
 ## 2.2.54 21/04/2025
 
 * Bundle web-ui v2.2.54
