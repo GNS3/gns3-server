@@ -745,6 +745,7 @@ class DockerVM(BaseNode):
                                                                          "-rfbport", str(self.console),
                                                                          "-AlwaysShared",
                                                                          "-SecurityTypes", "None",
+                                                                         "-desktop", self.name,
                                                                          ":{}".format(self._display),
                                                                          stdout=fd, stderr=subprocess.STDOUT)
 
