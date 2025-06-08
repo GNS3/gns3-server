@@ -30,8 +30,8 @@ jobs:
 
     - name: Build and push to GitHub Container Registry
       run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest .
-        docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+        docker build -t ghcr.io/${{ github.event.repository.name }}:latest .
+        docker push ghcr.io/${{ github.event.repository.name }}:latest
 
     - name: Build and push to Docker Hub
       run: |
