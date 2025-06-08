@@ -35,5 +35,5 @@ jobs:
 
     - name: Build and push to Docker Hub
       run: |
-        docker build -t ${{ github.repository }}:latest .
-        docker push ${{ github.repository }}:latest
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest .
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
