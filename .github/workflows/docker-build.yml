@@ -28,10 +28,10 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push to GitHub Container Registry
-      run: |
-        docker build -t ghcr.io/${{ github.event.repository.name }}:latest .
-        docker push ghcr.io/${{ github.event.repository.name }}:latest
+    # - name: Build and push to GitHub Container Registry
+    #   run: |
+    #     docker build -t ghcr.io/${{ github.event.repository.name }}:latest .
+    #     docker push ghcr.io/${{ github.event.repository.name }}:latest
 
     - name: Build and push to Docker Hub
       run: |
