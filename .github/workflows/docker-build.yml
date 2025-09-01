@@ -3,9 +3,7 @@ name: Build and Push Docker Image
 on:
   workflow_dispatch:
   push:
-    branches: [ master, '2.2', '3.3' ]
-  pull_request:
-    branches: [ master, '2.2', '3.3' ]
+    tags: ['v2.*', 'v3.*']
 
 jobs:
   build:
