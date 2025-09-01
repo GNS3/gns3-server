@@ -1,10 +1,11 @@
 name: Build and Push Docker Image
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, master, enhancement/**, dev ]
+    branches: [ master, '2.2', '3.3' ]
   pull_request:
-    branches: [ main, master, enhancement/**, dev ]
+    branches: [ master, '2.2', '3.3' ]
 
 jobs:
   build:
