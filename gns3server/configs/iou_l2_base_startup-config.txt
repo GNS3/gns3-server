@@ -13,8 +13,7 @@ logging console discriminator EXCESS
 !
 no ip icmp rate-limit unreachable
 !
-! due to some bugs with IOU, try to change the following line to 'ip cef' if your routing does not work
-no ip cef
+ip cef
 no ip domain lookup
 !
 !
