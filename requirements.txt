@@ -7,6 +7,7 @@ aiohttp>=3.11.16,<3.12
 async-timeout==5.0.1; python_version < '3.11'
 aiofiles>=24.1.0,<25.0
 Jinja2>=3.1.6,<3.2
+telnetlib3==2.0.8  # used by the asyncio telnet server implementation
 sentry-sdk>=2.26.1,<2.27  # optional dependency
 psutil>=7.0.0
 async-timeout>=5.0.1,<5.1
