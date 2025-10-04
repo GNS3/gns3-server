@@ -47,6 +47,25 @@ log = logging.getLogger(__name__)
 READ_SIZE = 1024
 
 
+def _translate_c1_controls(data: bytes) -> bytes:
+    """Convert selected 8-bit C1 control bytes to their 7-bit escape sequence.
+
+    Some terminal widgets (notably the QTermWidget used by the GNS3 GUI) do not
+    interpret C1 control characters such as CSI (0x9B) and instead echo them
+    literally, leading to artefacts like ``ESC {05;76H`` on connect. Converting
+    these bytes to their 7-bit equivalents keeps backward compatibility without
+    affecting peers that already support the 8-bit control range.
+    """
+
+    if not data:
+        return data
+
+    if b"\x9b" in data:
+        data = data.replace(b"\x9b", b"\x1b[")
+
+    return data
+
+
 class _StreamWriterTransportAdapter:
     """Adapter exposing the minimal transport API expected by TelnetWriter."""
 
@@ -163,7 +182,7 @@ class TelnetConnection:
         try:
             if not isinstance(data, (bytes, bytearray)):
                 raise TypeError("Expected bytes-like object")
-            text = bytes(data)
+            text = _translate_c1_controls(bytes(data))
             payload = text.decode(errors="ignore").replace("\n", "\r\n").encode()
             if self.telnet_writer is not None:
                 self.telnet_writer.write(payload)
@@ -441,6 +460,7 @@ class AsyncioTelnetServer:
                     reader_read = await self._get_reader(network_reader)
 
                     # Replicate the output on all clients
+                    outbound = _translate_c1_controls(data)
                     for connection_key in list(self._connections.keys()):
                         client_info = connection_key.get_extra_info("socket", None)
                         client_connection = self._connections[connection_key]
@@ -448,10 +468,10 @@ class AsyncioTelnetServer:
 
                         try:
                             if client_session is not None:
-                                client_session.writer.write(data)
+                                client_session.writer.write(outbound)
                                 await asyncio.wait_for(client_session.writer.drain(), timeout=10)
                             else:
-                                client_connection.writer.write(data)
+                                client_connection.writer.write(outbound)
                                 await asyncio.wait_for(client_connection.writer.drain(), timeout=10)
                         except:
                             log.debug(
