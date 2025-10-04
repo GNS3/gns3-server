@@ -46,24 +46,101 @@ log = logging.getLogger(__name__)
 
 READ_SIZE = 1024
 
+_C1_ESCAPE_MAP = {value: b"\x1b" + bytes([value - 0x40]) for value in range(0x80, 0xA0)}
+
+_IAC_BYTE = IAC[0]
+_SB_BYTE = SB[0]
+_SE_BYTE = SE[0]
+_IAC_COMMAND_WITH_OPTION = {DO[0], DONT[0], WILL[0], WONT[0]}
+
+
+class _TelnetCommandFilter:
+    """Stateful filter removing telnet IAC negotiation sequences from byte streams."""
+
+    _STATE_DATA = 0
+    _STATE_IAC = 1
+    _STATE_IAC_OPTION = 2
+    _STATE_SB_OPTION = 3
+    _STATE_SB = 4
+    _STATE_SB_IAC = 5
+
+    def __init__(self):
+        self._state = self._STATE_DATA
+
+    def reset(self):
+        self._state = self._STATE_DATA
+
+    def feed(self, data: bytes) -> bytes:
+        if not data:
+            return data
+
+        output = bytearray()
+
+        for byte in data:
+            if self._state == self._STATE_DATA:
+                if byte == _IAC_BYTE:
+                    self._state = self._STATE_IAC
+                else:
+                    output.append(byte)
+            elif self._state == self._STATE_IAC:
+                if byte == _IAC_BYTE:
+                    # Escaped 0xFF
+                    output.append(_IAC_BYTE)
+                    self._state = self._STATE_DATA
+                elif byte == _SB_BYTE:
+                    self._state = self._STATE_SB_OPTION
+                elif byte in _IAC_COMMAND_WITH_OPTION:
+                    self._state = self._STATE_IAC_OPTION
+                else:
+                    # One-byte command (e.g. NOP, AYT, GA...)
+                    self._state = self._STATE_DATA
+            elif self._state == self._STATE_IAC_OPTION:
+                # Skip single option byte
+                self._state = self._STATE_DATA
+            elif self._state == self._STATE_SB_OPTION:
+                # Skip the option identifier and enter subnegotiation body
+                self._state = self._STATE_SB
+            elif self._state == self._STATE_SB:
+                if byte == _IAC_BYTE:
+                    self._state = self._STATE_SB_IAC
+                # Everything else inside SB is ignored
+            elif self._state == self._STATE_SB_IAC:
+                if byte == _SE_BYTE:
+                    self._state = self._STATE_DATA
+                elif byte == _IAC_BYTE:
+                    # Escaped 0xFF inside subnegotiation, continue consuming
+                    self._state = self._STATE_SB
+                else:
+                    # Unexpected command inside SB; keep consuming the body
+                    self._state = self._STATE_SB
+
+        return bytes(output)
+
 
 def _translate_c1_controls(data: bytes) -> bytes:
-    """Convert selected 8-bit C1 control bytes to their 7-bit escape sequence.
-
-    Some terminal widgets (notably the QTermWidget used by the GNS3 GUI) do not
-    interpret C1 control characters such as CSI (0x9B) and instead echo them
-    literally, leading to artefacts like ``ESC {05;76H`` on connect. Converting
-    these bytes to their 7-bit equivalents keeps backward compatibility without
-    affecting peers that already support the 8-bit control range.
-    """
+    """Convert 8-bit C1 control bytes to their 7-bit ``ESC``-prefixed versions."""
 
     if not data:
         return data
 
-    if b"\x9b" in data:
-        data = data.replace(b"\x9b", b"\x1b[")
+    for index, byte in enumerate(data):
+        replacement = _C1_ESCAPE_MAP.get(byte)
+        if replacement is not None:
+            break
+    else:
+        return data
 
-    return data
+    translated = bytearray(data[:index])
+    translated.extend(replacement)
+
+    for byte in data[index + 1 :]:
+        replacement = _C1_ESCAPE_MAP.get(byte)
+        if replacement is not None:
+            translated.extend(replacement)
+        else:
+            translated.append(byte)
+
+    return bytes(translated)
 
 
 class _StreamWriterTransportAdapter:
@@ -248,6 +325,7 @@ class AsyncioTelnetServer:
             connection_factory = default_connection_factory
 
         self._connection_factory = connection_factory
+        self._backend_filter = _TelnetCommandFilter()
 
     @staticmethod
     async def write_client_intro(writer, echo=False):
@@ -458,6 +536,10 @@ class AsyncioTelnetServer:
                         raise ConnectionResetError()
 
                     reader_read = await self._get_reader(network_reader)
+
+                    data = self._backend_filter.feed(data)
+                    if not data:
+                        continue
 
                     # Replicate the output on all clients
                     outbound = _translate_c1_controls(data)
