@@ -380,7 +380,13 @@ async def export_project(
     except (ValueError, OSError, RuntimeError) as e:
         raise ConnectionError(f"Cannot export project: {e}")
 
-    headers = {"CONTENT-DISPOSITION": f'attachment; filename="{project.name}.gns3project"'}
+    fallback = project.name.encode("ascii", "ignore").decode() or "project"
+    encoded = urllib.parse.quote(project.name, safe="")
+    headers = {
+        "Content-Disposition": (
+            f'attachment; filename="{fallback}.gns3project"; filename*=UTF-8\'\'{encoded}.gns3project'
+        )
+    }
     return StreamingResponse(streamer(), media_type="application/gns3project", headers=headers)
 
 
