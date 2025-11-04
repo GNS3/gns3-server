@@ -330,6 +330,9 @@ async def export_project(
     Required privilege: Project.Audit
     """
 
+    if project.is_running():
+        raise ControllerError("Project must be stopped in order to export it")
+
     compression_query = compression.lower()
     if compression_query == "zip":
         compression = zipfile.ZIP_DEFLATED
