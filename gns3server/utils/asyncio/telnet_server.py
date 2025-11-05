@@ -14,49 +14,202 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import socket
 import asyncio
 import asyncio.subprocess
-import struct
+
+from dataclasses import dataclass
+from typing import Optional, Union
 
 import logging
 
+from telnetlib3.stream_writer import TelnetWriter
+from telnetlib3.telopt import (
+    AYT,
+    BINARY,
+    DONT,
+    DO,
+    ECHO,
+    GA,
+    IAC,
+    LINEMODE,
+    NAWS,
+    NOP,
+    SB,
+    SE,
+    SGA,
+    WILL,
+    WONT,
+)
+
 log = logging.getLogger(__name__)
 
-# Mostly from https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
-
-# Telnet Commands
-SE = 240  # End of sub-negotiation parameters
-NOP = 241  # No operation
-DATMK = 242  # Data stream portion of a sync.
-BREAK = 243  # NVT Character BRK
-IP = 244  # Interrupt Process
-AO = 245  # Abort Output
-AYT = 246  # Are you there
-EC = 247  # Erase Character
-EL = 248  # Erase Line
-GA = 249  # The Go Ahead Signal
-SB = 250  # Sub-option to follow
-WILL = 251  # Will; request or confirm option begin
-WONT = 252  # Wont; deny option request
-DO = 253  # Do = Request or confirm remote option
-DONT = 254  # Don't = Demand or confirm option halt
-IAC = 255  # Interpret as Command
-SEND = 1  # Sub-process negotiation SEND command
-IS = 0  # Sub-process negotiation IS command
-
-# Telnet Options
-BINARY = 0  # Transmit Binary
-ECHO = 1  # Echo characters back to sender
-RECON = 2  # Reconnection
-SGA = 3  # Suppress Go-Ahead
-TMARK = 6  # Timing Mark
-TTYPE = 24  # Terminal Type
-NAWS = 31  # Negotiate About Window Size
-LINEMO = 34  # Line Mode
-
 READ_SIZE = 1024
+
+_C1_ESCAPE_MAP = {value: b"\x1b" + bytes([value - 0x40]) for value in range(0x80, 0xA0)}
+
+_IAC_BYTE = IAC[0]
+_SB_BYTE = SB[0]
+_SE_BYTE = SE[0]
+_IAC_COMMAND_WITH_OPTION = {DO[0], DONT[0], WILL[0], WONT[0]}
+
+
+class _TelnetCommandFilter:
+    """Stateful filter removing telnet IAC negotiation sequences from byte streams."""
+
+    _STATE_DATA = 0
+    _STATE_IAC = 1
+    _STATE_IAC_OPTION = 2
+    _STATE_SB_OPTION = 3
+    _STATE_SB = 4
+    _STATE_SB_IAC = 5
+
+    def __init__(self):
+        self._state = self._STATE_DATA
+
+    def reset(self):
+        self._state = self._STATE_DATA
+
+    def feed(self, data: bytes) -> bytes:
+        if not data:
+            return data
+
+        output = bytearray()
+
+        for byte in data:
+            if self._state == self._STATE_DATA:
+                if byte == _IAC_BYTE:
+                    self._state = self._STATE_IAC
+                else:
+                    output.append(byte)
+            elif self._state == self._STATE_IAC:
+                if byte == _IAC_BYTE:
+                    # Escaped 0xFF
+                    output.append(_IAC_BYTE)
+                    self._state = self._STATE_DATA
+                elif byte == _SB_BYTE:
+                    self._state = self._STATE_SB_OPTION
+                elif byte in _IAC_COMMAND_WITH_OPTION:
+                    self._state = self._STATE_IAC_OPTION
+                else:
+                    # One-byte command (e.g. NOP, AYT, GA...)
+                    self._state = self._STATE_DATA
+            elif self._state == self._STATE_IAC_OPTION:
+                # Skip single option byte
+                self._state = self._STATE_DATA
+            elif self._state == self._STATE_SB_OPTION:
+                # Skip the option identifier and enter subnegotiation body
+                self._state = self._STATE_SB
+            elif self._state == self._STATE_SB:
+                if byte == _IAC_BYTE:
+                    self._state = self._STATE_SB_IAC
+                # Everything else inside SB is ignored
+            elif self._state == self._STATE_SB_IAC:
+                if byte == _SE_BYTE:
+                    self._state = self._STATE_DATA
+                elif byte == _IAC_BYTE:
+                    # Escaped 0xFF inside subnegotiation, continue consuming
+                    self._state = self._STATE_SB
+                else:
+                    # Unexpected command inside SB; keep consuming the body
+                    self._state = self._STATE_SB
+
+        return bytes(output)
+
+
+def _translate_c1_controls(data: bytes) -> bytes:
+    """Convert 8-bit C1 control bytes to their 7-bit ``ESC``-prefixed versions."""
+
+    if not data:
+        return data
+
+    for index, byte in enumerate(data):
+        replacement = _C1_ESCAPE_MAP.get(byte)
+        if replacement is not None:
+            break
+    else:
+        return data
+
+    translated = bytearray(data[:index])
+    translated.extend(replacement)
+
+    for byte in data[index + 1 :]:
+        replacement = _C1_ESCAPE_MAP.get(byte)
+        if replacement is not None:
+            translated.extend(replacement)
+        else:
+            translated.append(byte)
+
+    return bytes(translated)
+
+
+class _StreamWriterTransportAdapter:
+    """Adapter exposing the minimal transport API expected by TelnetWriter."""
+
+    def __init__(self, writer: asyncio.StreamWriter):
+        self._writer = writer
+
+    def write(self, data: bytes) -> None:
+        self._writer.write(data)
+
+    def write_eof(self) -> None:
+        try:
+            self._writer.write_eof()
+        except (AttributeError, RuntimeError):
+            pass
+
+    def can_write_eof(self) -> bool:
+        if hasattr(self._writer, "can_write_eof"):
+            try:
+                return self._writer.can_write_eof()
+            except Exception:
+                return False
+        return False
+
+    def close(self) -> None:
+        try:
+            self._writer.close()
+        except Exception:
+            pass
+
+    def is_closing(self) -> bool:
+        if hasattr(self._writer, "is_closing"):
+            try:
+                return self._writer.is_closing()
+            except Exception:
+                return True
+        return True
+
+    def get_extra_info(self, name, default=None):
+        return self._writer.get_extra_info(name, default)
+
+
+class _StreamWriterProtocolAdapter:
+    """Minimal protocol adapter used by TelnetWriter."""
+
+    def __init__(self, writer: asyncio.StreamWriter):
+        self._writer = writer
+
+    def get_extra_info(self, name, default=None):
+        return self._writer.get_extra_info(name, default)
+
+    async def _drain_helper(self):
+        await self._writer.drain()
+
+    def connection_lost(self, exc):
+        # Nothing special to do here; the server owns the lifecycle.
+        pass
+
+    def encoding(self, *, outgoing=False, incoming=False):
+        # Binary by default; let higher level handle newline conversions.
+        return None
+
+
+@dataclass
+class _TelnetSession:
+    writer: TelnetWriter
+    transport: _StreamWriterTransportAdapter
+    protocol: _StreamWriterProtocolAdapter
 
 
 class TelnetConnection:
@@ -67,6 +220,7 @@ class TelnetConnection:
         self._reader = reader
         self._writer = writer
         self._window_size_changed_callback = window_size_changed_callback
+        self.telnet_writer: Optional[TelnetWriter] = None
 
     @property
     def reader(self):
@@ -102,19 +256,32 @@ class TelnetConnection:
         Sending data back to client
         :return:
         """
-        data = data.decode().replace("\n", "\r\n")
-        self.writer.write(data.encode())
+        try:
+            if not isinstance(data, (bytes, bytearray)):
+                raise TypeError("Expected bytes-like object")
+            text = _translate_c1_controls(bytes(data))
+            payload = text.decode(errors="ignore").replace("\n", "\r\n").encode()
+            if self.telnet_writer is not None:
+                self.telnet_writer.write(payload)
+            else:
+                self.writer.write(payload)
+        except Exception as exc:
+            log.error("Failed to send data to telnet client: %s", exc)
 
     def close(self):
         """
         Closes current connection
         :return:
         """
-        self.is_closing = True
+        try:
+            self.is_closing = True
+            if self.telnet_writer is not None:
+                self.telnet_writer.close()
+        except Exception as exc:
+            log.error("Failed to close telnet connection cleanly: %s", exc)
 
 
 class AsyncioTelnetServer:
-    MAX_NEGOTIATION_READ = 10
 
     def __init__(
         self,
@@ -138,6 +305,7 @@ class AsyncioTelnetServer:
         self._reader = reader
         self._writer = writer
         self._connections = dict()
+        self._sessions = dict()
         self._lock = asyncio.Lock()
         self._reader_process = None
         self._current_read = None
@@ -157,50 +325,113 @@ class AsyncioTelnetServer:
             connection_factory = default_connection_factory
 
         self._connection_factory = connection_factory
+        self._backend_filter = _TelnetCommandFilter()
 
     @staticmethod
     async def write_client_intro(writer, echo=False):
         # Send initial telnet session opening
         if echo:
-            writer.write(bytes([IAC, WILL, ECHO]))
+            writer.write(IAC + WILL + ECHO)
         else:
-            writer.write(bytes([IAC, WONT, ECHO, IAC, DONT, ECHO]))
+            writer.write(IAC + WONT + ECHO + IAC + DONT + ECHO)
         await writer.drain()
 
-    async def _write_intro(self, writer, binary=False, echo=False, naws=False):
-        # Send initial telnet session opening
+    async def _write_intro(self, telnet_writer: TelnetWriter, binary=False, echo=False, naws=False):
+        # Configure negotiation preferences through telnetlib3 writer
         if echo:
-            writer.write(bytes([IAC, WILL, ECHO]))
+            telnet_writer.iac(WILL, ECHO)
         else:
-            writer.write(bytes([IAC, WONT, ECHO, IAC, DONT, ECHO]))
+            telnet_writer.iac(WONT, ECHO)
+            telnet_writer.iac(DONT, ECHO)
 
         if binary:
-            writer.write(bytes([IAC, WILL, SGA, IAC, WILL, BINARY, IAC, DO, BINARY]))
+            telnet_writer.iac(WILL, SGA)
+            telnet_writer.iac(WILL, BINARY)
+            telnet_writer.iac(DO, BINARY)
         else:
-            writer.write(bytes([IAC, WONT, SGA, IAC, DONT, SGA, IAC, WONT, BINARY, IAC, DONT, BINARY]))
+            telnet_writer.iac(WONT, SGA)
+            telnet_writer.iac(DONT, SGA)
+            telnet_writer.iac(WONT, BINARY)
+            telnet_writer.iac(DONT, BINARY)
 
         if naws:
-            writer.write(bytes([IAC, DO, NAWS]))
-        await writer.drain()
+            telnet_writer.iac(DO, NAWS)
+
+        await telnet_writer.drain()
+
+    def _create_telnet_session(self, network_writer: asyncio.StreamWriter, connection: TelnetConnection) -> _TelnetSession:
+        session = self._sessions.get(network_writer)
+        if session is not None:
+            return session
+
+        transport = _StreamWriterTransportAdapter(network_writer)
+        protocol = _StreamWriterProtocolAdapter(network_writer)
+        telnet_writer = TelnetWriter(transport=transport, protocol=protocol, server=True)
+
+        loop = asyncio.get_running_loop()
+
+        if self._naws:
+            def _on_naws(rows, cols):
+                loop.create_task(self._handle_naws_update(connection, rows, cols))
+
+            telnet_writer.set_ext_callback(NAWS, _on_naws)
+
+        def _on_ayt(_cmd):
+            telnet_writer.write(b"\r\nYour Are-You-There received. I am here.\r\n")
+
+        telnet_writer.set_iac_callback(AYT, _on_ayt)
+        telnet_writer.set_iac_callback(NOP, lambda _cmd: None)
+
+        session = _TelnetSession(writer=telnet_writer, transport=transport, protocol=protocol)
+        self._sessions[network_writer] = session
+        connection.telnet_writer = telnet_writer
+        return session
+
+    async def _handle_naws_update(self, connection: TelnetConnection, rows: int, cols: int) -> None:
+        try:
+            # Telnetlib3 provides rows first, columns second; convert back to original order.
+            await connection.window_size_changed(cols, rows)
+        except Exception:  # pragma: no cover - defensive logging only
+            log.exception("Failed to propagate NAWS update to connection")
+
+    def _consume_network_data(self, data: Union[bytes, bytearray], session: _TelnetSession) -> bytes:
+        if not data:
+            return b""
+
+        payload = bytearray()
+        for byte in data:
+            raw_byte = bytes([byte]) if isinstance(byte, int) else bytes(byte)
+            try:
+                in_band = session.writer.feed_byte(raw_byte)
+            except Exception:  # pragma: no cover - telnetlib3 handles negotiation extensively
+                log.exception("Failed to interpret telnet byte during negotiation")
+                continue
+            if in_band:
+                payload.extend(raw_byte)
+        return bytes(payload)
 
     async def run(self, network_reader, network_writer):
 
         sock = network_writer.get_extra_info("socket")
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        # 60 sec keep alives, close tcp session after 4 missed
-        # Will keep a firewall from aging out telnet console.
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
-        #log.debug("New connection from {}".format(sock.getpeername()))
+        if sock is not None:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                # 60 sec keep alives, close tcp session after 4 missed
+                # Will keep a firewall from aging out telnet console.
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
+            except OSError:
+                log.debug("Failed to configure TCP keepalive for telnet client", exc_info=True)
 
-        # Keep track of connected clients
         connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
         self._connections[network_writer] = connection
 
+        session = self._create_telnet_session(network_writer, connection)
+
         try:
-            await self._write_intro(network_writer, echo=self._echo, binary=self._binary, naws=self._naws)
+            await self._write_intro(session.writer, echo=self._echo, binary=self._binary, naws=self._naws)
             await connection.connected()
             await self._process(network_reader, network_writer, connection)
         except ConnectionError:
@@ -215,9 +446,16 @@ class AsyncioTelnetServer:
 
             await connection.disconnected()
             del self._connections[network_writer]
+            session = self._sessions.pop(network_writer, None)
+            if session is not None:
+                connection.telnet_writer = None
+                try:
+                    session.writer.close()
+                except Exception:
+                    pass
 
     async def close(self):
-        for writer, connection in self._connections.items():
+        for writer, connection in list(self._connections.items()):
             try:
                 writer.write_eof()
                 await writer.drain()
@@ -225,6 +463,14 @@ class AsyncioTelnetServer:
                 # await writer.wait_closed()  # this doesn't work in Python 3.6
             except (AttributeError, ConnectionError):
                 continue
+            session = self._sessions.pop(writer, None)
+            if session is not None:
+                try:
+                    session.writer.close()
+                except Exception:
+                    pass
+            connection.telnet_writer = None
+            self._connections.pop(writer, None)
 
     async def client_connected_hook(self):
         pass
@@ -245,6 +491,7 @@ class AsyncioTelnetServer:
     async def _process(self, network_reader, network_writer, connection):
         network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
         reader_read = await self._get_reader(network_reader)
+        session = self._sessions.get(network_writer)
 
         while True:
             if reader_read is None:
@@ -267,8 +514,8 @@ class AsyncioTelnetServer:
 
                     network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
 
-                    if IAC in data:
-                        data = await self._IAC_parser(data, network_reader, network_writer, connection)
+                    if session is not None:
+                        data = self._consume_network_data(data, session)
 
                     if len(data) == 0:
                         continue
@@ -290,134 +537,33 @@ class AsyncioTelnetServer:
 
                     reader_read = await self._get_reader(network_reader)
 
+                    data = self._backend_filter.feed(data)
+                    if not data:
+                        continue
+
                     # Replicate the output on all clients
+                    outbound = _translate_c1_controls(data)
                     for connection_key in list(self._connections.keys()):
-                        client_info = connection_key.get_extra_info("socket").getpeername()
-                        connection = self._connections[connection_key]
+                        client_info = connection_key.get_extra_info("socket", None)
+                        client_connection = self._connections[connection_key]
+                        client_session = self._sessions.get(connection_key)
 
                         try:
-                            connection.writer.write(data)
-                            await asyncio.wait_for(connection.writer.drain(), timeout=10)
-                        except:
-                            log.debug(f"Timeout while sending data to client: {client_info}, closing and removing from connection table.")
-                            connection.close()
-                            del self._connections[connection_key]
-
-    async def _read(self, cmd, buffer, location, reader):
-        """ Reads next op from the buffer or reader"""
-        try:
-            op = buffer[location]
-            cmd.append(op)
-            return op
-        except IndexError:
-            op = await reader.read(1)
-            buffer.extend(op)
-            cmd.append(buffer[location])
-            return op
-
-    async def _negotiate(self, data, connection):
-        """ Performs negotiation commands"""
-
-        command, payload = data[0], data[1:]
-        if command == NAWS:
-            if len(payload) == 4:
-                columns, rows = struct.unpack("!HH", bytes(payload))
-                await connection.window_size_changed(columns, rows)
-            else:
-                log.warning("Wrong number of NAWS bytes")
-        else:
-            log.debug("Not supported negotiation sequence, received {} bytes", len(data))
-
-    async def _IAC_parser(self, buf, network_reader, network_writer, connection):
-        """
-        Processes and removes any Telnet commands from the buffer.
-
-        :param buf: buffer
-        :returns: buffer minus Telnet commands
-        """
-
-        skip_to = 0
-        while True:
-            # Locate an IAC to process
-            iac_loc = buf.find(IAC, skip_to)
-            if iac_loc < 0:
-                break
-
-            # Get the TELNET command
-            iac_cmd = bytearray([IAC])
-            try:
-                iac_cmd.append(buf[iac_loc + 1])
-            except IndexError:
-                d = await network_reader.read(1)
-                buf.extend(d)
-                iac_cmd.append(buf[iac_loc + 1])
-
-            # Is this just a 2-byte TELNET command?
-            if iac_cmd[1] not in [WILL, WONT, DO, DONT, SB]:
-                if iac_cmd[1] == AYT:
-                    log.debug("Telnet server received Are-You-There (AYT)")
-                    network_writer.write(b"\r\nYour Are-You-There received. I am here.\r\n")
-                elif iac_cmd[1] == IAC:
-                    # It's data, not an IAC
-                    iac_cmd.pop()
-                    # This prevents the 0xff from being
-                    # interrupted as yet another IAC
-                    skip_to = iac_loc + 1
-                    log.debug("Received IAC IAC")
-                elif iac_cmd[1] == NOP:
-                    pass
-                else:
-                    log.debug("Unhandled telnet command: " "{:#x} {:#x}".format(*iac_cmd))
-            elif iac_cmd[1] == SB:  # starts negotiation commands
-                negotiation = []
-                for pos in range(2, self.MAX_NEGOTIATION_READ):
-                    op = await self._read(iac_cmd, buf, iac_loc + pos, network_reader)
-                    negotiation.append(op)
-                    if op == SE:
-                        # ends negotiation commands
-                        break
-
-                # SE command is followed by IAC, remove the last two operations from stack
-                await self._negotiate(negotiation[0:-2], connection)
-
-            # This must be a 3-byte TELNET command
-            else:
-                try:
-                    iac_cmd.append(buf[iac_loc + 2])
-                except IndexError:
-                    d = await network_reader.read(1)
-                    buf.extend(d)
-                    iac_cmd.append(buf[iac_loc + 2])
-                # We do ECHO, SGA, and BINARY. Period.
-                if iac_cmd[1] == DO:
-                    if iac_cmd[2] not in [ECHO, SGA, BINARY]:
-                        network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                        log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
-                    else:
-                        if iac_cmd[2] == SGA:
-                            if self._binary:
-                                network_writer.write(bytes([IAC, WILL, iac_cmd[2]]))
+                            if client_session is not None:
+                                client_session.writer.write(outbound)
+                                await asyncio.wait_for(client_session.writer.drain(), timeout=10)
                             else:
-                                network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                                log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
+                                client_connection.writer.write(outbound)
+                                await asyncio.wait_for(client_connection.writer.drain(), timeout=10)
+                        except:
+                            log.debug(
+                                "Timeout while sending data to client: %s, closing and removing from connection table.",
+                                client_info,
+                            )
+                            client_connection.close()
+                            del self._connections[connection_key]
+                            self._sessions.pop(connection_key, None)
 
-                elif iac_cmd[1] == DONT:
-                    log.debug("Unhandled DONT telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
-                elif iac_cmd[1] == WILL:
-                    if iac_cmd[2] not in [BINARY, NAWS]:
-                        log.debug("Unhandled WILL telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
-                elif iac_cmd[1] == WONT:
-                    log.debug("Unhandled WONT telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
-                else:
-                    log.debug("Unhandled telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
-
-            # Remove the entire TELNET command from the buffer
-            buf = buf.replace(iac_cmd, b"", 1)
-
-            await network_writer.drain()
-
-        # Return the new copy of the buffer, minus telnet commands
-        return buf
 
 
 if __name__ == "__main__":
