@@ -155,6 +155,10 @@ class DockerVM(BaseNode):
 
     @property
     def docker_name(self):
+        """
+        Container name in Docker
+        """
+
         return "GNS3.{}.{}".format(self.name, self._project.id)
 
     @property
@@ -456,7 +460,7 @@ class DockerVM(BaseNode):
                 params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
 
         # Support name in Doker: [a-zA-Z0-9][a-zA-Z0-9_.-]
-        result = await self.manager.query("POST", "containers/create?name=GNS3.{}.{}".format(self._name, self.project.id), data=params)
+        result = await self.manager.query("POST", "containers/create?name={}".format(self.docker_name), data=params)
         self._cid = result['Id']
         log.info("Docker container '{name}' [{id}] created".format(name=self._name, id=self._id))
         return True
