@@ -47,7 +47,7 @@ async def test_query_success(vm):
     vm._session.request = AsyncioMagicMock(return_value=response)
     data = await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/v1.25/test',
+                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},
@@ -69,7 +69,7 @@ async def test_query_error(vm):
     with pytest.raises(DockerError):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/v1.25/test',
+                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},
@@ -89,7 +89,7 @@ async def test_query_error_json(vm):
     with pytest.raises(DockerError):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with('POST',
-                                           'http://docker/v1.25/test',
+                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
                                            data='{"a": true}',
                                            headers={'content-type': 'application/json'},
                                            params={'b': 1},
@@ -180,7 +180,9 @@ async def test_docker_check_connection_docker_minimum_version(vm):
 async def test_docker_check_connection_docker_preferred_version_against_newer(vm):
 
     response = {
-        'ApiVersion': '1.31'
+        'ApiVersion': '1.52',
+        'Version': '29.0.1',
+
     }
 
     with patch("gns3server.compute.docker.Docker.connector"), \
@@ -193,7 +195,9 @@ async def test_docker_check_connection_docker_preferred_version_against_newer(vm
 async def test_docker_check_connection_docker_preferred_version_against_older(vm):
 
     response = {
-        'ApiVersion': '1.27',
+        'ApiVersion': '1.43',
+        'Version': '24.0.2',
+        'MinAPIVersion': '1.40'
     }
 
     with patch("gns3server.compute.docker.Docker.connector"), \
@@ -201,6 +205,20 @@ async def test_docker_check_connection_docker_preferred_version_against_older(vm
         vm._connected = False
         await vm._check_connection()
         assert vm._api_version == DOCKER_MINIMUM_API_VERSION
+
+
+async def test_docker_check_connection_docker_unsupported_version(vm):
+
+    response = {
+        'ApiVersion': '1.25',
+        'Version': '1.13.1',
+    }
+
+    with patch("gns3server.compute.docker.Docker.connector"), \
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        vm._connected = False
+        with pytest.raises(DockerError) as e:
+            await vm._check_connection()
 
 
 @pytest.mark.asyncio
