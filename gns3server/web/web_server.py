@@ -293,6 +293,11 @@ class WebServer:
                 raise SystemExit
             self._ssl_context = self._create_ssl_context(server_config)
 
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         self._loop = asyncio.get_event_loop()
 
         if log.getEffectiveLevel() == logging.DEBUG:
