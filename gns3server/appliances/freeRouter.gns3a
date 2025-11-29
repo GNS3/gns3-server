@@ -25,19 +25,19 @@
     },
     "images": [
         {
-            "filename": "rtr.qcow2",
-            "version": "20.7.1",
-            "md5sum": "4707415d15d20ced92423d90e52eedcd",
-            "filesize": 254767616,
-            "download_url": "http://freerouter.nop.hu/",
-            "direct_download_url": "http://dl.nop.hu/rtr.qcow2"
+            "filename": "rtr-x86_64.qcow2",
+            "version": "25.8.29",
+            "md5sum": "13d72fdfd772258808a9d4b75fa67083",
+            "filesize": 73269248,
+            "download_url": "http://www.freertr.org/",
+            "direct_download_url": "http://dl.nop.hu/rtr-x86_64.qcow2"
         }
     ],
     "versions": [
         {
-            "name": "20.7.1",
+            "name": "25.8.29",
             "images": {
-                "hda_disk_image": "rtr.qcow2"
+                "hda_disk_image": "rtr-x86_64.qcow2"
             }
         }
     ]

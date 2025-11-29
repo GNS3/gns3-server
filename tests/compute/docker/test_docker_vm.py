@@ -99,7 +99,7 @@ async def test_create(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -150,7 +150,7 @@ async def test_create_with_tag(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:16.04")
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -204,7 +204,7 @@ async def test_create_vnc(compute_project, manager):
             vm._start_vnc = MagicMock()
             vm._display = 42
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -356,7 +356,7 @@ async def test_create_start_cmd(compute_project, manager):
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
             vm._start_command = "/bin/ls"
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -469,7 +469,7 @@ async def test_create_image_not_available(compute_project, manager):
     with asyncio_patch("gns3server.compute.docker.DockerVM.pull_image", return_value=True) as mock_pull:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -524,7 +524,7 @@ async def test_create_with_user(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -624,7 +624,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/vol/1"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -680,7 +680,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/vol/1", "/vol/1"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -736,7 +736,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/vol/1/", "/vol"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -792,7 +792,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/vol//", "/vol"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -848,7 +848,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/etc"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -899,7 +899,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/etc/test", "/etc"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -956,7 +956,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", extra_volumes=["/vol/2"])
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -1243,7 +1243,7 @@ async def test_update(vm):
                 await vm.update()
 
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
-    mock_query.assert_any_call("POST", "containers/create", data={
+    mock_query.assert_any_call("POST", "containers/create?name={}".format(vm.docker_name), data={
         "Tty": True,
         "OpenStdin": True,
         "StdinOnce": False,
@@ -1325,7 +1325,7 @@ async def test_update_running(vm):
                 await vm.update()
 
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
-    mock_query.assert_any_call("POST", "containers/create", data={
+    mock_query.assert_any_call("POST", "containers/create?name={}".format(vm.docker_name), data={
         "Tty": True,
         "OpenStdin": True,
         "StdinOnce": False,

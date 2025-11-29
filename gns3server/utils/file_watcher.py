@@ -60,7 +60,14 @@ class FileWatcher:
                     self._hashed[path] = zlib.adler32(open(path, "rb").read())
                 except OSError:
                     self._hashed[path] = None
-        asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        loop.call_later(self._delay, self._check_config_file_change)
 
     def __del__(self):
         self._closed = True

@@ -50,6 +50,12 @@
             "version": "124-25G",
             "md5sum": "9c7cc9b3f3b3571411a7f62faaa2c036",
             "filesize": 71528984
+        },
+        {
+            "filename": "c7200-itpk9-mz.124-15.SW.image",
+            "version": "124-15.SW",
+            "md5sum": "3334a0facdbd26164e83d3c201fff5b5",
+            "filesize": 46423952
         }
     ],
     "versions": [
@@ -86,6 +92,13 @@
             "idlepc": "0x6066a998",
             "images": {
                 "image": "c7200-a3jk9s-mz.124-25g.image"
+            }
+        },
+        {
+            "name": "124-15.SW",
+            "idlepc": "0x60b2bc68",
+            "images": {
+                "image": "c7200-itpk9-mz.124-15.SW.image"
             }
         }
     ]

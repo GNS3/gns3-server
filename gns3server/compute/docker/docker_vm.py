@@ -196,6 +196,14 @@ class DockerVM(BaseNode):
         return self._ethernet_adapters
 
     @property
+    def docker_name(self):
+        """
+        Container name in Docker
+        """
+
+        return "GNS3.{}.{}".format(self.name, self._project.id)
+
+    @property
     def mac_address(self):
         """
         Returns the MAC address for this Docker container.
@@ -539,7 +547,8 @@ class DockerVM(BaseNode):
             if extra_hosts:
                 params["Env"].append(f"GNS3_EXTRA_HOSTS={extra_hosts}")
 
-        result = await self.manager.query("POST", "containers/create", data=params)
+        # Support name in Doker: [a-zA-Z0-9][a-zA-Z0-9_.-]
+        result = await self.manager.query("POST", f"containers/create?name={self.docker_name}", data=params)
         self._cid = result["Id"]
         log.info(f"Docker container '{self._name}' [{self._id}] created")
         if self._cpus > 0:
