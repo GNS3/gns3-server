@@ -31,6 +31,13 @@
     },
     "images": [
         {
+            "filename": "vyos-1.4.4-kvm-amd64.qcow2",
+            "version": "1.4.4",
+            "md5sum": "942dae45d63924b58b65d069890765d4",
+            "filesize": 518782976,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
             "filename": "vyos-1.4.3-kvm-amd64.qcow2",
             "version": "1.4.3",
             "md5sum": "4eec0ba2ec367bbbdf2d2f212f947746",
@@ -130,6 +137,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.4.4",
+            "images": {
+                "hda_disk_image": "vyos-1.4.4-kvm-amd64.qcow2"
+            }
+        },
         {
             "name": "1.4.3",
             "images": {
