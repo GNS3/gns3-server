@@ -3,7 +3,12 @@
 # script for udhcpc
 # Copyright (c) 2008 Natanael Copa <natanael.copa@gmail.com>
 
-UDHCPC="/gns3/etc/udhcpc"
+if [ -d /etc/network ]; then
+  UDHCPC="/etc/network/udhcpc"
+else
+  UDHCPC="/gns3/etc/udhcpc"
+fi
+
 UDHCPC_CONF="$UDHCPC/udhcpc.conf"
 
 RESOLV_CONF="/etc/resolv.conf"

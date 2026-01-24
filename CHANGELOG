@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.2.56 21/01/2026
+
+* Set default location of udhcpc in "/etc/network/udhcpc". Fixes #2582
+* Upgrade pywin32 to v311
+
 ## 2.2.55 19/11/2025
 
 * Docker API version requirements and process to handle older daemons

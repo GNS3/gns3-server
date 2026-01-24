@@ -1,0 +1,22 @@
+{
+    "appliance_id": "1174e46d-4a29-4554-a1e8-71ed90682295",
+    "name": "MikroTik WinBox 2026",
+    "category": "guest",
+    "description": "Mikrotik's WinBox router management software for GNS3 2026",
+    "vendor_name": "MikroTik",
+    "vendor_url": "https://mikrotik.com",
+    "documentation_url": "https://mikrotik.com/winbox",
+    "product_name": "MikroTik WinBox",
+    "product_url": "https://mikrotik.com/winbox",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "h3ck13r",
+    "maintainer_email": "pisdushko1886@gmail.com",
+    "usage": "Connect WinBox to a MikroTik CHR port and start them both. Open WinBox console and wait until MikroTik appear in neighbors tab, provide credentials and connect.",
+    "docker": {
+        "adapters": 1,
+        "image": "snatao808/winbox-mikrotik-2026",
+        "console_type": "vnc"
+    }
+}
