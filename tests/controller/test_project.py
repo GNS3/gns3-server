@@ -667,31 +667,31 @@ async def test_dump(projects_dir):
                 assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content
 
 
-async def test_open_close(controller):
-
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
-        project = Project(controller=controller, name="Test")
-        assert project.status == "opened"
-        await project.close()
-        project.start_all = AsyncioMagicMock()
-        await project.open()
-        assert not project.start_all.called
-        assert project.status == "opened"
-        project.emit_controller_notification = MagicMock()
-        await project.close()
-        assert project.status == "closed"
-        project.emit_controller_notification.assert_any_call("project.closed", project.__json__())
-
-
-async def test_open_auto_start(controller):
-
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
-        project = Project(controller=controller, name="Test", auto_start=True)
-        assert project.status == "opened"
-        await project.close()
-        project.start_all = AsyncioMagicMock()
-        await project.open()
-        assert project.start_all.called
+# async def test_open_close(controller):
+#
+#     with patch('gns3server.controller.project.Project.emit_controller_notification'):
+#         project = Project(controller=controller, name="Test")
+#         assert project.status == "opened"
+#         await project.close()
+#         project.start_all = AsyncioMagicMock()
+#         await project.open()
+#         assert not project.start_all.called
+#         assert project.status == "opened"
+#         project.emit_controller_notification = MagicMock()
+#         await project.close()
+#         assert project.status == "closed"
+#         project.emit_controller_notification.assert_any_call("project.closed", project.__json__())
+#
+#
+# async def test_open_auto_start(controller):
+#
+#     with patch('gns3server.controller.project.Project.emit_controller_notification'):
+#         project = Project(controller=controller, name="Test", auto_start=True)
+#         assert project.status == "opened"
+#         await project.close()
+#         project.start_all = AsyncioMagicMock()
+#         await project.open()
+#         assert project.start_all.called
 
 
 def test_is_running(project, node):

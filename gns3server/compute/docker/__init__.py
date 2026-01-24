@@ -39,9 +39,9 @@ log = logging.getLogger(__name__)
 
 
 # Be careful to keep it consistent
-DOCKER_MINIMUM_API_VERSION = "1.25"
-DOCKER_MINIMUM_VERSION = "1.13"
-DOCKER_PREFERRED_API_VERSION = "1.30"
+DOCKER_MINIMUM_API_VERSION = "1.40"
+DOCKER_MINIMUM_VERSION = "19.03.8"
+DOCKER_PREFERRED_API_VERSION = "1.44"
 CHUNK_SIZE = 1024 * 8  # 8KB
 
 
@@ -123,22 +123,30 @@ class Docker(BaseManager):
         if not self._connected:
             try:
                 self._connected = True
-                connector = self.connector()
-                version = await self.query("GET", "version")
+                self._connector = self.connector()
+                docker_info = await self.query("GET", "version")
             except (aiohttp.ClientOSError, FileNotFoundError):
                 self._connected = False
-                raise DockerError("Can't connect to docker daemon")
+                raise DockerError("Can't connect to Docker daemon")
 
-            docker_version = parse_version(version['ApiVersion'])
+            api_version = parse_version(docker_info['ApiVersion'])
+            version = docker_info["Version"]
 
-            if docker_version < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError(
-                    "Docker version is {}. GNS3 requires a minimum version of {}".format(
-                        version["Version"], DOCKER_MINIMUM_VERSION))
+            if api_version < parse_version(DOCKER_MINIMUM_API_VERSION):
+                raise DockerError("Docker version is {}. GNS3 requires a minimum version of {}".format(
+                    version,
+                    DOCKER_MINIMUM_VERSION)
+                )
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
-            if docker_version >= preferred_api_version:
+            if api_version >= preferred_api_version:
                 self._api_version = DOCKER_PREFERRED_API_VERSION
+            else:
+                # use the Min API version supported by the daemon
+                self._api_version = docker_info['MinAPIVersion']
+                log.warning("Using Docker client with the minimum API version {}".format(self._api_version))
+
+            log.info("Connected to Docker daemon version {} using API version {}".format(version, self._api_version))
 
     def connector(self):
 
@@ -186,7 +194,7 @@ class Docker(BaseManager):
 
         :param method: HTTP method
         :param path: Endpoint in API
-        :param data: Dictionnary with the body. Will be transformed to a JSON
+        :param data: Dictionary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
         :param timeout: Timeout
         :returns: HTTP response
@@ -197,12 +205,11 @@ class Docker(BaseManager):
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
         if path == 'version':
-            url = "http://docker/v1.24/" + path
+            url = "http://docker/" + path
         else:
-            url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
+            await self._check_connection()  # version is use by check connection
+            url = "http://docker/v" + self._api_version + "/" + path
         try:
-            if path != "version":  # version is use by check connection
-                await self._check_connection()
             if self._session is None or self._session.closed:
                 connector = self.connector()
                 self._session = aiohttp.ClientSession(connector=connector)

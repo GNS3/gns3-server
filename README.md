@@ -259,5 +259,4 @@ py.test --cov-report term-missing --cov=gns3server
 Security issues
 ---------------
 
-Please contact us using contact form available here:
-<http://docs.gns3.com/1ON9JBXSeR7Nt2-Qum2o3ZX0GU86BZwlmNSUgvmqNWGY/index.html>
+Please use GitHub's report a vulnerability feature. More information can be found in https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability
