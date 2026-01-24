@@ -216,6 +216,7 @@ async def test_docker_check_connection_docker_preferred_version_against_older(vm
         assert vm._api_version == DOCKER_MINIMUM_API_VERSION
 
 
+@pytest.mark.asyncio
 async def test_docker_check_connection_docker_unsupported_version(vm):
 
     response = {

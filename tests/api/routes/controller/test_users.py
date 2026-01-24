@@ -183,7 +183,7 @@ class TestAuthTokens:
         jwt_secret = config.settings.Controller.jwt_secret_key
         token = auth_service.create_access_token(test_user.username)
         with pytest.raises(ValueError):
-            jwt.decode(token, jwt_secret, algorithms=["ES256"])
+            jwt.decode(token, jwt_secret, algorithms=["HS256"])
 
     async def test_can_retrieve_username_from_token(
             self,

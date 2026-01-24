@@ -1791,7 +1791,7 @@ async def test_cpus(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", cpus=0.5)
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
@@ -1842,7 +1842,7 @@ async def test_memory(compute_project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", memory=32)
             await vm.create()
-            mock.assert_called_with("POST", "containers/create", data={
+            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
                 "Tty": True,
                 "OpenStdin": True,
                 "StdinOnce": False,
