@@ -11,8 +11,8 @@ psutil>=7.2.1
 async-timeout>=5.0.1,<5.1; python_version < '3.11'  # this library has effectively been upstreamed into Python 3.11+
 distro>=1.9.0
 py-cpuinfo>=9.0.0,<10.0
-greenlet==3.2.0  # necessary to run sqlalchemy on Python 3.13
-sqlalchemy==2.0.46
+greenlet==3.3.1; python_version >= '3.13' # necessary to run sqlalchemy on Python >= 3.13
+sqlalchemy==2.0.43
 aiosqlite==0.21.0
 alembic==1.15.2
 bcrypt==5.0.0
