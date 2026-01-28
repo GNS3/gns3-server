@@ -96,7 +96,13 @@ async def create_qemu_image(
     await Qemu.instance().create_disk_image(disk_image_path, options)
 
     image_info = await read_image_info(disk_image_path, "qemu")
-    return await images_repo.add_image(**image_info)
+
+    image = await images_repo.get_image(disk_image_path)
+    if image:
+        # the image has already been added to the database
+        return image
+    else:
+        return await images_repo.add_image(**image_info)
 
 @router.get(
     "",
