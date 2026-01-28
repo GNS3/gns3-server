@@ -24,6 +24,7 @@ import socket
 import shutil
 import re
 import logging
+import inspect
 
 log = logging.getLogger(__name__)
 
@@ -196,7 +197,7 @@ class BaseManager:
             node_id = str(uuid4())
 
         node = self._NODE_CLASS(name, node_id, project, self, *args, **kwargs)
-        if asyncio.iscoroutinefunction(node.create):
+        if inspect.iscoroutinefunction(node.create):
             await node.create()
         else:
             node.create()
@@ -245,7 +246,7 @@ class BaseManager:
         """
 
         node = self.get_node(node_id)
-        if asyncio.iscoroutinefunction(node.close):
+        if inspect.iscoroutinefunction(node.close):
             await node.close()
         else:
             node.close()

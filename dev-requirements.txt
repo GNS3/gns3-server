@@ -1,7 +1,7 @@
-pytest==8.3.4
-flake8==7.1.1
-pytest-timeout==2.3.1
-pytest-asyncio==0.25.2
-requests==2.32.3
+pytest==8.4.2  # version 8.4.2 is the last one supporting Python 3.9
+flake8==7.3.0
+pytest-timeout==2.4.0
+pytest-asyncio==0.26.0  # upgrading leads to stuck / failed tests
+requests==2.32.5
 httpx==0.28.1
-httpx_ws==0.7.1
+httpx_ws==0.7.1  # upgrading leads to failures in tests

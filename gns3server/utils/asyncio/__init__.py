@@ -20,6 +20,7 @@ import asyncio
 import sys
 import os
 import threading
+import inspect
 
 
 async def wait_run_in_executor(func, *args, **kwargs):
@@ -90,9 +91,6 @@ async def wait_for_process_termination(process, timeout=10):
     In theory this can be implemented by just:
     await asyncio.wait_for(self._iou_process.wait(), timeout=100)
 
-    But it's broken before Python 3.4:
-    http://bugs.python.org/issue23140
-
     :param process: An asyncio subprocess
     :param timeout: Timeout in seconds
     """
@@ -106,7 +104,7 @@ async def wait_for_process_termination(process, timeout=10):
 async def _check_process(process, termination_callback):
     if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
         returncode = await process.wait()
-        if asyncio.iscoroutinefunction(termination_callback):
+        if inspect.iscoroutinefunction(termination_callback):
             await termination_callback(returncode)
         else:
             termination_callback(returncode)

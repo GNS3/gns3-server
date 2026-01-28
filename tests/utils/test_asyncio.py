@@ -18,11 +18,9 @@
 
 import asyncio
 import pytest
-import sys
-from unittest.mock import MagicMock
 
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination, locking
-from tests.utils import AsyncioMagicMock
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, locking
+
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,34 @@
 # Change Log
 
+## 3.0.6 28/01/2026
+
+* Sync appliances
+* Fix creating Qemu disk image. Fixes #2542
+* Disable checking for available disk space. Ref #2548
+* Set default location of udhcpc in "/etc/network/udhcpc". Fixes #2582
+* Support for Python 3.14
+* Fix non-ASCII characters in project names
+* Increase DB engine pool size and max overflow
+* Enable ip cef in IOU L2 and IOU L3 base configs
+
+## 2.2.56 21/01/2026
+
+* Set default location of udhcpc in "/etc/network/udhcpc". Fixes #2582
+* Upgrade pywin32 to v311
+
+## 2.2.55 19/11/2025
+
+* Docker API version requirements and process to handle older daemons
+* Use docker_name property when creating a container
+* Set name of container in Docker
+* Support for Python 3.14
+* Enable ip cef in IOU L2 and IOU L3 base configs
+* Only build and push Docker image when releasing a new version
+* Fix pushing Docker image to Docker hub
+* Update security issues in README.md. Fixes #2535
+* Add missing 'nat' template type in schema. Fixes #2529
+* Resolve deprecation warnings of regex library
+
 ## 3.0.5 14/05/2025
 
 * Bundle web-ui v3.0.5

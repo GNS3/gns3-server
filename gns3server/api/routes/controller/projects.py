@@ -330,6 +330,9 @@ async def export_project(
     Required privilege: Project.Audit
     """
 
+    if project.is_running():
+        raise ControllerError("Project must be stopped in order to export it")
+
     compression_query = compression.lower()
     if compression_query == "zip":
         compression = zipfile.ZIP_DEFLATED
@@ -380,7 +383,13 @@ async def export_project(
     except (ValueError, OSError, RuntimeError) as e:
         raise ConnectionError(f"Cannot export project: {e}")
 
-    headers = {"CONTENT-DISPOSITION": f'attachment; filename="{project.name}.gns3project"'}
+    fallback = project.name.encode("ascii", "ignore").decode() or "project"
+    encoded = urllib.parse.quote(project.name, safe="")
+    headers = {
+        "Content-Disposition": (
+            f'attachment; filename="{fallback}.gns3project"; filename*=UTF-8\'\'{encoded}.gns3project'
+        )
+    }
     return StreamingResponse(streamer(), media_type="application/gns3project", headers=headers)
 
 

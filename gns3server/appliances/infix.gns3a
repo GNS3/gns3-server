@@ -2,13 +2,13 @@
     "appliance_id": "4d351078-c6f5-444c-ab30-0ef20e3d8c53",
     "name": "Infix",
     "category": "router",
-    "description": "Infix is a Network Operating System based on Linux. It can be set up both as a switch, with offloading using switchdev, and a router with firewalling.",
+    "description": "Infix OS is a free Linux-based operating system with made-easy management using NETCONF, RESTCONF, or the built-in command line interface (CLI). It is suitable for both end-devices with a single Ethernet port and switches/routers with multiple ports. Immutable by design, extensions are possible using Docker containers.",
     "vendor_name": "KernelKit",
     "vendor_url": "https://github.com/kernelkit",
     "vendor_logo_url": "https://kernelkit.org/assets/img/jack.png",
     "product_name": "Infix",
     "registry_version": 4,
-    "documentation_url": "https://github.com/kernelkit/infix/tree/main/doc",
+    "documentation_url": "https://kernelkit.org/infix/latest/",
     "status": "stable",
     "availability": "free",
     "maintainer": "KernelKit",
@@ -76,9 +76,79 @@
             "md5sum": "84bd999513325d0007d0e6587abc6140",
             "version": "25.04.0",
             "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.04.0/infix-x86_64-disk-25.04.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.05.0.qcow2",
+            "filesize": 259958784,
+            "md5sum": "a6b1b3a6bccc60bb5214f2b864602fde",
+            "version": "25.05.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.05.0/infix-x86_64-disk-25.05.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.08.0.qcow2",
+            "filesize": 284453888,
+            "md5sum": "5fbf146d2ac73d1bd8fa1c509d6169b1",
+            "version": "25.08.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.08.0/infix-x86_64-disk-25.08.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.09.0.qcow2",
+            "filesize": 285120000,
+            "md5sum": "9761968406780a5b28311b8527f8629f",
+            "version": "25.09.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.09.0/infix-x86_64-disk-25.09.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.10.0.qcow2",
+            "filesize": 288818688,
+            "md5sum": "781d0fce9fbf789f6ea6ff10dc104afb",
+            "version": "25.10.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.10.0/infix-x86_64-disk-25.10.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-disk-25.11.0.qcow2",
+            "filesize": 288930816,
+            "md5sum": "e2eb1a4fff9d56815f37c2e82a6279fb",
+            "version": "25.11.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v25.11.0/infix-x86_64-disk-25.11.0.qcow2"
         }
     ],
     "versions": [
+        {
+            "name": "25.11.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.11.0.qcow2"
+            }
+        },
+        {
+            "name": "25.10.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.10.0.qcow2"
+            }
+        },
+        {
+            "name": "25.09.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.09.0.qcow2"
+            }
+        },
+        {
+            "name": "25.08.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.08.0.qcow2"
+            }
+        },
+        {
+            "name": "25.05.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-disk-25.05.0.qcow2"
+            }
+        },
         {
             "name": "25.04.0",
             "images": {

@@ -303,7 +303,7 @@ class TestControllerProjectRoutes:
                                         params={"include_images": "yes"})
         assert response.status_code == status.HTTP_200_OK
         assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
-        assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
+        assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{name}.gns3project"; filename*=UTF-8\'\'{name}.gns3project'.format(name=project.name)
     
         with open(str(tmpdir / 'project.zip'), 'wb+') as f:
             f.write(response.content)
@@ -346,8 +346,7 @@ class TestControllerProjectRoutes:
                                         params={"include_images": "0"})
         assert response.status_code == status.HTTP_200_OK
         assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
-        assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
-    
+        assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{name}.gns3project"; filename*=UTF-8\'\'{name}.gns3project'.format(name=project.name)
         with open(str(tmpdir / 'project.zip'), 'wb+') as f:
             f.write(response.content)
     
@@ -412,8 +411,7 @@ class TestControllerProjectRoutes:
     
         if response.status_code == status.HTTP_200_OK:
             assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
-            assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
-    
+            assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{name}.gns3project"; filename*=UTF-8\'\'{name}.gns3project'.format(name=project.name)
             with open(str(tmpdir / 'project.zip'), 'wb+') as f:
                 f.write(response.content)
     

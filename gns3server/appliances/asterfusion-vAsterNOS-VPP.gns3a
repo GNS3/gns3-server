@@ -1,0 +1,33 @@
+{
+    "appliance_id": "4aa78f74-c769-43e0-9ef1-5dd2cf1909c6",
+    "name": "Asterfusion AsterNOS-VPP",
+    "category": "router",
+    "description": "AsterNOS-VPP leverages SONiC’s robust routing features and management capability with VPP’s high-performance data forwarding. It supports L3 routing, NAT, PPPoE, and VPN services. Minimum requirements: 4 vCPUs and 4GB RAM.",
+    "vendor_name": "Asterfusion",
+    "vendor_url": "https://cloudswit.ch/product/sonic-enterprise-distribution/#vAsterNOS",
+    "documentation_url": "https://docs.asternos.com/routing",
+    "product_name": "AsterNOS-VPP",
+    "registry_version": 6,
+    "status": "stable",
+    "maintainer": "Asterfusion Product Team",
+    "maintainer_email": "bd@cloudswit.ch",
+    "images": [
+        {
+            "filename": "AsterNOS-VPP_V6.1-R0101P02_x86.img.gz",
+            "version": "V6.1",
+            "md5sum": "55834c3e8849ab226144d79ef76acf81",
+            "filesize": 1318201015,
+            "download_url": "https://asternos.dev/api/file/b2c9fd83-a9d3-46f3-9676-6b49dd481d6c",
+            "comments": "Registration is required to download the image."
+        }
+    ],
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 4096,
+        "cpus": 4,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    }
+}
