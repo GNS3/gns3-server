@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4aa78f74-c769-43e0-9ef1-5dd2cf1909c6",
     "name": "Asterfusion AsterNOS-VPP",
     "category": "router",
     "description": "AsterNOS-VPP leverages SONiC’s robust routing features and management capability with VPP’s high-performance data forwarding. It supports L3 routing, NAT, PPPoE, and VPN services. Minimum requirements: 4 vCPUs and 4GB RAM.",
@@ -9,6 +10,7 @@
     "registry_version": 6,
     "status": "stable",
     "maintainer": "Asterfusion Product Team",
+    "maintainer_email": "bd@cloudswit.ch",
     "images": [
         {
             "filename": "AsterNOS-VPP_V6.1-R0101P02_x86.img.gz",
