@@ -2190,14 +2190,31 @@ class QemuVM(BaseNode):
                     patched_qemu = True
 
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
-        pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
+        # Count PCI devices: 4 default + disks (virtio/sata/nvme/scsi) + network adapters
+        pci_disk_devices = 0
+        for drive in ["a", "b", "c", "d"]:
+            # config disk replaces hdd when enabled
+            if drive == "d" and self._create_config_disk:
+                continue
+            if getattr(self, "_hd{}_disk_image".format(drive)):
+                interface = getattr(self, "_hd{}_disk_interface".format(drive))
+                # virtio, sata, nvme, and scsi each consume 1 PCI slot; ide and none don't
+                if interface not in ("none", "ide"):
+                    pci_disk_devices += 1
+        # config disk (replaces hdd) also consumes a PCI slot if created
+        if self._create_config_disk and self.config_disk_image:
+            interface = self.hdd_disk_interface if self.hdd_disk_interface != "none" else self.hda_disk_interface
+            if interface not in ("none", "ide"):
+                pci_disk_devices += 1
+        
+        pci_devices = 4 + pci_disk_devices + len(self._ethernet_adapters)
         pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
         if pci_bridges >= 1:
             if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
                 raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
 
-        pci_device_id = 4 + pci_bridges  # Bridge consume PCI ports
+        pci_device_id = 4 + pci_bridges + pci_disk_devices  # Bridges and disks consume PCI ports
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
