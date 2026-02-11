@@ -1,7 +1,7 @@
 uvicorn==0.39.0  # version 0.39.0 is the last version supporting Python 3.9
 pydantic==2.12.5
 fastapi==0.128.0
-python-multipart==0.0.22  # version 0.0.20 is the last to support Python 3.9
+python-multipart==0.0.20  # version 0.0.20 is the last to support Python 3.9
 websockets==15.0.1  # version 15.0.1 is the last to support Python 3.9
 aiohttp>=3.13.3,<3.14
 aiofiles>=25.1.0,<26.0
