@@ -9,6 +9,7 @@
     "registry_version": 6,
     "status": "stable",
     "maintainer": "Asterfusion Product Team",
+    "maintainer_email": "bd@cloudswit.ch",
     "images": [
         {
             "filename": "AsterNOS-VPP_V6.1-R0101P02_x86.img.gz",

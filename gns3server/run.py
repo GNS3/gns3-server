@@ -235,9 +235,9 @@ def run():
             return
         log.info("HTTP authentication is enabled with username '{}'".format(user))
 
-    # we only support Python 3 version >= 3.8
-    if sys.version_info < (3, 8, 0):
-        raise SystemExit("Python 3.8 or higher is required")
+    # we only support Python 3 version >= 3.9
+    if sys.version_info < (3, 9, 0):
+        raise SystemExit("Python 3.9 or higher is required")
 
     user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0], minor=sys.version_info[1],
                                                                                          micro=sys.version_info[2], pid=os.getpid()))

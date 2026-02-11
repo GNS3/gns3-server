@@ -186,15 +186,25 @@ class AsyncioTelnetServer:
         await writer.drain()
 
     async def run(self, network_reader, network_writer):
-
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         # 60 sec keep alives, close tcp session after 4 missed
         # Will keep a firewall from aging out telnet console.
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
+        try:
+            # Keepalive options are platform dependent: Linux uses TCP_KEEPIDLE,
+            # while macOS exposes TCP_KEEPALIVE (in Python >= 3.10).
+            if hasattr(socket, "TCP_KEEPIDLE"):
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+            elif hasattr(socket, "TCP_KEEPALIVE"):
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 60)
+            else:
+                raise AttributeError("module 'socket' has no attribute 'TCP_KEEPIDLE' or 'TCP_KEEPALIVE'")
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
+        except (AttributeError, OSError):
+            log.debug("Failed to tune TCP keepalive for telnet client; using OS defaults", exc_info=True)
+
         #log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients
