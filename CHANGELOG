@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.2.56.1 28/01/2026
+
+* Fix telnet keepalive options on macOS
+* Upgrade dependencies
+* Drop Python 3.8 support
+
 ## 3.0.6 28/01/2026
 
 * Sync appliances
