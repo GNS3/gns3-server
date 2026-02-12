@@ -91,25 +91,16 @@ async def wait_for_process_termination(process, timeout=10):
     In theory this can be implemented by just:
     await asyncio.wait_for(self._iou_process.wait(), timeout=100)
 
-    But it's broken before Python 3.4:
-    http://bugs.python.org/issue23140
-
     :param process: An asyncio subprocess
     :param timeout: Timeout in seconds
     """
 
-    if sys.version_info >= (3, 5):
-        try:
-            await asyncio.wait_for(process.wait(), timeout=timeout)
-        except ProcessLookupError:
+    while timeout > 0:
+        if process.returncode is not None:
             return
-    else:
-        while timeout > 0:
-            if process.returncode is not None:
-                return
-            await asyncio.sleep(0.1)
-            timeout -= 0.1
-        raise asyncio.TimeoutError()
+        await asyncio.sleep(0.1)
+        timeout -= 0.1
+    raise asyncio.TimeoutError()
 
 
 async def _check_process(process, termination_callback):

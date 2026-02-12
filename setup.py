@@ -21,8 +21,8 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
 # we only support Python 3 version >= 3.8
-if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 8):
-    raise SystemExit("Python 3.8 or higher is required")
+if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 9):
+    raise SystemExit("Python 3.9 or higher is required")
 
 
 class PyTest(TestCommand):
@@ -78,7 +78,6 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
