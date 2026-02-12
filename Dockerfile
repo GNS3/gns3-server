@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
 RUN locale-gen en_US.UTF-8
 
 # Install uninstall to install dependencies
-RUN apt-get install -y vpcs ubridge
+RUN apt-get install -y vpcs ubridge dynamips
 
 ADD . /server
 WORKDIR /server
