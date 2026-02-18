@@ -24,8 +24,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- @2x -->
-    <link rel="apple-touch-icon" sizes="40x40" type="image/png" href="app/images/icons/novnc-ios-40.png">
     <link rel="apple-touch-icon" sizes="58x58" type="image/png" href="app/images/icons/novnc-ios-58.png">
+    <link rel="apple-touch-icon" sizes="40x40" type="image/png" href="app/images/icons/novnc-ios-40.png">
     <link rel="apple-touch-icon" sizes="80x80" type="image/png" href="app/images/icons/novnc-ios-80.png">
     <link rel="apple-touch-icon" sizes="120x120" type="image/png" href="app/images/icons/novnc-ios-120.png">
     <link rel="apple-touch-icon" sizes="152x152" type="image/png" href="app/images/icons/novnc-ios-152.png">
@@ -138,22 +138,23 @@
                 title="Show extra keys">
             <div class="noVNC_vcenter">
             <div id="noVNC_modifiers" class="noVNC_panel">
-                <input type="image" alt="Ctrl" src="app/images/ctrl.svg"
+                <input type="image" alt="Ctrl" src="./app/images/ctrl.svg"
                     id="noVNC_toggle_ctrl_button" class="noVNC_button"
                     title="Toggle Ctrl">
-                <input type="image" alt="Alt" src="app/images/alt.svg"
+                <input type="image" alt="Alt" src="./app/images/alt.svg"
                     id="noVNC_toggle_alt_button" class="noVNC_button"
                     title="Toggle Alt">
-                <input type="image" alt="Windows" src="app/images/windows.svg"
+                <input type="image" alt="Windows" src="./app/images/windows.svg"
                     id="noVNC_toggle_windows_button" class="noVNC_button"
                     title="Toggle Windows">
-                <input type="image" alt="Tab" src="app/images/tab.svg"
+                <input type="image" alt="Tab" src="./app/images/tab.svg"
                     id="noVNC_send_tab_button" class="noVNC_button"
                     title="Send Tab">
-                <input type="image" alt="Esc" src="app/images/esc.svg"
+                <input type="image" alt="Esc" src="./app/images/esc.svg"
                     id="noVNC_send_esc_button" class="noVNC_button"
                     title="Send Escape">
-                <input type="image" alt="Ctrl+Alt+Del" src="app/images/ctrlaltdel.svg"
+                <!-- i am purposely breaking the path to the ctrlaltdel.svg as if it can find it none of the images renders its not pretty but it works -->
+                <input type="image" alt="Ctrl+Alt+Del" src="./app/images/ctrlaltdel.sv"
                     id="noVNC_send_ctrl_alt_del_button" class="noVNC_button"
                     title="Send Ctrl-Alt-Del">
             </div>
