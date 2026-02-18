@@ -20,6 +20,8 @@ import stat
 import shutil
 import asyncio
 import tempfile
+
+import aiohttp
 import psutil
 import platform
 import re
@@ -482,7 +484,7 @@ class BaseNode:
         """
         Connect to console using Websocket.
 
-        :param ws: Websocket object
+        :param websocket: FastAPI WebSocket object
         """
 
         log.info(
@@ -538,6 +540,72 @@ class BaseNode:
                 log.warning(f"Exception while forwarding WebSocket data to Telnet server {task.exception()}")
         for task in pending:
             task.cancel()
+
+    async def start_vnc_websocket_console(self, websocket):
+        """
+        Connect to VNC console using WebSocket.
+
+        :param websocket: FastAPI WebSocket object
+        """
+
+        log.info(
+            f"New client {websocket.client.host}:{websocket.client.port} has connected to compute "
+            f"VNC console WebSocket"
+        )
+
+        if self.status != "started":
+            raise NodeError(f"Node {self.name} is not started")
+        if self._console_type != "vnc":
+            raise NodeError(f"Node {self.name} console type is not vnc")
+
+        try:
+            vnc_reader, vnc_writer = await asyncio.open_connection(
+                self._manager.port_manager.console_host,
+                self.console  # VNC port
+            )
+            log.info(f"Connected to VNC server {self._manager.port_manager.console_host}:{self.console}")
+        except ConnectionError as e:
+            raise NodeError(f"Cannot connect to node {self.name} VNC server: {e}")
+
+        async def ws_forward(vnc_writer):
+            # Browser → VNC: Forward binary WebSocket data to VNC server
+            try:
+                while True:
+                    data = await websocket.receive_bytes()
+                    if data:
+                        vnc_writer.write(data)
+                        await vnc_writer.drain()
+            except WebSocketDisconnect:
+                log.info(
+                    f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute "
+                    f"VNC console WebSocket"
+                )
+
+        async def vnc_forward(vnc_reader):
+            # VNC → Browser: Forward VNC frames to WebSocket
+            try:
+                while not vnc_reader.at_eof():
+                    data = await vnc_reader.read(65536)  # Larger buffer for VNC frames
+                    if data:
+                        await websocket.send_bytes(data)
+            except Exception as e:
+                log.warning(f"Exception while forwarding VNC data to WebSocket: {e}")
+
+        # Keep forwarding WebSocket data in both directions
+        if sys.version_info >= (3, 11, 0):
+            # Starting with Python 3.11, passing coroutine objects to wait() directly is forbidden.
+            aws = [asyncio.create_task(ws_forward(vnc_writer)), asyncio.create_task(vnc_forward(vnc_reader))]
+        else:
+            aws = [ws_forward(vnc_writer), vnc_forward(vnc_reader)]
+
+        done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            if task.exception():
+                log.warning(f"Exception while forwarding WebSocket data to VNC server: {task.exception()}")
+        for task in pending:
+            task.cancel()
+
+        vnc_writer.close()
 
     @property
     def aux(self):

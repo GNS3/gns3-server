@@ -589,6 +589,82 @@ async def ws_console(
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
 
+@router.websocket("/{node_id}/console/vnc")
+async def vnc_console(
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
+        node: Node = Depends(dep_node)
+) -> None:
+    """
+    VNC WebSocket console.
+
+    Required privilege: Node.Console
+    """
+
+    if current_user is None:
+        return
+
+    compute = node.compute
+    log.info(
+        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller VNC console WebSocket"
+    )
+
+    compute_host = compute.host
+    try:
+        # handle IPv6 address
+        ip = ipaddress.ip_address(compute_host)
+        if isinstance(ip, ipaddress.IPv6Address):
+            compute_host = '[' + compute_host + ']'
+    except ValueError:
+        pass
+
+    vnc_console_compute_url = (
+        f"{websocket.url.scheme}://{compute_host}:{compute.port}/v3/compute/projects/"
+        f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/vnc"
+    )
+
+    async def vnc_receive(vnc_console_compute):
+        """
+        Receive binary WebSocket data from client and forward to compute VNC console WebSocket.
+        """
+
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                if data:
+                    await vnc_console_compute.send_bytes(data)
+        except WebSocketDisconnect:
+            await vnc_console_compute.close()
+            log.info(
+                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+                f" VNC console WebSocket"
+            )
+
+    try:
+        # receive binary data from compute VNC console WebSocket and forward to client
+        log.info(f"Forwarding VNC console WebSocket to '{vnc_console_compute_url}'")
+        server_config = Config.instance().settings.Server
+        user = server_config.compute_username
+        password = server_config.compute_password
+        if not user:
+            raise ControllerForbiddenError("Compute username is not set")
+        user = user.strip()
+        if user and password:
+            auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+        else:
+            auth = aiohttp.BasicAuth(user, "")
+        ssl_context = Controller.instance().ssl_context()
+        async with HTTPClient.get_client().ws_connect(vnc_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
+            asyncio.ensure_future(vnc_receive(ws))
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+    except aiohttp.ClientError as e:
+        log.error(f"Client error received when forwarding to compute VNC console WebSocket: {e}")
+
+
 @router.post(
     "/console/reset",
     status_code=status.HTTP_204_NO_CONTENT,

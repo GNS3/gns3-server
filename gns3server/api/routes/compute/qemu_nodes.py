@@ -27,6 +27,7 @@ from typing import Union
 from uuid import UUID
 
 from gns3server import schemas
+from gns3server.compute import qemu
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
 
@@ -401,6 +402,20 @@ async def console_ws(
     if websocket:
         await node.start_websocket_console(websocket)
 
+
+@router.websocket(
+    "/{node_id}/console/vnc"
+)
+async def vnc_console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: QemuVM = Depends(dep_node)
+) -> None:
+    """
+    VNC Console WebSocket.
+    """
+
+    if websocket:
+        await node.start_vnc_websocket_console(websocket)
 
 @router.post(
     "/{node_id}/console/reset",
