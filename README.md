@@ -1,4 +1,4 @@
-# GNS3 server repository (not the offical one official can found here https://github.com/GNS3/gns3-server )
+# GNS3 server repository
 
 [![Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![GitHub Actions tests](https://github.com/GNS3/gns3-server/workflows/testing/badge.svg?branch=3.0)](https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting+branch%3A3.0)
