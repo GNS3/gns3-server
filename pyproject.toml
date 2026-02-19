@@ -46,6 +46,9 @@ dev = {file = ['dev-requirements.txt']}
 "Repository" = "http://github.com/GNS3/gns3-server"
 "Bug tracker" = "http://github.com/GNS3/gns3-server/issues"
 
+[tool.setuptools.package-data]
+gns3server = ["static/**"]
+
 [project.scripts]
 gns3server = "gns3server.main:main"
 gns3vmnet = "gns3server.utils.vmnet:main"
