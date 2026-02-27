@@ -36,7 +36,7 @@ from langchain.messages import (
     HumanMessage,
     AIMessage,
 )
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.managed.is_last_step import RemainingSteps
 from typing_extensions import TypedDict
@@ -79,6 +79,7 @@ class CopilotService:
         self._tools_by_name = {}
         self._model_with_tools = None
         self._checkpointer = None
+        self._checkpointer_conn = None  # Save connection reference to prevent GC
         self._project_checkpoint_path = None
         log.debug("CopilotService initialized successfully")
 
@@ -162,12 +163,12 @@ class CopilotService:
             log.info(f"Model bound with {len(tools)} tools")
         return self._model_with_tools
 
-    def _get_checkpointer(self, project_id: str):
+    async def _get_checkpointer(self, project_id: str):
         """
         Get or create a SQLite checkpointer for a specific project.
 
         :param project_id: GNS3 project ID
-        :return: SqliteSaver instance
+        :return: AsyncSqliteSaver instance
         """
         log.debug(f"Getting checkpointer for project {project_id}")
 
@@ -192,15 +193,33 @@ class CopilotService:
             log.debug("Reusing existing checkpointer")
             return self._checkpointer
 
-        # Create new checkpointer
-        log.debug(f"Creating new checkpointer at {checkpointer_path}")
-        conn = sqlite3.connect(checkpointer_path, check_same_thread=False)
-        self._checkpointer = SqliteSaver(conn)
-        log.info(f"Project checkpointer created at {checkpointer_path}")
+        # Create new checkpointer using AsyncSqliteSaver
+        log.debug(f"Creating new async checkpointer at {checkpointer_path}")
+        import aiosqlite
+
+        # Close existing connection if switching projects
+        if self._checkpointer_conn:
+            try:
+                await self._checkpointer_conn.close()
+                log.debug("Closed previous checkpointer connection")
+            except Exception as e:
+                log.warning(f"Error closing old checkpointer connection: {e}")
+
+        # Create new connection
+        conn = await aiosqlite.connect(checkpointer_path)
+        # Enable WAL mode for better concurrent performance
+        await conn.execute("PRAGMA journal_mode=WAL;")
+        self._checkpointer_conn = conn  # Save connection reference to prevent GC
+        self._checkpointer = AsyncSqliteSaver(conn)
+
+        # CRITICAL: Initialize database schema
+        await self._checkpointer.setup()
+
+        log.info(f"Project async checkpointer created and initialized at {checkpointer_path}")
 
         return self._checkpointer
 
-    def _build_agent(self, project_id: str):
+    async def _build_agent(self, project_id: str):
         """
         Build and compile the LangGraph agent with tools for a specific project.
 
@@ -210,7 +229,7 @@ class CopilotService:
         log.info(f"Building agent for project {project_id}")
 
         # Get project-specific checkpointer
-        checkpointer = self._get_checkpointer(project_id)
+        checkpointer = await self._get_checkpointer(project_id)
 
         # Define state
         class AgentState(MessagesState):
@@ -313,7 +332,7 @@ class CopilotService:
         log.info(f"Agent built successfully for project {project_id}")
         return agent
 
-    def _get_agent(self, project_id: str):
+    async def _get_agent(self, project_id: str):
         """
         Get or create the copilot agent instance for a specific project.
 
@@ -322,7 +341,7 @@ class CopilotService:
         """
         if project_id not in self._agents:
             log.info(f"No cached agent for project {project_id}, creating new one")
-            self._agents[project_id] = self._build_agent(project_id)
+            self._agents[project_id] = await self._build_agent(project_id)
         else:
             log.debug(f"Using cached agent for project {project_id}")
         return self._agents[project_id]
@@ -344,30 +363,113 @@ class CopilotService:
 
     def _get_topology_context(self, project) -> str:
         """
-        Get a textual representation of the project topology.
+        Get a structured JSON representation of the project topology.
+
+        Reference implementation from gns3-copilot's links_summary method.
 
         :param project: GNS3 project
-        :return: Topology description
+        :return: JSON string with topology data
         """
+        import json
+
         try:
-            lines = [f"Project: {project.name} ({project.id})"]
-            lines.append(f"Nodes: {len(project.nodes)}")
+            # Build nodes inventory (similar to gns3-copilot's nodes_inventory)
+            nodes_data = {}
+            for node_id, node in project.nodes.items():
+                node_info = {
+                    "name": node.name,
+                    "node_id": node.id,
+                    "node_type": node.node_type,
+                    "status": node.status,
+                    "x": node.x if hasattr(node, 'x') else 0,
+                    "y": node.y if hasattr(node, 'y') else 0,
+                }
 
-            for node in project.nodes.values():
-                lines.append(f"  - {node.name} ({node.node_type})")
+                # Add ports if available (clean format like gns3-copilot)
+                if hasattr(node, "ports") and node.ports:
+                    node_info["ports"] = [
+                        {"name": port.get("name"), "short_name": port.get("short_name")}
+                        for port in node.ports
+                    ]
+                else:
+                    node_info["ports"] = []
 
-            lines.append(f"Links: {len(project.links)}")
+                nodes_data[node_id] = node_info
 
+            # Build links summary (similar to gns3-copilot's links_summary)
+            links_data = []
             for link in project.links.values():
-                lines.append(f"  - {link.node_a.name} <-> {link.node_b.name}")
+                # Skip if link has no nodes
+                if not link.nodes or len(link.nodes) < 2:
+                    continue
 
-            topology = "\n".join(lines)
-            log.debug(f"Topology context: {topology}")
-            return topology
+                # Get both sides of the link
+                side_a = link.nodes[0]
+                side_b = link.nodes[1]
+
+                # Get node objects
+                node_a = project.nodes.get(side_a["node_id"])
+                node_b = project.nodes.get(side_b["node_id"])
+
+                if not node_a or not node_b:
+                    continue
+
+                # Get port names
+                port_a_name = self._get_port_name(node_a, side_a.get("adapter_number"), side_a.get("port_number"))
+                port_b_name = self._get_port_name(node_b, side_b.get("adapter_number"), side_b.get("port_number"))
+
+                links_data.append({
+                    "node_a": node_a.name,
+                    "port_a": port_a_name,
+                    "node_b": node_b.name,
+                    "port_b": port_b_name,
+                    "link_id": link.id if hasattr(link, 'id') else None
+                })
+
+            # Build structured topology (same format as gns3-copilot)
+            topology = {
+                "project_id": project.id,
+                "name": project.name,
+                "status": project.status if hasattr(project, 'status') else "opened",
+                "nodes_count": len(nodes_data),
+                "links_count": len(links_data),
+                "nodes": nodes_data,
+                "links": links_data
+            }
+
+            # Return as formatted JSON string
+            topology_json = json.dumps(topology, indent=2, ensure_ascii=False)
+            log.debug(f"Topology context: {topology_json[:200]}...")
+            return topology_json
 
         except Exception as e:
             log.error(f"Error getting topology context: {e}", exc_info=True)
-            return f"Project: {project.name} (unable to load topology details)"
+            # Return error info in JSON format
+            error_json = json.dumps({
+                "project_id": project.id,
+                "name": project.name,
+                "error": f"Unable to load topology details: {str(e)}"
+            }, ensure_ascii=False)
+            return error_json
+
+    def _get_port_name(self, node, adapter_number: int, port_number: int) -> str:
+        """
+        Get port name from node by adapter and port number.
+
+        :param node: GNS3 node object
+        :param adapter_number: Adapter number
+        :param port_number: Port number
+        :return: Port name or placeholder
+        """
+        if not hasattr(node, "ports") or not node.ports:
+            return f"adp{adapter_number}/prt{port_number}"
+
+        for port in node.ports:
+            if (port.get("adapter_number") == adapter_number and
+                port.get("port_number") == port_number):
+                return port.get("short_name", f"adp{adapter_number}/prt{port_number}")
+
+        return f"adp{adapter_number}/prt{port_number}"
 
     async def chat(
         self,
@@ -386,7 +488,7 @@ class CopilotService:
         log.info(f"Chat request - project: {project_id}, conversation: {conversation_id}, message: {message[:100]}...")
 
         # Get project-specific agent
-        agent = self._get_agent(project_id)
+        agent = await self._get_agent(project_id)
 
         try:
             # Get project topology context
@@ -461,7 +563,7 @@ Current project topology:
         log.info(f"Chat stream request - project: {project_id}, conversation: {conversation_id}, message: {message[:100]}...")
 
         # Get project-specific agent
-        agent = self._get_agent(project_id)
+        agent = await self._get_agent(project_id)
 
         try:
             # Get project topology context
@@ -541,3 +643,19 @@ Current project topology:
                 data=str(e),
                 conversation_id=conversation_id
             )
+
+    async def close(self):
+        """
+        Close the copilot service and cleanup database connections.
+
+        This should be called when shutting down the service to properly
+        close the SQLite checkpointer connection.
+        """
+        log.info("Closing CopilotService")
+        if self._checkpointer_conn:
+            await self._checkpointer_conn.close()
+            self._checkpointer_conn = None
+            self._checkpointer = None
+            log.info("Copilot checkpointer connection closed")
+        self._agents.clear()
+        log.info("CopilotService closed")

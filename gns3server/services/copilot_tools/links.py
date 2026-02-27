@@ -76,7 +76,22 @@ class GNS3LinkTool(GNS3ToolBase):
         **kwargs: Any,
     ) -> str:
         """
-        Create a GNS3 link.
+        Create a GNS3 link (sync wrapper - must use async version).
+
+        :param tool_input: JSON string with link creation parameters
+        :param run_manager: Callback manager
+        :return: JSON string with created link information
+        """
+        return self._format_error_response("This tool requires async execution. Use _arun instead.")
+
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Create a GNS3 link (async implementation).
 
         :param tool_input: JSON string with link creation parameters
         :param run_manager: Callback manager
