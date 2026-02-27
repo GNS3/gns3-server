@@ -101,6 +101,82 @@ GET /v3/copilot/config
 Authorization: Bearer <token>
 ```
 
+**响应 (配置存在时)**:
+```json
+{
+  "config_id": "abc123",
+  "user_id": "user456",
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true
+}
+```
+
+**响应 (配置不存在时)**:
+```json
+{
+  "message": "Copilot configuration not found. Please create one first.",
+  "details": {
+    "action": "Create a copilot configuration",
+    "endpoint": "POST /v3/copilot/config",
+    "required_fields": {
+      "provider": "AI provider (e.g., 'openai', 'anthropic', 'ollama', 'azure_openai')",
+      "model_name": "Model name (e.g., 'gpt-4', 'claude-3-5-sonnet-20241022')",
+      "api_key": "Your API key for the provider",
+      "base_url": "API base URL (optional, required for some providers)",
+      "temperature": "Sampling temperature (0.0-2.0, optional, default: 0.7)",
+      "max_tokens": "Maximum tokens to generate (optional, default: 2000)",
+      "enabled": "Whether the configuration is enabled (optional, default: true)"
+    },
+    "example": {
+      "provider": "openai",
+      "model_name": "gpt-4",
+      "api_key": "sk-...",
+      "base_url": "https://api.openai.com/v1",
+      "temperature": 0.7,
+      "max_tokens": 2000,
+      "enabled": true
+    }
+  }
+}
+```
+
+**根据错误响应创建配置 (POST 方法)**:
+```bash
+POST /v3/copilot/config
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "api_key": "sk-xxxx",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true
+}
+```
+
+**响应 (创建成功)**:
+```json
+{
+  "config_id": "abc123",
+  "user_id": "user456",
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true,
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-15T10:30:00Z"
+}
+```
+
 #### 更新配置
 ```bash
 PUT /v3/copilot/config
@@ -115,7 +191,23 @@ Content-Type: application/json
 #### 删除配置
 ```bash
 DELETE /v3/copilot/config
+Authorization: Bearer <token>
 ```
+
+**响应 (删除成功)**:
+```
+HTTP/1.1 204 No Content
+```
+- 状态码: 204
+- 无响应体
+
+**响应 (配置不存在)**:
+```json
+{
+  "message": "Copilot configuration not found."
+}
+```
+- 状态码: 404
 
 ### 2. 聊天 API
 

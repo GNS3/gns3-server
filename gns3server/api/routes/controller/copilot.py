@@ -20,6 +20,7 @@ API routes for copilot configuration.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import JSONResponse
 from uuid import UUID
 
 from gns3server import schemas
@@ -41,11 +42,11 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/config", response_model=schemas.CopilotConfig)
+@router.get("/config")
 async def get_copilot_config(
         current_user: schemas.User = Depends(get_current_active_user),
         copilot_repo: CopilotRepository = Depends(get_repository(CopilotRepository))
-) -> schemas.CopilotConfig:
+):
     """
     Get the current user's copilot configuration.
     """
@@ -53,7 +54,34 @@ async def get_copilot_config(
     config = await copilot_repo.get_copilot_config(current_user.user_id)
     if not config:
         log.warning(f"Copilot config not found for user {current_user.username}")
-        raise ControllerNotFoundError(f"Copilot configuration not found. Please create one first.")
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "message": "Copilot configuration not found. Please create one first.",
+                "details": {
+                    "action": "Create a copilot configuration",
+                    "endpoint": "POST /v3/copilot/config",
+                    "required_fields": {
+                        "provider": "AI provider (e.g., 'openai', 'anthropic', 'ollama', 'azure_openai')",
+                        "model_name": "Model name (e.g., 'gpt-4', 'claude-3-5-sonnet-20241022')",
+                        "api_key": "Your API key for the provider",
+                        "base_url": "API base URL (optional, required for some providers)",
+                        "temperature": "Sampling temperature (0.0-2.0, optional, default: 0.7)",
+                        "max_tokens": "Maximum tokens to generate (optional, default: 2000)",
+                        "enabled": "Whether the configuration is enabled (optional, default: true)"
+                    },
+                    "example": {
+                        "provider": "openai",
+                        "model_name": "gpt-4",
+                        "api_key": "sk-...",
+                        "base_url": "https://api.openai.com/v1",
+                        "temperature": 0.7,
+                        "max_tokens": 2000,
+                        "enabled": True
+                    }
+                }
+            }
+        )
     log.debug(f"Returning copilot config for user {current_user.username}: {config.provider}/{config.model_name}")
     return config
 
@@ -79,12 +107,12 @@ async def create_copilot_config(
     return config
 
 
-@router.put("/config", response_model=schemas.CopilotConfig)
+@router.put("/config")
 async def update_copilot_config(
         config_update: schemas.CopilotConfigUpdate,
         current_user: schemas.User = Depends(get_current_active_user),
         copilot_repo: CopilotRepository = Depends(get_repository(CopilotRepository))
-) -> schemas.CopilotConfig:
+):
     """
     Update the current user's copilot configuration.
     """
@@ -92,7 +120,17 @@ async def update_copilot_config(
     config = await copilot_repo.update_copilot_config(current_user.user_id, config_update)
     if not config:
         log.warning(f"Copilot config not found for user {current_user.username}")
-        raise ControllerNotFoundError(f"Copilot configuration not found. Please create one first.")
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "message": "Copilot configuration not found. Please create one first.",
+                "details": {
+                    "action": "Create a copilot configuration",
+                    "endpoint": "POST /v3/copilot/config",
+                    "note": "Use POST to create a new configuration, then use PUT to update it."
+                }
+            }
+        )
     log.info(f"Updated copilot config for user {current_user.username}: {config.provider}/{config.model_name}")
     return config
 

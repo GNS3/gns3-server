@@ -101,6 +101,82 @@ GET /v3/copilot/config
 Authorization: Bearer <token>
 ```
 
+**Response (when configuration exists)**:
+```json
+{
+  "config_id": "abc123",
+  "user_id": "user456",
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true
+}
+```
+
+**Response (when configuration does not exist)**:
+```json
+{
+  "message": "Copilot configuration not found. Please create one first.",
+  "details": {
+    "action": "Create a copilot configuration",
+    "endpoint": "POST /v3/copilot/config",
+    "required_fields": {
+      "provider": "AI provider (e.g., 'openai', 'anthropic', 'ollama', 'azure_openai')",
+      "model_name": "Model name (e.g., 'gpt-4', 'claude-3-5-sonnet-20241022')",
+      "api_key": "Your API key for the provider",
+      "base_url": "API base URL (optional, required for some providers)",
+      "temperature": "Sampling temperature (0.0-2.0, optional, default: 0.7)",
+      "max_tokens": "Maximum tokens to generate (optional, default: 2000)",
+      "enabled": "Whether the configuration is enabled (optional, default: true)"
+    },
+    "example": {
+      "provider": "openai",
+      "model_name": "gpt-4",
+      "api_key": "sk-...",
+      "base_url": "https://api.openai.com/v1",
+      "temperature": 0.7,
+      "max_tokens": 2000,
+      "enabled": true
+    }
+  }
+}
+```
+
+**Create configuration based on error response (POST method)**:
+```bash
+POST /v3/copilot/config
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "api_key": "sk-xxxx",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true
+}
+```
+
+**Response (creation successful)**:
+```json
+{
+  "config_id": "abc123",
+  "user_id": "user456",
+  "provider": "openai",
+  "model_name": "gpt-4o",
+  "base_url": "https://api.openai.com/v1",
+  "temperature": 0.7,
+  "max_tokens": 2000,
+  "enabled": true,
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-15T10:30:00Z"
+}
+```
+
 #### Update Configuration
 ```bash
 PUT /v3/copilot/config
@@ -115,7 +191,23 @@ Content-Type: application/json
 #### Delete Configuration
 ```bash
 DELETE /v3/copilot/config
+Authorization: Bearer <token>
 ```
+
+**Response (deletion successful)**:
+```
+HTTP/1.1 204 No Content
+```
+- Status code: 204
+- No response body
+
+**Response (configuration does not exist)**:
+```json
+{
+  "message": "Copilot configuration not found."
+}
+```
+- Status code: 404
 
 ### 2. Chat API
 
