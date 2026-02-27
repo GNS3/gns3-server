@@ -26,3 +26,21 @@ watchdog==6.0.0
 zstandard==0.25.0
 platformdirs>=2.4.0,<3  # platformdirs >=3 conflicts when building Debian packages
 truststore>=0.10.4; python_version >= '3.10'
+
+# Optional Copilot AI Agent dependencies
+langchain>=1.2.0
+langchain-core>=1.2.6
+langgraph>=1.0.5
+langgraph-checkpoint-sqlite>=3.0.1
+langchain-openai>=1.1.6
+langchain-anthropic>=1.3.1
+langchain-google-genai>=4.1.3
+langchain-aws>=1.2.0
+langchain-ollama>=1.0.1
+
+# Copilot network automation dependencies
+netmiko>=4.6.0
+nornir>=3.5.0
+nornir-netmiko>=1.0.1
+nornir-utils>=0.2.0
+telnetlib3>=2.0.8

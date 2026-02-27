@@ -34,6 +34,8 @@ from . import roles
 from . import acl
 from . import pools
 from . import privileges
+from . import copilot
+from . import copilot_chat
 
 from .dependencies.authentication import get_current_active_user
 
@@ -144,4 +146,18 @@ router.include_router(
     deprecated=True,
     prefix="/gns3vm",
     tags=["GNS3 VM"]
+)
+
+router.include_router(
+    copilot.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/copilot",
+    tags=["Copilot"]
+)
+
+router.include_router(
+    copilot_chat.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/copilot",
+    tags=["Copilot Chat"]
 )

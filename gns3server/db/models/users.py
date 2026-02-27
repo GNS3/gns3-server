@@ -49,6 +49,7 @@ class User(BaseTable):
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
     acl_entries = relationship("ACE")
+    copilot_config = relationship("CopilotConfig", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 @event.listens_for(User.__table__, 'after_create')

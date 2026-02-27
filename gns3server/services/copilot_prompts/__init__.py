@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2021 GNS3 Technologies Inc.
+# Copyright (C) 2025 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .base import Base
-from .acl import ACE
-from .users import User, UserGroup
-from .roles import Role
-from .privileges import Privilege
-from .computes import Compute
-from .images import Image
-from .pools import Resource, ResourcePool
-from .copilot import CopilotConfig
-from .templates import (
-    Template,
-    CloudTemplate,
-    DockerTemplate,
-    DynamipsTemplate,
-    EthernetHubTemplate,
-    EthernetSwitchTemplate,
-    IOUTemplate,
-    QemuTemplate,
-    VirtualBoxTemplate,
-    VMwareTemplate,
-    VPCSTemplate,
-)
+"""
+Prompts module for GNS3 Copilot.
+
+This package contains system prompts for the GNS3 Copilot AI agent.
+"""
+
+from .base_prompt import SYSTEM_PROMPT
+
+__all__ = [
+    "SYSTEM_PROMPT",
+]

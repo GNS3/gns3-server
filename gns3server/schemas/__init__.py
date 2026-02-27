@@ -36,6 +36,7 @@ from .controller.tokens import Token
 from .controller.snapshots import SnapshotCreate, Snapshot
 from .controller.iou_license import IOULicense
 from .controller.capabilities import Capabilities
+from .controller.copilot import CopilotConfigCreate, CopilotConfigUpdate, CopilotConfig, ChatRequest, ChatResponse, ChatStreamEvent
 
 # Controller template schemas
 from .controller.templates.vpcs_templates import VPCSTemplate, VPCSTemplateUpdate
