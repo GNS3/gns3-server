@@ -26,8 +26,8 @@ from .topology import GNS3TopologyTool
 from .nodes import GNS3CreateNodeTool, GNS3StartNodeTool
 from .links import GNS3LinkTool
 from .templates import GNS3TemplateTool
-from .network_commands import ExecuteDisplayCommandsTool, ExecuteConfigCommandsTool
-from .vpcs import VPCSCommandsTool
+from .network_commands import ReadDeviceInfoTool, ApplyDeviceConfigTool
+from .vpcs import VPCSTerminalTool
 
 __all__ = [
     "GNS3TopologyTool",
@@ -35,7 +35,7 @@ __all__ = [
     "GNS3StartNodeTool",
     "GNS3LinkTool",
     "GNS3TemplateTool",
-    "ExecuteDisplayCommandsTool",
-    "ExecuteConfigCommandsTool",
-    "VPCSCommandsTool",
+    "ReadDeviceInfoTool",
+    "ApplyDeviceConfigTool",
+    "VPCSTerminalTool",
 ]

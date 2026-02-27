@@ -38,7 +38,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class ExecuteDisplayCommandsTool(GNS3ToolBase):
+class ReadDeviceInfoTool(GNS3ToolBase):
     """
     A tool to execute display (show) commands on multiple network devices.
 
@@ -67,13 +67,13 @@ class ExecuteDisplayCommandsTool(GNS3ToolBase):
     Only use 'show' or display commands. Do NOT use for configuration commands.
     """
 
-    name: str = "execute_display_commands"
+    name: str = "read_device_info"
     description: str = """
-    Executes display (show) commands on multiple network devices in the project.
+    Executes display (show) commands on network devices to read device information.
     Input is a JSON object with project_id and device_configs array.
     Example input: {"project_id": "uuid", "device_configs": [{"device_name": "R1", "commands": ["show version"]}]}
-    Returns command outputs for each device.
-    **IMPORTANT: Only use for display/show commands. NOT for configuration.**
+    Returns device information outputs.
+    **IMPORTANT: This is a READ-ONLY tool for show/display commands. NOT for configuration.**
     """
 
     def _get_device_console_info(self, project, device_names: List[str]) -> dict:
@@ -109,9 +109,10 @@ class ExecuteDisplayCommandsTool(GNS3ToolBase):
 
         :param node_type: GNS3 node type
         :return: Netmiko platform string
+
+        Note: VPCS devices should use the execute_vpcs_commands tool instead.
         """
         platform_map = {
-            "vpcs": "term",
             "dynamips": "cisco_ios",
             "iosv": "cisco_ios",
             "iol": "cisco_iosxe",
@@ -283,9 +284,9 @@ class ExecuteDisplayCommandsTool(GNS3ToolBase):
             return self._format_error_response(f"Failed to execute commands: {str(e)}")
 
 
-class ExecuteConfigCommandsTool(GNS3ToolBase):
+class ApplyDeviceConfigTool(GNS3ToolBase):
     """
-    A tool to execute configuration commands on multiple network devices.
+    A tool to apply configuration commands on multiple network devices.
 
     **Input:**
     A JSON object containing project_id and device configurations.
@@ -311,13 +312,13 @@ class ExecuteConfigCommandsTool(GNS3ToolBase):
     **WARNING:** This tool modifies device configuration. Use with caution.
     """
 
-    name: str = "execute_config_commands"
+    name: str = "apply_device_config"
     description: str = """
-    Executes configuration commands on multiple network devices in the project.
+    Applies configuration commands to network devices (MODIFIES device settings).
     Input is a JSON object with project_id and device_configs array.
     Example input: {"project_id": "uuid", "device_configs": [{"device_name": "R1", "commands": ["interface g0/0", "ip address 1.1.1.1 255.255.255.0"]}]}
-    Returns configuration results for each device.
-    **WARNING: This modifies device configuration. Use with caution.**
+    Returns configuration results.
+    **WARNING: This MODIFIES device configuration. Use with caution.**
     """
 
     def _run(
@@ -354,8 +355,7 @@ class ExecuteConfigCommandsTool(GNS3ToolBase):
             commands_map = {config["device_name"]: config["commands"] for config in device_configs}
 
             # Get device console information
-            from .network_commands import ExecuteDisplayCommandsTool
-            display_tool = ExecuteDisplayCommandsTool(controller=self.controller)
+            display_tool = ReadDeviceInfoTool(controller=self.controller)
             hosts_data = display_tool._get_device_console_info(project, device_names)
 
             if not hosts_data:

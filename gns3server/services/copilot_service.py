@@ -127,9 +127,9 @@ class CopilotService:
                 GNS3StartNodeTool,
                 GNS3LinkTool,
                 GNS3TemplateTool,
-                ExecuteDisplayCommandsTool,
-                ExecuteConfigCommandsTool,
-                VPCSCommandsTool,
+                ReadDeviceInfoTool,
+                ApplyDeviceConfigTool,
+                VPCSTerminalTool,
             )
 
             # Create tool instances with controller
@@ -139,9 +139,9 @@ class CopilotService:
                 GNS3CreateNodeTool(controller=self.controller),
                 GNS3StartNodeTool(controller=self.controller),
                 GNS3LinkTool(controller=self.controller),
-                ExecuteDisplayCommandsTool(controller=self.controller),
-                ExecuteConfigCommandsTool(controller=self.controller),
-                VPCSCommandsTool(controller=self.controller),
+                ReadDeviceInfoTool(controller=self.controller),
+                ApplyDeviceConfigTool(controller=self.controller),
+                VPCSTerminalTool(controller=self.controller),
             ]
 
             # Build tools by name dict

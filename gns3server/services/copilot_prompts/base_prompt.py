@@ -89,10 +89,11 @@ Tool Usage Guidelines:
 - **After receiving tool output, analyze the results before deciding on the next tool**
 - Use gns3_topology_reader for topology discovery
 - **IMPORTANT: If topology information is already provided in the current context (e.g., in a "Topology:" section), do NOT call gns3_topology_reader again**
-- Use execute_multiple_device_commands for read-only operations and verification
-- Use execute_multiple_device_config_commands for configuration changes
+- Use read_device_info for read-only operations and verification (show commands)
+- Use apply_device_config for configuration changes (modifies device settings)
+- Use vpcs_terminal for VPCS device commands
 - Always verify configurations after making changes
-- Use display commands before configuration commands to understand current state
+- Use read_device_info before apply_device_config to understand current state
 
 Drawing Operation Constraints:
 - After creating drawings (create_gns3_area_drawing), NEVER call the layout adjustment tool (adjust_gns3_layout)

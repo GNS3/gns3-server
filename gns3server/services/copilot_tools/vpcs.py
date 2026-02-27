@@ -19,11 +19,13 @@
 VPCS Command Execution Tool
 
 Provides tool for executing commands on VPCS (Virtual PC Simulator) devices
-using Telnet.
+using Telnet with threading for concurrent execution.
 """
 
-import asyncio
+import json
 import re
+import threading
+from time import sleep
 from typing import Any, Optional, List
 from langchain_core.callbacks import CallbackManagerForToolRun
 from telnetlib3 import Telnet
@@ -35,9 +37,10 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class VPCSCommandsTool(GNS3ToolBase):
+class VPCSTerminalTool(GNS3ToolBase):
     """
-    A tool to execute commands on multiple VPCS devices.
+    A tool to execute multiple command groups across multiple VPCS devices concurrently.
+    Supports parallel execution with threading for improved performance.
 
     **Input:**
     A JSON object containing project_id and device configurations.
@@ -58,17 +61,114 @@ class VPCSCommandsTool(GNS3ToolBase):
         }
 
     **Output:**
-    A list of results for each VPCS device.
+    A list of results, one for each command group.
     """
 
-    name: str = "execute_vpcs_commands"
+    name: str = "vpcs_terminal"
     description: str = """
-    Executes commands on multiple VPCS (Virtual PC Simulator) devices.
+    Executes commands on VPCS (Virtual PC Simulator) devices via telnet.
+    Supports concurrent execution on multiple VPCS devices using threading.
     Input is a JSON object with project_id and device_configs array.
     Example input: {"project_id": "uuid", "device_configs": [{"device_name": "PC1", "commands": ["ip 1.1.1.1/24 1.1.1.254"]}]}
-    Supports VPCS commands like: ip, ping, traceroute, arp, etc.
+    Supports VPCS commands: ip, ping, traceroute, arp, save, etc.
     Returns command outputs for each VPCS device.
     """
+
+    def _connect_and_execute_commands(
+        self,
+        device_name: str,
+        commands: List[str],
+        results_list: List[Any],
+        index: int,
+        device_ports: dict,
+    ) -> None:
+        """
+        Internal method to connect to device and execute multiple commands.
+
+        :param device_name: Name of the VPCS device
+        :param commands: List of commands to execute
+        :param results_list: Pre-allocated list for thread-safe results
+        :param index: Index in results list
+        :param device_ports: Dictionary mapping device names to port info
+        """
+        log.info(
+            f"Starting connection for device '{device_name}' with {len(commands)} commands"
+        )
+
+        # Check if device has port information
+        if device_name not in device_ports:
+            log.warning(
+                f"Device '{device_name}' not found in topology or missing console port"
+            )
+            results_list[index] = {
+                "device_name": device_name,
+                "status": "error",
+                "output": f"Device '{device_name}' not found in topology or missing console port",
+                "commands": commands,
+            }
+            return
+
+        port = device_ports[device_name]["port"]
+        host = device_ports[device_name]["host"]
+
+        log.info(f"Connecting to device '{device_name}' at {host}:{port}")
+
+        tn = Telnet()
+        try:
+            tn.open(host=host, port=port, timeout=30)
+            log.info(f"Successfully connected to device '{device_name}' at {host}:{port}")
+
+            # Initialize connection - send newlines and wait for prompt
+            tn.write(b"\n")
+            sleep(0.5)
+            tn.write(b"\n")
+            sleep(0.5)
+            tn.write(b"\n")
+            sleep(0.5)
+            tn.write(b"\n")
+            sleep(0.5)
+            tn.expect([rb"PC\d+>"])
+            log.info(f"Connection initialized for device '{device_name}'")
+
+            # Execute all commands and merge output
+            combined_output = ""
+            for i, command in enumerate(commands):
+                log.info(
+                    f"Executing command {i+1}/{len(commands)} on device '{device_name}': {command}"
+                )
+                tn.write(command.encode(encoding="ascii") + b"\n")
+                sleep(5)  # Wait for command execution
+                tn.expect([rb"PC\d+>"])
+                output = tn.read_very_eager().decode("utf-8", errors="ignore")
+                combined_output += output
+                log.debug(
+                    f"Command '{command}' executed on device '{device_name}', output length: {len(output)}"
+                )
+
+            # Add result to list
+            results_list[index] = {
+                "device_name": device_name,
+                "status": "success",
+                "output": combined_output,
+                "commands": commands,
+            }
+            log.info(
+                f"Successfully executed all {len(commands)} commands on device '{device_name}'"
+            )
+
+        except Exception as e:
+            log.error(
+                f"Error executing commands on device '{device_name}': {e}", exc_info=True
+            )
+            results_list[index] = {
+                "device_name": device_name,
+                "status": "error",
+                "output": str(e),
+                "commands": commands,
+            }
+        finally:
+            tn.close()
+            log.debug(f"Connection closed for device '{device_name}'")
 
     def _get_vpcs_console_info(self, project, device_names: List[str]) -> dict:
         """
@@ -80,7 +180,7 @@ class VPCSCommandsTool(GNS3ToolBase):
         """
         hosts_data = {}
 
-        for node in project.nodes:
+        for node in project.nodes.values():
             if node.name in device_names and node.node_type == "vpcs":
                 hosts_data[node.name] = {
                     "host": "127.0.0.1",  # GNS3 console binding
@@ -90,67 +190,112 @@ class VPCSCommandsTool(GNS3ToolBase):
 
         return hosts_data
 
-    async def _execute_commands_on_device(
-        self, device_name: str, commands: List[str], host_info: dict
-    ) -> dict:
+    def _validate_project_id(self, project_id: str) -> bool:
         """
-        Execute commands on a single VPCS device.
+        Validate project_id format (UUID).
 
-        :param device_name: Name of the VPCS device
-        :param commands: List of commands to execute
-        :param host_info: Dictionary with host and port
-        :return: Result dictionary
+        :param project_id: The project ID to validate
+        :return: True if valid UUID format, False otherwise
         """
-        host = host_info["host"]
-        port = host_info["port"]
+        uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        is_valid = bool(re.match(uuid_pattern, project_id, re.IGNORECASE))
+        if is_valid:
+            log.debug(f"project_id '{project_id}' is valid UUID format")
+        else:
+            log.warning(f"project_id '{project_id}' is not a valid UUID format")
+        return is_valid
 
-        result = {
-            "device_name": device_name,
-            "commands": commands,
-            "output": "",
-            "status": "success",
-        }
+    def _validate_tool_input(self, tool_input: str) -> tuple:
+        """
+        Validate device command input and extract project_id and device_configs.
 
-        try:
-            # Connect to VPCS via Telnet
-            reader, writer = await Telnet(host, port).open()
+        :param tool_input: The input received from the tool call
+        :return: Tuple containing (device_configs_list, project_id) or (error_list, "")
+        """
+        parsed_input = None
 
-            # Initialize connection
-            await asyncio.sleep(0.5)
-            for _ in range(4):
-                writer.write(b"\n")
-                await asyncio.sleep(0.5)
+        # Parse JSON input
+        if isinstance(tool_input, (str, bytes, bytearray)):
+            try:
+                parsed_input = json.loads(tool_input)
+                log.info("Successfully parsed tool input from JSON string.")
+            except json.JSONDecodeError as e:
+                log.error(f"Invalid JSON string received as tool input: {e}")
+                return ([{"error": f"Invalid JSON input: {e}"}], "")
+        else:
+            parsed_input = tool_input
+            log.info(f"Using tool input directly as type: {type(parsed_input).__name__}")
 
-            # Wait for VPCS prompt
-            await asyncio.sleep(1)
+        # Validate input is a dictionary
+        if not isinstance(parsed_input, dict):
+            error_msg = (
+                "Tool input must be a JSON object containing 'project_id' and 'device_configs', "
+                f"but got {type(parsed_input).__name__}"
+            )
+            log.error(error_msg)
+            return ([{"error": error_msg}], "")
 
-            # Execute commands
-            outputs = []
-            for command in commands:
-                log.info(f"Executing on {device_name}: {command}")
-                writer.write(command.encode("ascii") + b"\n")
-                await asyncio.sleep(3)  # Wait for command execution
+        # Extract and validate project_id
+        project_id = parsed_input.get("project_id")
+        if not project_id:
+            error_msg = "Missing required field 'project_id' in input"
+            log.error(error_msg)
+            return ([{"error": error_msg}], "")
 
-                # Read output
-                try:
-                    output = await asyncio.wait_for(
-                        reader.read(4096), timeout=5
-                    )
-                    output_str = output.decode("utf-8", errors="ignore")
-                    outputs.append(output_str)
-                except asyncio.TimeoutError:
-                    outputs.append("")
+        # Validate project_id format
+        if not self._validate_project_id(project_id):
+            error_msg = f"Invalid project_id format: {project_id}. Expected UUID format."
+            log.error(error_msg)
+            return ([{"error": error_msg}], "")
 
-            result["output"] = "\n".join(outputs)
-            writer.close()
-            await writer.wait_closed()
+        # Extract and validate device_configs
+        device_configs = parsed_input.get("device_configs")
+        if device_configs is None:
+            error_msg = "Missing required field 'device_configs' in input"
+            log.error(error_msg)
+            return ([{"error": error_msg}], "")
 
-        except Exception as e:
-            log.error(f"Error executing commands on {device_name}: {e}")
-            result["status"] = "error"
-            result["output"] = str(e)
+        # Validate device_configs is a list
+        if not isinstance(device_configs, list):
+            error_msg = f"'device_configs' must be a list, but got {type(device_configs).__name__}"
+            log.error(error_msg)
+            return ([{"error": error_msg}], "")
 
-        return result
+        # Handle empty list
+        if not device_configs:
+            log.warning("Device configs list is empty.")
+            return [], ""
+
+        # Validate each item in device_configs
+        for i, item in enumerate(device_configs):
+            if not isinstance(item, dict):
+                error_msg = f"Item at index {i} must be a dictionary, got {type(item).__name__}"
+                log.error(error_msg)
+                return ([{"error": error_msg}], "")
+
+            # Validate required fields in each device config
+            if "device_name" not in item:
+                error_msg = f"Item at index {i} missing required field 'device_name'"
+                log.error(error_msg)
+                return ([{"error": error_msg}], "")
+
+            if "commands" not in item:
+                error_msg = f"Item at index {i} missing required field 'commands'"
+                log.error(error_msg)
+                return ([{"error": error_msg}], "")
+
+            if not isinstance(item["commands"], list):
+                error_msg = (
+                    f"'commands' in item at index {i} must be a list, "
+                    f"but got {type(item['commands']).__name__}"
+                )
+                log.error(error_msg)
+                return ([{"error": error_msg}], "")
+
+        log.info(
+            f"Input validated successfully. project_id={project_id}, device_configs_count={len(device_configs)}"
+        )
+        return device_configs, project_id
 
     def _run(
         self,
@@ -159,89 +304,87 @@ class VPCSCommandsTool(GNS3ToolBase):
         **kwargs: Any,
     ) -> str:
         """
-        Execute commands on multiple VPCS devices.
+        Execute commands on multiple VPCS devices concurrently.
 
         :param tool_input: JSON string with project_id and device_configs
         :param run_manager: Callback manager
         :return: JSON string with command outputs
         """
-        async def _async_execute():
-            try:
-                # Parse input
-                input_data = self._parse_json_input(tool_input)
-                project_id = input_data.get("project_id")
-                device_configs = input_data.get("device_configs", [])
+        log.info(f"VPCS commands tool called with input: {tool_input[:200]}...")
 
-                # Validate required fields
-                if not project_id:
-                    return self._format_error_response("Missing project_id")
+        # Validate tool input and extract project_id and device_configs
+        device_configs, project_id = self._validate_tool_input(tool_input)
 
-                if not device_configs:
-                    return self._format_error_response("Missing device_configs")
+        # Check if validation returned an error
+        if (
+            isinstance(device_configs, list)
+            and len(device_configs) > 0
+            and "error" in device_configs[0]
+        ):
+            return self._format_error_response(device_configs[0]["error"])
 
-                # Get project
-                project = self._get_project(project_id)
+        # Empty device configs
+        if not device_configs:
+            return self._format_success_response({"results": []})
 
-                # Extract VPCS device names
-                device_names = [config["device_name"] for config in device_configs]
-
-                # Get VPCS console information
-                hosts_data = self._get_vpcs_console_info(project, device_names)
-
-                if not hosts_data:
-                    return self._format_error_response(
-                        "No VPCS devices found. Make sure devices are started and have console ports."
-                    )
-
-                # Execute commands on all devices concurrently
-                results = []
-                tasks = []
-
-                for device_config in device_configs:
-                    device_name = device_config["device_name"]
-                    commands = device_config["commands"]
-
-                    if device_name in hosts_data:
-                        task = self._execute_commands_on_device(
-                            device_name, commands, hosts_data[device_name]
-                        )
-                        tasks.append(task)
-                    else:
-                        results.append({
-                            "device_name": device_name,
-                            "commands": commands,
-                            "status": "error",
-                            "output": f"Device {device_name} not found or is not a VPCS device"
-                        })
-
-                # Wait for all tasks to complete
-                if tasks:
-                    task_results = await asyncio.gather(*tasks, return_exceptions=True)
-                    for task_result in task_results:
-                        if isinstance(task_result, Exception):
-                            results.append({
-                                "device_name": "unknown",
-                                "commands": [],
-                                "status": "error",
-                                "output": str(task_result)
-                            })
-                        else:
-                            results.append(task_result)
-
-                return self._format_success_response({"results": results})
-
-            except ValueError as e:
-                log.error(f"Error in VPCS commands tool: {e}")
-                return self._format_error_response(str(e))
-            except Exception as e:
-                log.error(f"Unexpected error in VPCS commands tool: {e}")
-                return self._format_error_response(f"Failed to execute VPCS commands: {str(e)}")
-
-        # Run async function in event loop
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Get project
+            project = self._get_project(project_id)
 
-        return loop.run_until_complete(_async_execute())
+            # Extract all device names from input
+            device_names = {config["device_name"] for config in device_configs}
+            log.debug(f"Extracted device names: {list(device_names)}")
+
+            # Get device console information
+            log.debug(f"Retrieving device port mapping for project_id={project_id}")
+            device_ports = self._get_vpcs_console_info(project, list(device_names))
+            log.info(
+                f"Retrieved port mappings for {len(device_ports)} devices: {list(device_ports.keys())}"
+            )
+
+            # Initialize results list (pre-allocate space for concurrent writes)
+            results = [{} for _ in range(len(device_configs))]
+            threads = []
+
+            # Create thread for each command group
+            log.info(f"Starting parallel execution for {len(device_configs)} devices")
+            for i, cmd_group in enumerate(device_configs):
+                device_name = cmd_group["device_name"]
+                log.debug(
+                    f"Creating thread for device '{device_name}' (index {i}) with {len(cmd_group['commands'])} commands"
+                )
+                thread = threading.Thread(
+                    target=self._connect_and_execute_commands,
+                    args=(
+                        cmd_group["device_name"],
+                        cmd_group["commands"],
+                        results,
+                        i,
+                        device_ports,
+                    ),
+                )
+                threads.append(thread)
+                thread.start()
+                log.debug(f"Thread started for device '{device_name}'")
+
+            # Wait for all threads to complete
+            log.debug("Waiting for all threads to complete...")
+            for thread in threads:
+                thread.join()
+
+            # Count successful and failed executions
+            success_count = sum(1 for r in results if r.get("status") == "success")
+            error_count = sum(1 for r in results if r.get("status") == "error")
+
+            log.info(
+                f"Multi-device command execution completed. Total: {len(results)}, Success: {success_count}, Error: {error_count}"
+            )
+
+            return self._format_success_response({"results": results})
+
+        except ValueError as e:
+            log.error(f"Error in VPCS commands tool: {e}", exc_info=True)
+            return self._format_error_response(str(e))
+        except Exception as e:
+            log.error(f"Unexpected error in VPCS commands tool: {e}", exc_info=True)
+            return self._format_error_response(f"Failed to execute VPCS commands: {str(e)}")

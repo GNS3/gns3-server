@@ -167,9 +167,9 @@ data: {"data": "", "conversation_id": "session-123"}
 | `create_gns3_node` | Create node | Create new node in project |
 | `start_gns3_node` | Start node | Start specified node |
 | `create_gns3_link` | Create link | Connect two nodes |
-| `execute_display_commands` | Display commands | Execute show commands (read-only) |
-| `execute_config_commands` | Config commands | Execute configuration commands (modify devices) |
-| `execute_vpcs_commands` | VPCS commands | Execute VPCS device commands |
+| `read_device_info` | Read device info | Execute show commands (read-only) |
+| `apply_device_config` | Apply device config | Execute configuration commands (modify devices) |
+| `vpcs_terminal` | VPCS terminal | Execute VPCS device commands |
 
 ## Checkpoint Conversation Persistence
 

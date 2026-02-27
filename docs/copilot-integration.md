@@ -167,9 +167,9 @@ data: {"data": "", "conversation_id": "session-123"}
 | `create_gns3_node` | 创建节点 | 在项目中创建新节点 |
 | `start_gns3_node` | 启动节点 | 启动指定的节点 |
 | `create_gns3_link` | 创建链路 | 连接两个节点 |
-| `execute_display_commands` | 显示命令 | 执行 show 命令 (只读) |
-| `execute_config_commands` | 配置命令 | 执行配置命令 (修改设备) |
-| `execute_vpcs_commands` | VPCS 命令 | 执行 VPCS 设备命令 |
+| `read_device_info` | 读取设备信息 | 执行 show 命令 (只读) |
+| `apply_device_config` | 应用设备配置 | 执行配置命令 (修改设备) |
+| `vpcs_terminal` | VPCS 终端 | 执行 VPCS 设备命令 |
 
 ## Checkpoint 对话持久化
 
