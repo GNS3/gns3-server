@@ -48,9 +48,10 @@ async def dep_project(project_id: UUID) -> Project:
     """
     Dependency to retrieve a project.
     """
-
+    log.debug(f"Loading project {project_id}")
     controller = Controller.instance()
     project = await controller.get_loaded_project(str(project_id))
+    log.debug(f"Project loaded: {project.name} ({project.id})")
     return project
 
 
@@ -64,24 +65,31 @@ async def _stream_chat_response(
     """
     Stream chat response from the copilot agent.
     """
+    log.info(f"Starting chat stream for project {project_id}, conversation {conversation_id}")
     try:
         # Import the copilot agent service
         from gns3server.services.copilot_service import CopilotService
 
+        log.debug("Creating CopilotService instance")
         copilot_service = CopilotService(copilot_config, controller)
 
         # Stream the response
+        event_count = 0
         async for event in copilot_service.chat_stream(
             message=message,
             project_id=project_id,
             conversation_id=conversation_id,
         ):
+            event_count += 1
+            log.debug(f"Streaming event #{event_count}: {event.event}")
             # Format as SSE event
             yield f"event: {event.event}\n"
             yield f"data: {json.dumps({'data': event.data, 'conversation_id': event.conversation_id})}\n\n"
 
+        log.info(f"Chat stream completed, sent {event_count} events")
+
     except Exception as e:
-        log.error(f"Error in copilot chat stream: {str(e)}")
+        log.error(f"Error in copilot chat stream: {str(e)}", exc_info=True)
         error_event = schemas.ChatStreamEvent(
             event="error",
             data=str(e),
@@ -104,28 +112,37 @@ async def chat_with_copilot(
     The agent has access to the project topology and can perform actions
     such as creating nodes, links, and executing commands on devices.
     """
+    log.info(f"Chat request from user {current_user.username} for project {project.name}")
 
     # Get user's copilot configuration
+    log.debug(f"Fetching copilot config for user {current_user.user_id}")
     config = await copilot_repo.get_copilot_config(current_user.user_id)
     if not config:
+        log.warning(f"Copilot config not found for user {current_user.user_id}")
         raise ControllerNotFoundError(f"Copilot configuration not found. Please configure it first.")
 
     if not config.enabled:
+        log.warning(f"Copilot disabled for user {current_user.user_id}")
         raise ControllerBadRequestError(f"Copilot is disabled for this user.")
+
+    log.debug(f"Copilot config: {config.provider}/{config.model_name}")
 
     try:
         from gns3server.services.copilot_service import CopilotService
 
         controller = Controller.instance()
+        log.debug("Creating CopilotService instance")
         copilot_service = CopilotService(config, controller)
         conversation_id = chat_request.conversation_id or f"{current_user.user_id}_{project.id}"
 
+        log.info(f"Processing chat with conversation_id: {conversation_id}")
         response = await copilot_service.chat(
             message=chat_request.message,
             project_id=project.id,
             conversation_id=conversation_id,
         )
 
+        log.info(f"Chat response successful, tools_used: {response.get('tools_used', [])}")
         return schemas.ChatResponse(
             response=response["response"],
             conversation_id=conversation_id,
@@ -133,7 +150,7 @@ async def chat_with_copilot(
         )
 
     except Exception as e:
-        log.error(f"Error in copilot chat: {str(e)}")
+        log.error(f"Error in copilot chat: {str(e)}", exc_info=True)
         raise ControllerError(f"Copilot chat error: {str(e)}")
 
 
@@ -152,18 +169,25 @@ async def chat_with_copilot_stream(
     The agent has access to the project topology and can perform actions
     such as creating nodes, links, and executing commands on devices.
     """
+    log.info(f"Chat stream request from user {current_user.username} for project {project.name}")
 
     # Get user's copilot configuration
+    log.debug(f"Fetching copilot config for user {current_user.user_id}")
     config = await copilot_repo.get_copilot_config(current_user.user_id)
     if not config:
+        log.warning(f"Copilot config not found for user {current_user.user_id}")
         raise ControllerNotFoundError(f"Copilot configuration not found. Please configure it first.")
 
     if not config.enabled:
+        log.warning(f"Copilot disabled for user {current_user.user_id}")
         raise ControllerBadRequestError(f"Copilot is disabled for this user.")
+
+    log.debug(f"Copilot config: {config.provider}/{config.model_name}")
 
     conversation_id = chat_request.conversation_id or f"{current_user.user_id}_{project.id}"
     controller = Controller.instance()
 
+    log.info(f"Starting chat stream with conversation_id: {conversation_id}")
     return StreamingResponse(
         _stream_chat_response(
             message=chat_request.message,

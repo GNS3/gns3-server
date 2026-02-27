@@ -50,6 +50,7 @@ class GNS3ToolBase(BaseTool):
         """
         kwargs["controller"] = controller
         super().__init__(**kwargs)
+        log.debug(f"Initialized tool: {self.name}")
 
     def _get_project(self, project_id: str):
         """
@@ -59,6 +60,7 @@ class GNS3ToolBase(BaseTool):
         :return: Project instance
         :raises: ValueError if project not found
         """
+        log.debug(f"Getting project: {project_id}")
         # Import here to avoid circular dependencies
         from gns3server.controller.project import Project
         import asyncio
@@ -67,10 +69,12 @@ class GNS3ToolBase(BaseTool):
             # Get the project from controller
             project = self.controller.get_project(project_id)
             if project is None:
+                log.error(f"Project {project_id} not found")
                 raise ValueError(f"Project {project_id} not found")
+            log.debug(f"Found project: {project.name} ({project.id})")
             return project
         except Exception as e:
-            log.error(f"Error getting project {project_id}: {e}")
+            log.error(f"Error getting project {project_id}: {e}", exc_info=True)
             raise
 
     def _parse_json_input(self, tool_input: str) -> dict:
@@ -81,9 +85,13 @@ class GNS3ToolBase(BaseTool):
         :return: Parsed dictionary
         :raises: ValueError if JSON is invalid
         """
+        log.debug(f"Parsing JSON input: {tool_input[:100]}...")
         try:
-            return json.loads(tool_input)
+            data = json.loads(tool_input)
+            log.debug(f"Parsed JSON successfully, keys: {list(data.keys())}")
+            return data
         except json.JSONDecodeError as e:
+            log.error(f"Invalid JSON input: {e}")
             raise ValueError(f"Invalid JSON input: {e}")
 
     def _format_success_response(self, data: dict) -> str:
@@ -93,7 +101,9 @@ class GNS3ToolBase(BaseTool):
         :param data: Response data
         :return: JSON string
         """
-        return json.dumps(data, indent=2, ensure_ascii=False)
+        response = json.dumps(data, indent=2, ensure_ascii=False)
+        log.debug(f"Formatted success response: {response[:100]}...")
+        return response
 
     def _format_error_response(self, message: str) -> str:
         """
@@ -102,6 +112,7 @@ class GNS3ToolBase(BaseTool):
         :param message: Error message
         :return: JSON string with error
         """
+        log.error(f"Formatting error response: {message}")
         return json.dumps({"error": message}, ensure_ascii=False)
 
     def _run(
@@ -119,6 +130,7 @@ class GNS3ToolBase(BaseTool):
         :param run_manager: Callback manager
         :return: Tool output (JSON string)
         """
+        log.info(f"Running tool: {self.name}")
         raise NotImplementedError("Subclasses must implement _run method")
 
     async def _arun(
@@ -137,4 +149,5 @@ class GNS3ToolBase(BaseTool):
         :param run_manager: Callback manager
         :return: Tool output (JSON string)
         """
+        log.debug(f"Running tool async: {self.name}")
         return self._run(tool_input, run_manager, **kwargs)

@@ -71,18 +71,22 @@ class CopilotService:
         :param config: Copilot configuration
         :param controller: GNS3 controller instance
         """
+        log.info(f"Initializing CopilotService with config: {config.provider}/{config.model_name}")
         self.config = config
         self.controller = controller
-        self._agent = None
-        self._checkpointer = None
+        self._agents = {}  # Cache agents by project_id
         self._tools = []
         self._tools_by_name = {}
         self._model_with_tools = None
+        self._checkpointer = None
+        self._project_checkpoint_path = None
+        log.debug("CopilotService initialized successfully")
 
     def _create_model(self):
         """
         Create a fresh LLM model instance from configuration.
         """
+        log.debug(f"Creating model: {self.config.provider}/{self.config.model_name}")
         model_kwargs = {
             "temperature": str(self.config.temperature),
             "configurable_fields": "any",
@@ -104,10 +108,10 @@ class CopilotService:
                 model_provider=self.config.provider,
                 **model_kwargs
             )
-            log.info(f"Model created: {self.config.provider}/{self.config.model_name}")
+            log.info(f"Model created successfully: {self.config.provider}/{self.config.model_name}")
             return model
         except Exception as e:
-            log.error(f"Failed to create model: {e}")
+            log.error(f"Failed to create model: {e}", exc_info=True)
             raise RuntimeError(f"Failed to create model: {e}")
 
     def _get_tools(self):
@@ -115,6 +119,7 @@ class CopilotService:
         Get available tools for the agent.
         """
         if not self._tools:
+            log.debug("Loading copilot tools...")
             # Import tools here to avoid circular dependencies
             from gns3server.services.copilot_tools import (
                 GNS3TopologyTool,
@@ -150,25 +155,12 @@ class CopilotService:
         Get model with tools bound.
         """
         if self._model_with_tools is None:
+            log.debug("Binding tools to model...")
             model = self._create_model()
             tools = self._get_tools()
             self._model_with_tools = model.bind_tools(tools)
             log.info(f"Model bound with {len(tools)} tools")
         return self._model_with_tools
-
-    def __init__(self, config: schemas.CopilotConfig, controller: Controller):
-        """
-        Initialize the copilot service.
-
-        :param config: Copilot configuration
-        :param controller: GNS3 controller instance
-        """
-        self.config = config
-        self.controller = controller
-        self._agents = {}  # Cache agents by project_id
-        self._tools = []
-        self._tools_by_name = {}
-        self._model_with_tools = None
 
     def _get_checkpointer(self, project_id: str):
         """
@@ -177,26 +169,31 @@ class CopilotService:
         :param project_id: GNS3 project ID
         :return: SqliteSaver instance
         """
+        log.debug(f"Getting checkpointer for project {project_id}")
+
         # Import here to avoid circular dependency
         from gns3server.controller.project import Project
 
         # Get the project to find its directory
         project = self.controller.get_project(project_id)
         if not project:
+            log.error(f"Project {project_id} not found in controller")
             raise ValueError(f"Project {project_id} not found")
 
         # Create checkpoint file in the project directory
         checkpointer_path = os.path.join(project.path, "copilot_checkpoints.db")
+        log.debug(f"Checkpoint path: {checkpointer_path}")
 
         # Store the path for reference
         self._project_checkpoint_path = checkpointer_path
 
         # Check if we already created a checkpointer for this project
         if self._checkpointer and self._project_checkpoint_path == checkpointer_path:
+            log.debug("Reusing existing checkpointer")
             return self._checkpointer
 
         # Create new checkpointer
-        import sqlite3
+        log.debug(f"Creating new checkpointer at {checkpointer_path}")
         conn = sqlite3.connect(checkpointer_path, check_same_thread=False)
         self._checkpointer = SqliteSaver(conn)
         log.info(f"Project checkpointer created at {checkpointer_path}")
@@ -210,6 +207,8 @@ class CopilotService:
         :param project_id: GNS3 project ID
         :return: Compiled LangGraph agent
         """
+        log.info(f"Building agent for project {project_id}")
+
         # Get project-specific checkpointer
         checkpointer = self._get_checkpointer(project_id)
 
@@ -220,6 +219,7 @@ class CopilotService:
         # Define LLM call node
         def llm_call(state: dict):
             """LLM decides whether to call a tool or not"""
+            log.debug("Executing LLM call node")
             system_prompt = self._get_system_prompt()
 
             # Build messages with system prompt
@@ -232,6 +232,7 @@ class CopilotService:
             model_with_tools = self._get_model_with_tools()
 
             response = model_with_tools.invoke(full_messages)
+            log.debug(f"LLM response received, tool_calls: {len(response.tool_calls) if hasattr(response, 'tool_calls') else 0}")
             return {
                 "messages": [response],
                 "llm_calls": state.get("llm_calls", 0) + 1,
@@ -240,9 +241,13 @@ class CopilotService:
         # Define tool execution node
         def tool_node(state: dict):
             """Execute tool calls"""
+            tool_calls = state["messages"][-1].tool_calls
+            log.debug(f"Executing {len(tool_calls)} tool calls")
             results = []
-            for tool_call in state["messages"][-1].tool_calls:
-                tool = self._tools_by_name[tool_call["name"]]
+            for tool_call in tool_calls:
+                tool_name = tool_call["name"]
+                log.info(f"Executing tool: {tool_name}")
+                tool = self._tools_by_name[tool_name]
                 try:
                     # Parse tool arguments
                     if isinstance(tool_call.get("args"), dict):
@@ -250,23 +255,26 @@ class CopilotService:
                     else:
                         tool_input = str(tool_call.get("args", {}))
 
+                    log.debug(f"Tool {tool_name} input: {tool_input[:200]}...")
+
                     # Execute tool
                     observation = tool._run(tool_input)
 
+                    log.debug(f"Tool {tool_name} result: {observation[:200]}...")
                     results.append(
                         ToolMessage(
                             content=observation,
                             tool_call_id=tool_call["id"],
-                            name=tool_call["name"]
+                            name=tool_name
                         )
                     )
                 except Exception as e:
-                    log.error(f"Tool {tool_call['name']} failed: {e}")
+                    log.error(f"Tool {tool_name} failed: {e}", exc_info=True)
                     results.append(
                         ToolMessage(
                             content=f"Error: {str(e)}",
                             tool_call_id=tool_call["id"],
-                            name=tool_call["name"]
+                            name=tool_name
                         )
                     )
             return {"messages": results}
@@ -278,11 +286,14 @@ class CopilotService:
 
             # LLM requested tool calls
             if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+                log.debug(f"Routing to tool_node, {len(last_message.tool_calls)} tools to execute")
                 return "tool_node"
 
+            log.debug("Routing to END (no more tool calls)")
             return END
 
         # Build workflow
+        log.debug("Building agent workflow graph")
         agent_builder = StateGraph(AgentState)
         agent_builder.add_node("llm_call", llm_call)
         agent_builder.add_node("tool_node", tool_node)
@@ -299,6 +310,7 @@ class CopilotService:
 
         # Compile with project-specific checkpointer
         agent = agent_builder.compile(checkpointer=checkpointer)
+        log.info(f"Agent built successfully for project {project_id}")
         return agent
 
     def _get_agent(self, project_id: str):
@@ -309,8 +321,10 @@ class CopilotService:
         :return: Compiled LangGraph agent
         """
         if project_id not in self._agents:
+            log.info(f"No cached agent for project {project_id}, creating new one")
             self._agents[project_id] = self._build_agent(project_id)
-            log.info(f"Created new agent for project {project_id}")
+        else:
+            log.debug(f"Using cached agent for project {project_id}")
         return self._agents[project_id]
 
     def _get_system_prompt(self) -> str:
@@ -319,7 +333,6 @@ class CopilotService:
         """
         # Use gns3-copilot's base prompt
         from gns3server.services.copilot_prompts import SYSTEM_PROMPT
-
         return SYSTEM_PROMPT
 
     def _get_topology_context_from_state(self, state: dict) -> str:
@@ -340,18 +353,20 @@ class CopilotService:
             lines = [f"Project: {project.name} ({project.id})"]
             lines.append(f"Nodes: {len(project.nodes)}")
 
-            for node in project.nodes:
+            for node in project.nodes.values():
                 lines.append(f"  - {node.name} ({node.node_type})")
 
             lines.append(f"Links: {len(project.links)}")
 
-            for link in project.links:
+            for link in project.links.values():
                 lines.append(f"  - {link.node_a.name} <-> {link.node_b.name}")
 
-            return "\n".join(lines)
+            topology = "\n".join(lines)
+            log.debug(f"Topology context: {topology}")
+            return topology
 
         except Exception as e:
-            log.error(f"Error getting topology context: {e}")
+            log.error(f"Error getting topology context: {e}", exc_info=True)
             return f"Project: {project.name} (unable to load topology details)"
 
     async def chat(
@@ -368,11 +383,14 @@ class CopilotService:
         :param conversation_id: Conversation/thread ID
         :return: Response dictionary with 'response' and optionally 'tools_used'
         """
+        log.info(f"Chat request - project: {project_id}, conversation: {conversation_id}, message: {message[:100]}...")
+
         # Get project-specific agent
         agent = self._get_agent(project_id)
 
         try:
             # Get project topology context
+            log.debug(f"Loading project {project_id} for topology context")
             project = await self.controller.get_loaded_project(project_id)
             topology_context = self._get_topology_context(project)
 
@@ -399,6 +417,7 @@ Current project topology:
             ]
 
             # Invoke the agent
+            log.debug(f"Invoking agent with thread_id: {conversation_id}")
             config = {"configurable": {"thread_id": conversation_id}}
             result = await agent.ainvoke({"messages": messages}, config=config)
 
@@ -415,13 +434,14 @@ Current project topology:
                     for tool_call in msg.tool_calls:
                         tools_used.append(tool_call.get("name", "unknown"))
 
+            log.info(f"Chat response - tools_used: {tools_used}, response_length: {len(response)}")
             return {
                 "response": response,
                 "tools_used": tools_used,
             }
 
         except Exception as e:
-            log.error(f"Error in copilot chat: {str(e)}")
+            log.error(f"Error in copilot chat: {str(e)}", exc_info=True)
             raise
 
     async def chat_stream(
@@ -438,11 +458,14 @@ Current project topology:
         :param conversation_id: Conversation/thread ID
         :yields: ChatStreamEvent objects
         """
+        log.info(f"Chat stream request - project: {project_id}, conversation: {conversation_id}, message: {message[:100]}...")
+
         # Get project-specific agent
         agent = self._get_agent(project_id)
 
         try:
             # Get project topology context
+            log.debug(f"Loading project {project_id} for topology context")
             project = await self.controller.get_loaded_project(project_id)
             topology_context = self._get_topology_context(project)
 
@@ -468,6 +491,7 @@ Current project topology:
             ]
 
             # Stream the agent response
+            log.debug(f"Starting agent stream with thread_id: {conversation_id}")
             config = {"configurable": {"thread_id": conversation_id}}
 
             async for chunk in agent.astream({"messages": messages}, config=config):
@@ -477,6 +501,7 @@ Current project topology:
                         if isinstance(msg, AIMessage):
                             # Stream text content
                             if hasattr(msg, "content") and isinstance(msg.content, str) and msg.content:
+                                log.debug(f"Streaming token: {msg.content[:50]}...")
                                 yield schemas.ChatStreamEvent(
                                     event="token",
                                     data=msg.content,
@@ -486,6 +511,7 @@ Current project topology:
                             if hasattr(msg, "tool_calls") and msg.tool_calls:
                                 for tool_call in msg.tool_calls:
                                     tool_name = tool_call.get("name", "unknown")
+                                    log.info(f"Streaming tool call: {tool_name}")
                                     yield schemas.ChatStreamEvent(
                                         event="tool_call",
                                         data=tool_name,
@@ -493,6 +519,7 @@ Current project topology:
                                     )
                         elif isinstance(msg, ToolMessage):
                             # Tool execution result
+                            log.debug(f"Streaming tool result: {msg.name}")
                             yield schemas.ChatStreamEvent(
                                 event="tool_result",
                                 data=f"{msg.name}: {msg.content[:100]}...",
@@ -500,6 +527,7 @@ Current project topology:
                             )
 
             # Send done event
+            log.info(f"Chat stream completed for conversation {conversation_id}")
             yield schemas.ChatStreamEvent(
                 event="done",
                 data="",
@@ -507,7 +535,7 @@ Current project topology:
             )
 
         except Exception as e:
-            log.error(f"Error in copilot chat stream: {str(e)}")
+            log.error(f"Error in copilot chat stream: {str(e)}", exc_info=True)
             yield schemas.ChatStreamEvent(
                 event="error",
                 data=str(e),
