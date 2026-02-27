@@ -83,42 +83,94 @@ class ReadDeviceInfoTool(GNS3ToolBase):
         :param project: GNS3 project
         :param device_names: List of device names
         :return: Dictionary mapping device names to console info
+        :raises: ValueError if no devices can be connected due to missing platform
         """
         hosts_data = {}
+        skipped_devices = []
 
-        for node in project.nodes:
+        for node in project.nodes.values():
             if node.name in device_names:
                 # Get console information
                 if node.console_type == "telnet":
+                    # Get platform from template tags
+                    platform = self._get_platform_from_node(node)
+                    if not platform:
+                        skipped_devices.append(node.name)
+                        log.error(
+                            f"No netmiko platform found for device '{node.name}' (type: {node.node_type}). "
+                            f"Please add a 'netmiko:<platform>' tag to the template."
+                        )
+                        continue
+
                     hosts_data[node.name] = {
                         "hostname": "127.0.0.1",  # GNS3 console binding
                         "port": node.console,
                         "username": "",
                         "password": "",
-                        "platform": self._get_platform_from_node_type(node.node_type),
+                        "platform": platform,
                         "connection_type": "telnet",
                         "device_type": node.node_type,
                     }
-                    log.info(f"Found device {node.name}: telnet port {node.console}")
+                    log.info(f"Found device {node.name}: telnet port {node.console}, platform {platform}")
+
+        # If no devices could be connected, raise error
+        if not hosts_data and skipped_devices:
+            raise ValueError(
+                f"No netmiko platform configured for devices: {', '.join(skipped_devices)}. "
+                f"Please add 'netmiko:<platform>' tag to device templates. "
+                f"Example tags: ['netmiko:cisco_ios_telnet'] for Cisco devices."
+            )
 
         return hosts_data
 
+    def _get_platform_from_node(self, node) -> str:
+        """
+        Get Netmiko platform from node's template tags.
+
+        Expected tag format: "netmiko:<platform>"
+        Example: "netmiko:cisco_ios_telnet"
+
+        :param node: GNS3 node instance
+        :return: Platform string or None if not found
+        """
+        # First, try to get platform from template tags
+        if node.template_id:
+            try:
+                template = self.controller.template.get_template(node.template_id)
+                if template and template.get("tags"):
+                    tags = template.get("tags", [])
+                    for tag in tags:
+                        if isinstance(tag, str) and tag.startswith("netmiko:"):
+                            # Extract platform: netmiko:cisco_ios_telnet -> cisco_ios_telnet
+                            platform = tag.split(":", 1)[1]
+                            log.debug(f"Found netmiko platform '{platform}' from template tags for node {node.name}")
+                            return platform
+            except Exception as e:
+                log.warning(f"Error getting template for node {node.name}: {e}")
+
+        # Fallback: try to get platform from node type
+        # This is a basic fallback for templates without netmiko tags
+        platform = self._get_platform_from_node_type(node.node_type)
+        if platform:
+            log.debug(f"Using fallback platform '{platform}' from node_type for node {node.name}")
+        return platform
+
     def _get_platform_from_node_type(self, node_type: str) -> str:
         """
-        Map GNS3 node type to Netmiko platform.
+        Fallback: Map GNS3 node type to Netmiko platform.
+
+        This is used when template tags don't specify netmiko platform.
+
+        Note: All GNS3 devices use telnet connections, so we use cisco_ios_telnet.
 
         :param node_type: GNS3 node type
-        :return: Netmiko platform string
-
-        Note: VPCS devices should use the execute_vpcs_commands tool instead.
+        :return: Netmiko platform string, or None if not supported
         """
         platform_map = {
-            "dynamips": "cisco_ios",
-            "iosv": "cisco_ios",
-            "iol": "cisco_iosxe",
-            "qemu": "cisco_ios",  # Default assumption
+            "dynamips": "cisco_ios_telnet",  # Cisco routers via Dynamips
+            "iou": "cisco_ios_telnet",       # Cisco IOU/IOL devices
         }
-        return platform_map.get(node_type, "term")
+        return platform_map.get(node_type)  # Returns None if not found
 
     def _initialize_nornir(self, hosts_data: dict):
         """
