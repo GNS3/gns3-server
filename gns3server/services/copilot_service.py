@@ -388,7 +388,10 @@ class CopilotService:
                 # Add ports if available (clean format like gns3-copilot)
                 if hasattr(node, "ports") and node.ports:
                     node_info["ports"] = [
-                        {"name": port.get("name"), "short_name": port.get("short_name")}
+                        {
+                            "name": port.name if hasattr(port, "name") else str(port),
+                            "short_name": port.short_name if hasattr(port, "short_name") else ""
+                        }
                         for port in node.ports
                     ]
                 else:
@@ -404,19 +407,26 @@ class CopilotService:
                     continue
 
                 # Get both sides of the link
+                # link.nodes is a list: [{"node": node_obj, "adapter_number": 0, "port_number": 0}, ...]
                 side_a = link.nodes[0]
                 side_b = link.nodes[1]
 
-                # Get node objects
-                node_a = project.nodes.get(side_a["node_id"])
-                node_b = project.nodes.get(side_b["node_id"])
+                # Extract node objects and parameters
+                node_a = side_a.get("node")
+                node_b = side_b.get("node")
 
                 if not node_a or not node_b:
                     continue
 
+                # Get adapter and port numbers
+                adapter_a = side_a.get("adapter_number", 0)
+                port_a = side_a.get("port_number", 0)
+                adapter_b = side_b.get("adapter_number", 0)
+                port_b = side_b.get("port_number", 0)
+
                 # Get port names
-                port_a_name = self._get_port_name(node_a, side_a.get("adapter_number"), side_a.get("port_number"))
-                port_b_name = self._get_port_name(node_b, side_b.get("adapter_number"), side_b.get("port_number"))
+                port_a_name = self._get_port_name(node_a, adapter_a, port_a)
+                port_b_name = self._get_port_name(node_b, adapter_b, port_b)
 
                 links_data.append({
                     "node_a": node_a.name,
@@ -465,9 +475,12 @@ class CopilotService:
             return f"adp{adapter_number}/prt{port_number}"
 
         for port in node.ports:
-            if (port.get("adapter_number") == adapter_number and
-                port.get("port_number") == port_number):
-                return port.get("short_name", f"adp{adapter_number}/prt{port_number}")
+            # Access port object attributes directly
+            port_adapter_num = getattr(port, "adapter_number", None)
+            port_port_num = getattr(port, "port_number", None)
+
+            if port_adapter_num == adapter_number and port_port_num == port_number:
+                return getattr(port, "short_name", f"adp{adapter_number}/prt{port_number}")
 
         return f"adp{adapter_number}/prt{port_number}"
 
@@ -511,6 +524,16 @@ Current project topology:
 
 **CRITICAL:** When calling tools, ALWAYS use project_id: "{project_id}"
 """
+
+            # Log the complete system prompt for debugging
+            log.info(f"=== AGENT SYSTEM PROMPT ===")
+            log.info(f"Project ID: {project_id}")
+            log.info(f"Conversation ID: {conversation_id}")
+            log.info(f"Base prompt length: {len(base_prompt)} chars")
+            log.info(f"Topology context length: {len(topology_context)} chars")
+            log.info(f"Total system prompt length: {len(system_message)} chars")
+            log.info(f"Full system prompt:\n{system_message}")  # Log complete prompt
+            log.info(f"=== END SYSTEM PROMPT ===")
 
             # Prepare the input message
             messages = [
