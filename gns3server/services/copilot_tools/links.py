@@ -136,17 +136,18 @@ class GNS3LinkTool(BaseTool):
             if not node_b:
                 return {"error": f"Node B ({node_b_id}) not found in project"}
 
-            # Create link
+            # Create link using the correct API
             log.info("Creating link between %s and %s", node_a.name, node_b.name)
 
-            link_data = {
-                "nodes": [
-                    {"node_id": node_a_id, "adapter_number": port_a, "port_number": 0},
-                    {"node_id": node_b_id, "adapter_number": port_b, "port_number": 0},
-                ]
-            }
+            # Step 1: Create an empty link
+            link = asyncio.run(project.add_link())
 
-            link = asyncio.run(project.create_link(link_data))
+            # Step 2: Add nodes to the link
+            asyncio.run(link.add_node(node_a, port_a, 0))
+            asyncio.run(link.add_node(node_b, port_b, 0))
+
+            # Step 3: Create the link on the nodes
+            asyncio.run(link.create())
 
             link_info = {
                 "link_id": link.id,
@@ -160,7 +161,7 @@ class GNS3LinkTool(BaseTool):
                     "name": node_b.name,
                     "port": port_b,
                 },
-                "active": link.active,
+                "active": link.created,
             }
 
             log.info("Successfully created link between %s and %s", node_a.name, node_b.name)

@@ -21,6 +21,7 @@ GNS3 Template Tool
 Provides tool for listing GNS3 node templates.
 """
 
+import asyncio
 import json
 import logging
 from typing import Any, Optional
