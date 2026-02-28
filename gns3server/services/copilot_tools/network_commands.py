@@ -97,8 +97,9 @@ class ReadDeviceInfoTool(GNS3ToolBase):
                     if not platform:
                         skipped_devices.append(node.name)
                         log.error(
-                            f"No netmiko platform found for device '{node.name}' (type: {node.node_type}). "
-                            f"Please add a 'netmiko:<platform>' tag to the template."
+                            "No netmiko platform found for device '%s' (type: %s). "
+                            "Please add a 'netmiko:<platform>' tag to the template.",
+                            node.name, node.node_type
                         )
                         continue
 
@@ -111,7 +112,7 @@ class ReadDeviceInfoTool(GNS3ToolBase):
                         "connection_type": "telnet",
                         "device_type": node.node_type,
                     }
-                    info("Found device %s: telnet port %s, platform %s", node.name, node.console, platform))
+                    log.info("Found device %s: telnet port %s, platform %s", node.name, node.console, platform)
 
         # If no devices could be connected, raise error
         if not hosts_data and skipped_devices:
@@ -143,16 +144,16 @@ class ReadDeviceInfoTool(GNS3ToolBase):
                         if isinstance(tag, str) and tag.startswith("netmiko:"):
                             # Extract platform: netmiko:cisco_ios_telnet -> cisco_ios_telnet
                             platform = tag.split(":", 1)[1]
-                            debug("Found netmiko platform '%s' from template tags for node %s", platform, node.name))
+                            log.debug("Found netmiko platform '%s' from template tags for node %s", platform, node.name)
                             return platform
             except Exception as e:
-                warning("Error getting template for node %s: %s", node.name, e))
+                log.warning("Error getting template for node %s: %s", node.name, e)
 
         # Fallback: try to get platform from node type
         # This is a basic fallback for templates without netmiko tags
         platform = self._get_platform_from_node_type(node.node_type)
         if platform:
-            debug("Using fallback platform '%s' from node_type for node %s", platform, node.name))
+            log.debug("Using fallback platform '%s' from node_type for node %s", platform, node.name)
         return platform
 
     def _get_platform_from_node_type(self, node_type: str) -> str:
@@ -208,11 +209,11 @@ class ReadDeviceInfoTool(GNS3ToolBase):
 
         try:
             nr = InitNornir(inventory=inventory)
-            info("Initialized Nornir with %s hosts", len(hosts_data)))
+            log.info("Initialized Nornir with %s hosts", len(hosts_data))
             return nr
         except Exception as e:
-            error("Failed to initialize Nornir: %s", e))
-            raise ValueError(f"Failed to initialize Nornir: {e}")
+            log.error("Failed to initialize Nornir: %s", e)
+            raise ValueError("Failed to initialize Nornir: %s" % e)
 
     def _run_commands_task(self, task: Task, commands_map: dict) -> Result:
         """
@@ -238,17 +239,17 @@ class ReadDeviceInfoTool(GNS3ToolBase):
             return Result(host=task.host, result=result.result)
 
         except ReadTimeout as e:
-            error("ReadTimeout for device %s: %s", device_name, e))
+            log.error("ReadTimeout for device %s: %s", device_name, e)
             return Result(
                 host=task.host,
-                result=f"Command execution failed (ReadTimeout): {str(e)}",
+                result="Command execution failed (ReadTimeout): %s" % str(e),
                 failed=True,
             )
         except Exception as e:
-            error("Command execution failed for %s: %s", device_name, e))
+            log.error("Command execution failed for %s: %s", device_name, e)
             return Result(
                 host=task.host,
-                result=f"Command execution failed: {str(e)}",
+                result="Command execution failed: %s" % str(e),
                 failed=True,
             )
 
@@ -329,11 +330,11 @@ class ReadDeviceInfoTool(GNS3ToolBase):
             return self._format_success_response({"results": results})
 
         except ValueError as e:
-            error("Error in display commands tool: %s", e))
+            log.error("Error in display commands tool: %s", e)
             return self._format_error_response(str(e))
         except Exception as e:
-            error("Unexpected error in display commands tool: %s", e))
-            return self._format_error_response(f"Failed to execute commands: {str(e)}")
+            log.error("Unexpected error in display commands tool: %s", e)
+            return self._format_error_response("Failed to execute commands: %s" % str(e))
 
 
 class ApplyDeviceConfigTool(GNS3ToolBase):
@@ -459,11 +460,11 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
             return self._format_success_response({"results": results})
 
         except ValueError as e:
-            error("Error in config commands tool: %s", e))
+            log.error("Error in config commands tool: %s", e)
             return self._format_error_response(str(e))
         except Exception as e:
-            error("Unexpected error in config commands tool: %s", e))
-            return self._format_error_response(f"Failed to execute config commands: {str(e)}")
+            log.error("Unexpected error in config commands tool: %s", e)
+            return self._format_error_response("Failed to execute config commands: %s" % str(e))
 
 
 def device_configuration_task(task: Task, commands: list) -> Result:
@@ -486,9 +487,9 @@ def device_configuration_task(task: Task, commands: list) -> Result:
         return Result(host=task.host, result=result_obj.result)
 
     except Exception as e:
-        error("Configuration failed for %s: %s", task.host.name, e))
+        log.error("Configuration failed for %s: %s", task.host.name, e)
         return Result(
             host=task.host,
-            result=f"Configuration failed: {str(e)}",
+            result="Configuration failed: %s" % str(e),
             failed=True,
         )

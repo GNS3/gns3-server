@@ -98,7 +98,7 @@ class GNS3CreateNodeTool(GNS3ToolBase):
         :param run_manager: Callback manager
         :return: JSON string with created node information
         """
-        info("create_gns3_node called with input: %s...", tool_input[))
+        log.info("create_gns3_node called with input: %s...", tool_input[:200])
         try:
             # Parse input
             input_data = self._parse_json_input(tool_input)
@@ -108,7 +108,8 @@ class GNS3CreateNodeTool(GNS3ToolBase):
             y = input_data.get("y")
             name = input_data.get("name")
 
-            debug("Parsed parameters: project_id=%s, template_id=%s, x=%s, y=%s, name=%s", project_id, template_id, x, y, name))
+            log.debug("Parsed parameters: project_id=%s, template_id=%s, x=%s, y=%s, name=%s",
+                     project_id, template_id, x, y, name)
 
             # Validate required fields
             if not all([project_id, template_id, x is not None, y is not None]):
@@ -118,26 +119,26 @@ class GNS3CreateNodeTool(GNS3ToolBase):
                 )
 
             # Get project
-            debug("Getting project %s", project_id))
+            log.debug("Getting project %s", project_id)
             project = self._get_project(project_id)
 
             # Get template
-            debug("Getting template %s", template_id))
+            log.debug("Getting template %s", template_id)
             template = self.controller.template.get_template(template_id)
             if not template:
-                error("Template %s not found", template_id))
-                return self._format_error_response(f"Template {template_id} not found")
+                log.error("Template %s not found", template_id)
+                return self._format_error_response("Template %s not found" % template_id)
 
-            debug("Template found: %s, type: %s", template.name, template.template_type))
+            log.debug("Template found: %s, type: %s", template.name, template.template_type)
 
             # Get compute for template
             compute_id = template.compute_id
             compute = self.controller.get_compute(compute_id)
             if not compute:
-                error("Compute %s not found", compute_id))
-                return self._format_error_response(f"Compute {compute_id} not found")
+                log.error("Compute %s not found", compute_id)
+                return self._format_error_response("Compute %s not found" % compute_id)
 
-            debug("Compute found: %s", compute_id))
+            log.debug("Compute found: %s", compute_id)
 
             # Prepare node data
             node_data = {
@@ -150,7 +151,7 @@ class GNS3CreateNodeTool(GNS3ToolBase):
             }
 
             # Create node
-            info("Creating node in project %s at (%s, %s)", project_id, x, y))
+            log.info("Creating node in project %s at (%s, %s)", project_id, x, y)
             node = await project.add_node(compute, name=name, node_id=None, **node_data)
 
             node_info = {
@@ -164,15 +165,15 @@ class GNS3CreateNodeTool(GNS3ToolBase):
                 "console_port": node.console_port,
             }
 
-            info("Successfully created node %s (%s)", node.name, node.id))
+            log.info("Successfully created node %s (%s)", node.name, node.id)
             return self._format_success_response(node_info)
 
         except ValueError as e:
-            error("Error in create node tool: %s", e), exc_info=True)
+            log.error("Error in create node tool: %s", e, exc_info=True)
             return self._format_error_response(str(e))
         except Exception as e:
-            error("Unexpected error in create node tool: %s", e), exc_info=True)
-            return self._format_error_response(f"Failed to create node: {str(e)}")
+            log.error("Unexpected error in create node tool: %s", e, exc_info=True)
+            return self._format_error_response("Failed to create node: %s" % str(e))
 
 
 class GNS3StartNodeTool(GNS3ToolBase):
@@ -234,14 +235,14 @@ class GNS3StartNodeTool(GNS3ToolBase):
         :param run_manager: Callback manager
         :return: JSON string with node status
         """
-        info("start_gns3_node called with input: %s...", tool_input[))
+        log.info("start_gns3_node called with input: %s...", tool_input[:200])
         try:
             # Parse input
             input_data = self._parse_json_input(tool_input)
             project_id = input_data.get("project_id")
             node_id = input_data.get("node_id")
 
-            debug("Parsed parameters: project_id=%s, node_id=%s", project_id, node_id))
+            log.debug("Parsed parameters: project_id=%s, node_id=%s", project_id, node_id)
 
             # Validate required fields
             if not all([project_id, node_id]):
@@ -249,20 +250,20 @@ class GNS3StartNodeTool(GNS3ToolBase):
                 return self._format_error_response("Missing required fields: project_id, node_id")
 
             # Get project
-            debug("Getting project %s", project_id))
+            log.debug("Getting project %s", project_id)
             project = self._get_project(project_id)
 
             # Get node
-            debug("Getting node %s", node_id))
+            log.debug("Getting node %s", node_id)
             node = project.get_node(node_id)
             if not node:
-                error("Node %s not found in project", node_id))
-                return self._format_error_response(f"Node {node_id} not found in project")
+                log.error("Node %s not found in project", node_id)
+                return self._format_error_response("Node %s not found in project" % node_id)
 
-            debug("Node found: %s, current status: %s", node.name, node.status))
+            log.debug("Node found: %s, current status: %s", node.name, node.status)
 
             # Start node
-            info("Starting node %s (%s)", node.name, node_id))
+            log.info("Starting node %s (%s)", node.name, node_id)
             await node.start()
 
             node_info = {
@@ -271,12 +272,12 @@ class GNS3StartNodeTool(GNS3ToolBase):
                 "status": node.status,
             }
 
-            info("Successfully started node %s, new status: %s", node.name, node.status))
+            log.info("Successfully started node %s, new status: %s", node.name, node.status)
             return self._format_success_response(node_info)
 
         except ValueError as e:
-            error("Error in start node tool: %s", e), exc_info=True)
+            log.error("Error in start node tool: %s", e, exc_info=True)
             return self._format_error_response(str(e))
         except Exception as e:
-            error("Unexpected error in start node tool: %s", e), exc_info=True)
-            return self._format_error_response(f"Failed to start node: {str(e)}")
+            log.error("Unexpected error in start node tool: %s", e, exc_info=True)
+            return self._format_error_response("Failed to start node: %s" % str(e))

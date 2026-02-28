@@ -92,18 +92,20 @@ class VPCSTerminalTool(GNS3ToolBase):
         :param device_ports: Dictionary mapping device names to port info
         """
         log.info(
-            f"Starting connection for device '{device_name}' with {len(commands)} commands"
+            "Starting connection for device '%s' with %s commands",
+            device_name, len(commands)
         )
 
         # Check if device has port information
         if device_name not in device_ports:
             log.warning(
-                f"Device '{device_name}' not found in topology or missing console port"
+                "Device '%s' not found in topology or missing console port",
+                device_name
             )
             results_list[index] = {
                 "device_name": device_name,
                 "status": "error",
-                "output": f"Device '{device_name}' not found in topology or missing console port",
+                "output": "Device '%s' not found in topology or missing console port" % device_name,
                 "commands": commands,
             }
             return
@@ -111,12 +113,12 @@ class VPCSTerminalTool(GNS3ToolBase):
         port = device_ports[device_name]["port"]
         host = device_ports[device_name]["host"]
 
-        info("Connecting to device '%s' at %s:%s", device_name, host, port))
+        log.info("Connecting to device '%s' at %s:%s", device_name, host, port)
 
         tn = Telnet()
         try:
             tn.open(host=host, port=port, timeout=30)
-            info("Successfully connected to device '%s' at %s:%s", device_name, host, port))
+            log.info("Successfully connected to device '%s' at %s:%s", device_name, host, port)
 
             # Initialize connection - send newlines and wait for prompt
             tn.write(b"\n")
@@ -128,13 +130,14 @@ class VPCSTerminalTool(GNS3ToolBase):
             tn.write(b"\n")
             sleep(0.5)
             tn.expect([rb"PC\d+>"])
-            info("Connection initialized for device '%s'", device_name))
+            log.info("Connection initialized for device '%s'", device_name)
 
             # Execute all commands and merge output
             combined_output = ""
             for i, command in enumerate(commands):
                 log.info(
-                    f"Executing command {i+1}/{len(commands)} on device '{device_name}': {command}"
+                    "Executing command %s/%s on device '%s': %s",
+                    i+1, len(commands), device_name, command
                 )
                 tn.write(command.encode(encoding="ascii") + b"\n")
                 sleep(5)  # Wait for command execution
@@ -142,7 +145,8 @@ class VPCSTerminalTool(GNS3ToolBase):
                 output = tn.read_very_eager().decode("utf-8", errors="ignore")
                 combined_output += output
                 log.debug(
-                    f"Command '{command}' executed on device '{device_name}', output length: {len(output)}"
+                    "Command '%s' executed on device '%s', output length: %s",
+                    command, device_name, len(output)
                 )
 
             # Add result to list
@@ -153,12 +157,13 @@ class VPCSTerminalTool(GNS3ToolBase):
                 "commands": commands,
             }
             log.info(
-                f"Successfully executed all {len(commands)} commands on device '{device_name}'"
+                "Successfully executed all %s commands on device '%s'",
+                len(commands), device_name
             )
 
         except Exception as e:
             log.error(
-                f"Error executing commands on device '{device_name}': {e}", exc_info=True
+                "Error executing commands on device '%s': %s", device_name, e, exc_info=True
             )
             results_list[index] = {
                 "device_name": device_name,
@@ -168,7 +173,7 @@ class VPCSTerminalTool(GNS3ToolBase):
             }
         finally:
             tn.close()
-            debug("Connection closed for device '%s'", device_name))
+            log.debug("Connection closed for device '%s'", device_name)
 
     def _get_vpcs_console_info(self, project, device_names: List[str]) -> dict:
         """
@@ -186,7 +191,7 @@ class VPCSTerminalTool(GNS3ToolBase):
                     "host": "127.0.0.1",  # GNS3 console binding
                     "port": node.console,
                 }
-                info("Found VPCS device %s: telnet port %s", node.name, node.console))
+                log.info("Found VPCS device %s: telnet port %s", node.name, node.console)
 
         return hosts_data
 
@@ -200,9 +205,9 @@ class VPCSTerminalTool(GNS3ToolBase):
         uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         is_valid = bool(re.match(uuid_pattern, project_id, re.IGNORECASE))
         if is_valid:
-            debug("project_id '%s' is valid UUID format", project_id))
+            log.debug("project_id '%s' is valid UUID format", project_id)
         else:
-            warning("project_id '%s' is not a valid UUID format", project_id))
+            log.warning("project_id '%s' is not a valid UUID format", project_id)
         return is_valid
 
     def _validate_tool_input(self, tool_input: str) -> tuple:
@@ -220,17 +225,17 @@ class VPCSTerminalTool(GNS3ToolBase):
                 parsed_input = json.loads(tool_input)
                 log.info("Successfully parsed tool input from JSON string.")
             except json.JSONDecodeError as e:
-                error("Invalid JSON string received as tool input: %s", e))
-                return ([{"error": f"Invalid JSON input: {e}"}], "")
+                log.error("Invalid JSON string received as tool input: %s", e)
+                return ([{"error": "Invalid JSON input: %s" % e}], "")
         else:
             parsed_input = tool_input
-            info("Using tool input directly as type: %s", type(parsed_input).__name__))
+            log.info("Using tool input directly as type: %s", type(parsed_input).__name__)
 
         # Validate input is a dictionary
         if not isinstance(parsed_input, dict):
             error_msg = (
                 "Tool input must be a JSON object containing 'project_id' and 'device_configs', "
-                f"but got {type(parsed_input).__name__}"
+                "but got %s" % type(parsed_input).__name__
             )
             log.error(error_msg)
             return ([{"error": error_msg}], "")
@@ -244,7 +249,7 @@ class VPCSTerminalTool(GNS3ToolBase):
 
         # Validate project_id format
         if not self._validate_project_id(project_id):
-            error_msg = f"Invalid project_id format: {project_id}. Expected UUID format."
+            error_msg = "Invalid project_id format: %s. Expected UUID format." % project_id
             log.error(error_msg)
             return ([{"error": error_msg}], "")
 
@@ -257,7 +262,7 @@ class VPCSTerminalTool(GNS3ToolBase):
 
         # Validate device_configs is a list
         if not isinstance(device_configs, list):
-            error_msg = f"'device_configs' must be a list, but got {type(device_configs).__name__}"
+            error_msg = "'device_configs' must be a list, but got %s" % type(device_configs).__name__
             log.error(error_msg)
             return ([{"error": error_msg}], "")
 
@@ -269,31 +274,32 @@ class VPCSTerminalTool(GNS3ToolBase):
         # Validate each item in device_configs
         for i, item in enumerate(device_configs):
             if not isinstance(item, dict):
-                error_msg = f"Item at index {i} must be a dictionary, got {type(item).__name__}"
+                error_msg = "Item at index %s must be a dictionary, got %s" % (i, type(item).__name__)
                 log.error(error_msg)
                 return ([{"error": error_msg}], "")
 
             # Validate required fields in each device config
             if "device_name" not in item:
-                error_msg = f"Item at index {i} missing required field 'device_name'"
+                error_msg = "Item at index %s missing required field 'device_name'" % i
                 log.error(error_msg)
                 return ([{"error": error_msg}], "")
 
             if "commands" not in item:
-                error_msg = f"Item at index {i} missing required field 'commands'"
+                error_msg = "Item at index %s missing required field 'commands'" % i
                 log.error(error_msg)
                 return ([{"error": error_msg}], "")
 
             if not isinstance(item["commands"], list):
                 error_msg = (
-                    f"'commands' in item at index {i} must be a list, "
-                    f"but got {type(item['commands']).__name__}"
+                    "'commands' in item at index %s must be a list, "
+                    "but got %s" % (i, type(item['commands']).__name__)
                 )
                 log.error(error_msg)
                 return ([{"error": error_msg}], "")
 
         log.info(
-            f"Input validated successfully. project_id={project_id}, device_configs_count={len(device_configs)}"
+            "Input validated successfully. project_id=%s, device_configs_count=%s",
+            project_id, len(device_configs)
         )
         return device_configs, project_id
 
@@ -310,7 +316,7 @@ class VPCSTerminalTool(GNS3ToolBase):
         :param run_manager: Callback manager
         :return: JSON string with command outputs
         """
-        info("VPCS commands tool called with input: %s...", tool_input[))
+        log.info("VPCS commands tool called with input: %s...", tool_input[:200])
 
         # Validate tool input and extract project_id and device_configs
         device_configs, project_id = self._validate_tool_input(tool_input)
@@ -333,13 +339,14 @@ class VPCSTerminalTool(GNS3ToolBase):
 
             # Extract all device names from input
             device_names = {config["device_name"] for config in device_configs}
-            debug("Extracted device names: %s", list(device_names)))
+            log.debug("Extracted device names: %s", list(device_names))
 
             # Get device console information
-            debug("Retrieving device port mapping for project_id=%s", project_id))
+            log.debug("Retrieving device port mapping for project_id=%s", project_id)
             device_ports = self._get_vpcs_console_info(project, list(device_names))
             log.info(
-                f"Retrieved port mappings for {len(device_ports)} devices: {list(device_ports.keys())}"
+                "Retrieved port mappings for %s devices: %s",
+                len(device_ports), list(device_ports.keys())
             )
 
             # Initialize results list (pre-allocate space for concurrent writes)
@@ -347,11 +354,12 @@ class VPCSTerminalTool(GNS3ToolBase):
             threads = []
 
             # Create thread for each command group
-            info("Starting parallel execution for %s devices", len(device_configs)))
+            log.info("Starting parallel execution for %s devices", len(device_configs))
             for i, cmd_group in enumerate(device_configs):
                 device_name = cmd_group["device_name"]
                 log.debug(
-                    f"Creating thread for device '{device_name}' (index {i}) with {len(cmd_group['commands'])} commands"
+                    "Creating thread for device '%s' (index %s) with %s commands",
+                    device_name, i, len(cmd_group['commands'])
                 )
                 thread = threading.Thread(
                     target=self._connect_and_execute_commands,
@@ -365,7 +373,7 @@ class VPCSTerminalTool(GNS3ToolBase):
                 )
                 threads.append(thread)
                 thread.start()
-                debug("Thread started for device '%s'", device_name))
+                log.debug("Thread started for device '%s'", device_name)
 
             # Wait for all threads to complete
             log.debug("Waiting for all threads to complete...")
@@ -377,14 +385,15 @@ class VPCSTerminalTool(GNS3ToolBase):
             error_count = sum(1 for r in results if r.get("status") == "error")
 
             log.info(
-                f"Multi-device command execution completed. Total: {len(results)}, Success: {success_count}, Error: {error_count}"
+                "Multi-device command execution completed. Total: %s, Success: %s, Error: %s",
+                len(results), success_count, error_count
             )
 
             return self._format_success_response({"results": results})
 
         except ValueError as e:
-            error("Error in VPCS commands tool: %s", e), exc_info=True)
+            log.error("Error in VPCS commands tool: %s", e, exc_info=True)
             return self._format_error_response(str(e))
         except Exception as e:
-            error("Unexpected error in VPCS commands tool: %s", e), exc_info=True)
-            return self._format_error_response(f"Failed to execute VPCS commands: {str(e)}")
+            log.error("Unexpected error in VPCS commands tool: %s", e, exc_info=True)
+            return self._format_error_response("Failed to execute VPCS commands: %s" % str(e))
