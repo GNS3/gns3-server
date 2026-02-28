@@ -97,17 +97,23 @@ class GNS3TopologyTool(BaseTool):
     description: str = """
     Retrieves the topology of a GNS3 project including nodes and links.
 
-    Example input:
-        {
-            "project_id": "uuid-of-project"
-        }
-        
+    Input: A JSON string with:
+    - `project_id` (str): The UUID of the GNS3 project.
+
+    Example Input:
+    {
+        "project_id": "uuid-of-project"
+    }
+
     Output: Dictionary with:
     - `project_id`, `name`, `status`: Project metadata
-    - `nodes`: Dict of node details (node_id, name, ports, type, etc.)
-    - `links`: List of link connections
+    - `nodes`: Dictionary of node details:
+    - `node_id` (str): The UUID - use this for create_gns3_link, start_gns3_node
+    - `name` (str): Display name (e.g., "R1", "CiscoIOSv-1") - for reference only
+    - `node_type`, `status`, `ports`: Additional node information
+    - `links`: List of existing link connections
 
-    Use this to understand network structure before making changes.
+    Note: Use node_id (UUID) for creating links or starting nodes, NOT the node name.
     """
     args_schema: type[BaseModel] = GetGNS3TopologyInput
 

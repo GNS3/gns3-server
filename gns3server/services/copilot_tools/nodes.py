@@ -192,9 +192,18 @@ class GNS3StartNodeTool(BaseTool):
     name: str = "start_gns3_node"
     description: str = """
     Starts a GNS3 node.
-    Input is a JSON object with project_id and node_id.
-    Example input: {"project_id": "uuid", "node_id": "uuid"}
-    Returns the node status after starting.
+
+    Input: A JSON string with:
+    - `project_id` (str): The UUID of the GNS3 project.
+    - `node_id` (str): Node UUID (IMPORTANT: Use node_id from get_gns3_topology, NOT the node name).
+
+    Example Input:
+    {
+        "project_id": "uuid-of-project",
+        "node_id": "uuid-of-node"
+    }
+
+    Output: Node status after starting.
     """
 
     def _run(

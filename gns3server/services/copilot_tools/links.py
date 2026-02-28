@@ -73,10 +73,26 @@ class GNS3LinkTool(BaseTool):
     name: str = "create_gns3_link"
     description: str = """
     Creates a link between two nodes in a GNS3 project.
-    Input is a JSON object with project_id, node_a, node_b, and optional port numbers.
-    Example input: {"project_id": "uuid", "node_a": "uuid1", "node_b": "uuid2", "port_a": 0, "port_b": 0}
-    If port numbers are not specified, the first available port on each node will be used.
-    Returns the created link information including link_id and connected nodes.
+
+    Input: A JSON string with:
+    - `project_id` (str): The UUID of the GNS3 project.
+    - `node_a` (str): UUID of the first node (IMPORTANT: Use node_id from topology, NOT the node name).
+    - `node_b` (str): UUID of the second node (IMPORTANT: Use node_id from topology, NOT the node name).
+    - `port_a` (int, optional): Adapter/port number for node_a (default: 0).
+    - `port_b` (int, optional): Adapter/port number for node_b (default: 0).
+
+    Note: Node IDs must be UUIDs from get_gns3_topology tool, not node names.
+
+    Example Input:
+    {
+        "project_id": "uuid-of-project",
+        "node_a": "uuid-of-node1",
+        "node_b": "uuid-of-node2",
+        "port_a": 0,
+        "port_b": 0
+    }
+
+    Output: Created link information with link_id, node names, and port numbers.
     """
 
     def _run(
