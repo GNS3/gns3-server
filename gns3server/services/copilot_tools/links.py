@@ -56,18 +56,6 @@ class GNS3LinkTool(BaseTool):
             "port_a": 0,
             "port_b": 0
         }
-
-    **Output:**
-    A dictionary containing the created link information.
-    Example output:
-        {
-            "link_id": "uuid",
-            "node_a": "R1",
-            "node_b": "R2",
-            "port_a": 0,
-            "port_b": 0,
-            "status": "active"
-        }
     """
 
     name: str = "create_gns3_link"
