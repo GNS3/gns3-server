@@ -40,8 +40,8 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.managed.is_last_step import RemainingSteps
 from typing_extensions import TypedDict
 
-from gns3server import schemas
 from gns3server.controller import Controller
+from gns3server.schemas.controller.copilot import ChatStreamEvent, CopilotConfig, OpenAIToolCall
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class CopilotService:
     Service for interacting with the GNS3 Copilot agent.
     """
 
-    def __init__(self, config: schemas.CopilotConfig, controller: Controller):
+    def __init__(self, config: CopilotConfig, controller: Controller):
         """
         Initialize the copilot service.
 
@@ -233,13 +233,27 @@ class CopilotService:
         def llm_call(state: dict):
             """LLM decides whether to call a tool or not"""
             log.debug("Executing LLM call node")
+
+            # Get system prompt
             system_prompt = self._get_system_prompt()
 
-            # Build messages with system prompt
-            context_messages = [SystemMessage(content=system_prompt)]
+            # Build messages with system prompt and context
+            # Following FlowNet-Lab's approach: always prepend system prompt
+            context_messages = []
+            project_context = state.get("project_context")
+            if project_context:
+                context_messages.append(SystemMessage(content=project_context))
+                log.debug("Added project context to messages (length: %d chars)", len(project_context))
 
-            # Combine with existing messages
-            full_messages = context_messages + state["messages"]
+            # Combine: system prompt + context + conversation history
+            full_messages = [SystemMessage(content=system_prompt)] + context_messages + state["messages"]
+
+            # Log message structure for debugging
+            log.debug("LLM call message structure:")
+            log.debug("  System prompt length: %d chars", len(system_prompt))
+            log.debug("  Context messages: %d", len(context_messages))
+            log.debug("  Conversation history: %d messages", len(state["messages"]))
+            log.debug("  Total messages: %d", len(full_messages))
 
             # Get model with tools
             model_with_tools = self._get_model_with_tools()
@@ -453,7 +467,7 @@ Current project topology:
         message: str,
         project_id: str,
         conversation_id: str,
-    ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
         """
         Stream a chat response from the copilot agent with token-level granularity.
 
@@ -474,14 +488,18 @@ Current project topology:
         agent = await self._get_agent(project_id)
 
         try:
-            # Prepare messages with topology context
-            messages = await self._prepare_stream_messages(project_id, message)
+            # Prepare messages with topology context (returns messages + context string)
+            messages, context_message = await self._prepare_stream_messages(project_id, message)
+
+            # Log conversation info
+            log.info("Conversation ID: %s", conversation_id)
 
             # Prepare input for the agent
             inputs = {
                 "messages": messages,
                 "llm_calls": 0,
                 "remaining_steps": 20,
+                "project_context": context_message,  # Pass context to llm_call node
             }
             config = {"configurable": {"thread_id": conversation_id}}
 
@@ -508,7 +526,7 @@ Current project topology:
                     chunks = tool_call_accumulator.process_event(event)
                     for chunk in chunks:
                         if chunk.get("type") == "content":
-                            yield schemas.ChatStreamEvent(
+                            yield ChatStreamEvent(
                                 type="content",
                                 content=chunk.get("content", ""),
                                 message_id=chunk.get("message_id"),
@@ -517,9 +535,9 @@ Current project topology:
                         elif chunk.get("type") == "tool_call":
                             tool_call_data = chunk.get("tool_call", {})
                             function_data = tool_call_data.get("function", {})
-                            yield schemas.ChatStreamEvent(
+                            yield ChatStreamEvent(
                                 type="tool_call",
-                                tool_call=schemas.OpenAIToolCall(
+                                tool_call=OpenAIToolCall(
                                     id=tool_call_data.get("id", ""),
                                     type=tool_call_data.get("type", "function"),
                                     function={
@@ -535,13 +553,13 @@ Current project topology:
                 elif event_type in ("on_tool_start", "on_tool_end"):
                     sse_event = convert_stream_event_to_sse(event)
                     if sse_event.get("type") == "tool_start":
-                        yield schemas.ChatStreamEvent(
+                        yield ChatStreamEvent(
                             type="tool_start",
                             tool_name=sse_event.get("tool_name", ""),
                             conversation_id=conversation_id
                         )
                     elif sse_event.get("type") == "tool_end":
-                        yield schemas.ChatStreamEvent(
+                        yield ChatStreamEvent(
                             type="tool_end",
                             tool_name=sse_event.get("tool_name", ""),
                             tool_output=sse_event.get("tool_output", ""),
@@ -550,26 +568,26 @@ Current project topology:
 
             # Send done event
             log.info("Chat stream completed for conversation %s", conversation_id)
-            yield schemas.ChatStreamEvent(
+            yield ChatStreamEvent(
                 type="done",
                 conversation_id=conversation_id
             )
 
         except Exception as e:
             log.error("Error in copilot chat stream: %s", str(e), exc_info=True)
-            yield schemas.ChatStreamEvent(
+            yield ChatStreamEvent(
                 type="error",
                 error=str(e),
                 conversation_id=conversation_id
             )
 
-    async def _prepare_stream_messages(self, project_id: str, message: str) -> list:
+    async def _prepare_stream_messages(self, project_id: str, message: str) -> tuple:
         """
         Prepare messages with topology context for streaming.
 
         :param project_id: GNS3 project ID
         :param message: User message
-        :return: List of messages
+        :return: Tuple of (messages list, topology info string)
         """
         # Get topology using the topology tool
         log.debug("Getting topology for project %s using topology tool", project_id)
@@ -582,23 +600,29 @@ Current project topology:
         # Get the base system prompt from gns3-copilot
         base_prompt = self._get_system_prompt()
 
-        # Prepare system message with project context and topology
-        system_message = """%s
-
-### CURRENT PROJECT CONTEXT ###
+        # Prepare context message with project context and topology
+        # This will be combined with system prompt in llm_call node
+        context_message = """### CURRENT PROJECT CONTEXT ###
 You are working on GNS3 project: %s
 
 Current project topology:
 %s
 
 **CRITICAL:** When calling tools, ALWAYS use project_id: "%s"
-""" % (base_prompt, project_id, topology_result, project_id)
+""" % (project_id, topology_result, project_id)
 
-        # Prepare the input message
-        return [
-            SystemMessage(content=system_message),
-            HumanMessage(content=message),
-        ]
+        # Log the system prompt for debugging
+        log.info("=== AGENT SYSTEM PROMPT ===")
+        log.info("Project ID: %s", project_id)
+        log.info("Base prompt length: %d chars", len(base_prompt))
+        log.info("Topology result length: %d chars", len(topology_result))
+        log.info("Context message length: %d chars", len(context_message))
+        log.info("Topology data:\n%s", topology_result)
+        log.info("=== END SYSTEM PROMPT ===")
+
+        # Only return human message - system prompt will be added by llm_call node
+        # This matches FlowNet-Lab's approach
+        return [HumanMessage(content=message)], context_message
 
     async def close(self):
         """
