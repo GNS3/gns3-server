@@ -20,14 +20,12 @@ API routes for copilot configuration.
 """
 
 import logging
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
-    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
 )
@@ -101,7 +99,7 @@ async def create_copilot_config(
     existing_config = await copilot_repo.get_copilot_config(current_user.user_id)
     if existing_config:
         log.warning("Copilot config already exists for user %s", current_user.username)
-        raise ControllerBadRequestError(f"Copilot configuration already exists. Use PUT to update.")
+        raise ControllerBadRequestError("Copilot configuration already exists. Use PUT to update.")
 
     config = await copilot_repo.create_copilot_config(config_create, current_user.user_id)
     log.info("Created copilot config %s for user %s", config.config_id, current_user.username)
@@ -149,5 +147,5 @@ async def delete_copilot_config(
     success = await copilot_repo.delete_copilot_config(current_user.user_id)
     if not success:
         log.warning("Copilot config not found for user %s", current_user.username)
-        raise ControllerNotFoundError(f"Copilot configuration not found.")
+        raise ControllerNotFoundError("Copilot configuration not found.")
     log.info("Deleted copilot config for user %s", current_user.username)

@@ -25,9 +25,7 @@ for GNS3 network automation tasks.
 import json
 import logging
 import os
-import sqlite3
-from pathlib import Path
-from typing import Any, AsyncGenerator, Literal, Optional
+from typing import AsyncGenerator, Literal
 
 from langchain.chat_models import init_chat_model
 from langchain.messages import (
@@ -170,9 +168,6 @@ class CopilotService:
         :return: AsyncSqliteSaver instance
         """
         log.debug("Getting checkpointer for project %s", project_id)
-
-        # Import here to avoid circular dependency
-        from gns3server.controller.project import Project
 
         # Get the project to find its directory
         project = self.controller.get_project(project_id)
@@ -474,70 +469,16 @@ Current project topology:
         agent = await self._get_agent(project_id)
 
         try:
-            # Get topology using the topology tool
-            log.debug("Getting topology for project %s using topology tool", project_id)
-            from gns3server.services.copilot_tools.topology import GNS3TopologyTool
-
-            topology_tool = GNS3TopologyTool(controller=self.controller)
-            topology_input = json.dumps({"project_id": project_id})
-            topology_result = await topology_tool._arun(topology_input)
-
-            # Get the base system prompt from gns3-copilot
-            base_prompt = self._get_system_prompt()
-
-            # Prepare system message with project context and topology
-            system_message = f"""{base_prompt}
-
-### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: {project_id}
-
-Current project topology:
-{topology_result}
-
-**CRITICAL:** When calling tools, ALWAYS use project_id: "{project_id}"
-"""
-
-            # Prepare the input message
-            messages = [
-                SystemMessage(content=system_message),
-                HumanMessage(content=message),
-            ]
+            # Prepare messages with topology context
+            messages = await self._prepare_stream_messages(project_id, message)
 
             # Stream the agent response
             log.debug("Starting agent stream with thread_id: %s", conversation_id)
             config = {"configurable": {"thread_id": conversation_id}}
 
             async for chunk in agent.astream({"messages": messages}, config=config):
-                # Process the chunk and yield events
-                if "messages" in chunk:
-                    for msg in chunk["messages"]:
-                        if isinstance(msg, AIMessage):
-                            # Stream text content
-                            if hasattr(msg, "content") and isinstance(msg.content, str) and msg.content:
-                                log.debug("Streaming token: %s...", msg.content[:50])
-                                yield schemas.ChatStreamEvent(
-                                    event="token",
-                                    data=msg.content,
-                                    conversation_id=conversation_id
-                                )
-                            # Stream tool calls
-                            if hasattr(msg, "tool_calls") and msg.tool_calls:
-                                for tool_call in msg.tool_calls:
-                                    tool_name = tool_call.get("name", "unknown")
-                                    log.info("Streaming tool call: %s", tool_name)
-                                    yield schemas.ChatStreamEvent(
-                                        event="tool_call",
-                                        data=tool_name,
-                                        conversation_id=conversation_id
-                                    )
-                        elif isinstance(msg, ToolMessage):
-                            # Tool execution result
-                            log.debug("Streaming tool result: %s", msg.name)
-                            yield schemas.ChatStreamEvent(
-                                event="tool_result",
-                                data=f"{msg.name}: {msg.content[:100]}...",
-                                conversation_id=conversation_id
-                            )
+                async for event in self._process_stream_chunk(chunk, conversation_id):
+                    yield event
 
             # Send done event
             log.info("Chat stream completed for conversation %s", conversation_id)
@@ -554,6 +495,102 @@ Current project topology:
                 data=str(e),
                 conversation_id=conversation_id
             )
+
+    async def _prepare_stream_messages(self, project_id: str, message: str) -> list:
+        """
+        Prepare messages with topology context for streaming.
+
+        :param project_id: GNS3 project ID
+        :param message: User message
+        :return: List of messages
+        """
+        # Get topology using the topology tool
+        log.debug("Getting topology for project %s using topology tool", project_id)
+        from gns3server.services.copilot_tools.topology import GNS3TopologyTool
+
+        topology_tool = GNS3TopologyTool(controller=self.controller)
+        topology_input = json.dumps({"project_id": project_id})
+        topology_result = await topology_tool._arun(topology_input)
+
+        # Get the base system prompt from gns3-copilot
+        base_prompt = self._get_system_prompt()
+
+        # Prepare system message with project context and topology
+        system_message = """%s
+
+### CURRENT PROJECT CONTEXT ###
+You are working on GNS3 project: %s
+
+Current project topology:
+%s
+
+**CRITICAL:** When calling tools, ALWAYS use project_id: "%s"
+""" % (base_prompt, project_id, topology_result, project_id)
+
+        # Prepare the input message
+        return [
+            SystemMessage(content=system_message),
+            HumanMessage(content=message),
+        ]
+
+    async def _process_stream_chunk(
+        self,
+        chunk: dict,
+        conversation_id: str
+    ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
+        """
+        Process a streaming chunk and yield events.
+
+        :param chunk: Streaming chunk from agent
+        :param conversation_id: Conversation ID
+        :yields: ChatStreamEvent objects
+        """
+        if "messages" not in chunk:
+            return
+
+        for msg in chunk["messages"]:
+            if isinstance(msg, AIMessage):
+                async for event in self._process_ai_message(msg, conversation_id):
+                    yield event
+            elif isinstance(msg, ToolMessage):
+                log.debug("Streaming tool result: %s", msg.name)
+                yield schemas.ChatStreamEvent(
+                    event="tool_result",
+                    data="%s: %s..." % (msg.name, msg.content[:100]),
+                    conversation_id=conversation_id
+                )
+
+    async def _process_ai_message(
+        self,
+        msg: AIMessage,
+        conversation_id: str
+    ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
+        """
+        Process an AI message and yield events.
+
+        :param msg: AI message
+        :param conversation_id: Conversation ID
+        :yields: ChatStreamEvent objects
+        """
+        # Stream text content
+        if hasattr(msg, "content") and isinstance(msg.content, str) and msg.content:
+            log.debug("Streaming token: %s...", msg.content[:50])
+            yield schemas.ChatStreamEvent(
+                event="token",
+                data=msg.content,
+                conversation_id=conversation_id
+            )
+
+        # Stream tool calls
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            for tool_call in msg.tool_calls:
+                tool_name = tool_call.get("name", "unknown")
+                log.info("Streaming tool call: %s", tool_name)
+                yield schemas.ChatStreamEvent(
+                    event="tool_call",
+                    data=tool_name,
+                    conversation_id=conversation_id
+                )
 
     async def close(self):
         """

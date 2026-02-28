@@ -24,7 +24,7 @@ import logging
 from typing import AsyncGenerator
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
