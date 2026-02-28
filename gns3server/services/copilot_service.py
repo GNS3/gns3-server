@@ -338,47 +338,59 @@ You are working on GNS3 project: %s
 
         # Define tool execution node (async)
         async def tool_node(state: dict):
-            """Execute tool calls"""
-            tool_calls = state["messages"][-1].tool_calls
-            log.debug("Executing %d tool calls", len(tool_calls))
-            results = []
-            for tool_call in tool_calls:
-                tool_name = tool_call["name"]
+            """
+            Execute tool calls in parallel using ainvoke.
+
+            Using tool.ainvoke() automatically selects the best execution path:
+            - If tool has _arun, it will use async execution
+            - If tool only has _run, it will run in executor thread
+            """
+            import asyncio
+
+            last_message = state["messages"][-1]
+            tool_calls = last_message.tool_calls
+
+            log.debug("Executing %d tool calls in parallel", len(tool_calls))
+
+            async def execute_single_tool(tool_call: dict) -> ToolMessage:
+                """Execute a single tool call"""
+                tool_name = tool_call.get("name", "")
+                tool_call_id = tool_call.get("id", "")
+
                 log.info("Executing tool: %s", tool_name)
+
                 tool = self._tools_by_name[tool_name]
                 try:
-                    # Parse tool arguments
-                    if isinstance(tool_call.get("args"), dict):
-                        tool_input = json.dumps(tool_call["args"])
-                    else:
-                        tool_input = str(tool_call.get("args", {}))
+                    # Use tool.ainvoke() - it automatically chooses the best execution path
+                    # If tool has _arun, it uses async
+                    # If tool only has _run, it runs in executor thread
+                    observation = await tool.ainvoke(tool_call)
 
-                    log.debug("Tool %s input: %s...", tool_name, tool_input[:200])
+                    # Ensure result is string (ToolMessage content must be string)
+                    if not isinstance(observation, str):
+                        observation = json.dumps(observation, ensure_ascii=False)
 
-                    # Execute tool (use _arun for async tools)
-                    if hasattr(tool, '_arun'):
-                        observation = await tool._arun(tool_input)
-                    else:
-                        observation = tool._run(tool_input)
-
-                    log.debug("Tool %s result: %s...", tool_name, observation[:200])
-                    results.append(
-                        ToolMessage(
-                            content=observation,
-                            tool_call_id=tool_call["id"],
-                            name=tool_name
-                        )
+                    log.debug("Tool %s result: %s...", tool_name, observation[:200] if observation else "empty")
+                    return ToolMessage(
+                        content=observation,
+                        tool_call_id=tool_call_id,
+                        name=tool_name
                     )
                 except Exception as e:
                     log.error("Tool %s failed: %s", tool_name, e, exc_info=True)
-                    results.append(
-                        ToolMessage(
-                            content=f"Error: {str(e)}",
-                            tool_call_id=tool_call["id"],
-                            name=tool_name
-                        )
+                    return ToolMessage(
+                        content=f"Error: {str(e)}",
+                        tool_call_id=tool_call_id,
+                        name=tool_name
                     )
-            return {"messages": results}
+
+            # Execute all tool calls in parallel using asyncio.gather
+            results = await asyncio.gather(
+                *[execute_single_tool(tc) for tc in tool_calls]
+            )
+
+            # Return results (they will be added to messages state)
+            return {"messages": list(results)}
 
         # Define routing logic
         def should_continue(state: MessagesState) -> Literal["tool_node", END]:
