@@ -464,49 +464,24 @@ You are working on GNS3 project: %s
         agent = await self._get_agent(project_id)
 
         try:
-            # Get topology using the topology tool
-            log.debug("Getting topology for project %s using topology tool", project_id)
-            from gns3server.services.copilot_tools.topology import GNS3TopologyTool
-
-            topology_tool = GNS3TopologyTool(controller=self.controller)
-            topology_input = json.dumps({"project_id": project_id})
-            topology_result = await topology_tool._arun(topology_input)
-
-            # Get the base system prompt from gns3-copilot
-            base_prompt = self._get_system_prompt()
-
-            # Prepare system message with project context and topology
-            system_message = f"""{base_prompt}
-
-### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: {project_id}
-
-Current project topology:
-{topology_result}
-
-**CRITICAL:** When calling tools, ALWAYS use project_id: "{project_id}"
-"""
-
-            # Log the system prompt for debugging
-            log.info("=== AGENT SYSTEM PROMPT ===")
-            log.info("Project ID: %s", project_id)
+            # Log conversation info
             log.info("Conversation ID: %s", conversation_id)
-            log.info("Base prompt length: %d chars", len(base_prompt))
-            log.info("Topology result length: %d chars", len(topology_result))
-            log.info("Total system prompt length: %d chars", len(system_message))
-            log.info("Topology data:\n%s", topology_result)
-            log.info("=== END SYSTEM PROMPT ===")
 
-            # Prepare the input message
-            messages = [
-                SystemMessage(content=system_message),
-                HumanMessage(content=message),
-            ]
+            # Prepare the input message (topology will be fetched in llm_call node)
+            # Following FlowNet-Lab's approach: only human message, system prompt added in llm_call
+            messages = [HumanMessage(content=message)]
 
-            # Invoke the agent
+            # Invoke the agent with project_id in state
             log.debug("Invoking agent with thread_id: %s", conversation_id)
             config = {"configurable": {"thread_id": conversation_id}}
-            result = await agent.ainvoke({"messages": messages}, config=config)
+            inputs = {
+                "messages": messages,
+                "llm_calls": 0,
+                "remaining_steps": 20,
+                "project_id": project_id,  # Store in state for multi-turn conversations
+                "topology_info": None,  # Will be fetched on first llm_call
+            }
+            result = await agent.ainvoke(inputs, config=config)
 
             # Extract the response
             response_messages = result.get("messages", [])
