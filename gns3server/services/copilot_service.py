@@ -54,6 +54,12 @@ class MessagesState(TypedDict):
     messages: list[AnyMessage]
     llm_calls: int
     remaining_steps: RemainingSteps
+    # Store project_id for multi-turn conversations
+    # This ensures the correct project_id is available across tool calls
+    project_id: str | None
+    # Store topology information to avoid repeated fetches
+    # Following FlowNet-Lab's approach
+    topology_info: dict | None
 
 
 class CopilotService:
@@ -237,13 +243,70 @@ class CopilotService:
             # Get system prompt
             system_prompt = self._get_system_prompt()
 
-            # Build messages with system prompt and context
-            # Following FlowNet-Lab's approach: always prepend system prompt
+            # Get project_id from state (persisted across turns)
+            project_id = state.get("project_id")
+
+            # Build context messages
+            # Following FlowNet-Lab's approach: fetch topology on EVERY llm_call
+            # This ensures AI always sees the latest topology (user may have added/removed nodes)
             context_messages = []
-            project_context = state.get("project_context")
-            if project_context:
-                context_messages.append(SystemMessage(content=project_context))
-                log.debug("Added project context to messages (length: %d chars)", len(project_context))
+            topology_info = None
+
+            if project_id:
+                try:
+                    # Always fetch fresh topology for each LLM call
+                    # This ensures AI has the most up-to-date topology information
+                    from gns3server.services.copilot_tools.topology import GNS3TopologyTool
+
+                    topology_tool = GNS3TopologyTool(controller=self.controller)
+                    topology_input = json.dumps({"project_id": project_id})
+                    topology_result = topology_tool._run(topology_input)
+
+                    # Parse result
+                    topology_data = json.loads(topology_result)
+                    if isinstance(topology_data, dict) and "error" not in topology_data:
+                        topology_info = topology_data
+                        log.info("Successfully fetched topology for project %s: %d nodes, %d links",
+                                 project_id, topology_data.get("nodes_count", 0), topology_data.get("links_count", 0))
+
+                        # Build context with topology details
+                        topology_context = json.dumps(topology_info, indent=2, ensure_ascii=False)
+                        context_message = """### CURRENT PROJECT CONTEXT ###
+You are working on GNS3 project: %s
+
+Current project topology:
+%s
+
+**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
+""" % (project_id, topology_context, project_id)
+                        context_messages.append(SystemMessage(content=context_message))
+                        log.debug("Added topology context (%d nodes, %d links)",
+                                  topology_info.get("nodes_count", 0), topology_info.get("links_count", 0))
+                    else:
+                        # Topology fetch failed - use generic context
+                        log.warning("Failed to fetch topology for project %s: %s",
+                                    project_id, topology_data.get("error", "Unknown error"))
+                        context_message = """### CURRENT PROJECT CONTEXT ###
+You are working on GNS3 project: %s
+
+**Note:** Unable to retrieve topology details at this time.
+
+**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
+""" % (project_id, project_id)
+                        context_messages.append(SystemMessage(content=context_message))
+                        log.debug("Added generic project context (topology unavailable)")
+
+                except Exception as e:
+                    log.warning("Error fetching topology for project %s: %s", project_id, e)
+                    # Fallback to generic context
+                    context_message = """### CURRENT PROJECT CONTEXT ###
+You are working on GNS3 project: %s
+
+**Note:** Unable to retrieve topology details at this time.
+
+**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
+""" % (project_id, project_id)
+                    context_messages.append(SystemMessage(content=context_message))
 
             # Combine: system prompt + context + conversation history
             full_messages = [SystemMessage(content=system_prompt)] + context_messages + state["messages"]
@@ -254,6 +317,8 @@ class CopilotService:
             log.debug("  Context messages: %d", len(context_messages))
             log.debug("  Conversation history: %d messages", len(state["messages"]))
             log.debug("  Total messages: %d", len(full_messages))
+            if project_id:
+                log.debug("  Project ID: %s", project_id)
 
             # Get model with tools
             model_with_tools = self._get_model_with_tools()
@@ -261,9 +326,14 @@ class CopilotService:
             response = model_with_tools.invoke(full_messages)
             tool_calls_count = len(response.tool_calls) if hasattr(response, 'tool_calls') else 0
             log.debug("LLM response received, tool_calls: %d", tool_calls_count)
+
+            # Return updated state with latest topology_info
+            # Always return topology_info (even if None) to update state
+            # Following FlowNet-Lab's approach
             return {
                 "messages": [response],
                 "llm_calls": state.get("llm_calls", 0) + 1,
+                "topology_info": topology_info,
             }
 
         # Define tool execution node (async)
@@ -488,8 +558,8 @@ Current project topology:
         agent = await self._get_agent(project_id)
 
         try:
-            # Prepare messages with topology context (returns messages + context string)
-            messages, context_message = await self._prepare_stream_messages(project_id, message)
+            # Prepare messages (topology will be fetched in llm_call node)
+            messages = [HumanMessage(content=message)]
 
             # Log conversation info
             log.info("Conversation ID: %s", conversation_id)
@@ -499,7 +569,8 @@ Current project topology:
                 "messages": messages,
                 "llm_calls": 0,
                 "remaining_steps": 20,
-                "project_context": context_message,  # Pass context to llm_call node
+                "project_id": project_id,  # Store in state for multi-turn conversations
+                "topology_info": None,  # Will be fetched on first llm_call
             }
             config = {"configurable": {"thread_id": conversation_id}}
 
@@ -580,49 +651,6 @@ Current project topology:
                 error=str(e),
                 conversation_id=conversation_id
             )
-
-    async def _prepare_stream_messages(self, project_id: str, message: str) -> tuple:
-        """
-        Prepare messages with topology context for streaming.
-
-        :param project_id: GNS3 project ID
-        :param message: User message
-        :return: Tuple of (messages list, topology info string)
-        """
-        # Get topology using the topology tool
-        log.debug("Getting topology for project %s using topology tool", project_id)
-        from gns3server.services.copilot_tools.topology import GNS3TopologyTool
-
-        topology_tool = GNS3TopologyTool(controller=self.controller)
-        topology_input = json.dumps({"project_id": project_id})
-        topology_result = await topology_tool._arun(topology_input)
-
-        # Get the base system prompt from gns3-copilot
-        base_prompt = self._get_system_prompt()
-
-        # Prepare context message with project context and topology
-        # This will be combined with system prompt in llm_call node
-        context_message = """### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: %s
-
-Current project topology:
-%s
-
-**CRITICAL:** When calling tools, ALWAYS use project_id: "%s"
-""" % (project_id, topology_result, project_id)
-
-        # Log the system prompt for debugging
-        log.info("=== AGENT SYSTEM PROMPT ===")
-        log.info("Project ID: %s", project_id)
-        log.info("Base prompt length: %d chars", len(base_prompt))
-        log.info("Topology result length: %d chars", len(topology_result))
-        log.info("Context message length: %d chars", len(context_message))
-        log.info("Topology data:\n%s", topology_result)
-        log.info("=== END SYSTEM PROMPT ===")
-
-        # Only return human message - system prompt will be added by llm_call node
-        # This matches FlowNet-Lab's approach
-        return [HumanMessage(content=message)], context_message
 
     async def close(self):
         """
