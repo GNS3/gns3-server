@@ -21,17 +21,26 @@ GNS3 Template Tool
 Provides tool for listing GNS3 node templates.
 """
 
+import json
 import logging
 from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain.tools import BaseTool
+from pydantic import Field
 
-from .base import GNS3ToolBase
+from gns3server.controller import Controller
 
 log = logging.getLogger(__name__)
 
 
-class GNS3TemplateTool(GNS3ToolBase):
+class GNS3TemplateTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A LangChain tool to list available GNS3 node templates.
 
@@ -77,20 +86,22 @@ class GNS3TemplateTool(GNS3ToolBase):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
         List GNS3 templates.
 
-        :param tool_input: JSON string with optional filter parameters
-        :param run_manager: Callback manager
-        :return: JSON string with templates list
+        Args:
+            tool_input: JSON string with optional filter parameters
+            run_manager: LangChain run manager
+
+        Returns:
+            dict: Templates list or error dict
         """
         try:
             # Parse input (may be empty object)
             try:
-                input_data = self._parse_json_input(tool_input)
-            except (ValueError, TypeError):
+                input_data = json.loads(tool_input)
+            except (json.JSONDecodeError, TypeError):
                 input_data = {}
 
             template_type = input_data.get("template_type")
@@ -118,8 +129,8 @@ class GNS3TemplateTool(GNS3ToolBase):
                 result["templates"].append(template_info)
 
             log.info("Retrieved %s templates", len(result['templates']))
-            return self._format_success_response(result)
+            return result
 
         except Exception as e:
             log.error("Error in template tool: %s", e)
-            return self._format_error_response("Failed to retrieve templates: %s" % str(e))
+            return {"error": "Failed to retrieve templates: %s" % str(e)}

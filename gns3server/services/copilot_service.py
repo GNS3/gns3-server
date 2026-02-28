@@ -255,7 +255,7 @@ class CopilotService:
                     from gns3server.services.copilot_tools.topology import GNS3TopologyTool
 
                     topology_tool = GNS3TopologyTool(controller=self.controller)
-                    topology = topology_tool._run({"project_id": project_id})
+                    topology = topology_tool._run(project_id=project_id)
 
                     if topology and "error" not in topology:
                         topology_info = topology
@@ -302,7 +302,8 @@ class CopilotService:
             last_message = state["messages"][-1]
             tool_calls = last_message.tool_calls
 
-            log.debug("Executing %d tool calls", len(tool_calls))
+            log.info("Executing %d tool calls", len(tool_calls))
+            log.info("tool_calls %s", tool_calls)
 
             results = []
             for tool_call in tool_calls:
@@ -310,7 +311,7 @@ class CopilotService:
                 tool_call_id = tool_call["id"]
 
                 log.info("Executing tool: %s", tool_name)
-
+                log.info("tool_call args: %s", tool_call["args"])
                 tool = self._tools_by_name[tool_name]
                 try:
                     # Use tool.invoke() - LangChain handles the rest

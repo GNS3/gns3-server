@@ -30,14 +30,22 @@ from time import sleep
 from typing import Any, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain.tools import BaseTool
+from pydantic import Field
 from telnetlib3 import Telnet
 
-from .base import GNS3ToolBase
+from gns3server.controller import Controller
 
 log = logging.getLogger(__name__)
 
 
-class VPCSTerminalTool(GNS3ToolBase):
+class VPCSTerminalTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A tool to execute multiple command groups across multiple VPCS devices concurrently.
     Supports parallel execution with threading for improved performance.
@@ -307,14 +315,13 @@ class VPCSTerminalTool(GNS3ToolBase):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
         Execute commands on multiple VPCS devices concurrently.
 
         :param tool_input: JSON string with project_id and device_configs
         :param run_manager: Callback manager
-        :return: JSON string with command outputs
+        :return: Dictionary with command outputs
         """
         log.info("VPCS commands tool called with input: %s...", tool_input[:200])
 
@@ -327,15 +334,15 @@ class VPCSTerminalTool(GNS3ToolBase):
             and len(device_configs) > 0
             and "error" in device_configs[0]
         ):
-            return self._format_error_response(device_configs[0]["error"])
+            return {"error": device_configs[0]["error"]}
 
         # Empty device configs
         if not device_configs:
-            return self._format_success_response({"results": []})
+            return {"results": []}
 
         try:
             # Get project
-            project = self._get_project(project_id)
+            project = self.controller.get_project(project_id)
 
             # Extract all device names from input
             device_names = {config["device_name"] for config in device_configs}
@@ -389,11 +396,11 @@ class VPCSTerminalTool(GNS3ToolBase):
                 len(results), success_count, error_count
             )
 
-            return self._format_success_response({"results": results})
+            return {"results": results}
 
         except ValueError as e:
             log.error("Error in VPCS commands tool: %s", e, exc_info=True)
-            return self._format_error_response(str(e))
+            return {"error": str(e)}
         except Exception as e:
             log.error("Unexpected error in VPCS commands tool: %s", e, exc_info=True)
-            return self._format_error_response("Failed to execute VPCS commands: %s" % str(e))
+            return {"error": "Failed to execute VPCS commands: %s" % str(e)}

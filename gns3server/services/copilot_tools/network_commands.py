@@ -22,21 +22,30 @@ Provides tools for executing display and configuration commands on network devic
 using Nornir and Netmiko.
 """
 
+import json
 import logging
 from typing import Any, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain.tools import BaseTool
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir_netmiko.tasks import netmiko_multiline
+from pydantic import Field
 
-from .base import GNS3ToolBase
+from gns3server.controller import Controller
 
 log = logging.getLogger(__name__)
 
 
-class ReadDeviceInfoTool(GNS3ToolBase):
+class ReadDeviceInfoTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A tool to execute display (show) commands on multiple network devices.
 
@@ -255,30 +264,29 @@ class ReadDeviceInfoTool(GNS3ToolBase):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
         Execute display commands on multiple devices.
 
         :param tool_input: JSON string with project_id and device_configs
         :param run_manager: Callback manager
-        :return: JSON string with command outputs
+        :return: Dictionary with command outputs
         """
         try:
             # Parse input
-            input_data = self._parse_json_input(tool_input)
+            input_data = json.loads(tool_input)
             project_id = input_data.get("project_id")
             device_configs = input_data.get("device_configs", [])
 
             # Validate required fields
             if not project_id:
-                return self._format_error_response("Missing project_id")
+                return {"error": "Missing project_id"}
 
             if not device_configs:
-                return self._format_error_response("Missing device_configs")
+                return {"error": "Missing device_configs"}
 
             # Get project
-            project = self._get_project(project_id)
+            project = self.controller.get_project(project_id)
 
             # Extract device names and commands
             device_names = [config["device_name"] for config in device_configs]
@@ -288,9 +296,7 @@ class ReadDeviceInfoTool(GNS3ToolBase):
             hosts_data = self._get_device_console_info(project, device_names)
 
             if not hosts_data:
-                return self._format_error_response(
-                    "No valid devices found. Make sure devices are started and have console ports."
-                )
+                return {"error": "No valid devices found. Make sure devices are started and have console ports."}
 
             # Initialize Nornir
             nr = self._initialize_nornir(hosts_data)
@@ -325,17 +331,23 @@ class ReadDeviceInfoTool(GNS3ToolBase):
 
                 results.append(result_item)
 
-            return self._format_success_response({"results": results})
+            return {"results": results}
 
         except ValueError as e:
             log.error("Error in display commands tool: %s", e)
-            return self._format_error_response(str(e))
+            return {"error": str(e)}
         except Exception as e:
             log.error("Unexpected error in display commands tool: %s", e)
-            return self._format_error_response("Failed to execute commands: %s" % str(e))
+            return {"error": "Failed to execute commands: %s" % str(e)}
 
 
-class ApplyDeviceConfigTool(GNS3ToolBase):
+class ApplyDeviceConfigTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A tool to apply configuration commands on multiple network devices.
 
@@ -377,30 +389,29 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
         Execute configuration commands on multiple devices.
 
         :param tool_input: JSON string with project_id and device_configs
         :param run_manager: Callback manager
-        :return: JSON string with configuration results
+        :return: Dictionary with configuration results
         """
         try:
             # Parse input
-            input_data = self._parse_json_input(tool_input)
+            input_data = json.loads(tool_input)
             project_id = input_data.get("project_id")
             device_configs = input_data.get("device_configs", [])
 
             # Validate required fields
             if not project_id:
-                return self._format_error_response("Missing project_id")
+                return {"error": "Missing project_id"}
 
             if not device_configs:
-                return self._format_error_response("Missing device_configs")
+                return {"error": "Missing device_configs"}
 
             # Get project
-            project = self._get_project(project_id)
+            project = self.controller.get_project(project_id)
 
             # Extract device names and commands
             device_names = [config["device_name"] for config in device_configs]
@@ -410,9 +421,7 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
             hosts_data = display_tool._get_device_console_info(project, device_names)
 
             if not hosts_data:
-                return self._format_error_response(
-                    "No valid devices found. Make sure devices are started and have console ports."
-                )
+                return {"error": "No valid devices found. Make sure devices are started and have console ports."}
 
             # Initialize Nornir
             nr = display_tool._initialize_nornir(hosts_data)
@@ -455,14 +464,14 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
 
                 results.append(result_item)
 
-            return self._format_success_response({"results": results})
+            return {"results": results}
 
         except ValueError as e:
             log.error("Error in config commands tool: %s", e)
-            return self._format_error_response(str(e))
+            return {"error": str(e)}
         except Exception as e:
             log.error("Unexpected error in config commands tool: %s", e)
-            return self._format_error_response("Failed to execute config commands: %s" % str(e))
+            return {"error": "Failed to execute config commands: %s" % str(e)}
 
 
 def device_configuration_task(task: Task, commands: list) -> Result:

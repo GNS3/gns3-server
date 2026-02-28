@@ -23,12 +23,16 @@ Reference implementation from gns3-copilot's links_summary method.
 """
 
 import logging
+import asyncio
+
 from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 
-from .base import GNS3ToolBase
+from langchain.tools import BaseTool
+
+from gns3server.controller import Controller
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +43,13 @@ class GetGNS3TopologyInput(BaseModel):
     project_id: str = Field(description="GNS3 project UUID")
 
 
-class GNS3TopologyTool(GNS3ToolBase):
+class GNS3TopologyTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A LangChain tool to read GNS3 project topology information.
 
@@ -87,8 +97,11 @@ class GNS3TopologyTool(GNS3ToolBase):
     description: str = """
     Retrieves the topology of a GNS3 project including nodes and links.
 
-    Input: `project_id` (str, required): UUID of the GNS3 project.
-
+    Example input:
+        {
+            "project_id": "uuid-of-project"
+        }
+        
     Output: Dictionary with:
     - `project_id`, `name`, `status`: Project metadata
     - `nodes`: Dict of node details (node_id, name, ports, type, etc.)
@@ -100,81 +113,80 @@ class GNS3TopologyTool(GNS3ToolBase):
 
     def _run(
         self,
-        tool_input: str,
+        tool_input: Any = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
+        project_id: str | None = None,
     ) -> dict:
         """
         Read GNS3 project topology (sync wrapper).
 
-        Following FlowNet-Lab's approach: returns dict directly.
+        Following gns3-copilot's approach: supports both keyword arg and tool_input.
 
-        :param tool_input: JSON string with project_id (or dict with project_id)
+        :param tool_input: Optional input (dict or JSON string)
         :param run_manager: Callback manager
+        :param project_id: Project ID as keyword argument
         :return: Dict with topology information (or dict with error key)
         """
-        import asyncio
-
-        log.info("get_gns3_topology called (sync) with input: %s...", str(tool_input)[:100])
-        try:
-            # Parse input - handle both string and dict
+        # Use project_id from keyword arg, or extract from tool_input
+        if not project_id and tool_input:
             if isinstance(tool_input, dict):
-                input_data = tool_input
+                project_id = tool_input.get("project_id")
             else:
-                input_data = self._parse_json_input(tool_input)
+                try:
+                    data = json.loads(tool_input)
+                    project_id = data.get("project_id")
+                except:
+                    pass
 
-            project_id = input_data.get("project_id")
+        log.info("get_gns3_topology called with project_id: %s", project_id)
 
-            if not project_id:
-                return {"error": "Missing project_id"}
+        if not project_id:
+            return {"error": "project_id parameter is required. Please provide a valid project UUID."}
 
-            # Get project (sync - this may block)
-            try:
-                project = self.controller.get_project(project_id)
-            except Exception as e:
-                return {"error": f"Project {project_id} not found: {e}"}
-
-            # Build topology using sync helper
-            topology = asyncio.run(self._build_topology(project))
-
-            log.info("Retrieved topology for project %s: %d nodes, %d links",
-                     project_id, topology['nodes_count'], topology['links_count'])
-
-            return topology
-
-        except ValueError as e:
-            log.error("Error in topology tool: %s", e, exc_info=True)
-            return {"error": str(e)}
+        # Get project (sync - this may block)
+        try:
+            project = self.controller.get_project(project_id)
         except Exception as e:
-            log.error("Unexpected error in topology tool: %s", e, exc_info=True)
-            return {"error": "Failed to read topology: %s" % str(e)}
+            return {"error": f"Project {project_id} not found: {e}"}
+
+        # Build topology using sync helper
+        topology = asyncio.run(self._build_topology(project))
+
+        log.info("Retrieved topology for project %s: %d nodes, %d links",
+                 project_id, topology['nodes_count'], topology['links_count'])
+
+        return topology
 
     async def _arun(
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
         Read GNS3 project topology (async implementation).
 
-        :param tool_input: JSON string with project_id
-        :param run_manager: Callback manager
-        :return: JSON string with topology information
+        Args:
+            tool_input: JSON string with project_id
+            run_manager: Callback manager
+
+        Returns:
+            dict: Topology info or error dict
         """
+        import json
+
         log.info("get_gns3_topology called with input: %s...", tool_input[:100])
         try:
             # Parse input
-            input_data = self._parse_json_input(tool_input)
+            input_data = json.loads(tool_input)
             project_id = input_data.get("project_id")
 
             if not project_id:
-                return self._format_error_response("Missing project_id")
+                return {"error": "Missing project_id"}
 
             # Get project (async)
             project = await self.controller.get_loaded_project(project_id)
             if not project:
-                return self._format_error_response("Project %s not found" % project_id)
+                return {"error": "Project %s not found" % project_id}
 
             # Build topology using helper methods
             topology = await self._build_topology(project)
@@ -182,14 +194,14 @@ class GNS3TopologyTool(GNS3ToolBase):
             log.info("Retrieved topology for project %s: %d nodes, %d links",
                      project_id, topology['nodes_count'], topology['links_count'])
 
-            return self._format_success_response(topology)
+            return topology
 
-        except ValueError as e:
+        except json.JSONDecodeError as e:
             log.error("Error in topology tool: %s", e, exc_info=True)
-            return self._format_error_response(str(e))
+            return {"error": str(e)}
         except Exception as e:
             log.error("Unexpected error in topology tool: %s", e, exc_info=True)
-            return self._format_error_response("Failed to read topology: %s" % str(e))
+            return {"error": "Failed to read topology: %s" % str(e)}
 
     async def _build_topology(self, project) -> dict:
         """

@@ -21,17 +21,27 @@ GNS3 Link Tool
 Provides tool for creating links between GNS3 nodes.
 """
 
+import asyncio
+import json
 import logging
 from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain.tools import BaseTool
+from pydantic import Field
 
-from .base import GNS3ToolBase
+from gns3server.controller import Controller
 
 log = logging.getLogger(__name__)
 
 
-class GNS3LinkTool(GNS3ToolBase):
+class GNS3LinkTool(BaseTool):
+    controller: Controller = Field(description="GNS3 controller instance")
+
+    def __init__(self, controller: Controller, **kwargs):
+        kwargs["controller"] = controller
+        super().__init__(**kwargs)
+
     """
     A LangChain tool to create links between GNS3 nodes.
 
@@ -73,33 +83,21 @@ class GNS3LinkTool(GNS3ToolBase):
         self,
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
-        Create a GNS3 link (sync wrapper - must use async version).
+        Create a GNS3 link.
 
-        :param tool_input: JSON string with link creation parameters
-        :param run_manager: Callback manager
-        :return: JSON string with created link information
-        """
-        return self._format_error_response("This tool requires async execution. Use _arun instead.")
+        Args:
+            tool_input: JSON string with project_id, node_a, node_b, port_a, port_b
+            run_manager: LangChain run manager
 
-    async def _arun(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
+        Returns:
+            dict: Created link info or error dict
         """
-        Create a GNS3 link (async implementation).
-
-        :param tool_input: JSON string with link creation parameters
-        :param run_manager: Callback manager
-        :return: JSON string with created link information
-        """
+        log.info("create_gns3_link called with input: %s...", tool_input[:200])
         try:
-            # Parse input
-            input_data = self._parse_json_input(tool_input)
+            # Parse input JSON
+            input_data = json.loads(tool_input)
             project_id = input_data.get("project_id")
             node_a_id = input_data.get("node_a")
             node_b_id = input_data.get("node_b")
@@ -108,21 +106,19 @@ class GNS3LinkTool(GNS3ToolBase):
 
             # Validate required fields
             if not all([project_id, node_a_id, node_b_id]):
-                return self._format_error_response(
-                    "Missing required fields: project_id, node_a, node_b"
-                )
+                return {"error": "Missing required fields: project_id, node_a, node_b"}
 
             # Get project
-            project = self._get_project(project_id)
+            project = self.controller.get_project(project_id)
 
             # Get nodes
             node_a = project.get_node(node_a_id)
             node_b = project.get_node(node_b_id)
 
             if not node_a:
-                return self._format_error_response(f"Node A ({node_a_id}) not found in project")
+                return {"error": f"Node A ({node_a_id}) not found in project"}
             if not node_b:
-                return self._format_error_response(f"Node B ({node_b_id}) not found in project")
+                return {"error": f"Node B ({node_b_id}) not found in project"}
 
             # Create link
             log.info("Creating link between %s and %s", node_a.name, node_b.name)
@@ -134,7 +130,7 @@ class GNS3LinkTool(GNS3ToolBase):
                 ]
             }
 
-            link = await project.create_link(link_data)
+            link = asyncio.run(project.create_link(link_data))
 
             link_info = {
                 "link_id": link.id,
@@ -152,11 +148,11 @@ class GNS3LinkTool(GNS3ToolBase):
             }
 
             log.info("Successfully created link between %s and %s", node_a.name, node_b.name)
-            return self._format_success_response(link_info)
+            return link_info
 
-        except ValueError as e:
-            log.error("Error in create link tool: %s", e)
-            return self._format_error_response(str(e))
+        except json.JSONDecodeError as e:
+            log.error("Invalid JSON input: %s", e)
+            return {"error": "Invalid JSON input: %s" % str(e)}
         except Exception as e:
-            log.error("Unexpected error in create link tool: %s", e)
-            return self._format_error_response("Failed to create link: %s" % str(e))
+            log.error("Error in create link tool: %s", e, exc_info=True)
+            return {"error": "Failed to create link: %s" % str(e)}
