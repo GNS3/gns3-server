@@ -19,6 +19,7 @@
 API routes for project chat with copilot.
 """
 
+import asyncio
 import json
 import logging
 from typing import AsyncGenerator
@@ -62,42 +63,162 @@ async def _stream_chat_response(
     conversation_id: str,
     copilot_config: schemas.CopilotConfig,
     controller: Controller,
+    heartbeat_interval: float = 15.0,
+    heartbeat_enabled: bool = True,
 ) -> AsyncGenerator[str, None]:
     """
-    Stream chat response from the copilot agent.
+    Stream chat response from the copilot agent with SSE format and heartbeat.
+
+    This implementation uses asyncio.wait() for efficient timeout-based heartbeat,
+    avoiding the overhead of queues and background tasks. This is optimized for
+    multi-user concurrent scenarios.
+
+    Args:
+        message: User message
+        project_id: GNS3 project ID
+        conversation_id: Conversation/thread ID
+        copilot_config: Copilot configuration
+        controller: GNS3 controller instance
+        heartbeat_interval: Heartbeat interval in seconds (default: 15.0)
+        heartbeat_enabled: Whether to enable heartbeat (default: True)
     """
     log.info("Starting chat stream for project %s, conversation %s", project_id, conversation_id)
+
     try:
-        # Import the copilot agent service
         from gns3server.services.copilot_service import CopilotService
 
         log.debug("Creating CopilotService instance")
         copilot_service = CopilotService(copilot_config, controller)
 
-        # Stream the response
-        event_count = 0
-        async for event in copilot_service.chat_stream(
+        # Create async iterator from the event stream
+        event_stream = copilot_service.chat_stream(
             message=message,
             project_id=project_id,
             conversation_id=conversation_id,
-        ):
-            event_count += 1
-            log.debug("Streaming event #%s: %s", event_count, event.event)
-            # Format as SSE event
-            yield "event: %s\n" % event.event
-            yield "data: %s\n\n" % json.dumps({'data': event.data, 'conversation_id': event.conversation_id})
+        )
+        stream_aiter = aiter(event_stream)
 
-        log.info("Chat stream completed, sent %s events", event_count)
+        # Track event count for SSE IDs
+        event_count = 0
+        # Single task that we keep waiting on (no cancellation)
+        next_event_task = None
+
+        while True:
+            # Create task if not already created
+            if next_event_task is None:
+                next_event_task = asyncio.create_task(anext(stream_aiter))
+
+            try:
+                if heartbeat_enabled and heartbeat_interval > 0:
+                    # Wait with timeout - task continues running if timeout
+                    done, pending = await asyncio.wait(
+                        [next_event_task],
+                        timeout=heartbeat_interval
+                    )
+
+                    if done:
+                        # Event received - process it
+                        event = next_event_task.result()
+                        next_event_task = None  # Reset for next iteration
+
+                        # Stream the event
+                        event_count += 1
+                        log.debug("Streaming event #%s: %s", event_count, event.event)
+
+                        # Format SSE event
+                        event_data = {
+                            "conversation_id": event.conversation_id,
+                            "data": event.data,
+                        }
+                        json_str = json.dumps(event_data, ensure_ascii=False)
+                        json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
+
+                        yield "event: %s\n" % event.event
+                        yield "id: %s\n" % event_count
+                        yield "data: %s\n\n" % json_str
+
+                        # Check if stream is done
+                        if event.event == "done":
+                            log.info("Stream completed naturally, sent %s events", event_count)
+                            break
+                    else:
+                        # Timeout - send heartbeat, keep task running
+                        log.debug("Sending heartbeat after %ss idle", heartbeat_interval)
+                        heartbeat_data = {
+                            "conversation_id": conversation_id,
+                            "timestamp": event_count,
+                        }
+                        json_str = json.dumps(heartbeat_data, ensure_ascii=False)
+                        yield "event: heartbeat\n"
+                        yield "data: %s\n\n" % json_str
+                        # Don't reset next_event_task - continue waiting on same task
+
+                else:
+                    # Heartbeat disabled - just wait for event
+                    event = await next_event_task
+                    next_event_task = None
+
+                    # Stream the event
+                    event_count += 1
+                    log.debug("Streaming event #%s: %s", event_count, event.event)
+
+                    # Format SSE event
+                    event_data = {
+                        "conversation_id": event.conversation_id,
+                        "data": event.data,
+                    }
+                    json_str = json.dumps(event_data, ensure_ascii=False)
+                    json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
+
+                    yield "event: %s\n" % event.event
+                    yield "id: %s\n" % event_count
+                    yield "data: %s\n\n" % json_str
+
+                    # Check if stream is done
+                    if event.event == "done":
+                        log.info("Stream completed naturally, sent %s events", event_count)
+                        break
+
+            except StopAsyncIteration:
+                # Stream ended normally
+                log.info("Stream ended by StopAsyncIteration, sent %s events", event_count)
+                # Send final done event if not already sent
+                if event_count > 0:
+                    done_data = {
+                        "conversation_id": conversation_id,
+                        "status": "completed",
+                    }
+                    yield "event: done\n"
+                    yield "data: %s\n\n" % json.dumps(done_data)
+                break
+
+    except asyncio.CancelledError:
+        log.info("Stream cancelled by client")
+        # Send error event for cancellation
+        try:
+            error_data = {
+                "conversation_id": conversation_id,
+                "error": "Stream cancelled by client",
+            }
+            json_str = json.dumps(error_data, ensure_ascii=False)
+            yield "event: error\n"
+            yield "data: %s\n\n" % json_str
+        except Exception:
+            pass
 
     except Exception as e:
-        log.error("Error in copilot chat stream: %s", str(e), exc_info=True)
-        error_event = schemas.ChatStreamEvent(
-            event="error",
-            data=str(e),
-            conversation_id=conversation_id
-        )
-        yield f"event: {error_event.event}\n"
-        yield f"data: {json.dumps({'data': error_event.data, 'conversation_id': error_event.conversation_id})}\n\n"
+        log.error("Error in stream: %s", str(e), exc_info=True)
+        # Send error event
+        try:
+            error_data = {
+                "conversation_id": conversation_id,
+                "error": str(e),
+            }
+            json_str = json.dumps(error_data, ensure_ascii=False)
+            yield "event: error\n"
+            yield "data: %s\n\n" % json_str
+        except Exception:
+            pass
 
 
 @router.post("/chat", response_model=schemas.ChatResponse)
@@ -161,6 +282,8 @@ async def chat_with_copilot_stream(
     project: Project = Depends(dep_project),
     current_user: schemas.User = Depends(get_current_active_user),
     copilot_repo: CopilotRepository = Depends(get_repository(CopilotRepository)),
+    heartbeat_interval: float = 15.0,
+    heartbeat_enabled: bool = True,
 ):
     """
     Chat with the copilot agent for a project (streaming).
@@ -169,6 +292,14 @@ async def chat_with_copilot_stream(
 
     The agent has access to the project topology and can perform actions
     such as creating nodes, links, and executing commands on devices.
+
+    Args:
+        chat_request: Chat request with message and optional conversation_id
+        project: GNS3 project
+        current_user: Authenticated user
+        copilot_repo: Copilot configuration repository
+        heartbeat_interval: SSE heartbeat interval in seconds (default: 15.0)
+        heartbeat_enabled: Whether to enable SSE heartbeat (default: True)
     """
     log.info("Chat stream request from user %s for project %s", current_user.username, project.name)
 
@@ -184,6 +315,7 @@ async def chat_with_copilot_stream(
         raise ControllerBadRequestError("Copilot is disabled for this user.")
 
     log.debug("Copilot config: %s/%s", config.provider, config.model_name)
+    log.debug("SSE heartbeat: enabled=%s, interval=%ss", heartbeat_enabled, heartbeat_interval)
 
     conversation_id = chat_request.conversation_id or "%s_%s" % (current_user.user_id, project.id)
     controller = Controller.instance()
@@ -196,6 +328,8 @@ async def chat_with_copilot_stream(
             conversation_id=conversation_id,
             copilot_config=config,
             controller=controller,
+            heartbeat_interval=heartbeat_interval,
+            heartbeat_enabled=heartbeat_enabled,
         ),
         media_type="text/event-stream",
         headers={
