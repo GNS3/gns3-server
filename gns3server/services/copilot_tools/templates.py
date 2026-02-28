@@ -90,7 +90,7 @@ class GNS3TemplateTool(GNS3ToolBase):
             # Parse input (may be empty object)
             try:
                 input_data = self._parse_json_input(tool_input)
-            except:
+            except (ValueError, TypeError):
                 input_data = {}
 
             template_type = input_data.get("template_type")

@@ -316,4 +316,3 @@ class GNS3TopologyTool(GNS3ToolBase):
                 return getattr(port, "short_name", "adp%s/prt%s" % (adapter_number, port_number))
 
         return "adp%s/prt%s" % (adapter_number, port_number)
-

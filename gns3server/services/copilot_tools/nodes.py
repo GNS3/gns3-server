@@ -108,8 +108,10 @@ class GNS3CreateNodeTool(GNS3ToolBase):
             y = input_data.get("y")
             name = input_data.get("name")
 
-            log.debug("Parsed parameters: project_id=%s, template_id=%s, x=%s, y=%s, name=%s",
-                     project_id, template_id, x, y, name)
+            log.debug(
+                "Parsed parameters: project_id=%s, template_id=%s, x=%s, y=%s, name=%s",
+                project_id, template_id, x, y, name
+            )
 
             # Validate required fields
             if not all([project_id, template_id, x is not None, y is not None]):

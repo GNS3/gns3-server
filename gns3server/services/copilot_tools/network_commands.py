@@ -22,9 +22,7 @@ Provides tools for executing display and configuration commands on network devic
 using Nornir and Netmiko.
 """
 
-import json
 import logging
-import re
 from typing import Any, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -291,7 +289,7 @@ class ReadDeviceInfoTool(GNS3ToolBase):
 
             if not hosts_data:
                 return self._format_error_response(
-                    f"No valid devices found. Make sure devices are started and have console ports."
+                    "No valid devices found. Make sure devices are started and have console ports."
                 )
 
             # Initialize Nornir
@@ -369,7 +367,8 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
     description: str = """
     Applies configuration commands to network devices (MODIFIES device settings).
     Input is a JSON object with project_id and device_configs array.
-    Example input: {"project_id": "uuid", "device_configs": [{"device_name": "R1", "commands": ["interface g0/0", "ip address 1.1.1.1 255.255.255.0"]}]}
+    Example input: {"project_id": "uuid", "device_configs": [{"device_name": "R1",
+    "commands": ["interface g0/0", "ip address 1.1.1.1 255.255.255.0"]}]}
     Returns configuration results.
     **WARNING: This MODIFIES device configuration. Use with caution.**
     """
@@ -405,7 +404,6 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
 
             # Extract device names and commands
             device_names = [config["device_name"] for config in device_configs]
-            commands_map = {config["device_name"]: config["commands"] for config in device_configs}
 
             # Get device console information
             display_tool = ReadDeviceInfoTool(controller=self.controller)
@@ -413,7 +411,7 @@ class ApplyDeviceConfigTool(GNS3ToolBase):
 
             if not hosts_data:
                 return self._format_error_response(
-                    f"No valid devices found. Make sure devices are started and have console ports."
+                    "No valid devices found. Make sure devices are started and have console ports."
                 )
 
             # Initialize Nornir

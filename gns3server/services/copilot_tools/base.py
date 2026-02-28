@@ -27,7 +27,7 @@ from typing import Any, Optional
 
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from gns3server.controller import Controller
 
@@ -62,9 +62,6 @@ class GNS3ToolBase(BaseTool):
         :raises: ValueError if project not found
         """
         log.debug("Getting project: %s", project_id)
-        # Import here to avoid circular dependencies
-        from gns3server.controller.project import Project
-        import asyncio
 
         try:
             # Get the project from controller
