@@ -50,10 +50,10 @@ async def get_copilot_config(
     """
     Get the current user's copilot configuration.
     """
-    log.debug(f"Fetching copilot config for user {current_user.username}")
+    log.debug("Fetching copilot config for user %s", current_user.username)
     config = await copilot_repo.get_copilot_config(current_user.user_id)
     if not config:
-        log.warning(f"Copilot config not found for user {current_user.username}")
+        log.warning("Copilot config not found for user %s", current_user.username)
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -82,7 +82,8 @@ async def get_copilot_config(
                 }
             }
         )
-    log.debug(f"Returning copilot config for user {current_user.username}: {config.provider}/{config.model_name}")
+    log.debug("Returning copilot config for user %s: %s/%s",
+              current_user.username, config.provider, config.model_name)
     return config
 
 
@@ -95,15 +96,16 @@ async def create_copilot_config(
     """
     Create a new copilot configuration for the current user.
     """
-    log.info(f"Creating copilot config for user {current_user.username}: {config_create.provider}/{config_create.model_name}")
+    log.info("Creating copilot config for user %s: %s/%s",
+             current_user.username, config_create.provider, config_create.model_name)
 
     existing_config = await copilot_repo.get_copilot_config(current_user.user_id)
     if existing_config:
-        log.warning(f"Copilot config already exists for user {current_user.username}")
+        log.warning("Copilot config already exists for user %s", current_user.username)
         raise ControllerBadRequestError(f"Copilot configuration already exists. Use PUT to update.")
 
     config = await copilot_repo.create_copilot_config(config_create, current_user.user_id)
-    log.info(f"Created copilot config {config.config_id} for user {current_user.username}")
+    log.info("Created copilot config %s for user %s", config.config_id, current_user.username)
     return config
 
 
@@ -116,10 +118,10 @@ async def update_copilot_config(
     """
     Update the current user's copilot configuration.
     """
-    log.info(f"Updating copilot config for user {current_user.username}")
+    log.info("Updating copilot config for user %s", current_user.username)
     config = await copilot_repo.update_copilot_config(current_user.user_id, config_update)
     if not config:
-        log.warning(f"Copilot config not found for user {current_user.username}")
+        log.warning("Copilot config not found for user %s", current_user.username)
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -131,7 +133,8 @@ async def update_copilot_config(
                 }
             }
         )
-    log.info(f"Updated copilot config for user {current_user.username}: {config.provider}/{config.model_name}")
+    log.info("Updated copilot config for user %s: %s/%s",
+             current_user.username, config.provider, config.model_name)
     return config
 
 
@@ -143,9 +146,9 @@ async def delete_copilot_config(
     """
     Delete the current user's copilot configuration.
     """
-    log.info(f"Deleting copilot config for user {current_user.username}")
+    log.info("Deleting copilot config for user %s", current_user.username)
     success = await copilot_repo.delete_copilot_config(current_user.user_id)
     if not success:
-        log.warning(f"Copilot config not found for user {current_user.username}")
+        log.warning("Copilot config not found for user %s", current_user.username)
         raise ControllerNotFoundError(f"Copilot configuration not found.")
-    log.info(f"Deleted copilot config for user {current_user.username}")
+    log.info("Deleted copilot config for user %s", current_user.username)

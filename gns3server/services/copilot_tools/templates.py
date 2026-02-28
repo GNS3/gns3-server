@@ -117,9 +117,9 @@ class GNS3TemplateTool(GNS3ToolBase):
 
                 result["templates"].append(template_info)
 
-            log.info(f"Retrieved {len(result['templates'])} templates")
+            info("Retrieved %s templates", len(result['templates'])))
             return self._format_success_response(result)
 
         except Exception as e:
-            log.error(f"Error in template tool: {e}")
+            error("Error in template tool: %s", e))
             return self._format_error_response(f"Failed to retrieve templates: {str(e)}")

@@ -125,7 +125,7 @@ class GNS3LinkTool(GNS3ToolBase):
                 return self._format_error_response(f"Node B ({node_b_id}) not found in project")
 
             # Create link
-            log.info(f"Creating link between {node_a.name} and {node_b.name}")
+            info("Creating link between %s and %s", node_a.name, node_b.name))
 
             link_data = {
                 "nodes": [
@@ -151,12 +151,12 @@ class GNS3LinkTool(GNS3ToolBase):
                 "active": link.active,
             }
 
-            log.info(f"Successfully created link between {node_a.name} and {node_b.name}")
+            info("Successfully created link between %s and %s", node_a.name, node_b.name))
             return self._format_success_response(link_info)
 
         except ValueError as e:
-            log.error(f"Error in create link tool: {e}")
+            error("Error in create link tool: %s", e))
             return self._format_error_response(str(e))
         except Exception as e:
-            log.error(f"Unexpected error in create link tool: {e}")
+            error("Unexpected error in create link tool: %s", e))
             return self._format_error_response(f"Failed to create link: {str(e)}")
