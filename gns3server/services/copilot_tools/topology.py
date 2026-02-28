@@ -138,7 +138,7 @@ class GNS3TopologyTool(GNS3ToolBase):
             # Get project (async)
             project = await self.controller.get_loaded_project(project_id)
             if not project:
-                return self._format_error_response(f"Project {project_id} not found")
+                return self._format_error_response("Project %s not found" % project_id)
 
             # Build topology using helper methods
             topology = await self._build_topology(project)
@@ -153,7 +153,7 @@ class GNS3TopologyTool(GNS3ToolBase):
             return self._format_error_response(str(e))
         except Exception as e:
             log.error("Unexpected error in topology tool: %s", e, exc_info=True)
-            return self._format_error_response(f"Failed to read topology: {str(e)}")
+            return self._format_error_response("Failed to read topology: %s" % str(e))
 
     async def _build_topology(self, project) -> dict:
         """
@@ -220,9 +220,9 @@ class GNS3TopologyTool(GNS3ToolBase):
                     port_number = getattr(port, "_port_number", getattr(port, "port_number", 0))
 
                     if not port_name:
-                        port_name = f"port{port_number}"
+                        port_name = "port%s" % port_number
                     if not port_short_name:
-                        port_short_name = f"p{port_number}"
+                        port_short_name = "p%s" % port_number
 
                     # Convert to string
                     port_name = str(port_name)
@@ -236,8 +236,8 @@ class GNS3TopologyTool(GNS3ToolBase):
                 log.warning("Error accessing port attributes: %s", e)
                 port_number = getattr(port, "_port_number", getattr(port, "port_number", 0))
                 ports_data.append({
-                    "name": f"port{port_number}",
-                    "short_name": f"p{port_number}"
+                    "name": "port%s" % port_number,
+                    "short_name": "p%s" % port_number
                 })
 
         return ports_data
@@ -305,7 +305,7 @@ class GNS3TopologyTool(GNS3ToolBase):
         :return: Port name or placeholder
         """
         if not hasattr(node, "ports") or not node.ports:
-            return f"adp{adapter_number}/prt{port_number}"
+            return "adp%s/prt%s" % (adapter_number, port_number)
 
         for port in node.ports:
             # Access port object attributes directly
@@ -313,7 +313,7 @@ class GNS3TopologyTool(GNS3ToolBase):
             port_port_num = getattr(port, "port_number", None)
 
             if port_adapter_num == adapter_number and port_port_num == port_number:
-                return getattr(port, "short_name", f"adp{adapter_number}/prt{port_number}")
+                return getattr(port, "short_name", "adp%s/prt%s" % (adapter_number, port_number))
 
-        return f"adp{adapter_number}/prt{port_number}"
+        return "adp%s/prt%s" % (adapter_number, port_number)
 
