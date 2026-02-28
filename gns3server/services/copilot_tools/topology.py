@@ -115,7 +115,7 @@ class GNS3TopologyTool(GNS3ToolBase):
         """
         import asyncio
 
-        log.info("get_gns3_topology called (sync) with input: %s...", tool_input[:100])
+        log.info("get_gns3_topology called (sync) with input: %s...", str(tool_input)[:100])
         try:
             # Parse input - handle both string and dict
             if isinstance(tool_input, dict):

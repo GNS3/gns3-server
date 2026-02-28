@@ -254,7 +254,7 @@ class CopilotService:
                     from gns3server.services.copilot_tools.topology import GNS3TopologyTool
 
                     topology_tool = GNS3TopologyTool(controller=self.controller)
-                    topology = topology_tool._run(project_id)
+                    topology = topology_tool._run({"project_id": project_id})
 
                     if topology and "error" not in topology:
                         topology_info = topology
