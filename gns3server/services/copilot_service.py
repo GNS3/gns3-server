@@ -24,9 +24,10 @@ for GNS3 network automation tasks.
 
 import json
 import logging
+import operator
 import os
 import aiosqlite
-from typing import AsyncGenerator, Literal
+from typing import Annotated, AsyncGenerator, Literal
 
 from langchain.chat_models import init_chat_model
 from langchain.messages import (
@@ -52,7 +53,7 @@ class MessagesState(TypedDict):
     GNS3 Copilot conversation state management class.
     """
 
-    messages: list[AnyMessage]
+    messages: Annotated[list[AnyMessage], operator.add]
     llm_calls: int
     remaining_steps: RemainingSteps
     # Store project_id for multi-turn conversations
