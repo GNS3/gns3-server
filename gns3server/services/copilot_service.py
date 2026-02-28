@@ -25,6 +25,7 @@ for GNS3 network automation tasks.
 import json
 import logging
 import os
+import aiosqlite
 from typing import AsyncGenerator, Literal
 
 from langchain.chat_models import init_chat_model
@@ -195,7 +196,7 @@ class CopilotService:
 
         # Create new checkpointer using AsyncSqliteSaver
         log.debug("Creating new async checkpointer at %s", checkpointer_path)
-        import aiosqlite
+
 
         # Close existing connection if switching projects
         if self._checkpointer_conn:
