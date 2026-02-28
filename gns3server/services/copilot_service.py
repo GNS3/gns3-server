@@ -455,7 +455,12 @@ Current project topology:
         conversation_id: str,
     ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
         """
-        Stream a chat response from the copilot agent.
+        Stream a chat response from the copilot agent with token-level granularity.
+
+        Uses LangGraph's astream_events() API to get fine-grained events including:
+        - Token-level content streaming
+        - Tool call start/end events
+        - Progressive tool call arguments
 
         :param message: User message
         :param project_id: GNS3 project ID
@@ -472,13 +477,74 @@ Current project topology:
             # Prepare messages with topology context
             messages = await self._prepare_stream_messages(project_id, message)
 
-            # Stream the agent response
-            log.debug("Starting agent stream with thread_id: %s", conversation_id)
+            # Prepare input for the agent
+            inputs = {
+                "messages": messages,
+                "llm_calls": 0,
+                "remaining_steps": 20,
+            }
             config = {"configurable": {"thread_id": conversation_id}}
 
-            async for chunk in agent.astream({"messages": messages}, config=config):
-                async for event in self._process_stream_chunk(chunk, conversation_id):
-                    yield event
+            # Import stream utilities
+            from gns3server.services.copilot_utils import ToolCallStreamAccumulator, convert_stream_event_to_sse
+
+            # Initialize tool call accumulator for stateful tool call handling
+            tool_call_accumulator = ToolCallStreamAccumulator()
+
+            log.debug("Starting agent stream_events with thread_id: %s", conversation_id)
+
+            # Use astream_events for token-level streaming
+            event_stream = agent.astream_events(
+                inputs,
+                config=config,
+                version="v2",  # Use v2 for more detailed events
+            )
+
+            async for event in event_stream:
+                event_type = event.get("event", "")
+
+                # Use accumulator for tool_call events (stateful)
+                if event_type == "on_chat_model_stream":
+                    chunks = tool_call_accumulator.process_event(event)
+                    for chunk in chunks:
+                        if chunk.get("type") == "content":
+                            yield schemas.ChatStreamEvent(
+                                event="token",
+                                data=chunk.get("content", ""),
+                                conversation_id=conversation_id
+                            )
+                        elif chunk.get("type") == "tool_call":
+                            tool_call = chunk.get("tool_call", {})
+                            function = tool_call.get("function", {})
+                            yield schemas.ChatStreamEvent(
+                                event="tool_call",
+                                data=json.dumps({
+                                    "id": tool_call.get("id", ""),
+                                    "name": function.get("name", ""),
+                                    "arguments": function.get("arguments", ""),
+                                    "complete": function.get("complete", False)
+                                }),
+                                conversation_id=conversation_id
+                            )
+
+                # Use stateless converter for other events
+                elif event_type in ("on_tool_start", "on_tool_end"):
+                    sse_event = convert_stream_event_to_sse(event)
+                    if sse_event.get("type") == "tool_start":
+                        yield schemas.ChatStreamEvent(
+                            event="tool_start",
+                            data=sse_event.get("tool_name", ""),
+                            conversation_id=conversation_id
+                        )
+                    elif sse_event.get("type") == "tool_end":
+                        yield schemas.ChatStreamEvent(
+                            event="tool_end",
+                            data=json.dumps({
+                                "tool_name": sse_event.get("tool_name", ""),
+                                "output": sse_event.get("tool_output", ""),
+                            }),
+                            conversation_id=conversation_id
+                        )
 
             # Send done event
             log.info("Chat stream completed for conversation %s", conversation_id)
@@ -532,65 +598,6 @@ Current project topology:
             SystemMessage(content=system_message),
             HumanMessage(content=message),
         ]
-
-    async def _process_stream_chunk(
-        self,
-        chunk: dict,
-        conversation_id: str
-    ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
-        """
-        Process a streaming chunk and yield events.
-
-        :param chunk: Streaming chunk from agent
-        :param conversation_id: Conversation ID
-        :yields: ChatStreamEvent objects
-        """
-        if "messages" not in chunk:
-            return
-
-        for msg in chunk["messages"]:
-            if isinstance(msg, AIMessage):
-                async for event in self._process_ai_message(msg, conversation_id):
-                    yield event
-            elif isinstance(msg, ToolMessage):
-                log.debug("Streaming tool result: %s", msg.name)
-                yield schemas.ChatStreamEvent(
-                    event="tool_result",
-                    data="%s: %s..." % (msg.name, msg.content[:100]),
-                    conversation_id=conversation_id
-                )
-
-    async def _process_ai_message(
-        self,
-        msg: AIMessage,
-        conversation_id: str
-    ) -> AsyncGenerator[schemas.ChatStreamEvent, None]:
-        """
-        Process an AI message and yield events.
-
-        :param msg: AI message
-        :param conversation_id: Conversation ID
-        :yields: ChatStreamEvent objects
-        """
-        # Stream text content
-        if hasattr(msg, "content") and isinstance(msg.content, str) and msg.content:
-            log.debug("Streaming token: %s...", msg.content[:50])
-            yield schemas.ChatStreamEvent(
-                event="token",
-                data=msg.content,
-                conversation_id=conversation_id
-            )
-
-        # Stream tool calls
-        if hasattr(msg, "tool_calls") and msg.tool_calls:
-            for tool_call in msg.tool_calls:
-                tool_name = tool_call.get("name", "unknown")
-                log.info("Streaming tool call: %s", tool_name)
-                yield schemas.ChatStreamEvent(
-                    event="tool_call",
-                    data=tool_name,
-                    conversation_id=conversation_id
-                )
 
     async def close(self):
         """
