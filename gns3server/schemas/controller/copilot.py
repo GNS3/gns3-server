@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, SecretStr, ConfigDict
 from uuid import UUID
 
@@ -96,11 +96,32 @@ class ChatResponse(BaseModel):
     tools_used: list[str] = Field(default_factory=list, description="List of tools used by the agent")
 
 
+class OpenAIToolCall(BaseModel):
+    """OpenAI-compatible tool call information"""
+    id: str
+    type: str = "function"
+    function: Dict[str, Any] = Field(
+        default_factory=lambda: {"name": "", "arguments": ""},
+        description="Function call details with name and arguments"
+    )
+
+
 class ChatStreamEvent(BaseModel):
     """
     Server-Sent Event for streaming chat responses.
-    """
 
-    event: str = Field(..., description="Event type: 'token', 'tool_call', 'done', 'error'")
-    data: str = Field(..., description="Event data")
-    conversation_id: str = Field(..., description="Conversation/thread ID")
+    Uses flat structure compatible with OpenAI format for better frontend integration.
+    All event data is in flat fields, not nested JSON strings.
+    """
+    type: str = Field(
+        ...,
+        description="Event type: 'content', 'tool_call', 'tool_start', 'tool_end', 'done', 'error', 'heartbeat'"
+    )
+    content: Optional[str] = Field(None, description="Text content for 'content' events")
+    message_id: Optional[str] = Field(None, description="Message ID")
+    tool_call: Optional[OpenAIToolCall] = Field(None, description="Tool call info for 'tool_call' events")
+    tool_name: Optional[str] = Field(None, description="Tool name for 'tool_start' events")
+    tool_output: Optional[str] = Field(None, description="Tool output for 'tool_end' events")
+    error: Optional[str] = Field(None, description="Error message for 'error' events")
+    conversation_id: Optional[str] = Field(None, description="Conversation/thread ID")
+    timestamp: Optional[int] = Field(None, description="Timestamp for 'heartbeat' events")

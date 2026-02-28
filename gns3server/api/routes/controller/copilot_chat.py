@@ -73,6 +73,12 @@ async def _stream_chat_response(
     avoiding the overhead of queues and background tasks. This is optimized for
     multi-user concurrent scenarios.
 
+    SSE Format:
+        Uses flat JSON structure (no event: or id: lines):
+        data: {"type":"content","content":"Hello","conversation_id":"abc"}
+
+        This is compatible with FlowNet-Lab and OpenAI format.
+
     Args:
         message: User message
         project_id: GNS3 project ID
@@ -98,7 +104,7 @@ async def _stream_chat_response(
         )
         stream_aiter = aiter(event_stream)
 
-        # Track event count for SSE IDs
+        # Track event count for heartbeat
         event_count = 0
         # Single task that we keep waiting on (no cancellation)
         next_event_task = None
@@ -123,33 +129,26 @@ async def _stream_chat_response(
 
                         # Stream the event
                         event_count += 1
-                        log.debug("Streaming event #%s: %s", event_count, event.event)
+                        log.debug("Streaming event #%s: type=%s", event_count, event.type)
 
-                        # Format SSE event
-                        event_data = {
-                            "conversation_id": event.conversation_id,
-                            "data": event.data,
-                        }
-                        json_str = json.dumps(event_data, ensure_ascii=False)
-                        json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
-
-                        yield "event: %s\n" % event.event
-                        yield "id: %s\n" % event_count
+                        # Convert to dict and output as SSE (flat format, no event:/id: lines)
+                        event_dict = event.dict(exclude_none=True)
+                        json_str = json.dumps(event_dict, ensure_ascii=False)
                         yield "data: %s\n\n" % json_str
 
                         # Check if stream is done
-                        if event.event == "done":
+                        if event.type == "done":
                             log.info("Stream completed naturally, sent %s events", event_count)
                             break
                     else:
                         # Timeout - send heartbeat, keep task running
                         log.debug("Sending heartbeat after %ss idle", heartbeat_interval)
-                        heartbeat_data = {
+                        heartbeat_event = {
+                            "type": "heartbeat",
                             "conversation_id": conversation_id,
                             "timestamp": event_count,
                         }
-                        json_str = json.dumps(heartbeat_data, ensure_ascii=False)
-                        yield "event: heartbeat\n"
+                        json_str = json.dumps(heartbeat_event, ensure_ascii=False)
                         yield "data: %s\n\n" % json_str
                         # Don't reset next_event_task - continue waiting on same task
 
@@ -160,48 +159,33 @@ async def _stream_chat_response(
 
                     # Stream the event
                     event_count += 1
-                    log.debug("Streaming event #%s: %s", event_count, event.event)
+                    log.debug("Streaming event #%s: type=%s", event_count, event.type)
 
-                    # Format SSE event
-                    event_data = {
-                        "conversation_id": event.conversation_id,
-                        "data": event.data,
-                    }
-                    json_str = json.dumps(event_data, ensure_ascii=False)
-                    json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
-
-                    yield "event: %s\n" % event.event
-                    yield "id: %s\n" % event_count
+                    # Convert to dict and output as SSE
+                    event_dict = event.dict(exclude_none=True)
+                    json_str = json.dumps(event_dict, ensure_ascii=False)
                     yield "data: %s\n\n" % json_str
 
                     # Check if stream is done
-                    if event.event == "done":
+                    if event.type == "done":
                         log.info("Stream completed naturally, sent %s events", event_count)
                         break
 
             except StopAsyncIteration:
                 # Stream ended normally
                 log.info("Stream ended by StopAsyncIteration, sent %s events", event_count)
-                # Send final done event if not already sent
-                if event_count > 0:
-                    done_data = {
-                        "conversation_id": conversation_id,
-                        "status": "completed",
-                    }
-                    yield "event: done\n"
-                    yield "data: %s\n\n" % json.dumps(done_data)
                 break
 
     except asyncio.CancelledError:
         log.info("Stream cancelled by client")
         # Send error event for cancellation
         try:
-            error_data = {
-                "conversation_id": conversation_id,
+            error_event = {
+                "type": "error",
                 "error": "Stream cancelled by client",
+                "conversation_id": conversation_id,
             }
-            json_str = json.dumps(error_data, ensure_ascii=False)
-            yield "event: error\n"
+            json_str = json.dumps(error_event, ensure_ascii=False)
             yield "data: %s\n\n" % json_str
         except Exception:
             pass
@@ -210,12 +194,12 @@ async def _stream_chat_response(
         log.error("Error in stream: %s", str(e), exc_info=True)
         # Send error event
         try:
-            error_data = {
-                "conversation_id": conversation_id,
+            error_event = {
+                "type": "error",
                 "error": str(e),
+                "conversation_id": conversation_id,
             }
-            json_str = json.dumps(error_data, ensure_ascii=False)
-            yield "event: error\n"
+            json_str = json.dumps(error_event, ensure_ascii=False)
             yield "data: %s\n\n" % json_str
         except Exception:
             pass

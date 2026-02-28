@@ -509,21 +509,25 @@ Current project topology:
                     for chunk in chunks:
                         if chunk.get("type") == "content":
                             yield schemas.ChatStreamEvent(
-                                event="token",
-                                data=chunk.get("content", ""),
+                                type="content",
+                                content=chunk.get("content", ""),
+                                message_id=chunk.get("message_id"),
                                 conversation_id=conversation_id
                             )
                         elif chunk.get("type") == "tool_call":
-                            tool_call = chunk.get("tool_call", {})
-                            function = tool_call.get("function", {})
+                            tool_call_data = chunk.get("tool_call", {})
+                            function_data = tool_call_data.get("function", {})
                             yield schemas.ChatStreamEvent(
-                                event="tool_call",
-                                data=json.dumps({
-                                    "id": tool_call.get("id", ""),
-                                    "name": function.get("name", ""),
-                                    "arguments": function.get("arguments", ""),
-                                    "complete": function.get("complete", False)
-                                }),
+                                type="tool_call",
+                                tool_call=schemas.OpenAIToolCall(
+                                    id=tool_call_data.get("id", ""),
+                                    type=tool_call_data.get("type", "function"),
+                                    function={
+                                        "name": function_data.get("name", ""),
+                                        "arguments": function_data.get("arguments", ""),
+                                        "complete": function_data.get("complete", False)
+                                    }
+                                ),
                                 conversation_id=conversation_id
                             )
 
@@ -532,33 +536,30 @@ Current project topology:
                     sse_event = convert_stream_event_to_sse(event)
                     if sse_event.get("type") == "tool_start":
                         yield schemas.ChatStreamEvent(
-                            event="tool_start",
-                            data=sse_event.get("tool_name", ""),
+                            type="tool_start",
+                            tool_name=sse_event.get("tool_name", ""),
                             conversation_id=conversation_id
                         )
                     elif sse_event.get("type") == "tool_end":
                         yield schemas.ChatStreamEvent(
-                            event="tool_end",
-                            data=json.dumps({
-                                "tool_name": sse_event.get("tool_name", ""),
-                                "output": sse_event.get("tool_output", ""),
-                            }),
+                            type="tool_end",
+                            tool_name=sse_event.get("tool_name", ""),
+                            tool_output=sse_event.get("tool_output", ""),
                             conversation_id=conversation_id
                         )
 
             # Send done event
             log.info("Chat stream completed for conversation %s", conversation_id)
             yield schemas.ChatStreamEvent(
-                event="done",
-                data="",
+                type="done",
                 conversation_id=conversation_id
             )
 
         except Exception as e:
             log.error("Error in copilot chat stream: %s", str(e), exc_info=True)
             yield schemas.ChatStreamEvent(
-                event="error",
-                data=str(e),
+                type="error",
+                error=str(e),
                 conversation_id=conversation_id
             )
 
