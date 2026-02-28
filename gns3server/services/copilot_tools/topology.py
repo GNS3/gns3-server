@@ -103,15 +103,51 @@ class GNS3TopologyTool(GNS3ToolBase):
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> dict:
         """
-        Read GNS3 project topology (sync wrapper - must use async version).
+        Read GNS3 project topology (sync wrapper).
 
-        :param tool_input: JSON string with project_id
+        Following FlowNet-Lab's approach: returns dict directly.
+
+        :param tool_input: JSON string with project_id (or dict with project_id)
         :param run_manager: Callback manager
-        :return: JSON string with topology information
+        :return: Dict with topology information (or dict with error key)
         """
-        return self._format_error_response("This tool requires async execution. Use _arun instead.")
+        import asyncio
+
+        log.info("get_gns3_topology called (sync) with input: %s...", tool_input[:100])
+        try:
+            # Parse input - handle both string and dict
+            if isinstance(tool_input, dict):
+                input_data = tool_input
+            else:
+                input_data = self._parse_json_input(tool_input)
+
+            project_id = input_data.get("project_id")
+
+            if not project_id:
+                return {"error": "Missing project_id"}
+
+            # Get project (sync - this may block)
+            try:
+                project = self.controller.get_project(project_id)
+            except Exception as e:
+                return {"error": f"Project {project_id} not found: {e}"}
+
+            # Build topology using sync helper
+            topology = asyncio.run(self._build_topology(project))
+
+            log.info("Retrieved topology for project %s: %d nodes, %d links",
+                     project_id, topology['nodes_count'], topology['links_count'])
+
+            return topology
+
+        except ValueError as e:
+            log.error("Error in topology tool: %s", e, exc_info=True)
+            return {"error": str(e)}
+        except Exception as e:
+            log.error("Unexpected error in topology tool: %s", e, exc_info=True)
+            return {"error": "Failed to read topology: %s" % str(e)}
 
     async def _arun(
         self,

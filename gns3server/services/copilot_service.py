@@ -238,159 +238,107 @@ class CopilotService:
         # Define LLM call node
         def llm_call(state: dict):
             """LLM decides whether to call a tool or not"""
-            log.debug("Executing LLM call node")
-
             # Get system prompt
             system_prompt = self._get_system_prompt()
 
             # Get project_id from state (persisted across turns)
             project_id = state.get("project_id")
 
-            # Build context messages
-            # Following FlowNet-Lab's approach: fetch topology on EVERY llm_call
-            # This ensures AI always sees the latest topology (user may have added/removed nodes)
+            # Build context messages - fetch topology on EVERY llm_call
+            # This ensures AI always sees the latest topology
             context_messages = []
             topology_info = None
 
             if project_id:
                 try:
-                    # Always fetch fresh topology for each LLM call
-                    # This ensures AI has the most up-to-date topology information
                     from gns3server.services.copilot_tools.topology import GNS3TopologyTool
 
                     topology_tool = GNS3TopologyTool(controller=self.controller)
-                    topology_input = json.dumps({"project_id": project_id})
-                    topology_result = topology_tool._run(topology_input)
+                    topology = topology_tool._run(project_id)
 
-                    # Parse result
-                    topology_data = json.loads(topology_result)
-                    if isinstance(topology_data, dict) and "error" not in topology_data:
-                        topology_info = topology_data
-                        log.info("Successfully fetched topology for project %s: %d nodes, %d links",
-                                 project_id, topology_data.get("nodes_count", 0), topology_data.get("links_count", 0))
+                    if topology and "error" not in topology:
+                        topology_info = topology
+                        log.info("Retrieved topology for project %s: %d nodes, %d links",
+                                 project_id, topology.get("nodes_count", 0), topology.get("links_count", 0))
 
-                        # Build context with topology details
-                        topology_context = json.dumps(topology_info, indent=2, ensure_ascii=False)
-                        context_message = """### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: %s
-
-Current project topology:
-%s
-
-**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
-""" % (project_id, topology_context, project_id)
-                        context_messages.append(SystemMessage(content=context_message))
-                        log.debug("Added topology context (%d nodes, %d links)",
-                                  topology_info.get("nodes_count", 0), topology_info.get("links_count", 0))
+                        context_messages.append(
+                            SystemMessage(
+                                content=f"Current Context: Project_ID={project_id}\n\nTopology:\n{topology}"
+                            )
+                        )
                     else:
-                        # Topology fetch failed - use generic context
-                        log.warning("Failed to fetch topology for project %s: %s",
-                                    project_id, topology_data.get("error", "Unknown error"))
-                        context_message = """### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: %s
-
-**Note:** Unable to retrieve topology details at this time.
-
-**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
-""" % (project_id, project_id)
-                        context_messages.append(SystemMessage(content=context_message))
-                        log.debug("Added generic project context (topology unavailable)")
-
+                        log.warning("Failed to retrieve topology: %s", topology.get("error", "Unknown"))
+                        context_messages.append(
+                            SystemMessage(content=f"Current Context: Project_ID={project_id}")
+                        )
                 except Exception as e:
-                    log.warning("Error fetching topology for project %s: %s", project_id, e)
-                    # Fallback to generic context
-                    context_message = """### CURRENT PROJECT CONTEXT ###
-You are working on GNS3 project: %s
+                    log.warning("Error retrieving topology: %s", e)
+                    context_messages.append(
+                        SystemMessage(content=f"Current Context: Project_ID={project_id}")
+                    )
 
-**Note:** Unable to retrieve topology details at this time.
-
-**CRITICAL:** When calling tools, ALWAYS use the exact project_id: "%s"
-""" % (project_id, project_id)
-                    context_messages.append(SystemMessage(content=context_message))
-
-            # Combine: system prompt + context + conversation history
+            # Merge message lists
             full_messages = [SystemMessage(content=system_prompt)] + context_messages + state["messages"]
 
-            # Log message structure for debugging
-            log.debug("LLM call message structure:")
-            log.debug("  System prompt length: %d chars", len(system_prompt))
-            log.debug("  Context messages: %d", len(context_messages))
-            log.debug("  Conversation history: %d messages", len(state["messages"]))
-            log.debug("  Total messages: %d", len(full_messages))
-            if project_id:
-                log.debug("  Project ID: %s", project_id)
-
-            # Get model with tools
+            # Create fresh model with tools
             model_with_tools = self._get_model_with_tools()
-
             response = model_with_tools.invoke(full_messages)
-            tool_calls_count = len(response.tool_calls) if hasattr(response, 'tool_calls') else 0
-            log.debug("LLM response received, tool_calls: %d", tool_calls_count)
 
-            # Return updated state with latest topology_info
-            # Always return topology_info (even if None) to update state
-            # Following FlowNet-Lab's approach
             return {
                 "messages": [response],
                 "llm_calls": state.get("llm_calls", 0) + 1,
                 "topology_info": topology_info,
             }
 
-        # Define tool execution node (async)
-        async def tool_node(state: dict):
+        # Define tool execution node
+        def tool_node(state: dict):
             """
-            Execute tool calls in parallel using ainvoke.
+            Execute tool calls.
 
-            Using tool.ainvoke() automatically selects the best execution path:
-            - If tool has _arun, it will use async execution
-            - If tool only has _run, it will run in executor thread
+            Simple implementation using tool.invoke() - LangChain handles
+            the internal logic of calling _run or _arun automatically.
             """
-            import asyncio
-
             last_message = state["messages"][-1]
             tool_calls = last_message.tool_calls
 
-            log.debug("Executing %d tool calls in parallel", len(tool_calls))
+            log.debug("Executing %d tool calls", len(tool_calls))
 
-            async def execute_single_tool(tool_call: dict) -> ToolMessage:
-                """Execute a single tool call"""
-                tool_name = tool_call.get("name", "")
-                tool_call_id = tool_call.get("id", "")
+            results = []
+            for tool_call in tool_calls:
+                tool_name = tool_call["name"]
+                tool_call_id = tool_call["id"]
 
                 log.info("Executing tool: %s", tool_name)
 
                 tool = self._tools_by_name[tool_name]
                 try:
-                    # Use tool.ainvoke() - it automatically chooses the best execution path
-                    # If tool has _arun, it uses async
-                    # If tool only has _run, it runs in executor thread
-                    observation = await tool.ainvoke(tool_call)
+                    # Use tool.invoke() - LangChain handles the rest
+                    # Pass tool_call["args"] directly (can be dict or JSON string)
+                    observation = tool.invoke(tool_call["args"])
 
-                    # Ensure result is string (ToolMessage content must be string)
+                    # Ensure result is string
                     if not isinstance(observation, str):
                         observation = json.dumps(observation, ensure_ascii=False)
 
                     log.debug("Tool %s result: %s...", tool_name, observation[:200] if observation else "empty")
-                    return ToolMessage(
-                        content=observation,
-                        tool_call_id=tool_call_id,
-                        name=tool_name
+                    results.append(
+                        ToolMessage(
+                            content=observation,
+                            tool_call_id=tool_call_id,
+                            name=tool_name
+                        )
                     )
                 except Exception as e:
                     log.error("Tool %s failed: %s", tool_name, e, exc_info=True)
-                    return ToolMessage(
-                        content=f"Error: {str(e)}",
-                        tool_call_id=tool_call_id,
-                        name=tool_name
+                    results.append(
+                        ToolMessage(
+                            content=f"Error: {str(e)}",
+                            tool_call_id=tool_call_id,
+                            name=tool_name
+                        )
                     )
 
-            # Execute all tool calls in parallel using asyncio.gather
-            results = await asyncio.gather(
-                *[execute_single_tool(tc) for tc in tool_calls]
-            )
-
-            # Return results (they will be added to messages state)
-            return {"messages": list(results)}
+            return {"messages": results}
 
         # Define routing logic
         def should_continue(state: MessagesState) -> Literal["tool_node", END]:
