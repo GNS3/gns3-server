@@ -22,13 +22,14 @@ Provides a common interface for tools that need to interact with GNS3 controller
 """
 
 import json
+import logging
 from typing import Any, Optional
+
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 
 from gns3server.controller import Controller
-import logging
 
 log = logging.getLogger(__name__)
 

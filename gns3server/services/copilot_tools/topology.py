@@ -22,13 +22,13 @@ Reads and analyzes GNS3 project topology information.
 Reference implementation from gns3-copilot's links_summary method.
 """
 
+import logging
 from typing import Any, Optional
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 
 from .base import GNS3ToolBase
-
-import logging
 
 log = logging.getLogger(__name__)
 

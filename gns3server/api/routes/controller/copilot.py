@@ -19,9 +19,11 @@
 API routes for copilot configuration.
 """
 
+import logging
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
@@ -29,13 +31,10 @@ from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
 )
-
 from gns3server.db.repositories.copilot import CopilotRepository
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
-
-import logging
 
 log = logging.getLogger(__name__)
 

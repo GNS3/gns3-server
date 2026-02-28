@@ -19,20 +19,21 @@
 API routes for project chat with copilot.
 """
 
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import StreamingResponse
-from uuid import UUID
-from typing import AsyncGenerator
 import json
 import logging
+from typing import AsyncGenerator
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
+from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
 )
-from gns3server.controller import Controller
 from gns3server.controller.project import Project
 from gns3server.db.repositories.copilot import CopilotRepository
 

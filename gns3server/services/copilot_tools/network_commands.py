@@ -23,17 +23,17 @@ using Nornir and Netmiko.
 """
 
 import json
+import logging
 import re
-from typing import Any, Optional, List
+from typing import Any, List, Optional
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
-from nornir.core.task import Task, Result
+from nornir.core.task import Result, Task
 from nornir_netmiko.tasks import netmiko_multiline
 
 from .base import GNS3ToolBase
-
-import logging
 
 log = logging.getLogger(__name__)
 

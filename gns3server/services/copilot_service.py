@@ -23,18 +23,19 @@ for GNS3 network automation tasks.
 """
 
 import json
+import logging
 import os
 import sqlite3
-from typing import Any, AsyncGenerator, Literal, Optional
 from pathlib import Path
+from typing import Any, AsyncGenerator, Literal, Optional
 
 from langchain.chat_models import init_chat_model
 from langchain.messages import (
+    AIMessage,
     AnyMessage,
+    HumanMessage,
     SystemMessage,
     ToolMessage,
-    HumanMessage,
-    AIMessage,
 )
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
@@ -43,8 +44,6 @@ from typing_extensions import TypedDict
 
 from gns3server import schemas
 from gns3server.controller import Controller
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -21,12 +21,12 @@ GNS3 Template Tool
 Provides tool for listing GNS3 node templates.
 """
 
+import logging
 from typing import Any, Optional
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 
 from .base import GNS3ToolBase
-
-import logging
 
 log = logging.getLogger(__name__)
 

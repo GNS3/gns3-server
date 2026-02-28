@@ -23,16 +23,16 @@ using Telnet with threading for concurrent execution.
 """
 
 import json
+import logging
 import re
 import threading
 from time import sleep
-from typing import Any, Optional, List
+from typing import Any, List, Optional
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from telnetlib3 import Telnet
 
 from .base import GNS3ToolBase
-
-import logging
 
 log = logging.getLogger(__name__)
 
