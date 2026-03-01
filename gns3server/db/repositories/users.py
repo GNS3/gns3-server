@@ -293,107 +293,25 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
-    # User settings methods
+    # Model profile methods (stored in user.model_configs as JSON)
 
-    async def get_user_settings(self, user_id: UUID) -> List[models.UserSetting]:
-        """
-        Get all settings for a user.
-        """
-
-        query = select(models.UserSetting).where(models.UserSetting.user_id == user_id)
-        result = await self._db_session.execute(query)
-        return result.scalars().all()
-
-    async def get_user_setting(self, user_id: UUID, key: str) -> Optional[models.UserSetting]:
-        """
-        Get a specific setting for a user.
-        """
-
-        query = select(models.UserSetting).where(
-            models.UserSetting.user_id == user_id,
-            models.UserSetting.key == key
-        )
-        result = await self._db_session.execute(query)
-        return result.scalars().first()
-
-    async def set_user_setting(self, user_id: UUID, key: str, value: str) -> models.UserSetting:
-        """
-        Set a specific setting for a user (create or update).
-        """
-
-        # First, try to get existing setting
-        existing_setting = await self.get_user_setting(user_id, key)
-
-        if existing_setting:
-            # Update existing setting
-            query = update(models.UserSetting).where(
-                models.UserSetting.user_id == user_id,
-                models.UserSetting.key == key
-            ).values(value=value)
-
-            await self._db_session.execute(query)
-            await self._db_session.commit()
-            # Return the updated setting
-            return await self.get_user_setting(user_id, key)
-        else:
-            # Create new setting
-            db_setting = models.UserSetting(user_id=user_id, key=key, value=value)
-            self._db_session.add(db_setting)
-            await self._db_session.commit()
-            await self._db_session.refresh(db_setting)
-            return db_setting
-
-    async def delete_user_setting(self, user_id: UUID, key: str) -> bool:
-        """
-        Delete a specific setting for a user.
-        """
-
-        query = delete(models.UserSetting).where(
-            models.UserSetting.user_id == user_id,
-            models.UserSetting.key == key
-        )
-        result = await self._db_session.execute(query)
-        await self._db_session.commit()
-        return result.rowcount > 0
-
-    async def set_user_settings(self, user_id: UUID, settings: Dict[str, str]) -> List[models.UserSetting]:
-        """
-        Set multiple settings for a user.
-        """
-
-        result_settings = []
-        for key, value in settings.items():
-            setting = await self.set_user_setting(user_id, key, value)
-            result_settings.append(setting)
-        return result_settings
-
-    async def delete_all_user_settings(self, user_id: UUID) -> bool:
-        """
-        Delete all settings for a user.
-        """
-
-        query = delete(models.UserSetting).where(models.UserSetting.user_id == user_id)
-        result = await self._db_session.execute(query)
-        await self._db_session.commit()
-        return result.rowcount > 0
-
-    # Model profile methods
-
-    async def get_model_configs(self, user_id: UUID) -> Optional[Dict[str, Any]]:
+    async def get_model_configs(self, user_id: UUID) -> Dict[str, Any]:
         """
         Get all model configurations for a user.
         Returns a dict with 'profiles' list and 'active' profile name.
         """
 
-        setting = await self.get_user_setting(user_id, "MODEL_CONFIGS")
-        if not setting or not setting.value:
-            # Return default empty config
+        user = await self.get_user(user_id)
+        if not user:
+            return {"profiles": [], "active": "default"}
+
+        if not user.model_configs:
             return {"profiles": [], "active": "default"}
 
         try:
-            return json.loads(setting.value)
+            return json.loads(user.model_configs)
         except (json.JSONDecodeError, ValueError) as e:
-            log.warning(f"Invalid MODEL_CONFIGS JSON for user {user_id}: {e}")
+            log.warning(f"Invalid model_configs JSON for user {user_id}: {e}")
             return {"profiles": [], "active": "default"}
 
     async def set_model_configs(self, user_id: UUID, configs: Dict[str, Any]) -> None:
@@ -401,7 +319,12 @@ class UsersRepository(BaseRepository):
         Set all model configurations for a user.
         """
 
-        await self.set_user_setting(user_id, "MODEL_CONFIGS", json.dumps(configs))
+        query = update(models.User).where(
+            models.User.user_id == user_id
+        ).values(model_configs=json.dumps(configs))
+
+        await self._db_session.execute(query)
+        await self._db_session.commit()
 
     async def add_model_profile(
         self,

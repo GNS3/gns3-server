@@ -179,7 +179,7 @@ class ModelProfile(BaseModel):
     provider: str = Field(default="openai")
     model: str
     api_key: str
-    base_url: str
+    base_url: str = ""  # Optional, uses provider default if empty
     temperature: str = "0.7"
 
     model_config = ConfigDict(extra="allow")  # Allow extra fields
@@ -195,7 +195,7 @@ class ModelProfileCreate(BaseModel):
     provider: str = "openai"
     model: str
     api_key: str
-    base_url: str
+    base_url: str = ""  # Optional, uses provider default if empty
     temperature: str = "0.7"
 
     model_config = ConfigDict(extra="allow")  # Allow extra fields

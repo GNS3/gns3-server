@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event, Text, UniqueConstraint
+from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event, Text
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
@@ -47,6 +47,7 @@ class User(BaseTable):
     last_login = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
+    model_configs = Column(Text, nullable=True)  # JSON string for model profiles
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
     acl_entries = relationship("ACE")
 
@@ -92,21 +93,3 @@ def create_default_user_groups(target, connection, **kw):
     connection.execute(stmt)
     connection.commit()
     log.debug("The default user groups have been created in the database")
-
-
-class UserSetting(BaseTable):
-    """
-    User settings for storing user-specific configuration.
-    """
-
-    __tablename__ = "user_settings"
-
-    setting_id = Column(GUID, primary_key=True, default=generate_uuid)
-    user_id = Column(GUID, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    key = Column(String(255), nullable=False)
-    value = Column(Text, nullable=True)
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "key", name="unique_user_setting"),
-        {"sqlite_autoincrement": True}
-    )
