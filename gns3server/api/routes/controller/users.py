@@ -301,15 +301,9 @@ async def create_model_profile(
     """
 
     try:
-        new_profile = await users_repo.add_model_profile(
-            user_id,
-            profile_data.name,
-            profile_data.provider,
-            profile_data.model,
-            profile_data.api_key,
-            profile_data.base_url,
-            profile_data.temperature
-        )
+        # Convert profile_data to dict to include extra fields
+        profile_dict = profile_data.model_dump()
+        new_profile = await users_repo.add_model_profile(user_id, profile_dict)
         return schemas.ModelProfile(**new_profile)
     except ValueError as e:
         raise HTTPException(
@@ -322,6 +316,60 @@ async def create_model_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create model profile"
         )
+
+
+@router.get(
+    "/{user_id}/profiles/active",
+    response_model=schemas.ModelProfile,
+    dependencies=[Depends(has_privilege("User.Audit"))]
+)
+async def get_active_model_profile(
+        user_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Get the currently active model profile.
+
+    Required privilege: User.Audit
+    """
+
+    profile = await users_repo.get_active_model_profile(user_id)
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No model profiles configured"
+        )
+
+    return schemas.ModelProfile(**profile)
+
+
+@router.put(
+    "/{user_id}/profiles/active",
+    response_model=schemas.ModelConfigsResponse,
+    dependencies=[Depends(has_privilege("User.Modify"))]
+)
+async def set_active_model_profile(
+        user_id: UUID,
+        request: schemas.ActiveProfileRequest,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelConfigsResponse:
+    """
+    Set the active model profile.
+
+    Required privilege: User.Modify
+    """
+
+    success = await users_repo.set_active_model_profile(user_id, request.profile_name)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile '{request.profile_name}' not found"
+        )
+
+    configs = await users_repo.get_model_configs(user_id)
+    profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
+    return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
 
 
 @router.put(
@@ -391,57 +439,3 @@ async def delete_model_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Profile '{profile_name}' not found"
         )
-
-
-@router.get(
-    "/{user_id}/profiles/active",
-    response_model=schemas.ModelProfile,
-    dependencies=[Depends(has_privilege("User.Audit"))]
-)
-async def get_active_model_profile(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> schemas.ModelProfile:
-    """
-    Get the currently active model profile.
-
-    Required privilege: User.Audit
-    """
-
-    profile = await users_repo.get_active_model_profile(user_id)
-
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No model profiles configured"
-        )
-
-    return schemas.ModelProfile(**profile)
-
-
-@router.put(
-    "/{user_id}/profiles/active",
-    response_model=schemas.ModelConfigsResponse,
-    dependencies=[Depends(has_privilege("User.Modify"))]
-)
-async def set_active_model_profile(
-        user_id: UUID,
-        request: schemas.ActiveProfileRequest,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> schemas.ModelConfigsResponse:
-    """
-    Set the active model profile.
-
-    Required privilege: User.Modify
-    """
-
-    success = await users_repo.set_active_model_profile(user_id, request.profile_name)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Profile '{request.profile_name}' not found"
-        )
-
-    configs = await users_repo.get_model_configs(user_id)
-    profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
-    return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))

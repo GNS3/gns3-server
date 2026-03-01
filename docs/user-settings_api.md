@@ -191,6 +191,42 @@ curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
   }'
 ```
 
+### Create a Profile with Extended Fields
+
+The API accepts any additional custom fields. These are saved and returned as-is:
+
+```bash
+curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "deepseek",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "api_key": "sk-xxx",
+    "temperature": "0.0",
+    "base_url": "https://api.deepseek.com/v1",
+    "max_tokens": 4000,
+    "top_p": "0.9",
+    "custom_field": "custom_value"
+  }'
+```
+
+**Response:**
+```json
+{
+  "name": "deepseek",
+  "provider": "deepseek",
+  "model": "deepseek-chat",
+  "api_key": "sk-xxx",
+  "temperature": "0.0",
+  "base_url": "https://api.deepseek.com/v1",
+  "max_tokens": 4000,
+  "top_p": "0.9",
+  "custom_field": "custom_value"
+}
+```
+
 ### Get All Profiles
 
 ```bash
@@ -198,7 +234,7 @@ curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles" \
   -H "Authorization: Bearer <token>"
 ```
 
-**Response:**
+**Response (with profiles):**
 ```json
 {
   "profiles": [
@@ -213,6 +249,14 @@ curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles" \
     }
   ],
   "active": "qwen"
+}
+```
+
+**Response (empty profiles):**
+```json
+{
+  "profiles": [],
+  "active": "default"
 }
 ```
 
@@ -294,28 +338,31 @@ curl -X DELETE "http://localhost:3080/v3/access/users/{user_id}/profiles/qwen" \
 
 ### Multi-Environment Setup
 
+Create multiple profiles for different environments, then switch between them:
+
+1. Create profiles for each environment (work, personal, etc.)
+2. Switch between them using `PUT /profiles/active`
+
+Example:
 ```bash
-# Create work profile
-POST /profiles {"name": "work", "model": "gpt-4", ...}
-
-# Create personal profile
-POST /profiles {"name": "personal", "model": "claude-3", ...}
-
-# Switch to work profile
-PUT /profiles/active {"profile_name": "work"}
+# Create work profile → POST /profiles {"name": "work", ...}
+# Create personal profile → POST /profiles {"name": "personal", ...}
+# Switch to work → PUT /profiles/active {"profile_name": "work"}
 ```
 
 ### Testing Different Parameters
 
+Create test profiles with different configurations, then easily switch:
+
+1. Create a test profile with specific parameters
+2. Switch to test profile
+3. Switch back to production when done
+
+Example:
 ```bash
-# Create test profile
-POST /profiles {"name": "test-high-temp", "model": "gpt-4", "temperature": "0.9"}
-
-# Switch to test
-PUT /profiles/active {"profile_name": "test-high-temp"}
-
-# Switch back to production
-PUT /profiles/active {"profile_name": "production"}
+# Create test profile → POST /profiles {"name": "test-high-temp", "temperature": "0.9", ...}
+# Switch to test → PUT /profiles/active {"profile_name": "test-high-temp"}
+# Switch back → PUT /profiles/active {"profile_name": "production"}
 ```
 
 ---
@@ -447,26 +494,6 @@ To create a valid profile, you only need:
 - `api_key` - API key
 
 All other fields have sensible defaults or are optional.
-
-### Common Provider Defaults
-
-```python
-# Quick reference for common providers
-PROVIDER_DEFAULTS = {
-    "openai": {
-        "base_url": "https://api.openai.com/v1",
-        "models": ["gpt-4", "gpt-3.5-turbo"]
-    },
-    "qwen": {
-        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "models": ["qwen-max", "qwen-plus"]
-    },
-    "anthropic": {
-        "base_url": "https://api.anthropic.com",
-        "models": ["claude-3-opus", "claude-3-sonnet"]
-    }
-}
-```
 
 ---
 

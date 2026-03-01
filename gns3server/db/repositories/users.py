@@ -329,33 +329,26 @@ class UsersRepository(BaseRepository):
     async def add_model_profile(
         self,
         user_id: UUID,
-        name: str,
-        provider: str,
-        model: str,
-        api_key: str,
-        base_url: str,
-        temperature: str
+        profile_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Add a new model profile to the user's configurations.
+        Accepts profile data including any extra fields.
         """
 
         configs = await self.get_model_configs(user_id)
 
         # Check if profile with same name exists
+        name = profile_data.get("name")
+        if not name:
+            raise ValueError("Profile name is required")
+
         for profile in configs["profiles"]:
             if profile["name"] == name:
                 raise ValueError(f"Profile '{name}' already exists")
 
-        # Add new profile
-        new_profile = {
-            "name": name,
-            "provider": provider,
-            "model": model,
-            "api_key": api_key,
-            "base_url": base_url,
-            "temperature": temperature
-        }
+        # Add new profile with all fields (including extra fields)
+        new_profile = profile_data.copy()
         configs["profiles"].append(new_profile)
 
         # If this is the first profile, set it as active
