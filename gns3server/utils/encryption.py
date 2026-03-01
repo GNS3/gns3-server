@@ -119,14 +119,17 @@ def is_encrypted(value: str) -> bool:
     if not value:
         return False
 
-    # Fernet encrypted data is base64 and has a specific structure
-    # Valid base64 characters and reasonable length
+    # Fernet encrypted data is URL-safe base64 and has a specific structure
+    # Check for Fernet prefix and valid format
     try:
-        # Attempt to decode as base64
+        # Fernet tokens always start with 'gAAAAA' in base64
+        if not value.startswith('gAAAAA'):
+            return False
+        # Attempt to decode as URL-safe base64
         import base64
-        decoded = base64.b64decode(value, validate=True)
-        # Fernet tokens have a specific format
-        return len(decoded) >= 32  # Minimum size for a Fernet token
+        decoded = base64.urlsafe_b64decode(value)
+        # Fernet tokens have a specific format (minimum 32 bytes)
+        return len(decoded) >= 32
     except Exception:
         return False
 
