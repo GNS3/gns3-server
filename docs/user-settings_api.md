@@ -4,6 +4,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.0 | 2026-03-01 | Improve encryption validation, auto-generate keys without config file, enhance database migration |
 | 2.0.0 | 2026-03-01 | Add API key encryption, optimistic locking, data validation |
 | 1.0.0 | 2026-03-01 | Initial release |
 
@@ -39,22 +40,52 @@
 
 ### 2. Encryption
 
-- **Algorithm**: Fernet symmetric encryption (AES-128-CBC)
-- **Key storage**: `{secrets_dir}/gns3_encryption_key`
+- **Algorithm**: Fernet symmetric encryption (AES-128-CBC) with URL-safe base64 encoding
+- **Key storage**: `{secrets_dir}/gns3_encryption_key` (default: `{config_dir}/gns3_encryption_key`)
 - **Key generation**: Auto-generated on first startup, permissions 0600
+- **Key priority**: Key file overrides config file settings
+- **Validation**: Checks for Fernet prefix (`gAAAAA`) before decryption
 - **Behavior**: Auto-encrypt on save, auto-decrypt on retrieve
 
-### 3. Optimistic Locking
+### 3. Configuration & Keys
+
+**Key file priority**: Key files take precedence over config file settings
+- `gns3_jwt_secret_key` - JWT authentication key
+- `gns3_encryption_key` - API key encryption key
+
+**Auto-generation**:
+- Keys are auto-generated on first startup if files don't exist
+- Works even without `gns3_server.conf` configuration file
+- Keys persist across server restarts
+
+**Config file**:
+- Optional - server uses code defaults if not found
+- Default location: `~/.config/GNS3/3.1/gns3_server.conf`
+- Key settings in config are overridden by key files
+
+### 4. Database Migration
+
+**Migration improvements**:
+- Detects database state: new, new with version tracking, or old database
+- Automatically runs migrations for old databases without version tracking
+- Idempotent migration scripts (safe to re-run)
+- Proper transaction handling with explicit commits
+
+**Migration scripts**:
+- `20260301_add_model_configs_version.py` - Add version column (idempotent)
+- `20260301_validate_model_configs.py` - Validate and repair JSON data
+
+### 5. Optimistic Locking
 
 - `model_configs_version` auto-increments on each update
 - Send `expected_version` in write requests for validation
 - Returns HTTP 409 if version mismatch
 
-### 4. New Files
+### 6. New Files
 
 | File | Description |
 |------|-------------|
-| `gns3server/utils/encryption.py` | Encryption utilities |
+| `gns3server/utils/encryption.py` | Fernet encryption utilities |
 | `gns3server/db_migrations/versions/20260301_add_model_configs_version.py` | Add version column |
 | `gns3server/db_migrations/versions/20260301_validate_model_configs.py` | Validate and repair JSON |
 

@@ -321,11 +321,8 @@ class UsersRepository(BaseRepository):
             for profile in configs.get("profiles", []):
                 if "api_key" in profile and profile["api_key"]:
                     try:
-                        encrypted = is_encrypted(profile["api_key"])
-                        log.debug(f"Profile '{profile.get('name')}' api_key is_encrypted: {encrypted}")
-                        if encrypted:
+                        if is_encrypted(profile["api_key"]):
                             profile["api_key"] = decrypt(profile["api_key"])
-                            log.debug(f"Profile '{profile.get('name')}' api_key decrypted successfully")
                     except Exception as e:
                         log.warning(f"Failed to decrypt API key for profile '{profile.get('name')}': {e}")
 
