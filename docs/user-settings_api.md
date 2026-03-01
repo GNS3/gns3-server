@@ -171,6 +171,18 @@ users.model_configs (JSON):
 | base_url | string | No | "" | API endpoint URL (empty = use provider default) |
 | temperature | string | No | "0.7" | Generation temperature |
 
+### Naming Restrictions
+
+**Reserved names:**
+- ⚠️ `"active"` - Reserved for system use (conflicts with `/profiles/active` route)
+
+Attempting to create or rename a profile to `"active"` will result in an error:
+```json
+{
+  "detail": "Profile name 'active' is reserved for system use"
+}
+```
+
 ### Extended Fields (Optional)
 
 Any additional fields are accepted and stored:

@@ -343,6 +343,10 @@ class UsersRepository(BaseRepository):
         if not name:
             raise ValueError("Profile name is required")
 
+        # Reserve "active" as it conflicts with API routes
+        if name == "active":
+            raise ValueError("Profile name 'active' is reserved for system use")
+
         for profile in configs["profiles"]:
             if profile["name"] == name:
                 raise ValueError(f"Profile '{name}' already exists")
@@ -370,12 +374,27 @@ class UsersRepository(BaseRepository):
 
         configs = await self.get_model_configs(user_id)
 
+        # Check if trying to rename to "active"
+        new_name = updates.get("name")
+        if new_name == "active":
+            raise ValueError("Profile name 'active' is reserved for system use")
+
+        # Check if new name conflicts with existing profile
+        if new_name and new_name != profile_name:
+            for profile in configs["profiles"]:
+                if profile["name"] == new_name:
+                    raise ValueError(f"Profile '{new_name}' already exists")
+
         for profile in configs["profiles"]:
             if profile["name"] == profile_name:
                 # Update fields
                 for key, value in updates.items():
                     if value is not None:
                         profile[key] = value
+
+                # Update active profile reference if name changed
+                if new_name and configs.get("active") == profile_name:
+                    configs["active"] = new_name
 
                 await self.set_model_configs(user_id, configs)
                 return profile
