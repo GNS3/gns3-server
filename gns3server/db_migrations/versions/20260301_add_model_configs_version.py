@@ -7,6 +7,7 @@ Create Date: 2026-03-01
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -17,7 +18,18 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column('users', sa.Column('model_configs_version', sa.Integer(), nullable=False, server_default='0'))
+    # Get the current connection
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
+    # Check if column already exists (idempotent for new databases)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+
+    if 'model_configs_version' not in columns:
+        op.add_column('users', sa.Column('model_configs_version', sa.Integer(), nullable=False, server_default='0'))
+    else:
+        # Column exists from Base.metadata.create_all, ensure it has the right defaults
+        pass
 
 
 def downgrade() -> None:

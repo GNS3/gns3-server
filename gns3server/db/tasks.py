@@ -25,6 +25,7 @@ from typing import List
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from alembic import command, config
 from alembic.script import ScriptDirectory
@@ -87,8 +88,36 @@ async def connect_to_db(app: FastAPI) -> None:
             current_rev, head_rev = await conn.run_sync(check_revision, alembic_cfg)
             log.info(f"Current database revision is {current_rev}")
             if current_rev is None:
-                await conn.run_sync(Base.metadata.create_all)
-                await conn.run_sync(run_stamp, alembic_cfg)
+                # No version tracking found. Check if this is a truly new database
+                # or an old database that needs migration.
+                def check_db_state(connection):
+                    # Check if users table exists and has model_configs_version column
+                    inspector = sa.inspect(connection)
+                    if 'users' not in inspector.get_table_names():
+                        return 'new'  # Truly new database
+                    columns = [col['name'] for col in inspector.get_columns('users')]
+                    if 'model_configs_version' in columns:
+                        return 'new_with_version'  # New database created from code
+                    else:
+                        return 'old_needs_migration'  # Old database without version tracking
+
+                db_state = await conn.run_sync(check_db_state)
+
+                if db_state == 'new':
+                    # Truly new database: create all tables and stamp
+                    await conn.run_sync(Base.metadata.create_all)
+                    await conn.run_sync(run_stamp, alembic_cfg)
+                    await conn.commit()
+                elif db_state == 'new_with_version':
+                    # Database already has all columns (including model_configs_version)
+                    # Just stamp the version
+                    await conn.run_sync(run_stamp, alembic_cfg)
+                    await conn.commit()
+                else:
+                    # Old database without version tracking: run migrations
+                    log.info("Old database detected (no version tracking), running migrations...")
+                    await conn.run_sync(run_upgrade, alembic_cfg)
+                    await conn.commit()
             elif current_rev != head_rev:
                 # upgrade the database if needed
                 await conn.run_sync(run_upgrade, alembic_cfg)
