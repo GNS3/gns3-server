@@ -256,17 +256,23 @@ async def get_user_memberships(
 
 # Model profile endpoints (simplified - single API for all user settings)
 
-@router.get("/profiles", response_model=schemas.ModelConfigsResponse)
+@router.get(
+    "/{user_id}/profiles",
+    response_model=schemas.ModelConfigsResponse,
+    dependencies=[Depends(has_privilege("User.Audit"))]
+)
 async def get_model_profiles(
-        current_user: schemas.User = Depends(get_current_active_user),
+        user_id: UUID,
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.ModelConfigsResponse:
     """
     Get all model profiles and the active profile.
+
+    Required privilege: User.Audit
     """
 
     try:
-        configs = await users_repo.get_model_configs(current_user.user_id)
+        configs = await users_repo.get_model_configs(user_id)
         profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
         return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
     except Exception as e:
@@ -277,19 +283,26 @@ async def get_model_profiles(
         )
 
 
-@router.post("/profiles", response_model=schemas.ModelProfile, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}/profiles",
+    response_model=schemas.ModelProfile,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("User.Modify"))]
+)
 async def create_model_profile(
+        user_id: UUID,
         profile_data: schemas.ModelProfileCreate,
-        current_user: schemas.User = Depends(get_current_active_user),
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.ModelProfile:
     """
     Create a new model profile.
+
+    Required privilege: User.Modify
     """
 
     try:
         new_profile = await users_repo.add_model_profile(
-            current_user.user_id,
+            user_id,
             profile_data.name,
             profile_data.provider,
             profile_data.model,
@@ -311,15 +324,21 @@ async def create_model_profile(
         )
 
 
-@router.put("/profiles/{profile_name}", response_model=schemas.ModelProfile)
+@router.put(
+    "/{user_id}/profiles/{profile_name}",
+    response_model=schemas.ModelProfile,
+    dependencies=[Depends(has_privilege("User.Modify"))]
+)
 async def update_model_profile(
+        user_id: UUID,
         profile_name: str,
         profile_update: schemas.ModelProfileUpdate,
-        current_user: schemas.User = Depends(get_current_active_user),
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.ModelProfile:
     """
     Update an existing model profile.
+
+    Required privilege: User.Modify
     """
 
     try:
@@ -327,7 +346,7 @@ async def update_model_profile(
         updates = {k: v for k, v in profile_update.model_dump().items() if v is not None}
 
         updated_profile = await users_repo.update_model_profile(
-            current_user.user_id,
+            user_id,
             profile_name,
             updates
         )
@@ -349,18 +368,24 @@ async def update_model_profile(
         )
 
 
-@router.delete("/profiles/{profile_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}/profiles/{profile_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("User.Modify"))]
+)
 async def delete_model_profile(
+        user_id: UUID,
         profile_name: str,
-        current_user: schemas.User = Depends(get_current_active_user),
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> None:
     """
     Delete a model profile.
     If deleting the active profile, another profile will be set as active.
+
+    Required privilege: User.Modify
     """
 
-    success = await users_repo.delete_model_profile(current_user.user_id, profile_name)
+    success = await users_repo.delete_model_profile(user_id, profile_name)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -368,16 +393,22 @@ async def delete_model_profile(
         )
 
 
-@router.get("/profiles/active", response_model=schemas.ModelProfile)
+@router.get(
+    "/{user_id}/profiles/active",
+    response_model=schemas.ModelProfile,
+    dependencies=[Depends(has_privilege("User.Audit"))]
+)
 async def get_active_model_profile(
-        current_user: schemas.User = Depends(get_current_active_user),
+        user_id: UUID,
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.ModelProfile:
     """
     Get the currently active model profile.
+
+    Required privilege: User.Audit
     """
 
-    profile = await users_repo.get_active_model_profile(current_user.user_id)
+    profile = await users_repo.get_active_model_profile(user_id)
 
     if not profile:
         raise HTTPException(
@@ -388,23 +419,29 @@ async def get_active_model_profile(
     return schemas.ModelProfile(**profile)
 
 
-@router.put("/profiles/active", response_model=schemas.ModelConfigsResponse)
+@router.put(
+    "/{user_id}/profiles/active",
+    response_model=schemas.ModelConfigsResponse,
+    dependencies=[Depends(has_privilege("User.Modify"))]
+)
 async def set_active_model_profile(
+        user_id: UUID,
         request: schemas.ActiveProfileRequest,
-        current_user: schemas.User = Depends(get_current_active_user),
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.ModelConfigsResponse:
     """
     Set the active model profile.
+
+    Required privilege: User.Modify
     """
 
-    success = await users_repo.set_active_model_profile(current_user.user_id, request.profile_name)
+    success = await users_repo.set_active_model_profile(user_id, request.profile_name)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Profile '{request.profile_name}' not found"
         )
 
-    configs = await users_repo.get_model_configs(current_user.user_id)
+    configs = await users_repo.get_model_configs(user_id)
     profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
     return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))

@@ -96,12 +96,12 @@ This design:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/access/users/profiles` | Get all profiles |
-| POST | `/access/users/profiles` | Create a new profile |
-| PUT | `/access/users/profiles/{name}` | Update a profile |
-| DELETE | `/access/users/profiles/{name}` | Delete a profile |
-| GET | `/access/users/profiles/active` | Get the active profile |
-| PUT | `/access/users/profiles/active` | Set the active profile |
+| GET | `/v3/access/users/{user_id}/profiles` | Get all profiles |
+| POST | `/v3/access/users/{user_id}/profiles` | Create a new profile |
+| PUT | `/v3/access/users/{user_id}/profiles/{name}` | Update a profile |
+| DELETE | `/v3/access/users/{user_id}/profiles/{name}` | Delete a profile |
+| GET | `/v3/access/users/{user_id}/profiles/active` | Get the active profile |
+| PUT | `/v3/access/users/{user_id}/profiles/active` | Set the active profile |
 
 ---
 
@@ -161,7 +161,7 @@ When `base_url` is empty or not provided, the client should use provider-specifi
 ### Create a Profile
 
 ```bash
-curl -X POST "http://localhost:3080/v3/access/users/profiles" \
+curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -177,7 +177,7 @@ Note: `base_url` is optional. If not provided, the client will use the provider'
 ### Create a Profile with Custom Base URL
 
 ```bash
-curl -X POST "http://localhost:3080/v3/access/users/profiles" \
+curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -194,7 +194,7 @@ curl -X POST "http://localhost:3080/v3/access/users/profiles" \
 ### Get All Profiles
 
 ```bash
-curl -X GET "http://localhost:3080/v3/access/users/profiles" \
+curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles" \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -219,7 +219,7 @@ curl -X GET "http://localhost:3080/v3/access/users/profiles" \
 ### Set Active Profile
 
 ```bash
-curl -X PUT "http://localhost:3080/v3/access/users/profiles/active" \
+curl -X PUT "http://localhost:3080/v3/access/users/{user_id}/profiles/active" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"profile_name": "qwen"}'
@@ -228,7 +228,7 @@ curl -X PUT "http://localhost:3080/v3/access/users/profiles/active" \
 ### Get Active Profile
 
 ```bash
-curl -X GET "http://localhost:3080/v3/access/users/profiles/active" \
+curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles/active" \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -248,7 +248,7 @@ curl -X GET "http://localhost:3080/v3/access/users/profiles/active" \
 ### Update a Profile
 
 ```bash
-curl -X PUT "http://localhost:3080/v3/access/users/profiles/qwen" \
+curl -X PUT "http://localhost:3080/v3/access/users/{user_id}/profiles/qwen" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -260,7 +260,7 @@ curl -X PUT "http://localhost:3080/v3/access/users/profiles/qwen" \
 ### Delete a Profile
 
 ```bash
-curl -X DELETE "http://localhost:3080/v3/access/users/profiles/qwen" \
+curl -X DELETE "http://localhost:3080/v3/access/users/{user_id}/profiles/qwen" \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -431,12 +431,12 @@ This design prioritizes simplicity without sacrificing functionality.
 ### Quick Reference Card
 
 ```
-POST   /profiles              Create profile
-GET    /profiles              List all profiles
-GET    /profiles/active       Get active profile
-PUT    /profiles/active       Switch active profile
-PUT    /profiles/{name}       Update profile
-DELETE /profiles/{name}       Delete profile
+POST   /v3/access/users/{user_id}/profiles              Create profile
+GET    /v3/access/users/{user_id}/profiles              List all profiles
+GET    /v3/access/users/{user_id}/profiles/active       Get active profile
+PUT    /v3/access/users/{user_id}/profiles/active       Switch active profile
+PUT    /v3/access/users/{user_id}/profiles/{name}       Update profile
+DELETE /v3/access/users/{user_id}/profiles/{name}       Delete profile
 ```
 
 ### Minimum Required Fields
