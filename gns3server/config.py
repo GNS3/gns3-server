@@ -261,6 +261,7 @@ class Config:
         if not parsed_files:
             log.warning("No configuration file could be found or read")
             self._settings = ServerConfig()
+            self._load_secret_files()
             return
 
         for file in parsed_files:
