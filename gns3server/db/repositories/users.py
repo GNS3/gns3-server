@@ -16,10 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Any
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+import json
+import logging
+
+log = logging.getLogger(__name__)
 
 from .base import BaseRepository
 
@@ -371,3 +376,149 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
+
+    # Model profile methods
+
+    async def get_model_configs(self, user_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Get all model configurations for a user.
+        Returns a dict with 'profiles' list and 'active' profile name.
+        """
+
+        setting = await self.get_user_setting(user_id, "MODEL_CONFIGS")
+        if not setting or not setting.value:
+            # Return default empty config
+            return {"profiles": [], "active": "default"}
+
+        try:
+            return json.loads(setting.value)
+        except (json.JSONDecodeError, ValueError) as e:
+            log.warning(f"Invalid MODEL_CONFIGS JSON for user {user_id}: {e}")
+            return {"profiles": [], "active": "default"}
+
+    async def set_model_configs(self, user_id: UUID, configs: Dict[str, Any]) -> None:
+        """
+        Set all model configurations for a user.
+        """
+
+        await self.set_user_setting(user_id, "MODEL_CONFIGS", json.dumps(configs))
+
+    async def add_model_profile(
+        self,
+        user_id: UUID,
+        name: str,
+        provider: str,
+        model: str,
+        api_key: str,
+        base_url: str,
+        temperature: str
+    ) -> Dict[str, Any]:
+        """
+        Add a new model profile to the user's configurations.
+        """
+
+        configs = await self.get_model_configs(user_id)
+
+        # Check if profile with same name exists
+        for profile in configs["profiles"]:
+            if profile["name"] == name:
+                raise ValueError(f"Profile '{name}' already exists")
+
+        # Add new profile
+        new_profile = {
+            "name": name,
+            "provider": provider,
+            "model": model,
+            "api_key": api_key,
+            "base_url": base_url,
+            "temperature": temperature
+        }
+        configs["profiles"].append(new_profile)
+
+        # If this is the first profile, set it as active
+        if len(configs["profiles"]) == 1:
+            configs["active"] = name
+
+        await self.set_model_configs(user_id, configs)
+        return new_profile
+
+    async def update_model_profile(
+        self,
+        user_id: UUID,
+        profile_name: str,
+        updates: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update an existing model profile.
+        """
+
+        configs = await self.get_model_configs(user_id)
+
+        for profile in configs["profiles"]:
+            if profile["name"] == profile_name:
+                # Update fields
+                for key, value in updates.items():
+                    if value is not None:
+                        profile[key] = value
+
+                await self.set_model_configs(user_id, configs)
+                return profile
+
+        return None
+
+    async def delete_model_profile(self, user_id: UUID, profile_name: str) -> bool:
+        """
+        Delete a model profile.
+        If deleting the active profile, switches to another profile.
+        """
+
+        configs = await self.get_model_configs(user_id)
+
+        # Find and remove the profile
+        for i, profile in enumerate(configs["profiles"]):
+            if profile["name"] == profile_name:
+                configs["profiles"].pop(i)
+
+                # If we deleted the active profile, switch to another
+                if configs["active"] == profile_name:
+                    if configs["profiles"]:
+                        configs["active"] = configs["profiles"][0]["name"]
+                    else:
+                        configs["active"] = "default"
+
+                await self.set_model_configs(user_id, configs)
+                return True
+
+        return False
+
+    async def set_active_model_profile(self, user_id: UUID, profile_name: str) -> bool:
+        """
+        Set the active model profile.
+        """
+
+        configs = await self.get_model_configs(user_id)
+
+        # Check if profile exists
+        profile_exists = any(p["name"] == profile_name for p in configs["profiles"])
+        if not profile_exists:
+            return False
+
+        configs["active"] = profile_name
+        await self.set_model_configs(user_id, configs)
+        return True
+
+    async def get_active_model_profile(self, user_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Get the active model profile for a user.
+        """
+
+        configs = await self.get_model_configs(user_id)
+
+        if not configs["profiles"]:
+            return None
+
+        for profile in configs["profiles"]:
+            if profile["name"] == configs["active"]:
+                return profile
+
+        return None

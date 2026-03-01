@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Any
 from pydantic import ConfigDict, EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
 
@@ -165,3 +165,69 @@ class UserSettingValue(BaseModel):
     """
 
     value: str
+
+
+# Model profile schemas for multi-model configuration
+
+class ModelProfile(BaseModel):
+    """
+    A single model configuration profile.
+    Allow extra fields for future extensibility.
+    """
+
+    name: str = Field(..., min_length=1, max_length=50)
+    provider: str = Field(default="openai")
+    model: str
+    api_key: str
+    base_url: str
+    temperature: str = "0.7"
+
+    model_config = ConfigDict(extra="allow")  # Allow extra fields
+
+
+class ModelProfileCreate(BaseModel):
+    """
+    Request to create a new model profile.
+    Allow extra fields for future extensibility.
+    """
+
+    name: str = Field(..., min_length=1, max_length=50)
+    provider: str = "openai"
+    model: str
+    api_key: str
+    base_url: str
+    temperature: str = "0.7"
+
+    model_config = ConfigDict(extra="allow")  # Allow extra fields
+
+
+class ModelProfileUpdate(BaseModel):
+    """
+    Request to update a model profile.
+    Allow extra fields for future extensibility.
+    """
+
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    temperature: Optional[str] = None
+
+    model_config = ConfigDict(extra="allow")  # Allow extra fields
+
+
+class ModelConfigsResponse(BaseModel):
+    """
+    Response containing all model profiles and active profile.
+    """
+
+    profiles: List[ModelProfile]
+    active: str
+
+
+class ActiveProfileRequest(BaseModel):
+    """
+    Request to set the active model profile.
+    """
+
+    profile_name: str

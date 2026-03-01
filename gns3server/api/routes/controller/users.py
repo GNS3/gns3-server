@@ -389,3 +389,159 @@ async def delete_user_setting(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Setting '{key}' not found"
             )
+
+
+# Model profile endpoints
+
+@router.get("/settings/model/profiles", response_model=schemas.ModelConfigsResponse)
+async def get_model_profiles(
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelConfigsResponse:
+    """
+    Get all model profiles and the active profile.
+    """
+
+    try:
+        configs = await users_repo.get_model_configs(current_user.user_id)
+        profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
+        return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
+    except Exception as e:
+        log.error(f"Failed to retrieve model profiles: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve model profiles"
+        )
+
+
+@router.post("/settings/model/profiles", response_model=schemas.ModelProfile, status_code=status.HTTP_201_CREATED)
+async def create_model_profile(
+        profile_data: schemas.ModelProfileCreate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Create a new model profile.
+    """
+
+    try:
+        new_profile = await users_repo.add_model_profile(
+            current_user.user_id,
+            profile_data.name,
+            profile_data.provider,
+            profile_data.model,
+            profile_data.api_key,
+            profile_data.base_url,
+            profile_data.temperature
+        )
+        return schemas.ModelProfile(**new_profile)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        log.error(f"Failed to create model profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create model profile"
+        )
+
+
+@router.put("/settings/model/profiles/{profile_name}", response_model=schemas.ModelProfile)
+async def update_model_profile(
+        profile_name: str,
+        profile_update: schemas.ModelProfileUpdate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Update an existing model profile.
+    """
+
+    try:
+        # Build updates dict with only non-None values
+        updates = {k: v for k, v in profile_update.model_dump().items() if v is not None}
+
+        updated_profile = await users_repo.update_model_profile(
+            current_user.user_id,
+            profile_name,
+            updates
+        )
+
+        if not updated_profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Profile '{profile_name}' not found"
+            )
+
+        return schemas.ModelProfile(**updated_profile)
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Failed to update model profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update model profile"
+        )
+
+
+@router.delete("/settings/model/profiles/{profile_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_model_profile(
+        profile_name: str,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> None:
+    """
+    Delete a model profile.
+    If deleting the active profile, another profile will be set as active.
+    """
+
+    success = await users_repo.delete_model_profile(current_user.user_id, profile_name)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile '{profile_name}' not found"
+        )
+
+
+@router.put("/settings/model/active", response_model=schemas.ModelConfigsResponse)
+async def set_active_model_profile(
+        request: schemas.ActiveProfileRequest,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelConfigsResponse:
+    """
+    Set the active model profile.
+    """
+
+    success = await users_repo.set_active_model_profile(current_user.user_id, request.profile_name)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile '{request.profile_name}' not found"
+        )
+
+    configs = await users_repo.get_model_configs(current_user.user_id)
+    profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
+    return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
+
+
+@router.get("/settings/model/active", response_model=schemas.ModelProfile)
+async def get_active_model_profile(
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Get the currently active model profile.
+    """
+
+    profile = await users_repo.get_active_model_profile(current_user.user_id)
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No model profiles configured"
+        )
+
+    return schemas.ModelProfile(**profile)
