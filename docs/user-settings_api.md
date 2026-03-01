@@ -256,16 +256,11 @@ HTTP Status: 204 No Content
 | Field | Type | Description |
 |-------|------|-------------|
 | name | string | Profile name, 1-50 chars, "active" reserved |
+| provider | string | Provider name |
 | model | string | Model name |
 | api_key | string | API key, auto-encrypted |
-
-### Optional Fields
-
-| Field | Type | Default | Description |
-|------|------|---------|-------------|
-| provider | string | "openai" | Provider name |
-| base_url | string | "" | API endpoint URL |
-| temperature | string | "0.7" | Temperature parameter |
+| base_url | string | API endpoint URL |
+| temperature | string | Temperature parameter |
 
 ### Extended Fields
 
