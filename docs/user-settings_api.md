@@ -61,9 +61,6 @@ Beyond core fields, the API accepts any additional custom fields.
 
 All data is stored in the GNS3 controller database (SQLite):
 
-- **Linux**: `~/.config/GNS3/gns3_controller.db`
-- **macOS**: `~/Library/Application Support/GNS3/gns3_controller.db`
-- **Windows**: `%APPDATA%\GNS3\gns3_controller.db`
 
 ### Storage Structure
 
@@ -114,6 +111,50 @@ Authorization: Bearer <your_token>
 ```
 
 Tokens are obtained via `/access/users/login`.
+
+---
+
+## Security Considerations
+
+### ⚠️ API Key Storage
+
+**API keys are stored in PLAINTEXT** in the database. This is a security consideration that requires proper handling:
+
+**Database Security:**
+- 🔒 **Protect the database file** - Ensure proper file permissions (e.g., `chmod 600` on Linux)
+- 🔒 **Limit database access** - Only the GNS3 service account should have read access
+- 🔒 **Regular backups** - Backup the database securely and store in encrypted form
+- 🔒 **Monitor access** - Audit and monitor database file access
+
+**Network Security:**
+- 🔒 **Use HTTPS in production** - Encrypt API keys in transit
+- 🔒 **Secure internal communication** - Use TLS between services
+- 🔒 **VPN/Private networks** - Deploy API endpoints in trusted networks only
+
+**Access Control:**
+- ✅ **RBAC enforced** - All endpoints require proper permissions
+- ✅ **JWT authentication** - Valid token required for all operations
+- ✅ **Audit logging** - Track who accesses which profiles
+
+**Data at Risk:**
+```
+users.model_configs (JSON):
+{
+  "profiles": [
+    {
+      "api_key": "sk-xxxxx",  ← Stored in plaintext!
+      ...
+    }
+  ]
+}
+```
+
+**Recommendations:**
+1. **Never commit database files** to version control
+2. **Use environment-specific credentials** - Different keys for dev/staging/prod
+3. **Rotate API keys regularly** - Implement key rotation policies
+4. **Consider encryption at rest** - For highly sensitive deployments, consider database encryption
+5. **Limit token lifespan** - Use short-lived JWT tokens when possible
 
 ---
 
@@ -387,41 +428,96 @@ Example:
 
 ---
 
-## Database Migration
-
-Automatic migration via Alembic on server startup. Manual commands:
-
-```bash
-alembic current        # Check version
-alembic upgrade head   # Upgrade to latest
-alembic history        # View history
-```
-
-The migration adds the `model_configs` column to the existing `users` table.
-
----
-
 ## Integration Guide
 
-### Reading User Profile in Other Modules
+### Recommended: Integration via HTTP API
+
+For security and consistency, other modules should access user profiles through the HTTP API:
 
 ```python
+import httpx
+from typing import Optional, Dict, Any
+
+class UserProfileClient:
+    """Client for accessing user profiles via API."""
+
+    def __init__(self, base_url: str = "http://localhost:3080"):
+        self.base_url = base_url
+        self.client = httpx.AsyncClient()
+
+    async def get_active_profile(
+        self,
+        user_id: str,
+        token: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get the active model profile for a user.
+
+        Args:
+            user_id: User UUID
+            token: JWT token for authentication
+
+        Returns:
+            Profile dict or None if not found
+        """
+        response = await self.client.get(
+            f"{self.base_url}/v3/access/users/{user_id}/profiles/active",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        if response.status_code == 404:
+            return None
+
+        response.raise_for_status()
+        return response.json()
+
+    async def close(self):
+        await self.client.aclose()
+
+
+# Usage example
+async def get_user_llm_config(user_id: str, token: str) -> Optional[Dict[str, Any]]:
+    """Get LLM configuration for a user via API."""
+    client = UserProfileClient()
+
+    try:
+        profile = await client.get_active_profile(user_id, token)
+        if profile:
+            return {
+                "provider": profile["provider"],
+                "model": profile["model"],
+                "api_key": profile["api_key"],
+                "base_url": profile["base_url"],
+                "temperature": profile["temperature"],
+            }
+        return None
+    finally:
+        await client.close()
+```
+
+**Security Benefits:**
+- ✅ Enforces RBAC permission checks
+- ✅ Requires valid JWT authentication
+- ✅ Maintains audit trail
+- ✅ Consistent with external clients
+
+### Direct Repository Access (Not Recommended)
+
+Direct repository access bypasses security controls and should be avoided:
+
+```python
+# ⚠️ SECURITY RISK: Skips RBAC, authentication, and audit
 from gns3server.db.repositories.users import UsersRepository
 
-# Get active profile for a user
 async def get_user_config(user_id: str, users_repo: UsersRepository):
     profile = await users_repo.get_active_model_profile(user_id)
-    if profile:
-        return {
-            "provider": profile["provider"],
-            "model": profile["model"],
-            "api_key": profile["api_key"],
-            "base_url": profile["base_url"],
-            "temperature": profile["temperature"],
-            # Additional fields...
-        }
-    return None
+    # ... no permission checks!
 ```
+
+**Use direct repository access only when:**
+- The code is already within a secured context with proper validation
+- You need to bypass API for performance reasons (rare)
+- You're implementing the API layer itself
 
 ---
 
@@ -435,23 +531,6 @@ async def get_user_config(user_id: str, users_repo: UsersRepository):
 
 ---
 
-## Troubleshooting
-
-### Common Issues
-
-**Issue**: "Profile not found" when switching
-- **Solution**: List all profiles first to verify the name
-
-**Issue**: "Profile already exists" when creating
-- **Solution**: Use a unique name or update the existing profile
-
-**Issue**: No profiles configured
-- **Solution**: Create at least one profile before using the API
-
-**Issue**: Authentication fails
-- **Solution**: Verify JWT token is valid and not expired
-
----
 
 ## Summary
 
