@@ -1,594 +1,256 @@
 # User Settings API
 
-## Document Information
-
-| Field | Value |
-|-------|-------|
-| **Created** | 2026-03-01 |
-| **Last Revised** | 2026-03-01 |
-| **Version** | 1.0.0 |
-| **Status** | Stable |
-| **Author** | Guobin Yue |
-
----
-
 ## Changelog
 
-### Version 1.0.0 (2026-03-01)
-- Initial release
-- Profile-based configuration management
-- Single table design (users.model_configs)
-- Multi-profile support with active switching
-- Extensible field support via JSON storage
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0.0 | 2026-03-01 | Add API key encryption, optimistic locking, data validation |
+| 1.0.0 | 2026-03-01 | Initial release |
 
 ---
 
-## Overview
+## Code Changes
 
-The User Settings API provides a unified and flexible configuration management system. User configurations are stored directly in the `users` table as a JSON field, eliminating the need for separate tables.
+### 1. Database Schema
 
----
+**New columns in `users` table:**
 
-## Features
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model_configs` | TEXT | NULL | JSON config data, API keys auto-encrypted |
+| `model_configs_version` | INTEGER | 0 | Optimistic locking version |
 
-### 1. Profile-Based Configuration
-
-Store all user settings as profiles. Each profile represents a complete configuration that can include:
-- LLM provider settings
-- API credentials
-- Model parameters
-- Any custom fields via extensible JSON storage
-
-**Use Cases:**
-- Multiple LLM configurations for different providers
-- Quick switching between work and personal settings
-- A/B testing different model parameters
-- Custom configurations for specific projects
-
-### 2. Active Profile Management
-
-Users can create multiple profiles and mark one as "active". The system always uses the active profile for operations.
-
-### 3. Extensible Field Support
-
-Beyond core fields, the API accepts any additional custom fields.
-
----
-
-## Data Storage
-
-### Storage Location
-
-All data is stored in the GNS3 controller database (SQLite):
-
-
-### Storage Structure
-
-Configurations are stored as a JSON field `model_configs` in the `users` table:
-
-```
-users table:
-┌────────────────────────────────────┐
-│ user_id                            │
-│ username                           │
-│ email                              │
-│ ...                                │
-│ model_configs (TEXT/JSON)          │
-│   {                                │
-│     "profiles": [...],             │
-│     "active": "profile_name"       │
-│   }                                │
-└────────────────────────────────────┘
+**Data format:**
+```json
+{
+  "profiles": [
+    {
+      "name": "profile-name",
+      "provider": "openai",
+      "model": "gpt-4",
+      "api_key": "<encrypted>",
+      "base_url": "",
+      "temperature": "0.7"
+    }
+  ],
+  "active": "profile-name"
+}
 ```
 
-This design:
-- Eliminates the need for a separate `user_settings` table
-- Simplifies queries (no joins required)
-- Reduces code complexity
-- Maintains flexibility for future fields
+### 2. Encryption
+
+- **Algorithm**: Fernet symmetric encryption (AES-128-CBC)
+- **Key storage**: `{secrets_dir}/gns3_encryption_key`
+- **Key generation**: Auto-generated on first startup, permissions 0600
+- **Behavior**: Auto-encrypt on save, auto-decrypt on retrieve
+
+### 3. Optimistic Locking
+
+- `model_configs_version` auto-increments on each update
+- Send `expected_version` in write requests for validation
+- Returns HTTP 409 if version mismatch
+
+### 4. New Files
+
+| File | Description |
+|------|-------------|
+| `gns3server/utils/encryption.py` | Encryption utilities |
+| `gns3server/db_migrations/versions/20260301_add_model_configs_version.py` | Add version column |
+| `gns3server/db_migrations/versions/20260301_validate_model_configs.py` | Validate and repair JSON |
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/v3/access/users/{user_id}/profiles` | Get all profiles |
-| POST | `/v3/access/users/{user_id}/profiles` | Create a new profile |
-| PUT | `/v3/access/users/{user_id}/profiles/{name}` | Update a profile |
-| DELETE | `/v3/access/users/{user_id}/profiles/{name}` | Delete a profile |
-| GET | `/v3/access/users/{user_id}/profiles/active` | Get the active profile |
-| PUT | `/v3/access/users/{user_id}/profiles/active` | Set the active profile |
-
----
-
-## Authentication
-
-All endpoints require JWT authentication:
+### Base Path
 
 ```
-Authorization: Bearer <your_token>
+/v3/access/users/{user_id}/profiles
 ```
 
-Tokens are obtained via `/access/users/login`.
+### 1. Get All Profiles
 
----
-
-## Security Considerations
-
-### ⚠️ API Key Storage
-
-**API keys are stored in PLAINTEXT** in the database. This is a security consideration that requires proper handling:
-
-**Database Security:**
-- 🔒 **Protect the database file** - Ensure proper file permissions (e.g., `chmod 600` on Linux)
-- 🔒 **Limit database access** - Only the GNS3 service account should have read access
-- 🔒 **Regular backups** - Backup the database securely and store in encrypted form
-- 🔒 **Monitor access** - Audit and monitor database file access
-
-**Network Security:**
-- 🔒 **Use HTTPS in production** - Encrypt API keys in transit
-- 🔒 **Secure internal communication** - Use TLS between services
-- 🔒 **VPN/Private networks** - Deploy API endpoints in trusted networks only
-
-**Access Control:**
-- ✅ **RBAC enforced** - All endpoints require proper permissions
-- ✅ **JWT authentication** - Valid token required for all operations
-- ✅ **Audit logging** - Track who accesses which profiles
-
-**Data at Risk:**
+**Request**
 ```
-users.model_configs (JSON):
-{
-  "profiles": [
-    {
-      "api_key": "sk-xxxxx",  ← Stored in plaintext!
-      ...
-    }
-  ]
-}
+GET /v3/access/users/{user_id}/profiles
+Authorization: Bearer <token>
 ```
 
-**Recommendations:**
-1. **Never commit database files** to version control
-2. **Use environment-specific credentials** - Different keys for dev/staging/prod
-3. **Rotate API keys regularly** - Implement key rotation policies
-4. **Consider encryption at rest** - For highly sensitive deployments, consider database encryption
-5. **Limit token lifespan** - Use short-lived JWT tokens when possible
-
----
-
-## Profile Fields
-
-### Core Fields (Required)
-
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| name | string | Yes | - | Unique profile identifier (1-50 chars) |
-| provider | string | No | "openai" | LLM provider name |
-| model | string | Yes | - | Model name/identifier |
-| api_key | string | Yes | - | API authentication key |
-| base_url | string | No | "" | API endpoint URL (empty = use provider default) |
-| temperature | string | No | "0.7" | Generation temperature |
-
-### Naming Restrictions
-
-**Reserved names:**
-- ⚠️ `"active"` - Reserved for system use (conflicts with `/profiles/active` route)
-
-Attempting to create or rename a profile to `"active"` will result in an error:
-```json
-{
-  "detail": "Profile name 'active' is reserved for system use"
-}
-```
-
-### Extended Fields (Optional)
-
-Any additional fields are accepted and stored:
-
-- `max_tokens` - Maximum response tokens
-- `top_p` - Nucleus sampling parameter
-- `stream` - Enable streaming
-- Custom provider-specific fields
-
-### Provider Default URLs
-
-When `base_url` is empty or not provided, the client should use provider-specific defaults:
-
-| Provider | Default Base URL |
-|----------|------------------|
-| openai | https://api.openai.com/v1 |
-| qwen | https://dashscope.aliyuncs.com/compatible-mode/v1 |
-| anthropic | https://api.anthropic.com |
-| deepseek | https://api.deepseek.com/v1 |
-| moonshot | https://api.moonshot.cn/v1 |
-| zhipu | https://open.bigmodel.cn/api/paas/v4 |
-
-**Note**: Clients are responsible for applying default URLs when `base_url` is empty.
-
----
-
-## Usage Examples
-
-### Create a Profile
-
-```bash
-curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "openai-default",
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key": "sk-xxx"
-  }'
-```
-
-Note: `base_url` is optional. If not provided, the client will use the provider's default URL.
-
-### Create a Profile with Custom Base URL
-
-```bash
-curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "qwen",
-    "provider": "qwen",
-    "model": "qwen-max",
-    "api_key": "sk-xxx",
-    "base_url": "https://api.qwen.com/v1",
-    "temperature": "0.7",
-    "max_tokens": 2000
-  }'
-```
-
-### Create a Profile with Extended Fields
-
-The API accepts any additional custom fields. These are saved and returned as-is:
-
-```bash
-curl -X POST "http://localhost:3080/v3/access/users/{user_id}/profiles" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "deepseek",
-    "provider": "deepseek",
-    "model": "deepseek-chat",
-    "api_key": "sk-xxx",
-    "temperature": "0.0",
-    "base_url": "https://api.deepseek.com/v1",
-    "max_tokens": 4000,
-    "top_p": "0.9",
-    "custom_field": "custom_value"
-  }'
-```
-
-**Response:**
-```json
-{
-  "name": "deepseek",
-  "provider": "deepseek",
-  "model": "deepseek-chat",
-  "api_key": "sk-xxx",
-  "temperature": "0.0",
-  "base_url": "https://api.deepseek.com/v1",
-  "max_tokens": 4000,
-  "top_p": "0.9",
-  "custom_field": "custom_value"
-}
-```
-
-### Get All Profiles
-
-```bash
-curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles" \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response (with profiles):**
+**Response**
 ```json
 {
   "profiles": [
     {
-      "name": "qwen",
-      "provider": "qwen",
-      "model": "qwen-max",
+      "name": "openai",
+      "provider": "openai",
+      "model": "gpt-4",
       "api_key": "sk-xxx",
-      "base_url": "https://api.qwen.com/v1",
-      "temperature": "0.7",
-      "max_tokens": 2000
+      "base_url": "",
+      "temperature": "0.7"
     }
   ],
-  "active": "qwen"
+  "active": "openai",
+  "version": 3
 }
 ```
 
-**Response (empty profiles):**
+### 2. Create Profile
+
+**Request**
+```
+POST /v3/access/users/{user_id}/profiles
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "qwen",
+  "provider": "qwen",
+  "model": "qwen-max",
+  "api_key": "sk-xxx"
+}
+```
+
+**Response**
+```
+HTTP Status: 201 Created
+
+{
+  "name": "qwen",
+  "provider": "qwen",
+  "model": "qwen-max",
+  "api_key": "sk-xxx",
+  "base_url": "",
+  "temperature": "0.7"
+}
+```
+
+### 3. Get Active Profile
+
+**Request**
+```
+GET /v3/access/users/{user_id}/profiles/active
+Authorization: Bearer <token>
+```
+
+**Response**
 ```json
 {
-  "profiles": [],
-  "active": "default"
+  "name": "openai",
+  "provider": "openai",
+  "model": "gpt-4",
+  "api_key": "sk-xxx",
+  "base_url": "",
+  "temperature": "0.7"
 }
 ```
 
-### Set Active Profile
+### 4. Set Active Profile
 
-```bash
-curl -X PUT "http://localhost:3080/v3/access/users/{user_id}/profiles/active" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"profile_name": "qwen"}'
+**Request**
+```
+PUT /v3/access/users/{user_id}/profiles/active
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "profile_name": "qwen",
+  "expected_version": 3  // Optional, for optimistic locking
+}
 ```
 
-### Get Active Profile
-
-```bash
-curl -X GET "http://localhost:3080/v3/access/users/{user_id}/profiles/active" \
-  -H "Authorization: Bearer <token>"
+**Response**
+```json
+{
+  "profiles": [...],
+  "active": "qwen",
+  "version": 4
+}
 ```
 
-**Response:**
+**Error Response (Conflict)**
+```
+HTTP Status: 409 Conflict
+
+{
+  "detail": "Concurrent modification detected. Expected version 3, but current version is 5. Please retry."
+}
+```
+
+### 5. Update Profile
+
+**Request**
+```
+PUT /v3/access/users/{user_id}/profiles/{profile_name}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "temperature": "0.9",
+  "max_tokens": 4000
+}
+```
+
+**Response**
 ```json
 {
   "name": "qwen",
   "provider": "qwen",
   "model": "qwen-max",
   "api_key": "sk-xxx",
-  "base_url": "https://api.qwen.com/v1",
-  "temperature": "0.7",
-  "max_tokens": 2000
+  "base_url": "",
+  "temperature": "0.9",
+  "max_tokens": 4000
 }
 ```
 
-### Update a Profile
+### 6. Delete Profile
 
-```bash
-curl -X PUT "http://localhost:3080/v3/access/users/{user_id}/profiles/qwen" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "temperature": "0.9",
-    "max_tokens": 4000
-  }'
+**Request**
+```
+DELETE /v3/access/users/{user_id}/profiles/{profile_name}
+Authorization: Bearer <token>
 ```
 
-### Delete a Profile
-
-```bash
-curl -X DELETE "http://localhost:3080/v3/access/users/{user_id}/profiles/qwen" \
-  -H "Authorization: Bearer <token>"
+**Response**
+```
+HTTP Status: 204 No Content
 ```
 
 ---
 
-## Error Handling
+## Field Definitions
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | string | Profile name, 1-50 chars, "active" reserved |
+| model | string | Model name |
+| api_key | string | API key, auto-encrypted |
+
+### Optional Fields
+
+| Field | Type | Default | Description |
+|------|------|---------|-------------|
+| provider | string | "openai" | Provider name |
+| base_url | string | "" | API endpoint URL |
+| temperature | string | "0.7" | Temperature parameter |
+
+### Extended Fields
+
+Any custom fields supported, e.g., `max_tokens`, `top_p`, `stream`, etc.
+
+---
+
+## Error Codes
 
 | Status | Description |
 |--------|-------------|
-| 200 OK | Request successful |
-| 201 Created | Profile created successfully |
-| 204 No Content | Deletion successful |
-| 400 Bad Request | Invalid data (e.g., duplicate name) |
-| 401 Unauthorized | Missing or invalid token |
-| 404 Not Found | Profile not found |
-| 500 Internal Server Error | Server error |
-
----
-
-## Design Principles
-
-1. **Simplicity** - Single table design, no complex joins
-2. **Flexibility** - JSON storage supports arbitrary fields
-3. **Clarity** - Clean, intuitive API endpoints
-4. **Reliability** - Proper validation and error handling
-5. **Security** - JWT authentication and user isolation
-
----
-
-## Common Workflows
-
-### Multi-Environment Setup
-
-Create multiple profiles for different environments, then switch between them:
-
-1. Create profiles for each environment (work, personal, etc.)
-2. Switch between them using `PUT /profiles/active`
-
-Example:
-```bash
-# Create work profile → POST /profiles {"name": "work", ...}
-# Create personal profile → POST /profiles {"name": "personal", ...}
-# Switch to work → PUT /profiles/active {"profile_name": "work"}
-```
-
-### Testing Different Parameters
-
-Create test profiles with different configurations, then easily switch:
-
-1. Create a test profile with specific parameters
-2. Switch to test profile
-3. Switch back to production when done
-
-Example:
-```bash
-# Create test profile → POST /profiles {"name": "test-high-temp", "temperature": "0.9", ...}
-# Switch to test → PUT /profiles/active {"profile_name": "test-high-temp"}
-# Switch back → PUT /profiles/active {"profile_name": "production"}
-```
-
----
-
-## Database Schema
-
-### users table (modified)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| user_id | CHAR(32)/UUID | Primary key |
-| username | String | Unique username |
-| email | String | Unique email |
-| full_name | String | Full name |
-| hashed_password | String | Hashed password |
-| last_login | DateTime | Last login time |
-| is_active | Boolean | Active status |
-| is_superadmin | Boolean | Super admin flag |
-| **model_configs** | **Text (JSON)** | **Model profiles data** |
-| created_at | DateTime | Creation timestamp |
-| updated_at | DateTime | Update timestamp |
-
----
-
-## Integration Guide
-
-### Recommended: Integration via HTTP API
-
-For security and consistency, other modules should access user profiles through the HTTP API:
-
-```python
-import httpx
-from typing import Optional, Dict, Any
-
-class UserProfileClient:
-    """Client for accessing user profiles via API."""
-
-    def __init__(self, base_url: str = "http://localhost:3080"):
-        self.base_url = base_url
-        self.client = httpx.AsyncClient()
-
-    async def get_active_profile(
-        self,
-        user_id: str,
-        token: str
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Get the active model profile for a user.
-
-        Args:
-            user_id: User UUID
-            token: JWT token for authentication
-
-        Returns:
-            Profile dict or None if not found
-        """
-        response = await self.client.get(
-            f"{self.base_url}/v3/access/users/{user_id}/profiles/active",
-            headers={"Authorization": f"Bearer {token}"}
-        )
-
-        if response.status_code == 404:
-            return None
-
-        response.raise_for_status()
-        return response.json()
-
-    async def close(self):
-        await self.client.aclose()
-
-
-# Usage example
-async def get_user_llm_config(user_id: str, token: str) -> Optional[Dict[str, Any]]:
-    """Get LLM configuration for a user via API."""
-    client = UserProfileClient()
-
-    try:
-        profile = await client.get_active_profile(user_id, token)
-        if profile:
-            return {
-                "provider": profile["provider"],
-                "model": profile["model"],
-                "api_key": profile["api_key"],
-                "base_url": profile["base_url"],
-                "temperature": profile["temperature"],
-            }
-        return None
-    finally:
-        await client.close()
-```
-
-**Security Benefits:**
-- ✅ Enforces RBAC permission checks
-- ✅ Requires valid JWT authentication
-- ✅ Maintains audit trail
-- ✅ Consistent with external clients
-
-### Direct Repository Access (Not Recommended)
-
-Direct repository access bypasses security controls and should be avoided:
-
-```python
-# ⚠️ SECURITY RISK: Skips RBAC, authentication, and audit
-from gns3server.db.repositories.users import UsersRepository
-
-async def get_user_config(user_id: str, users_repo: UsersRepository):
-    profile = await users_repo.get_active_model_profile(user_id)
-    # ... no permission checks!
-```
-
-**Use direct repository access only when:**
-- The code is already within a secured context with proper validation
-- You need to bypass API for performance reasons (rare)
-- You're implementing the API layer itself
-
----
-
-## Best Practices
-
-1. **Use descriptive profile names** - e.g., "work-gpt4", "personal-claude"
-2. **Validate API keys** before saving
-3. **Keep backups** of important configurations
-4. **Test profiles** before using in production
-5. **Delete unused profiles** to keep settings organized
-
----
-
-
-## Summary
-
-The User Settings API provides a clean, simple approach to configuration management. By storing configurations directly in the users table as JSON, we achieve:
-
-- **Simpler database schema** - No extra tables needed
-- **Better performance** - No joins required
-- **Easier maintenance** - Less code to manage
-- **Same flexibility** - JSON supports arbitrary fields
-
-This design prioritizes simplicity without sacrificing functionality.
-
-**Key Benefits:**
-- Single table design eliminates complexity
-- Direct field access improves query performance
-- Reduced code means easier maintenance
-- JSON storage preserves extensibility
-- Clean integration with other modules
-
----
-
-## Appendix
-
-### Quick Reference Card
-
-```
-POST   /v3/access/users/{user_id}/profiles              Create profile
-GET    /v3/access/users/{user_id}/profiles              List all profiles
-GET    /v3/access/users/{user_id}/profiles/active       Get active profile
-PUT    /v3/access/users/{user_id}/profiles/active       Switch active profile
-PUT    /v3/access/users/{user_id}/profiles/{name}       Update profile
-DELETE /v3/access/users/{user_id}/profiles/{name}       Delete profile
-```
-
-### Minimum Required Fields
-
-To create a valid profile, you only need:
-- `name` - Profile identifier
-- `model` - Model name
-- `api_key` - API key
-
-All other fields have sensible defaults or are optional.
-
----
-
-**Document Version**: 1.0.0
-**Last Updated**: 2026-03-01
-**Next Review**: 2026-06-01
-
+| 200 | Success |
+| 201 | Created |
+| 204 | Deleted (no content) |
+| 400 | Bad request (duplicate name, reserved name) |
+| 401 | Unauthorized |
+| 404 | Not found |
+| 409 | Conflict (version mismatch) |
+| 500 | Server error

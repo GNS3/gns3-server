@@ -24,15 +24,11 @@ from sqlalchemy.orm import selectinload
 import json
 import logging
 
-log = logging.getLogger(__name__)
-
 from .base import BaseRepository
 
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.services import auth_service
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -295,10 +291,18 @@ class UsersRepository(BaseRepository):
 
     # Model profile methods (stored in user.model_configs as JSON)
 
+    async def _get_model_configs_version(self, user_id: UUID) -> Optional[int]:
+        """
+        Helper method to get the current model_configs_version for a user.
+        """
+        user = await self.get_user(user_id)
+        return user.model_configs_version if user else None
+
     async def get_model_configs(self, user_id: UUID) -> Dict[str, Any]:
         """
         Get all model configurations for a user.
         Returns a dict with 'profiles' list and 'active' profile name.
+        API keys are decrypted before returning.
         """
 
         user = await self.get_user(user_id)
@@ -309,22 +313,79 @@ class UsersRepository(BaseRepository):
             return {"profiles": [], "active": "default"}
 
         try:
-            return json.loads(user.model_configs)
+            from gns3server.utils.encryption import decrypt, is_encrypted
+
+            configs = json.loads(user.model_configs)
+
+            # Decrypt API keys in profiles
+            for profile in configs.get("profiles", []):
+                if "api_key" in profile and profile["api_key"]:
+                    try:
+                        if is_encrypted(profile["api_key"]):
+                            profile["api_key"] = decrypt(profile["api_key"])
+                    except Exception as e:
+                        log.warning(f"Failed to decrypt API key for profile '{profile.get('name')}': {e}")
+
+            return configs
         except (json.JSONDecodeError, ValueError) as e:
             log.warning(f"Invalid model_configs JSON for user {user_id}: {e}")
             return {"profiles": [], "active": "default"}
 
-    async def set_model_configs(self, user_id: UUID, configs: Dict[str, Any]) -> None:
+    async def set_model_configs(
+        self,
+        user_id: UUID,
+        configs: Dict[str, Any],
+        expected_version: Optional[int] = None
+    ) -> None:
         """
         Set all model configurations for a user.
+        API keys are encrypted before storing.
+        Uses optimistic locking to prevent concurrent modifications.
+
+        :param user_id: User ID
+        :param configs: Configuration dictionary
+        :param expected_version: Expected version for optimistic locking (raises error if mismatch)
+        :raises ValueError: If version mismatch (concurrent modification)
         """
 
-        query = update(models.User).where(
-            models.User.user_id == user_id
-        ).values(model_configs=json.dumps(configs))
+        from gns3server.utils.encryption import encrypt
 
-        await self._db_session.execute(query)
+        # Encrypt API keys in profiles
+        configs_to_store = json.loads(json.dumps(configs))  # Deep copy
+        for profile in configs_to_store.get("profiles", []):
+            if "api_key" in profile and profile["api_key"]:
+                try:
+                    profile["api_key"] = encrypt(profile["api_key"])
+                except Exception as e:
+                    log.error(f"Failed to encrypt API key for profile '{profile.get('name')}': {e}")
+                    raise
+
+        # Build update with optimistic locking
+        values = {
+            "model_configs": json.dumps(configs_to_store),
+            "model_configs_version": models.User.model_configs_version + 1  # Increment version
+        }
+
+        # Build query with version check if provided
+        query = update(models.User).where(models.User.user_id == user_id)
+        if expected_version is not None:
+            query = query.where(models.User.model_configs_version == expected_version)
+
+        result = await self._db_session.execute(
+            query.values(values)
+        )
+
         await self._db_session.commit()
+
+        # Check if the update actually happened (optimistic lock)
+        if expected_version is not None and result.rowcount == 0:
+            # Fetch current version to provide helpful error
+            user = await self.get_user(user_id)
+            current_version = user.model_configs_version if user else -1
+            raise ValueError(
+                f"Concurrent modification detected. Expected version {expected_version}, "
+                f"but current version is {current_version}. Please retry."
+            )
 
     async def add_model_profile(
         self,
@@ -334,9 +395,12 @@ class UsersRepository(BaseRepository):
         """
         Add a new model profile to the user's configurations.
         Accepts profile data including any extra fields.
+        Uses optimistic locking to prevent concurrent modifications.
         """
 
+        # Get current configs and version
         configs = await self.get_model_configs(user_id)
+        current_version = await self._get_model_configs_version(user_id)
 
         # Check if profile with same name exists
         name = profile_data.get("name")
@@ -359,7 +423,7 @@ class UsersRepository(BaseRepository):
         if len(configs["profiles"]) == 1:
             configs["active"] = name
 
-        await self.set_model_configs(user_id, configs)
+        await self.set_model_configs(user_id, configs, expected_version=current_version)
         return new_profile
 
     async def update_model_profile(
@@ -370,9 +434,12 @@ class UsersRepository(BaseRepository):
     ) -> Optional[Dict[str, Any]]:
         """
         Update an existing model profile.
+        Uses optimistic locking to prevent concurrent modifications.
         """
 
+        # Get current configs and version
         configs = await self.get_model_configs(user_id)
+        current_version = await self._get_model_configs_version(user_id)
 
         # Check if trying to rename to "active"
         new_name = updates.get("name")
@@ -396,7 +463,7 @@ class UsersRepository(BaseRepository):
                 if new_name and configs.get("active") == profile_name:
                     configs["active"] = new_name
 
-                await self.set_model_configs(user_id, configs)
+                await self.set_model_configs(user_id, configs, expected_version=current_version)
                 return profile
 
         return None
@@ -405,9 +472,12 @@ class UsersRepository(BaseRepository):
         """
         Delete a model profile.
         If deleting the active profile, switches to another profile.
+        Uses optimistic locking to prevent concurrent modifications.
         """
 
+        # Get current configs and version
         configs = await self.get_model_configs(user_id)
+        current_version = await self._get_model_configs_version(user_id)
 
         # Find and remove the profile
         for i, profile in enumerate(configs["profiles"]):
@@ -421,7 +491,7 @@ class UsersRepository(BaseRepository):
                     else:
                         configs["active"] = "default"
 
-                await self.set_model_configs(user_id, configs)
+                await self.set_model_configs(user_id, configs, expected_version=current_version)
                 return True
 
         return False
@@ -429,9 +499,12 @@ class UsersRepository(BaseRepository):
     async def set_active_model_profile(self, user_id: UUID, profile_name: str) -> bool:
         """
         Set the active model profile.
+        Uses optimistic locking to prevent concurrent modifications.
         """
 
+        # Get current configs and version
         configs = await self.get_model_configs(user_id)
+        current_version = await self._get_model_configs_version(user_id)
 
         # Check if profile exists
         profile_exists = any(p["name"] == profile_name for p in configs["profiles"])
@@ -439,7 +512,7 @@ class UsersRepository(BaseRepository):
             return False
 
         configs["active"] = profile_name
-        await self.set_model_configs(user_id, configs)
+        await self.set_model_configs(user_id, configs, expected_version=current_version)
         return True
 
     async def get_active_model_profile(self, user_id: UUID) -> Optional[Dict[str, Any]]:

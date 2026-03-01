@@ -267,6 +267,7 @@ async def get_model_profiles(
 ) -> schemas.ModelConfigsResponse:
     """
     Get all model profiles and the active profile.
+    Includes the version for optimistic locking.
 
     Required privilege: User.Audit
     """
@@ -274,7 +275,12 @@ async def get_model_profiles(
     try:
         configs = await users_repo.get_model_configs(user_id)
         profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
-        return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
+        version = await users_repo._get_model_configs_version(user_id)
+        return schemas.ModelConfigsResponse(
+            profiles=profiles,
+            active=configs.get("active", "default"),
+            version=version or 0
+        )
     except Exception as e:
         log.error(f"Failed to retrieve model profiles: {e}")
         raise HTTPException(
@@ -306,6 +312,12 @@ async def create_model_profile(
         new_profile = await users_repo.add_model_profile(user_id, profile_dict)
         return schemas.ModelProfile(**new_profile)
     except ValueError as e:
+        # Handle both validation errors and optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -356,11 +368,22 @@ async def set_active_model_profile(
 ) -> schemas.ModelConfigsResponse:
     """
     Set the active model profile.
+    If expected_version is provided, it will be validated for optimistic locking.
 
     Required privilege: User.Modify
     """
 
-    success = await users_repo.set_active_model_profile(user_id, request.profile_name)
+    try:
+        success = await users_repo.set_active_model_profile(user_id, request.profile_name)
+    except ValueError as e:
+        # Optimistic lock error
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -369,7 +392,12 @@ async def set_active_model_profile(
 
     configs = await users_repo.get_model_configs(user_id)
     profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
-    return schemas.ModelConfigsResponse(profiles=profiles, active=configs.get("active", "default"))
+    version = await users_repo._get_model_configs_version(user_id)
+    return schemas.ModelConfigsResponse(
+        profiles=profiles,
+        active=configs.get("active", "default"),
+        version=version or 0
+    )
 
 
 @router.put(
@@ -408,6 +436,17 @@ async def update_model_profile(
         return schemas.ModelProfile(**updated_profile)
     except HTTPException:
         raise
+    except ValueError as e:
+        # Handle optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         log.error(f"Failed to update model profile: {e}")
         raise HTTPException(
@@ -433,7 +472,20 @@ async def delete_model_profile(
     Required privilege: User.Modify
     """
 
-    success = await users_repo.delete_model_profile(user_id, profile_name)
+    try:
+        success = await users_repo.delete_model_profile(user_id, profile_name)
+    except ValueError as e:
+        # Handle optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

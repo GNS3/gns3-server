@@ -219,10 +219,12 @@ class ModelProfileUpdate(BaseModel):
 class ModelConfigsResponse(BaseModel):
     """
     Response containing all model profiles and active profile.
+    Includes version for optimistic locking.
     """
 
     profiles: List[ModelProfile]
     active: str
+    version: int  # Version for optimistic locking
 
 
 class ActiveProfileRequest(BaseModel):
@@ -231,3 +233,4 @@ class ActiveProfileRequest(BaseModel):
     """
 
     profile_name: str
+    expected_version: Optional[int] = None  # For optimistic locking

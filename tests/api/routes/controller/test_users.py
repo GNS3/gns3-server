@@ -419,3 +419,176 @@ class TestSuperAdmin:
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status.HTTP_200_OK
 
+
+class TestModelProfiles:
+    """Test cases for model profiles API with encryption and optimistic locking"""
+
+    async def test_get_model_profiles_returns_version(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User
+    ) -> None:
+        """Test that getting model profiles returns a version number"""
+
+        response = await authorized_client.get(
+            app.url_path_for("get_model_profiles", user_id=str(test_user.user_id))
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "version" in data
+        assert isinstance(data["version"], int)
+        assert "profiles" in data
+        assert "active" in data
+
+    async def test_create_model_profile_encrypts_api_key(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession
+    ) -> None:
+        """Test that API keys are encrypted when stored"""
+
+        from gns3server.utils.encryption import is_encrypted
+
+        profile_data = {
+            "name": "test-profile",
+            "provider": "openai",
+            "model": "gpt-4",
+            "api_key": "sk-test-secret-key-12345",
+            "base_url": "https://api.openai.com/v1",
+            "temperature": "0.7"
+        }
+
+        response = await authorized_client.post(
+            app.url_path_for("create_model_profile", user_id=str(test_user.user_id)),
+            json=profile_data
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # Check that API key is encrypted in database
+        user_repo = UsersRepository(db_session)
+        user = await user_repo.get_user(test_user.user_id)
+        assert user is not None
+        assert user.model_configs is not None
+
+        import json
+        configs = json.loads(user.model_configs)
+        assert len(configs["profiles"]) == 1
+        stored_api_key = configs["profiles"][0]["api_key"]
+
+        # The stored key should be encrypted (different from original)
+        assert stored_api_key != profile_data["api_key"]
+        # Should look like encrypted data (base64, longer than original)
+        assert is_encrypted(stored_api_key)
+
+    async def test_get_model_profiles_decrypts_api_keys(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User
+    ) -> None:
+        """Test that API keys are decrypted when retrieved"""
+
+        original_api_key = "sk-test-secret-key-12345"
+        profile_data = {
+            "name": "test-profile",
+            "provider": "openai",
+            "model": "gpt-4",
+            "api_key": original_api_key,
+            "base_url": "https://api.openai.com/v1",
+            "temperature": "0.7"
+        }
+
+        # Create profile
+        await authorized_client.post(
+            app.url_path_for("create_model_profile", user_id=str(test_user.user_id)),
+            json=profile_data
+        )
+
+        # Get profiles and verify API key is decrypted
+        response = await authorized_client.get(
+            app.url_path_for("get_model_profiles", user_id=str(test_user.user_id))
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data["profiles"]) == 1
+        assert data["profiles"][0]["api_key"] == original_api_key
+
+    async def test_optimistic_lock_prevents_concurrent_updates(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession
+    ) -> None:
+        """Test that optimistic locking detects concurrent modifications"""
+
+        # Create initial profile
+        profile_data = {
+            "name": "test-profile",
+            "provider": "openai",
+            "model": "gpt-4",
+            "api_key": "sk-test-key",
+        }
+        await authorized_client.post(
+            app.url_path_for("create_model_profile", user_id=str(test_user.user_id)),
+            json=profile_data
+        )
+
+        # Get current version
+        response = await authorized_client.get(
+            app.url_path_for("get_model_profiles", user_id=str(test_user.user_id))
+        )
+        old_version = response.json()["version"]
+
+        # Manually increment version in database to simulate concurrent update
+        from sqlalchemy import update
+        query = update(models.User).where(
+            models.User.user_id == test_user.user_id
+        ).values(model_configs_version=old_version + 1)
+        await db_session.execute(query)
+        await db_session.commit()
+
+        # Try to update with old version - should fail
+        update_data = {
+            "profile_name": "test-profile",
+            "expected_version": old_version
+        }
+        response = await authorized_client.put(
+            app.url_path_for("set_active_model_profile", user_id=str(test_user.user_id)),
+            json=update_data
+        )
+
+        # Should return 409 Conflict
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "Concurrent modification" in response.json()["detail"]
+
+    async def test_model_config_validates_json_structure(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession
+    ) -> None:
+        """Test that invalid JSON is fixed during migration"""
+
+        # Set invalid JSON directly in database
+        from sqlalchemy import update
+        invalid_json = "this is not valid json {"
+        query = update(models.User).where(
+            models.User.user_id == test_user.user_id
+        ).values(model_configs=invalid_json)
+        await db_session.execute(query)
+        await db_session.commit()
+
+        # Getting profiles should still work, returning default
+        response = await authorized_client.get(
+            app.url_path_for("get_model_profiles", user_id=str(test_user.user_id))
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["profiles"] == []
+        assert data["active"] == "default"
+

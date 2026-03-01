@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event, Text
+from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event, Text, Integer
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
@@ -48,6 +48,7 @@ class User(BaseTable):
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     model_configs = Column(Text, nullable=True)  # JSON string for model profiles
+    model_configs_version = Column(Integer, default=0)  # Optimistic locking version
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
     acl_entries = relationship("ACE")
 

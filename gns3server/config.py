@@ -234,6 +234,18 @@ class Config:
             self._settings.Server.secrets_dir = os.path.dirname(self.server_config)
 
         self._load_jwt_secret_key()
+        self._load_encryption_key()
+
+    def _load_encryption_key(self):
+        """
+        Load the encryption key for sensitive data.
+        """
+        from .utils.encryption import init_encryption
+
+        try:
+            init_encryption(self._settings.Server.secrets_dir)
+        except Exception as e:
+            log.error(f"Could not initialize encryption: {e}")
 
     def read_config(self):
         """
