@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -287,3 +287,87 @@ class UsersRepository(BaseRepository):
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
+
+    # User settings methods
+
+    async def get_user_settings(self, user_id: UUID) -> List[models.UserSetting]:
+        """
+        Get all settings for a user.
+        """
+
+        query = select(models.UserSetting).where(models.UserSetting.user_id == user_id)
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
+
+    async def get_user_setting(self, user_id: UUID, key: str) -> Optional[models.UserSetting]:
+        """
+        Get a specific setting for a user.
+        """
+
+        query = select(models.UserSetting).where(
+            models.UserSetting.user_id == user_id,
+            models.UserSetting.key == key
+        )
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def set_user_setting(self, user_id: UUID, key: str, value: str) -> models.UserSetting:
+        """
+        Set a specific setting for a user (create or update).
+        """
+
+        # First, try to get existing setting
+        existing_setting = await self.get_user_setting(user_id, key)
+
+        if existing_setting:
+            # Update existing setting
+            query = update(models.UserSetting).where(
+                models.UserSetting.user_id == user_id,
+                models.UserSetting.key == key
+            ).values(value=value)
+
+            await self._db_session.execute(query)
+            await self._db_session.commit()
+            # Return the updated setting
+            return await self.get_user_setting(user_id, key)
+        else:
+            # Create new setting
+            db_setting = models.UserSetting(user_id=user_id, key=key, value=value)
+            self._db_session.add(db_setting)
+            await self._db_session.commit()
+            await self._db_session.refresh(db_setting)
+            return db_setting
+
+    async def delete_user_setting(self, user_id: UUID, key: str) -> bool:
+        """
+        Delete a specific setting for a user.
+        """
+
+        query = delete(models.UserSetting).where(
+            models.UserSetting.user_id == user_id,
+            models.UserSetting.key == key
+        )
+        result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        return result.rowcount > 0
+
+    async def set_user_settings(self, user_id: UUID, settings: Dict[str, str]) -> List[models.UserSetting]:
+        """
+        Set multiple settings for a user.
+        """
+
+        result_settings = []
+        for key, value in settings.items():
+            setting = await self.set_user_setting(user_id, key, value)
+            result_settings.append(setting)
+        return result_settings
+
+    async def delete_all_user_settings(self, user_id: UUID) -> bool:
+        """
+        Delete all settings for a user.
+        """
+
+        query = delete(models.UserSetting).where(models.UserSetting.user_id == user_id)
+        result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        return result.rowcount > 0

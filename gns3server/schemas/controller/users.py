@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict
 from pydantic import ConfigDict, EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
 
@@ -103,3 +103,65 @@ class Credentials(BaseModel):
 
     username: str
     password: str
+
+
+# User settings schemas
+
+class UserSettingBase(BaseModel):
+    """
+    Common user setting properties.
+    """
+
+    key: str
+    value: Optional[str] = None
+
+
+class UserSettingCreate(UserSettingBase):
+    """
+    Properties to create a user setting.
+    """
+
+    value: str
+
+
+class UserSettingUpdate(BaseModel):
+    """
+    Properties to update a user setting.
+    """
+
+    value: str
+
+
+class UserSetting(DateTimeModelMixin, UserSettingBase):
+    """
+    Complete user setting model.
+    """
+
+    setting_id: UUID
+    user_id: UUID
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserSettingsResponse(BaseModel):
+    """
+    Response for getting all user settings.
+    """
+
+    user_id: UUID
+    settings: Dict[str, str]
+
+
+class UserSettingsUpdate(BaseModel):
+    """
+    Request to update multiple user settings.
+    """
+
+    settings: Dict[str, str]
+
+
+class UserSettingValue(BaseModel):
+    """
+    Request to update a single user setting.
+    """
+
+    value: str

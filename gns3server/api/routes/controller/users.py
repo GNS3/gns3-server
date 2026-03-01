@@ -252,3 +252,140 @@ async def get_user_memberships(
     """
 
     return await users_repo.get_user_memberships(user_id)
+
+
+# User settings endpoints
+
+@router.get("/settings", response_model=schemas.UserSettingsResponse)
+async def get_user_settings(
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.UserSettingsResponse:
+    """
+    Get all settings for the current user.
+    """
+
+    try:
+        settings_db = await users_repo.get_user_settings(current_user.user_id)
+        settings = {setting.key: setting.value for setting in settings_db if setting.value is not None}
+        return schemas.UserSettingsResponse(user_id=current_user.user_id, settings=settings)
+    except Exception as e:
+        log.error(f"Failed to retrieve user settings: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user settings"
+        )
+
+
+@router.put("/settings", response_model=schemas.UserSettingsResponse)
+async def update_user_settings(
+        settings_update: schemas.UserSettingsUpdate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.UserSettingsResponse:
+    """
+    Update all settings for the current user.
+
+    Required keys (MODE_PROVIDER, MODEL_NAME, MODEL_API_KEY, BASE_URL, TEMPERATURE)
+    will be reset to default values if not provided.
+    """
+
+    try:
+        # Define required keys with default values
+        required_keys = {
+            "MODE_PROVIDER": "openai",
+            "MODEL_NAME": "gpt-3.5-turbo",
+            "MODEL_API_KEY": "",
+            "BASE_URL": "https://api.openai.com/v1",
+            "TEMPERATURE": "0.7"
+        }
+
+        # Merge provided settings with defaults for required keys
+        settings_to_update = required_keys.copy()
+        settings_to_update.update(settings_update.settings)
+
+        await users_repo.delete_all_user_settings(current_user.user_id)
+        await users_repo.set_user_settings(current_user.user_id, settings_to_update)
+
+        return schemas.UserSettingsResponse(user_id=current_user.user_id, settings=settings_to_update)
+    except Exception as e:
+        log.error(f"Failed to update user settings: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user settings"
+        )
+
+
+@router.get("/settings/{key}", response_model=Dict[str, str])
+async def get_user_setting(
+        key: str,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> Dict[str, str]:
+    """
+    Get a specific setting for the current user.
+    """
+
+    setting = await users_repo.get_user_setting(current_user.user_id, key)
+    if not setting or setting.value is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Setting '{key}' not found"
+        )
+    return {key: setting.value}
+
+
+@router.put("/settings/{key}", response_model=Dict[str, str])
+async def update_user_setting(
+        key: str,
+        setting_value: schemas.UserSettingValue,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> Dict[str, str]:
+    """
+    Set a specific setting for the current user.
+    """
+
+    try:
+        setting = await users_repo.set_user_setting(current_user.user_id, key, setting_value.value)
+        return {key: setting.value}
+    except Exception as e:
+        log.error(f"Failed to update user setting: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user setting"
+        )
+
+
+@router.delete("/settings/{key}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_setting(
+        key: str,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> None:
+    """
+    Delete a specific setting for the current user.
+
+    Required keys (MODE_PROVIDER, MODEL_NAME, MODEL_API_KEY, BASE_URL, TEMPERATURE)
+    will be reset to default values instead of being deleted.
+    """
+
+    # Required keys with default values
+    required_keys_defaults = {
+        "MODE_PROVIDER": "openai",
+        "MODEL_NAME": "gpt-3.5-turbo",
+        "MODEL_API_KEY": "",
+        "BASE_URL": "https://api.openai.com/v1",
+        "TEMPERATURE": "0.7"
+    }
+
+    if key in required_keys_defaults:
+        # Reset to default instead of deleting
+        await users_repo.set_user_setting(current_user.user_id, key, required_keys_defaults[key])
+    else:
+        success = await users_repo.delete_user_setting(current_user.user_id, key)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Setting '{key}' not found"
+            )
