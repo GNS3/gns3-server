@@ -19,7 +19,7 @@
 API routes for user groups.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import UUID
 from typing import List
 
@@ -229,3 +229,253 @@ async def remove_member_from_group(
     user_group = await users_repo.remove_member_from_user_group(user_group_id, user)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+
+# Model profile endpoints for user groups
+
+@router.get(
+    "/{user_group_id}/profiles",
+    response_model=schemas.ModelConfigsResponse,
+    dependencies=[Depends(has_privilege("Group.Audit"))]
+)
+async def get_group_model_profiles(
+        user_group_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelConfigsResponse:
+    """
+    Get all model profiles and the active profile for a user group.
+    Includes the version for optimistic locking.
+
+    Required privilege: Group.Audit
+    """
+
+    try:
+        configs = await users_repo.get_group_model_configs(user_group_id)
+        profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
+        version = await users_repo._get_group_model_configs_version(user_group_id)
+        return schemas.ModelConfigsResponse(
+            profiles=profiles,
+            active=configs.get("active", "default"),
+            version=version or 0
+        )
+    except Exception as e:
+        log.error(f"Failed to retrieve group model profiles: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve model profiles"
+        )
+
+
+@router.post(
+    "/{user_group_id}/profiles",
+    response_model=schemas.ModelProfile,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Group.Modify"))]
+)
+async def create_group_model_profile(
+        user_group_id: UUID,
+        profile_data: schemas.ModelProfileCreate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Create a new model profile for a user group.
+
+    Required privilege: Group.Modify
+    """
+
+    # Check if group exists
+    user_group = await users_repo.get_user_group(user_group_id)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    try:
+        # Convert profile_data to dict to include extra fields
+        profile_dict = profile_data.model_dump()
+        new_profile = await users_repo.add_group_model_profile(user_group_id, profile_dict)
+        return schemas.ModelProfile(**new_profile)
+    except ValueError as e:
+        # Handle both validation errors and optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise ControllerBadRequestError(str(e))
+    except Exception as e:
+        log.error(f"Failed to create group model profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create model profile"
+        )
+
+
+@router.get(
+    "/{user_group_id}/profiles/active",
+    response_model=schemas.ModelProfile,
+    dependencies=[Depends(has_privilege("Group.Audit"))]
+)
+async def get_active_group_model_profile(
+        user_group_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Get the currently active model profile for a user group.
+
+    Required privilege: Group.Audit
+    """
+
+    profile = await users_repo.get_active_group_model_profile(user_group_id)
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No model profiles configured"
+        )
+
+    return schemas.ModelProfile(**profile)
+
+
+@router.put(
+    "/{user_group_id}/profiles/active",
+    response_model=schemas.ModelConfigsResponse,
+    dependencies=[Depends(has_privilege("Group.Modify"))]
+)
+async def set_active_group_model_profile(
+        user_group_id: UUID,
+        request: schemas.ActiveProfileRequest,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelConfigsResponse:
+    """
+    Set the active model profile for a user group.
+    If expected_version is provided, it will be validated for optimistic locking.
+
+    Required privilege: Group.Modify
+    """
+
+    # Check if group exists
+    user_group = await users_repo.get_user_group(user_group_id)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    try:
+        success = await users_repo.set_active_group_model_profile(user_group_id, request.profile_name)
+    except ValueError as e:
+        # Optimistic lock error
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile '{request.profile_name}' not found"
+        )
+
+    configs = await users_repo.get_group_model_configs(user_group_id)
+    profiles = [schemas.ModelProfile(**p) for p in configs.get("profiles", [])]
+    version = await users_repo._get_group_model_configs_version(user_group_id)
+    return schemas.ModelConfigsResponse(
+        profiles=profiles,
+        active=configs.get("active", "default"),
+        version=version or 0
+    )
+
+
+@router.put(
+    "/{user_group_id}/profiles/{profile_name}",
+    response_model=schemas.ModelProfile,
+    dependencies=[Depends(has_privilege("Group.Modify"))]
+)
+async def update_group_model_profile(
+        user_group_id: UUID,
+        profile_name: str,
+        profile_update: schemas.ModelProfileUpdate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.ModelProfile:
+    """
+    Update an existing model profile for a user group.
+
+    Required privilege: Group.Modify
+    """
+
+    # Check if group exists
+    user_group = await users_repo.get_user_group(user_group_id)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    try:
+        # Build updates dict with only non-None values
+        updates = {k: v for k, v in profile_update.model_dump().items() if v is not None}
+
+        updated_profile = await users_repo.update_group_model_profile(
+            user_group_id,
+            profile_name,
+            updates
+        )
+
+        if not updated_profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Profile '{profile_name}' not found"
+            )
+
+        return schemas.ModelProfile(**updated_profile)
+    except HTTPException:
+        raise
+    except ValueError as e:
+        # Handle optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise ControllerBadRequestError(str(e))
+    except Exception as e:
+        log.error(f"Failed to update group model profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update model profile"
+        )
+
+
+@router.delete(
+    "/{user_group_id}/profiles/{profile_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Group.Modify"))]
+)
+async def delete_group_model_profile(
+        user_group_id: UUID,
+        profile_name: str,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> None:
+    """
+    Delete a model profile from a user group.
+    If deleting the active profile, another profile will be set as active.
+
+    Required privilege: Group.Modify
+    """
+
+    # Check if group exists
+    user_group = await users_repo.get_user_group(user_group_id)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    try:
+        success = await users_repo.delete_group_model_profile(user_group_id, profile_name)
+    except ValueError as e:
+        # Handle optimistic lock errors
+        if "Concurrent modification" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise ControllerBadRequestError(str(e))
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile '{profile_name}' not found"
+        )

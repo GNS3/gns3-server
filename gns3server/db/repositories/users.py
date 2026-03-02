@@ -530,3 +530,245 @@ class UsersRepository(BaseRepository):
                 return profile
 
         return None
+
+    # Model profile methods for user groups (stored in user_group.model_configs as JSON)
+
+    async def _get_group_model_configs_version(self, user_group_id: UUID) -> Optional[int]:
+        """
+        Helper method to get the current model_configs_version for a user group.
+        """
+        user_group = await self.get_user_group(user_group_id)
+        return user_group.model_configs_version if user_group else None
+
+    async def get_group_model_configs(self, user_group_id: UUID) -> Dict[str, Any]:
+        """
+        Get all model configurations for a user group.
+        Returns a dict with 'profiles' list and 'active' profile name.
+        API keys are decrypted before returning.
+        """
+
+        user_group = await self.get_user_group(user_group_id)
+        if not user_group:
+            return {"profiles": [], "active": "default"}
+
+        if not user_group.model_configs:
+            return {"profiles": [], "active": "default"}
+
+        try:
+            from gns3server.utils.encryption import decrypt, is_encrypted
+
+            configs = json.loads(user_group.model_configs)
+
+            # Decrypt API keys in profiles
+            for profile in configs.get("profiles", []):
+                if "api_key" in profile and profile["api_key"]:
+                    try:
+                        if is_encrypted(profile["api_key"]):
+                            profile["api_key"] = decrypt(profile["api_key"])
+                    except Exception as e:
+                        log.warning(f"Failed to decrypt API key for profile '{profile.get('name')}': {e}")
+
+            return configs
+        except (json.JSONDecodeError, ValueError) as e:
+            log.warning(f"Invalid model_configs JSON for user group {user_group_id}: {e}")
+            return {"profiles": [], "active": "default"}
+
+    async def set_group_model_configs(
+        self,
+        user_group_id: UUID,
+        configs: Dict[str, Any],
+        expected_version: Optional[int] = None
+    ) -> None:
+        """
+        Set all model configurations for a user group.
+        API keys are encrypted before storing.
+        Uses optimistic locking to prevent concurrent modifications.
+
+        :param user_group_id: User group ID
+        :param configs: Configuration dictionary
+        :param expected_version: Expected version for optimistic locking (raises error if mismatch)
+        :raises ValueError: If version mismatch (concurrent modification)
+        """
+
+        from gns3server.utils.encryption import encrypt
+
+        # Encrypt API keys in profiles
+        configs_to_store = json.loads(json.dumps(configs))  # Deep copy
+        for profile in configs_to_store.get("profiles", []):
+            if "api_key" in profile and profile["api_key"]:
+                try:
+                    profile["api_key"] = encrypt(profile["api_key"])
+                except Exception as e:
+                    log.error(f"Failed to encrypt API key for profile '{profile.get('name')}': {e}")
+                    raise
+
+        # Build update with optimistic locking
+        values = {
+            "model_configs": json.dumps(configs_to_store),
+            "model_configs_version": models.UserGroup.model_configs_version + 1  # Increment version
+        }
+
+        # Build query with version check if provided
+        query = update(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
+        if expected_version is not None:
+            query = query.where(models.UserGroup.model_configs_version == expected_version)
+
+        result = await self._db_session.execute(
+            query.values(values)
+        )
+
+        await self._db_session.commit()
+
+        # Check if the update actually happened (optimistic lock)
+        if expected_version is not None and result.rowcount == 0:
+            # Fetch current version to provide helpful error
+            user_group = await self.get_user_group(user_group_id)
+            current_version = user_group.model_configs_version if user_group else -1
+            raise ValueError(
+                f"Concurrent modification detected. Expected version {expected_version}, "
+                f"but current version is {current_version}. Please retry."
+            )
+
+    async def add_group_model_profile(
+        self,
+        user_group_id: UUID,
+        profile_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add a new model profile to the user group's configurations.
+        Accepts profile data including any extra fields.
+        Uses optimistic locking to prevent concurrent modifications.
+        """
+
+        # Get current configs and version
+        configs = await self.get_group_model_configs(user_group_id)
+        current_version = await self._get_group_model_configs_version(user_group_id)
+
+        # Check if profile with same name exists
+        name = profile_data.get("name")
+        if not name:
+            raise ValueError("Profile name is required")
+
+        # Reserve "active" as it conflicts with API routes
+        if name == "active":
+            raise ValueError("Profile name 'active' is reserved for system use")
+
+        for profile in configs["profiles"]:
+            if profile["name"] == name:
+                raise ValueError(f"Profile '{name}' already exists")
+
+        # Add new profile with all fields (including extra fields)
+        new_profile = profile_data.copy()
+        configs["profiles"].append(new_profile)
+
+        # If this is the first profile, set it as active
+        if len(configs["profiles"]) == 1:
+            configs["active"] = name
+
+        await self.set_group_model_configs(user_group_id, configs, expected_version=current_version)
+        return new_profile
+
+    async def update_group_model_profile(
+        self,
+        user_group_id: UUID,
+        profile_name: str,
+        updates: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update an existing model profile for a user group.
+        Uses optimistic locking to prevent concurrent modifications.
+        """
+
+        # Get current configs and version
+        configs = await self.get_group_model_configs(user_group_id)
+        current_version = await self._get_group_model_configs_version(user_group_id)
+
+        # Check if trying to rename to "active"
+        new_name = updates.get("name")
+        if new_name == "active":
+            raise ValueError("Profile name 'active' is reserved for system use")
+
+        # Check if new name conflicts with existing profile
+        if new_name and new_name != profile_name:
+            for profile in configs["profiles"]:
+                if profile["name"] == new_name:
+                    raise ValueError(f"Profile '{new_name}' already exists")
+
+        for profile in configs["profiles"]:
+            if profile["name"] == profile_name:
+                # Update fields
+                for key, value in updates.items():
+                    if value is not None:
+                        profile[key] = value
+
+                # Update active profile reference if name changed
+                if new_name and configs.get("active") == profile_name:
+                    configs["active"] = new_name
+
+                await self.set_group_model_configs(user_group_id, configs, expected_version=current_version)
+                return profile
+
+        return None
+
+    async def delete_group_model_profile(self, user_group_id: UUID, profile_name: str) -> bool:
+        """
+        Delete a model profile from a user group.
+        If deleting the active profile, switches to another profile.
+        Uses optimistic locking to prevent concurrent modifications.
+        """
+
+        # Get current configs and version
+        configs = await self.get_group_model_configs(user_group_id)
+        current_version = await self._get_group_model_configs_version(user_group_id)
+
+        # Find and remove the profile
+        for i, profile in enumerate(configs["profiles"]):
+            if profile["name"] == profile_name:
+                configs["profiles"].pop(i)
+
+                # If we deleted the active profile, switch to another
+                if configs["active"] == profile_name:
+                    if configs["profiles"]:
+                        configs["active"] = configs["profiles"][0]["name"]
+                    else:
+                        configs["active"] = "default"
+
+                await self.set_group_model_configs(user_group_id, configs, expected_version=current_version)
+                return True
+
+        return False
+
+    async def set_active_group_model_profile(self, user_group_id: UUID, profile_name: str) -> bool:
+        """
+        Set the active model profile for a user group.
+        Uses optimistic locking to prevent concurrent modifications.
+        """
+
+        # Get current configs and version
+        configs = await self.get_group_model_configs(user_group_id)
+        current_version = await self._get_group_model_configs_version(user_group_id)
+
+        # Check if profile exists
+        profile_exists = any(p["name"] == profile_name for p in configs["profiles"])
+        if not profile_exists:
+            return False
+
+        configs["active"] = profile_name
+        await self.set_group_model_configs(user_group_id, configs, expected_version=current_version)
+        return True
+
+    async def get_active_group_model_profile(self, user_group_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Get the active model profile for a user group.
+        """
+
+        configs = await self.get_group_model_configs(user_group_id)
+
+        if not configs["profiles"]:
+            return None
+
+        for profile in configs["profiles"]:
+            if profile["name"] == configs["active"]:
+                return profile
+
+        return None

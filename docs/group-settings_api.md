@@ -1,12 +1,10 @@
-# User Settings API
+# Group Settings API
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.1.0 | 2026-03-01 | Improve encryption validation, auto-generate keys without config file, enhance database migration |
-| 2.0.0 | 2026-03-01 | Add API key encryption, optimistic locking, data validation |
-| 1.0.0 | 2026-03-01 | Initial release |
+| 1.0.0 | 2026-03-03 | Initial release - match user settings API functionality |
 
 ---
 
@@ -14,7 +12,7 @@
 
 ### 1. Database Schema
 
-**New columns in `users` table:**
+**New columns in `user_groups` table:**
 
 | Column | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -65,15 +63,9 @@
 
 ### 4. Database Migration
 
-**Migration improvements**:
-- Detects database state: new, new with version tracking, or old database
-- Automatically runs migrations for old databases without version tracking
-- Idempotent migration scripts (safe to re-run)
-- Proper transaction handling with explicit commits
+**For new installations**: The columns are created automatically when the database is initialized.
 
-**Migration scripts**:
-- `20260301_add_model_configs_version.py` - Add version column (idempotent)
-- `20260301_validate_model_configs.py` - Validate and repair JSON data
+**For existing installations**: A database migration script will be provided to add the new columns to existing `user_groups` tables.
 
 ### 5. Optimistic Locking
 
@@ -81,13 +73,13 @@
 - Send `expected_version` in write requests for validation
 - Returns HTTP 409 if version mismatch
 
-### 6. New Files
+### 6. Modified Files
 
 | File | Description |
 |------|-------------|
-| `gns3server/utils/encryption.py` | Fernet encryption utilities |
-| `gns3server/db_migrations/versions/20260301_add_model_configs_version.py` | Add version column |
-| `gns3server/db_migrations/versions/20260301_validate_model_configs.py` | Validate and repair JSON |
+| `gns3server/db/models/users.py` | Added `model_configs` and `model_configs_version` to UserGroup |
+| `gns3server/db/repositories/users.py` | Added group model config methods |
+| `gns3server/api/routes/controller/groups.py` | Added group profile endpoints |
 
 ---
 
@@ -97,26 +89,28 @@
 
 | Method | Path                              | Privilege      |
 |--------|-----------------------------------|----------------|
-| GET    | /users/{user_id}/profiles         | User.Audit     |
-| POST   | /users/{user_id}/profiles         | User.Modify    |
-| GET    | /users/{user_id}/profiles/active  | User.Audit     |
-| PUT    | /users/{user_id}/profiles/active  | User.Modify    |
-| PUT    | /users/{user_id}/profiles/{name}  | User.Modify    |
-| DELETE | /users/{user_id}/profiles/{name}  | User.Modify    |
+| GET    | /groups/{group_id}/profiles        | Group.Audit    |
+| POST   | /groups/{group_id}/profiles        | Group.Modify   |
+| GET    | /groups/{group_id}/profiles/active | Group.Audit    |
+| PUT    | /groups/{group_id}/profiles/active | Group.Modify   |
+| PUT    | /groups/{group_id}/profiles/{name} | Group.Modify   |
+| DELETE | /groups/{group_id}/profiles/{name} | Group.Modify   |
 
 ### Base Path
 
 ```
-/v3/access/users/{user_id}/profiles
+/v3/access/groups/{user_group_id}/profiles
 ```
 
 ### 1. Get All Profiles
 
 **Request**
 ```
-GET /v3/access/users/{user_id}/profiles
+GET /v3/access/groups/{user_group_id}/profiles
 Authorization: Bearer <token>
 ```
+
+**Required Privilege**: `Group.Audit`
 
 **Response**
 ```json
@@ -140,7 +134,7 @@ Authorization: Bearer <token>
 
 **Request**
 ```
-POST /v3/access/users/{user_id}/profiles
+POST /v3/access/groups/{user_group_id}/profiles
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -151,6 +145,8 @@ Content-Type: application/json
   "api_key": "sk-xxx"
 }
 ```
+
+**Required Privilege**: `Group.Modify`
 
 **Response**
 ```
@@ -170,9 +166,11 @@ HTTP Status: 201 Created
 
 **Request**
 ```
-GET /v3/access/users/{user_id}/profiles/active
+GET /v3/access/groups/{user_group_id}/profiles/active
 Authorization: Bearer <token>
 ```
+
+**Required Privilege**: `Group.Audit`
 
 **Response**
 ```json
@@ -190,7 +188,7 @@ Authorization: Bearer <token>
 
 **Request**
 ```
-PUT /v3/access/users/{user_id}/profiles/active
+PUT /v3/access/groups/{user_group_id}/profiles/active
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -199,6 +197,8 @@ Content-Type: application/json
   "expected_version": 3  // Optional, for optimistic locking
 }
 ```
+
+**Required Privilege**: `Group.Modify`
 
 **Response**
 ```json
@@ -222,7 +222,7 @@ HTTP Status: 409 Conflict
 
 **Request**
 ```
-PUT /v3/access/users/{user_id}/profiles/{profile_name}
+PUT /v3/access/groups/{user_group_id}/profiles/{profile_name}
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -231,6 +231,8 @@ Content-Type: application/json
   "max_tokens": 4000
 }
 ```
+
+**Required Privilege**: `Group.Modify`
 
 **Response**
 ```json
@@ -249,9 +251,11 @@ Content-Type: application/json
 
 **Request**
 ```
-DELETE /v3/access/users/{user_id}/profiles/{profile_name}
+DELETE /v3/access/groups/{user_group_id}/profiles/{profile_name}
 Authorization: Bearer <token>
 ```
+
+**Required Privilege**: `Group.Modify`
 
 **Response**
 ```
@@ -290,4 +294,12 @@ Any custom fields supported, e.g., `max_tokens`, `top_p`, `stream`, etc.
 | 401 | Unauthorized |
 | 404 | Not found |
 | 409 | Conflict (version mismatch) |
-| 500 | Server error
+| 500 | Server error |
+
+---
+
+## Notes
+
+### Built-in Groups
+
+Built-in groups (like "Administrators" and "Users") can have model configs configured, but their `is_builtin` flag cannot be changed.

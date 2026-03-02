@@ -78,6 +78,8 @@ class UserGroup(BaseTable):
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
+    model_configs = Column(Text, nullable=True)  # JSON string for model profiles
+    model_configs_version = Column(Integer, default=0)  # Optimistic locking version
     users = relationship("User", secondary=user_group_map, back_populates="groups")
     acl_entries = relationship("ACE")
 
