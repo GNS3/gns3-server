@@ -95,14 +95,14 @@
 
 ### Overview
 
-| Method | Path                              | Privilege      |
-|--------|-----------------------------------|----------------|
-| GET    | /users/{user_id}/profiles         | User.Audit     |
-| POST   | /users/{user_id}/profiles         | User.Modify    |
-| GET    | /users/{user_id}/profiles/active  | User.Audit     |
-| PUT    | /users/{user_id}/profiles/active  | User.Modify    |
-| PUT    | /users/{user_id}/profiles/{name}  | User.Modify    |
-| DELETE | /users/{user_id}/profiles/{name}  | User.Modify    |
+| Method | Path                                 | Privilege      |
+|--------|--------------------------------------|----------------|
+| GET    | /v3/access/users/{user_id}/profiles  | User.Audit     |
+| POST   | /v3/access/users/{user_id}/profiles  | User.Modify    |
+| GET    | /v3/access/users/{user_id}/profiles/active | User.Audit     |
+| PUT    | /v3/access/users/{user_id}/profiles/active | User.Modify    |
+| PUT    | /v3/access/users/{user_id}/profiles/{name} | User.Modify    |
+| DELETE | /v3/access/users/{user_id}/profiles/{name} | User.Modify    |
 
 ### Base Path
 

@@ -87,26 +87,26 @@
 
 ### Overview
 
-| Method | Path                              | Privilege      |
-|--------|-----------------------------------|----------------|
-| GET    | /groups/{group_id}/profiles        | Group.Audit    |
-| POST   | /groups/{group_id}/profiles        | Group.Modify   |
-| GET    | /groups/{group_id}/profiles/active | Group.Audit    |
-| PUT    | /groups/{group_id}/profiles/active | Group.Modify   |
-| PUT    | /groups/{group_id}/profiles/{name} | Group.Modify   |
-| DELETE | /groups/{group_id}/profiles/{name} | Group.Modify   |
+| Method | Path                                    | Privilege      |
+|--------|-----------------------------------------|----------------|
+| GET    | /v3/access/groups/{group_id}/profiles   | Group.Audit    |
+| POST   | /v3/access/groups/{group_id}/profiles   | Group.Modify   |
+| GET    | /v3/access/groups/{group_id}/profiles/active | Group.Audit  |
+| PUT    | /v3/access/groups/{group_id}/profiles/active | Group.Modify |
+| PUT    | /v3/access/groups/{group_id}/profiles/{name} | Group.Modify |
+| DELETE | /v3/access/groups/{group_id}/profiles/{name} | Group.Modify |
 
 ### Base Path
 
 ```
-/v3/access/groups/{user_group_id}/profiles
+/v3/access/groups/{group_id}/profiles
 ```
 
 ### 1. Get All Profiles
 
 **Request**
 ```
-GET /v3/access/groups/{user_group_id}/profiles
+GET /v3/access/groups/{group_id}/profiles
 Authorization: Bearer <token>
 ```
 
@@ -134,7 +134,7 @@ Authorization: Bearer <token>
 
 **Request**
 ```
-POST /v3/access/groups/{user_group_id}/profiles
+POST /v3/access/groups/{group_id}/profiles
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -166,7 +166,7 @@ HTTP Status: 201 Created
 
 **Request**
 ```
-GET /v3/access/groups/{user_group_id}/profiles/active
+GET /v3/access/groups/{group_id}/profiles/active
 Authorization: Bearer <token>
 ```
 
@@ -188,7 +188,7 @@ Authorization: Bearer <token>
 
 **Request**
 ```
-PUT /v3/access/groups/{user_group_id}/profiles/active
+PUT /v3/access/groups/{group_id}/profiles/active
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -222,7 +222,7 @@ HTTP Status: 409 Conflict
 
 **Request**
 ```
-PUT /v3/access/groups/{user_group_id}/profiles/{profile_name}
+PUT /v3/access/groups/{group_id}/profiles/{profile_name}
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -251,7 +251,7 @@ Content-Type: application/json
 
 **Request**
 ```
-DELETE /v3/access/groups/{user_group_id}/profiles/{profile_name}
+DELETE /v3/access/groups/{group_id}/profiles/{profile_name}
 Authorization: Bearer <token>
 ```
 
