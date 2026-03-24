@@ -251,8 +251,12 @@ class AsyncioTelnetServer:
     async def _invoke_window_size_changed(self, connection, columns, rows):
         try:
             await connection.window_size_changed(columns, rows)
+        except asyncio.CancelledError:
+            raise
         except (ConnectionError, OSError):
             connection.close()
+        except Exception:
+            log.exception("Unhandled exception in window_size_changed callback for %r", connection)
 
     async def _run_client_session(self, network_reader, network_writer):
         self._set_socket_options(network_writer)

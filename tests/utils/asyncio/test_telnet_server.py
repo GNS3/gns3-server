@@ -143,7 +143,7 @@ async def test_telnet_server_broadcast_survives_client_disconnect():
         await _wait_for_connection_count(server, 2)
 
         client1_writer.close()
-        await asyncio.sleep(0.2)
+        await _wait_for_connection_count(server, 1)
 
         upstream_reader.feed_data(b"ok")
         data2 = await asyncio.wait_for(client2_reader.read(2), timeout=2)
