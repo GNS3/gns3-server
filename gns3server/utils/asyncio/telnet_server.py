@@ -22,12 +22,13 @@ import socket
 
 import telnetlib3
 from telnetlib3.server import TelnetServer
-from telnetlib3.telopt import DONT, ECHO, IAC, NAWS, WILL, WONT
+from telnetlib3.telopt import DONT, ECHO, IAC, NAWS, NOP, WILL, WONT
 
 log = logging.getLogger(__name__)
 
 READ_SIZE = 1024
 BROADCAST_DRAIN_TIMEOUT = 10
+KEEPALIVE_INTERVAL = 60  # Send NOP every 60 seconds
 
 
 class _ManagedTelnetListener:
@@ -108,12 +109,14 @@ class AsyncioTelnetServer:
         naws=False,
         window_size_changed_callback=None,
         connection_factory=None,
+        keepalive_interval=KEEPALIVE_INTERVAL,
     ):
         """
         Initialize telnet server.
 
         :param naws: when True, window size negotiation callbacks are enabled.
         :param connection_factory: optional factory to inject a custom connection implementation.
+        :param keepalive_interval: interval in seconds for sending NOP keep-alive (0 to disable).
         """
 
         assert connection_factory is None or (
@@ -126,12 +129,14 @@ class AsyncioTelnetServer:
         self._binary = binary
         self._echo = echo
         self._naws = naws
+        self._keepalive_interval = keepalive_interval
 
         self._connections = {}
         self._pending_window_sizes = {}
         self._connections_lock = asyncio.Lock()
         self._close_lock = asyncio.Lock()
         self._broadcast_task = None
+        self._keepalive_task = None
         self._server = None
         self._server_handle = None
 
@@ -177,6 +182,9 @@ class AsyncioTelnetServer:
         if self._reader is not None and self._broadcast_task is None:
             self._broadcast_task = asyncio.create_task(self._broadcast_from_upstream())
 
+        if self._keepalive_interval > 0 and self._keepalive_task is None:
+            self._keepalive_task = asyncio.create_task(self._send_keepalives())
+
         return self._server_handle
 
     async def run(self, network_reader, network_writer):
@@ -186,6 +194,13 @@ class AsyncioTelnetServer:
 
     async def close(self):
         async with self._close_lock:
+            if self._keepalive_task is not None:
+                keepalive_task = self._keepalive_task
+                self._keepalive_task = None
+                keepalive_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await keepalive_task
+
             if self._broadcast_task is not None:
                 broadcast_task = self._broadcast_task
                 self._broadcast_task = None
@@ -324,6 +339,29 @@ class AsyncioTelnetServer:
             pass
         finally:
             await self._disconnect_all_clients()
+
+    async def _send_keepalives(self):
+        """Periodically send IAC NOP to all connected clients to keep sessions alive."""
+
+        try:
+            while True:
+                await asyncio.sleep(self._keepalive_interval)
+                for network_writer, connection in await self._get_connections_snapshot():
+                    client_info = self._get_peername(network_writer)
+                    try:
+                        log.debug("Sending keepalive to client %s", client_info)
+                        connection.writer.send_iac(IAC + NOP)
+                        await asyncio.wait_for(connection.writer.drain(), timeout=BROADCAST_DRAIN_TIMEOUT)
+                    except (OSError, ConnectionError, asyncio.TimeoutError) as e:
+                        log.debug(
+                            "Keepalive failed for client %s: %s, closing connection.",
+                            client_info,
+                            e,
+                        )
+                        connection.close()
+                        await self._disconnect_client(network_writer)
+        except asyncio.CancelledError:
+            raise
 
     async def _get_connections_snapshot(self):
         async with self._connections_lock:
