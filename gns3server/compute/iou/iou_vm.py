@@ -651,9 +651,7 @@ class IOUVM(BaseNode):
                 reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
             )
             try:
-                self._telnet_server = await asyncio.start_server(
-                    server.run, self._manager.port_manager.console_host, self.console
-                )
+                self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 await self.stop()
                 raise IOUError(
