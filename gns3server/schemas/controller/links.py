@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -50,6 +50,7 @@ class LinkStyle(BaseModel):
     link_type: Optional[str] = None
     bezier_curviness: Optional[int] = None
     flowchart_roundness: Optional[int] = None
+    control_offset: Optional[Tuple[float, float]] = None
 
 
 class LinkBase(BaseModel):

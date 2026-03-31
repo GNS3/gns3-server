@@ -46,7 +46,6 @@ from gns3server.controller.controller_error import (
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.core import tasks
-from gns3server.version import __version__
 
 import logging
 
@@ -56,6 +55,7 @@ log = logging.getLogger(__name__)
 def get_application() -> FastAPI:
 
     application = FastAPI(
+        lifespan=tasks.lifespan,
         title="GNS3 controller API",
         description="This page describes the public controller API for GNS3",
         version="v3",
@@ -71,8 +71,6 @@ def get_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    application.add_event_handler("startup", tasks.create_startup_handler(application))
-    application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
     application.mount("/static", StaticFiles(packages=[('gns3server', 'static')]), name="static")
