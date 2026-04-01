@@ -25,8 +25,9 @@ platformdirs>=2.4.0,<3  # platformdirs >=3 conflicts when building Debian packag
 truststore>=0.10.4; python_version >= '3.10'
 
 # Shared dependencies (also used by AI Copilot)
+telnetlib3==4.0.1
 typing-extensions>=4.15.0
-requests>=2.32.5
+requests>=2.33.1
 urllib3>=2.6.2
 
 # ==============================================================================

@@ -36,9 +36,6 @@ nornir-netmiko>=1.0.1
 nornir-utils>=0.2.0
 nornir-salt>=0.23.0
 
-# Telnet Client
-telnetlib3>=2.0.8
-
 # Environment & Configuration
 python-dotenv>=1.2.1
 
