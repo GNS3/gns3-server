@@ -107,9 +107,15 @@ def get_device_ports_from_topology(
             # Return error if device_type not found in tags
             # Using a default would cause command execution errors
             if device_type is None:
+                tested_device_types = (
+                    "cisco_ios_telnet (Netmiko built-in), gns3_huawei_telnet_ce (custom Huawei), "
+                    "gns3_ruijie_telnet (custom Ruijie)"
+                )
                 error_msg = (
                     f"Device '{device_name}': device_type tag not found. "
                     f"Please add 'device_type:<type>' tag to this device in GNS3. "
+                    f"To configure via Web UI: right-click the device -> Configure -> Tags -> add 'device_type:<type>'. "
+                    f"Tested types: {tested_device_types}. "
                     f"Current tags: {tags}"
                 )
                 logger.error(error_msg)
