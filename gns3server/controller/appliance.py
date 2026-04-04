@@ -45,6 +45,10 @@ class Appliance:
         return self._data["status"]
 
     @property
+    def registry_version(self):
+        return self._data["registry_version"]
+
+    @property
     def symbol(self):
         return self._data.get("symbol")
 

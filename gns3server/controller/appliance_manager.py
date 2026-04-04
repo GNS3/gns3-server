@@ -37,6 +37,7 @@ from .appliance_to_template import ApplianceToTemplate
 from ..utils.images import InvalidImageError, write_image, read_image_info
 
 from gns3server import schemas
+from gns3server.schemas.controller.appliances import ApplianceModel
 from gns3server.utils.images import default_images_directory
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -248,7 +249,8 @@ class ApplianceManager:
         appliances_info = self._find_appliances_from_image_checksum(image_checksum)
         for appliance, image_version in appliances_info:
             try:
-                schemas.Appliance.model_validate(appliance.asdict())
+                # Validate with discriminated union - automatically routes to correct version
+                ApplianceModel.model_validate(appliance.asdict())
             except ValidationError as e:
                 log.warning(f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
@@ -279,7 +281,8 @@ class ApplianceManager:
             raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
 
         try:
-            schemas.Appliance.model_validate(appliance.asdict())
+            # Validate with discriminated union - automatically routes to correct version
+            ApplianceModel.model_validate(appliance.asdict())
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate appliance '{appliance_id}': {e}")
 
@@ -334,7 +337,9 @@ class ApplianceManager:
                             appliance = Appliance(path, json.load(f), builtin=builtin)
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
-                                schemas.Appliance.model_validate(json_data)
+                                # Validate using discriminated union - automatically routes to correct version
+                                log.debug(f"Validating appliance '{appliance.id}' with registry version {appliance.registry_version}")
+                                ApplianceModel.model_validate(json_data)
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
