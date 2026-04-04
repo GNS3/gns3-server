@@ -15,11 +15,17 @@
     "iou": {
         "ethernet_adapters": 2,
         "serial_adapters": 2,
-        "nvram": 512,
-        "ram": 512,
+        "nvram": 256,
+        "ram": 1024,
         "startup_config": "iou_l3_base_startup-config.txt"
     },
     "images": [
+        {
+            "filename": "x86_64_crb_linux-adventerprisek9-ms.17.16.1a.iol",
+            "version": "17.16.1a",
+            "md5sum": "39bdf959c3b99a3c81d66451f1cf0404",
+            "filesize": 293062920
+        },
         {
             "filename": "x86_64_crb_linux-adventerprisek9-ms.iol",
             "version": "17.15.1",
@@ -37,21 +43,15 @@
             "version": "15.7(3)M2",
             "md5sum": "d6874260c3daeeb96d10fc844ae0b93b",
             "filesize": 184759244
-        },
-        {
-            "filename": "i86bi-linux-l3-adventerprisek9-ms.155-2.T.bin",
-            "version": "155-2T",
-            "md5sum": "45e99761a95cbd3ee3924ecf0f3d89e5",
-            "filesize": 172982492
-        },
-        {
-            "filename": "i86bi-linux-l3-adventerprisek9-15.4.1T.bin",
-            "version": "15.4.1T",
-            "md5sum": "2eabae17778316c49cbc80e8e81262f9",
-            "filesize": 152677848
         }
     ],
     "versions": [
+        {
+            "name": "17.16.1a",
+            "images": {
+                "image": "x86_64_crb_linux-adventerprisek9-ms.17.16.1a.iol"
+            }
+        },
         {
             "name": "17.15.1",
             "images": {
@@ -68,18 +68,6 @@
             "name": "15.7(3)M2",
             "images": {
                 "image": "i86bi_LinuxL3-AdvEnterpriseK9-M2_157_3_May_2018.bin"
-            }
-        },
-        {
-            "name": "155-2T",
-            "images": {
-                "image": "i86bi-linux-l3-adventerprisek9-ms.155-2.T.bin"
-            }
-        },
-        {
-            "name": "15.4.1T",
-            "images": {
-                "image": "i86bi-linux-l3-adventerprisek9-15.4.1T.bin"
             }
         }
     ]
