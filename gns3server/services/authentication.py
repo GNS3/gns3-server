@@ -45,12 +45,12 @@ class AuthService:
 
         return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hashed_password.encode('utf-8'))
 
-    def create_access_token(self, username, secret_key: str = None, expires_in: int = 0) -> str:
+    def create_access_token(self, username, token_version: int = 0, secret_key: str = None, expires_in: int = 0) -> str:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_access_token_expire_minutes
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_in)
-        to_encode = {"sub": username, "exp": expire}
+        to_encode = {"sub": username, "exp": expire, "ver": token_version}
         if secret_key is None:
             secret_key = Config.instance().settings.Controller.jwt_secret_key
         if secret_key is None:
@@ -61,7 +61,7 @@ class AuthService:
         encoded_jwt = jwt.encode({"alg": algorithm}, to_encode, key)
         return encoded_jwt
 
-    def get_username_from_token(self, token: str, secret_key: str = None) -> Optional[str]:
+    def get_token_data(self, token: str, secret_key: str = None) -> TokenData:
 
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,7 +80,11 @@ class AuthService:
             username: str = payload.claims.get("sub")
             if username is None:
                 raise credentials_exception
-            token_data = TokenData(username=username)
+            token_version: int = payload.claims.get("ver", 0)
+            token_data = TokenData(username=username, token_version=token_version)
         except (JoseError, ValidationError, ValueError):
             raise credentials_exception
-        return token_data.username
+        return token_data
+
+    def get_username_from_token(self, token: str, secret_key: str = None) -> Optional[str]:
+        return self.get_token_data(token, secret_key).username

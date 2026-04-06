@@ -2,7 +2,7 @@
     "appliance_id": "ed6b9f98-7de2-4d61-a3ed-ad4c3e323ace",
     "name": "Tiny Core Linux",
     "category": "guest",
-    "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt provides a complete Linux system using only a few MiB.",
+    "description": "TinyCore is a Linux system with a graphical desktop using only a few MiB.",
     "vendor_name": "Team Tiny Core",
     "vendor_url": "http://distro.ibiblio.org/tinycorelinux",
     "documentation_url": "http://wiki.tinycorelinux.net/",
@@ -25,6 +25,14 @@
         "options": "-vga std -usbdevice tablet"
     },
     "images": [
+        {
+            "filename": "linux-tinycore-17.0.qcow2",
+            "version": "17.0",
+            "md5sum": "6434d4da25dd0277cc90b000bb4ac8f1",
+            "filesize": 35061760,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/linux-tinycore-17.0.qcow2"
+        },
         {
             "filename": "linux-tinycore-11.1.qcow2",
             "version": "11.1",
@@ -51,6 +59,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.0",
+            "images": {
+                "hda_disk_image": "linux-tinycore-17.0.qcow2"
+            }
+        },
         {
             "name": "11.1",
             "images": {

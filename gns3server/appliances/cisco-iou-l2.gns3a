@@ -15,11 +15,17 @@
     "iou": {
         "ethernet_adapters": 4,
         "serial_adapters": 0,
-        "nvram": 512,
-        "ram": 512,
+        "nvram": 256,
+        "ram": 1024,
         "startup_config": "iou_l2_base_startup-config.txt"
     },
     "images": [
+        {
+            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.17.16.1a.iol",
+            "version": "17.16.1a",
+            "md5sum": "d55879318e51c5401fb9314d45c67728",
+            "filesize": 244265240
+        },
         {
             "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.iol",
             "version": "17.15.1",
@@ -33,25 +39,25 @@
             "filesize": 240355720
         },
         {
-            "filename": "i86bi-linux-l2-ipbasek9-15.1g.bin",
-            "version": "15.1g",
-            "md5sum": "0b8b9e14ca99b68c654e44c4296857ba",
-            "filesize": 62137336
+            "filename": "i86bi_linux_l2-adventerprisek9-ms.SSA.high_iron_20190423.bin",
+            "version": "15.2(20190423)",
+            "md5sum": "ffe884f8e762b762d7886c51d8ee015c",
+            "filesize": 126249700
         },
         {
-            "filename": "i86bi-linux-l2-adventerprisek9-15.1a.bin",
-            "version": "15.1a",
-            "md5sum": "9549a20a7391fb849da32caa77a0d254",
-            "filesize": 72726092
-        },
-        {
-            "filename": "i86bi-linux-l2-adventerprisek9-15.2d.bin",
-            "version": "15.2d",
-            "md5sum": "f16db44433beb3e8c828db5ddad1de8a",
-            "filesize": 105036380
+            "filename": "i86bi_LinuxL2-AdvEnterpriseK9-M_152_May_2018.bin",
+            "version": "15.2(20180510)",
+            "md5sum": "d704b68c5f4c4f92e56b754b49b92012",
+            "filesize": 126226692
         }
     ],
     "versions": [
+        {
+            "name": "17.16.1a",
+            "images": {
+                "image": "x86_64_crb_linux_l2-adventerprisek9-ms.17.16.1a.iol"
+            }
+        },
         {
             "name": "17.15.1",
             "images": {
@@ -65,21 +71,15 @@
             }
         },
         {
-            "name": "15.1g",
+            "name": "15.2(20190423)",
             "images": {
-                "image": "i86bi-linux-l2-ipbasek9-15.1g.bin"
+                "image": "i86bi_linux_l2-adventerprisek9-ms.SSA.high_iron_20190423.bin"
             }
         },
         {
-            "name": "15.1a",
+            "name": "15.2(20180510)",
             "images": {
-                "image": "i86bi-linux-l2-adventerprisek9-15.1a.bin"
-            }
-        },
-        {
-            "name": "15.2d",
-            "images": {
-                "image": "i86bi-linux-l2-adventerprisek9-15.2d.bin"
+                "image": "i86bi_LinuxL2-AdvEnterpriseK9-M_152_May_2018.bin"
             }
         }
     ]

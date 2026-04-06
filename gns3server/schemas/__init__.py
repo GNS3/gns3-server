@@ -24,7 +24,7 @@ from .controller.links import LinkCreate, LinkUpdate, Link, UDPPortInfo, Etherne
 from .controller.computes import ComputeCreate, ComputeUpdate, ComputeVirtualBoxVM, ComputeVMwareVM, ComputeDockerImage, AutoIdlePC, Compute
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
 from .controller.images import Image, ImageType
-from .controller.appliances import ApplianceVersion, Appliance
+from .controller.appliances import ApplianceVersion, ApplianceVersionV8, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
 from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node

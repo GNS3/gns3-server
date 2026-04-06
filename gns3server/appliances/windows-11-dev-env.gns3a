@@ -30,19 +30,11 @@
     },
     "images": [
         {
-            "filename": "WinDev2308Eval-disk1.vmdk",
-            "version": "2308",
-            "md5sum": "6a9b4ed6d7481f7bbf8a054c797b1eee",
-            "filesize": 24945341952,
-            "download_url": "https://download.microsoft.com/download/7/1/3/7135f2ab-8528-49fc-9252-8d5d94c697ef/WinDev2308Eval.VMWare.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "WinDev2212Eval-disk1.vmdk",
-            "version": "2212",
-            "md5sum": "c79f393a067b92e01a513a118d455ac8",
-            "filesize": 24620493824,
-            "download_url": "https://aka.ms/windev_VM_vmware",
+            "filename": "WinDev2407Eval-disk1.vmdk",
+            "version": "2407",
+            "md5sum": "66e7233c7922ef128c5b7c957d20bcbe",
+            "filesize": 25984826368,
+            "download_url": "https://download.microsoft.com/download/e/e/c/eec4775f-f2e8-4476-98b2-ca51502a6429/WinDev2407Eval.VMWare.zip",
             "compression": "zip"
         },
         {
@@ -57,17 +49,10 @@
     ],
     "versions": [
         {
-            "name": "2308",
+            "name": "2407",
             "images": {
                 "bios_image": "OVMF-edk2-stable202305.fd",
-                "hda_disk_image": "WinDev2308Eval-disk1.vmdk"
-            }
-        },
-        {
-            "name": "2212",
-            "images": {
-                "bios_image": "OVMF-edk2-stable202305.fd",
-                "hda_disk_image": "WinDev2212Eval-disk1.vmdk"
+                "hda_disk_image": "WinDev2407Eval-disk1.vmdk"
             }
         }
     ]
