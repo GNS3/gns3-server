@@ -18,13 +18,16 @@
 import os
 import uuid
 import json
+import asyncio
 import pytest
 import socket
 from unittest.mock import MagicMock, patch
 from tests.utils import AsyncioMagicMock, asyncio_patch
+from watchdog.events import FileCreatedEvent, DirCreatedEvent
 
 from gns3server.controller.compute import Compute
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller import _ProjectsDirectoryEventHandler
 from gns3server.version import __version__
 
 
@@ -108,6 +111,51 @@ async def test_load_projects(controller, projects_dir):
     with asyncio_patch("gns3server.controller.Controller.load_project") as mock_load_project:
         await controller.load_projects()
     mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
+
+
+@pytest.mark.asyncio
+async def test_load_projects_skip_unexpected_errors(controller, projects_dir):
+
+    os.makedirs(os.path.join(projects_dir, "broken_project"))
+    with open(os.path.join(projects_dir, "broken_project", "broken.gns3"), "w+") as f:
+        f.write("")
+
+    with asyncio_patch("gns3server.controller.Controller.load_project", side_effect=Exception("boom")) as mock_load_project:
+        await controller.load_projects()
+    mock_load_project.assert_called_with(os.path.join(projects_dir, "broken_project", "broken.gns3"), load=False)
+
+
+def test_projects_directory_event_handler_filters_events(controller):
+
+    controller._notify_projects_directory_event = MagicMock()
+    handler = _ProjectsDirectoryEventHandler(controller, "/projects")
+
+    # Non-.gns3 file should be ignored
+    handler.on_created(FileCreatedEvent("/projects/project1/README.txt"))
+    assert controller._notify_projects_directory_event.call_count == 0
+
+    # .gns3 file creation should trigger
+    handler.on_created(FileCreatedEvent("/projects/project1/project1.gns3"))
+    assert controller._notify_projects_directory_event.call_count == 1
+
+    # Direct child directory creation should trigger
+    handler.on_created(DirCreatedEvent("/projects/project1"))
+    assert controller._notify_projects_directory_event.call_count == 2
+
+    # Deep subdirectory creation should be ignored
+    handler.on_created(DirCreatedEvent("/projects/project1/captures"))
+    assert controller._notify_projects_directory_event.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_schedule_projects_scan_is_debounced(controller):
+
+    with asyncio_patch("gns3server.controller.Controller._scan_projects_directory") as mock_scan_projects:
+        controller._projects_monitor_loop = asyncio.get_running_loop()
+        controller._schedule_projects_scan(delay=0.01)
+        controller._schedule_projects_scan(delay=0.01)
+        await asyncio.sleep(0.05)
+        assert mock_scan_projects.call_count == 1
 
 
 @pytest.mark.asyncio
