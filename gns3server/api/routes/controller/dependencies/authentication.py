@@ -114,7 +114,7 @@ async def get_current_active_user_from_websocket(
         if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"'{username}' is not an active user"
+                detail=f"'{token_data.username}' is not an active user"
             )
 
         return user
