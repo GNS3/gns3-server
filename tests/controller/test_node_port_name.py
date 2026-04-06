@@ -133,6 +133,13 @@ def test_list_ports_port_name_format(node):
     assert node.asdict()["ports"][1]["name"] == "eth0/0"
 
 
+def test_short_name_none():
+    """
+    Test short_name does not raise exception when name is None
+    """
+    assert EthernetPort(None, 0, 0, 0).short_name is None
+
+
 def test_list_ports_adapters(node):
     """
     List port using adapters properties
