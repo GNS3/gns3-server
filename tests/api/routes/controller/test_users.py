@@ -421,7 +421,7 @@ class TestLogout:
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.json()["message"] == "Token has been revoked"
+        assert response.json()["message"] == f"Token has been revoked for '{test_user.username}'"
 
     async def test_new_token_works_after_logout_and_relogin(
             self,
