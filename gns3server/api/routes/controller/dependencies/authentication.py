@@ -58,7 +58,7 @@ async def get_user_from_token(
     if token_data.token_version != user.token_version:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked",
+            detail=f"Token has been revoked for '{token_data.username}'",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
