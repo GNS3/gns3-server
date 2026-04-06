@@ -4,6 +4,26 @@
 
 Integrate Wireshark packet capture functionality into GNS3 Web UI, allowing users to view real-time capture data directly in the browser via noVNC.
 
+## Installation
+
+Web Wireshark is an optional component of gns3-server:
+
+```bash
+pip install gns3server[wireshark]
+```
+
+This installs:
+- Python modules in `gns3server/agent/web_wireshark/`
+- Ansible playbooks for container and session management
+
+The Wireshark container image is managed in [gns3-registry](https://github.com/GNS3/gns3-registry):
+
+```
+Repository: docker/web-wireshark/
+Image: ghcr.io/gns3/web-wireshark:latest
+Base Image: Ubuntu 22.04
+```
+
 ## Architecture
 
 ```
@@ -295,7 +315,7 @@ Heartbeat mechanism:
 Manages X display allocation within a single container.
 
 ```python
-# gns3server/compute/display_manager.py
+# gns3server/agent/web_wireshark/display_manager.py
 
 import asyncio
 import logging
@@ -373,7 +393,7 @@ class DisplayManager:
 Manages Wireshark container lifecycle per project.
 
 ```python
-# gns3server/compute/project_container_manager.py
+# gns3server/agent/web_wireshark/project_container_manager.py
 
 import asyncio
 import logging
@@ -404,7 +424,7 @@ class ProjectContainerManager:
     - Provide DisplayManager per container
     """
 
-    def __init__(self, container_image: str = "gns3/wireshark-server:latest"):
+    def __init__(self, container_image: str = "ghcr.io/gns3/web-wireshark:latest"):
         self._containers: dict[str, ProjectContainer] = {}  # project_id -> container
         self._container_image = container_image
         self._lock = asyncio.Lock()
@@ -502,7 +522,7 @@ class ProjectContainerManager:
 Manages Wireshark session lifecycle on the GNS3 Server side.
 
 ```python
-# gns3server/compute/wireshark_session_manager.py
+# gns3server/agent/web_wireshark/wireshark_session_manager.py
 
 import asyncio
 import json
@@ -556,8 +576,11 @@ class WiresharkSessionManager:
         self._project_containers: ProjectContainerManager = ProjectContainerManager()
         self._container_host = container_host
         self._lock = asyncio.Lock()
-        self._ansible_inventory = "/etc/ansible/hosts"
-        self._ansible_playbooks_dir = "/etc/ansible/playbooks"
+        # Ansible playbooks are packaged with the module
+        import os
+        self._ansible_playbooks_dir = os.path.join(
+            os.path.dirname(__file__), "ansible", "playbooks"
+        )
 
     async def on_project_opened(self, project_id: str) -> None:
         """Called when a project opens. Creates Wireshark container."""
@@ -789,7 +812,7 @@ class WiresharkSessionManager:
 Handles browser WebSocket connections with state-based messaging.
 
 ```python
-# gns3server/api/routes/controller/links.py (additions)
+# gns3server/agent/web_wireshark/websocket_handler.py
 
 import asyncio
 import json
@@ -1094,7 +1117,7 @@ function connectNoVNC(xpraWsUrl) {
           --hostname wireshark-{{ project_id[:8] }} \
           --memory=4g \
           --cpus=2 \
-          gns3/wireshark-server:latest \
+          ghcr.io/gns3/web-wireshark:latest \
           /start.sh
       when: container_exists.stdout == ""
 
@@ -1466,7 +1489,7 @@ docker run -d \
   --hostname wireshark-{project_id[:8]} \
   --memory=4g \
   --cpus=2 \
-  gns3/wireshark-server:latest \
+  ghcr.io/gns3/web-wireshark:latest \
   /start.sh
 ```
 

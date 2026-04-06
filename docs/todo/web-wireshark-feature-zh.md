@@ -4,6 +4,26 @@
 
 将 Wireshark 数据包捕获功能集成到 GNS3 Web UI 中，允许用户通过 noVNC 在浏览器中直接查看实时捕获数据。
 
+## 安装方式
+
+Web Wireshark 是 gns3-server 的可选组件：
+
+```bash
+pip install gns3server[wireshark]
+```
+
+这将安装：
+- Python 模块，位于 `gns3server/agent/web_wireshark/`
+- Ansible playbooks 用于容器和会话管理
+
+Wireshark 容器镜像托管在 [gns3-registry](https://github.com/GNS3/gns3-registry)：
+
+```
+仓库：docker/web-wireshark/
+镜像：ghcr.io/gns3/web-wireshark:latest
+基础镜像：Ubuntu 22.04
+```
+
 ## 架构
 
 ```
@@ -295,7 +315,7 @@ WebSocket 处理器检测到断开 (finally 块)
 管理单个容器内 X 显示器的分配。
 
 ```python
-# gns3server/compute/display_manager.py
+# gns3server/agent/web_wireshark/display_manager.py
 
 import asyncio
 import logging
@@ -373,7 +393,7 @@ class DisplayManager:
 管理每个 project 的 Wireshark 容器生命周期。
 
 ```python
-# gns3server/compute/project_container_manager.py
+# gns3server/agent/web_wireshark/project_container_manager.py
 
 import asyncio
 import logging
@@ -404,7 +424,7 @@ class ProjectContainerManager:
     - 为每个容器提供 DisplayManager
     """
 
-    def __init__(self, container_image: str = "gns3/wireshark-server:latest"):
+    def __init__(self, container_image: str = "ghcr.io/gns3/web-wireshark:latest"):
         self._containers: dict[str, ProjectContainer] = {}  # project_id -> container
         self._container_image = container_image
         self._lock = asyncio.Lock()
@@ -502,7 +522,7 @@ class ProjectContainerManager:
 在 GNS3 Server 端管理 Wireshark 会话生命周期。
 
 ```python
-# gns3server/compute/wireshark_session_manager.py
+# gns3server/agent/web_wireshark/wireshark_session_manager.py
 
 import asyncio
 import json
@@ -556,8 +576,11 @@ class WiresharkSessionManager:
         self._project_containers: ProjectContainerManager = ProjectContainerManager()
         self._container_host = container_host
         self._lock = asyncio.Lock()
-        self._ansible_inventory = "/etc/ansible/hosts"
-        self._ansible_playbooks_dir = "/etc/ansible/playbooks"
+        # Ansible playbooks 与模块一起打包
+        import os
+        self._ansible_playbooks_dir = os.path.join(
+            os.path.dirname(__file__), "ansible", "playbooks"
+        )
 
     async def on_project_opened(self, project_id: str) -> None:
         """当项目打开时调用。创建 Wireshark 容器。"""
@@ -789,7 +812,7 @@ class WiresharkSessionManager:
 通过基于状态的消息处理浏览器 WebSocket 连接。
 
 ```python
-# gns3server/api/routes/controller/links.py (添加部分)
+# gns3server/agent/web_wireshark/websocket_handler.py
 
 import asyncio
 import json
@@ -1094,7 +1117,7 @@ function connectNoVNC(xpraWsUrl) {
           --hostname wireshark-{{ project_id[:8] }} \
           --memory=4g \
           --cpus=2 \
-          gns3/wireshark-server:latest \
+          ghcr.io/gns3/web-wireshark:latest \
           /start.sh
       when: container_exists.stdout == ""
 
@@ -1466,7 +1489,7 @@ docker run -d \
   --hostname wireshark-{project_id[:8]} \
   --memory=4g \
   --cpus=2 \
-  gns3/wireshark-server:latest \
+  ghcr.io/gns3/web-wireshark:latest \
   /start.sh
 ```
 
