@@ -14,11 +14,11 @@
     "maintainer_email": "github@sugarpapa.mozmail.com",
     "usage": "GNS3 SHOULD be a baremetal installation. Using the GNS3 VM MIGHT result in unwanted issues. Default user is root. No password is needed.",
     "symbol": "juniper-vmx.svg",
-    "first_port_name": "ge-0/0/0",
+    "first_port_name": "fxp0",
     "port_name_format": "ge-0/0/{port0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
-        "adapters": 17,
+        "adapters": 10,
         "ram": 5120,
         "cpus": 4,
         "hda_disk_interface": "virtio",

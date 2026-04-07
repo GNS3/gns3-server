@@ -1,0 +1,60 @@
+{
+    "appliance_id": "4ac0d5bc-714d-4a5a-8af5-8fb452046acd",
+    "name": "Home Assistant",
+    "category": "guest",
+    "description": "Open source home automation that puts local control and privacy first. Powered by a worldwide community of tinkerers and DIY enthusiasts.",
+    "vendor_name": "Open Home Foundation",
+    "vendor_url": "https://www.openhomefoundation.org/",
+    "vendor_logo_url": "https://www.openhomefoundation.org/assets/images/logo/open-home-foundation.svg",
+    "documentation_url": "https://www.home-assistant.io/installation/alternative",
+    "product_name": "haos",
+    "product_url": "https://www.home-assistant.io/",
+    "registry_version": 8,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Neyder Achahuanco Apaza",
+    "maintainer_email": "gns3@neyder.net",
+    "usage": "You will be able to reach Home Assistant on homeassistant.local:8123, you might need to access Home Assistant at homeassistant:8123 or http://X.X.X.X:8123 (replace X.X.X.X with your virtual machine\u2019s IP address).\nYou can access trough console with root user without password.",
+    "symbol": "home-assistant-logomark-color-on-light.svg",
+    "default_username": "cisco",
+    "default_password": "admin",
+    "settings": [
+        {
+            "name": "Default template settings",
+            "default": true,
+            "template_type": "qemu",
+            "template_properties":
+                {
+                    "adapter_type": "virtio-net-pci",
+                    "platform": "x86_64",
+                    "adapters": 1,
+                    "ram": 2048,
+                    "cpus": 2,
+                    "hda_disk_interface": "virtio",
+                    "console_type": "telnet",
+                    "boot_priority": "cd",
+                    "on_close": "shutdown_signal",
+                    "uefi": true
+                }
+        }
+    ],
+    "images": [
+        {
+            "filename": "haos_ova-17.1.qcow2",
+            "version": "17.1",
+            "md5sum": "e1b950430045859a3ac035cb420df158",
+            "filesize": 1024393216,
+            "download_url": "https://www.home-assistant.io/installation/alternative",
+            "direct_download_url": "https://github.com/home-assistant/operating-system/releases/download/17.1/haos_ova-17.1.qcow2.xz",
+            "compression": "xz"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "haos_ova-17.1.qcow2"
+            },
+            "name": "17.1"
+        }
+    ]
+}

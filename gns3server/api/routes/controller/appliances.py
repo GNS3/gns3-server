@@ -21,7 +21,7 @@ API routes for appliances.
 import logging
 
 from fastapi import APIRouter, Depends, status
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 
 from gns3server import schemas
@@ -94,7 +94,7 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Appliance.Allocate"))]
 )
-def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> dict:
+def add_appliance_version(appliance_id: UUID, appliance_version: Union[schemas.ApplianceVersion, schemas.ApplianceVersionV8]) -> dict:
     """
     Add a version to an appliance.
 

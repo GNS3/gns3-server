@@ -1,0 +1,21 @@
+{
+    "appliance_id": "a2209414-88a6-403b-a2e1-477a057ec954",
+    "name": "AlpiNet",
+    "category": "guest",
+    "description": "AlpiNet is a lightweight Alpine-based networking toolbox for GNS3.\n\nCOMPREHENSIVE TOOLKIT:\n• Network: ip, ifconfig, ping, traceroute, mtr, arping, nmap, tcpdump\n• Performance: iperf, iperf3\n• HTTP/Web: curl, wget\n• TCP/UDP: netcat, socat, telnet\n• Advanced: ethtool, bridge-utils, vlan\n• Firewall: iptables, ip6tables, nftables\n• File Transfer: FTP (lftp), TFTP, SSH (scp/sftp), rsync\n• DNS: host, nslookup, dig\n• System: nano, tmux, screen, htop, bash\n• Text Tools: grep, sed, awk, jq, less\n• Compression: tar, gzip\n• Utilities: tree, file, openssl\n\nType 'alpinet-tools' in the container for the complete tool list.\n\nOptimized for network testing, troubleshooting, and education.",
+    "vendor_name": "AlpiNet Project",
+    "vendor_url": "https://www.alpinelinux.org/",
+    "product_name": "AlpiNet",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "nazDridoy",
+    "maintainer_email": "nazdridoy399@gmail.com",
+    "usage": "The /root directory is persistent across restarts. Type 'alpinet-tools' to see all available utilities.",
+    "symbol": "AlpiNet.svg",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/alpinet:latest",
+        "console_type": "telnet",
+        "environment": "TERM=xterm"
+    }
+}

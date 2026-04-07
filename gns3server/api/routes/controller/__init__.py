@@ -171,11 +171,13 @@ router.include_router(
 router.include_router(
     _llm_router,
     prefix="/access",
+    dependencies=[Depends(get_current_active_user)],
     tags=["LLM Model Configurations"]
 )
 
 router.include_router(
     _chat_router,
     prefix="/projects/{project_id}/chat",
+    dependencies=[Depends(get_current_active_user)],
     tags=["Chat"]
 )

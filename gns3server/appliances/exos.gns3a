@@ -7,7 +7,7 @@
     "vendor_url": "https://www.extremenetworks.com",
     "documentation_url": "https://www.extremenetworks.com/support/documentation",
     "product_name": "EXOS VM",
-    "registry_version": 4,
+    "registry_version": 5,
     "status": "stable",
     "maintainer": "Extreme Networks",
     "maintainer_email": "GitHubscripting@extremenetworks.com",
@@ -18,18 +18,25 @@
     "qemu": {
         "adapter_type": "rtl8139",
         "adapters": 13,
-        "ram": 512,
+        "ram": 1024,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "boot_priority": "dc",
         "kvm": "allow",
-        "options": "-cpu core2duo"
+        "options": "-nographic -cpu host -enable-kvm"
     },
     
     "images": [
 
-		{
+				{
+            "filename": "EXOS-VM_33.6.1.14.qcow2",
+            "version": "33.6.1.14",
+            "md5sum": "01ea4bea3f321f91910565bb223a2540",
+            "filesize": 278647296,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_33.6.1.14.qcow2"
+        },
+        {
             "filename": "EXOS-VM_32.7.2.19.qcow2",
             "version": "32.7.2.19",
             "md5sum": "eba580a2e18d2a9cc972c9ece8917ea8",
@@ -48,6 +55,12 @@
     
     "versions": [
 
+        {
+            "name": "33.6.1.14",
+            "images": {
+                "hda_disk_image": "EXOS-VM_33.6.1.14.qcow2"
+			}
+        },
         {
             "name": "32.7.2.19",
             "images": {
