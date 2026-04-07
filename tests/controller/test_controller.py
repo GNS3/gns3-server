@@ -150,11 +150,17 @@ def test_projects_directory_event_handler_filters_events(controller):
 @pytest.mark.asyncio
 async def test_schedule_projects_scan_is_debounced(controller):
 
+    scan_called = asyncio.Event()
+
+    async def _mark_scan_called(*args, **kwargs):
+        scan_called.set()
+
     with asyncio_patch("gns3server.controller.Controller._scan_projects_directory") as mock_scan_projects:
+        mock_scan_projects.side_effect = _mark_scan_called
         controller._projects_monitor_loop = asyncio.get_running_loop()
         controller._schedule_projects_scan(delay=0.01)
         controller._schedule_projects_scan(delay=0.01)
-        await asyncio.sleep(0.05)
+        await asyncio.wait_for(scan_called.wait(), timeout=1)
         assert mock_scan_projects.call_count == 1
 
 
