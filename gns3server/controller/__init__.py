@@ -363,7 +363,7 @@ class Controller:
                                 except (ControllerError, NotImplementedError):
                                     pass  # Skip not compatible projects
                                 except Exception as e:
-                                    log.warning(f"Could not load project from '{project_file}': {e}")
+                                    log.warning(f"Could not load project from '{project_file}': {e}", exc_info=True)
             except OSError as e:
                 log.error(str(e))
 
@@ -380,7 +380,7 @@ class Controller:
 
         try:
             observer = Observer()
-            observer.schedule(_ProjectsDirectoryEventHandler(self, projects_path), projects_path, recursive=True)
+            observer.schedule(_ProjectsDirectoryEventHandler(self, projects_path), projects_path, recursive=False)
             observer.start()
             self._projects_observer = observer
             log.info(f"Watching projects directory '{projects_path}' for changes")
