@@ -58,8 +58,7 @@ def get_symbols() -> List[dict]:
 @router.get(
     "/{symbol_id:path}/raw",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
-    # FIXME: this is a temporary workaround due to a bug in the web-ui: https://github.com/GNS3/gns3-web-ui/issues/1466
-    # dependencies=[Depends(has_privilege("Symbol.Audit"))]
+    dependencies=[Depends(has_privilege("Symbol.Audit"))]
 )
 async def get_symbol(symbol_id: str, request: Request) -> Response:
     """
