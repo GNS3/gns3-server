@@ -380,7 +380,7 @@ class Controller:
 
         try:
             observer = Observer()
-            observer.schedule(_ProjectsDirectoryEventHandler(self, projects_path), projects_path, recursive=False)
+            observer.schedule(_ProjectsDirectoryEventHandler(self, projects_path), projects_path, recursive=True)
             observer.start()
             self._projects_observer = observer
             log.info(f"Watching projects directory '{projects_path}' for changes")
