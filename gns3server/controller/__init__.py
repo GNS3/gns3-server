@@ -22,11 +22,15 @@ import shutil
 import asyncio
 import random
 import json
+import threading
 
 try:
     import importlib_resources
 except ImportError:
     from importlib import resources as importlib_resources
+
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from ..config import Config
 from ..utils import parse_version, md5sum
@@ -51,6 +55,39 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class _ProjectsDirectoryEventHandler(FileSystemEventHandler):
+    """
+    Watchdog handler for project directory changes.
+    """
+
+    def __init__(self, controller, projects_path):
+        self._controller = controller
+        self._projects_path = os.path.normpath(projects_path)
+
+    def on_created(self, event):
+        self._handle_event(event)
+
+    def on_modified(self, event):
+        self._handle_event(event)
+
+    def on_moved(self, event):
+        self._handle_event(event)
+
+    def _handle_event(self, event):
+        if event.is_directory:
+            # Only react to direct child directories of the projects path
+            # to avoid noise from subdirectory changes in existing projects
+            for path in (getattr(event, "src_path", ""), getattr(event, "dest_path", "")):
+                if path and os.path.dirname(os.path.normpath(path)) == self._projects_path:
+                    self._controller._notify_projects_directory_event()
+                    return
+        else:
+            for path in (getattr(event, "src_path", ""), getattr(event, "dest_path", "")):
+                if path and path.endswith(".gns3"):
+                    self._controller._notify_projects_directory_event()
+                    return
+
+
 class Controller:
     """
     The controller is responsible to manage one or more computes.
@@ -69,11 +106,18 @@ class Controller:
         self._vars_loaded = False
         self._vars_file = Config.instance().controller_vars
         self._project_auto_open_task_handle = None
+        self._projects_observer = None
+        self._projects_scan_handle = None
+        self._projects_scan_lock = asyncio.Lock()
+        self._projects_monitor_loop = None
+        self._projects_monitor_thread_id = None
         log.info(f'Loading controller vars file "{self._vars_file}"')
 
     async def start(self, computes=None):
 
         log.info("Controller is starting")
+        self._projects_monitor_loop = asyncio.get_running_loop()
+        self._projects_monitor_thread_id = threading.get_ident()
         await self._install_base_configs()
         await self._install_custom_symbols()
         installed_disks = await self._install_builtin_disks()
@@ -140,6 +184,7 @@ class Controller:
             log.warning(str(e))
 
         await self.load_projects()
+        self._start_projects_monitor()
 
         # start to auto open projects (if configured) 5 seconds after the controller has started
         self._project_auto_open_task_handle = asyncio.get_event_loop().call_later(
@@ -184,6 +229,7 @@ class Controller:
     async def stop(self):
 
         log.info("Controller is stopping")
+        self._stop_projects_monitor()
         if self._project_auto_open_task_handle is not None and not self._project_auto_open_task_handle.cancelled():
             self._project_auto_open_task_handle.cancel()
         for project in self._projects.values():
@@ -301,21 +347,106 @@ class Controller:
         Preload the list of projects from disk
         """
 
-        server_config = Config.instance().settings.Server
-        projects_path = os.path.expanduser(server_config.projects_path)
+        async with self._projects_scan_lock:
+            server_config = Config.instance().settings.Server
+            projects_path = os.path.expanduser(server_config.projects_path)
+            os.makedirs(projects_path, exist_ok=True)
+            try:
+                for project_path in os.listdir(projects_path):
+                    project_dir = os.path.join(projects_path, project_path)
+                    if os.path.isdir(project_dir):
+                        for file in os.listdir(project_dir):
+                            if file.endswith(".gns3"):
+                                project_file = os.path.join(project_dir, file)
+                                try:
+                                    await self.load_project(project_file, load=False)
+                                except (ControllerError, NotImplementedError):
+                                    pass  # Skip not compatible projects
+                                except Exception as e:
+                                    log.warning(f"Could not load project from '{project_file}': {e}", exc_info=True)
+            except OSError as e:
+                log.error(str(e))
+
+    def _start_projects_monitor(self):
+        """
+        Monitor the projects directory for newly added projects.
+        """
+
+        if self._projects_observer is not None:
+            return
+
+        projects_path = self.projects_directory()
         os.makedirs(projects_path, exist_ok=True)
+
         try:
-            for project_path in os.listdir(projects_path):
-                project_dir = os.path.join(projects_path, project_path)
-                if os.path.isdir(project_dir):
-                    for file in os.listdir(project_dir):
-                        if file.endswith(".gns3"):
-                            try:
-                                await self.load_project(os.path.join(project_dir, file), load=False)
-                            except (ControllerError, NotImplementedError):
-                                pass  # Skip not compatible projects
+            observer = Observer()
+            observer.schedule(_ProjectsDirectoryEventHandler(self, projects_path), projects_path, recursive=True)
+            observer.start()
+            self._projects_observer = observer
+            log.info(f"Watching projects directory '{projects_path}' for changes")
         except OSError as e:
-            log.error(str(e))
+            log.warning(f"Could not watch projects directory '{projects_path}': {e}")
+
+    def _stop_projects_monitor(self):
+        """
+        Stop projects directory monitoring.
+        """
+
+        if self._projects_scan_handle is not None:
+            self._projects_scan_handle.cancel()
+            self._projects_scan_handle = None
+
+        self._projects_monitor_loop = None
+
+        observer = self._projects_observer
+        if observer is None:
+            return
+
+        self._projects_observer = None
+        observer.stop()
+        observer.join(timeout=2)
+
+    def _notify_projects_directory_event(self):
+        """
+        Callback invoked by watchdog threads when the projects directory changes.
+        """
+
+        loop = self._projects_monitor_loop
+        if loop is None:
+            return
+
+        if threading.get_ident() == self._projects_monitor_thread_id:
+            self._schedule_projects_scan()
+            return
+
+        try:
+            loop.call_soon_threadsafe(self._schedule_projects_scan)
+        except RuntimeError:
+            pass  # Event loop may be closed during shutdown
+
+    def _schedule_projects_scan(self, delay=0.5):
+        """
+        Debounce projects directory scans to avoid excessive rescans during copy operations.
+        """
+
+        if self._projects_scan_handle is not None:
+            self._projects_scan_handle.cancel()
+
+        loop = self._projects_monitor_loop or asyncio.get_running_loop()
+        self._projects_scan_handle = loop.call_later(delay, lambda: asyncio.create_task(self._scan_projects_directory()))
+
+    async def _scan_projects_directory(self):
+        """
+        Refresh loaded projects after a filesystem change.
+        """
+
+        self._projects_scan_handle = None
+        if self._projects_observer is None:
+            return  # Monitor was stopped, skip the scan
+        try:
+            await self.load_projects()
+        except Exception as e:
+            log.warning(f"Projects directory rescan failed: {e}")
 
 
     @staticmethod
