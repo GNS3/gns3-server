@@ -85,7 +85,7 @@ class Port:
             return self._short_name
         elif self._name and '/' in self._name:
             return self._name.replace(self.long_name_type(), self.short_name_type())
-        elif self._name.startswith(f"{self.long_name_type()}{self._interface_number}"):
+        elif self._name and self._name.startswith(f"{self.long_name_type()}{self._interface_number}"):
             return self.short_name_type() + f"{self._interface_number}"
         return self._name
 
