@@ -696,6 +696,221 @@ gns3server/agent/web_wireshark/
 3. Create start.sh script
 4. Build and test container image locally
 
+#### ⚠️ Phase 1 Validation Gate
+
+**CRITICAL: All validation tests MUST pass before proceeding to Phase 2**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 1 Validation Gate                                        │
+│                                                                 │
+│  Before moving to Phase 2, you MUST verify:                     │
+│                                                                 │
+│  ✅ 1. Container builds successfully                           │
+│  ✅ 2. Container starts without errors                         │
+│  ✅ 3. xpra service is running on port 10000                   │
+│  ✅ 4. Wireshark can be launched inside container              │
+│  ✅ 5. VNC/noVNC can connect and display Wireshark UI          │
+│  ✅ 6. Wireshark can load and display PCAP files               │
+│                                                                 │
+│  ⛔ DO NOT PROCEED TO PHASE 2 until ALL tests pass             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Validation Test Steps
+
+#### Step 1: Build Container
+
+```bash
+cd gns3server/agent/web_wireshark/docker/
+docker build -t gns3/web-wireshark:test .
+
+# Expected output:
+# Successfully built <image-id>
+# Successfully tagged gns3/web-wireshark:test
+```
+
+**✅ Test Pass:** Build completes without errors
+
+#### Step 2: Start Container
+
+```bash
+# Remove old container if exists
+docker rm -f ws-test 2>/dev/null || true
+
+# Start new container
+docker run -d --name ws-test \
+  -p 10000:10000 \
+  gns3/web-wireshark:test
+
+# Wait for startup
+sleep 3
+
+# Check container is running
+docker ps | grep ws-test
+```
+
+**✅ Test Pass:** Container shows as "Up" in `docker ps`
+
+#### Step 3: Verify xpra Service
+
+```bash
+# Check xpra process is running
+docker exec ws-test ps aux | grep xpra
+
+# Check port 10000 is listening
+docker exec ws-test netstat -tlnp | grep 10000
+
+# Alternative if netstat not available
+docker exec ws-test ss -tlnp | grep 10000
+```
+
+**✅ Test Pass:** xpra process running and listening on port 10000
+
+#### Step 4: Launch Wireshark in Container
+
+```bash
+# Create test user
+docker exec ws-test useradd test-link-$(uuidgen | head -c 8)
+
+# Get a username
+docker exec ws-test bash -c 'ls /home/'
+
+# Start Wireshark on display :0
+docker exec ws-test bash -c 'echo "test" | xvfb-run :0 wireshark -k &'
+
+# Wait for Wireshark to start
+sleep 5
+
+# Check Wireshark process
+docker exec ws-test ps aux | grep wireshark
+```
+
+**✅ Test Pass:** Wireshark process is running
+
+#### Step 5: VNC Connection Test
+
+**Option A: Browser Test (Recommended)**
+
+```bash
+# Open browser and navigate to:
+http://localhost:10000
+
+# You should see xpra web interface
+# Connect to display :0
+```
+
+**Option B: VNC Client Test**
+
+```bash
+# Using vncviewer:
+vncviewer localhost:10000
+
+# Or using any VNC client application
+```
+
+**✅ Test Pass:**
+- Connection established successfully
+- Wireshark UI is visible
+- You can see the Wireshark interface with menus and toolbars
+
+#### Step 6: Verify Wireshark Functionality
+
+```bash
+# Create a test PCAP file in the container
+docker exec ws-test bash -c 'echo "Test PCAP" > /tmp/test.pcap'
+
+# In the VNC session:
+# 1. Click File → Open
+# 2. Navigate to /tmp/test.pcap
+# 3. Try to open the file
+
+# Or test with a real PCAP:
+# Copy a PCAP file to container:
+docker cp /path/to/test.pcap ws-test:/tmp/test.pcap
+
+# Then open it in Wireshark via VNC
+```
+
+**✅ Test Pass:**
+- File dialog opens
+- Can navigate filesystem
+- Wireshark responds to mouse/keyboard input
+- Interface is functional
+
+### Validation Checklist
+
+Print and use this checklist:
+
+```
+Phase 1 Validation Checklist
+═════════════════════════════════════════════════════════
+
+[ ] 1. Container Build
+      [ ] docker build completes
+      [ ] No errors in build log
+      [ ] Image size is reasonable (< 500MB)
+
+[ ] 2. Container Start
+      [ ] docker run starts container
+      [ ] Container shows as "Up" in docker ps
+      [ ] No errors in container logs (docker logs ws-test)
+
+[ ] 3. xpra Service
+      [ ] xpra process is running
+      [ ] Port 10000 is listening
+      [ ] Can access http://localhost:10000
+
+[ ] 4. Wireshark Launch
+      [ ] Can create user in container
+      [ ] Wireshark process starts
+      [ ] Wireshark stays running (doesn't crash)
+
+[ ] 5. VNC Connection
+      [ ] VNC client connects
+      [ ] Wireshark UI is visible
+      [ ] Display is responsive
+
+[ ] 6. Wireshark Functionality
+      [ ] Can open File menu
+      [ ] Can navigate filesystem
+      [ ] Can open PCAP files
+      [ ] Interface responds to input
+
+═════════════════════════════════════════════════════════
+
+ALL CHECKS MUST PASS BEFORE PROCEEDING TO PHASE 2
+
+Date: _______________
+Tester: _______________
+Signature: _______________
+```
+
+### Troubleshooting Validation Failures
+
+| Issue | Possible Cause | Solution |
+|-------|----------------|----------|
+| Build fails | Missing dependencies | Check Dockerfile RUN commands |
+| Container won't start | start.sh error | Check `docker logs ws-test` |
+| xpra not running | xpra failed to start | Check container logs, verify xpra installation |
+| Can't connect VNC | Port not exposed | Verify `-p 10000:10000` in docker run |
+| Black screen | Wireshark not starting | Check Wireshark process, verify Xvfb |
+| Wireshark crashes | Missing display | Verify `xvfb-run :0` is working |
+
+### Success Criteria
+
+**Phase 1 is complete ONLY when:**
+1. All validation tests pass
+2. VNC connection shows working Wireshark interface
+3. Checklist is fully signed off
+4. Screenshots/video of working VNC session are documented
+
+**Next Steps After Validation:**
+- Document test results
+- Save working Docker image
+- Commit Phase 1 code
+- Proceed to Phase 2: Core Managers
+
 ---
 
 ### Phase 2: Core Managers
