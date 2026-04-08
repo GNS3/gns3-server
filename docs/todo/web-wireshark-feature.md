@@ -2,7 +2,7 @@
 
 ## Overview
 
-Integrate Wireshark packet capture functionality into GNS3 Web UI, allowing users to view real-time capture data directly in the browser via noVNC.
+Integrate Wireshark packet capture functionality into GNS3 Web UI, allowing users to view real-time capture data directly in the browser via xpra HTML5 client.
 
 ## Installation
 
@@ -23,7 +23,7 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 │   ┌─────────────────────────────────────────────────────────┐  │
 │   │  GNS3 Web UI                                             │  │
 │   │  - "Start Capture" on a link                            │  │
-│   │  - "View in Wireshark" opens noVNC iframe               │  │
+│   │  - "View in Wireshark" opens xpra HTML5 iframe          │  │
 │   │  - Receives "ready" event via WebSocket                 │  │
 │   └─────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -52,9 +52,10 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 │                              │                                   │
 │                              ▼                                   │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Inside Container: xpra + noVNC Server (port 10000)     │   │
+│  │  Inside Container: xpra HTML5 Server (dynamic port)     │   │
 │  │  - Session dir: /tmp/sessions/link-{uuid}/               │   │
 │  │    - token.txt: User's JWT for capture/stream API       │   │
+│  │  - xpra-auth-token: For xpra session authentication    │   │
 │  │  - Wireshark uses token to call GNS3 Server API         │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                              │                                   │
@@ -79,22 +80,26 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 
 - **Distributed Architecture** - Uses GNS3's existing Docker management pattern
 - **Project-level container isolation** - One container per project
+- **Lazy container creation** - Container created on first Wireshark request (not project open)
+- **Dynamic port allocation** - Auto-assigned ports, no fixed limit
 - **Immediate session creation** - Wireshark session starts when capture begins (wireshark=true)
 - **Docker API direct management** - No Ansible or SSH required
 - **Browser only connects to GNS3 Server** - WebSocket proxy handles forwarding
 - **Secure token handling** - User's JWT token used in container for capture/stream API
+- **xpra authentication** - xpra auth tokens for session security
 - **Real-time notifications** - Progress updates via project WebSocket
 
 ## Container Lifecycle
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  Project opens ──▶ Container starts ──▶ Container running              │
-│  Project closes ──▶ Container stops                                       │
+│  Lazy Creation:                                                         │
+│  First wireshark=true request ──▶ Container created (dynamic port)      │
+│  Project closes ──▶ Container stopped and removed                       │
 │                                                                          │
 │  Within Container:                                                       │
 │  Capture start (wireshark=true) ──▶ Session starting ──▶ Session ready  │
-│  Capture stop ──▶ Session stopped ──▶ Session cleanup                   │
+│  Capture stop ──▶ Session stopped ──▶ Session cleanup + token cleanup   │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -157,7 +162,7 @@ Browser (via project WebSocket):
   │   └─▶ Update UI: "Starting Wireshark..."
   │
   └─▶ {"type": "wireshark.session", "status": "ready", "ws_url": "ws://..."}
-      └─▶ Connect noVNC to ws_url
+      └─▶ Load xpra HTML5 client
           └─▶ Display Wireshark in browser
 ```
 
@@ -209,9 +214,9 @@ Project closes:
 - Coordinates with DisplayManager for display allocation
 - Emits project notifications for status updates
 
-### noVNC WebSocket Handler
-- Proxies browser to container's xpra WebSocket
-- Validates JWT token and session ownership
+### xpra WebSocket Handler
+- Proxies browser to container's xpra HTML5 WebSocket
+- Validates JWT token and xpra auth token
 - Handles connection lifecycle
 
 ### LogStreamer
@@ -225,24 +230,27 @@ Project closes:
 | Concern | Mitigation |
 |---------|------------|
 | JWT token in container | User's JWT stored in /tmp/sessions/link-{uuid}/token.txt (mode 0600) |
+| JWT token cleanup | Tokens cleaned on session stop + container startup cleanup |
 | Token visible in `ps aux` | Token passed via file, not CLI arguments |
+| xpra access | xpra auth token (random 32-char) required for connection |
 | Container accessing GNS3 API | Container uses user's JWT token with same permissions as user |
-| Browser accessing container | All access via GNS3 Server WebSocket proxy |
-| Unauthorized WebSocket | JWT validation + link ownership check |
+| Browser accessing container | All access via GNS3 Server HTTP/WebSocket proxy |
+| Unauthorized access | JWT validation + xpra token validation + link ownership check |
 | Resource abuse | cgroups limit memory (2GB) and processes (50) |
-| Token lifecycle | Token expires when capture stops / session ends |
+| Token lifecycle | JWT and xpra tokens cleaned on capture stop / session end |
 
 ### Trust Model
 ```
 Browser ──▶ GNS3 Server (JWT validated)
                     │
-                    ├─▶ Wireshark Container (has user's JWT token)
-                    │       └─▶ GNS3 Server API (capture/stream)
+                    ├─▶ Wireshark Container
+                    │       ├─▶ GNS3 Server API (via user JWT)
+                    │       └─▶ xpra HTML5 (via xpra token)
                     │
-                    └─▶ Browser (noVNC WebSocket)
+                    └─▶ Browser (xpra HTML5 iframe)
 
 All traffic flows through GNS3 Server proxy
-Container uses user's JWT to access capture data (same permissions as user)
+Two-layer security: JWT (user auth) + xpra token (session auth)
 ```
 
 ## Distributed Architecture
@@ -274,27 +282,61 @@ Each compute node:
 ### Dockerfile
 ```dockerfile
 FROM ubuntu:22.04
-RUN apt-get update && apt-get install -y wireshark xpra xvfb curl python3
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wireshark xpra xvfb curl python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create sessions directory with proper permissions
 RUN mkdir -p /tmp/sessions && chmod 1777 /tmp/sessions
+
+# Copy startup script
 COPY start.sh /start.sh
-EXPOSE 10000
+RUN chmod +x /start.sh
+
+# No EXPOSE - port is dynamically allocated
 CMD ["/start.sh"]
 ```
 
 ### start.sh
 ```bash
 #!/bin/bash
-xpra start :0 --html=on --bind-tcp=0.0.0.0:10000 --auth=allow --daemonize
+set -e
+
+# Cleanup old session files and tokens on startup
+rm -rf /tmp/sessions/link-*/token.txt
+rm -rf /tmp/sessions/link-*/xpra-auth-token
+
+# Generate xpra auth token
+XPRA_AUTH_TOKEN=$(head -c 32 /dev/urandom | xxd -p -c 32)
+echo "$XPRA_AUTH_TOKEN" > /tmp/xpra-auth-token
+chmod 0600 /tmp/xpra-auth-token
+
+# Start xpra with:
+# - Dynamic port allocation (let Docker assign port)
+# - Token-based authentication
+# - HTML5 client enabled
+xpra start :0 \
+  --html=on \
+  --bind-tcp=0.0.0.0:0 \
+  --auth=token \
+  --tcp-auth="$XPRA_AUTH_TOKEN" \
+  --daemonize
+
+# Keep container running
 tail -f /dev/null
 ```
 
 ### Container Structure
 ```
 /
-├── tmp/sessions/link-{uuid}/
-│   └── token.txt                    # User's JWT (0600)
+├── tmp/
+│   ├── sessions/link-{uuid}/
+│   │   └── token.txt               # User's JWT for GNS3 API (0600)
+│   └── xpra-auth-token             # xpra authentication token (0600)
 ├── usr/bin/wireshark                # Uses token to call capture/stream API
-├── usr/bin/xpra
+├── usr/bin/xpra                     # HTML5 server on dynamic port
 └── usr/bin/xvfb-run
 ```
 
@@ -308,16 +350,24 @@ docker build -t gns3/web-wireshark:local .
 
 ### Test Container
 ```bash
-# Run container
+# Run container with dynamic port allocation
 docker run -d --name ws-test \
-  -p 10000:10000 \
+  -P \
   gns3/web-wireshark:local
+
+# Get the assigned port
+PORT=$(docker port ws-test 10000 | cut -d: -f2)
+echo "xpra is on port: $PORT"
 
 # Verify xpra is running
 docker exec ws-test ps aux | grep xpra
 
-# Test WebSocket endpoint
-curl -s http://localhost:10000
+# Get xpra auth token
+XPRA_TOKEN=$(docker exec ws-test cat /tmp/xpra-auth-token)
+echo "xpra auth token: $XPRA_TOKEN"
+
+# Test xpra HTML5 endpoint
+curl -s "http://localhost:$PORT"
 ```
 
 ### Push to Registry (when ready)
@@ -385,21 +435,21 @@ ws.onmessage = (event) => {
 
   if (msg.type === 'wireshark.session') {
     if (msg.status === 'starting') updateStatus("Starting Wireshark...");
-    if (msg.status === 'ready') connectNoVNC(msg.ws_url);
-    if (msg.status === 'stopped') closeNoVNC();
+    if (msg.status === 'ready') connectXpra(msg.xpra_url, msg.xpra_token);
+    if (msg.status === 'stopped') closeXpra();
     if (msg.status === 'error') showError(msg.error);
   }
 };
 ```
 
-### 3. noVNC Integration
+### 3. xpra HTML5 Client Integration
+
+When `wireshark.session.status === "ready"`, load xpra HTML5 client:
 
 ```javascript
-function connectNoVNC(wsUrl) {
-  const rfb = new RFB({
-    target: document.getElementById('vnc-container'),
-    url: wsUrl
-  });
+function connectXpra(containerUrl, xpraToken) {
+  const iframe = document.getElementById('wireshark-container');
+  iframe.src = `${containerUrl}/index.html?token=${xpraToken}`;
 }
 ```
 
@@ -411,9 +461,9 @@ function connectNoVNC(wsUrl) {
    - wireshark.capturing → "Capture started..."
    - wireshark.container → "Container ready..."
    - wireshark.session (starting) → "Starting Wireshark..."
-   - wireshark.session (ready) → Connect noVNC to ws_url
-3. Wireshark displays in browser
-4. POST /capture/stop → wireshark.session (stopped) → Close noVNC
+   - wireshark.session (ready) → Load xpra HTML5 client
+3. Wireshark displays in browser via xpra
+4. POST /capture/stop → wireshark.session (stopped) → Unload xpra client
 ```
 
 ## API Reference
@@ -549,7 +599,8 @@ The frontend receives real-time Wireshark session updates via the project WebSoc
   "status": "ready",
   "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
   "session_id": "ws-session-uuid",
-  "ws_url": "ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/ws/{session_id}",
+  "xpra_url": "http://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/xpra/{session_id}",
+  "xpra_token": "...",
   "display": ":0"
 }
 ```
@@ -566,17 +617,30 @@ The frontend receives real-time Wireshark session updates via the project WebSoc
 
 ---
 
-### 5. WebSocket - noVNC Connection
+### 5. xpra HTML5 Client Connection
 
-When `wireshark.session.status === "ready"`, connect to the provided WebSocket URL:
+When `wireshark.session.status === "ready"`, load xpra HTML5 client:
 
-```http
-ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/ws/{session_id}?token={jwt_token}
+**Notification includes:**
+```json
+{
+  "type": "wireshark.session",
+  "status": "ready",
+  "link_id": "...",
+  "session_id": "...",
+  "xpra_url": "http://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/xpra/{session_id}",
+  "xpra_token": "..."
+}
 ```
 
-**Authentication:** JWT token via query parameter
+**Frontend:**
+```javascript
+iframe.src = `${msg.xpra_url}/index.html?token=${msg.xpra_token}`;
+```
 
-This WebSocket connection is proxied to the container's xpra server for noVNC RFB protocol.
+**Authentication:** JWT token + xpra auth token
+
+The GNS3 Server proxies HTTP/WebSocket traffic to the container's xpra HTML5 server.
 
 ## Implementation Status
 
@@ -609,8 +673,19 @@ This WebSocket connection is proxied to the container's xpra server for noVNC RF
 
 ## Limitations
 
-- **Concurrent projects:** Max 100 projects with active Wireshark sessions (ports 10000-10099)
-- **Sessions per project:** Max 51 concurrent Wireshark sessions per project (displays 0-50)
+- **Sessions per project:** Max 51 concurrent Wireshark sessions per project (displays :0-:50)
+- **Container resource limits:** Memory (2GB) and processes (50) per container via cgroups
+- **Single-controller deployment:** Wireshark containers run on controller node (not distributed to computes)
+
+### Distributed Architecture Note
+
+While GNS3 supports distributed deployments with multiple compute nodes, Web Wireshark initially runs on the **controller node only**. This simplifies implementation because:
+
+- Wireshark containers don't need to be distributed across computes
+- No complex proxy routing between controller and computes
+- xpra HTML5 client connects directly to controller
+
+**Future enhancement:** Support running Wireshark containers on compute nodes with WebSocket proxying.
 
 ## Reliability & Debugging
 
@@ -962,13 +1037,13 @@ Signature: _______________
 
 ```python
 class ProjectContainerManager:
-    async def create_container(self, project_id: str) -> str: ...
+    async def create_container(self, project_id: str) -> dict: ...  # Returns {"container_id": "...", "port": ..., "xpra_token": "..."}
     async def get_container(self, project_id: str) -> dict: ...
     async def delete_container(self, project_id: str): ...
     def container_exists(self, project_id: str) -> bool: ...
 ```
 
-**Tasks:** Docker API, container naming (`gns3-ws-{project_id}`), port allocation (10000-10099), orphan cleanup
+**Tasks:** Docker API, container naming (`gns3-ws-{project_id}`), **dynamic port allocation**, orphan cleanup
 
 #### 2.2 DisplayManager (`display_manager.py`)
 
@@ -988,7 +1063,7 @@ class WiresharkSession:
     async def start(self, link_id: str, jwt_token: str, capture_url: str): ...
     async def stop(self): ...
     def get_state(self) -> str: ...  # idle/starting/ready/stopped/error
-    def get_websocket_url(self) -> str: ...
+    def get_connection_info(self) -> dict: ...  # {"xpra_url": "...", "xpra_token": "..."}
     async def get_logs(self, lines: int = 100) -> List[str]: ...
     async def _stream_container_logs(self): ...
 ```
@@ -1032,7 +1107,7 @@ class WiresharkManager:
 
 ```python
 async def start_capture(self, data_link_type="DLT_EN10MB",
-                       capture_file_name=None, wireshark=False):
+                       capture_file_name=None, wireshark=False, jwt_token=None):
     self._capturing = True
     self._capture_file_name = capture_file_name
 
@@ -1040,13 +1115,35 @@ async def start_capture(self, data_link_type="DLT_EN10MB",
         from gns3server.agent.web_wireshark import WiresharkManager
         manager = WiresharkManager.instance()
         await manager.start_capture_session(
-            self._project, self.id,
-            self._project._controller._current_user_jwt,
-            self.pcap_streaming_url()
+            self._project, self.id, jwt_token, self.pcap_streaming_url()
         )
 ```
 
-**Tasks:** Add `wireshark` param, integrate with WiresharkManager, handle JWT
+**Note:** `jwt_token` parameter must be passed from API route layer (extracted from request context)
+
+**API Route Layer:**
+
+**File:** `gns3server/api/routes/controller/links.py`
+
+```python
+from .dependencies.authentication import get_current_user_token
+
+@router.post("/{link_id}/capture/start")
+async def start_capture(
+    capture_data: dict,
+    link: Link = Depends(dep_link),
+    jwt_token: str = Depends(get_current_user_token)  # Extract from request
+):
+    await link.start_capture(
+        data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
+        capture_file_name=capture_data.get("capture_file_name"),
+        wireshark=capture_data.get("wireshark", False),
+        jwt_token=jwt_token  # Pass JWT to link
+    )
+    return link.asdict()
+```
+
+**Tasks:** Add `wireshark` and `jwt_token` params, integrate with WiresharkManager, extract JWT in API route
 
 #### 4.2 Modify Link.stop_capture()
 
