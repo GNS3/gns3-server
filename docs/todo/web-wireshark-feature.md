@@ -195,6 +195,7 @@ Project closes:
 - One container per project
 - Tracks container state and IP
 - Container lifecycle tied to project open/close
+- **Orphan cleanup on server startup** - Scans and removes leftover gns3-ws-* containers
 
 ### DisplayManager
 - Manages X display allocation per container (:0 to :50)
@@ -212,6 +213,12 @@ Project closes:
 - Proxies browser to container's xpra WebSocket
 - Validates JWT token and session ownership
 - Handles connection lifecycle
+
+### LogStreamer
+- Captures container stderr output during session startup
+- Streams logs via project WebSocket notifications
+- Provides detailed error messages for troubleshooting
+- Exposes log retrieval API for debugging
 
 ## Security
 
@@ -637,11 +644,13 @@ This WebSocket connection is proxied to the container's xpra server for noVNC RF
 |-----------|--------|-------|
 | agent/web_wireshark module | 🔲 TODO | Create module structure |
 | WiresharkManager | 🔲 TODO | Main coordinator |
-| ProjectContainerManager | 🔲 TODO | Docker API container lifecycle |
+| ProjectContainerManager | 🔲 TODO | Docker API container lifecycle + orphan cleanup |
 | DisplayManager | 🔲 TODO | Per-container display allocation |
-| WiresharkSession | 🔲 TODO | Session state + Docker exec |
+| WiresharkSession | 🔲 TODO | Session state + Docker exec + log streaming |
+| LogStreamer | 🔲 TODO | Container stderr capture and streaming |
 | Link API modifications | 🔲 TODO | Add wireshark parameter handling |
 | Project WebSocket notifications | 🔲 TODO | Emit progress notifications |
+| Log retrieval API | 🔲 TODO | GET /{link_id}/wireshark/logs |
 | noVNC WebSocket endpoint | 🔲 TODO | Proxy to xpra |
 | Dockerfile + start.sh | 🔲 TODO | Container image |
 | Frontend integration | 🔲 TODO | Implement notification handling |
@@ -662,6 +671,207 @@ This WebSocket connection is proxied to the container's xpra server for noVNC RF
 
 - **Concurrent projects:** Max 100 projects with active Wireshark sessions (ports 10000-10099)
 - **Sessions per project:** Max 51 concurrent Wireshark sessions per project (displays 0-50)
+
+## Reliability & Debugging
+
+### Orphan Container Cleanup
+
+**Problem:** If GNS3 Server crashes unexpectedly, `ProjectContainerManager` cannot trigger `delete_container()`, leaving orphaned `gns3-ws-*` containers consuming resources.
+
+**Solution:** Automatic orphan cleanup on server startup.
+
+#### Implementation
+
+**File:** `gns3server/agent/web_wireshark/manager.py`
+
+```python
+class WiresharkManager:
+    async def initialize_on_server_startup(self):
+        """Called when GNS3 Server starts"""
+        await self._cleanup_orphan_containers()
+
+    async def _cleanup_orphan_containers(self):
+        """Scan and remove orphaned gns3-ws-* containers"""
+        # List all gns3-ws-* containers
+        containers = await self._docker_manager.list_containers(
+            filters={"name": "gns3-ws-"}
+        )
+
+        # Check if project exists
+        for container in containers:
+            project_id = self._extract_project_id(container.name)
+            if not await self._project_exists(project_id):
+                log.warning(f"Found orphan container: {container.name}")
+                await self._container_manager.delete_container(project_id)
+```
+
+**Server Startup Hook:**
+
+**File:** `gns3server/controller.py` or `gns3server/main.py`
+
+```python
+async def on_server_startup():
+    """Called when GNS3 Server starts"""
+    from gns3server.agent.web_wireshark import WiresharkManager
+    manager = WiresharkManager.instance()
+    await manager.initialize_on_server_startup()
+```
+
+#### Benefits
+
+- **Automatic cleanup** - No manual intervention needed
+- **Resource recovery** - Frees up disk space and ports
+- **Prevents accumulation** - Stops orphan containers from building up over time
+
+### Log Streaming and Visibility
+
+**Problem:** When `wireshark.session.error` occurs, the error message is often too generic (e.g., "Failed to start Wireshark"). This makes debugging difficult.
+
+**Solution:** Stream container stderr output in real-time and provide log retrieval API.
+
+#### Implementation
+
+**Option A: Real-time Log Streaming via WebSocket**
+
+```python
+class WiresharkSession:
+    async def start(self, link_id: str, jwt_token: str, capture_url: str):
+        """Start Wireshark session with log streaming"""
+
+        # Start log capture task
+        self._log_task = asyncio.create_task(
+            self._stream_container_logs()
+        )
+
+        # ... rest of session startup ...
+
+    async def _stream_container_logs(self):
+        """Stream container stderr to project WebSocket"""
+        try:
+            async for log_line in self._container.logs(
+                stderr=True,
+                stdout=False,
+                follow=True
+            ):
+                # Emit log notification
+                self._project.emit_notification(
+                    "wireshark.log",
+                    {
+                        "link_id": self._link_id,
+                        "session_id": self._id,
+                        "log": log_line.decode('utf-8').strip()
+                    }
+                )
+        except Exception as e:
+            log.error(f"Log streaming failed: {e}")
+```
+
+**Frontend Integration:**
+
+```javascript
+// Listen for log messages
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+
+  if (msg.type === 'wireshark.log') {
+    // Display logs in debug console or error panel
+    console.log(`[Wireshark ${msg.link_id}] ${msg.log}`);
+    // Or append to a log viewer UI
+  }
+
+  if (msg.type === 'wireshark.session' && msg.status === 'error') {
+    // Error now includes context from previous log messages
+    showErrorWithLogs(msg.error, collectedLogs);
+  }
+};
+```
+
+**Option B: Log Retrieval API**
+
+```python
+# File: gns3server/api/routes/controller/links.py
+
+@router.get(
+    "/{link_id}/wireshark/logs",
+    dependencies=[Depends(has_privilege("Link.Capture"))]
+)
+async def get_wireshark_logs(
+    link: Link = Depends(dep_link),
+    lines: int = 100
+) -> dict:
+    """
+    Get Wireshark session logs for debugging.
+
+    Returns the last N lines of container stderr output.
+    """
+    from gns3server.agent.web_wireshark import WiresharkManager
+
+    manager = WiresharkManager.instance()
+    session = manager.get_session(link.id)
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    logs = await session.get_logs(lines=lines)
+
+    return {
+        "link_id": link.id,
+        "session_id": session.id,
+        "logs": logs
+    }
+```
+
+**API Response:**
+
+```json
+{
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
+  "session_id": "ws-session-uuid",
+  "logs": [
+    "xpra start :0 --html=on...",
+    "wireshark: error while loading shared libraries: libwireshark.so.14...",
+    "ERROR: Failed to start Wireshark"
+  ]
+}
+```
+
+#### Enhanced Error Notifications
+
+**Before:**
+```json
+{
+  "type": "wireshark.session",
+  "status": "error",
+  "error": "Failed to start Wireshark"
+}
+```
+
+**After (with log streaming):**
+```json
+{
+  "type": "wireshark.session",
+  "status": "error",
+  "error": "Failed to start Wireshark: libwireshark.so.14: cannot open shared object file",
+  "log_lines": [
+    "xpra start :0 --html=on...",
+    "wireshark: error while loading shared libraries: libwireshark.so.14: cannot open shared object file: No such file or directory",
+    "ERROR: Failed to start Wireshark"
+  ]
+}
+```
+
+#### Benefits
+
+- **Better debugging** - See actual error messages from container
+- **Real-time feedback** - Logs stream as they happen
+- **Historical access** - Retrieve logs after failure
+- **User-friendly** - Detailed errors in UI instead of generic messages
+
+### Recommended Implementation Priority
+
+1. **Phase 1** - Implement orphan container cleanup (low complexity, high value)
+2. **Phase 4 or 5** - Implement log streaming (medium complexity, high value)
+3. **Future** - Add log viewer UI component
 
 ## Future Enhancements
 
@@ -939,6 +1149,7 @@ class ProjectContainerManager:
 - Container naming: `gns3-ws-{project_id}`
 - Port allocation: 10000-10099
 - Container lifecycle management
+- **Orphan cleanup on server startup** - Scan and remove leftover containers
 
 #### 2.2 DisplayManager (`display_manager.py`)
 
@@ -978,6 +1189,12 @@ class WiresharkSession:
 
     def get_websocket_url(self) -> str:
         """Get WebSocket URL for noVNC connection"""
+
+    async def get_logs(self, lines: int = 100) -> List[str]:
+        """Get container stderr logs for debugging"""
+
+    async def _stream_container_logs(self):
+        """Stream container logs to project WebSocket"""
 ```
 
 **Tasks:**
@@ -986,6 +1203,9 @@ class WiresharkSession:
 - JWT token file creation
 - Display allocation coordination
 - Notification emission via project
+- **Log capture from container stderr**
+- **Log streaming via project WebSocket**
+- **Log retrieval API support**
 
 ---
 
@@ -1000,6 +1220,9 @@ class WiresharkManager:
     @staticmethod
     def instance() -> 'WiresharkManager':
         """Get singleton instance"""
+
+    async def initialize_on_server_startup(self):
+        """Initialize manager and cleanup orphan containers"""
 
     async def start_capture_session(
         self,
@@ -1018,6 +1241,9 @@ class WiresharkManager:
 
     async def cleanup_project(self, project_id: str):
         """Cleanup all sessions and container for a project"""
+
+    async def _cleanup_orphan_containers(self):
+        """Scan and remove orphaned gns3-ws-* containers"""
 ```
 
 **Tasks:**
