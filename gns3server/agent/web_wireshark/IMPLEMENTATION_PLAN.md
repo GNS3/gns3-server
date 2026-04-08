@@ -11,7 +11,7 @@
 2. API 端点从 `Authorization` header 提取 JWT token
 3. 调用管理脚本，传递 JWT token、project_id、link_id（可选 capture_url）
 4. 脚本自动检测 GNS3 server 地址（如果未提供 capture_url）
-5. 脚本创建（或复用）容器 `gns3-{project_id}`
+5. 脚本创建（或复用）容器 `gns3-wireshark-{project_id}`
 6. 脚本在容器内启动 xpra 会话 `--session-name=link-{link_id}`
 7. 脚本启动 Wireshark 并连接到抓包流
 8. 前端通过 WebSocket 连接到 `/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark`
@@ -153,7 +153,7 @@ class WebWiresharkManager:
 
     def get_or_create_container(self, project_id: str):
         """获取或创建项目的 Web Wireshark 容器"""
-        container_name = f"gns3-{project_id}"
+        container_name = f"gns3-wireshark-{project_id}"
 
         try:
             container = self.docker.containers.get(container_name)
@@ -278,10 +278,11 @@ class WebWiresharkManager:
         return result
 
     def stop_wireshark_session(self, project_id: str, link_id: str):
-        """停止 Web Wireshark 会话"""
+        """停止单个 Web Wireshark 会话"""
         logger.info(f"Stopping Web Wireshark session for link {link_id}")
         try:
-            container = self.docker.containers.get(f"gns3-{project_id}")
+            container_name = f"gns3-wireshark-{project_id}"
+            container = self.docker.containers.get(container_name)
 
             # 获取 display 编号
             link_hash = abs(hash(link_id)) % 10
@@ -299,6 +300,62 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error stopping session: {e}")
 
+    def stop_all_sessions(self, project_id: str):
+        """停止项目的所有 Web Wireshark 会话"""
+        logger.info(f"Stopping all Web Wireshark sessions for project {project_id}")
+        try:
+            container_name = f"gns3-wireshark-{project_id}"
+            container = self.docker.containers.get(container_name)
+
+            # 停止所有 xpra 会话（display 100-109）
+            for display in range(100, 110):
+                try:
+                    exit_code, output = container.exec_run(f"xpra stop :{display}", detach=True)
+                    if exit_code == 0:
+                        logger.info(f"Stopped xpra session :{display}")
+                except:
+                    # 忽略不存在的会话
+                    pass
+
+            logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
+
+        except Exception as e:
+            logger.error(f"Error stopping all sessions: {e}")
+
+    def stop_container(self, project_id: str):
+        """停止 Web Wireshark 容器"""
+        logger.info(f"Stopping Web Wireshark container for project {project_id}")
+        try:
+            container_name = f"gns3-wireshark-{project_id}"
+            container = self.docker.containers.get(container_name)
+
+            if container.status == "running":
+                container.stop(timeout=10)
+                logger.info(f"Container {container_name} stopped successfully")
+            else:
+                logger.info(f"Container {container_name} already stopped")
+
+        except Exception as e:
+            logger.error(f"Error stopping container: {e}")
+
+    def delete_container(self, project_id: str):
+        """删除 Web Wireshark 容器"""
+        logger.info(f"Deleting Web Wireshark container for project {project_id}")
+        try:
+            container_name = f"gns3-wireshark-{project_id}"
+            container = self.docker.containers.get(container_name)
+
+            # 先停止容器
+            if container.status == "running":
+                container.stop(timeout=5)
+
+            # 删除容器
+            container.remove()
+            logger.info(f"Container {container_name} deleted successfully")
+
+        except Exception as e:
+            logger.error(f"Error deleting container: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Web Wireshark 管理脚本")
@@ -312,9 +369,21 @@ def main():
     start_parser.add_argument("--capture-url", help="抓包流 URL（可选，未提供则自动检测）")
 
     # stop 命令
-    stop_parser = subparsers.add_parser("stop", help="停止 Web Wireshark 会话")
+    stop_parser = subparsers.add_parser("stop", help="停止单个 Web Wireshark 会话")
     stop_parser.add_argument("--project-id", required=True, help="项目 ID")
     stop_parser.add_argument("--link-id", required=True, help="链路 ID")
+
+    # stop-sessions 命令
+    stop_sessions_parser = subparsers.add_parser("stop-sessions", help="停止项目的所有 xpra 会话")
+    stop_sessions_parser.add_argument("--project-id", required=True, help="项目 ID")
+
+    # stop-container 命令
+    stop_container_parser = subparsers.add_parser("stop-container", help="停止 Web Wireshark 容器")
+    stop_container_parser.add_argument("--project-id", required=True, help="项目 ID")
+
+    # delete-container 命令
+    delete_container_parser = subparsers.add_parser("delete-container", help="删除 Web Wireshark 容器")
+    delete_container_parser.add_argument("--project-id", required=True, help="项目 ID")
 
     args = parser.parse_args()
 
@@ -338,8 +407,19 @@ def main():
         elif args.command == "stop":
             manager.stop_wireshark_session(args.project_id, args.link_id)
 
+        elif args.command == "stop-sessions":
+            manager.stop_all_sessions(args.project_id)
+
+        elif args.command == "stop-container":
+            manager.stop_container(args.project_id)
+
+        elif args.command == "delete-container":
+            manager.delete_container(args.project_id)
+
     except Exception as e:
         logger.error(f"Error: {e}")
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
 
@@ -563,7 +643,7 @@ async def web_wireshark_websocket(
 
     try:
         # 获取容器信息
-        container_name = f"gns3-{project_id}"
+        container_name = f"gns3-wireshark-{project_id}"
 
         # 计算 xpra 端口
         link_hash = abs(hash(link_id)) % 10
@@ -632,6 +712,463 @@ async def web_wireshark_websocket(
     except Exception as e:
         log.error(f"Error in WebSocket proxy for link {link_id}: {e}")
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason=str(e))
+```
+
+### 5. 清理逻辑
+
+**清理策略：**
+
+1. **项目关闭时**：停止所有 xpra 会话，停止容器（保留容器便于快速重启）
+2. **项目删除时**：停止所有 xpra 会话，删除容器
+3. **服务器启动时**：智能清理僵尸容器
+
+**容器命名：** `gns3-wireshark-{project_id}` （精确标识，避免误删）
+
+#### 5.1 Project 类清理方法
+
+**文件：** `gns3server/controller/project.py`
+
+```python
+import time
+
+class Project:
+    def __init__(self, ...):
+        # 现有代码...
+        self._web_wireshark_container_created = False  # 标记容器是否已创建
+
+    async def _cleanup_web_wireshark_xpra_sessions(self):
+        """
+        清理所有 Web Wireshark xpra 会话（不删除容器）
+
+        在项目关闭时调用，停止所有 xpra 会话和 Wireshark 进程
+        但保留容器，便于项目重新打开时快速复用
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            log.info(f"Stopping xpra sessions for project '{self.name}' ({self.id})")
+
+            # 调用脚本停止所有会话
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                log.warning(f"Web Wireshark script not found: {script_path}")
+                return
+
+            # 停止所有会话
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "stop-sessions",
+                "--project-id", self.id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark xpra sessions stopped successfully")
+            else:
+                log.warning(f"Failed to stop xpra sessions: {stderr.decode()}")
+
+        except Exception as e:
+            # 不抛出异常，避免影响项目关闭流程
+            log.warning(f"Failed to cleanup xpra sessions for project '{self.name}': {e}")
+
+    async def _stop_web_wireshark_container(self):
+        """
+        停止 Web Wireshark 容器（但不删除）
+
+        在项目关闭时调用，停止容器以释放内存
+        但保留容器，便于项目重新打开时快速启动
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            container_name = f"gns3-wireshark-{self.id}"
+            log.info(f"Stopping Web Wireshark container '{container_name}' for project '{self.name}'")
+
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                return
+
+            # 停止容器
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "stop-container",
+                "--project-id", self.id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark container stopped successfully")
+            else:
+                log.warning(f"Failed to stop container: {stderr.decode()}")
+
+        except Exception as e:
+            log.warning(f"Failed to stop container for project '{self.name}': {e}")
+
+    async def _cleanup_web_wireshark_container(self):
+        """
+        删除 Web Wireshark 容器
+
+        在项目删除时调用，停止并删除容器
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            container_name = f"gns3-wireshark-{self.id}"
+            log.info(f"Deleting Web Wireshark container '{container_name}' for project '{self.name}'")
+
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                return
+
+            # 删除容器
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "delete-container",
+                "--project-id", self.id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark container deleted successfully")
+                self._web_wireshark_container_created = False
+            else:
+                log.warning(f"Failed to delete container: {stderr.decode()}")
+
+        except Exception as e:
+            log.warning(f"Failed to delete container for project '{self.name}': {e}")
+
+    async def close(self):
+        """关闭项目"""
+        # 现有代码...
+
+        # 1. 停止所有 xpra 会话
+        await self._cleanup_web_wireshark_xpra_sessions()
+
+        # 2. 停止容器（保留，便于快速重启）
+        await self._stop_web_wireshark_container()
+
+        # 清理 GNS3 Copilot AgentService
+        await self._cleanup_copilot_agent()
+
+        # 现有代码...
+
+    async def delete(self):
+        """删除项目"""
+        # 现有代码...
+
+        # 删除 Web Wireshark 容器
+        await self._cleanup_web_wireshark_container()
+
+        # 现有代码...
+```
+
+#### 5.2 服务器启动时清理
+
+**文件：** `gns3server/controller/controller.py` 或新建清理模块
+
+```python
+async def cleanup_web_wireshark_containers_on_startup():
+    """
+    服务器启动时智能清理 Web Wireshark 容器
+
+    清理策略：
+    1. 删除僵尸容器（项目不存在）
+    2. 停止孤立容器（项目已关闭）
+    3. 保留活跃容器（项目已打开）
+    """
+    try:
+        from gns3server.agent.web_wireshark.manage_wireshark import WebWiresharkManager
+
+        manager = WebWiresharkManager()
+        docker = manager.docker
+
+        # 获取所有 gns3-wireshark- 开头的容器
+        containers = docker.containers.list(
+            all=True,
+            filters={"name": "gns3-wireshark-"}
+        )
+
+        log.info(f"Found {len(containers)} Web Wireshark containers to check")
+
+        for container in containers:
+            # 提取 project_id
+            # 容器名格式：gns3-wireshark-{project_id}
+            project_id = container.name.replace("gns3-wireshark-", "")
+
+            try:
+                # 检查项目是否存在
+                project = controller.get_project(project_id)
+
+                # 项目存在
+                if project.status == "opened":
+                    # 项目已打开，保持容器运行
+                    log.info(f"Container {container.name} belongs to active project, keeping it running")
+
+                    # 确保容器在运行
+                    if container.status != "running":
+                        log.info(f"Starting container {container.name} for active project")
+                        container.start()
+
+                else:
+                    # 项目已关闭，停止容器但保留
+                    if container.status == "running":
+                        log.info(f"Stopping container {container.name} (project is closed)")
+                        container.stop()
+                    else:
+                        log.info(f"Container {container.name} already stopped (project is closed)")
+
+            except ControllerNotFoundError:
+                # 项目不存在，删除僵尸容器
+                log.warning(f"Project {project_id} not found, removing zombie container {container.name}")
+                try:
+                    if container.status == "running":
+                        container.stop()
+                    container.remove()
+                    log.info(f"Removed zombie container {container.name}")
+                except Exception as e:
+                    log.error(f"Failed to remove zombie container {container.name}: {e}")
+
+    except Exception as e:
+        log.error(f"Error during Web Wireshark container cleanup on startup: {e}")
+```
+
+在 `Controller` 启动时调用：
+
+```python
+class Controller:
+    async def load(self):
+        """加载控制器"""
+        # 现有代码...
+
+        # 清理 Web Wireshark 僵尸容器
+        await cleanup_web_wireshark_containers_on_startup()
+
+        # 现有代码...
+```
+
+### 6. 管理脚本添加清理命令
+
+**文件：** `gns3server/agent/web_wireshark/manage_wireshark.py`
+
+添加 cleanup 命令：
+
+```python
+def main():
+    parser = argparse.ArgumentParser(description="Web Wireshark 管理脚本")
+    subparsers = parser.add_subparsers(dest="command", help="可用命令")
+
+    # start 命令
+    start_parser = subparsers.add_parser("start", help="启动 Web Wireshark 会话")
+    start_parser.add_argument("--project-id", required=True, help="项目 ID")
+    start_parser.add_argument("--link-id", required=True, help="链路 ID")
+    start_parser.add_argument("--jwt-token", required=True, help="JWT 认证令牌")
+    start_parser.add_argument("--capture-url", help="抓包流 URL（可选，未提供则自动检测）")
+
+    # stop 命令
+    stop_parser = subparsers.add_parser("stop", help="停止 Web Wireshark 会话")
+    stop_parser.add_argument("--project-id", required=True, help="项目 ID")
+    stop_parser.add_argument("--link-id", required=True, help="链路 ID")
+
+    # cleanup 命令（新增）
+    cleanup_parser = subparsers.add_parser("cleanup", help="清理 Web Wireshark 容器")
+    cleanup_parser.add_argument("--project-id", required=True, help="项目 ID")
+    cleanup_parser.add_argument("--force", action="store_true", help="强制删除，即使容器正在运行")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    manager = WebWiresharkManager()
+
+    try:
+        if args.command == "start":
+            manager.ensure_network()
+            result = manager.start_wireshark_session(
+                args.project_id,
+                args.link_id,
+                args.jwt_token,
+                getattr(args, 'capture_url', None)
+            )
+            print(json.dumps(result))
+
+        elif args.command == "stop":
+            manager.stop_wireshark_session(args.project_id, args.link_id)
+
+        elif args.command == "cleanup":
+            manager.cleanup_container(args.project_id, force=getattr(args, 'force', False))
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)
+
+
+class WebWiresharkManager:
+    # 现有代码...
+
+    def cleanup_container(self, project_id: str, force: bool = False):
+        """
+        清理 Web Wireshark 容器
+
+        Args:
+            project_id: 项目 ID
+            force: 是否强制删除（即使容器正在运行）
+        """
+        container_name = f"gns3-wireshark-{project_id}"
+
+        try:
+            container = self.docker.containers.get(container_name)
+
+            logger.info(f"Stopping container {container_name}")
+            container.stop(timeout=5)
+
+            logger.info(f"Removing container {container_name}")
+            container.remove()
+
+            logger.info(f"Container {container_name} cleaned up successfully")
+
+        except Exception as e:
+            if force:
+                # 强制删除：尝试直接删除容器
+                try:
+                    container = self.docker.containers.get(container_name)
+                    container.remove(force=True)
+                    logger.info(f"Container {container_name} force removed")
+                except:
+                    # 如果容器不存在，认为已经清理完成
+                    logger.info(f"Container {container_name} not found, assuming already cleaned")
+            else:
+                logger.error(f"Error cleaning up container {container_name}: {e}")
+                raise
+```
+
+### 清理场景
+
+**1. 项目关闭时**
+```
+用户关闭项目
+  ↓
+Project.close()
+  ↓
+_cleanup_web_wireshark_container()
+  ↓
+脚本 cleanup 命令
+  ↓
+停止并删除容器
+```
+
+**2. 项目删除时**
+```
+用户删除项目
+  ↓
+Project.delete()
+  ↓
+先调用 close()
+  ↓
+_cleanup_web_wireshark_container()
+  ↓
+删除项目目录
+```
+
+**3. 服务器关闭时**
+```
+gns3-server 关闭
+  ↓
+Controller.unload()
+  ↓
+遍历所有项目
+  ↓
+每个项目调用 close()
+  ↓
+_cleanup_web_wireshark_container()
+```
+
+**4. 异常处理**
+```
+清理失败
+  ↓
+捕获异常
+  ↓
+记录警告日志
+  ↓
+不影响项目关闭流程
+  ↓
+继续执行其他清理
+```
+
+### 资源泄漏防护
+
+**定期清理僵尸容器：**
+```python
+def cleanup_zombie_containers():
+    """
+    清理没有对应项目的僵尸容器
+
+    可以定期调用此函数（如通过 cron 或系统启动时）
+    """
+    manager = WebWiresharkManager()
+    docker = manager.docker
+
+    # 获取所有 gns3- 开头的容器
+    containers = docker.containers.list(all=True, filters={"name": "gns3-"})
+
+    for container in containers:
+        # 提取 project_id
+        project_id = container.name.replace("gns3-", "")
+
+        # 检查项目是否存在
+        try:
+            from gns3server.controller import Controller
+            controller = Controller.instance()
+            controller.get_project(project_id)
+            # 项目存在，跳过
+            continue
+        except:
+            # 项目不存在，删除容器
+            logger.warning(f"Found zombie container {container.name}, removing...")
+            try:
+                container.remove(force=True)
+                logger.info(f"Removed zombie container {container.name}")
+            except Exception as e:
+                logger.error(f"Failed to remove zombie container {container.name}: {e}")
 ```
 
 ## 关键特性
