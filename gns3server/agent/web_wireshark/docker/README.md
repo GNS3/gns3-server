@@ -24,6 +24,65 @@
 └─────────────────────────────────────────────────┘
 ```
 
+## 性能指标与资源规划
+
+### 单个 Wireshark 实例资源占用
+
+| 资源类型 | 占用量 | 说明 |
+|---------|--------|------|
+| **内存** | 150-250 MB | 取决于抓包流量和解析的协议数量 |
+| **CPU** | 0.5-2% | 空闲时较低，高流量时上升 |
+| **线程数** | ~30 个线程 | Wireshark 多线程架构（GUI、抓包、解析、渲染） |
+| **磁盘 I/O** | 最小 | 主要是日志写入 |
+
+### 容器资源配置建议
+
+基于 `--pids-limit 1000` 和 `--memory="2g"` 的配置：
+
+| Wireshark 实例数 | 预计线程占用 | 预计内存占用 | 推荐场景 |
+|-----------------|-------------|-------------|---------|
+| 1-3 | 120-200 线程 | 450-750 MB | 轻量级项目，小型拓扑 |
+| 4-6 | 230-290 线程 | 600-1.5 GB | 中型项目，多个网络链路 |
+| 7-10 | 320-410 线程 | 1-2.5 GB | 大型项目，密集抓包 |
+| 10+ | >400 线程 | >2.5 GB | ⚠️ 需要增加内存限制 |
+
+### 实际测试数据
+
+**测试环境：** 3 个 Wireshark 实例同时运行
+
+```
+CONTAINER ID   NAME                     CPU %     MEM USAGE / LIMIT   MEM %     NET I/O          BLOCK I/O     PIDS
+19363d29bd9d   gns3-PROJECT-ID          4.59%     735.6MiB / 2GiB     35.92%    386kB / 38.6MB   0B / 15.5MB   201
+```
+
+**详细进程统计：**
+- 总线程数：~204
+- 总进程数：~61
+- 每个 Wireshark 实例：~30 线程 + 1 个父进程
+
+### 性能优化建议
+
+1. **内存是主要瓶颈**，而非 PID 限制
+   - 默认 2GB 内存可支持 6-8 个 Wireshark 实例
+   - 需要更多实例时，优先增加内存而非 PID 限制
+
+2. **按需启动 Wireshark**
+   - 只为需要抓包的链路启动 Wireshark
+   - 使用完毕后及时停止会话释放资源
+
+3. **多容器策略**
+   - 对于超大型项目（10+ 链路），建议使用多个容器
+   - 每个容器负责 5-8 个链路，资源隔离更稳定
+
+4. **监控资源使用**
+   ```bash
+   # 实时监控容器资源
+   docker stats gns3-PROJECT-ID
+
+   # 检查容器内进程数
+   docker exec gns3-PROJECT_ID bash -c "ps -eLf | wc -l"
+   ```
+
 ## 1. 创建 Docker 网络
 
 首先创建一个桥接网络，用于容器与宿主机之间的通信：
@@ -324,4 +383,57 @@ docker exec "${CONTAINER_NAME}" xpra stop ":${DISPLAY_ID}"
 docker exec "${CONTAINER_NAME}" rm -rf "/tmp/sessions/link-${LINK_ID}"
 
 # 重新启动（参考前面的启动命令）
+```
+
+### 9.5 线程创建错误 (QThread::start: Thread creation error)
+
+**错误信息：**
+```
+QThread::start: Thread creation error (Resource temporarily unavailable)
+```
+
+**原因分析：**
+- Docker 容器的 PID 限制（`--pids-limit`）实际限制的是线程数
+- 每个 Wireshark 实例需要约 30 个线程
+- 默认限制 200 可能不足以支持多个 Wireshark 实例
+
+**解决方案：**
+
+```bash
+# 检查当前线程使用情况
+docker exec "${CONTAINER_NAME}" bash -c "ps -eLf | wc -l"
+
+# 增加 PID 限制（推荐设置为 1000）
+docker update --pids-limit 1000 "${CONTAINER_NAME}"
+
+# 验证新限制
+docker inspect "${CONTAINER_NAME}" --format '{{.HostConfig.PidsLimit}}'
+```
+
+**预防措施：**
+- 启动容器时设置合理的 PID 限制：`--pids-limit 1000`
+- 参考"性能指标与资源规划"章节确定合适的配置
+
+### 9.6 XDG_RUNTIME_DIR 警告
+
+**警告信息：**
+```
+Warning: XDG_RUNTIME_DIR is not defined
+ and '/run/user/1000' does not exist
+ using '/tmp'
+```
+
+**说明：**
+- 这是警告而非错误，Xpra 会回退使用 `/tmp`
+- 可能影响某些依赖 XDG 规范的功能
+
+**解决方案：**
+确保使用最新的 Docker 镜像，已包含以下修复：
+- 创建 `/run/user/1000` 目录
+- 设置 `XDG_RUNTIME_DIR` 环境变量
+
+如需手动修复：
+```bash
+docker exec "${CONTAINER_NAME}" mkdir -p /run/user/1000
+docker exec "${CONTAINER_NAME}" bash -c "export XDG_RUNTIME_DIR=/run/user/1000"
 ```
