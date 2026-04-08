@@ -24,9 +24,6 @@ RUN apt-get install -y \
 # Create sessions directory with proper permissions
 RUN mkdir -p /tmp/sessions && chmod 1777 /tmp/sessions
 
-# Copy startup script
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
 # No EXPOSE - port will be dynamically allocated
-CMD ["/start.sh"]
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]
