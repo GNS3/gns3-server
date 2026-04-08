@@ -46,19 +46,6 @@ if ! pgrep -f "xpra.*$DISPLAY" > /dev/null; then
     exit 1
 fi
 
-# Start Wireshark with auto-restart watchdog
-echo "Starting Wireshark with auto-restart..."
-(
-    while true; do
-        if ! pgrep -x wireshark > /dev/null; then
-            echo "$(date): Wireshark not running, starting..."
-            export DISPLAY="$DISPLAY"
-            wireshark &
-        fi
-        sleep 5
-    done
-) &
-
 echo "========================================"
 echo "GNS3 Web Wireshark container ready!"
 echo "Display: $DISPLAY"
