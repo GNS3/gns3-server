@@ -18,11 +18,19 @@ RUN apt-get install -y \
     wireshark \
     xpra \
     xvfb \
+    curl \
     x11-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# Create gns3 user
+RUN groupadd -g 1000 gns3 && \
+    useradd -u 1000 -g gns3 -m -s /bin/bash gns3
+
 # Create sessions directory with proper permissions
 RUN mkdir -p /tmp/sessions && chmod 1777 /tmp/sessions
+
+# Set default user
+USER gns3
 
 # No EXPOSE - port will be dynamically allocated
 # Keep container running
