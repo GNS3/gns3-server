@@ -11,7 +11,7 @@ Integrate Wireshark packet capture functionality into GNS3 Web UI, allowing user
 docker pull ghcr.io/gns3/web-wireshark:latest
 ```
 
-**Module location:** `gns3server/compute/web_wireshark/`
+**Module location:** `gns3server/agent/web_wireshark/`
 
 **Note:** This feature is part of gns3server core. No additional Python dependencies required.
 
@@ -34,11 +34,11 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 │                       GNS3 Server (Port 3080)                   │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  WiresharkSessionManager                                  │   │
-│  │  - DisplayManager: tracks displays per container (:0-:50)│   │
-│  │  - Session state: pending → starting → ready → error    │   │
-│  │  - ProjectContainerManager: project container lifecycle │   │
-│  │  - Docker API: direct container/session management       │   │
+│  │  agent/web_wireshark/                                    │   │
+│  │  - WiresharkManager: main coordinator                    │   │
+│  │  - DisplayManager: tracks displays (:0-:50)              │   │
+│  │  - ProjectContainerManager: container lifecycle          │   │
+│  │  - WiresharkSession: session state + Docker exec         │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                              │                                   │
 │                              ▼                                   │
@@ -54,7 +54,8 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  Inside Container: xpra + noVNC Server (port 10000)     │   │
 │  │  - Session dir: /tmp/sessions/link-{uuid}/               │   │
-│  │    - token: JWT for capture/stream API                  │   │
+│  │    - token.txt: User's JWT for capture/stream API       │   │
+│  │  - Wireshark uses token to call GNS3 Server API         │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                              │                                   │
 │                              ▼                                   │
@@ -78,10 +79,11 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 
 - **Distributed Architecture** - Uses GNS3's existing Docker management pattern
 - **Project-level container isolation** - One container per project
-- **On-demand Wireshark sessions** - Created only when user clicks "View in Wireshark"
+- **Immediate session creation** - Wireshark session starts when capture begins (wireshark=true)
 - **Docker API direct management** - No Ansible or SSH required
 - **Browser only connects to GNS3 Server** - WebSocket proxy handles forwarding
-- **Secure token handling** - JWT token stored in session file, not CLI
+- **Secure token handling** - User's JWT token used in container for capture/stream API
+- **Real-time notifications** - Progress updates via project WebSocket
 
 ## Container Lifecycle
 
@@ -91,19 +93,19 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 │  Project closes ──▶ Container stops                                       │
 │                                                                          │
 │  Within Container:                                                       │
-│  Session requested ──▶ Session starting ──▶ Session ready                   │
-│  Session closed ──▶ Session cleanup                                        │
+│  Capture start (wireshark=true) ──▶ Session starting ──▶ Session ready  │
+│  Capture stop ──▶ Session stopped ──▶ Session cleanup                   │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Session State Machine
 
 ```
-[idle] ──▶ [pending] ──▶ [starting] ──▶ [ready] ──▶ [closing] ──▶ [idle]
-                │                │                │
-                ▼                ▼                ▼
-            User clicks     Docker exec     User views
-            View Wireshark  (5-10s)        Wireshark
+[idle] ──▶ [starting] ──▶ [ready] ──▶ [stopped] ──▶ [idle]
+            │              │              │
+            ▼              ▼              ▼
+        Capture start    Docker exec    User views
+        (wireshark=true) (5-10s)       Wireshark
 
 [idle] ──▶ [error]  (if Docker operation fails)
 ```
@@ -115,78 +117,125 @@ docker pull ghcr.io/gns3/web-wireshark:latest
 Project opened → Docker API creates container → Container starts with xpra
 ```
 
-### 2. Start Capture
+### 2. Start Capture with Wireshark
 ```
-POST /v3/links/{link_id}/capture/start
+POST /v3/projects/{project_id}/links/{link_id}/capture/start
   Body: { "wireshark": true }
-→ Starts packet capture (existing behavior)
-→ Response includes wireshark_ws endpoint
-```
-
-### 3. View in Wireshark
-```
-User clicks "View in Wireshark"
   │
-  └─▶ WebSocket /v3/links/{link_id}/capture/wireshark
-      │
-      ▼
-  GNS3 Server:
-  - Checks/creates container via Docker API
-  - Allocates display :N (DisplayManager)
-  - Creates session state: pending
-  - Docker exec: create user, write token, start xpra/wireshark
-      │
-      ▼
-  WebSocket sends: {"type": "ready", "display": ":0"}
+  ▼
+GNS3 Server:
+  │
+  ├─▶ Step 1: Start packet capture
+  │   └─▶ project.emit_notification("wireshark.capturing", {"status": "started"})
+  │
+  ├─▶ Step 2: Create/check Wireshark container
+  │   └─▶ project.emit_notification("wireshark.container", {"status": "ready"})
+  │
+  ├─▶ Step 3: Start Wireshark session
+  │   ├─▶ Allocate display :N
+  │   ├─▶ Docker exec: create user, write JWT token, start wireshark
+  │   └─▶ project.emit_notification("wireshark.session", {"status": "starting"})
+  │
+  └─▶ Step 4: WebSocket endpoint ready
+      ├─▶ Generate WebSocket URL
+      └─▶ project.emit_notification("wireshark.session", {"status": "ready", "ws_url": "..."})
+
+Response: {capturing: true, wireshark: true}
 ```
 
-### 4. Frontend Connection
+### 3. Frontend Receives Notifications
 ```
-Browser receives "ready" → Connects noVNC to xpra via GNS3 Server proxy
+Browser (via project WebSocket):
+  │
+  ├─▶ {"type": "wireshark.capturing", "status": "started"}
+  │   └─▶ Update UI: "Capture started..."
+  │
+  ├─▶ {"type": "wireshark.container", "status": "ready"}
+  │   └─▶ Update UI: "Container ready..."
+  │
+  ├─▶ {"type": "wireshark.session", "status": "starting"}
+  │   └─▶ Update UI: "Starting Wireshark..."
+  │
+  └─▶ {"type": "wireshark.session", "status": "ready", "ws_url": "ws://..."}
+      └─▶ Connect noVNC to ws_url
+          └─▶ Display Wireshark in browser
 ```
 
-### 5. Stop View / Project Close
+### 4. Stop Capture
 ```
-Stop View: Docker exec cleanup → Release display → Container stays running
-Project Close: Cleanup all sessions → docker stop + rm container
+POST /v3/projects/{project_id}/links/{link_id}/capture/stop
+  │
+  ▼
+GNS3 Server:
+  ├─▶ Stop packet capture
+  ├─▶ Stop Wireshark session (Docker exec)
+  ├─▶ Release display
+  └─▶ project.emit_notification("wireshark.session", {"status": "stopped"})
+
+Note: Container stays running for project
+```
+
+### 5. Project Close
+```
+Project closes:
+  ├─▶ Stop all Wireshark sessions
+  ├─▶ docker stop + rm container
+  └─▶ All resources cleaned up
 ```
 
 ## Key Components
 
-### DisplayManager
-- Manages X display allocation per container (:0 to :10)
-- Each Wireshark session uses one display
+### WiresharkManager (agent/web_wireshark/manager.py)
+- Main coordinator for Web Wireshark functionality
+- Singleton instance accessed via `WiresharkManager.instance()`
+- Coordinates container and session management
 
 ### ProjectContainerManager
 - Creates/destroys containers via Docker API
 - One container per project
 - Tracks container state and IP
+- Container lifecycle tied to project open/close
 
-### WiresharkSessionManager
+### DisplayManager
+- Manages X display allocation per container (:0 to :50)
+- Each Wireshark session uses one display
+- Tracks used/available displays per container
+
+### WiresharkSession
+- Represents a single Wireshark session (one per link)
+- Session state: idle → starting → ready → stopped → error
 - Creates/closes sessions via Docker exec
-- Tracks session state per link
-- Coordinates with DisplayManager
+- Coordinates with DisplayManager for display allocation
+- Emits project notifications for status updates
 
-### WebSocket Handler
-- Validates JWT token
-- Sends state messages (waiting/ready/error)
-- Proxies browser to xpra WebSocket
+### noVNC WebSocket Handler
+- Proxies browser to container's xpra WebSocket
+- Validates JWT token and session ownership
+- Handles connection lifecycle
 
 ## Security
 
 | Concern | Mitigation |
 |---------|------------|
-| JWT token in CLI | Token stored in session file, mode 0600 |
-| Token visible in `ps aux` | Token file only readable by session user |
+| JWT token in container | User's JWT stored in /tmp/sessions/link-{uuid}/token.txt (mode 0600) |
+| Token visible in `ps aux` | Token passed via file, not CLI arguments |
+| Container accessing GNS3 API | Container uses user's JWT token with same permissions as user |
 | Browser accessing container | All access via GNS3 Server WebSocket proxy |
 | Unauthorized WebSocket | JWT validation + link ownership check |
 | Resource abuse | cgroups limit memory (2GB) and processes (50) |
-| SSH key management | Not required - uses Docker API |
+| Token lifecycle | Token expires when capture stops / session ends |
 
 ### Trust Model
 ```
-Browser ──▶ GNS3 Server (JWT validated) ──▶ Wireshark Container
-              All traffic flows through GNS3 Server proxy
+Browser ──▶ GNS3 Server (JWT validated)
+                    │
+                    ├─▶ Wireshark Container (has user's JWT token)
+                    │       └─▶ GNS3 Server API (capture/stream)
+                    │
+                    └─▶ Browser (noVNC WebSocket)
+
+All traffic flows through GNS3 Server proxy
+Container uses user's JWT to access capture data (same permissions as user)
 ```
 
 ## Distributed Architecture
@@ -235,8 +284,9 @@ tail -f /dev/null
 ### Container Structure
 ```
 /
-├── tmp/sessions/link-{uuid}/token   # JWT (0600)
-├── usr/bin/wireshark
+├── tmp/sessions/link-{uuid}/
+│   └── token.txt                    # User's JWT (0600)
+├── usr/bin/wireshark                # Uses token to call capture/stream API
 ├── usr/bin/xpra
 └── usr/bin/xvfb-run
 ```
@@ -245,7 +295,7 @@ tail -f /dev/null
 
 ### Build Container Locally
 ```bash
-cd gns3server/compute/web_wireshark/
+cd gns3server/agent/web_wireshark/
 docker build -t gns3/web-wireshark:local .
 ```
 
@@ -311,104 +361,86 @@ Before showing Wireshark options, check if the system has required components:
 }
 ```
 
-### 2. UI Requirements
+### 2. Listen for Project WebSocket Notifications
 
-#### Show "View in Wireshark" button when:
-- System has Wireshark capabilities (from step 0)
-- `link.capturing === true`
-- `link.wireshark === true`
-
-#### Button should:
-- Be visible on the link context menu or toolbar
-- Open noVNC iframe/modal when clicked
-
-### 3. WebSocket Connection
-
-**Endpoint:**
-```
-ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/capture/wireshark?token={jwt_token}
-```
-
-**Authentication:** JWT token via query parameter (same as other GNS3 WebSocket endpoints)
-
-### 4. WebSocket Protocol
-
-#### Server → Client Messages:
-
-**Waiting (session starting):**
-```json
-{"type": "waiting", "message": "Starting Wireshark..."}
-```
-
-**Ready (Wireshark is running):**
-```json
-{
-  "type": "ready",
-  "display": ":0",
-  "display": ":0"
-}
-```
-
-**Error:**
-```json
-{"type": "error", "message": "Failed to start Wireshark"}
-```
-
-### 5. noVNC Integration
-
-After receiving `{"type": "ready"}`:
-
-1. Connect to GNS3 Server WebSocket endpoint
-2. Use the same WebSocket connection for noVNC RFB protocol
-3. Display noVNC in an iframe or modal
-
-### 6. Complete Flow
-
-```
-1. User clicks "Start Capture" with Wireshark enabled
-   └── POST /capture/start {wireshark: true}
-
-2. User clicks "View in Wireshark"
-   └── Connect to WebSocket /capture/wireshark?token=...
-
-3. WebSocket receives:
-   └── {type: "waiting", message: "..."}
-       └── Show "Starting..." UI
-
-4. WebSocket receives:
-   └── {type: "ready", display: ":0"}
-       └── Browser uses same WebSocket for VNC protocol
-       └── Display Wireshark in browser
-
-5. User closes / stops viewing
-   └── WebSocket disconnects
-   └── Server stops Wireshark session
-```
-
-### 7. noVNC Integration
-
-The browser connects to the same WebSocket endpoint. GNS3 Server proxies the connection to the container's xpra.
+The frontend receives real-time updates via the project WebSocket:
 
 ```javascript
-// Connect to GNS3 Server WebSocket (same endpoint for capture view)
+// Connect to project notifications WebSocket
 const ws = new WebSocket(
-  `ws://gns3-server:3080/v3/projects/${projectId}/links/${linkId}/capture/wireshark?token=${jwtToken}`
+  `ws://gns3-server:3080/v3/projects/${projectId}/notifications/ws?token=${jwtToken}`
 );
 
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
 
-  if (msg.type === 'waiting') {
-    // Show "Starting..." UI
+  // Wireshark progress notifications
+  if (msg.type === 'wireshark.capturing') {
+    // msg.status: "started"
+    updateStatus("Capture started...");
   }
 
-  if (msg.type === 'ready') {
-    // msg.display contains the X display number
-    // WebSocket is now proxied to xpra - use with noVNC
-    const rfb = new RFB(ws, 'Wireshark');
-    rfb.connect();
+  if (msg.type === 'wireshark.container') {
+    // msg.status: "ready"
+    updateStatus("Container ready...");
+  }
+
+  if (msg.type === 'wireshark.session') {
+    if (msg.status === 'starting') {
+      updateStatus("Starting Wireshark...");
+    } else if (msg.status === 'ready') {
+      // msg.ws_url: "ws://gns3-server:3080/..."
+      connectNoVNC(msg.ws_url);
+    } else if (msg.status === 'stopped') {
+      updateStatus("Wireshark stopped");
+      closeNoVNC();
+    } else if (msg.status === 'error') {
+      // msg.error: error message
+      showError(msg.error);
+    }
   }
 };
+```
+
+### 3. noVNC Integration
+
+When `wireshark.session.status === "ready"`, connect to the provided WebSocket:
+
+```javascript
+function connectNoVNC(wsUrl) {
+  const rfb = new RFB({
+    target: document.getElementById('vnc-container'),
+    url: wsUrl,
+    credentials: { password: '' } // No password required
+  });
+
+  rfb.addEventListener('connect', () => {
+    console.log('Connected to Wireshark');
+  });
+
+  rfb.addEventListener('disconnect', () => {
+    console.log('Disconnected from Wireshark');
+  });
+}
+```
+
+### 4. Complete Flow
+
+```
+1. User clicks "Start Capture" with Wireshark enabled
+   └── POST /capture/start {wireshark: true}
+
+2. Frontend receives project WebSocket notifications:
+   ├─ "wireshark.capturing" → "Capture started..."
+   ├─ "wireshark.container" → "Container ready..."
+   ├─ "wireshark.session" (starting) → "Starting Wireshark..."
+   └─ "wireshark.session" (ready) → Connect noVNC to ws_url
+
+3. Wireshark displays in browser via noVNC
+
+4. User clicks "Stop Capture"
+   └── POST /capture/stop
+   └─ "wireshark.session" (stopped) → Close noVNC
 ```
 
 ## API Reference
@@ -484,12 +516,15 @@ POST /v3/projects/{project_id}/links/{link_id}/capture/start
   "project_id": "5af0fe00-f39d-4985-8669-7e8c512d729c",
   "capturing": true,
   "wireshark": true,
+  "wireshark_session_id": "ws-session-uuid",
   "capture_file_name": "capture_001",
   "capture_file_path": "/path/to/projects/5af0fe00/captures/capture_001",
   "link_type": "ethernet",
   "nodes": [...]
 }
 ```
+
+**Note:** The actual Wireshark session progress is sent via project WebSocket notifications. See "Frontend Integration Guide" section.
 
 **Error Responses:**
 - 401 Unauthorized: Not authenticated
@@ -518,69 +553,98 @@ Empty body
 
 ---
 
-### 4. WebSocket - View in Wireshark
+### 4. Project WebSocket Notifications
 
-Open a WebSocket connection to view Wireshark in browser.
+The frontend receives real-time Wireshark session updates via the project WebSocket.
 
-```http
-ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/capture/wireshark?token={jwt_token}
-```
-
-**Authentication:** JWT token via query parameter
-
-#### Server → Client Messages:
-
-**Step 1: Waiting (session starting)**
-```json
-{"type": "waiting", "message": "Starting Wireshark..."}
-```
-
-**Step 2: Ready (Wireshark is running)**
+#### Notification: wireshark.capturing
 ```json
 {
-  "type": "ready",
+  "type": "wireshark.capturing",
+  "status": "started",
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752"
+}
+```
+
+#### Notification: wireshark.container
+```json
+{
+  "type": "wireshark.container",
+  "status": "ready",
+  "container_id": "gns3-ws-5af0fe00-f39d-4985-8669-7e8c512d729c"
+}
+```
+
+#### Notification: wireshark.session (starting)
+```json
+{
+  "type": "wireshark.session",
+  "status": "starting",
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
+  "session_id": "ws-session-uuid"
+}
+```
+
+#### Notification: wireshark.session (ready)
+```json
+{
+  "type": "wireshark.session",
+  "status": "ready",
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
+  "session_id": "ws-session-uuid",
+  "ws_url": "ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/ws/{session_id}",
   "display": ":0"
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| type | string | Message type: "waiting", "ready", "error" |
-| display | string | X display number (e.g., ":0") |
-| message | string | Human-readable status message |
-| error | string | Error details (only on error type) |
-
-**Step 3: Error (if something fails)**
+#### Notification: wireshark.session (stopped)
 ```json
 {
-  "type": "error",
-  "message": "Wireshark not available: missing wireshark"
+  "type": "wireshark.session",
+  "status": "stopped",
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
+  "session_id": "ws-session-uuid"
 }
 ```
 
-**WebSocket Close Codes:**
-- 1008: Link not found or capture not started
-- 1011: Internal server error
+#### Notification: wireshark.session (error)
+```json
+{
+  "type": "wireshark.session",
+  "status": "error",
+  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
+  "error": "Failed to start Wireshark: Docker container not accessible"
+}
+```
 
 ---
 
-### 5. noVNC Integration
+### 5. WebSocket - noVNC Connection
 
-After receiving `{"type": "ready"}`, use noVNC to connect to the xpra WebSocket.
+When `wireshark.session.status === "ready"`, connect to the provided WebSocket URL:
 
-See section 7. noVNC Integration above.
+```http
+ws://gns3-server:3080/v3/projects/{project_id}/links/{link_id}/wireshark/ws/{session_id}?token={jwt_token}
+```
+
+**Authentication:** JWT token via query parameter
+
+This WebSocket connection is proxied to the container's xpra server for noVNC RFB protocol.
 
 ## Implementation Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| ProjectContainerManager | ✅ DONE | Docker API container lifecycle |
-| DisplayManager | ✅ DONE | Per-container display allocation |
-| WiresharkSessionManager | ✅ DONE | Session state machine + Docker exec |
-| WebSocket Handler | ✅ DONE | FastAPI WebSocket with state protocol |
-| Dockerfile + start.sh | ✅ DONE | Container image |
-| Link API modifications | ✅ DONE | Add wireshark=true to start/stop |
-| Frontend integration | 📄 Docs Ready | See "Frontend Integration Guide" section |
+| agent/web_wireshark module | 🔲 TODO | Create module structure |
+| WiresharkManager | 🔲 TODO | Main coordinator |
+| ProjectContainerManager | 🔲 TODO | Docker API container lifecycle |
+| DisplayManager | 🔲 TODO | Per-container display allocation |
+| WiresharkSession | 🔲 TODO | Session state + Docker exec |
+| Link API modifications | 🔲 TODO | Add wireshark parameter handling |
+| Project WebSocket notifications | 🔲 TODO | Emit progress notifications |
+| noVNC WebSocket endpoint | 🔲 TODO | Proxy to xpra |
+| Dockerfile + start.sh | 🔲 TODO | Container image |
+| Frontend integration | 🔲 TODO | Implement notification handling |
 
 ## Troubleshooting
 
