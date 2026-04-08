@@ -101,7 +101,7 @@ docker run -d \
   --memory="2g" \
   --memory-swap="2g" \
   --cpus="1.0" \
-  --pids-limit 100 \
+  --pids-limit 1000 \
   --log-driver json-file \
   --log-opt max-size="10m" \
   --log-opt max-file="3" \
@@ -132,10 +132,32 @@ docker run -d \
 
 # 启动 xpra 会话
 docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
-  xpra start ":100" \
+  xpra start ":101" \
   --xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR" \
   --html=on \
   --bind-tcp=0.0.0.0:12345 \
+  --session-name="link-8a14355e-4a62-406c-98de-acf5ec9394de" \
+  --daemon=yes \
+  --dbus-launch=no \
+  --resize-display=yes
+
+
+docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
+  xpra start ":102" \
+  --xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR" \
+  --html=on \
+  --bind-tcp=0.0.0.0:12346 \
+  --session-name="link-f233f27f-7432-49c3-9aa2-50e326a10eec" \
+  --daemon=yes \
+  --dbus-launch=no \
+  --resize-display=yes
+
+
+docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
+  xpra start ":103" \
+  --xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR" \
+  --html=on \
+  --bind-tcp=0.0.0.0:12347 \
   --session-name="link-a0d9132c-0f65-4ff8-9e5f-1c8061f70bdd" \
   --daemon=yes \
   --dbus-launch=no \
@@ -167,8 +189,18 @@ docker exec "${CONTAINER_NAME}" \
 ```bash
 docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
     bash -c 'curl -N -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3NTcyMjMwMCwidmVyIjowfQ.gCv42XkJu9AeoUssVCOjp1aJdqoYSEsXLWHk00C8PZk" \
+      "http://192.168.1.140:3080/v3/projects/5af0fe00-f39d-4985-8669-7e8c512d729c/links/8a14355e-4a62-406c-98de-acf5ec9394de/capture/stream" | \
+      wireshark -i - -k -display :101'
+
+docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
+    bash -c 'curl -N -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3NTcyMjMwMCwidmVyIjowfQ.gCv42XkJu9AeoUssVCOjp1aJdqoYSEsXLWHk00C8PZk" \
+      "http://192.168.1.140:3080/v3/projects/5af0fe00-f39d-4985-8669-7e8c512d729c/links/f233f27f-7432-49c3-9aa2-50e326a10eec/capture/stream" | \
+      wireshark -i - -k -display :102'
+
+docker exec gns3-5af0fe00-f39d-4985-8669-7e8c512d729c \
+    bash -c 'curl -N -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3NTcyMjMwMCwidmVyIjowfQ.gCv42XkJu9AeoUssVCOjp1aJdqoYSEsXLWHk00C8PZk" \
       "http://192.168.1.140:3080/v3/projects/5af0fe00-f39d-4985-8669-7e8c512d729c/links/a0d9132c-0f65-4ff8-9e5f-1c8061f70bdd/capture/stream" | \
-      wireshark -i - -k -display :100'
+      wireshark -i - -k -display :103'
 ```
 
 **参数说明：**
