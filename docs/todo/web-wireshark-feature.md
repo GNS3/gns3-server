@@ -335,9 +335,10 @@ docker push ghcr.io/gns3/web-wireshark:latest
 
 Before showing Wireshark options, check if the system has required components:
 
-```javascript
-// GET /v3/capabilities/web-wireshark
-// Response:
+**GET** `/v3/capabilities/web-wireshark`
+
+**Response:**
+```json
 {
   "available": true,
   "docker": true,
@@ -346,34 +347,32 @@ Before showing Wireshark options, check if the system has required components:
   "xvfb": true,
   "missing": []
 }
-
-// If available is false, hide Wireshark UI options
 ```
 
 ### 1. Enable Wireshark when starting capture
 
-```javascript
-// POST /v3/projects/{project_id}/links/{link_id}/capture/start
-{
-  "wireshark": true
-}
+**POST** `/v3/projects/{project_id}/links/{link_id}/capture/start`
+
+**Request:**
+```json
+{ "wireshark": true }
 ```
 
-**Response includes `wireshark` field:**
+**Response:**
 ```json
 {
   "link_id": "xxx",
   "capturing": true,
-  "wireshark": true
+  "wireshark": true,
+  "wireshark_session_id": "ws-session-uuid"
 }
 ```
 
 ### 2. Listen for Project WebSocket Notifications
 
-The frontend receives real-time updates via the project WebSocket:
+Connect to project notifications WebSocket and handle Wireshark progress:
 
 ```javascript
-// Connect to project notifications WebSocket
 const ws = new WebSocket(
   `ws://gns3-server:3080/v3/projects/${projectId}/notifications/ws?token=${jwtToken}`
 );
@@ -381,52 +380,25 @@ const ws = new WebSocket(
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
 
-  // Wireshark progress notifications
-  if (msg.type === 'wireshark.capturing') {
-    // msg.status: "started"
-    updateStatus("Capture started...");
-  }
-
-  if (msg.type === 'wireshark.container') {
-    // msg.status: "ready"
-    updateStatus("Container ready...");
-  }
+  if (msg.type === 'wireshark.capturing') updateStatus("Capture started...");
+  if (msg.type === 'wireshark.container') updateStatus("Container ready...");
 
   if (msg.type === 'wireshark.session') {
-    if (msg.status === 'starting') {
-      updateStatus("Starting Wireshark...");
-    } else if (msg.status === 'ready') {
-      // msg.ws_url: "ws://gns3-server:3080/..."
-      connectNoVNC(msg.ws_url);
-    } else if (msg.status === 'stopped') {
-      updateStatus("Wireshark stopped");
-      closeNoVNC();
-    } else if (msg.status === 'error') {
-      // msg.error: error message
-      showError(msg.error);
-    }
+    if (msg.status === 'starting') updateStatus("Starting Wireshark...");
+    if (msg.status === 'ready') connectNoVNC(msg.ws_url);
+    if (msg.status === 'stopped') closeNoVNC();
+    if (msg.status === 'error') showError(msg.error);
   }
 };
 ```
 
 ### 3. noVNC Integration
 
-When `wireshark.session.status === "ready"`, connect to the provided WebSocket:
-
 ```javascript
 function connectNoVNC(wsUrl) {
   const rfb = new RFB({
     target: document.getElementById('vnc-container'),
-    url: wsUrl,
-    credentials: { password: '' } // No password required
-  });
-
-  rfb.addEventListener('connect', () => {
-    console.log('Connected to Wireshark');
-  });
-
-  rfb.addEventListener('disconnect', () => {
-    console.log('Disconnected from Wireshark');
+    url: wsUrl
   });
 }
 ```
@@ -434,20 +406,14 @@ function connectNoVNC(wsUrl) {
 ### 4. Complete Flow
 
 ```
-1. User clicks "Start Capture" with Wireshark enabled
-   └── POST /capture/start {wireshark: true}
-
-2. Frontend receives project WebSocket notifications:
-   ├─ "wireshark.capturing" → "Capture started..."
-   ├─ "wireshark.container" → "Container ready..."
-   ├─ "wireshark.session" (starting) → "Starting Wireshark..."
-   └─ "wireshark.session" (ready) → Connect noVNC to ws_url
-
-3. Wireshark displays in browser via noVNC
-
-4. User clicks "Stop Capture"
-   └── POST /capture/stop
-   └─ "wireshark.session" (stopped) → Close noVNC
+1. POST /capture/start {wireshark: true}
+2. Receive WebSocket notifications:
+   - wireshark.capturing → "Capture started..."
+   - wireshark.container → "Container ready..."
+   - wireshark.session (starting) → "Starting Wireshark..."
+   - wireshark.session (ready) → Connect noVNC to ws_url
+3. Wireshark displays in browser
+4. POST /capture/stop → wireshark.session (stopped) → Close noVNC
 ```
 
 ## API Reference
@@ -564,35 +530,19 @@ Empty body
 
 The frontend receives real-time Wireshark session updates via the project WebSocket.
 
-#### Notification: wireshark.capturing
-```json
-{
-  "type": "wireshark.capturing",
-  "status": "started",
-  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752"
-}
-```
+**Notification Types:**
 
-#### Notification: wireshark.container
-```json
-{
-  "type": "wireshark.container",
-  "status": "ready",
-  "container_id": "gns3-ws-5af0fe00-f39d-4985-8669-7e8c512d729c"
-}
-```
+| Type | Status | Description |
+|------|--------|-------------|
+| `wireshark.capturing` | `started` | Packet capture started |
+| `wireshark.container` | `ready` | Container is ready |
+| `wireshark.session` | `starting` | Wireshark starting |
+| `wireshark.session` | `ready` | Wireshark ready + `ws_url` + `display` |
+| `wireshark.session` | `stopped` | Wireshark stopped |
+| `wireshark.session` | `error` | Error + `error` message |
+| `wireshark.log` | - | Log line in `log` field |
 
-#### Notification: wireshark.session (starting)
-```json
-{
-  "type": "wireshark.session",
-  "status": "starting",
-  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
-  "session_id": "ws-session-uuid"
-}
-```
-
-#### Notification: wireshark.session (ready)
+**Example: Session Ready**
 ```json
 {
   "type": "wireshark.session",
@@ -604,17 +554,7 @@ The frontend receives real-time Wireshark session updates via the project WebSoc
 }
 ```
 
-#### Notification: wireshark.session (stopped)
-```json
-{
-  "type": "wireshark.session",
-  "status": "stopped",
-  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
-  "session_id": "ws-session-uuid"
-}
-```
-
-#### Notification: wireshark.session (error)
+**Example: Session Error**
 ```json
 {
   "type": "wireshark.session",
@@ -676,52 +616,32 @@ This WebSocket connection is proxied to the container's xpra server for noVNC RF
 
 ### Orphan Container Cleanup
 
-**Problem:** If GNS3 Server crashes unexpectedly, `ProjectContainerManager` cannot trigger `delete_container()`, leaving orphaned `gns3-ws-*` containers consuming resources.
+**Problem:** Server crashes leave orphaned `gns3-ws-*` containers.
 
-**Solution:** Automatic orphan cleanup on server startup.
-
-#### Implementation
+**Solution:** Automatic cleanup on server startup.
 
 **File:** `gns3server/agent/web_wireshark/manager.py`
 
 ```python
 class WiresharkManager:
     async def initialize_on_server_startup(self):
-        """Called when GNS3 Server starts"""
-        await self._cleanup_orphan_containers()
-
-    async def _cleanup_orphan_containers(self):
-        """Scan and remove orphaned gns3-ws-* containers"""
-        # List all gns3-ws-* containers
         containers = await self._docker_manager.list_containers(
             filters={"name": "gns3-ws-"}
         )
-
-        # Check if project exists
         for container in containers:
             project_id = self._extract_project_id(container.name)
             if not await self._project_exists(project_id):
-                log.warning(f"Found orphan container: {container.name}")
                 await self._container_manager.delete_container(project_id)
 ```
 
-**Server Startup Hook:**
-
-**File:** `gns3server/controller.py` or `gns3server/main.py`
+**Server Hook:** `gns3server/main.py`
 
 ```python
 async def on_server_startup():
-    """Called when GNS3 Server starts"""
-    from gns3server.agent.web_wireshark import WiresharkManager
-    manager = WiresharkManager.instance()
-    await manager.initialize_on_server_startup()
+    await WiresharkManager.instance().initialize_on_server_startup()
 ```
 
-#### Benefits
-
-- **Automatic cleanup** - No manual intervention needed
-- **Resource recovery** - Frees up disk space and ports
-- **Prevents accumulation** - Stops orphan containers from building up over time
+**Benefits:** Automatic cleanup, resource recovery, prevents accumulation
 
 ### Log Streaming and Visibility
 
@@ -731,132 +651,45 @@ async def on_server_startup():
 
 #### Implementation
 
-**Option A: Real-time Log Streaming via WebSocket**
+**Option A: Real-time Log Streaming**
 
 ```python
 class WiresharkSession:
     async def start(self, link_id: str, jwt_token: str, capture_url: str):
-        """Start Wireshark session with log streaming"""
-
-        # Start log capture task
-        self._log_task = asyncio.create_task(
-            self._stream_container_logs()
-        )
-
-        # ... rest of session startup ...
+        self._log_task = asyncio.create_task(self._stream_container_logs())
 
     async def _stream_container_logs(self):
-        """Stream container stderr to project WebSocket"""
-        try:
-            async for log_line in self._container.logs(
-                stderr=True,
-                stdout=False,
-                follow=True
-            ):
-                # Emit log notification
-                self._project.emit_notification(
-                    "wireshark.log",
-                    {
-                        "link_id": self._link_id,
-                        "session_id": self._id,
-                        "log": log_line.decode('utf-8').strip()
-                    }
-                )
-        except Exception as e:
-            log.error(f"Log streaming failed: {e}")
+        async for log_line in self._container.logs(stderr=True, follow=True):
+            self._project.emit_notification("wireshark.log", {
+                "link_id": self._link_id,
+                "log": log_line.decode('utf-8').strip()
+            })
 ```
 
-**Frontend Integration:**
-
+**Frontend:**
 ```javascript
-// Listen for log messages
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
-
-  if (msg.type === 'wireshark.log') {
-    // Display logs in debug console or error panel
-    console.log(`[Wireshark ${msg.link_id}] ${msg.log}`);
-    // Or append to a log viewer UI
-  }
-
-  if (msg.type === 'wireshark.session' && msg.status === 'error') {
-    // Error now includes context from previous log messages
-    showErrorWithLogs(msg.error, collectedLogs);
-  }
+  if (msg.type === 'wireshark.log') console.log(`[Wireshark] ${msg.log}`);
 };
 ```
 
 **Option B: Log Retrieval API**
 
 ```python
-# File: gns3server/api/routes/controller/links.py
-
-@router.get(
-    "/{link_id}/wireshark/logs",
-    dependencies=[Depends(has_privilege("Link.Capture"))]
-)
-async def get_wireshark_logs(
-    link: Link = Depends(dep_link),
-    lines: int = 100
-) -> dict:
-    """
-    Get Wireshark session logs for debugging.
-
-    Returns the last N lines of container stderr output.
-    """
-    from gns3server.agent.web_wireshark import WiresharkManager
-
-    manager = WiresharkManager.instance()
-    session = manager.get_session(link.id)
-
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    logs = await session.get_logs(lines=lines)
-
-    return {
-        "link_id": link.id,
-        "session_id": session.id,
-        "logs": logs
-    }
+@router.get("/{link_id}/wireshark/logs")
+async def get_wireshark_logs(link: Link = Depends(dep_link), lines: int = 100):
+    session = WiresharkManager.instance().get_session(link.id)
+    return {"link_id": link.id, "session_id": session.id, "logs": await session.get_logs(lines)}
 ```
 
-**API Response:**
-
-```json
-{
-  "link_id": "582524e6-c7be-4c0b-9921-77e25a344752",
-  "session_id": "ws-session-uuid",
-  "logs": [
-    "xpra start :0 --html=on...",
-    "wireshark: error while loading shared libraries: libwireshark.so.14...",
-    "ERROR: Failed to start Wireshark"
-  ]
-}
-```
-
-#### Enhanced Error Notifications
-
-**Before:**
+**Enhanced Errors:**
 ```json
 {
   "type": "wireshark.session",
   "status": "error",
-  "error": "Failed to start Wireshark"
-}
-```
-
-**After (with log streaming):**
-```json
-{
-  "type": "wireshark.session",
-  "status": "error",
-  "error": "Failed to start Wireshark: libwireshark.so.14: cannot open shared object file",
-  "log_lines": [
-    "xpra start :0 --html=on...",
-    "wireshark: error while loading shared libraries: libwireshark.so.14: cannot open shared object file: No such file or directory",
-    "ERROR: Failed to start Wireshark"
-  ]
+  "error": "Failed to start: libwireshark.so.14: cannot open shared object",
+  "log_lines": ["xpra start...", "wireshark: error...", "ERROR: ..."]
 }
 ```
 
@@ -1129,83 +962,38 @@ Signature: _______________
 
 ```python
 class ProjectContainerManager:
-    """Manages Docker containers for Wireshark sessions"""
-
-    async def create_container(self, project_id: str) -> str:
-        """Create a new Wireshark container for the project"""
-
-    async def get_container(self, project_id: str) -> dict:
-        """Get container info by project ID"""
-
-    async def delete_container(self, project_id: str):
-        """Stop and remove the project's Wireshark container"""
-
-    def container_exists(self, project_id: str) -> bool:
-        """Check if container exists"""
+    async def create_container(self, project_id: str) -> str: ...
+    async def get_container(self, project_id: str) -> dict: ...
+    async def delete_container(self, project_id: str): ...
+    def container_exists(self, project_id: str) -> bool: ...
 ```
 
-**Tasks:**
-- Implement Docker API integration
-- Container naming: `gns3-ws-{project_id}`
-- Port allocation: 10000-10099
-- Container lifecycle management
-- **Orphan cleanup on server startup** - Scan and remove leftover containers
+**Tasks:** Docker API, container naming (`gns3-ws-{project_id}`), port allocation (10000-10099), orphan cleanup
 
 #### 2.2 DisplayManager (`display_manager.py`)
 
 ```python
 class DisplayManager:
-    """Manages X display allocation per container"""
-
-    def allocate_display(self, container_id: str) -> str:
-        """Allocate an available display (e.g., :0)"""
-
-    def release_display(self, container_id: str, display: str):
-        """Release a previously allocated display"""
-
-    def get_available_displays(self, container_id: str) -> List[str]:
-        """Get list of available displays"""
+    def allocate_display(self, container_id: str) -> str: ...
+    def release_display(self, container_id: str, display: str): ...
+    def get_available_displays(self, container_id: str) -> List[str]: ...
 ```
 
-**Tasks:**
-- Track displays :0 to :50 per container
-- Thread-safe allocation
-- Automatic cleanup on container removal
+**Tasks:** Track displays :0-:50, thread-safe allocation
 
 #### 2.3 WiresharkSession (`session.py`)
 
 ```python
 class WiresharkSession:
-    """Represents a single Wireshark session for a link"""
-
-    async def start(self, link_id: str, jwt_token: str, capture_url: str):
-        """Start Wireshark session in container"""
-
-    async def stop(self):
-        """Stop Wireshark session and cleanup"""
-
-    def get_state(self) -> str:
-        """Get current session state: idle/starting/ready/stopped/error"""
-
-    def get_websocket_url(self) -> str:
-        """Get WebSocket URL for noVNC connection"""
-
-    async def get_logs(self, lines: int = 100) -> List[str]:
-        """Get container stderr logs for debugging"""
-
-    async def _stream_container_logs(self):
-        """Stream container logs to project WebSocket"""
+    async def start(self, link_id: str, jwt_token: str, capture_url: str): ...
+    async def stop(self): ...
+    def get_state(self) -> str: ...  # idle/starting/ready/stopped/error
+    def get_websocket_url(self) -> str: ...
+    async def get_logs(self, lines: int = 100) -> List[str]: ...
+    async def _stream_container_logs(self): ...
 ```
 
-**Tasks:**
-- Session state management
-- Docker exec for user creation and Wireshark startup
-- JWT token file creation
-- Display allocation coordination
-- Notification emission via project
-- **Log capture from container stderr**
-- **Log streaming via project WebSocket**
-- **Log retrieval API support**
+**Tasks:** State management, Docker exec, JWT token, display allocation, notifications, log streaming
 
 ---
 
@@ -1215,42 +1003,24 @@ class WiresharkSession:
 
 ```python
 class WiresharkManager:
-    """Main coordinator for Web Wireshark functionality"""
-
     @staticmethod
-    def instance() -> 'WiresharkManager':
-        """Get singleton instance"""
+    def instance() -> 'WiresharkManager': ...
 
-    async def initialize_on_server_startup(self):
-        """Initialize manager and cleanup orphan containers"""
+    async def initialize_on_server_startup(self): ...  # orphan cleanup
 
-    async def start_capture_session(
-        self,
-        project,
-        link_id: str,
-        jwt_token: str,
-        capture_url: str
-    ) -> WiresharkSession:
-        """Start Wireshark session for a link capture"""
+    async def start_capture_session(self, project, link_id: str,
+                                     jwt_token: str, capture_url: str) -> WiresharkSession: ...
 
-    async def stop_capture_session(self, project, link_id: str):
-        """Stop Wireshark session for a link"""
+    async def stop_capture_session(self, project, link_id: str): ...
 
-    def get_session(self, link_id: str) -> Optional[WiresharkSession]:
-        """Get existing session by link ID"""
+    def get_session(self, link_id: str) -> Optional[WiresharkSession]: ...
 
-    async def cleanup_project(self, project_id: str):
-        """Cleanup all sessions and container for a project"""
+    async def cleanup_project(self, project_id: str): ...
 
-    async def _cleanup_orphan_containers(self):
-        """Scan and remove orphaned gns3-ws-* containers"""
+    async def _cleanup_orphan_containers(self): ...
 ```
 
-**Tasks:**
-- Singleton pattern implementation
-- Coordinate ContainerManager, DisplayManager, and Session
-- Session lifecycle management
-- Error handling and recovery
+**Tasks:** Singleton, coordinate managers, session lifecycle, error handling
 
 ---
 
@@ -1261,36 +1031,22 @@ class WiresharkManager:
 **File:** `gns3server/controller/link.py`
 
 ```python
-async def start_capture(
-    self,
-    data_link_type="DLT_EN10MB",
-    capture_file_name=None,
-    wireshark=False  # NEW PARAMETER
-):
-    """Start capture on the link"""
-
+async def start_capture(self, data_link_type="DLT_EN10MB",
+                       capture_file_name=None, wireshark=False):
     self._capturing = True
     self._capture_file_name = capture_file_name
 
     if wireshark:
         from gns3server.agent.web_wireshark import WiresharkManager
         manager = WiresharkManager.instance()
-        # Start Wireshark session with user's JWT token
         await manager.start_capture_session(
-            self._project,
-            self.id,
-            self._project._controller._current_user_jwt,  # Need to pass JWT
+            self._project, self.id,
+            self._project._controller._current_user_jwt,
             self.pcap_streaming_url()
         )
-
-    self._project.emit_notification("link.updated", self.asdict())
 ```
 
-**Tasks:**
-- Add `wireshark` parameter to `start_capture()`
-- Add `wireshark_session_id` to link state
-- Integrate with WiresharkManager
-- Handle JWT token passing
+**Tasks:** Add `wireshark` param, integrate with WiresharkManager, handle JWT
 
 #### 4.2 Modify Link.stop_capture()
 
@@ -1298,20 +1054,13 @@ async def start_capture(
 
 ```python
 async def stop_capture(self):
-    """Stop capture on the link"""
-
     if self._wireshark_session_id:
         from gns3server.agent.web_wireshark import WiresharkManager
-        manager = WiresharkManager.instance()
-        await manager.stop_capture_session(self._project, self.id)
-
+        await WiresharkManager.instance().stop_capture_session(self._project, self.id)
     self._capturing = False
-    self._project.emit_notification("link.updated", self.asdict())
 ```
 
-**Tasks:**
-- Stop Wireshark session when capture stops
-- Cleanup session state
+**Tasks:** Stop Wireshark session, cleanup state
 
 #### 4.3 Project Lifecycle Integration
 
@@ -1319,27 +1068,15 @@ async def stop_capture(self):
 
 ```python
 async def open(self):
-    """Open project"""
-    # ... existing code ...
-
-    # Create Wireshark container for project
-    from gns3server.agent.web_wireshark import WiresharkManager
-    manager = WiresharkManager.instance()
-    await manager._container_manager.create_container(self.id)
+    # ... existing ...
+    await WiresharkManager.instance()._container_manager.create_container(self.id)
 
 async def close(self):
-    """Close project"""
-    # Cleanup Wireshark sessions and container
-    from gns3server.agent.web_wireshark import WiresharkManager
-    manager = WiresharkManager.instance()
-    await manager.cleanup_project(self.id)
-
-    # ... existing code ...
+    await WiresharkManager.instance().cleanup_project(self.id)
+    # ... existing ...
 ```
 
-**Tasks:**
-- Create container on project open
-- Cleanup on project close
+**Tasks:** Create container on open, cleanup on close
 
 ---
 
