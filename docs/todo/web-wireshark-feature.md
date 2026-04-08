@@ -669,3 +669,333 @@ This WebSocket connection is proxied to the container's xpra server for noVNC RF
 2. **Multiple Viewers** - Allow multiple browsers to view same session (read-only)
 3. **Session Recording** - Save Wireshark interaction for playback
 4. **Resource Monitoring** - Track and limit Wireshark resource usage
+
+---
+
+## Implementation Plan
+
+### Phase 1: Foundation (Module Structure)
+
+Create the `gns3server/agent/web_wireshark/` module structure:
+
+```
+gns3server/agent/web_wireshark/
+├── __init__.py
+├── manager.py           # WiresharkManager (singleton coordinator)
+├── container_manager.py  # ProjectContainerManager
+├── display_manager.py    # DisplayManager
+├── session.py            # WiresharkSession
+└── docker/
+    ├── Dockerfile        # Wireshark container image
+    └── start.sh          # Container entry point
+```
+
+**Tasks:**
+1. Create module structure with `__init__.py`
+2. Create Dockerfile for Wireshark container
+3. Create start.sh script
+4. Build and test container image locally
+
+---
+
+### Phase 2: Core Managers
+
+#### 2.1 ProjectContainerManager (`container_manager.py`)
+
+```python
+class ProjectContainerManager:
+    """Manages Docker containers for Wireshark sessions"""
+
+    async def create_container(self, project_id: str) -> str:
+        """Create a new Wireshark container for the project"""
+
+    async def get_container(self, project_id: str) -> dict:
+        """Get container info by project ID"""
+
+    async def delete_container(self, project_id: str):
+        """Stop and remove the project's Wireshark container"""
+
+    def container_exists(self, project_id: str) -> bool:
+        """Check if container exists"""
+```
+
+**Tasks:**
+- Implement Docker API integration
+- Container naming: `gns3-ws-{project_id}`
+- Port allocation: 10000-10099
+- Container lifecycle management
+
+#### 2.2 DisplayManager (`display_manager.py`)
+
+```python
+class DisplayManager:
+    """Manages X display allocation per container"""
+
+    def allocate_display(self, container_id: str) -> str:
+        """Allocate an available display (e.g., :0)"""
+
+    def release_display(self, container_id: str, display: str):
+        """Release a previously allocated display"""
+
+    def get_available_displays(self, container_id: str) -> List[str]:
+        """Get list of available displays"""
+```
+
+**Tasks:**
+- Track displays :0 to :50 per container
+- Thread-safe allocation
+- Automatic cleanup on container removal
+
+#### 2.3 WiresharkSession (`session.py`)
+
+```python
+class WiresharkSession:
+    """Represents a single Wireshark session for a link"""
+
+    async def start(self, link_id: str, jwt_token: str, capture_url: str):
+        """Start Wireshark session in container"""
+
+    async def stop(self):
+        """Stop Wireshark session and cleanup"""
+
+    def get_state(self) -> str:
+        """Get current session state: idle/starting/ready/stopped/error"""
+
+    def get_websocket_url(self) -> str:
+        """Get WebSocket URL for noVNC connection"""
+```
+
+**Tasks:**
+- Session state management
+- Docker exec for user creation and Wireshark startup
+- JWT token file creation
+- Display allocation coordination
+- Notification emission via project
+
+---
+
+### Phase 3: Main Coordinator
+
+#### 3.1 WiresharkManager (`manager.py`)
+
+```python
+class WiresharkManager:
+    """Main coordinator for Web Wireshark functionality"""
+
+    @staticmethod
+    def instance() -> 'WiresharkManager':
+        """Get singleton instance"""
+
+    async def start_capture_session(
+        self,
+        project,
+        link_id: str,
+        jwt_token: str,
+        capture_url: str
+    ) -> WiresharkSession:
+        """Start Wireshark session for a link capture"""
+
+    async def stop_capture_session(self, project, link_id: str):
+        """Stop Wireshark session for a link"""
+
+    def get_session(self, link_id: str) -> Optional[WiresharkSession]:
+        """Get existing session by link ID"""
+
+    async def cleanup_project(self, project_id: str):
+        """Cleanup all sessions and container for a project"""
+```
+
+**Tasks:**
+- Singleton pattern implementation
+- Coordinate ContainerManager, DisplayManager, and Session
+- Session lifecycle management
+- Error handling and recovery
+
+---
+
+### Phase 4: API Integration
+
+#### 4.1 Modify Link.start_capture()
+
+**File:** `gns3server/controller/link.py`
+
+```python
+async def start_capture(
+    self,
+    data_link_type="DLT_EN10MB",
+    capture_file_name=None,
+    wireshark=False  # NEW PARAMETER
+):
+    """Start capture on the link"""
+
+    self._capturing = True
+    self._capture_file_name = capture_file_name
+
+    if wireshark:
+        from gns3server.agent.web_wireshark import WiresharkManager
+        manager = WiresharkManager.instance()
+        # Start Wireshark session with user's JWT token
+        await manager.start_capture_session(
+            self._project,
+            self.id,
+            self._project._controller._current_user_jwt,  # Need to pass JWT
+            self.pcap_streaming_url()
+        )
+
+    self._project.emit_notification("link.updated", self.asdict())
+```
+
+**Tasks:**
+- Add `wireshark` parameter to `start_capture()`
+- Add `wireshark_session_id` to link state
+- Integrate with WiresharkManager
+- Handle JWT token passing
+
+#### 4.2 Modify Link.stop_capture()
+
+**File:** `gns3server/controller/link.py`
+
+```python
+async def stop_capture(self):
+    """Stop capture on the link"""
+
+    if self._wireshark_session_id:
+        from gns3server.agent.web_wireshark import WiresharkManager
+        manager = WiresharkManager.instance()
+        await manager.stop_capture_session(self._project, self.id)
+
+    self._capturing = False
+    self._project.emit_notification("link.updated", self.asdict())
+```
+
+**Tasks:**
+- Stop Wireshark session when capture stops
+- Cleanup session state
+
+#### 4.3 Project Lifecycle Integration
+
+**File:** `gns3server/controller/project.py`
+
+```python
+async def open(self):
+    """Open project"""
+    # ... existing code ...
+
+    # Create Wireshark container for project
+    from gns3server.agent.web_wireshark import WiresharkManager
+    manager = WiresharkManager.instance()
+    await manager._container_manager.create_container(self.id)
+
+async def close(self):
+    """Close project"""
+    # Cleanup Wireshark sessions and container
+    from gns3server.agent.web_wireshark import WiresharkManager
+    manager = WiresharkManager.instance()
+    await manager.cleanup_project(self.id)
+
+    # ... existing code ...
+```
+
+**Tasks:**
+- Create container on project open
+- Cleanup on project close
+
+---
+
+### Phase 5: WebSocket Endpoint
+
+#### 5.1 noVNC WebSocket Route
+
+**File:** `gns3server/api/routes/controller/links.py`
+
+```python
+@router.websocket(
+    "/{link_id}/wireshark/ws/{session_id}"
+)
+async def wireshark_websocket(
+    websocket: WebSocket,
+    link_id: str,
+    session_id: str,
+    token: str,
+    link: Link = Depends(dep_link)
+):
+    """WebSocket endpoint for noVNC connection to Wireshark"""
+
+    # Validate JWT token
+    # Validate session ownership
+    # Proxy WebSocket to container's xpra server
+```
+
+**Tasks:**
+- WebSocket route creation
+- JWT validation
+- Session ownership check
+- WebSocket proxy to container xpra
+- Connection lifecycle management
+
+---
+
+### Phase 6: Testing & Documentation
+
+#### 6.1 Unit Tests
+
+**Files:**
+- `tests/agent/web_wireshark/test_manager.py`
+- `tests/agent/web_wireshark/test_container_manager.py`
+- `tests/agent/web_wireshark/test_display_manager.py`
+- `tests/agent/web_wireshark/test_session.py`
+
+**Tasks:**
+- Mock Docker API
+- Test container lifecycle
+- Test display allocation
+- Test session state machine
+
+#### 6.2 Integration Tests
+
+**Tasks:**
+- End-to-end capture flow
+- WebSocket connection
+- Container cleanup
+- Error scenarios
+
+#### 6.3 Documentation Updates
+
+**Tasks:**
+- Update API documentation
+- Add configuration options
+- Update troubleshooting guide
+
+---
+
+### Implementation Order (Bottom-Up)
+
+```
+1. Dockerfile + start.sh (Container)
+2. ProjectContainerManager (Docker API)
+3. DisplayManager (Resource allocation)
+4. WiresharkSession (Session logic)
+5. WiresharkManager (Coordination)
+6. Link API integration (Controller)
+7. WebSocket endpoint (API)
+8. Tests & Docs
+```
+
+### Dependencies
+
+- Docker daemon access (`/var/run/docker.sock`)
+- Docker Python SDK (`docker` package)
+- WebSocket proxy support
+- Project WebSocket notification system
+
+### Estimated Complexity
+
+| Phase | Complexity | Time Estimate |
+|-------|-----------|---------------|
+| Phase 1: Foundation | Low | 1-2 days |
+| Phase 2: Core Managers | Medium | 3-5 days |
+| Phase 3: Main Coordinator | Medium | 2-3 days |
+| Phase 4: API Integration | Medium | 2-3 days |
+| Phase 5: WebSocket | High | 3-4 days |
+| Phase 6: Testing & Docs | Low | 2-3 days |
+| **Total** | | **13-20 days** |
