@@ -28,7 +28,7 @@ fi
 echo "Starting xpra session for link $LINK_ID on $DISPLAY..."
 xpra start "$DISPLAY" \
     --html=on \
-    --bind-tcp=127.0.0.1:${PORT} \
+    --bind-tcp=0.0.0.0:${PORT} \
     --session-name="link-${LINK_ID}" \
     --daemon=yes \
     --use-display \
@@ -50,5 +50,5 @@ echo "Display: $DISPLAY"
 echo "Container port: $PORT"
 echo "========================================"
 
-# Keep container running
-tail -f /dev/null
+# Exit - xpra is running in background
+exit 0
