@@ -33,6 +33,7 @@ from gns3server.controller.controller_error import ControllerError
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.controller.link import Link
 from gns3server.utils.http_client import HTTPClient
+from gns3server.utils.port_allocator import link_id_to_port
 from gns3server import schemas
 
 from .dependencies.database import get_repository
@@ -318,7 +319,6 @@ async def web_wireshark_websocket(
         container_name = f"gns3-wireshark-{project_id}"
 
         # 计算 xpra 端口（使用确定性 hash）
-        from gns3server.utils.port_allocator import link_id_to_port
         xpra_port = link_id_to_port(link_id)
 
         # 获取容器 IP
