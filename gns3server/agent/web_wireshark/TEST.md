@@ -40,6 +40,10 @@ python3 gns3server/agent/web_wireshark/manage_wireshark.py \
   --project-id "test-project"
 ```
 
+# ws
+
+ws://192.168.1.140:3080/v3/projects/5af0fe00-f39d-4985-8669-7e8c512d729c/links/f233f27f-7432-49c3-9aa2-50e326a10eec/capture/web-wireshark?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3NTc4MjI5MywidmVyIjowfQ.gFHuLijX86YOdmMYNckRJNiCbTTfYzGnE6RWJUlmQdk
+
 ## 资源参数配置
 
 ### 内存配置

@@ -37,7 +37,7 @@ from gns3server.utils.port_allocator import link_id_to_port
 from gns3server import schemas
 
 from .dependencies.database import get_repository
-from .dependencies.rbac import has_privilege
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 import logging
 
@@ -303,16 +303,22 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
 async def web_wireshark_websocket(
     websocket: WebSocket,
     link_id: str,
-    project_id: str
+    project_id: str,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Link.Capture"))
 ):
     """
     WebSocket 代理端点，转发到容器的 xpra HTML5 客户端
 
-    路径：ws://host/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark
+    路径：ws://host/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark?token=<jwt_token>
+
+    Required privilege: Link.Capture
     """
 
+    if current_user is None:
+        return
+
     await websocket.accept()
-    log.info(f"New WebSocket connection for project {project_id}, link {link_id}")
+    log.info(f"New WebSocket connection for project {project_id}, link {link_id}, user {current_user.username}")
 
     try:
         # 获取容器信息
