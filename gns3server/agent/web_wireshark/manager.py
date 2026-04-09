@@ -212,15 +212,20 @@ class WebWiresharkManager:
 
     async def ensure_network(self):
         """Ensure Docker network exists."""
+        from gns3server.config import Config
+
         network = await self.docker.get_network(self.network_name)
         if network:
             logger.info(f"Network {self.network_name} already exists")
         else:
-            logger.info(f"Creating network {self.network_name}")
+            # Get subnet from config or use default
+            config = Config.instance()
+            subnet = getattr(config.settings.WebWireshark, "network_subnet", "172.31.0.0/22")
+            logger.info(f"Creating network {self.network_name} with subnet {subnet}")
             await self.docker.create_network(
                 self.network_name,
                 driver="bridge",
-                subnet="100.64.0.0/22"
+                subnet=subnet
             )
 
     async def get_or_create_container(
