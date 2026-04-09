@@ -89,9 +89,9 @@ class DockerHTTPClient:
                     self._api_version = DOCKER_PREFERRED_API_VERSION
                     logger.info(f"Using Docker API version {self._api_version}")
                 else:
-                    # 使用 Docker daemon 支持的最小 API 版本
-                    self._api_version = docker_info['MinAPIVersion']
-                    logger.info(f"Using Docker API version {self._api_version} (daemon preferred)")
+                    # 使用 Docker daemon 的实际 API 版本
+                    self._api_version = docker_info['ApiVersion']
+                    logger.info(f"Using Docker API version {self._api_version} (daemon native)")
 
             except (aiohttp.ClientError, FileNotFoundError) as e:
                 self._connected = False
@@ -117,7 +117,7 @@ class DockerHTTPClient:
             await self._check_connection()
 
         session = await self._get_session()
-        url = f"http://docker/{self._api_version}/{endpoint}"
+        url = f"http://docker/v{self._api_version}/{endpoint}"
 
         try:
             async with session.request(method, url, **kwargs) as response:
@@ -216,24 +216,6 @@ class DockerHTTPClient:
         """删除容器"""
         params = {"force": "true"} if force else {}
         await self._request("DELETE", f"containers/{container_id}", params=params)
-
-    async def exec_create(self, container_id: str, cmd: list, detach: bool = False):
-        """创建 exec 实例"""
-        data = {
-            "AttachStdin": False,
-            "AttachStdout": True,
-            "AttachStderr": True,
-            "Cmd": cmd,
-            "Detatch": detach,
-            "Tty": False
-        }
-        result = await self._request("POST", f"containers/{container_id}/exec", json=data)
-        return result["Id"]
-
-    async def exec_start(self, exec_id: str, detach: bool = False):
-        """启动 exec 实例"""
-        data = {"Detach": detach}
-        await self._request("POST", f"exec/{exec_id}/start", json=data)
 
 
 class WebWiresharkManager:
@@ -423,12 +405,10 @@ class WebWiresharkManager:
 
         # 健康检查配置
         health_config = {
-            "Test": {
-                "CMD": ["xpra", "list"],
-                "Interval": 30000000000,  # 30秒（纳秒）
-                "Timeout": 10000000000,   # 10秒
-                "Retries": 3
-            }
+            "Test": ["CMD-SHELL", "xpra list"],
+            "Interval": 30000000000,  # 30秒（纳秒）
+            "Timeout": 10000000000,   # 10秒
+            "Retries": 3
         }
 
         container_id = await self.docker.create_container(
@@ -521,18 +501,22 @@ class WebWiresharkManager:
         # 等待 xpra 初始化
         await asyncio.sleep(2)
 
-        # 启动 Wireshark 并连接抓包流
-        wireshark_cmd = [
-            "bash", "-c",
+        # 启动 Wireshark 并连接抓包流（使用 docker exec 命令行工具）
+        wireshark_cmd = (
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
             f"wireshark -i - -k -display :{display}"
-        ]
+        )
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
-        exec_id = await self.docker.exec_create(container_id, wireshark_cmd, detach=True)
-        await self.docker.exec_start(exec_id, detach=True)
+        # 使用 docker exec 命令行工具（与 GNS3 docker_vm 模式一致）
+        await asyncio.create_subprocess_exec(
+            "docker", "exec", "-d", container_id,
+            "bash", "-c", wireshark_cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
 
         # 获取容器 IP
         container = await self.docker.get_container(container_name)
