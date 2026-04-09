@@ -12,6 +12,7 @@ import json
 import argparse
 import logging
 import asyncio
+import re
 from typing import Optional
 
 import aiohttp
@@ -171,19 +172,24 @@ class DockerHTTPClient:
             data["Env"] = [f"{k}={v}" for k, v in kwargs.pop("environment").items()]
 
         # 处理资源限制
-        host_config = {}
-        if "mem_limit" in kwargs:
-            host_config["Memory"] = kwargs.pop("mem_limit")
-        if "cpu_quota" in kwargs:
-            host_config["CpuQuota"] = kwargs.pop("cpu_quota")
-        if "pids_limit" in kwargs:
-            host_config["PidsLimit"] = kwargs.pop("pids_limit")
+        if "host_config" in kwargs:
+            data["HostConfig"].update(kwargs.pop("host_config"))
+        else:
+            # 兼容旧的参数格式
+            host_config = {}
+            if "mem_limit" in kwargs:
+                host_config["Memory"] = kwargs.pop("mem_limit")
+            if "cpu_quota" in kwargs:
+                host_config["NanoCpus"] = kwargs.pop("cpu_quota")
+            if "pids_limit" in kwargs:
+                host_config["PidsLimit"] = kwargs.pop("pids_limit")
+            if "restart_policy" in kwargs:
+                host_config["RestartPolicy"] = kwargs.pop("restart_policy")
+            data["HostConfig"].update(host_config)
 
-        # 处理重启策略
-        if "restart_policy" in kwargs:
-            host_config["RestartPolicy"] = kwargs.pop("restart_policy")
-
-        data["HostConfig"] = host_config
+        # 处理健康检查
+        if "health_config" in kwargs:
+            data["HealthCheck"] = kwargs.pop("health_config")
 
         # 创建容器
         result = await self._request("POST", "containers/create", params={"name": name}, json=data)
@@ -238,6 +244,39 @@ class WebWiresharkManager:
     async def close(self):
         """关闭 Docker 连接"""
         await self.docker.close()
+
+    @staticmethod
+    def _parse_memory(memory_str: str) -> int:
+        """解析内存字符串为字节数
+
+        Args:
+            memory_str: 内存字符串，如 "2g", "512m", "1024k"
+
+        Returns:
+            内存字节数
+        """
+        memory_str = memory_str.lower().strip()
+        if not memory_str:
+            return 0
+
+        # 提取数字和单位
+        match = re.match(r'(\d+(?:\.\d+)?)\s*([kmg]b?)?', memory_str)
+        if not match:
+            raise ValueError(f"Invalid memory format: {memory_str}")
+
+        value = float(match.group(1))
+        unit = match.group(2) or 'b'
+
+        # 转换为字节
+        multipliers = {
+            'b': 1,
+            'k': 1024,
+            'm': 1024 * 1024,
+            'g': 1024 * 1024 * 1024
+        }
+
+        unit = unit[0]  # 取第一个字符（处理 'kb', 'mb' 等）
+        return int(value * multipliers.get(unit, 1))
 
     def _get_gns3_url_from_controller(self) -> Optional[str]:
         """从 Controller 实例获取 GNS3 server URL
@@ -326,12 +365,24 @@ class WebWiresharkManager:
                 subnet="172.28.0.0/16"
             )
 
-    async def get_or_create_container(self, project_id: str, image: str = "gns3/web-wireshark:latest") -> str:
+    async def get_or_create_container(
+        self,
+        project_id: str,
+        image: str = "gns3/web-wireshark:latest",
+        memory: str = "2g",
+        memory_swap: str = None,
+        cpus: float = 1.0,
+        pids_limit: int = 1000
+    ) -> str:
         """获取或创建项目的 Web Wireshark 容器
 
         Args:
             project_id: 项目 ID
             image: Docker 镜像名称
+            memory: 内存限制 (默认: 2g)
+            memory_swap: 内存交换限制 (默认: 与memory相同)
+            cpus: CPU核心数 (默认: 1.0)
+            pids_limit: 进程数限制 (默认: 1000)
 
         Returns:
             容器 ID
@@ -349,14 +400,43 @@ class WebWiresharkManager:
 
         # 创建新容器
         logger.info(f"Creating new container {container_name} with image {image}")
+        logger.info(f"Resources: memory={memory}, cpus={cpus}, pids_limit={pids_limit}")
+
+        # 计算CPU quota (1个CPU = 1000000微秒)
+        cpu_quota = int(cpus * 100000)
+
+        # 配置主机配置
+        host_config = {
+            "Memory": self._parse_memory(memory),
+            "MemorySwap": self._parse_memory(memory_swap) if memory_swap else 0,
+            "NanoCpus": cpu_quota,
+            "PidsLimit": pids_limit,
+            "RestartPolicy": {"Name": "unless-stopped"},
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-size": "10m",
+                    "max-file": "3"
+                }
+            }
+        }
+
+        # 健康检查配置
+        health_config = {
+            "Test": {
+                "CMD": ["xpra", "list"],
+                "Interval": 30000000000,  # 30秒（纳秒）
+                "Timeout": 10000000000,   # 10秒
+                "Retries": 3
+            }
+        }
+
         container_id = await self.docker.create_container(
             name=container_name,
             image=image,
             network=self.network_name,
-            mem_limit="2g",
-            cpu_quota=100000,
-            pids_limit=1000,
-            restart_policy={"Name": "unless-stopped"},
+            host_config=host_config,
+            health_config=health_config,
             environment={
                 "XDG_RUNTIME_DIR": "/run/user/1000",
                 "LANG": "C.UTF-8",
@@ -374,7 +454,11 @@ class WebWiresharkManager:
         link_id: str,
         jwt_token: str,
         capture_stream_url: Optional[str] = None,
-        image: str = "gns3/web-wireshark:latest"
+        image: str = "gns3/web-wireshark:latest",
+        memory: str = "2g",
+        memory_swap: Optional[str] = None,
+        cpus: float = 1.0,
+        pids_limit: int = 1000
     ) -> dict:
         """启动 Web Wireshark 会话
 
@@ -384,6 +468,10 @@ class WebWiresharkManager:
             jwt_token: JWT 认证令牌
             capture_stream_url: 抓包流 URL（可选，如果未提供则自动检测）
             image: Docker 镜像名称
+            memory: 内存限制 (默认: 2g)
+            memory_swap: 内存交换限制 (默认: 与memory相同)
+            cpus: CPU核心数 (默认: 1.0)
+            pids_limit: 进程数限制 (默认: 1000)
         """
         logger.info(f"Starting Web Wireshark session for link {link_id}")
 
@@ -396,12 +484,19 @@ class WebWiresharkManager:
             )
             logger.info(f"Auto-detected capture stream URL: {capture_stream_url}")
 
-        container_id = await self.get_or_create_container(project_id, image)
+        container_id = await self.get_or_create_container(
+            project_id,
+            image,
+            memory,
+            memory_swap,
+            cpus,
+            pids_limit
+        )
         container_name = f"gns3-wireshark-{project_id}"
 
         # 分配 display 和端口
         # 使用 link_id 的 hash 来分配固定的 display 和端口
-        link_hash = abs(hash(link_id)) % 10
+        link_hash = abs(hash(link_id)) % 100
         display = 100 + link_hash
         port = 12300 + link_hash
 
@@ -474,7 +569,7 @@ class WebWiresharkManager:
                 return
 
             # 获取 display 编号
-            link_hash = abs(hash(link_id)) % 10
+            link_hash = abs(hash(link_id)) % 100
             display = 100 + link_hash
 
             # 停止 xpra 会话
@@ -499,8 +594,8 @@ class WebWiresharkManager:
                 logger.warning(f"Container {container_name} not found")
                 return
 
-            # 停止所有 xpra 会话（display 100-109）
-            for display in range(100, 110):
+            # 停止所有 xpra 会话（display 100-199）
+            for display in range(100, 200):
                 try:
                     xpra_cmd = ["xpra", "stop", f":{display}"]
                     exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
@@ -572,6 +667,14 @@ async def main_async():
     start_parser.add_argument("--capture-url", help="抓包流 URL（可选，未提供则自动检测）")
     start_parser.add_argument("--image", default="gns3/web-wireshark:latest",
                             help="Docker 镜像名称（默认: gns3/web-wireshark:latest）")
+    start_parser.add_argument("--memory", default="2g",
+                            help="内存限制（默认: 2g）")
+    start_parser.add_argument("--memory-swap", default=None,
+                            help="内存交换限制（默认: 与memory相同）")
+    start_parser.add_argument("--cpus", type=float, default=1.0,
+                            help="CPU核心数（默认: 1.0）")
+    start_parser.add_argument("--pids-limit", type=int, default=1000,
+                            help="进程数限制（默认: 1000）")
 
     # stop 命令
     stop_parser = subparsers.add_parser("stop", help="停止单个 Web Wireshark 会话")
@@ -613,7 +716,11 @@ async def main_async():
                 args.link_id,
                 args.jwt_token,
                 getattr(args, 'capture_url', None),  # 可选参数
-                getattr(args, 'image', "gns3/web-wireshark:latest")  # 可选参数
+                getattr(args, 'image', "gns3/web-wireshark:latest"),
+                getattr(args, 'memory', "2g"),
+                getattr(args, 'memory_swap', None),
+                getattr(args, 'cpus', 1.0),
+                getattr(args, 'pids_limit', 1000)
             )
             print(json.dumps(result))
 
