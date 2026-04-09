@@ -495,11 +495,59 @@ class WebWiresharkManager:
             "--resize-display=yes"
         ]
 
-        exec_id = await self.docker.exec_create(container_id, xpra_cmd, detach=True)
-        await self.docker.exec_start(exec_id, detach=True)
+        # 先检查是否已有会话在使用这个 display，如果有则先清理
+        logger.info(f"Checking for existing session on display :{display}")
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "exec", container_id,
+            "bash", "-c", f"xpra list 2>&1 | grep -q ':{display}' && xpra stop :{display} 2>&1 || echo 'no existing session'",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        stdout, _ = await proc.communicate()
+        if "no existing session" not in stdout.decode():
+            logger.info(f"Cleaned up existing session on display :{display}")
+            # 等待会话完全停止
+            await asyncio.sleep(1)
+
+        # 启动 xpra 会话（使用 docker exec 命令行工具）
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "exec", "-d", container_id,
+            "bash", "-c", " ".join(xpra_cmd),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        stdout, _ = await proc.communicate()
+
+        if proc.returncode != 0:
+            error_msg = stdout.decode().strip()
+            logger.error(f"xpra start failed (code {proc.returncode}): {error_msg}")
+            raise RuntimeError(f"xpra start failed: {error_msg}")
 
         # 等待 xpra 初始化
         await asyncio.sleep(2)
+
+        # 验证 xpra 会话是否启动成功
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "exec", container_id,
+            "bash", "-c", f"xpra list 2>&1 | grep -q '{session_name}'",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        await proc.wait()
+
+        if proc.returncode != 0:
+            # xpra 会话可能以不同名称注册，获取实际的 xpra 输出用于调试
+            proc = await asyncio.create_subprocess_exec(
+                "docker", "exec", container_id,
+                "bash", "-c", "xpra list 2>&1",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+            xpra_output, _ = await proc.communicate()
+            logger.error(f"xpra session verification failed. xpra list output:\n{xpra_output.decode().strip()}")
+            raise RuntimeError(f"xpra session {session_name} failed to start")
+
+        logger.info(f"xpra session {session_name} started successfully on display :{display}")
 
         # 启动 Wireshark 并连接抓包流（使用 docker exec 命令行工具）
         wireshark_cmd = (
@@ -511,12 +559,18 @@ class WebWiresharkManager:
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
         # 使用 docker exec 命令行工具（与 GNS3 docker_vm 模式一致）
-        await asyncio.create_subprocess_exec(
+        proc = await asyncio.create_subprocess_exec(
             "docker", "exec", "-d", container_id,
             "bash", "-c", wireshark_cmd,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
         )
+        stdout, _ = await proc.communicate()
+
+        if proc.returncode != 0:
+            logger.warning(f"Wireshark start returned code {proc.returncode}: {stdout.decode().strip()}")
+        else:
+            logger.info("Wireshark started successfully")
 
         # 获取容器 IP
         container = await self.docker.get_container(container_name)
@@ -559,8 +613,12 @@ class WebWiresharkManager:
             # 停止 xpra 会话
             logger.info(f"Stopping xpra session :{display}")
             xpra_cmd = ["xpra", "stop", f":{display}"]
-            exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
-            await self.docker.exec_start(exec_id, detach=True)
+            await asyncio.create_subprocess_exec(
+                "docker", "exec", container["Id"],
+                "bash", "-c", " ".join(xpra_cmd),
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
+            )
 
             logger.info("Web Wireshark session stopped successfully")
 
@@ -582,8 +640,12 @@ class WebWiresharkManager:
             for display in range(100, 200):
                 try:
                     xpra_cmd = ["xpra", "stop", f":{display}"]
-                    exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
-                    await self.docker.exec_start(exec_id, detach=True)
+                    await asyncio.create_subprocess_exec(
+                        "docker", "exec", container["Id"],
+                        "bash", "-c", " ".join(xpra_cmd),
+                        stdout=asyncio.subprocess.DEVNULL,
+                        stderr=asyncio.subprocess.DEVNULL
+                    )
                     logger.info(f"Stopped xpra session :{display}")
                 except Exception:
                     # 忽略不存在的会话
