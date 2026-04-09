@@ -433,7 +433,7 @@ class WebWiresharkManager:
         wireshark_cmd = (
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
-            f"wireshark -i - -k -display :{display} &"
+            f"wireshark -i - -k --fullscreen -display :{display} &"
         )
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
