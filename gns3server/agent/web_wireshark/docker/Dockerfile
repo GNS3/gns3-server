@@ -7,6 +7,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
+# Use Alibaba Cloud Debian mirror for faster downloads in China (Debian Trixie uses deb822 format)
+RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list.d/debian.sources \
+    && sed -i 's|http://security.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources
+
 # Add xpra official repository
 RUN apt-get update && apt-get install -y \
     ca-certificates \
