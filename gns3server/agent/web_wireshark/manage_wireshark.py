@@ -18,7 +18,6 @@ from typing import Optional
 
 from gns3server.utils import parse_version
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 默认 GNS3 server 地址
@@ -553,6 +552,8 @@ class WebWiresharkManager:
 
 async def main_async():
     parser = argparse.ArgumentParser(description="Web Wireshark 管理脚本")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="启用详细日志输出（主要用于调试）")
     subparsers = parser.add_subparsers(dest="command", help="可用命令")
 
     # start 命令
@@ -580,6 +581,13 @@ async def main_async():
     delete_container_parser.add_argument("--project-id", required=True, help="项目 ID")
 
     args = parser.parse_args()
+
+    # 配置日志（仅在独立运行时通过 --verbose 参数控制）
+    if args.verbose:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
 
     if not args.command:
         parser.print_help()
