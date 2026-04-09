@@ -432,19 +432,20 @@ class WebWiresharkManager:
 
         logger.info(f"xpra session {session_name} started successfully on display :{display}")
 
-        # Start Wireshark and connect to capture stream
+        # Start Wireshark and connect to capture stream (run in background with &)
         wireshark_cmd = (
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
-            f"wireshark -i - -k -display :{display}"
+            f"wireshark -i - -k -display :{display} &"
         )
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
+        # Don't wait for wireshark to complete - it runs continuously
         returncode, stdout, stderr = await self._exec_in_container(
             container_id,
             wireshark_cmd,
-            timeout=10  # Wireshark startup may take longer
+            timeout=5  # Short timeout since it runs in background
         )
 
         if returncode != 0:
