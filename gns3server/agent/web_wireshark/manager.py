@@ -220,7 +220,7 @@ class WebWiresharkManager:
             await self.docker.create_network(
                 self.network_name,
                 driver="bridge",
-                subnet="172.28.0.0/16"
+                subnet="100.64.1.0/24"
             )
 
     async def get_or_create_container(
