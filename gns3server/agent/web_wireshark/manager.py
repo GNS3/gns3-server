@@ -275,8 +275,8 @@ class WebWiresharkManager:
             logger.info(f"Creating new container {container_name} with image {image}")
             logger.info(f"Resources: memory={memory}, cpus={cpus}, pids_limit={pids_limit}")
 
-            # Calculate CPU quota
-            cpu_quota = int(cpus * 100000)
+            # Calculate CPU quota (NanoCpus uses nanoseconds: 1 CPU = 1000000000)
+            cpu_quota = int(cpus * 1000000000)
 
             # Configure host settings
             host_config = {
