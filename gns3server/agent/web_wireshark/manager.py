@@ -398,6 +398,7 @@ class WebWiresharkManager:
         xpra_cmd = [
             "XPRA_CLIENT_CAN_SHUTDOWN=false",
             "xpra", "start", f":{display}",
+            '--xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR"',
             "--html=on",
             f"--bind-tcp=0.0.0.0:{port}",
             f"--session-name={session_name}",
