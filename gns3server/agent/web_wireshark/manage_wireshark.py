@@ -13,6 +13,8 @@ import asyncio
 import os
 from typing import Optional
 
+from gns3server.utils.uuid_validator import validate_uuid
+
 # Add parent directory to path for imports when run directly
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
@@ -152,8 +154,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Start command
     start_parser = subparsers.add_parser("start", help="Start Web Wireshark session")
-    start_parser.add_argument("--project-id", required=True, help="Project ID")
-    start_parser.add_argument("--link-id", required=True, help="Link ID")
+    start_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
+    start_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
     start_parser.add_argument("--jwt-token", required=True, help="JWT token")
     start_parser.add_argument(
         "--capture-url",
@@ -184,16 +186,16 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Stop command
     stop_parser = subparsers.add_parser("stop", help="Stop Web Wireshark session")
-    stop_parser.add_argument("--project-id", required=True, help="Project ID")
-    stop_parser.add_argument("--link-id", required=True, help="Link ID")
+    stop_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
+    stop_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
 
     # Stop all command
     stop_all_parser = subparsers.add_parser("stop-all", help="Stop all sessions")
-    stop_all_parser.add_argument("--project-id", required=True, help="Project ID")
+    stop_all_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
 
     # Delete command
     delete_parser = subparsers.add_parser("delete", help="Delete container")
-    delete_parser.add_argument("--project-id", required=True, help="Project ID")
+    delete_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
 
     return parser
 
