@@ -2,6 +2,9 @@
 """
 Web Wireshark 管理脚本
 负责创建容器、启动 xpra 会话、管理 Wireshark 进程
+
+使用 Docker HTTP API (通过 aiohttp) 而不是 docker SDK
+遵循 GNS3 的架构模式
 """
 
 import sys
@@ -9,8 +12,9 @@ import json
 import argparse
 import time
 import logging
+import asyncio
+import aiohttp
 from typing import Optional
-from docker import DockerClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,11 +22,173 @@ logger = logging.getLogger(__name__)
 # 默认 GNS3 server 地址
 DEFAULT_GNS3_URL = "http://127.0.0.1:3080"
 
+# Docker API 配置
+DOCKER_SOCKET = "/var/run/docker.sock"
+DOCKER_API_VERSION = "v1.44"
+
+
+class DockerHTTPClient:
+    """Docker HTTP API 客户端，使用 aiohttp 通过 Unix socket 连接"""
+
+    def __init__(self):
+        self._connector = None
+        self._session = None
+
+    async def _get_connector(self):
+        """获取 Unix socket 连接器"""
+        if self._connector is None or self._connector.closed:
+            self._connector = aiohttp.UnixConnector(DOCKER_SOCKET, limit=None)
+        return self._connector
+
+    async def _get_session(self):
+        """获取 aiohttp 会话"""
+        if self._session is None or self._session.closed:
+            connector = await self._get_connector()
+            self._session = aiohttp.ClientSession(connector=connector)
+        return self._session
+
+    async def close(self):
+        """关闭连接"""
+        if self._session and not self._session.closed:
+            await self._session.close()
+        if self._connector and not self._connector.closed:
+            await self._connector.close()
+
+    async def _request(self, method: str, endpoint: str, **kwargs):
+        """
+        发送请求到 Docker API
+
+        Args:
+            method: HTTP 方法
+            endpoint: API 端点（不包含版本前缀）
+            **kwargs: 传递给 aiohttp.request 的其他参数
+
+        Returns:
+            响应 JSON 数据
+        """
+        session = await self._get_session()
+        url = f"http://docker/{DOCKER_API_VERSION}/{endpoint}"
+
+        try:
+            async with session.request(method, url, **kwargs) as response:
+                if response.status >= 300:
+                    error_text = await response.text()
+                    raise RuntimeError(f"Docker API error {response.status}: {error_text}")
+                if response.status == 204:  # No Content
+                    return None
+                return await response.json()
+        except aiohttp.ClientError as e:
+            raise RuntimeError(f"Docker connection error: {e}")
+
+    async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
+        """创建 Docker 网络"""
+        data = {
+            "Name": name,
+            "Driver": driver
+        }
+        if subnet:
+            data["IPAM"] = {
+                "Config": [{"Subnet": subnet}]
+            }
+        await self._request("POST", "networks/create", json=data)
+
+    async def get_network(self, name: str):
+        """获取网络信息"""
+        try:
+            return await self._request("GET", f"networks/{name}")
+        except RuntimeError as e:
+            if "404" in str(e):
+                return None
+            raise
+
+    async def create_container(self, name: str, image: str, **kwargs):
+        """创建容器"""
+        data = {
+            "Image": image,
+            "name": name,
+            "HostConfig": {},
+            "NetworkingConfig": {}
+        }
+
+        # 处理网络配置
+        if "network" in kwargs:
+            network_name = kwargs.pop("network")
+            data["NetworkingConfig"]["EndpointsConfig"] = {
+                network_name: {}
+            }
+
+        # 处理环境变量
+        if "environment" in kwargs:
+            data["Env"] = [f"{k}={v}" for k, v in kwargs.pop("environment").items()]
+
+        # 处理资源限制
+        host_config = {}
+        if "mem_limit" in kwargs:
+            host_config["Memory"] = kwargs.pop("mem_limit")
+        if "cpu_quota" in kwargs:
+            host_config["CpuQuota"] = kwargs.pop("cpu_quota")
+        if "pids_limit" in kwargs:
+            host_config["PidsLimit"] = kwargs.pop("pids_limit")
+
+        # 处理重启策略
+        if "restart_policy" in kwargs:
+            host_config["RestartPolicy"] = kwargs.pop("restart_policy")
+
+        data["HostConfig"] = host_config
+
+        # 创建容器
+        result = await self._request("POST", "containers/create", params={"name": name}, json=data)
+        return result["Id"]
+
+    async def start_container(self, container_id: str):
+        """启动容器"""
+        await self._request("POST", f"containers/{container_id}/start")
+
+    async def get_container(self, name: str):
+        """获取容器信息"""
+        try:
+            return await self._request("GET", f"containers/{name}/json")
+        except RuntimeError as e:
+            if "404" in str(e):
+                return None
+            raise
+
+    async def stop_container(self, container_id: str, timeout: int = 10):
+        """停止容器"""
+        await self._request("POST", f"containers/{container_id}/stop", params={"t": timeout})
+
+    async def remove_container(self, container_id: str, force: bool = False):
+        """删除容器"""
+        params = {"force": "true"} if force else {}
+        await self._request("DELETE", f"containers/{container_id}", params=params)
+
+    async def exec_create(self, container_id: str, cmd: list, detach: bool = False):
+        """创建 exec 实例"""
+        data = {
+            "AttachStdin": False,
+            "AttachStdout": True,
+            "AttachStderr": True,
+            "Cmd": cmd,
+            "Detatch": detach,
+            "Tty": False
+        }
+        result = await self._request("POST", f"containers/{container_id}/exec", json=data)
+        return result["Id"]
+
+    async def exec_start(self, exec_id: str, detach: bool = False):
+        """启动 exec 实例"""
+        data = {"Detach": detach}
+        await self._request("POST", f"exec/{exec_id}/start", json=data)
+
 
 class WebWiresharkManager:
     def __init__(self):
-        self.docker = DockerClient(base_url="unix:///var/run/docker.sock")
+        self.docker = DockerHTTPClient()
         self.network_name = "gns3-wireshark"
+
+    async def close(self):
+        """关闭 Docker 连接"""
+        await self.docker.close()
 
     def _get_gns3_url_from_controller(self) -> Optional[str]:
         """从 Controller 实例获取 GNS3 server URL
@@ -98,50 +264,59 @@ class WebWiresharkManager:
         logger.warning(f"Using fallback default URL: {DEFAULT_GNS3_URL}")
         return DEFAULT_GNS3_URL
 
-    def ensure_network(self):
+    async def ensure_network(self):
         """确保 Docker 网络存在"""
-        try:
-            self.docker.networks.get(self.network_name)
+        network = await self.docker.get_network(self.network_name)
+        if network:
             logger.info(f"Network {self.network_name} already exists")
-        except:
+        else:
             logger.info(f"Creating network {self.network_name}")
-            self.docker.networks.create(
+            await self.docker.create_network(
                 self.network_name,
                 driver="bridge",
                 subnet="172.28.0.0/16"
             )
 
-    def get_or_create_container(self, project_id: str):
-        """获取或创建项目的 Web Wireshark 容器"""
+    async def get_or_create_container(self, project_id: str) -> str:
+        """获取或创建项目的 Web Wireshark 容器
+
+        Returns:
+            容器 ID
+        """
         container_name = f"gns3-wireshark-{project_id}"
 
-        try:
-            container = self.docker.containers.get(container_name)
-            if container.status != "running":
+        container = await self.docker.get_container(container_name)
+        if container:
+            if container["State"]["Running"]:
+                logger.info(f"Container {container_name} already running")
+                return container["Id"]
+            else:
                 logger.info(f"Starting existing container {container_name}")
-                container.start()
-            return container
-        except:
-            # 创建新容器
-            logger.info(f"Creating new container {container_name}")
-            container = self.docker.containers.run(
-                "gns3/web-wireshark:latest",
-                name=container_name,
-                detach=True,
-                network=self.network_name,
-                mem_limit="2g",
-                cpu_quota=100000,
-                pids_limit=1000,
-                restart_policy={"Name": "unless-stopped"},
-                environment={
-                    "XDG_RUNTIME_DIR": "/run/user/1000",
-                    "LANG": "C.UTF-8",
-                    "LC_ALL": "C.UTF-8"
-                }
-            )
-            return container
+                await self.docker.start_container(container["Id"])
+                return container["Id"]
 
-    def start_wireshark_session(
+        # 创建新容器
+        logger.info(f"Creating new container {container_name}")
+        container_id = await self.docker.create_container(
+            name=container_name,
+            image="gns3/web-wireshark:latest",
+            network=self.network_name,
+            mem_limit="2g",
+            cpu_quota=100000,
+            pids_limit=1000,
+            restart_policy={"Name": "unless-stopped"},
+            environment={
+                "XDG_RUNTIME_DIR": "/run/user/1000",
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8"
+            }
+        )
+
+        # 启动容器
+        await self.docker.start_container(container_id)
+        return container_id
+
+    async def start_wireshark_session(
         self,
         project_id: str,
         link_id: str,
@@ -164,7 +339,8 @@ class WebWiresharkManager:
             capture_stream_url = f"{gns3_url}/v3/projects/{project_id}/links/{link_id}/capture/stream"
             logger.info(f"Auto-detected capture stream URL: {capture_stream_url}")
 
-        container = self.get_or_create_container(project_id)
+        container_id = await self.get_or_create_container(project_id)
+        container_name = f"gns3-wireshark-{project_id}"
 
         # 分配 display 和端口
         # 使用 link_id 的 hash 来分配固定的 display 和端口
@@ -176,52 +352,43 @@ class WebWiresharkManager:
         session_name = f"link-{link_id}"
         logger.info(f"Starting xpra session {session_name} on display :{display}")
 
-        xpra_cmd = (
-            f"xpra start :{display} "
-            f"--xvfb='Xvfb -screen 0 1920x1080x24 +extension RANDR' "
-            f"--html=on "
-            f"--bind-tcp=0.0.0.0:{port} "
-            f"--session-name={session_name} "
-            f"--daemon=yes "
-            f"--dbus-launch=no "
-            f"--resize-display=yes"
-        )
+        xpra_cmd = [
+            "xpra", "start", f":{display}",
+            "--xvfb=Xvfb -screen 0 1920x1080x24 +extension RANDR",
+            "--html=on",
+            f"--bind-tcp=0.0.0.0:{port}",
+            f"--session-name={session_name}",
+            "--daemon=yes",
+            "--dbus-launch=no",
+            "--resize-display=yes"
+        ]
 
-        exit_code, output = container.exec_run(xpra_cmd, detach=True)
-        if exit_code != 0:
-            logger.error(f"Failed to start xpra: {output}")
-            raise RuntimeError(f"Failed to start xpra session: {output}")
+        exec_id = await self.docker.exec_create(container_id, xpra_cmd, detach=True)
+        await self.docker.exec_start(exec_id, detach=True)
 
         # 等待 xpra 初始化
-        time.sleep(2)
+        await asyncio.sleep(2)
 
         # 启动 Wireshark 并连接抓包流
-        wireshark_cmd = (
+        wireshark_cmd = [
+            "bash", "-c",
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
             f"wireshark -i - -k -display :{display}"
-        )
+        ]
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
-        # 在后台启动 Wireshark
-        exit_code, output = container.exec_run(
-            f"bash -c \"{wireshark_cmd}\"",
-            detach=True,
-            stdin=True
-        )
-
-        if exit_code != 0:
-            logger.error(f"Failed to start Wireshark: {output}")
-            raise RuntimeError(f"Failed to start Wireshark: {output}")
+        exec_id = await self.docker.exec_create(container_id, wireshark_cmd, detach=True)
+        await self.docker.exec_start(exec_id, detach=True)
 
         # 获取容器 IP
-        container.reload()
-        networks = container.attrs["NetworkSettings"]["Networks"]
+        container = await self.docker.get_container(container_name)
+        networks = container["NetworkSettings"]["Networks"]
         container_ip = networks.get(self.network_name, {}).get("IPAddress", "")
 
         if not container_ip:
-            logger.error(f"Container {container.name} has no IP in network {self.network_name}")
+            logger.error(f"Container {container_name} has no IP in network {self.network_name}")
             raise RuntimeError(f"Container has no IP address")
 
         result = {
@@ -229,7 +396,8 @@ class WebWiresharkManager:
             "display": display,
             "port": port,
             "url": f"http://{container_ip}:{port}",
-            "container_name": container.name,
+            "container_name": container_name,
+            "container_id": container_id,
             "session_name": session_name,
             "capture_stream_url": capture_stream_url
         }
@@ -237,12 +405,16 @@ class WebWiresharkManager:
         logger.info(f"Web Wireshark session started successfully: {result['url']}")
         return result
 
-    def stop_wireshark_session(self, project_id: str, link_id: str):
+    async def stop_wireshark_session(self, project_id: str, link_id: str):
         """停止单个 Web Wireshark 会话"""
         logger.info(f"Stopping Web Wireshark session for link {link_id}")
         try:
             container_name = f"gns3-wireshark-{project_id}"
-            container = self.docker.containers.get(container_name)
+            container = await self.docker.get_container(container_name)
+
+            if not container:
+                logger.warning(f"Container {container_name} not found")
+                return
 
             # 获取 display 编号
             link_hash = abs(hash(link_id)) % 10
@@ -250,30 +422,34 @@ class WebWiresharkManager:
 
             # 停止 xpra 会话
             logger.info(f"Stopping xpra session :{display}")
-            exit_code, output = container.exec_run(f"xpra stop :{display}", detach=True)
+            xpra_cmd = ["xpra", "stop", f":{display}"]
+            exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
+            await self.docker.exec_start(exec_id, detach=True)
 
-            if exit_code == 0:
-                logger.info(f"Web Wireshark session stopped successfully")
-            else:
-                logger.warning(f"xpra stop returned exit code {exit_code}: {output}")
+            logger.info(f"Web Wireshark session stopped successfully")
 
         except Exception as e:
             logger.error(f"Error stopping session: {e}")
 
-    def stop_all_sessions(self, project_id: str):
+    async def stop_all_sessions(self, project_id: str):
         """停止项目的所有 Web Wireshark 会话"""
         logger.info(f"Stopping all Web Wireshark sessions for project {project_id}")
         try:
             container_name = f"gns3-wireshark-{project_id}"
-            container = self.docker.containers.get(container_name)
+            container = await self.docker.get_container(container_name)
+
+            if not container:
+                logger.warning(f"Container {container_name} not found")
+                return
 
             # 停止所有 xpra 会话（display 100-109）
             for display in range(100, 110):
                 try:
-                    exit_code, output = container.exec_run(f"xpra stop :{display}", detach=True)
-                    if exit_code == 0:
-                        logger.info(f"Stopped xpra session :{display}")
-                except:
+                    xpra_cmd = ["xpra", "stop", f":{display}"]
+                    exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
+                    await self.docker.exec_start(exec_id, detach=True)
+                    logger.info(f"Stopped xpra session :{display}")
+                except Exception:
                     # 忽略不存在的会话
                     pass
 
@@ -282,15 +458,19 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error stopping all sessions: {e}")
 
-    def stop_container(self, project_id: str):
+    async def stop_container(self, project_id: str):
         """停止 Web Wireshark 容器"""
         logger.info(f"Stopping Web Wireshark container for project {project_id}")
         try:
             container_name = f"gns3-wireshark-{project_id}"
-            container = self.docker.containers.get(container_name)
+            container = await self.docker.get_container(container_name)
 
-            if container.status == "running":
-                container.stop(timeout=10)
+            if not container:
+                logger.warning(f"Container {container_name} not found")
+                return
+
+            if container["State"]["Running"]:
+                await self.docker.stop_container(container["Id"], timeout=10)
                 logger.info(f"Container {container_name} stopped successfully")
             else:
                 logger.info(f"Container {container_name} already stopped")
@@ -298,26 +478,30 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error stopping container: {e}")
 
-    def delete_container(self, project_id: str):
+    async def delete_container(self, project_id: str):
         """删除 Web Wireshark 容器"""
         logger.info(f"Deleting Web Wireshark container for project {project_id}")
         try:
             container_name = f"gns3-wireshark-{project_id}"
-            container = self.docker.containers.get(container_name)
+            container = await self.docker.get_container(container_name)
+
+            if not container:
+                logger.warning(f"Container {container_name} not found")
+                return
 
             # 先停止容器
-            if container.status == "running":
-                container.stop(timeout=5)
+            if container["State"]["Running"]:
+                await self.docker.stop_container(container["Id"], timeout=5)
 
             # 删除容器
-            container.remove()
+            await self.docker.remove_container(container["Id"])
             logger.info(f"Container {container_name} deleted successfully")
 
         except Exception as e:
             logger.error(f"Error deleting container: {e}")
 
 
-def main():
+async def main_async():
     parser = argparse.ArgumentParser(description="Web Wireshark 管理脚本")
     subparsers = parser.add_subparsers(dest="command", help="可用命令")
 
@@ -355,8 +539,8 @@ def main():
 
     try:
         if args.command == "start":
-            manager.ensure_network()
-            result = manager.start_wireshark_session(
+            await manager.ensure_network()
+            result = await manager.start_wireshark_session(
                 args.project_id,
                 args.link_id,
                 args.jwt_token,
@@ -365,21 +549,28 @@ def main():
             print(json.dumps(result))
 
         elif args.command == "stop":
-            manager.stop_wireshark_session(args.project_id, args.link_id)
+            await manager.stop_wireshark_session(args.project_id, args.link_id)
 
         elif args.command == "stop-sessions":
-            manager.stop_all_sessions(args.project_id)
+            await manager.stop_all_sessions(args.project_id)
 
         elif args.command == "stop-container":
-            manager.stop_container(args.project_id)
+            await manager.stop_container(args.project_id)
 
         elif args.command == "delete-container":
-            manager.delete_container(args.project_id)
+            await manager.delete_container(args.project_id)
 
     except Exception as e:
         logger.error(f"Error: {e}")
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
+    finally:
+        await manager.close()
+
+
+def main():
+    """同步入口函数"""
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":
