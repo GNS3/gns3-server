@@ -6,51 +6,17 @@
 #
 
 import asyncio
-import hashlib
 import logging
 import re
 from typing import Optional
 
+from gns3server.utils.port_allocator import link_id_to_display, link_id_to_port
 from .docker_client import DockerHTTPClient
 
 logger = logging.getLogger(__name__)
 
 # Default GNS3 server address
 DEFAULT_GNS3_URL = "http://127.0.0.1:3080"
-
-# Display/port allocation range (stable across process restarts)
-DISPLAY_RANGE = 10000  # Start at :10000
-DISPLAY_MODULO = 10000  # Range: 10000-19999
-
-
-def link_id_to_display(link_id: str) -> int:
-    """Convert link_id to display number using deterministic hash.
-
-    Uses MD5 to ensure stable display assignment across process restarts.
-    Controller can use this same function to predict ports.
-
-    Args:
-        link_id: The link ID (UUID)
-
-    Returns:
-        Display number (10000-19999)
-    """
-    hash_value = int(hashlib.md5(link_id.encode()).hexdigest(), 16)
-    return DISPLAY_RANGE + (hash_value % DISPLAY_MODULO)
-
-
-def link_id_to_port(link_id: str) -> int:
-    """Convert link_id to TCP port using deterministic hash.
-
-    Uses same algorithm as link_id_to_display for consistency.
-
-    Args:
-        link_id: The link ID (UUID)
-
-    Returns:
-        TCP port (10000-19999)
-    """
-    return link_id_to_display(link_id)  # Same calculation
 
 
 class WebWiresharkManager:

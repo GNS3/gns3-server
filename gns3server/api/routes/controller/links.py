@@ -317,9 +317,9 @@ async def web_wireshark_websocket(
         # 获取容器信息
         container_name = f"gns3-wireshark-{project_id}"
 
-        # 计算 xpra 端口
-        link_hash = abs(hash(link_id)) % 10
-        xpra_port = 12300 + link_hash
+        # 计算 xpra 端口（使用确定性 hash）
+        from gns3server.utils.port_allocator import link_id_to_port
+        xpra_port = link_id_to_port(link_id)
 
         # 获取容器 IP
         from gns3server.compute.docker import Docker
