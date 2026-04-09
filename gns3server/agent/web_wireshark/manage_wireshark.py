@@ -16,6 +16,8 @@ import asyncio
 import aiohttp
 from typing import Optional
 
+from gns3server.utils import parse_version
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,8 @@ DEFAULT_GNS3_URL = "http://127.0.0.1:3080"
 
 # Docker API 配置
 DOCKER_SOCKET = "/var/run/docker.sock"
-DOCKER_API_VERSION = "v1.44"
+DOCKER_MINIMUM_API_VERSION = "1.40"
+DOCKER_PREFERRED_API_VERSION = "1.44"
 
 
 class DockerHTTPClient:
@@ -33,11 +36,16 @@ class DockerHTTPClient:
     def __init__(self):
         self._connector = None
         self._session = None
+        self._connected = False
+        self._api_version = DOCKER_MINIMUM_API_VERSION
 
     async def _get_connector(self):
         """获取 Unix socket 连接器"""
         if self._connector is None or self._connector.closed:
-            self._connector = aiohttp.UnixConnector(DOCKER_SOCKET, limit=None)
+            try:
+                self._connector = aiohttp.UnixConnector(DOCKER_SOCKET, limit=None)
+            except (aiohttp.ClientError, FileNotFoundError) as e:
+                raise RuntimeError(f"Can't connect to Docker daemon: {e}")
         return self._connector
 
     async def _get_session(self):
@@ -54,6 +62,43 @@ class DockerHTTPClient:
         if self._connector and not self._connector.closed:
             await self._connector.close()
 
+    async def _check_connection(self):
+        """检查 Docker 连接并检测 API 版本"""
+        if not self._connected:
+            try:
+                # 获取 Docker 版本信息
+                docker_info = await self._request("GET", "version", check_connection=False)
+                self._connected = True
+
+                # 解析 API 版本
+                api_version = parse_version(docker_info['ApiVersion'])
+                docker_version = docker_info["Version"]
+
+                logger.info(f"Connected to Docker {docker_version}, API {api_version}")
+
+                # 检查最小版本要求
+                if api_version < parse_version(DOCKER_MINIMUM_API_VERSION):
+                    raise RuntimeError(
+                        f"Docker version is {docker_version}. "
+                        f"GNS3 requires a minimum API version of {DOCKER_MINIMUM_API_VERSION}"
+                    )
+
+                # 如果支持，使用首选 API 版本
+                preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
+                if api_version >= preferred_api_version:
+                    self._api_version = DOCKER_PREFERRED_API_VERSION
+                    logger.info(f"Using Docker API version {self._api_version}")
+                else:
+                    # 使用 Docker daemon 支持的最小 API 版本
+                    self._api_version = docker_info['MinAPIVersion']
+                    logger.info(f"Using Docker API version {self._api_version} (daemon preferred)")
+
+            except (aiohttp.ClientError, FileNotFoundError) as e:
+                self._connected = False
+                raise RuntimeError(f"Can't connect to Docker daemon: {e}")
+            except KeyError as e:
+                raise RuntimeError(f"Unexpected Docker API response: missing {e}")
+
     async def _request(self, method: str, endpoint: str, **kwargs):
         """
         发送请求到 Docker API
@@ -66,8 +111,13 @@ class DockerHTTPClient:
         Returns:
             响应 JSON 数据
         """
+        # 首次请求时检查连接和版本
+        check_connection = kwargs.pop('check_connection', True)
+        if check_connection and not self._connected:
+            await self._check_connection()
+
         session = await self._get_session()
-        url = f"http://docker/{DOCKER_API_VERSION}/{endpoint}"
+        url = f"http://docker/{self._api_version}/{endpoint}"
 
         try:
             async with session.request(method, url, **kwargs) as response:
