@@ -3,6 +3,7 @@
 # UUID validation utilities
 #
 
+import argparse
 import re
 
 
@@ -13,7 +14,7 @@ UUID_PATTERN = re.compile(
 
 
 def validate_uuid(value: str) -> str:
-    """Validate UUID format.
+    """Validate UUID format for argparse.
 
     Args:
         value: UUID string to validate
@@ -22,10 +23,10 @@ def validate_uuid(value: str) -> str:
         The validated UUID string
 
     Raises:
-        ValueError: If UUID format is invalid
+        argparse.ArgumentTypeError: If UUID format is invalid
     """
     if not UUID_PATTERN.match(value):
-        raise ValueError(
+        raise argparse.ArgumentTypeError(
             f"Invalid UUID format: '{value}'. "
             f"Expected 8-4-4-4-12 hex groups (e.g., 5af0fe00-f39d-4985-8669-7e8c512d729c)"
         )
