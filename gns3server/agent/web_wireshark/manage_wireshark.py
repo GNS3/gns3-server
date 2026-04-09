@@ -326,8 +326,12 @@ class WebWiresharkManager:
                 subnet="172.28.0.0/16"
             )
 
-    async def get_or_create_container(self, project_id: str) -> str:
+    async def get_or_create_container(self, project_id: str, image: str = "gns3/web-wireshark:latest") -> str:
         """获取或创建项目的 Web Wireshark 容器
+
+        Args:
+            project_id: 项目 ID
+            image: Docker 镜像名称
 
         Returns:
             容器 ID
@@ -344,10 +348,10 @@ class WebWiresharkManager:
             return container["Id"]
 
         # 创建新容器
-        logger.info(f"Creating new container {container_name}")
+        logger.info(f"Creating new container {container_name} with image {image}")
         container_id = await self.docker.create_container(
             name=container_name,
-            image="gns3/web-wireshark:latest",
+            image=image,
             network=self.network_name,
             mem_limit="2g",
             cpu_quota=100000,
@@ -369,7 +373,8 @@ class WebWiresharkManager:
         project_id: str,
         link_id: str,
         jwt_token: str,
-        capture_stream_url: Optional[str] = None
+        capture_stream_url: Optional[str] = None,
+        image: str = "gns3/web-wireshark:latest"
     ) -> dict:
         """启动 Web Wireshark 会话
 
@@ -378,6 +383,7 @@ class WebWiresharkManager:
             link_id: 链路 ID
             jwt_token: JWT 认证令牌
             capture_stream_url: 抓包流 URL（可选，如果未提供则自动检测）
+            image: Docker 镜像名称
         """
         logger.info(f"Starting Web Wireshark session for link {link_id}")
 
@@ -390,7 +396,7 @@ class WebWiresharkManager:
             )
             logger.info(f"Auto-detected capture stream URL: {capture_stream_url}")
 
-        container_id = await self.get_or_create_container(project_id)
+        container_id = await self.get_or_create_container(project_id, image)
         container_name = f"gns3-wireshark-{project_id}"
 
         # 分配 display 和端口
@@ -564,6 +570,8 @@ async def main_async():
     start_parser.add_argument("--link-id", required=True, help="链路 ID")
     start_parser.add_argument("--jwt-token", required=True, help="JWT 认证令牌")
     start_parser.add_argument("--capture-url", help="抓包流 URL（可选，未提供则自动检测）")
+    start_parser.add_argument("--image", default="gns3/web-wireshark:latest",
+                            help="Docker 镜像名称（默认: gns3/web-wireshark:latest）")
 
     # stop 命令
     stop_parser = subparsers.add_parser("stop", help="停止单个 Web Wireshark 会话")
@@ -604,7 +612,8 @@ async def main_async():
                 args.project_id,
                 args.link_id,
                 args.jwt_token,
-                getattr(args, 'capture_url', None)  # 可选参数
+                getattr(args, 'capture_url', None),  # 可选参数
+                getattr(args, 'image', "gns3/web-wireshark:latest")  # 可选参数
             )
             print(json.dumps(result))
 
