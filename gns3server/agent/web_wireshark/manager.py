@@ -375,6 +375,7 @@ class WebWiresharkManager:
         logger.info(f"Starting xpra session {session_name} on display :{display}")
 
         xpra_cmd = [
+            "XPRA_CLIENT_CAN_SHUTDOWN=false",
             "xpra", "start", f":{display}",
             '--xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR"',
             "--html=on",
