@@ -175,7 +175,7 @@ class UDPLink(Link):
         await self.delete()
         await self.create()
 
-    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None, wireshark=False, jwt_token=None):
         """
         Start capture on a link
         """
@@ -189,7 +189,7 @@ class UDPLink(Link):
             ),
             data=data,
         )
-        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
+        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name, wireshark=wireshark, jwt_token=jwt_token)
 
     async def stop_capture(self):
         """
