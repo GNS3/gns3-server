@@ -382,7 +382,7 @@ class WebWiresharkManager:
 
         xpra_cmd = [
             "xpra", "start", f":{display}",
-            "--xvfb=Xvfb -screen 0 1920x1080x24 +extension RANDR",
+            '--xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR"',
             "--html=on",
             f"--bind-tcp=0.0.0.0:{port}",
             f"--session-name={session_name}",
@@ -419,10 +419,10 @@ class WebWiresharkManager:
         # Wait for xpra to initialize
         await asyncio.sleep(2)
 
-        # Verify xpra session started successfully
+        # Verify xpra session started successfully (xpra list shows display number, not session name)
         returncode, stdout, stderr = await self._exec_in_container(
             container_id,
-            f"xpra list 2>&1 | grep -q '{session_name}'"
+            f"xpra list 2>&1 | grep -q ':{display}'"
         )
 
         if returncode != 0:
