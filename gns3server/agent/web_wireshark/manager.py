@@ -494,7 +494,7 @@ class WebWiresharkManager:
             logger.info(f"Stopping xpra session :{display}")
             await self._exec_in_container(
                 container["Id"],
-                f"xpra stop :{display}"
+                f"pkill -f 'xpra.*:{display}'"
             )
 
             logger.info("Web Wireshark session stopped successfully")
@@ -521,7 +521,7 @@ class WebWiresharkManager:
             for display in range(100, 200):
                 await self._exec_in_container(
                     container["Id"],
-                    f"xpra stop :{display}"
+                    f"pkill -f 'xpra.*:{display}'"
                 )
                 logger.info(f"Stopped xpra session :{display}")
 
