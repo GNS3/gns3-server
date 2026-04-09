@@ -44,7 +44,19 @@ RUN mkdir -p /run/user/1000 && chown -R gns3:gns3 /run/user/1000 && chmod 700 /r
 ENV XDG_RUNTIME_DIR=/run/user/1000
 
 # Configure xpra HTML5 client defaults - disable unused features
-RUN printf "file_transfer=false\nprinting=false\nsound=false\nfullscreen_button=false\n" >> /usr/share/xpra/www/default-settings.txt
+RUN cat >> /usr/share/xpra/www/default-settings.txt << 'EOF'
+file_transfer=false
+printing=false
+sound=false
+audio=false
+fullscreen_button=false
+keyboard_button=false
+cursor_lock_button=false
+keyboard=false
+mediasource=false
+aurora=false
+http-stream=false
+EOF
 
 # Copy GNS3 icon as background image with modern gradient background
 COPY gns3_icon_black.svg /usr/share/xpra/www/background.svg
