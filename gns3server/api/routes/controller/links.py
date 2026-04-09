@@ -18,10 +18,11 @@
 API routes for links.
 """
 
+import asyncio
 import multidict
 import aiohttp
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status, WebSocket
 from fastapi.responses import StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List, Union
@@ -214,16 +215,26 @@ async def reset_link(link: Link = Depends(dep_link)) -> schemas.Link:
     response_model=schemas.Link,
     dependencies=[Depends(has_privilege("Link.Capture"))]
 )
-async def start_capture(capture_data: dict, link: Link = Depends(dep_link)) -> schemas.Link:
+async def start_capture(
+    capture_data: schemas.LinkCapture,
+    http_request: Request,
+    link: Link = Depends(dep_link)
+) -> schemas.Link:
     """
     Start packet capture on the link.
 
     Required privilege: Link.Capture
     """
 
+    # 从 Authorization header 提取 JWT token
+    auth_header = http_request.headers.get("Authorization", "")
+    jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
+
     await link.start_capture(
-        data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
-        capture_file_name=capture_data.get("capture_file_name"),
+        data_link_type=capture_data.data_link_type,
+        capture_file_name=capture_data.capture_file_name,
+        wireshark=capture_data.wireshark,
+        jwt_token=jwt_token
     )
     return link.asdict()
 
@@ -285,6 +296,92 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
             raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
+
+
+@router.websocket("/{link_id}/capture/web-wireshark")
+async def web_wireshark_websocket(
+    websocket: WebSocket,
+    link_id: str,
+    project_id: str
+):
+    """
+    WebSocket 代理端点，转发到容器的 xpra HTML5 客户端
+
+    路径：ws://host/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark
+    """
+
+    await websocket.accept()
+    log.info(f"New WebSocket connection for project {project_id}, link {link_id}")
+
+    try:
+        # 获取容器信息
+        container_name = f"gns3-wireshark-{project_id}"
+
+        # 计算 xpra 端口
+        link_hash = abs(hash(link_id)) % 10
+        xpra_port = 12300 + link_hash
+
+        # 获取容器 IP
+        from gns3server.compute.docker import Docker
+
+        docker_manager = Docker.instance()
+        container_info = await docker_manager.query(
+            "GET",
+            f"containers/{container_name}/json"
+        )
+
+        networks = container_info["NetworkSettings"]["Networks"]
+        container_ip = None
+
+        # 查找 gns3-wireshark 网络
+        for network_name, network_config in networks.items():
+            if "wireshark" in network_name.lower():
+                container_ip = network_config["IPAddress"]
+                break
+
+        if not container_ip:
+            log.error(f"Container {container_name} not found in wireshark network")
+            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+            return
+
+        # 构造容器 WebSocket URL
+        container_ws_url = f"ws://{container_ip}:{xpra_port}"
+        log.info(f"Proxying WebSocket to container: {container_ws_url}")
+
+        # 双向转发
+        async with aiohttp.ClientSession() as session:
+            async with session.ws_connect(container_ws_url) as container_ws:
+
+                async def forward_client_to_container():
+                    """从客户端转发到容器"""
+                    try:
+                        while True:
+                            data = await websocket.receive_text()
+                            await container_ws.send_str(data)
+                    except Exception as e:
+                        log.error(f"Error forwarding client to container: {e}")
+
+                async def forward_container_to_client():
+                    """从容器转发到客户端"""
+                    try:
+                        async for msg in container_ws:
+                            if msg.type == aiohttp.WSMsgType.TEXT:
+                                await websocket.send_text(msg.data)
+                            elif msg.type == aiohttp.WSMsgType.BINARY:
+                                await websocket.send_bytes(msg.data)
+                    except Exception as e:
+                        log.error(f"Error forwarding container to client: {e}")
+
+                # 并行运行两个转发任务
+                await asyncio.gather(
+                    forward_client_to_container(),
+                    forward_container_to_client(),
+                    return_exceptions=True
+                )
+
+    except Exception as e:
+        log.error(f"Error in WebSocket proxy for link {link_id}: {e}")
+        await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason=str(e))
 
 
 @router.get(

@@ -17,6 +17,7 @@
 
 import re
 import os
+import sys
 import json
 import uuid
 import copy
@@ -224,6 +225,9 @@ class Project:
 
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
+
+        # Track if Web Wireshark container has been created for this project
+        self._web_wireshark_container_created = False
 
     @property
     def scene_height(self):
@@ -853,6 +857,12 @@ class Project:
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
 
+        # 1. 停止所有 xpra 会话
+        await self._cleanup_web_wireshark_xpra_sessions()
+
+        # 2. 停止容器（保留，便于快速重启）
+        await self._stop_web_wireshark_container()
+
         # Cleanup GNS3 Copilot AgentService for this project
         await self._cleanup_copilot_agent()
 
@@ -892,6 +902,143 @@ class Project:
         except OSError as e:
             log.warning(f"Could not delete unused pictures: {e}")
 
+    async def _cleanup_web_wireshark_xpra_sessions(self):
+        """
+        清理所有 Web Wireshark xpra 会话（不删除容器）
+
+        在项目关闭时调用，停止所有 xpra 会话和 Wireshark 进程
+        但保留容器，便于项目重新打开时快速复用
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            log.info(f"Stopping xpra sessions for project '{self.name}' ({self._id})")
+
+            # 调用脚本停止所有会话
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                log.warning(f"Web Wireshark script not found: {script_path}")
+                return
+
+            # 停止所有会话
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "stop-sessions",
+                "--project-id", self._id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark xpra sessions stopped successfully")
+            else:
+                log.warning(f"Failed to stop xpra sessions: {stderr.decode()}")
+
+        except Exception as e:
+            # 不抛出异常，避免影响项目关闭流程
+            log.warning(f"Failed to cleanup xpra sessions for project '{self.name}': {e}")
+
+    async def _stop_web_wireshark_container(self):
+        """
+        停止 Web Wireshark 容器（但不删除）
+
+        在项目关闭时调用，停止容器以释放内存
+        但保留容器，便于项目重新打开时快速启动
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info(f"Stopping Web Wireshark container '{container_name}' for project '{self.name}'")
+
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                return
+
+            # 停止容器
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "stop-container",
+                "--project-id", self._id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark container stopped successfully")
+            else:
+                log.warning(f"Failed to stop container: {stderr.decode()}")
+
+        except Exception as e:
+            log.warning(f"Failed to stop container for project '{self.name}': {e}")
+
+    async def _cleanup_web_wireshark_container(self):
+        """
+        删除 Web Wireshark 容器
+
+        在项目删除时调用，停止并删除容器
+        """
+        try:
+            if not self._web_wireshark_container_created:
+                return
+
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info(f"Deleting Web Wireshark container '{container_name}' for project '{self.name}'")
+
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                return
+
+            # 删除容器
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "delete-container",
+                "--project-id", self._id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark container deleted successfully")
+                self._web_wireshark_container_created = False
+            else:
+                log.warning(f"Failed to delete container: {stderr.decode()}")
+
+        except Exception as e:
+            log.warning(f"Failed to delete container for project '{self.name}': {e}")
+
     async def _cleanup_copilot_agent(self):
         """
         Cleanup GNS3 Copilot AgentService for this project.
@@ -919,6 +1066,10 @@ class Project:
                 log.warning(f"Conflict while deleting project: {e}")
         await self.delete_on_computes()
         await self.close()
+
+        # 删除 Web Wireshark 容器
+        await self._cleanup_web_wireshark_container()
+
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:

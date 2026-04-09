@@ -19,6 +19,9 @@ import os
 import re
 import uuid
 import html
+import sys
+import asyncio
+import json
 
 from .controller_error import ControllerError, ControllerNotFoundError
 
@@ -284,10 +287,14 @@ class Link:
 
         raise NotImplementedError
 
-    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None, wireshark=False, jwt_token=None):
         """
         Start capture on the link
 
+        :param data_link_type: PCAP data link type
+        :param capture_file_name: PCAP capture file name
+        :param wireshark: Enable Web Wireshark
+        :param jwt_token: JWT token for authentication
         :returns: Capture object
         """
 
@@ -295,13 +302,120 @@ class Link:
         self._capture_file_name = capture_file_name
         self._project.emit_notification("link.updated", self.asdict())
 
+        # 如果需要 Web Wireshark
+        if wireshark:
+            await self._start_web_wireshark(jwt_token)
+
     async def stop_capture(self):
         """
         Stop capture on the link
         """
 
+        # 停止 Web Wireshark
+        if self._capturing:
+            await self._stop_web_wireshark()
+
         self._capturing = False
         self._project.emit_notification("link.updated", self.asdict())
+
+    async def _start_web_wireshark(self, jwt_token: str):
+        """启动 Web Wireshark
+
+        Args:
+            jwt_token: JWT 认证令牌
+        """
+        if not jwt_token:
+            log.error("JWT token is required for Web Wireshark")
+            return
+
+        try:
+            # 调用管理脚本（不传递 capture_url，让脚本自动检测）
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            # 确保脚本路径存在
+            if not os.path.exists(script_path):
+                log.error(f"Web Wireshark script not found: {script_path}")
+                return
+
+            log.info(f"Starting Web Wireshark for link {self.id}")
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "start",
+                "--project-id", self._project.id,
+                "--link-id", self.id,
+                "--jwt-token", jwt_token,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode != 0:
+                log.error(f"Failed to start Web Wireshark: {stderr.decode()}")
+                return
+
+            # 解析结果
+            try:
+                result = json.loads(stdout.decode())
+
+                # 发送通知
+                self._project.emit_notification("link.web_wireshark_started", {
+                    "link_id": self.id,
+                    "url": result["url"]
+                })
+
+                log.info(f"Web Wireshark started for link {self.id}: {result['url']}")
+
+            except json.JSONDecodeError as e:
+                log.error(f"Failed to parse script output: {e}")
+
+        except Exception as e:
+            log.error(f"Error starting Web Wireshark: {e}")
+
+    async def _stop_web_wireshark(self):
+        """停止 Web Wireshark"""
+        try:
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                log.warning(f"Web Wireshark script not found: {script_path}")
+                return
+
+            log.info(f"Stopping Web Wireshark for link {self.id}")
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "stop",
+                "--project-id", self._project.id,
+                "--link-id", self.id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode == 0:
+                log.info(f"Web Wireshark stopped for link {self.id}")
+            else:
+                log.warning(f"Failed to stop Web Wireshark: {stderr.decode()}")
+
+        except Exception as e:
+            log.error(f"Error stopping Web Wireshark: {e}")
 
     def pcap_streaming_url(self):
         """

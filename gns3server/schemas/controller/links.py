@@ -117,3 +117,13 @@ class EthernetPortInfo(BaseModel):
     node_id: UUID
     interface: str
     type: str
+
+
+class LinkCapture(BaseModel):
+    """
+    Link capture data.
+    """
+
+    data_link_type: str = "DLT_EN10MB"
+    capture_file_name: Optional[str] = None
+    wireshark: bool = False
