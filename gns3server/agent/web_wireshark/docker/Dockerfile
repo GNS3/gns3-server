@@ -42,6 +42,12 @@ ENV XDG_RUNTIME_DIR=/run/user/1000
 # Configure xpra HTML5 client defaults - disable unused features
 RUN echo -e "file_transfer=false\nprinting=false\nsound=false\nfullscreen_button=false\n" >> /usr/share/xpra/www/default-settings.txt
 
+# Copy GNS3 icon as background image with modern gradient background
+COPY gns3_icon_black.svg /usr/share/xpra/www/background.svg
+RUN sed -i 's|url(../background.jpg)|url(../background.svg)|g' /usr/share/xpra/www/css/client.css \
+    && sed -i 's/.*background-size.*/  background-size: cover;/' /usr/share/xpra/www/css/client.css \
+    && sed -i 's|background-color: #021d3a;|background: linear-gradient(135deg, #0a1628 0%, #1e3a5f 50%, #0a1628 100%);|' /usr/share/xpra/www/css/client.css
+
 # Set default user
 USER gns3
 
