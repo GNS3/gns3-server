@@ -382,7 +382,8 @@ class WebWiresharkManager:
             f"--session-name={session_name}",
             "--daemon=yes",
             "--dbus-launch=no",
-            "--resize-display=yes"
+            "--resize-display=yes",
+            "--dpi=96"
         ]
 
         # Check for existing session on this display and clean up
