@@ -166,16 +166,10 @@ class WebWiresharkManager:
         """Get GNS3 server URL from config file."""
         try:
             from gns3server.config import Config
-            url = Config.instance().settings.get("Server", {}).get("host")
-            if url:
-                # Ensure URL has protocol
-                if not url.startswith("http"):
-                    url = f"http://{url}"
-                # Add default port if not specified
-                if ":" not in url:
-                    url = f"{url}:3080"
-                logger.info(f"Got GNS3 URL from Config: {url}")
-                return url
+            server_config = Config.instance().settings.Server
+            url = f"{server_config.protocol.value}://{server_config.host}:{server_config.port}"
+            logger.info(f"Got GNS3 URL from Config: {url}")
+            return url
         except Exception as e:
             logger.debug(f"Cannot get URL from Config: {e}")
         return None
