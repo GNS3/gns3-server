@@ -91,13 +91,13 @@ CONTAINER ID   NAME                     CPU %     MEM USAGE / LIMIT   MEM %     
 # 创建 gns3-wireshark 网络
 docker network create \
   --driver bridge \
-  --subnet=172.28.0.0/16 \
+  --subnet=100.64.0.0/22 \
   gns3-wireshark
 ```
 
 **说明：**
 - 使用 bridge 驱动
-- 子网范围：172.28.0.0/16
+- 子网范围：100.64.0.0/22
 - 容器连接到此网络后，可通过容器IP直接访问服务
 
 ### 删除 Docker 网络
@@ -295,9 +295,9 @@ http://<容器IP>:<端口>
 ```
 
 **示例：**
-- Link 1: http://172.28.0.2:10001
-- Link 2: http://172.28.0.2:10002
-- Link 3: http://172.28.0.2:10003
+- Link 1: http://100.64.0.2:10001
+- Link 2: http://100.64.0.2:10002
+- Link 3: http://100.64.0.2:10003
 
 ## 6. 管理命令
 
@@ -358,7 +358,7 @@ docker ps | grep "${CONTAINER_NAME}"
 
 ```bash
 # 从宿主机 ping 容器
-docker exec "${CONTAINER_NAME}" ping -c 3 172.28.0.1
+docker exec "${CONTAINER_NAME}" ping -c 3 100.64.0.1
 
 # 检查端口监听
 docker exec "${CONTAINER_NAME}" netstat -tlnp | grep xpra

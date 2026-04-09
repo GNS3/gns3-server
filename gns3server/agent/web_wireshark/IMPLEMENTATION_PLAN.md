@@ -148,7 +148,7 @@ class WebWiresharkManager:
             self.docker.networks.create(
                 self.network_name,
                 driver="bridge",
-                subnet="172.28.0.0/16"
+                subnet="100.64.0.0/22"
             )
 
     def get_or_create_container(self, project_id: str):
@@ -1251,7 +1251,7 @@ curl -X POST "http://localhost:3080/v3/projects/{project_id}/links/{link_id}/cap
 ### 3. 访问 Web UI
 ```bash
 # 脚本返回的 URL 格式
-http://172.28.0.x:12300
+http://100.64.0.x:12300
 
 # 直接在浏览器中访问
 ```

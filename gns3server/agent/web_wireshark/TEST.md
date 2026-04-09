@@ -118,7 +118,7 @@ docker network ls | grep 'gns3-wireshark' | awk '{print $2}' | xargs -r docker n
 
 - 默认使用 `gns3/web-wireshark:latest` 镜像
 - 使用 `--verbose` 查看详细日志
-- 容器使用 172.28.0.0/16 网络
+- 容器使用 100.64.0.0/22 网络
 - xpra 端口范围：12300-12309
 - **已修复**: CPU 现在正确分配为 1.0 核（之前错误地为 0.1 核）
 - **已添加**: 健康检查 (xpra list)
