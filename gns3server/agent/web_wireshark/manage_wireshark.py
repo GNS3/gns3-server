@@ -33,6 +33,9 @@ DOCKER_PREFERRED_API_VERSION = "1.44"
 class DockerHTTPClient:
     """Docker HTTP API 客户端，使用 aiohttp 通过 Unix socket 连接"""
 
+    # API 请求超时时间（秒）
+    REQUEST_TIMEOUT = 10
+
     def __init__(self):
         self._connector = None
         self._session = None
@@ -120,13 +123,16 @@ class DockerHTTPClient:
         url = f"http://docker/v{self._api_version}/{endpoint}"
 
         try:
-            async with session.request(method, url, **kwargs) as response:
-                if response.status >= 300:
-                    error_text = await response.text()
-                    raise RuntimeError(f"Docker API error {response.status}: {error_text}")
-                if response.status == 204:  # No Content
-                    return None
-                return await response.json()
+            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+                async with session.request(method, url, **kwargs) as response:
+                    if response.status >= 300:
+                        error_text = await response.text()
+                        raise RuntimeError(f"Docker API error {response.status}: {error_text}")
+                    if response.status == 204:  # No Content
+                        return None
+                    return await response.json()
+        except asyncio.TimeoutError:
+            raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for {endpoint}")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e
 
@@ -219,6 +225,9 @@ class DockerHTTPClient:
 
 
 class WebWiresharkManager:
+    # 容器命令执行超时时间（秒）
+    CONTAINER_EXEC_TIMEOUT = 5
+
     def __init__(self):
         self.docker = DockerHTTPClient()
         self.network_name = "gns3-wireshark"
@@ -226,6 +235,67 @@ class WebWiresharkManager:
     async def close(self):
         """关闭 Docker 连接"""
         await self.docker.close()
+
+    async def _is_container_healthy(self, container_id: str) -> bool:
+        """检查容器是否健康响应
+
+        Args:
+            container_id: 容器 ID
+
+        Returns:
+            True 如果容器健康，False 否则
+        """
+        try:
+            proc = await asyncio.wait_for(
+                asyncio.create_subprocess_exec(
+                    "docker", "exec", container_id,
+                    "bash", "-c", "echo 'ping'",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                ),
+                timeout=self.CONTAINER_EXEC_TIMEOUT
+            )
+            stdout, _ = await proc.communicate()
+            return proc.returncode == 0 and b"ping" in stdout
+        except asyncio.TimeoutError:
+            logger.warning(f"Container {container_id[:12]} is not responding (timeout)")
+            return False
+        except Exception as e:
+            logger.warning(f"Container {container_id[:12]} health check failed: {e}")
+            return False
+
+    async def _exec_in_container(self, container_id: str, command: str, timeout: int = None) -> tuple:
+        """在容器中执行命令，带超时
+
+        Args:
+            container_id: 容器 ID
+            command: 要执行的命令
+            timeout: 超时时间（秒），默认使用 CONTAINER_EXEC_TIMEOUT
+
+        Returns:
+            (returncode, stdout, stderr)
+        """
+        if timeout is None:
+            timeout = self.CONTAINER_EXEC_TIMEOUT
+
+        try:
+            proc = await asyncio.wait_for(
+                asyncio.create_subprocess_exec(
+                    "docker", "exec", container_id,
+                    "bash", "-c", command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                ),
+                timeout=timeout
+            )
+            stdout, stderr = await proc.communicate()
+            return (proc.returncode, stdout.decode().strip(), stderr.decode().strip())
+        except asyncio.TimeoutError:
+            logger.error(f"Command timeout after {timeout}s: {command}")
+            return (-1, "", f"timeout after {timeout}s")
+        except Exception as e:
+            logger.error(f"Command execution failed: {e}")
+            return (-1, "", str(e))
 
     @staticmethod
     def _parse_memory(memory_str: str) -> int:
@@ -371,18 +441,44 @@ class WebWiresharkManager:
         """
         container_name = f"gns3-wireshark-{project_id}"
 
+        logger.info(f"Checking container {container_name}")
         container = await self.docker.get_container(container_name)
+        logger.info(f"Container found: {container is not None}")
         if container:
+            logger.info(f"Container state: {container['State']}")
             if container["State"]["Running"]:
-                logger.info(f"Container {container_name} already running")
-                return container["Id"]
-            logger.info(f"Starting existing container {container_name}")
-            await self.docker.start_container(container["Id"])
-            return container["Id"]
+                logger.info("Container is running, checking health...")
+                if await self._is_container_healthy(container["Id"]):
+                    logger.info(f"Container {container_name} already running and healthy")
+                    return container["Id"]
+                else:
+                    # 容器状态为 running 但不响应，强制删除并重建
+                    logger.warning(f"Container {container_name} is not responding, force removing...")
+                    try:
+                        # 直接 force remove，不尝试 stop（避免 Docker API 等待卡住）
+                        await self.docker.remove_container(container["Id"], force=True)
+                        logger.info(f"Container {container_name} force removed")
+                    except Exception as e:
+                        logger.warning(f"Failed to remove unhealthy container: {e}")
+                    container = None  # 触发重建流程
+            else:
+                logger.info(f"Starting existing container {container_name}")
+                await self.docker.start_container(container["Id"])
+                # 等待启动并检查健康
+                await asyncio.sleep(2)
+                if await self._is_container_healthy(container["Id"]):
+                    return container["Id"]
+                # 启动后仍然不健康，删除并重建
+                logger.error(f"Container {container_name} failed to become healthy after start, force removing...")
+                try:
+                    await self.docker.remove_container(container["Id"], force=True)
+                except Exception:
+                    pass
+                container = None  # 触发重建流程
 
-        # 创建新容器
-        logger.info(f"Creating new container {container_name} with image {image}")
-        logger.info(f"Resources: memory={memory}, cpus={cpus}, pids_limit={pids_limit}")
+        # 需要创建新容器
+        if container is None:
+            logger.info(f"Creating new container {container_name} with image {image}")
 
         # 计算CPU quota (1个CPU = 1000000微秒)
         cpu_quota = int(cpus * 100000)
@@ -497,59 +593,48 @@ class WebWiresharkManager:
 
         # 先检查是否已有会话在使用这个 display，如果有则先清理
         logger.info(f"Checking for existing session on display :{display}")
-        proc = await asyncio.create_subprocess_exec(
-            "docker", "exec", container_id,
-            "bash", "-c", f"xpra list 2>&1 | grep -q ':{display}' && xpra stop :{display} 2>&1 || echo 'no existing session'",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
+        returncode, stdout, stderr = await self._exec_in_container(
+            container_id,
+            f"xpra list 2>&1 | grep -q ':{display}' && xpra stop :{display} 2>&1 || echo 'no existing session'"
         )
-        stdout, _ = await proc.communicate()
-        if "no existing session" not in stdout.decode():
+
+        if returncode == 0 and "no existing session" not in stdout:
             logger.info(f"Cleaned up existing session on display :{display}")
             # 等待会话完全停止
             await asyncio.sleep(1)
+        elif returncode == -1:
+            # 超时或其他错误，容器可能有问题
+            logger.error(f"Container command failed (timeout?): {stderr}")
+            raise RuntimeError(f"Container is not responding: {stderr}")
 
-        # 启动 xpra 会话（使用 docker exec 命令行工具）
-        proc = await asyncio.create_subprocess_exec(
-            "docker", "exec", "-d", container_id,
-            "bash", "-c", " ".join(xpra_cmd),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
+        # 启动 xpra 会话
+        returncode, stdout, stderr = await self._exec_in_container(
+            container_id,
+            " ".join(xpra_cmd)
         )
-        stdout, _ = await proc.communicate()
 
-        if proc.returncode != 0:
-            error_msg = stdout.decode().strip()
-            logger.error(f"xpra start failed (code {proc.returncode}): {error_msg}")
-            raise RuntimeError(f"xpra start failed: {error_msg}")
+        if returncode != 0:
+            logger.error(f"xpra start failed (code {returncode}): {stdout} {stderr}")
+            raise RuntimeError(f"xpra start failed: {stdout} {stderr}")
 
         # 等待 xpra 初始化
         await asyncio.sleep(2)
 
         # 验证 xpra 会话是否启动成功
-        proc = await asyncio.create_subprocess_exec(
-            "docker", "exec", container_id,
-            "bash", "-c", f"xpra list 2>&1 | grep -q '{session_name}'",
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
+        returncode, stdout, stderr = await self._exec_in_container(
+            container_id,
+            f"xpra list 2>&1 | grep -q '{session_name}'"
         )
-        await proc.wait()
 
-        if proc.returncode != 0:
+        if returncode != 0:
             # xpra 会话可能以不同名称注册，获取实际的 xpra 输出用于调试
-            proc = await asyncio.create_subprocess_exec(
-                "docker", "exec", container_id,
-                "bash", "-c", "xpra list 2>&1",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
-            )
-            xpra_output, _ = await proc.communicate()
-            logger.error(f"xpra session verification failed. xpra list output:\n{xpra_output.decode().strip()}")
+            _, xpra_output, _ = await self._exec_in_container(container_id, "xpra list 2>&1")
+            logger.error(f"xpra session verification failed. xpra list output:\n{xpra_output}")
             raise RuntimeError(f"xpra session {session_name} failed to start")
 
         logger.info(f"xpra session {session_name} started successfully on display :{display}")
 
-        # 启动 Wireshark 并连接抓包流（使用 docker exec 命令行工具）
+        # 启动 Wireshark 并连接抓包流
         wireshark_cmd = (
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
@@ -558,17 +643,15 @@ class WebWiresharkManager:
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
-        # 使用 docker exec 命令行工具（与 GNS3 docker_vm 模式一致）
-        proc = await asyncio.create_subprocess_exec(
-            "docker", "exec", "-d", container_id,
-            "bash", "-c", wireshark_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
+        # Wireshark 启动不需要等待返回结果，使用 detach 模式
+        returncode, stdout, stderr = await self._exec_in_container(
+            container_id,
+            wireshark_cmd,
+            timeout=10  # Wireshark 启动可能需要更长时间
         )
-        stdout, _ = await proc.communicate()
 
-        if proc.returncode != 0:
-            logger.warning(f"Wireshark start returned code {proc.returncode}: {stdout.decode().strip()}")
+        if returncode != 0:
+            logger.warning(f"Wireshark start returned code {returncode}: {stdout} {stderr}")
         else:
             logger.info("Wireshark started successfully")
 
