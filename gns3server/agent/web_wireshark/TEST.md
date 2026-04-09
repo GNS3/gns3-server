@@ -19,7 +19,7 @@ python3 gns3server/agent/web_wireshark/manage_wireshark.py \
 # 2. 使用自定义镜像
 python3 gns3server/agent/web_wireshark/manage_wireshark.py \
   --verbose start \
-  --project-id "af0fe00-f39d-4985-8669-7e8c512d729c" \
+  --project-id "5af0fe00-f39d-4985-8669-7e8c512d729c" \
   --link-id "f233f27f-7432-49c3-9aa2-50e326a10eec" \
   --jwt-token "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3NTc4MjI5MywidmVyIjowfQ.gFHuLijX86YOdmMYNckRJNiCbTTfYzGnE6RWJUlmQdk" \
   --image "gns3/web-wireshark:test"
