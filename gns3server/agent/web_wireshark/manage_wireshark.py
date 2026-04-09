@@ -10,11 +10,11 @@ Web Wireshark 管理脚本
 import sys
 import json
 import argparse
-import time
 import logging
 import asyncio
-import aiohttp
 from typing import Optional
+
+import aiohttp
 
 from gns3server.utils import parse_version
 
@@ -44,7 +44,7 @@ class DockerHTTPClient:
             try:
                 self._connector = aiohttp.UnixConnector(DOCKER_SOCKET, limit=None)
             except (aiohttp.ClientError, FileNotFoundError) as e:
-                raise RuntimeError(f"Can't connect to Docker daemon: {e}")
+                raise RuntimeError(f"Can't connect to Docker daemon: {e}") from e
         return self._connector
 
     async def _get_session(self):
@@ -94,9 +94,9 @@ class DockerHTTPClient:
 
             except (aiohttp.ClientError, FileNotFoundError) as e:
                 self._connected = False
-                raise RuntimeError(f"Can't connect to Docker daemon: {e}")
+                raise RuntimeError(f"Can't connect to Docker daemon: {e}") from e
             except KeyError as e:
-                raise RuntimeError(f"Unexpected Docker API response: missing {e}")
+                raise RuntimeError(f"Unexpected Docker API response: missing {e}") from e
 
     async def _request(self, method: str, endpoint: str, **kwargs):
         """
@@ -127,7 +127,7 @@ class DockerHTTPClient:
                     return None
                 return await response.json()
         except aiohttp.ClientError as e:
-            raise RuntimeError(f"Docker connection error: {e}")
+            raise RuntimeError(f"Docker connection error: {e}") from e
 
     async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
         """创建 Docker 网络"""
@@ -339,10 +339,9 @@ class WebWiresharkManager:
             if container["State"]["Running"]:
                 logger.info(f"Container {container_name} already running")
                 return container["Id"]
-            else:
-                logger.info(f"Starting existing container {container_name}")
-                await self.docker.start_container(container["Id"])
-                return container["Id"]
+            logger.info(f"Starting existing container {container_name}")
+            await self.docker.start_container(container["Id"])
+            return container["Id"]
 
         # 创建新容器
         logger.info(f"Creating new container {container_name}")
@@ -385,7 +384,10 @@ class WebWiresharkManager:
         # 如果未提供 capture_stream_url，自动构造
         if not capture_stream_url:
             gns3_url = self.detect_gns3_url()
-            capture_stream_url = f"{gns3_url}/v3/projects/{project_id}/links/{link_id}/capture/stream"
+            capture_stream_url = (
+                f"{gns3_url}/v3/projects/{project_id}/links/"
+                f"{link_id}/capture/stream"
+            )
             logger.info(f"Auto-detected capture stream URL: {capture_stream_url}")
 
         container_id = await self.get_or_create_container(project_id)
@@ -438,7 +440,7 @@ class WebWiresharkManager:
 
         if not container_ip:
             logger.error(f"Container {container_name} has no IP in network {self.network_name}")
-            raise RuntimeError(f"Container has no IP address")
+            raise RuntimeError("Container has no IP address")
 
         result = {
             "link_id": link_id,
@@ -475,7 +477,7 @@ class WebWiresharkManager:
             exec_id = await self.docker.exec_create(container["Id"], xpra_cmd, detach=True)
             await self.docker.exec_start(exec_id, detach=True)
 
-            logger.info(f"Web Wireshark session stopped successfully")
+            logger.info("Web Wireshark session stopped successfully")
 
         except Exception as e:
             logger.error(f"Error stopping session: {e}")
