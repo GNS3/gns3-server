@@ -384,10 +384,7 @@ class WebWiresharkManager:
             "--daemon=yes",
             "--dbus-launch=no",
             "--resize-display=yes",
-            "--dpi=96",
-            "--file-transfer=no",
-            "--printing=no",
-            "--sound=no"
+            "--dpi=96"
         ]
 
         # Start xpra session (xpra start will reuse existing display)

@@ -39,6 +39,9 @@ RUN mkdir -p /run/user/1000 && chown -R gns3:gns3 /run/user/1000 && chmod 700 /r
 # Set XDG environment variables
 ENV XDG_RUNTIME_DIR=/run/user/1000
 
+# Configure xpra HTML5 client defaults - disable unused features
+RUN echo -e "file_transfer=false\nprinting=false\nsound=false\nfullscreen_button=false\n" >> /usr/share/xpra/www/default-settings.txt
+
 # Set default user
 USER gns3
 
