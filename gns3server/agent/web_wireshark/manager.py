@@ -384,25 +384,13 @@ class WebWiresharkManager:
             "--daemon=yes",
             "--dbus-launch=no",
             "--resize-display=yes",
-            "--dpi=96"
+            "--dpi=96",
+            "--file-transfer=no",
+            "--printing=no",
+            "--sound=no"
         ]
 
-        # Check for existing session on this display and clean up
-        logger.info(f"Checking for existing session on display :{display}")
-        returncode, stdout, stderr = await self._exec_in_container(
-            container_id,
-            f"xpra list 2>&1 | grep -q ':{display}' && xpra stop :{display} 2>&1 || echo 'no existing session'"
-        )
-
-        if returncode == 0 and "no existing session" not in stdout:
-            logger.info(f"Cleaned up existing session on display :{display}")
-            await asyncio.sleep(1)
-        elif returncode == -1:
-            # Timeout or error
-            logger.error(f"Container command failed: {stderr}")
-            raise RuntimeError(f"Container is not responding: {stderr}")
-
-        # Start xpra session
+        # Start xpra session (xpra start will reuse existing display)
         returncode, stdout, stderr = await self._exec_in_container(
             container_id,
             " ".join(xpra_cmd)
