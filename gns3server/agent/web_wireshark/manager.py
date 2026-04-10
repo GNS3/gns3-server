@@ -390,7 +390,7 @@ class WebWiresharkManager:
         display = link_id_to_display(link_id)
         port = link_id_to_port(link_id)
 
-        # Start xpra session
+        # Prepare xpra command
         session_name = f"link-{link_id}"
         logger.info(f"Starting xpra session {session_name} on display :{display}")
 
@@ -406,30 +406,36 @@ class WebWiresharkManager:
             "--resize-display=yes"
         ]
 
-        # Start xpra session (xpra start will reuse existing display)
-        returncode, stdout, stderr = await self._exec_in_container(
-            container_id,
-            " ".join(xpra_cmd)
+        # Parallel execution: get container info + start xpra
+        container_info_task = asyncio.create_task(
+            self.docker.get_container(container_name)
+        )
+        xpra_start_task = asyncio.create_task(
+            self._exec_in_container(container_id, " ".join(xpra_cmd))
         )
 
+        # Wait for both tasks to complete
+        container, (returncode, stdout, stderr) = await asyncio.gather(
+            container_info_task,
+            xpra_start_task
+        )
+
+        # Check xpra start result
         if returncode != 0:
             logger.error(f"xpra start failed (code {returncode}): {stdout} {stderr}")
             raise RuntimeError(f"xpra start failed: {stdout} {stderr}")
 
-        # Verify xpra session started successfully (xpra list shows display number, not session name)
-        returncode, stdout, stderr = await self._exec_in_container(
-            container_id,
-            f"xpra list 2>&1 | grep -q ':{display}'"
-        )
-
-        if returncode != 0:
-            _, xpra_output, _ = await self._exec_in_container(container_id, "xpra list 2>&1")
-            logger.error(f"xpra session verification failed. xpra list output:\n{xpra_output}")
-            raise RuntimeError(f"xpra session {session_name} failed to start")
-
         logger.info(f"xpra session {session_name} started successfully on display :{display}")
 
-        # Start Wireshark and connect to capture stream (run in background with &)
+        # Extract container IP
+        networks = container["NetworkSettings"]["Networks"]
+        container_ip = networks.get(self.network_name, {}).get("IPAddress", "")
+
+        if not container_ip:
+            logger.error(f"Container {container_name} has no IP in network {self.network_name}")
+            raise RuntimeError("Container has no IP address")
+
+        # Start Wireshark in background (fire-and-forget, no waiting)
         wireshark_cmd = (
             f"curl -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
@@ -438,24 +444,16 @@ class WebWiresharkManager:
 
         logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
 
-        # Don't wait for wireshark to complete - it runs continuously
-        returncode, stdout, stderr = await self._exec_in_container(
-            container_id,
-            wireshark_cmd,
-            timeout=5  # Short timeout since it runs in background
+        # Execute Wireshark command without waiting for completion
+        proc = await asyncio.create_subprocess_exec(
+            "docker", "exec", container_id,
+            "bash", "-c", wireshark_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
 
-        if returncode != 0:
-            logger.warning(f"Wireshark start returned code {returncode}: {stdout} {stderr}")
-
-        # Get container IP
-        container = await self.docker.get_container(container_name)
-        networks = container["NetworkSettings"]["Networks"]
-        container_ip = networks.get(self.network_name, {}).get("IPAddress", "")
-
-        if not container_ip:
-            logger.error(f"Container {container_name} has no IP in network {self.network_name}")
-            raise RuntimeError("Container has no IP address")
+        # Don't wait - Wireshark runs in background
+        logger.info(f"Wireshark start command executed for link {link_id}")
 
         result = {
             "link_id": link_id,
