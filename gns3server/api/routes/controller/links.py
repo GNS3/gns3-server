@@ -329,13 +329,11 @@ async def web_wireshark_websocket(
         # Get container IP
         from gns3server.compute.docker import Docker
 
-        log.info(f"Getting container info for {container_name}")
         docker_manager = Docker.instance()
         container_info = await docker_manager.query(
             "GET",
             f"containers/{container_name}/json"
         )
-        log.info(f"Got container info: {list(container_info.get('NetworkSettings', {}).get('Networks', {}).keys())}")
 
         networks = container_info["NetworkSettings"]["Networks"]
         container_ip = None

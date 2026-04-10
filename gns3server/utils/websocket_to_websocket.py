@@ -63,12 +63,9 @@ async def websocket_proxy(
 
     async def forward_client_to_target(target_ws):
         """Client → Target: Forward binary WebSocket data."""
-        log.info(f"forward_client_to_target: started")
         try:
             while True:
-                log.info(f"forward_client_to_target: waiting for client data")
                 data = await client_ws.receive_bytes()
-                log.info(f"forward_client_to_target: received {len(data)} bytes from client")
                 if data:
                     await target_ws.send_bytes(data)
         except WebSocketDisconnect:
@@ -78,10 +75,8 @@ async def websocket_proxy(
 
     async def forward_target_to_client(target_ws):
         """Target → Client: Forward binary WebSocket data."""
-        log.info(f"forward_target_to_client: started, about to iterate")
         try:
             async for msg in target_ws:
-                log.info(f"forward_target_to_client: got message type={msg.type}")
                 if msg.type == aiohttp.WSMsgType.BINARY:
                     try:
                         await client_ws.send_bytes(msg.data)
@@ -95,7 +90,6 @@ async def websocket_proxy(
                     log.info(f"Target WebSocket closed")
                     # Don't try to forward close to client if already disconnected
                     break
-            log.info(f"forward_target_to_client: iteration ended")
         except Exception as e:
             log.warning(f"Error forwarding target to client: {e}")
 
@@ -112,18 +106,9 @@ async def websocket_proxy(
             timeout_config = {"timeout": aiohttp.ClientTimeout(total=timeout)}
 
         async with aiohttp.ClientSession() as session:
-            log.info(f"About to ws_connect to {target_url}")
-            ws_conn = session.ws_connect(target_url, protocols=subprotocols, **timeout_config)
-            log.info(f"ws_connect coroutine created, about to enter")
-            async with ws_conn as target_ws:
+            async with session.ws_connect(target_url, protocols=subprotocols, **timeout_config) as target_ws:
                 negotiated_protocol = target_ws.protocol
                 log.info(f"Target WebSocket negotiated protocol: {negotiated_protocol}")
-                log.info(f"target_ws.closed = {target_ws.closed}")
-
-                # Note: FastAPI has already accepted the client WebSocket connection
-                # The subprotocol should have been set on the websocket object before
-                # the route handler was called. We just log it here for debugging.
-                log.info(f"Client WebSocket subprotocol: {getattr(client_ws, 'subprotocol', None)}")
                 log.info(f"WebSocket proxy established: {client_info} → {target_url}")
 
                 # Run both forwarding tasks in parallel
@@ -139,16 +124,13 @@ async def websocket_proxy(
                         forward_target_to_client(target_ws)
                     ]
 
-                log.info(f"About to call asyncio.wait with {len(aws)} tasks")
                 try:
                     done, pending = await asyncio.wait(
                         aws,
                         return_when=asyncio.ALL_COMPLETED
                     )
-                    log.info(f"asyncio.wait returned. done={len(done)}, pending={len(pending)}")
                 except Exception as e:
                     log.error(f"asyncio.wait raised exception: {e}")
-                log.info(f"After asyncio.wait check")
 
                 # Check for exceptions
                 for task in done:
@@ -159,10 +141,7 @@ async def websocket_proxy(
 
                 # Cancel pending tasks
                 for task in pending:
-                    log.info(f"Cancelling pending task")
                     task.cancel()
-
-                log.info(f"Cleanup complete, exiting websocket_proxy")
 
     except aiohttp.ClientError as e:
         log.error(f"WebSocket proxy connection error: {e}")
