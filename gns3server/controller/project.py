@@ -857,10 +857,7 @@ class Project:
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
 
-        # 1. 停止所有 xpra 会话
-        await self._cleanup_web_wireshark_xpra_sessions()
-
-        # 2. 停止容器（保留，便于快速重启）
+        # 停止 Web Wireshark 容器（容器停止时 xpra 会话一并终止）
         await self._stop_web_wireshark_container()
 
         # Cleanup GNS3 Copilot AgentService for this project
@@ -932,7 +929,7 @@ class Project:
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
-                "stop-sessions",
+                "stop-all",
                 "--project-id", self._id,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
