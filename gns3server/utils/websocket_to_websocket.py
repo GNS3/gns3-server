@@ -89,12 +89,16 @@ async def websocket_proxy(
         # Connect to target WebSocket
         log.info(f"Connecting to target WebSocket: {target_url}")
 
+        # Get subprotocol from client WebSocket (usually "binary" for xpra)
+        subprotocols = getattr(client_ws, "subprotocols", None) or []
+        log.info(f"Client subprotocols: {subprotocols}")
+
         timeout_config = {}
         if timeout:
             timeout_config = {"timeout": aiohttp.ClientTimeout(total=timeout)}
 
         async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(target_url, **timeout_config) as target_ws:
+            async with session.ws_connect(target_url, protocols=subprotocols or ["binary"], **timeout_config) as target_ws:
                 log.info(f"WebSocket proxy established: {client_info} → {target_url}")
 
                 # Run both forwarding tasks in parallel

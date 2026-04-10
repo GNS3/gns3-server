@@ -315,10 +315,6 @@ async def web_wireshark_websocket(
     Required privilege: Link.Capture
     """
 
-    if current_user is None:
-        return
-
-    await websocket.accept()
     log.info(f"New WebSocket connection for project {project_id}, link {link_id}, user {current_user.username}")
 
     try:
