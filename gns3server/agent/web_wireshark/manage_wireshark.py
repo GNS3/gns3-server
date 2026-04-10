@@ -134,6 +134,50 @@ async def cmd_stop_all(args) -> int:
         await manager.close()
 
 
+async def cmd_stop_container(args) -> int:
+    """Stop Web Wireshark container (without deleting).
+
+    Args:
+        args: Command line arguments
+
+    Returns:
+        Exit code (0 for success)
+    """
+    manager = WebWiresharkManager()
+    try:
+        await manager.stop_container(project_id=args.project_id)
+        print(json.dumps({"status": "stopped"}))
+        return 0
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
+        return 1
+    finally:
+        await manager.close()
+
+
+async def cmd_delete_container(args) -> int:
+    """Delete Web Wireshark container.
+
+    Args:
+        args: Command line arguments
+
+    Returns:
+        Exit code (0 for success)
+    """
+    manager = WebWiresharkManager()
+    try:
+        await manager.delete_container(project_id=args.project_id)
+        print(json.dumps({"status": "deleted"}))
+        return 0
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
+        return 1
+    finally:
+        await manager.close()
+
+
 async def cmd_delete(args) -> int:
     """Delete Web Wireshark container.
 
@@ -214,6 +258,14 @@ def create_parser() -> argparse.ArgumentParser:
     delete_parser = subparsers.add_parser("delete", help="Delete container")
     delete_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
 
+    # Stop container command
+    stop_container_parser = subparsers.add_parser("stop-container", help="Stop container (without deleting)")
+    stop_container_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
+
+    # Delete container command
+    delete_container_parser = subparsers.add_parser("delete-container", help="Delete container")
+    delete_container_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
+
     return parser
 
 
@@ -233,6 +285,8 @@ async def main() -> int:
         "stop": cmd_stop,
         "stop-all": cmd_stop_all,
         "delete": cmd_delete,
+        "stop-container": cmd_stop_container,
+        "delete-container": cmd_delete_container,
     }
 
     return await commands[args.command](args)
