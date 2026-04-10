@@ -302,7 +302,7 @@ class Link:
         self._capture_file_name = capture_file_name
         self._project.emit_notification("link.updated", self.asdict())
 
-        # 如果需要 Web Wireshark
+        # Start Web Wireshark if requested
         if wireshark:
             await self._start_web_wireshark(jwt_token)
 
@@ -311,7 +311,7 @@ class Link:
         Stop capture on the link
         """
 
-        # 停止 Web Wireshark
+        # Stop Web Wireshark
         if self._capturing:
             await self._stop_web_wireshark()
 
@@ -319,19 +319,19 @@ class Link:
         self._project.emit_notification("link.updated", self.asdict())
 
     async def _start_web_wireshark(self, jwt_token: str):
-        """启动 Web Wireshark
+        """Start Web Wireshark.
 
         Args:
-            jwt_token: JWT 认证令牌
+            jwt_token: JWT authentication token
 
         Raises:
-            ControllerError: 如果启动失败
+            ControllerError: If startup fails
         """
         if not jwt_token:
             raise ControllerError("JWT token is required for Web Wireshark")
 
         try:
-            # 调用管理脚本（不传递 capture_url，让脚本自动检测）
+            # Call management script (don't pass capture_url, let script auto-detect)
             script_path = os.path.join(
                 os.path.dirname(__file__),
                 "..",
@@ -340,7 +340,7 @@ class Link:
                 "manage_wireshark.py"
             )
 
-            # 确保脚本路径存在
+            # Ensure script path exists
             if not os.path.exists(script_path):
                 raise ControllerError(f"Web Wireshark script not found: {script_path}")
 
@@ -364,14 +364,14 @@ class Link:
                 log.error(f"Failed to start Web Wireshark: {error_msg}")
                 raise ControllerError(f"Failed to start Web Wireshark: {error_msg}")
 
-            # 解析结果
+            # Parse result
             try:
                 result = json.loads(stdout.decode())
 
-                # 标记容器已创建
+                # Mark container as created
                 self._project._web_wireshark_container_created = True
 
-                # 发送通知
+                # Send notification
                 self._project.emit_notification("link.web_wireshark_started", {
                     "link_id": self.id,
                     "ws_url": result.get("ws_url", result.get("url"))
@@ -393,7 +393,7 @@ class Link:
             raise ControllerError(error_msg)
 
     async def _stop_web_wireshark(self):
-        """停止 Web Wireshark"""
+        """Stop Web Wireshark"""
         try:
             script_path = os.path.join(
                 os.path.dirname(__file__),

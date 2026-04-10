@@ -228,7 +228,7 @@ async def start_capture(
     Required privilege: Link.Capture
     """
 
-    # 从 Authorization header 提取 JWT token
+    # Extract JWT token from Authorization header
     auth_header = http_request.headers.get("Authorization", "")
     jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
 

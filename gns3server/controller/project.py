@@ -857,7 +857,7 @@ class Project:
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
 
-        # 停止 Web Wireshark 容器（容器停止时 xpra 会话一并终止）
+        # Stop Web Wireshark container (xpra sessions terminate when container stops)
         await self._stop_web_wireshark_container()
 
         # Cleanup GNS3 Copilot AgentService for this project
@@ -901,10 +901,10 @@ class Project:
 
     async def _cleanup_web_wireshark_xpra_sessions(self):
         """
-        清理所有 Web Wireshark xpra 会话（不删除容器）
+        Cleanup all Web Wireshark xpra sessions (without deleting container).
 
-        在项目关闭时调用，停止所有 xpra 会话和 Wireshark 进程
-        但保留容器，便于项目重新打开时快速复用
+        Called when project is closed to stop all xpra sessions and Wireshark processes,
+        while keeping the container for quick reuse when project is reopened.
         """
         try:
             if not self._web_wireshark_container_created:
@@ -912,7 +912,7 @@ class Project:
 
             log.info(f"Stopping xpra sessions for project '{self.name}' ({self._id})")
 
-            # 调用脚本停止所有会话
+            # Call script to stop all sessions
             script_path = os.path.join(
                 os.path.dirname(__file__),
                 "..",
@@ -925,7 +925,7 @@ class Project:
                 log.warning(f"Web Wireshark script not found: {script_path}")
                 return
 
-            # 停止所有会话
+            # Stop all sessions
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -943,15 +943,15 @@ class Project:
                 log.warning(f"Failed to stop xpra sessions: {stderr.decode()}")
 
         except Exception as e:
-            # 不抛出异常，避免影响项目关闭流程
+            # Don't raise exception to avoid affecting project close flow
             log.warning(f"Failed to cleanup xpra sessions for project '{self.name}': {e}")
 
     async def _stop_web_wireshark_container(self):
         """
-        停止 Web Wireshark 容器（但不删除）
+        Stop Web Wireshark container (without deleting).
 
-        在项目关闭时调用，停止容器以释放内存
-        但保留容器，便于项目重新打开时快速启动
+        Called when project is closed to stop the container and free memory,
+        while keeping the container for quick startup when project is reopened.
         """
         try:
             if not self._web_wireshark_container_created:
@@ -971,7 +971,7 @@ class Project:
             if not os.path.exists(script_path):
                 return
 
-            # 停止容器
+            # Stop container
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -993,9 +993,9 @@ class Project:
 
     async def _cleanup_web_wireshark_container(self):
         """
-        删除 Web Wireshark 容器
+        Delete Web Wireshark container.
 
-        在项目删除时调用，停止并删除容器
+        Called when project is deleted to stop and remove the container.
         """
         try:
             if not self._web_wireshark_container_created:
@@ -1015,7 +1015,7 @@ class Project:
             if not os.path.exists(script_path):
                 return
 
-            # 删除容器
+            # Delete container
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -1064,7 +1064,7 @@ class Project:
         await self.delete_on_computes()
         await self.close()
 
-        # 删除 Web Wireshark 容器
+        # Delete Web Wireshark container
         await self._cleanup_web_wireshark_container()
 
         try:
