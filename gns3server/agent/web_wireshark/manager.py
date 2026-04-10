@@ -275,7 +275,6 @@ class WebWiresharkManager:
             else:
                 logger.info(f"Starting existing container {container_name}")
                 await self.docker.start_container(container["Id"])
-                await asyncio.sleep(2)
                 if await self._is_container_healthy(container["Id"]):
                     return container["Id"]
                 # Still unhealthy after start, remove and recreate
@@ -416,9 +415,6 @@ class WebWiresharkManager:
         if returncode != 0:
             logger.error(f"xpra start failed (code {returncode}): {stdout} {stderr}")
             raise RuntimeError(f"xpra start failed: {stdout} {stderr}")
-
-        # Wait for xpra to initialize
-        await asyncio.sleep(2)
 
         # Verify xpra session started successfully (xpra list shows display number, not session name)
         returncode, stdout, stderr = await self._exec_in_container(
