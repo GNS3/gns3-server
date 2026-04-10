@@ -517,18 +517,22 @@ class WebWiresharkManager:
                 logger.warning(f"Container {container_name} not found")
                 return
 
-            # Stop all xpra sessions (display 100-199)
-            for display in range(100, 200):
-                await self._exec_in_container(
-                    container["Id"],
-                    f"pkill -f 'xpra.*:{display}'"
-                )
-                logger.info(f"Stopped xpra session :{display}")
+            # Stop all xpra sessions with single command (much faster than loop)
+            # This matches all xpra sessions with session-name starting with "link-"
+            returncode, stdout, stderr = await self._exec_in_container(
+                container["Id"],
+                "pkill -f 'xpra.*--session-name=link-' || true"
+            )
 
-            logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
+            if returncode == 0:
+                logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
+            else:
+                # No sessions to stop is not an error
+                logger.info(f"No Web Wireshark sessions found to stop")
 
         except Exception as e:
-            logger.error(f"Error stopping all sessions: {e}")
+            # Don't fail if container is already stopped or doesn't exist
+            logger.warning(f"Error stopping all sessions: {e}")
 
     async def stop_container(self, project_id: str):
         """Stop Web Wireshark container.

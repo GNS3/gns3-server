@@ -688,9 +688,18 @@ class AgentService:
         async with self._init_lock:
             if self._checkpointer_conn:
                 try:
-                    await self._checkpointer_conn.close()
+                    # Add timeout to prevent blocking on database close
+                    await asyncio.wait_for(
+                        self._checkpointer_conn.close(),
+                        timeout=5.0
+                    )
                     log.debug(
                         "Checkpointer connection closed for: %s",
+                        self.project_path,
+                    )
+                except asyncio.TimeoutError:
+                    log.warning(
+                        "Checkpointer connection close timeout for: %s (forcing cleanup)",
                         self.project_path,
                     )
                 except Exception as e:
