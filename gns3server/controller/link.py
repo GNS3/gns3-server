@@ -368,6 +368,9 @@ class Link:
             try:
                 result = json.loads(stdout.decode())
 
+                # 标记容器已创建
+                self._project._web_wireshark_container_created = True
+
                 # 发送通知
                 self._project.emit_notification("link.web_wireshark_started", {
                     "link_id": self.id,

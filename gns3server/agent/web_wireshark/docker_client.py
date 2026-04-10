@@ -221,8 +221,8 @@ class DockerHTTPClient:
                 return None
             raise
 
-    async def stop_container(self, container_id: str, timeout: int = 10):
-        """Stop container."""
+    async def stop_container(self, container_id: str, timeout: int = 0):
+        """Stop container immediately (force kill, no graceful shutdown)."""
         await self._request("POST", f"containers/{container_id}/stop", params={"t": timeout})
 
     async def remove_container(self, container_id: str, force: bool = False):
