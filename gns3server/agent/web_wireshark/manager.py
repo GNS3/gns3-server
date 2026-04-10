@@ -399,7 +399,7 @@ class WebWiresharkManager:
             "XPRA_CLIENT_CAN_SHUTDOWN=false",
             "xpra", "start", f":{display}",
             '--xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR"',
-            "--html=on",
+            "--html=no",
             f"--bind-tcp=0.0.0.0:{port}",
             f"--session-name={session_name}",
             "--daemon=yes",
@@ -465,14 +465,14 @@ class WebWiresharkManager:
             "link_id": link_id,
             "display": display,
             "port": port,
-            "url": f"http://{container_ip}:{port}",
+            "ws_url": f"ws://{container_ip}:{port}",
             "container_name": container_name,
             "container_id": container_id,
             "session_name": session_name,
             "capture_stream_url": capture_stream_url
         }
 
-        logger.info(f"Web Wireshark session started successfully: {result['url']}")
+        logger.info(f"Web Wireshark session started successfully: {result['ws_url']}")
         return result
 
     async def stop_wireshark_session(self, project_id: str, link_id: str):
