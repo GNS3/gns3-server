@@ -323,10 +323,12 @@ class Link:
 
         Args:
             jwt_token: JWT 认证令牌
+
+        Raises:
+            ControllerError: 如果启动失败
         """
         if not jwt_token:
-            log.error("JWT token is required for Web Wireshark")
-            return
+            raise ControllerError("JWT token is required for Web Wireshark")
 
         try:
             # 调用管理脚本（不传递 capture_url，让脚本自动检测）
@@ -340,8 +342,7 @@ class Link:
 
             # 确保脚本路径存在
             if not os.path.exists(script_path):
-                log.error(f"Web Wireshark script not found: {script_path}")
-                return
+                raise ControllerError(f"Web Wireshark script not found: {script_path}")
 
             log.info(f"Starting Web Wireshark for link {self.id}")
 
@@ -359,8 +360,9 @@ class Link:
             stdout, stderr = await proc.communicate()
 
             if proc.returncode != 0:
-                log.error(f"Failed to start Web Wireshark: {stderr.decode()}")
-                return
+                error_msg = stderr.decode() if stderr else "Unknown error"
+                log.error(f"Failed to start Web Wireshark: {error_msg}")
+                raise ControllerError(f"Failed to start Web Wireshark: {error_msg}")
 
             # 解析结果
             try:
@@ -369,16 +371,23 @@ class Link:
                 # 发送通知
                 self._project.emit_notification("link.web_wireshark_started", {
                     "link_id": self.id,
-                    "url": result["url"]
+                    "ws_url": result.get("ws_url", result.get("url"))
                 })
 
-                log.info(f"Web Wireshark started for link {self.id}: {result['url']}")
+                log.info(f"Web Wireshark started for link {self.id}: {result.get('ws_url', result.get('url'))}")
 
             except json.JSONDecodeError as e:
-                log.error(f"Failed to parse script output: {e}")
+                error_msg = f"Failed to parse script output: {stdout.decode()}"
+                log.error(error_msg)
+                raise ControllerError(error_msg)
 
+        except ControllerError:
+            # Re-raise ControllerError to return error to client
+            raise
         except Exception as e:
-            log.error(f"Error starting Web Wireshark: {e}")
+            error_msg = f"Error starting Web Wireshark: {str(e)}"
+            log.error(error_msg)
+            raise ControllerError(error_msg)
 
     async def _stop_web_wireshark(self):
         """停止 Web Wireshark"""
