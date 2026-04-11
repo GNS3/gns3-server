@@ -239,7 +239,25 @@ class DockerHTTPClient:
         Returns:
             List of process dicts with keys: PID, USER, COMMAND, etc.
         """
-        result = await self._request("GET", f"containers/{container_name}/top?ps_args=aux")
+        # Note: Docker API /containers/{id}/top returns text, not JSON
+        # We need to use the session directly to get text response
+        if not self._connected:
+            await self._check_connection()
+
+        session = await self._get_session()
+        url = f"http://docker/v{self._api_version}/containers/{container_name}/top?ps_args=aux"
+
+        try:
+            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+                async with session.get(url) as response:
+                    if response.status >= 300:
+                        error_text = await response.text()
+                        raise RuntimeError(f"Docker API error {response.status}: {error_text}")
+                    result = await response.text()
+        except asyncio.TimeoutError:
+            raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for containers/{container_name}/top")
+        except aiohttp.ClientError as e:
+            raise RuntimeError(f"Docker connection error: {e}") from e
 
         # Docker API returns text format like:
         # USER    PID ... COMMAND
