@@ -124,19 +124,52 @@ class WebWiresharkManager:
             return (-1, "", str(e))
 
     async def _kill_process_tree(self, container_id: str, pattern: str) -> None:
-        """Kill all processes matching pattern and their child processes.
+        """Kill all processes matching pattern using Docker API.
 
-        Uses process group kill (-pid) to ensure child processes are terminated.
-        Uses exec to replace bash process and avoid zombie pkill processes.
+        Queries Docker API for process list and kills matching PIDs directly.
+        This avoids creating zombie pkill processes.
 
         Args:
             container_id: Container ID
-            pattern: Process pattern to match (grep -f format)
+            pattern: Process pattern to match (regex applied to COMMAND field)
         """
-        # Use exec to replace bash, so pkill becomes the main process
-        # This avoids leaving zombie processes from subshells
-        cmd = f"exec pkill -9 -f '{pattern}' 2>/dev/null || true"
-        await self._exec_in_container(container_id, cmd)
+        try:
+            # Get process list from Docker API
+            # Docker API accepts both container ID and name in /containers/{id}/top
+            processes = await self.docker.list_processes(container_id)
+
+            if not processes:
+                logger.debug(f"No processes found in container {container_id[:12]}")
+                return
+
+            # Compile regex pattern for matching COMMAND field
+            pattern_re = re.compile(pattern)
+
+            # Find PIDs matching the pattern
+            matching_pids = []
+            for proc in processes:
+                command = proc.get("COMMAND", "")
+                pid = proc.get("PID", "")
+
+                if command and pid:
+                    # Match using regex pattern
+                    if pattern_re.search(command):
+                        matching_pids.append(pid)
+
+            if matching_pids:
+                logger.info(f"Killing {len(matching_pids)} processes matching '{pattern}': {matching_pids}")
+                # Kill all matching PIDs in one command to avoid zombie processes
+                pids_str = " ".join(matching_pids)
+                kill_cmd = f"exec kill -9 {pids_str} 2>/dev/null || true"
+                await self._exec_in_container(container_id, kill_cmd)
+            else:
+                logger.debug(f"No processes found matching pattern '{pattern}'")
+
+        except Exception as e:
+            logger.warning(f"Error using Docker API to kill processes (fallback to pkill): {e}")
+            # Fallback to pkill if Docker API fails
+            cmd = f"exec pkill -9 -f '{pattern}' 2>/dev/null || true"
+            await self._exec_in_container(container_id, cmd)
 
     async def _cleanup_x_lock(self, container_id: str, display: int) -> None:
         """Remove X lock file for a display.
@@ -500,8 +533,8 @@ class WebWiresharkManager:
         logger.info(f"Cleaning up any existing processes on display :{display}")
         await self._kill_process_tree(container_id, f'xpra.*:{display}')
         await self._kill_process_tree(container_id, f'Xvfb.*:{display}')
-        await self._exec_in_container(container_id, f"exec pkill -9 -f 'wireshark.*:{display}' 2>/dev/null || true")
-        await self._exec_in_container(container_id, f"exec pkill -9 -f 'pulseaudio.*display=:{display}' 2>/dev/null || true")
+        await self._kill_process_tree(container_id, f'wireshark.*:{display}')
+        await self._kill_process_tree(container_id, f'pulseaudio.*display=:{display}')
         await self._cleanup_x_lock(container_id, display)
 
         # Prepare xpra command
@@ -609,8 +642,8 @@ class WebWiresharkManager:
             await self._kill_process_tree(container["Id"], f'xpra.*:{display}')
             await self._kill_process_tree(container["Id"], f'Xvfb.*:{display}')
             await self._kill_process_tree(container["Id"], f'Xvfb-for-Xpra-{display}')
-            await self._exec_in_container(container["Id"], f"exec pkill -9 -f 'wireshark.*:{display}' 2>/dev/null || true")
-            await self._exec_in_container(container["Id"], f"exec pkill -9 -f 'pulseaudio.*display=:{display}' 2>/dev/null || true")
+            await self._kill_process_tree(container["Id"], f'wireshark.*:{display}')
+            await self._kill_process_tree(container["Id"], f'pulseaudio.*display=:{display}')
             await self._cleanup_x_lock(container["Id"], display)
 
             logger.info("Web Wireshark session stopped successfully")
@@ -680,8 +713,8 @@ class WebWiresharkManager:
             # This ensures clean removal of all session processes
             await self._kill_process_tree(container["Id"], "xpra.*--session-name=link-")
             await self._kill_process_tree(container["Id"], "Xvfb-for-Xpra-")
-            await self._exec_in_container(container["Id"], "pkill -9 -f 'wireshark.*display :' || true")
-            await self._exec_in_container(container["Id"], "pkill -9 -f 'pulseaudio.*display :' || true")
+            await self._kill_process_tree(container["Id"], "wireshark.*display :")
+            await self._kill_process_tree(container["Id"], "pulseaudio.*display :")
 
             logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
 

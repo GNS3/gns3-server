@@ -229,3 +229,43 @@ class DockerHTTPClient:
         """Remove container."""
         params = {"force": "true"} if force else {}
         await self._request("DELETE", f"containers/{container_id}", params=params)
+
+    async def list_processes(self, container_name: str) -> list:
+        """Get process list from container.
+
+        Args:
+            container_name: Container name (e.g., "gns3-wireshark-xxx")
+
+        Returns:
+            List of process dicts with keys: PID, USER, COMMAND, etc.
+        """
+        result = await self._request("GET", f"containers/{container_name}/top?ps_args=aux")
+
+        # Docker API returns text format like:
+        # USER    PID ... COMMAND
+        # root      1 ... tail -f /dev/null
+        # We need to parse this
+
+        lines = result.strip().split('\n')
+        if len(lines) < 2:
+            return []
+
+        # First line is header
+        headers = lines[0].split()
+        processes = []
+
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            values = line.split(None, len(headers) - 1)
+            if len(values) < len(headers):
+                continue
+
+            proc = {}
+            for i, header in enumerate(headers):
+                if i < len(values):
+                    proc[header] = values[i]
+
+            processes.append(proc)
+
+        return processes
