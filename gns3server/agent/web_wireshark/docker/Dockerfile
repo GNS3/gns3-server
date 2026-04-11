@@ -25,10 +25,11 @@ RUN apt-get update && apt-get install -y \
 
 # Install xpra and dependencies
 # Lock xpra version for reproducible builds
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y \
     wireshark-common \
     wireshark \
     xpra=6.4.3* \
+    xpra-x11 \
     xvfb \
     curl \
     x11-utils \
