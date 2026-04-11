@@ -807,7 +807,7 @@ class Project:
                 with open(self._snapshot_conf_path, encoding="utf-8") as f:
                     self._snapshot_conf = json.load(f)
             except (OSError, UnicodeDecodeError, ValueError) as e:
-                raise aiohttp.web.HTTPConflict(text="Could not read snapshot config {}: {}".format(self._snapshot_conf_path, str(e)))
+                raise ControllerError(f"Could not read snapshot config {e}")
 
         # Load all legacy snapshots (.gns3project files) to create an initial snapshot config if it doesn't exist
         if os.path.exists(snapshot_dir) and not self._snapshot_conf:
@@ -843,7 +843,7 @@ class Project:
 
         self._snapshot_conf = []
         for snapshot in self._snapshots.values():
-            self._snapshot_conf.append(snapshot.__json__())
+            self._snapshot_conf.append(snapshot.asdict())
         try:
             with open(self._snapshot_conf_path, 'w+') as f:
                 json.dump(self._snapshot_conf, f, indent=4)

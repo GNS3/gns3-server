@@ -72,7 +72,7 @@ def test_json(project):
 
     # new style snapshot
     snapshot = Snapshot(project, name="snapshot_test2")
-    assert snapshot.__json__() == {
+    assert snapshot.asdict() == {
         "snapshot_id": snapshot._id,
         "name": "snapshot_test2",
         "project_id": project.id,
