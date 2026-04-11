@@ -17,9 +17,54 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Web Wireshark Management Script
+Web Wireshark Management Script (CLI Tool)
 
-Manages Web Wireshark containers using Docker and xpra for web-based packet capture.
+This script provides a command-line interface for managing Web Wireshark containers.
+It is intended for manual management, debugging, and testing purposes.
+
+NOTE: For programmatic access within GNS3 server, use WebWiresharkManager class directly
+from gns3server.agent.web_wireshark.manager instead of calling this script via subprocess.
+
+Usage Examples:
+    # Start a Web Wireshark session
+    python manage_wireshark.py start \\
+        --project-id <uuid> \\
+        --link-id <uuid> \\
+        --jwt-token <token>
+
+    # Stop a Web Wireshark session
+    python manage_wireshark.py stop \\
+        --project-id <uuid> \\
+        --link-id <uuid>
+
+    # Restart a Web Wireshark session
+    python manage_wireshark.py restart \\
+        --project-id <uuid> \\
+        --link-id <uuid> \\
+        --jwt-token <token>
+
+    # Stop all sessions for a project
+    python manage_wireshark.py stop-all --project-id <uuid>
+
+    # Delete project container
+    python manage_wireshark.py delete --project-id <uuid>
+
+Available Commands:
+    start       Start a new Web Wireshark session
+    stop        Stop a Web Wireshark session
+    restart     Restart a Web Wireshark session
+    stop-all    Stop all Web Wireshark sessions for a project
+    delete      Delete the Web Wireshark container
+    stop-container  Stop container without deleting
+    delete-container  Delete the container
+
+Output Format:
+    All commands output JSON to stdout for easy parsing:
+    - Success: {"status": "...", "ws_url": "...", ...}
+    - Error: {"error": "message"} (to stderr)
+
+For more information on each command, use:
+    python manage_wireshark.py <command> --help
 """
 
 import sys
