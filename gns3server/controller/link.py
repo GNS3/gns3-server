@@ -24,6 +24,7 @@ import asyncio
 import json
 
 from .controller_error import ControllerError, ControllerNotFoundError
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 import logging
 
@@ -330,8 +331,8 @@ class Link:
         if not jwt_token:
             raise ControllerError("JWT token is required for Web Wireshark")
 
-        # Delay import to avoid circular dependency
-        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+        # Get capture stream URL from compute
+        capture_stream_url = self.pcap_streaming_url()
 
         manager = WebWiresharkManager()
         try:
@@ -340,7 +341,8 @@ class Link:
             result = await manager.start_wireshark_session(
                 project_id=self._project.id,
                 link_id=self.id,
-                jwt_token=jwt_token
+                jwt_token=jwt_token,
+                capture_stream_url=capture_stream_url
             )
 
             # Mark container as created
@@ -366,9 +368,6 @@ class Link:
 
     async def _stop_web_wireshark(self):
         """Stop Web Wireshark"""
-        # Delay import to avoid circular dependency
-        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
-
         manager = WebWiresharkManager()
         try:
             log.info(f"Stopping Web Wireshark for link {self.id}")
@@ -394,8 +393,8 @@ class Link:
         Raises:
             ControllerError: If restart fails
         """
-        # Delay import to avoid circular dependency
-        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+        # Get capture stream URL from compute
+        capture_stream_url = self.pcap_streaming_url()
 
         manager = WebWiresharkManager()
         try:
@@ -404,7 +403,8 @@ class Link:
             result = await manager.restart_wireshark_session(
                 project_id=self._project.id,
                 link_id=self.id,
-                jwt_token=jwt_token
+                jwt_token=jwt_token,
+                capture_stream_url=capture_stream_url
             )
 
             self._project.emit_notification("link.web_wireshark_started", {

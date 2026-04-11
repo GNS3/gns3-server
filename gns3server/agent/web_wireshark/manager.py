@@ -28,7 +28,6 @@ import socket
 from typing import Optional
 from urllib.parse import urlparse
 
-from gns3server.controller import Controller
 from gns3server.config import Config
 from gns3server.utils.port_allocator import link_id_to_display, link_id_to_port
 from .docker_client import DockerHTTPClient
@@ -225,28 +224,6 @@ class WebWiresharkManager:
         unit = unit[0]  # Take first character
         return int(value * multipliers.get(unit, 1))
 
-    def _get_gns3_url_from_controller(self) -> Optional[str]:
-        """Get GNS3 server URL from Controller instance.
-
-        Reference: gns3-copilot implementation.
-        """
-        try:
-            controller = Controller.instance()
-            local_compute = controller.get_compute("local")
-
-            url = f"{local_compute.protocol}://{local_compute.host}:{local_compute.port}"
-            logger.info(f"Got GNS3 URL from Controller: {url}")
-            return url
-        except AttributeError as e:
-            logger.debug(f"Controller instance not available: {e}")
-            return None
-        except KeyError as e:
-            logger.debug(f"Local compute not found in Controller: {e}")
-            return None
-        except Exception as e:
-            logger.warning(f"Unexpected error getting URL from Controller: {e}")
-            return None
-
     def _get_gns3_url_from_config(self) -> Optional[str]:
         """Get GNS3 server URL from config file."""
         try:
@@ -331,7 +308,7 @@ class WebWiresharkManager:
         return url
 
     def detect_gns3_url(self) -> str:
-        """Detect GNS3 server URL using multiple strategies.
+        """Detect GNS3 server URL from config or use default.
 
         Note: This returns the raw URL (may contain 127.0.0.1).
         The URL will be fixed for container access later using _fix_localhost_url.
@@ -339,24 +316,17 @@ class WebWiresharkManager:
         Returns:
             GNS3 server URL
         """
-        # Strategy 1: Get from Controller
-        url = self._get_gns3_url_from_controller()
-        if url:
-            return url
-
-        # Strategy 2: Get from Config
+        # Strategy 1: Get from Config
         url = self._get_gns3_url_from_config()
         if url:
             return url
 
-        # Strategy 3: Use default
+        # Strategy 2: Use default
         logger.warning(f"Using fallback default URL: {DEFAULT_GNS3_URL}")
         return DEFAULT_GNS3_URL
 
     async def ensure_network(self):
         """Ensure Docker network exists."""
-        from gns3server.config import Config
-
         network = await self.docker.get_network(self.network_name)
         if network:
             logger.info(f"Network {self.network_name} already exists")
