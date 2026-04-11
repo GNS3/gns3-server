@@ -514,6 +514,49 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error stopping session: {e}")
 
+    async def restart_wireshark_session(
+        self,
+        project_id: str,
+        link_id: str,
+        jwt_token: str,
+        capture_stream_url: str = None,
+        image: str = "gns3/web-wireshark:latest",
+        memory: str = "2g",
+        memory_swap: str = None,
+        cpus: float = 1.0,
+        pids_limit: int = 1000
+    ):
+        """Restart Web Wireshark session.
+
+        This simply calls start_wireshark_session since it already handles
+        cleanup of existing processes.
+
+        Args:
+            project_id: Project ID
+            link_id: Link ID
+            jwt_token: JWT authentication token
+            capture_stream_url: Capture stream URL
+            image: Docker image name
+            memory: Memory limit
+            memory_swap: Memory swap limit
+            cpus: CPU cores
+            pids_limit: Process limit
+
+        Returns:
+            Session info dict
+        """
+        return await self.start_wireshark_session(
+            project_id=project_id,
+            link_id=link_id,
+            jwt_token=jwt_token,
+            capture_stream_url=capture_stream_url,
+            image=image,
+            memory=memory,
+            memory_swap=memory_swap,
+            cpus=cpus,
+            pids_limit=pids_limit
+        )
+
     async def stop_all_sessions(self, project_id: str):
         """Stop all Web Wireshark sessions for a project.
 

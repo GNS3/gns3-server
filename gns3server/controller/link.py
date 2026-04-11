@@ -429,6 +429,66 @@ class Link:
         except Exception as e:
             log.error(f"Error stopping Web Wireshark: {e}")
 
+    async def _restart_web_wireshark(self, jwt_token: str):
+        """Restart Web Wireshark after window was closed.
+
+        Args:
+            jwt_token: JWT authentication token
+
+        Raises:
+            ControllerError: If restart fails
+        """
+        try:
+            script_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "agent",
+                "web_wireshark",
+                "manage_wireshark.py"
+            )
+
+            if not os.path.exists(script_path):
+                raise ControllerError(f"Web Wireshark script not found: {script_path}")
+
+            log.info(f"Restarting Web Wireshark for link {self.id}")
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                script_path,
+                "restart",
+                "--project-id", self._project.id,
+                "--link-id", self.id,
+                "--jwt-token", jwt_token,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode != 0:
+                error_msg = stderr.decode() if stderr else "Unknown error"
+                log.error(f"Failed to restart Web Wireshark: {error_msg}")
+                raise ControllerError(f"Failed to restart Web Wireshark: {error_msg}")
+
+            try:
+                result = json.loads(stdout.decode())
+                self._project.emit_notification("link.web_wireshark_started", {
+                    "link_id": self.id,
+                    "ws_url": result.get("ws_url", result.get("url"))
+                })
+                log.info(f"Web Wireshark restarted for link {self.id}: {result.get('ws_url')}")
+            except json.JSONDecodeError as e:
+                error_msg = f"Failed to parse script output: {stdout.decode()}"
+                log.error(error_msg)
+                raise ControllerError(error_msg)
+
+        except ControllerError:
+            raise
+        except Exception as e:
+            error_msg = f"Error restarting Web Wireshark: {str(e)}"
+            log.error(error_msg)
+            raise ControllerError(error_msg)
+
     def pcap_streaming_url(self):
         """
         Get the PCAP streaming URL on compute

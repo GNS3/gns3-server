@@ -112,6 +112,33 @@ async def cmd_stop(args) -> int:
         await manager.close()
 
 
+async def cmd_restart(args) -> int:
+    """Restart Web Wireshark session.
+
+    Args:
+        args: Command line arguments
+
+    Returns:
+        Exit code (0 for success)
+    """
+    manager = WebWiresharkManager()
+    try:
+        result = await manager.restart_wireshark_session(
+            project_id=args.project_id,
+            link_id=args.link_id,
+            jwt_token=args.jwt_token,
+            capture_stream_url=args.capture_url
+        )
+        print(json.dumps(result, indent=2))
+        return 0
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
+        return 1
+    finally:
+        await manager.close()
+
+
 async def cmd_stop_all(args) -> int:
     """Stop all Web Wireshark sessions for a project.
 
@@ -250,6 +277,16 @@ def create_parser() -> argparse.ArgumentParser:
     stop_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
     stop_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
 
+    # Restart command
+    restart_parser = subparsers.add_parser("restart", help="Restart Web Wireshark session")
+    restart_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
+    restart_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
+    restart_parser.add_argument("--jwt-token", required=True, help="JWT token")
+    restart_parser.add_argument(
+        "--capture-url",
+        help="Capture stream URL (auto-detected if not provided)"
+    )
+
     # Stop all command
     stop_all_parser = subparsers.add_parser("stop-all", help="Stop all sessions")
     stop_all_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
@@ -283,6 +320,7 @@ async def main() -> int:
     commands = {
         "start": cmd_start,
         "stop": cmd_stop,
+        "restart": cmd_restart,
         "stop-all": cmd_stop_all,
         "delete": cmd_delete,
         "stop-container": cmd_stop_container,

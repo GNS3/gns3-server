@@ -257,6 +257,33 @@ async def stop_capture(link: Link = Depends(dep_link)) -> None:
     await link.stop_capture()
 
 
+@router.post(
+    "/{link_id}/capture/wireshark/restart",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(has_privilege("Link.Capture"))]
+)
+async def restart_wireshark(
+    http_request: Request,
+    link: Link = Depends(dep_link)
+) -> dict:
+    """
+    Restart Wireshark window without stopping the capture.
+
+    This allows recovery after accidentally closing the Wireshark window.
+
+    Required privilege: Link.Capture
+    """
+    # Extract JWT token from Authorization header
+    auth_header = http_request.headers.get("Authorization", "")
+    jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
+
+    if not jwt_token:
+        raise ControllerError("JWT token is required for Web Wireshark restart")
+
+    await link._restart_web_wireshark(jwt_token)
+    return {"status": "restarted"}
+
+
 @router.get(
     "/{link_id}/capture/stream",
     dependencies=[Depends(has_privilege("Link.Capture"))]
