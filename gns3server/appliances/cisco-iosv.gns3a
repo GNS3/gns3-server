@@ -30,77 +30,77 @@
             "version": "15.9(3)M9",
             "md5sum": "01b707a2e33185d6d33e0255ced45d23",
             "filesize": 57323008,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m8.qcow2",
             "version": "15.9(3)M8",
             "md5sum": "8d93a185c2fa778178a933f20b02150a",
             "filesize": 57319424,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m6.qcow2",
             "version": "15.9(3)M6",
             "md5sum": "49a6977977263b2774bebc56e4e678ff",
             "filesize": 57309696,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m4.qcow2",
             "version": "15.9(3)M4",
             "md5sum": "355b13ab821e64e2939fd7008d6304d7",
             "filesize": 57297920,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m3.qcow2",
             "version": "15.9(3)M3",
             "md5sum": "12893843af18e4c62f13d07266755653",
             "filesize": 57296384,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m2.qcow2",
             "version": "15.9(3)M2",
             "md5sum": "a19e998bc3086825c751d125af722329",
             "filesize": 57308672,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.spa.158-3.m2.qcow2",
             "version": "15.8(3)M2",
             "md5sum": "40e3d25b5b0cb13d639fcd2cf18e9965",
             "filesize": 57129984,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.157-3.M3",
             "version": "15.7(3)M3",
             "md5sum": "37c148ffa14a82f418a6e9c2b049fafe",
             "filesize": 134021120,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
             "version": "15.6(2)T",
             "md5sum": "83707e3cc93646da58ee6563a68002b5",
             "filesize": 128450560,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.156-1.T",
             "version": "15.6(1)T",
             "md5sum": "e7cb1bbd0c59280dd946feefa68fa270",
             "filesize": 128122880,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.155-3.M",
             "version": "15.5(3)M",
             "md5sum": "79f613ac3b179d5a64520730925130b2",
             "filesize": 127926272,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "IOSv_startup_config.img",

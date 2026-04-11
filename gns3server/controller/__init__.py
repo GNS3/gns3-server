@@ -288,7 +288,7 @@ class Controller:
         try:
             os.makedirs(os.path.dirname(self._vars_file), exist_ok=True)
             with open(self._vars_file, 'w+') as f:
-                json.dump(controller_vars, f, indent=4)
+                json.dump(controller_vars, f, indent=4, sort_keys=True)
         except OSError as e:
             log.error(f"Cannot write controller vars file '{self._vars_file}': {e}")
 

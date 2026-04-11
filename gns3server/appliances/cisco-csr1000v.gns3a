@@ -134,21 +134,21 @@
             "version": "16.5.1b",
             "md5sum": "ac11d33041b8ff6dc3553e324d02cccb",
             "filesize": 1209543680,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2",
             "version": "3.17",
             "md5sum": "06cbfcd11f3557391db64fe2a6015a6e",
             "filesize": 1346305024,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "csr1000v-universalk9.16.3.1-build2.qcow2",
             "version": "16.3.1-build2",
             "md5sum": "a770e96de928265515304c9c9d6b46b9",
             "filesize": 1280835584,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "csr1000v-universalk9.16.03.01.qcow2",
@@ -162,21 +162,21 @@
             "version": "16.3.2",
             "md5sum": "2e5803d23cd52cba5d55fa8306be5f13",
             "filesize": 1167720448,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "csr1000v-universalk9.16.4.1.qcow2",
             "version": "16.4.1",
             "md5sum": "3428e0dcf5132a1b11ab7696d8c61b2e",
             "filesize": 1261961216,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "csr1000v-universalk9.16.6.1.qcow2",
             "version": "16.6.1-VIRL",
             "md5sum": "996eb6dbf54781f6393bd689571a818c",
             "filesize": 1316301824,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         }
     ],
     "versions": [

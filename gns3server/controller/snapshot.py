@@ -36,32 +36,47 @@ import logging
 log = logging.getLogger(__name__)
 
 
+# Used to extract the date and time from the filename
+FILENAME_DATETIME_FORMAT = "%d%m%y_%H%M%S"
+
+# Used to create a description of the snapshot with a human-readable date and time
+DESCRIPTION_DATETIME_FORMAT = "%Y-%m-%d at %H:%M:%S"
+
 class Snapshot:
     """
     A snapshot object
     """
 
-    def __init__(self, project, name=None, filename=None):
+    def __init__(self, project, snapshot_id=None, name=None, filename=None, created_at=None, description=None):
 
         assert filename or name, "You need to pass a name or a filename"
 
-        self._id = str(
-            uuid.uuid4()
-        )  # We don't need to keep id between project loading because they are use only as key for operation like delete, update.. but have no impact on disk
+        if snapshot_id:
+            self._id = snapshot_id
+        else:
+            self._id = str(uuid.uuid4())
+
         self._project = project
         if name:
             self._name = name
-            self._created_at = datetime.now(timezone.utc).timestamp()
-            filename = (
-                self._name
-                + "_"
-                + datetime.fromtimestamp(self._created_at, tz=timezone.utc).replace(tzinfo=None).strftime("%d%m%y_%H%M%S")
-                + ".gns3project"
-            )
+
+            if created_at:
+                self._created_at = created_at
+            else:
+                self._created_at = int(datetime.now(timezone.utc).timestamp())
+            if not filename:
+                filename = self._name + ".gns3snapshot"
         else:
             self._name = filename.rsplit("_", 2)[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
-            self._created_at = (datetime.strptime(datestring, "%d%m%y_%H%M%S").replace(tzinfo=timezone.utc).timestamp())
+            self._created_at = int(datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=timezone.utc).timestamp())
+
+        if not description:
+            date = datetime.fromtimestamp(self._created_at, tz=timezone.utc).replace(tzinfo=None).strftime(DESCRIPTION_DATETIME_FORMAT)
+            description = "Snapshot '{}' taken on {}".format(self._name, date)
+
+        self._description = description
+        self._filename = filename
         self._path = os.path.join(project.path, "snapshots", filename)
 
     @property
@@ -73,12 +88,16 @@ class Snapshot:
         return self._name
 
     @property
+    def description(self):
+        return self._description
+
+    @property
     def path(self):
         return self._path
 
     @property
     def created_at(self):
-        return int(self._created_at)
+        return self._created_at
 
     async def create(self):
         """
@@ -117,14 +136,22 @@ class Snapshot:
         await self._project.close(ignore_notification=True)
 
         try:
+            begin = time.time()
             # delete the current project files
             project_files_path = os.path.join(self._project.path, "project-files")
             if os.path.exists(project_files_path):
                 await wait_run_in_executor(shutil.rmtree, project_files_path)
             with open(self._path, "rb") as f:
-                project = await import_project(self._project.controller, self._project.id, f, location=self._project.path,
-                                               auto_start=self._project.auto_start, auto_open=self._project.auto_open,
-                                               auto_close=self._project.auto_close)
+                project = await import_project(
+                    self._project.controller,
+                    self._project.id,
+                    f,
+                    location=self._project.path,
+                    auto_start=self._project.auto_start,
+                    auto_open=self._project.auto_open,
+                    auto_close=self._project.auto_close
+                )
+            log.info("Snapshot '{}' restored in {:.4f} seconds".format(self.name, time.time() - begin))
         except (OSError, PermissionError) as e:
             raise ControllerError(str(e))
         await project.open()
@@ -135,6 +162,8 @@ class Snapshot:
         return {
             "snapshot_id": self._id,
             "name": self._name,
-            "created_at": int(self._created_at),
-            "project_id": self._project.id,
+            "created_at": self._created_at,
+            "description": self._description,
+            "filename": self._filename,
+            "project_id": self._project.id
         }

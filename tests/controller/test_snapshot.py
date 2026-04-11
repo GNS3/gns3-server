@@ -16,20 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from uuid import uuid4
 
-from gns3server.controller.project import Project
+import pytest
+from unittest import mock
+from unittest.mock import patch, MagicMock
 from gns3server.controller.snapshot import Snapshot
 
 from tests.utils import AsyncioMagicMock
-
-
-# @pytest.fixture
-# def project(controller):
-#     project = Project(controller=controller, name="Test")
-#     controller._projects[project.id] = project
-#     return project
 
 
 def test_snapshot_name(project):
@@ -40,12 +34,7 @@ def test_snapshot_name(project):
     snapshot = Snapshot(project, name="test1")
     assert snapshot.name == "test1"
     assert snapshot._created_at > 0
-    assert snapshot.path.startswith(os.path.join(project.path, "snapshots", "test1_"))
-    assert snapshot.path.endswith(".gns3project")
-
-    # Check if UTC conversion doesn't corrupt the path
-    snap2 = Snapshot(project, filename=os.path.basename(snapshot.path))
-    assert snap2.path == snapshot.path
+    assert snapshot.path == os.path.join(project.path, "snapshots", "test1.gns3snapshot")
 
 
 def test_snapshot_filename(project):
@@ -53,22 +42,44 @@ def test_snapshot_filename(project):
     Test create a snapshot object with a filename
     """
 
+    # legacy snapshot
     snapshot = Snapshot(project, filename="test1_260716_100439.gns3project")
     assert snapshot.name == "test1"
-    assert snapshot._created_at == 1469527479.0
+    assert snapshot._created_at == 1469527479
     assert snapshot.path == os.path.join(project.path, "snapshots", "test1_260716_100439.gns3project")
+
+    # new style snapshot
+    snapshot_id = str(uuid4())
+    snapshot = Snapshot(project, snapshot_id=snapshot_id, name="test2", created_at=1469527479)
+    assert snapshot.id == snapshot_id
+    assert snapshot.name == "test2"
+    assert snapshot.path == os.path.join(project.path, "snapshots", "test2.gns3snapshot")
+    assert snapshot._created_at == 1469527479
 
 
 def test_json(project):
 
+    # legacy snapshot
     snapshot = Snapshot(project, filename="snapshot_test_260716_100439.gns3project")
     assert snapshot.asdict() == {
         "snapshot_id": snapshot._id,
         "name": "snapshot_test",
         "project_id": project.id,
+        "description": "Snapshot 'snapshot_test' taken on 2016-07-26 at 10:04:39",
+        "filename": "snapshot_test_260716_100439.gns3project",
         "created_at": 1469527479
     }
 
+    # new style snapshot
+    snapshot = Snapshot(project, name="snapshot_test2")
+    assert snapshot.__json__() == {
+        "snapshot_id": snapshot._id,
+        "name": "snapshot_test2",
+        "project_id": project.id,
+        "filename": "snapshot_test2.gns3snapshot",
+        "description": mock.ANY,
+        "created_at": mock.ANY
+    }
 
 def test_invalid_snapshot_filename(project):
 
@@ -86,7 +97,8 @@ async def test_restore(project, controller, config):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    await project.add_node(compute, "test1", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node1_id = str(uuid4())
+    await project.add_node(compute, "test1", node1_id, node_type="vpcs", properties={"startup_config": "test.cfg"})
     snapshot = await project.snapshot(name="test")
 
     # We add a node after the snapshots
@@ -103,8 +115,11 @@ async def test_restore(project, controller, config):
     controller._notification = MagicMock()
     await snapshot.restore()
 
+    # make sure the original node IDs are restored
+    assert list(project.nodes.keys())[0] == node1_id
+
     assert "snapshot.restored" in [c[0][0] for c in controller.notification.project_emit.call_args_list]
-    # project.closed notification should not be send when restoring snapshots
+    # project.closed notification should not be sent when restoring snapshots
     assert "project.closed" not in [c[0][0] for c in controller.notification.project_emit.call_args_list]
 
     project = controller.get_project(project.id)

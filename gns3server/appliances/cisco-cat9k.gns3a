@@ -31,14 +31,14 @@
             "version": "17.12(1)",
             "md5sum": "e587e92186f42bdf69d7fa27f34425f7",
             "filesize": 2739404800,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "cat9kv-prd-17.10.01prd7.qcow2",
             "version": "17.10(1)",
             "md5sum": "ffdbace33d31deae33e2a920a96b79ef",
             "filesize": 2155806720,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         }
     ],
     "versions": [

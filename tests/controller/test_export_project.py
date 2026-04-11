@@ -70,7 +70,6 @@ def test_exportable_files():
     assert not _is_exportable("project-files/tmp")
     assert not _is_exportable("project-files/test_log.txt")
     assert not _is_exportable("project-files/test.log")
-    assert not _is_exportable("test/snapshots")
     assert not _is_exportable("test/project-files/snapshots")
     assert not _is_exportable("test/project-files/snapshots/test.gns3p")
 

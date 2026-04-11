@@ -18,7 +18,7 @@
     "port_name_format": "ge-0/0/{port0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
-        "adapters": 10,
+        "adapters": 11,
         "ram": 5120,
         "cpus": 4,
         "hda_disk_interface": "virtio",
