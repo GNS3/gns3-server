@@ -239,8 +239,6 @@ class DockerHTTPClient:
         Returns:
             List of process dicts with keys: PID, USER, COMMAND, etc.
         """
-        # Note: Docker API /containers/{id}/top returns text, not JSON
-        # We need to use the session directly to get text response
         if not self._connected:
             await self._check_connection()
 
@@ -253,30 +251,24 @@ class DockerHTTPClient:
                     if response.status >= 300:
                         error_text = await response.text()
                         raise RuntimeError(f"Docker API error {response.status}: {error_text}")
-                    result = await response.text()
+                    result = await response.json()
         except asyncio.TimeoutError:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for containers/{container_name}/top")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e
 
-        # Docker API returns text format like:
-        # USER    PID ... COMMAND
-        # root      1 ... tail -f /dev/null
-        # We need to parse this
+        # Docker API returns JSON format:
+        # {"Processes": [["yueguob+", "259847", ...], [...]], "Titles": ["USER", "PID", "%CPU", ...]}
+        # Headers are in "Titles" key, data rows are in "Processes"
 
-        lines = result.strip().split('\n')
-        if len(lines) < 2:
+        headers = result.get("Titles", [])
+        processes_data = result.get("Processes", [])
+        if not headers or not processes_data:
             return []
 
-        # First line is header
-        headers = lines[0].split()
         processes = []
-
-        for line in lines[1:]:
-            if not line.strip():
-                continue
-            values = line.split(None, len(headers) - 1)
-            if len(values) < len(headers):
+        for values in processes_data:
+            if not values or len(values) < len(headers):
                 continue
 
             proc = {}

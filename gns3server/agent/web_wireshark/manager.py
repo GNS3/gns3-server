@@ -123,52 +123,35 @@ class WebWiresharkManager:
             return (-1, "", str(e))
 
     async def _kill_process_tree(self, container_id: str, pattern: str) -> None:
-        """Kill all processes matching pattern using Docker API.
+        """Kill all processes matching pattern inside the container.
 
-        Queries Docker API for process list and kills matching PIDs directly.
-        This avoids creating zombie pkill processes.
+        Uses pgrep inside the container to get container-local PIDs, then kills them.
+        This avoids the issue where Docker API returns host PIDs instead of container PIDs.
 
         Args:
             container_id: Container ID
             pattern: Process pattern to match (regex applied to COMMAND field)
         """
         try:
-            # Get process list from Docker API
-            # Docker API accepts both container ID and name in /containers/{id}/top
-            processes = await self.docker.list_processes(container_id)
+            # Get container-local PIDs using pgrep inside the container
+            pgrep_cmd = f"sh -c 'pgrep -f \"{pattern}\" || true'"
+            returncode, stdout, stderr = await self._exec_in_container(container_id, pgrep_cmd)
+            pids_str = stdout.strip()
 
-            if not processes:
-                logger.debug(f"No processes found in container {container_id[:12]}")
+            if not pids_str:
+                logger.debug(f"No processes found matching pattern '{pattern}'")
                 return
 
-            # Compile regex pattern for matching COMMAND field
-            pattern_re = re.compile(pattern)
+            pids = pids_str.replace('\n', ' ')
+            logger.info(f"Found matching processes for '{pattern}': PIDs={pids}")
 
-            # Find PIDs matching the pattern
-            matching_pids = []
-            for proc in processes:
-                command = proc.get("COMMAND", "")
-                pid = proc.get("PID", "")
-
-                if command and pid:
-                    # Match using regex pattern
-                    if pattern_re.search(command):
-                        matching_pids.append(pid)
-
-            if matching_pids:
-                logger.info(f"Killing {len(matching_pids)} processes matching '{pattern}': {matching_pids}")
-                # Kill all matching PIDs in one command to avoid zombie processes
-                pids_str = " ".join(matching_pids)
-                kill_cmd = f"exec kill -9 {pids_str} 2>/dev/null || true"
-                await self._exec_in_container(container_id, kill_cmd)
-            else:
-                logger.debug(f"No processes found matching pattern '{pattern}'")
+            # Kill the processes using their container-local PIDs
+            kill_cmd = f"kill -9 {pids} 2>/dev/null || true"
+            returncode, stdout, stderr = await self._exec_in_container(container_id, kill_cmd)
+            logger.debug(f"Kill result: returncode={returncode}")
 
         except Exception as e:
-            logger.warning(f"Error using Docker API to kill processes (fallback to pkill): {e}")
-            # Fallback to pkill if Docker API fails
-            cmd = f"exec pkill -9 -f '{pattern}' 2>/dev/null || true"
-            await self._exec_in_container(container_id, cmd)
+            logger.error(f"Error killing processes matching '{pattern}': {e}")
 
     async def _cleanup_x_lock(self, container_id: str, display: int) -> None:
         """Remove X lock file and xpra socket files for a display.
@@ -178,18 +161,16 @@ class WebWiresharkManager:
             display: Display number (e.g., 10210)
         """
         # Clean up X lock files
-        await self._exec_in_container(
-            container_id,
-            f"exec rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} 2>/dev/null || true"
-        )
+        cmd = f"rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} 2>/dev/null || true"
+        returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
+        logger.debug(f"Cleanup X locks: returncode={returncode}")
 
         # Clean up xpra socket files
-        await self._exec_in_container(
-            container_id,
-            f"exec rm -f /run/user/1000/xpra/{display}/socket "
-            f"/run/user/1000/xpra/*-{display} "
-            f"/home/gns3/.xpra/*-{display} 2>/dev/null || true"
-        )
+        cmd = (f"rm -f /run/user/1000/xpra/{display}/socket "
+               f"/run/user/1000/xpra/*-{display} "
+               f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
+        returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
+        logger.debug(f"Cleanup xpra sockets: returncode={returncode}")
 
     @staticmethod
     def _parse_memory(memory_str: str) -> int:
