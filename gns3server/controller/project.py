@@ -46,7 +46,7 @@ from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
 from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
-from .import_project import import_project, _move_node_file
+from .import_project import import_project, update_snapshots, regenerate_topology_ids
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 
 import logging
@@ -120,6 +120,7 @@ class Project:
         self._variables = variables
         self._supplier = supplier
         self._created_by = created_by
+        self._snapshots_config_file = "snapshots.conf"
 
         self._loading = False
         self._closing = False
@@ -210,19 +211,7 @@ class Project:
         self._drawings = {}
         self._snapshots = {}
         self._computes = []
-
-        # List the available snapshots
-        snapshot_dir = os.path.join(self.path, "snapshots")
-        if os.path.exists(snapshot_dir):
-            for snap in os.listdir(snapshot_dir):
-                if snap.endswith(".gns3project"):
-                    try:
-                        snapshot = Snapshot(self, filename=snap)
-                    except ValueError:
-                        log.error("Invalid snapshot file: {}".format(snap))
-                        continue
-                    self._snapshots[snapshot.id] = snapshot
-
+        self._load_snapshot_config()
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
 
@@ -812,6 +801,59 @@ class Project:
         except KeyError:
             raise ControllerNotFoundError(f"Snapshot ID {snapshot_id} doesn't exist")
 
+    def _load_snapshot_config(self):
+
+        snapshot_dir = os.path.join(self.path, "snapshots")
+        self._snapshot_conf_path = os.path.join(snapshot_dir, self._snapshots_config_file)
+        self._snapshot_conf = []
+        if os.path.isfile(self._snapshot_conf_path):
+            try:
+                with open(self._snapshot_conf_path, encoding="utf-8") as f:
+                    self._snapshot_conf = json.load(f)
+            except (OSError, UnicodeDecodeError, ValueError) as e:
+                raise ControllerError(f"Could not read snapshot config {e}")
+
+        # Load all legacy snapshots (.gns3project files) to create an initial snapshot config if it doesn't exist
+        if os.path.exists(snapshot_dir) and not self._snapshot_conf:
+            for snap in os.listdir(snapshot_dir):
+                if snap.endswith(".gns3project"):
+                    try:
+                        snapshot = Snapshot(self, filename=snap)
+                    except ValueError:
+                        log.error("Invalid snapshot file: {}".format(snap))
+                        continue
+                    self._snapshots[snapshot.id] = snapshot
+        else:
+            # Create the Snapshot instances from the snapshot config file
+            for snapshot_entry in self._snapshot_conf:
+                try:
+                    path = os.path.join(snapshot_dir, snapshot_entry["filename"])
+                    if not os.path.isfile(path):
+                        log.warning("Snapshot file '{}' does not exist".format(path))
+                        continue
+                    snapshot_entry.pop("project_id")
+                    snapshot = Snapshot(self, **snapshot_entry)
+                    self._snapshots[snapshot.id] = snapshot
+                except KeyError:
+                    log.error("Invalid entry in snapshot config file: {}".format(snapshot_entry))
+                    continue
+
+        self._save_snapshot_config()
+
+    def _save_snapshot_config(self):
+
+        if not self._snapshots:
+            return
+
+        self._snapshot_conf = []
+        for snapshot in self._snapshots.values():
+            self._snapshot_conf.append(snapshot.asdict())
+        try:
+            with open(self._snapshot_conf_path, 'w+') as f:
+                json.dump(self._snapshot_conf, f, indent=4)
+        except OSError as e:
+            log.error("Cannot write snapshot config '{}': {}".format(self._snapshot_conf_path, e))
+
     @open_required
     async def snapshot(self, name):
         """
@@ -825,12 +867,14 @@ class Project:
         snapshot = Snapshot(self, name=name)
         await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
+        self._save_snapshot_config()
         return snapshot
 
     @open_required
     async def delete_snapshot(self, snapshot_id):
         snapshot = self.get_snapshot(snapshot_id)
         del self._snapshots[snapshot.id]
+        self._save_snapshot_config()
         os.remove(snapshot.path)
 
     @locking
@@ -1091,7 +1135,7 @@ class Project:
     def _get_default_project_directory(cls):
         """
         Return the default location for the project directory
-        depending of the operating system
+        depending on the operating system
         """
 
         server_config = Config.instance().settings.Server
@@ -1298,8 +1342,8 @@ class Project:
                         self,
                         tmpdir,
                         keep_compute_ids=True,
-                        allow_all_nodes=True,
-                        reset_mac_addresses=reset_mac_addresses,
+                        include_snapshots=True,
+                        allow_all_nodes=True
                     )
 
                     # export the project to a temporary location
@@ -1309,13 +1353,15 @@ class Project:
                         async for chunk in zstream:
                             await f.write(chunk)
 
-                    # import the temporary project
+                    new_project_id = str(uuid.uuid4())
+                    # import the duplicated project
                     with open(project_path, "rb") as f:
                         project = await import_project(
                             self._controller,
-                            str(uuid.uuid4()),
+                            new_project_id,
                             f,
                             name=name,
+                            reset_mac_addresses=reset_mac_addresses,
                             keep_compute_ids=True
                         )
 
@@ -1326,6 +1372,62 @@ class Project:
         if previous_status == "closed":
             await self.close()
 
+        return project
+
+    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+        """
+        Fast duplication of a project.
+
+        Copy the project files directly rather than in an import-export fashion.
+
+        :param name: Name of the new project. A new one will be generated in case of conflicts
+        :param location: Parent directory of the new project
+        :param reset_mac_addresses: Reset MAC addresses for the duplicated project
+        """
+
+        # remote replication is not supported with remote computes
+        for compute in self.computes:
+            if compute.id != "local":
+                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
+                return None
+        # work dir
+        p_work = pathlib.Path(location or self.path).parent.absolute()
+        t0 = time.time()
+        new_project_id = str(uuid.uuid4())
+        if location:
+            new_project_path = p_work.joinpath(location)
+        else:
+            new_project_path = p_work.joinpath(new_project_id)
+        # copy dir
+        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
+        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
+        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
+        project_name = name or topology["name"]
+        # If the project name is already used we generate a new one
+        project_name = self.controller.get_free_project_name(project_name)
+        topology["name"] = project_name
+        # To avoid unexpected behavior (project start without manual operations just after import)
+        topology["auto_start"] = False
+        topology["auto_open"] = False
+        topology["auto_close"] = False
+
+        # regenerate IDs for the duplicated project
+        regenerate_topology_ids(topology, new_project_path, reset_mac_addresses)
+
+        # dump the updated .gns3 project file
+        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
+        topology["project_id"] = new_project_id
+        with open(dot_gns3_path, "w+") as f:
+            json.dump(topology, f, indent=4, sort_keys=True)
+
+        # update the snapshots with new IDs
+        snapshots_dir = os.path.join(new_project_path, "snapshots")
+        if os.path.isdir(snapshots_dir):
+            await update_snapshots(snapshots_dir, new_project_path, project_name, new_project_id)
+
+        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
+        project = await self.controller.load_project(dot_gns3_path, load=False)
+        log.info("Project '{}': fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
         return project
 
     def is_running(self):
@@ -1472,7 +1574,13 @@ class Project:
         data["z"] = z
         data["locked"] = False  # duplicated node must not be locked
         new_node_uuid = str(uuid.uuid4())
-        new_node = await self.add_node(node.compute, node.name, new_node_uuid, node_type=node_type, **data)
+        new_node = await self.add_node(
+            node.compute,
+            node.name,
+            new_node_uuid,
+            node_type=node_type,
+            **data
+        )
         try:
             await node.post("/duplicate", timeout=None, data={"destination_node_id": new_node_uuid})
         except ControllerNotFoundError:
@@ -1519,68 +1627,3 @@ class Project:
     def __repr__(self):
         return f"<gns3server.controller.Project {self._name} {self._id}>"
 
-    async def _fast_duplication(self, name=None, reset_mac_addresses=True):
-        """
-        Fast duplication of a project.
-
-        Copy the project files directly rather than in an import-export fashion.
-
-        :param name: Name of the new project. A new one will be generated in case of conflicts
-        :param reset_mac_addresses: Reset MAC addresses for the new project
-        """
-
-        # remote replication is not supported with remote computes
-        for compute in self.computes:
-            if compute.id != "local":
-                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
-                return None
-        # work dir
-        p_work = pathlib.Path(self.path).parent.absolute()
-        t0 = time.time()
-        new_project_id = str(uuid.uuid4())
-        new_project_path = p_work.joinpath(new_project_id)
-        # copy dir
-        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
-        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
-        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
-        project_name = name or topology["name"]
-        # If the project name is already used we generate a new one
-        project_name = self.controller.get_free_project_name(project_name)
-        topology["name"] = project_name
-        # To avoid unexpected behavior (project start without manual operations just after import)
-        topology["auto_start"] = False
-        topology["auto_open"] = False
-        topology["auto_close"] = False
-        # change node ID
-        node_old_to_new = {}
-        for node in topology["topology"]["nodes"]:
-            new_node_id = str(uuid.uuid4())
-            if "node_id" in node:
-                node_old_to_new[node["node_id"]] = new_node_id
-                _move_node_file(new_project_path, node["node_id"], new_node_id)
-            node["node_id"] = new_node_id
-            if reset_mac_addresses:
-                if "properties" in node:
-                    for prop, value in node["properties"].items():
-                        # reset the MAC address
-                        if prop in ("mac_addr", "mac_address"):
-                            node["properties"][prop] = None
-        # change link ID
-        for link in topology["topology"]["links"]:
-            link["link_id"] = str(uuid.uuid4())
-            for node in link["nodes"]:
-                node["node_id"] = node_old_to_new[node["node_id"]]
-        # Generate new drawings id
-        for drawing in topology["topology"]["drawings"]:
-            drawing["drawing_id"] = str(uuid.uuid4())
-
-        # And we dump the updated.gns3
-        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
-        topology["project_id"] = new_project_id
-        with open(dot_gns3_path, "w+") as f:
-            json.dump(topology, f, indent=4)
-
-        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
-        project = await self.controller.load_project(dot_gns3_path, load=False)
-        log.info("Project '{}' fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
-        return project

@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.2.58 10/04/2026
+
+* Bundle web-ui v2.2.58
+* Sync appliances
+* Snapshot refactoring
+
 ## 2.2.57 23/03/2026
 
 * feat(telnet_server): improve error handling and connection management

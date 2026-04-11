@@ -40,8 +40,18 @@ Handle the import of project from a .gns3project
 """
 
 
-async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_ids=False,
-                         auto_start=False, auto_open=False, auto_close=True):
+async def import_project(
+        controller,
+        project_id,
+        stream,
+        location=None,
+        name=None,
+        reset_mac_addresses=False,
+        keep_compute_ids=False,
+        auto_start=False,
+        auto_open=False,
+        auto_close=True,
+):
     """
     Import a project contain in a zip file
 
@@ -52,7 +62,9 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     :param stream: A io.BytesIO of the zipfile
     :param location: Directory for the project if None put in the default directory
     :param name: Wanted project name, generate one from the .gns3 if None
+    :param reset_mac_addresses: Reset MAC addresses for each node
     :param keep_compute_ids: keep compute IDs unchanged
+    :param project_name: Original project name when restoring a snapshot
 
     :returns: Project
     """
@@ -73,12 +85,14 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         # We import the project on top of an existing project (snapshots)
         if topology["project_id"] == project_id:
             project_name = topology["name"]
+            restoring_snapshot = True
         else:
             # If the project name is already used we generate a new one
             if name:
                 project_name = controller.get_free_project_name(name)
             else:
                 project_name = controller.get_free_project_name(topology["name"])
+            restoring_snapshot = False
     except (ValueError, KeyError):
         raise ControllerError("Cannot import project, the project.gns3 file is corrupted")
 
@@ -106,27 +120,11 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     topology["auto_open"] = auto_open
     topology["auto_close"] = auto_close
 
-    # Generate a new node id
-    node_old_to_new = {}
-    for node in topology["topology"]["nodes"]:
-        if "node_id" in node:
-            node_old_to_new[node["node_id"]] = str(uuid.uuid4())
-            _move_node_file(path, node["node_id"], node_old_to_new[node["node_id"]])
-            node["node_id"] = node_old_to_new[node["node_id"]]
-        else:
-            node["node_id"] = str(uuid.uuid4())
+    if not restoring_snapshot:
+        # Do not re-generate IDs if we are restoring a snapshot because they should be the same in a project
+        regenerate_topology_ids(topology, path, reset_mac_addresses=reset_mac_addresses)
 
-    # Update link to use new id
-    for link in topology["topology"]["links"]:
-        link["link_id"] = str(uuid.uuid4())
-        for node in link["nodes"]:
-            node["node_id"] = node_old_to_new[node["node_id"]]
-
-    # Generate new drawings id
-    for drawing in topology["topology"]["drawings"]:
-        drawing["drawing_id"] = str(uuid.uuid4())
-
-    # Modify the compute id of the node depending of compute capacity
+    # Modify the compute id of the node depending on compute capacity
     if not keep_compute_ids:
         # For some VM type we move them to the GNS3 VM if possible
         # unless it's a linux host without GNS3 VM
@@ -136,14 +134,6 @@ async def import_project(controller, project_id, stream, location=None, name=Non
                     node["compute_id"] = "vm"
         else:
             # Round-robin through available compute resources.
-            # computes = []
-            # for compute_id in controller.computes:
-            #     compute = controller.get_compute(compute_id)
-            #     # only use the local compute or any connected compute
-            #     if compute_id == "local" or compute.connected:
-            #         computes.append(compute_id)
-            #     else:
-            #         log.warning(compute.name, "is not connected!")
             compute_nodes = itertools.cycle(controller.computes)
             for node in topology["topology"]["nodes"]:
                 node["compute_id"] = next(compute_nodes)
@@ -171,7 +161,7 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     # We change the project_id to avoid erasing the project
     topology["project_id"] = project_id
     with open(dot_gns3_path, "w+") as f:
-        json.dump(topology, f, indent=4)
+        json.dump(topology, f, indent=4, sort_keys=True)
     os.remove(os.path.join(path, "project.gns3"))
 
     images_path = os.path.join(path, "images")
@@ -179,8 +169,8 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         await _import_images(controller, images_path)
 
     snapshots_path = os.path.join(path, "snapshots")
-    if os.path.exists(snapshots_path):
-        await _import_snapshots(snapshots_path, project_name, project_id)
+    if not restoring_snapshot and os.path.exists(snapshots_path):
+        await update_snapshots(snapshots_path, path, project_name, project_id, reset_mac_addresses=reset_mac_addresses)
 
     project = await controller.load_project(dot_gns3_path, load=False)
     return project
@@ -203,6 +193,41 @@ def _create_symbolic_links(zip_file, path):
                 os.symlink(symlink_target, symlink_path)
             except OSError as e:
                 raise ControllerError(f"Cannot create symbolic link: {e}")
+
+def regenerate_topology_ids(topology, new_project_path, reset_mac_addresses=False):
+    """
+    Regenerate IDs in the topology and move the files of the nodes to match the new IDs.
+    This is necessary because IDs must be unique across projects.
+
+    :param topology: topology content
+    :param new_project_path: new project path
+    :param reset_mac_addresses: reset MAC addresses
+    """
+
+    # Generate new node IDs
+    node_old_to_new = {}
+    for node in topology["topology"]["nodes"]:
+        new_node_id = str(uuid.uuid4())
+        if "node_id" in node:
+            node_old_to_new[node["node_id"]] = new_node_id
+            _move_node_file(new_project_path, node["node_id"], new_node_id)
+        node["node_id"] = new_node_id
+        if reset_mac_addresses:
+            if "properties" in node:
+                for prop, value in node["properties"].items():
+                    # reset the MAC address
+                    if prop in ("mac_addr", "mac_address"):
+                        node["properties"][prop] = None
+
+    # Generate new link IDs
+    for link in topology["topology"]["links"]:
+        link["link_id"] = str(uuid.uuid4())
+        for node in link["nodes"]:
+            node["node_id"] = node_old_to_new[node["node_id"]]
+
+    # Generate new drawings IDs
+    for drawing in topology["topology"]["drawings"]:
+        drawing["drawing_id"] = str(uuid.uuid4())
 
 def _move_node_file(path, old_id, new_id):
     """
@@ -272,16 +297,17 @@ async def _import_images(controller, images_path):
                 os.chmod(dst, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
 
 
-async def _import_snapshots(snapshots_path, project_name, project_id):
+async def update_snapshots(snapshots_dir, project_path, project_name, project_id, reset_mac_addresses=True):
     """
-    Import the snapshots and update their project name and ID to be the same as the main project.
+    Load the snapshots and update their project name and project ID to be the same as the main project.
+    Regenerate all the node, link and drawing IDs
     """
 
-    for snapshot in os.listdir(snapshots_path):
-        if not snapshot.endswith(".gns3project"):
+    for snapshot in os.listdir(snapshots_dir):
+        if not (snapshot.endswith(".gns3snapshot") or snapshot.endswith(".gns3project")):
             continue
-        snapshot_path = os.path.join(snapshots_path, snapshot)
-        with tempfile.TemporaryDirectory(dir=snapshots_path) as tmpdir:
+        snapshot_path = os.path.join(snapshots_dir, snapshot)
+        with tempfile.TemporaryDirectory(dir=snapshots_dir) as tmpdir:
 
             # extract everything to a temporary directory
             try:
@@ -301,9 +327,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                 topology_file_path = os.path.join(tmpdir, "project.gns3")
                 with open(topology_file_path, encoding="utf-8") as f:
                     topology = json.load(f)
-
                     topology["name"] = project_name
                     topology["project_id"] = project_id
+                    regenerate_topology_ids(topology, project_path, reset_mac_addresses)
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:
@@ -325,6 +351,7 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                     async with aiofiles.open(snapshot_path, "wb+") as f:
                         async for chunk in zstream:
                             await f.write(chunk)
+                log.info("Project '{}': updated and repacked snapshot file '{}'".format(project_name, snapshot))
             except OSError as e:
                 raise ControllerError(
                     f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}"

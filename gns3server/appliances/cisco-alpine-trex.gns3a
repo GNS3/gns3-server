@@ -1,0 +1,43 @@
+{
+    "appliance_id": "924a2ef5-7b91-45ae-a1e4-7220338b76b0",
+    "name": "Cisco Alpine Linux TRex",
+    "category": "guest",
+    "description": "Alpine Linux VM image configured to run Cisco's Trex traffic generator in stateless mode",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://trex-tgn.cisco.com/",
+    "product_name": "Alpine Linux Virt",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
+    "registry_version": 4,
+    "status": "beta",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "By default, a \"cisco\" account with password \"cisco\" is created.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 512,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "alpine-trex-3-21-3.qcow2",
+            "version": "2.87",
+            "md5sum": "54cf267bbc2ab7a1c71dc53bced6e128",
+            "filesize": 465174528,
+            "download_url": "https://u.cisco.com/my-learning/my-account"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.87",
+            "images": {
+                "hda_disk_image": "alpine-trex-3-21-3.qcow2"
+            }
+        }
+    ]
+}

@@ -31,21 +31,21 @@
             "version": "24.3.1",
             "md5sum": "bd047c457e29952f265583f299bab845",
             "filesize": 1704658432,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "xrv9k-fullk9-x-7.7.1.qcow2",
             "version": "7.7.1",
             "md5sum": "682fff40d2ff373d8da3342906553b54",
             "filesize": 1643905024,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         },
         {
             "filename": "xrv9k-fullk9-x-7.1.1.qcow2",
             "version": "7.1.1",
             "md5sum": "dcf241e3f8df0151fec2c7bfac9d96ac",
             "filesize": 1443758080,
-            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+            "download_url": "https://u.cisco.com/my-learning/my-account"
         }
     ],
     "versions": [

@@ -16,6 +16,7 @@
 
 
 from pydantic import BaseModel, Field
+from typing import Optional
 from uuid import UUID
 
 
@@ -24,8 +25,8 @@ class SnapshotBase(BaseModel):
     Common properties for snapshot.
     """
 
-    name: str
-
+    name: str = Field(..., description="Name of the snapshot")
+    description: Optional[str] = Field(None, description="Description of the snapshot")
 
 class SnapshotCreate(SnapshotBase):
     """
@@ -39,4 +40,7 @@ class Snapshot(SnapshotBase):
 
     snapshot_id: UUID
     project_id: UUID
+    name: str = Field(..., description="Name of the snapshot")
+    filename: str = Field(..., description="Filename of the snapshot")
+    description: str = Field(..., description="Description of the snapshot")
     created_at: int = Field(..., description="Date of the snapshot (UTC timestamp)")
