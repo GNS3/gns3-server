@@ -331,9 +331,6 @@ class Link:
         if not jwt_token:
             raise ControllerError("JWT token is required for Web Wireshark")
 
-        # Get capture stream URL from compute
-        capture_stream_url = self.pcap_streaming_url()
-
         manager = WebWiresharkManager()
         try:
             log.info(f"Starting Web Wireshark for link {self.id}")
@@ -341,8 +338,7 @@ class Link:
             result = await manager.start_wireshark_session(
                 project_id=self._project.id,
                 link_id=self.id,
-                jwt_token=jwt_token,
-                capture_stream_url=capture_stream_url
+                jwt_token=jwt_token
             )
 
             # Mark container as created
@@ -394,8 +390,6 @@ class Link:
             ControllerError: If restart fails
         """
         # Get capture stream URL from compute
-        capture_stream_url = self.pcap_streaming_url()
-
         manager = WebWiresharkManager()
         try:
             log.info(f"Restarting Web Wireshark for link {self.id}")
@@ -403,8 +397,7 @@ class Link:
             result = await manager.restart_wireshark_session(
                 project_id=self._project.id,
                 link_id=self.id,
-                jwt_token=jwt_token,
-                capture_stream_url=capture_stream_url
+                jwt_token=jwt_token
             )
 
             self._project.emit_notification("link.web_wireshark_started", {
