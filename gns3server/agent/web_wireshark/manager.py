@@ -390,6 +390,16 @@ class WebWiresharkManager:
         display = link_id_to_display(link_id)
         port = link_id_to_port(link_id)
 
+        # Clean up any existing processes on this display before starting
+        # This prevents "another window manager seems to be running" errors
+        logger.info(f"Cleaning up any existing processes on display :{display}")
+        await self._exec_in_container(
+            container_id,
+            f"pkill -f 'xpra.*:{display}' || true; "
+            f"pkill -f 'wireshark.*display :{display}' || true; "
+            f"pkill -f 'Xvfb.*:{display}' || true"
+        )
+
         # Prepare xpra command
         session_name = f"link-{link_id}"
         logger.info(f"Starting xpra session {session_name} on display :{display}")
@@ -488,11 +498,15 @@ class WebWiresharkManager:
             # Get display number
             display = link_id_to_display(link_id)
 
-            # Stop xpra session
-            logger.info(f"Stopping xpra session :{display}")
+            # Kill all processes associated with this display to ensure clean stop
+            # This kills wireshark, xpra, and Xvfb processes
+            logger.info(f"Stopping all processes on display :{display}")
             await self._exec_in_container(
                 container["Id"],
-                f"pkill -f 'xpra.*:{display}'"
+                f"pkill -f 'xpra.*:{display}' || true; "
+                f"pkill -f 'Xvfb.*:{display}' || true; "
+                f"pkill -f 'wireshark.*display :{display}' || true; "
+                f"pkill -f 'Xvfb-for-Xpra-{display}' || true"
             )
 
             logger.info("Web Wireshark session stopped successfully")
@@ -515,11 +529,13 @@ class WebWiresharkManager:
                 logger.warning(f"Container {container_name} not found")
                 return
 
-            # Stop all xpra sessions with single command (much faster than loop)
-            # This matches all xpra sessions with session-name starting with "link-"
+            # Kill all wireshark, xpra and Xvfb processes for link sessions
+            # This ensures clean removal of all session processes
             returncode, stdout, stderr = await self._exec_in_container(
                 container["Id"],
-                "pkill -f 'xpra.*--session-name=link-' || true"
+                "pkill -f 'xpra.*--session-name=link-' || true; "
+                "pkill -f 'wireshark.*display :' || true; "
+                "pkill -f 'Xvfb-for-Xpra-' || true"
             )
 
             if returncode == 0:

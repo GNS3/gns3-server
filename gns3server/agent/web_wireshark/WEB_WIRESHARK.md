@@ -417,6 +417,15 @@ docker ps -a | grep 'gns3-wireshark-test' | awk '{print $1}' | xargs -r docker r
 docker network ls | grep 'gns3-wireshark' | awk '{print $2}' | xargs -r docker network rm
 ```
 
+## Known Issues
+
+- JWT token is passed via command-line arguments (visible in `/proc/<pid>/cmdline`). Consider using a temporary file inside the container for improved security.
+- `cmd_delete_container` and `cmd_delete` in manage_wireshark.py are duplicate code.
+- `stop-container` and `delete-container` subcommands are defined but not registered in the commands dictionary.
+- `link_id_to_display` and `link_id_to_port` return the same value (10000-19999), which may cause confusion since xpra typically uses different display numbers and ports.
+- Container health check timeout (5 seconds) may be insufficient on slow systems.
+- Docker Unix socket connection error handling could be improved (FileNotFoundError not properly caught).
+
 ## Notes
 
 - Default uses `gns3/web-wireshark:latest` image
