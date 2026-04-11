@@ -3,6 +3,9 @@ FROM debian:trixie
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Set timezone to UTC
+ENV TZ=UTC
+
 # Set UTF-8 locale to avoid Qt warnings
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -22,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install xpra and dependencies
 # Lock xpra version for reproducible builds
-RUN apt-get install -y \
+RUN apt-get install -y --no-install-recommends \
     wireshark-common \
     wireshark \
     xpra=6.4.3* \
@@ -30,6 +33,10 @@ RUN apt-get install -y \
     curl \
     x11-utils \
     && rm -rf /var/lib/apt/lists/*
+
+# Metadata
+LABEL maintainer="YueGuobin <yueguobin@outlook.com>"
+LABEL description="Web Wireshark container with xpra for GNS3"
 
 # Create gns3 user
 RUN groupadd -g 1000 gns3 && \
