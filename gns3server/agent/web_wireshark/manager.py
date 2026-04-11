@@ -24,8 +24,12 @@ This module handles xpra session management for Web Wireshark containers.
 import asyncio
 import logging
 import re
+import socket
 from typing import Optional
+from urllib.parse import urlparse
 
+from gns3server.controller import Controller
+from gns3server.config import Config
 from gns3server.utils.port_allocator import link_id_to_display, link_id_to_port
 from .docker_client import DockerHTTPClient
 
@@ -119,6 +123,33 @@ class WebWiresharkManager:
             logger.error(f"Command execution failed: {e}")
             return (-1, "", str(e))
 
+    async def _kill_process_tree(self, container_id: str, pattern: str) -> None:
+        """Kill all processes matching pattern and their child processes.
+
+        Uses process group kill (-pid) to ensure child processes are terminated.
+        Uses exec to replace bash process and avoid zombie pkill processes.
+
+        Args:
+            container_id: Container ID
+            pattern: Process pattern to match (grep -f format)
+        """
+        # Use exec to replace bash, so pkill becomes the main process
+        # This avoids leaving zombie processes from subshells
+        cmd = f"exec pkill -9 -f '{pattern}' 2>/dev/null || true"
+        await self._exec_in_container(container_id, cmd)
+
+    async def _cleanup_x_lock(self, container_id: str, display: int) -> None:
+        """Remove X lock file for a display.
+
+        Args:
+            container_id: Container ID
+            display: Display number (e.g., 10210)
+        """
+        await self._exec_in_container(
+            container_id,
+            f"exec rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} 2>/dev/null || true"
+        )
+
     @staticmethod
     def _parse_memory(memory_str: str) -> int:
         """Parse memory string to bytes.
@@ -158,16 +189,12 @@ class WebWiresharkManager:
         Reference: gns3-copilot implementation.
         """
         try:
-            from gns3server.controller import Controller
             controller = Controller.instance()
             local_compute = controller.get_compute("local")
 
             url = f"{local_compute.protocol}://{local_compute.host}:{local_compute.port}"
             logger.info(f"Got GNS3 URL from Controller: {url}")
             return url
-        except ImportError as e:
-            logger.debug(f"Cannot import Controller: {e}")
-            return None
         except AttributeError as e:
             logger.debug(f"Controller instance not available: {e}")
             return None
@@ -181,7 +208,6 @@ class WebWiresharkManager:
     def _get_gns3_url_from_config(self) -> Optional[str]:
         """Get GNS3 server URL from config file."""
         try:
-            from gns3server.config import Config
             server_config = Config.instance().settings.Server
             url = f"{server_config.protocol.value}://{server_config.host}:{server_config.port}"
             logger.info(f"Got GNS3 URL from Config: {url}")
@@ -190,8 +216,83 @@ class WebWiresharkManager:
             logger.debug(f"Cannot get URL from Config: {e}")
         return None
 
+    async def _get_container_gateway_ip(self, container_id: str) -> Optional[str]:
+        """Get the Docker bridge gateway IP for container to access host.
+
+        Args:
+            container_id: Container ID
+
+        Returns:
+            Gateway IP (e.g., 172.31.0.1) or None if not detectable
+        """
+        try:
+            # Method 1: Read from /proc/net/route
+            returncode, stdout, stderr = await self._exec_in_container(
+                container_id,
+                "cat /proc/net/route | grep -E '^eth0\\s+00000000' | awk '{print $3}' | head -1"
+            )
+            logger.info(f"Gateway detection - Method 1: returncode={returncode}, stdout='{stdout}', stderr='{stderr}'")
+            if returncode == 0 and stdout.strip():
+                gateway_hex = stdout.strip()
+                # Convert hex to dotted decimal
+                gateway_ip = socket.inet_ntoa(bytes.fromhex(gateway_hex)[::-1])
+                logger.info(f"Detected container gateway IP from route: {gateway_ip}")
+                return gateway_ip
+            else:
+                logger.info(f"Method 1 failed, trying Method 2")
+        except Exception as e:
+            logger.info(f"Cannot get gateway from /proc/net/route: {e}")
+
+        try:
+            # Method 2: Read from /etc/resolv.conf (nameserver)
+            returncode, stdout, _ = await self._exec_in_container(
+                container_id,
+                "grep nameserver /etc/resolv.conf | awk '{print $2}' | head -1"
+            )
+            if returncode == 0 and stdout:
+                nameserver = stdout.strip()
+                if nameserver not in ('127.0.0.53', '127.0.0.1'):
+                    logger.info(f"Detected nameserver as gateway: {nameserver}")
+                    return nameserver
+        except Exception as e:
+            logger.debug(f"Cannot get gateway from /etc/resolv.conf: {e}")
+
+        return None
+
+    async def _fix_localhost_url(self, url: str, container_id: str) -> str:
+        """Fix URL with localhost/127.0.0.1 for container access.
+
+        If the URL points to localhost, replace it with the container's
+        gateway IP so the container can reach the host.
+
+        Args:
+            url: Original URL
+            container_id: Container ID
+
+        Returns:
+            Fixed URL with accessible host IP
+        """
+        try:
+            parsed = urlparse(url)
+            if parsed.hostname in ('localhost', '127.0.0.1', '0.0.0.0'):
+                gateway = await self._get_container_gateway_ip(container_id)
+                if gateway:
+                    fixed_url = f"{parsed.scheme}://{gateway}:{parsed.port or 3080}{parsed.path}"
+                    if parsed.query:
+                        fixed_url += f"?{parsed.query}"
+                    logger.info(f"Fixed localhost URL for container: {url} -> {fixed_url}")
+                    return fixed_url
+                else:
+                    logger.warning(f"Cannot detect gateway IP, keeping original URL: {url}")
+        except Exception as e:
+            logger.warning(f"Error fixing localhost URL: {e}")
+        return url
+
     def detect_gns3_url(self) -> str:
         """Detect GNS3 server URL using multiple strategies.
+
+        Note: This returns the raw URL (may contain 127.0.0.1).
+        The URL will be fixed for container access later using _fix_localhost_url.
 
         Returns:
             GNS3 server URL
@@ -386,6 +487,10 @@ class WebWiresharkManager:
         )
         container_name = f"gns3-wireshark-{project_id}"
 
+        # Fix localhost URL after we have container_id
+        capture_stream_url = await self._fix_localhost_url(capture_stream_url, container_id)
+        logger.info(f"Final capture stream URL: {capture_stream_url}")
+
         # Allocate display and port using deterministic hash
         display = link_id_to_display(link_id)
         port = link_id_to_port(link_id)
@@ -393,12 +498,11 @@ class WebWiresharkManager:
         # Clean up any existing processes on this display before starting
         # This prevents "another window manager seems to be running" errors
         logger.info(f"Cleaning up any existing processes on display :{display}")
-        await self._exec_in_container(
-            container_id,
-            f"pkill -f 'xpra.*:{display}' || true; "
-            f"pkill -f 'wireshark.*display :{display}' || true; "
-            f"pkill -f 'Xvfb.*:{display}' || true"
-        )
+        await self._kill_process_tree(container_id, f'xpra.*:{display}')
+        await self._kill_process_tree(container_id, f'Xvfb.*:{display}')
+        await self._exec_in_container(container_id, f"exec pkill -9 -f 'wireshark.*:{display}' 2>/dev/null || true")
+        await self._exec_in_container(container_id, f"exec pkill -9 -f 'pulseaudio.*display=:{display}' 2>/dev/null || true")
+        await self._cleanup_x_lock(container_id, display)
 
         # Prepare xpra command
         session_name = f"link-{link_id}"
@@ -452,7 +556,8 @@ class WebWiresharkManager:
             f"wireshark -i - -k --fullscreen -display :{display} &"
         )
 
-        logger.info(f"Starting Wireshark with capture stream: {capture_stream_url}")
+        logger.info(f"[Web Wireshark] Starting Wireshark with capture stream URL: {capture_stream_url}")
+        logger.info(f"[Web Wireshark] Display: :{display}, Container IP: {container_ip}, Port: {port}")
 
         # Execute Wireshark command without waiting for completion
         proc = await asyncio.create_subprocess_exec(
@@ -463,7 +568,7 @@ class WebWiresharkManager:
         )
 
         # Don't wait - Wireshark runs in background
-        logger.info(f"Wireshark start command executed for link {link_id}")
+        logger.info(f"[Web Wireshark] Wireshark start command executed for link {link_id}")
 
         result = {
             "link_id": link_id,
@@ -498,16 +603,15 @@ class WebWiresharkManager:
             # Get display number
             display = link_id_to_display(link_id)
 
-            # Kill all processes associated with this display to ensure clean stop
-            # This kills wireshark, xpra, and Xvfb processes
+            # Kill all processes associated with this display using process tree kill
+            # This ensures child processes are properly terminated, not left as zombies
             logger.info(f"Stopping all processes on display :{display}")
-            await self._exec_in_container(
-                container["Id"],
-                f"pkill -f 'xpra.*:{display}' || true; "
-                f"pkill -f 'Xvfb.*:{display}' || true; "
-                f"pkill -f 'wireshark.*display :{display}' || true; "
-                f"pkill -f 'Xvfb-for-Xpra-{display}' || true"
-            )
+            await self._kill_process_tree(container["Id"], f'xpra.*:{display}')
+            await self._kill_process_tree(container["Id"], f'Xvfb.*:{display}')
+            await self._kill_process_tree(container["Id"], f'Xvfb-for-Xpra-{display}')
+            await self._exec_in_container(container["Id"], f"exec pkill -9 -f 'wireshark.*:{display}' 2>/dev/null || true")
+            await self._exec_in_container(container["Id"], f"exec pkill -9 -f 'pulseaudio.*display=:{display}' 2>/dev/null || true")
+            await self._cleanup_x_lock(container["Id"], display)
 
             logger.info("Web Wireshark session stopped successfully")
 
@@ -574,18 +678,12 @@ class WebWiresharkManager:
 
             # Kill all wireshark, xpra and Xvfb processes for link sessions
             # This ensures clean removal of all session processes
-            returncode, stdout, stderr = await self._exec_in_container(
-                container["Id"],
-                "pkill -f 'xpra.*--session-name=link-' || true; "
-                "pkill -f 'wireshark.*display :' || true; "
-                "pkill -f 'Xvfb-for-Xpra-' || true"
-            )
+            await self._kill_process_tree(container["Id"], "xpra.*--session-name=link-")
+            await self._kill_process_tree(container["Id"], "Xvfb-for-Xpra-")
+            await self._exec_in_container(container["Id"], "pkill -9 -f 'wireshark.*display :' || true")
+            await self._exec_in_container(container["Id"], "pkill -9 -f 'pulseaudio.*display :' || true")
 
-            if returncode == 0:
-                logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
-            else:
-                # No sessions to stop is not an error
-                logger.info(f"No Web Wireshark sessions found to stop")
+            logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
 
         except Exception as e:
             # Don't fail if container is already stopped or doesn't exist

@@ -359,6 +359,10 @@ class Link:
 
             stdout, stderr = await proc.communicate()
 
+            # Log stderr for debugging (contains manager.py logs like [Web Wireshark])
+            if stderr:
+                log.info(f"Web Wireshark manager logs: {stderr.decode()}")
+
             if proc.returncode != 0:
                 error_msg = stderr.decode() if stderr else "Unknown error"
                 log.error(f"Failed to start Web Wireshark: {error_msg}")
