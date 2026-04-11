@@ -172,15 +172,24 @@ class WebWiresharkManager:
             await self._exec_in_container(container_id, cmd)
 
     async def _cleanup_x_lock(self, container_id: str, display: int) -> None:
-        """Remove X lock file for a display.
+        """Remove X lock file and xpra socket files for a display.
 
         Args:
             container_id: Container ID
             display: Display number (e.g., 10210)
         """
+        # Clean up X lock files
         await self._exec_in_container(
             container_id,
             f"exec rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} 2>/dev/null || true"
+        )
+
+        # Clean up xpra socket files
+        await self._exec_in_container(
+            container_id,
+            f"exec rm -f /run/user/1000/xpra/{display}/socket "
+            f"/run/user/1000/xpra/*-{display} "
+            f"/home/gns3/.xpra/*-{display} 2>/dev/null || true"
         )
 
     @staticmethod
@@ -434,6 +443,7 @@ class WebWiresharkManager:
                 "NanoCpus": cpu_quota,
                 "PidsLimit": pids_limit,
                 "RestartPolicy": {"Name": "unless-stopped"},
+                "Init": True,  # Use init system (tini) as PID 1 to reap zombie processes
                 "LogConfig": {
                     "Type": "json-file",
                     "Config": {
