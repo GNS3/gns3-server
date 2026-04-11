@@ -19,11 +19,12 @@ API routes for links.
 """
 
 import asyncio
+import os
 import multidict
 import aiohttp
 
 from fastapi import APIRouter, Depends, Request, status, WebSocket
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List, Union
 from uuid import UUID
@@ -298,6 +299,33 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
             raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
+
+
+@router.get(
+    "/{link_id}/capture/file",
+    dependencies=[Depends(has_privilege("Link.Capture"))],
+    response_class=FileResponse
+)
+async def download_capture_file(link: Link = Depends(dep_link)):
+    """
+    Download the PCAP capture file.
+
+    This endpoint allows downloading the capture file even while capture is active.
+    The file is streamed directly, so partial data may be received if capture is still running.
+
+    Required privilege: Link.Capture
+    """
+    if not link.capture_file_path:
+        raise ControllerError("No capture file path set for this link")
+
+    if not os.path.exists(link.capture_file_path):
+        raise ControllerError(f"Capture file not found: {link.capture_file_path}")
+
+    return FileResponse(
+        path=link.capture_file_path,
+        filename=os.path.basename(link.capture_file_path),
+        media_type="application/vnd.tcpdump.pcap"
+    )
 
 
 @router.websocket("/{link_id}/capture/web-wireshark")
