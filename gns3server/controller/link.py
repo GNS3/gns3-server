@@ -24,7 +24,6 @@ import asyncio
 import json
 
 from .controller_error import ControllerError, ControllerNotFoundError
-from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 import logging
 
@@ -331,6 +330,9 @@ class Link:
         if not jwt_token:
             raise ControllerError("JWT token is required for Web Wireshark")
 
+        # Delay import to avoid circular dependency
+        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+
         manager = WebWiresharkManager()
         try:
             log.info(f"Starting Web Wireshark for link {self.id}")
@@ -364,6 +366,9 @@ class Link:
 
     async def _stop_web_wireshark(self):
         """Stop Web Wireshark"""
+        # Delay import to avoid circular dependency
+        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+
         manager = WebWiresharkManager()
         try:
             log.info(f"Stopping Web Wireshark for link {self.id}")
@@ -389,6 +394,9 @@ class Link:
         Raises:
             ControllerError: If restart fails
         """
+        # Delay import to avoid circular dependency
+        from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+
         manager = WebWiresharkManager()
         try:
             log.info(f"Restarting Web Wireshark for link {self.id}")
