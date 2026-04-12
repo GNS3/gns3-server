@@ -1041,9 +1041,6 @@ class Project:
         Called when project is deleted to stop and remove the container.
         """
         try:
-            if not self._web_wireshark_container_created:
-                return
-
             container_name = f"gns3-wireshark-{self._id}"
             log.info(f"Deleting Web Wireshark container '{container_name}' for project '{self.name}'")
 
@@ -1056,9 +1053,10 @@ class Project:
             )
 
             if not os.path.exists(script_path):
+                log.warning(f"Web Wireshark script not found: {script_path}")
                 return
 
-            # Delete container
+            # Delete container (script will handle case where container doesn't exist)
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -1074,9 +1072,11 @@ class Project:
                 log.info(f"Web Wireshark container deleted successfully")
                 self._web_wireshark_container_created = False
             else:
-                log.warning(f"Failed to delete container: {stderr.decode()}")
+                # Container might not exist, which is fine
+                log.debug(f"Container delete result: {stderr.decode().strip()}")
 
         except Exception as e:
+            # Don't fail project delete if container cleanup fails
             log.warning(f"Failed to delete container for project '{self.name}': {e}")
 
     async def _cleanup_copilot_agent(self):
