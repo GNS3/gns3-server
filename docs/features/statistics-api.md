@@ -1,14 +1,14 @@
 # Statistics API
 
-## `GET /statistics`
+## `GET /v3/statistics`
 
-Returns aggregated server statistics including compute resources, projects, nodes, and links.
+Returns aggregated server statistics including compute resources, projects, nodes, links, and Web Wireshark containers.
 
 **Authentication:** Requires active user session
 
 **Method:** `GET`
 
-**URL:** `http://server:3080/v1/statistics`
+**URL:** `http://server:3080/v3/statistics``
 
 ### Response
 
@@ -57,6 +57,24 @@ Returns aggregated server statistics including compute resources, projects, node
   "links": {
     "total": 38,
     "capturing": 2
+  },
+  "webwireshark": {
+    "total_containers": 1,
+    "running_containers": 1,
+    "active_sessions": 2,
+    "containers": [
+      {
+        "project_id": "e16e2b51-9ba9-403b-9df4-b2915d7508a3",
+        "project_name": "test-project",
+        "container_id": "6edc9029bac0",
+        "status": "running",
+        "running": true,
+        "active_sessions": 2,
+        "memory": "272.5MiB / 4GiB",
+        "cpu": "0.23%",
+        "pids": 69
+      }
+    ]
   }
 }
 ```
@@ -118,11 +136,36 @@ Valid node statuses: `started`, `stopped`, `suspended`
 | `total` | integer | Total number of links across all projects |
 | `capturing` | integer | Number of links currently capturing packets |
 
+#### `webwireshark`
+
+Web Wireshark container statistics for monitoring packet capture sessions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_containers` | integer | Total number of Web Wireshark containers |
+| `running_containers` | integer | Number of containers currently running |
+| `active_sessions` | integer | Total active packet capture sessions across all containers |
+| `containers` | array | Array of container details |
+
+#### `webwireshark.containers[]`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `project_id` | string | Project UUID |
+| `project_name` | string | Project name |
+| `container_id` | string | Docker container ID (truncated to 12 chars) |
+| `status` | string | Container status (running, exited, etc.) |
+| `running` | boolean | Whether container is running |
+| `active_sessions` | integer | Number of active capture sessions in this project |
+| `memory` | string | Memory usage (e.g., "272.5MiB / 4GiB") |
+| `cpu` | string | CPU usage percentage (e.g., "0.23%") |
+| `pids` | integer | Number of processes in container |
+
 ### Example Usage
 
 ```bash
 # Get statistics
-curl -X GET http://localhost:3080/v1/statistics \
+curl -X GET http://localhost:3080/v3/statistics \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -134,6 +177,7 @@ This API is designed for monitoring dashboards that need:
 - **Project overview**: Project counts from `projects`
 - **Node inventory**: Node counts by type and status from `nodes`
 - **Capture monitoring**: Active capture sessions from `links.capturing`
+- **Web Wireshark**: Container status and resource usage from `webwireshark`
 
 ### Error Responses
 

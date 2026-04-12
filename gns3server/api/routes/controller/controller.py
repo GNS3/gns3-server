@@ -28,6 +28,7 @@ from typing import List, Dict
 
 from gns3server.config import Config
 from gns3server.controller import Controller
+from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
 from gns3server.version import __version__
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
 from gns3server import schemas
@@ -241,11 +242,15 @@ async def statistics() -> dict:
         "capturing": link_capturing,
     }
 
+    # Web Wireshark container statistics
+    webwireshark_stats = await collect_webwireshark_stats(projects)
+
     return {
         "computes": compute_statistics,
         "projects": project_stats,
         "nodes": node_stats,
         "links": link_stats,
+        "webwireshark": webwireshark_stats,
     }
 
 
