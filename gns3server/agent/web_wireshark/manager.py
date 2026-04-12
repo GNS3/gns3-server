@@ -153,6 +153,132 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error killing processes matching '{pattern}': {e}")
 
+    async def _check_residuals_exist(self, container_id: str, display: int) -> tuple[bool, bool]:
+        """Check if there are residual processes or files for a display.
+
+        Uses host perspective for fast checking (~20ms vs ~850ms for docker exec).
+        Returns two booleans: (has_process_residuals, has_socket_residuals).
+        This allows selective cleanup when only one type needs attention.
+
+        Args:
+            container_id: Container ID
+            display: Display number (e.g., 10210)
+
+        Returns:
+            Tuple of (has_process_residuals, has_socket_residuals)
+        """
+        try:
+            # Get container init PID from host perspective
+            proc = await asyncio.create_subprocess_exec(
+                "docker", "inspect", container_id,
+                "--format", "{{.State.Pid}}",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            container_init_pid = stdout.decode().strip()
+
+            if not container_init_pid:
+                # Can't determine, assume cleanup needed
+                return (True, True)
+
+            has_process_residuals = False
+            has_socket_residuals = False
+
+            # Check for residual processes from host perspective
+            proc = await asyncio.create_subprocess_exec(
+                "ps", "-eo", "pid,ppid,args",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+
+            # Build parent->children mapping
+            children_map = {}
+            for line in stdout.decode().strip().split('\n'):
+                parts = line.split(None, 2)
+                if len(parts) < 3:
+                    continue
+                try:
+                    pid, ppid = int(parts[0]), int(parts[1])
+                    children_map.setdefault(ppid, []).append(pid)
+                except ValueError:
+                    continue
+
+            # Recursively find all descendant PIDs of container init
+            descendant_pids = set()
+
+            def find_descendants(ppid):
+                children = children_map.get(ppid, [])
+                for child_pid in children:
+                    descendant_pids.add(child_pid)
+                    find_descendants(child_pid)
+
+            find_descendants(int(container_init_pid))
+
+            # Check if any descendant processes match display patterns
+            import re
+            patterns = [
+                f'xpra.*:{display}',
+                f'Xvfb.*:{display}',
+                f'wireshark.*:{display}',
+                f'pulseaudio.*display=:{display}'
+            ]
+
+            for line in stdout.decode().strip().split('\n'):
+                parts = line.split(None, 2)
+                if len(parts) < 3:
+                    continue
+                try:
+                    pid, ppid = int(parts[0]), int(parts[1])
+                    command = parts[2]
+
+                    if pid not in descendant_pids:
+                        continue
+
+                    for pattern in patterns:
+                        if re.search(pattern, command):
+                            logger.debug(f"Found residual process: PID={pid}, COMMAND={command[:80]}")
+                            has_process_residuals = True
+                            break
+                except ValueError:
+                    continue
+
+            # Check for X lock files from host perspective
+            # /proc/<pid>/root points to container filesystem
+            lock_paths = [
+                f"/proc/{container_init_pid}/root/tmp/.X{display}-lock",
+                f"/proc/{container_init_pid}/root/tmp/.X11-unix/X{display}"
+            ]
+            for lock_path in lock_paths:
+                proc = await asyncio.create_subprocess_exec(
+                    "test", "-e", lock_path,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                await proc.communicate()
+                if proc.returncode == 0:
+                    logger.debug(f"Found residual lock file: {lock_path}")
+                    has_socket_residuals = True
+
+            # Check for xpra socket files
+            socket_path = f"/proc/{container_init_pid}/root/run/user/1000/xpra/{display}/socket"
+            proc = await asyncio.create_subprocess_exec(
+                "test", "-e", socket_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await proc.communicate()
+            if proc.returncode == 0:
+                logger.debug(f"Found residual socket: {socket_path}")
+                has_socket_residuals = True
+
+            return (has_process_residuals, has_socket_residuals)
+
+        except Exception as e:
+            logger.warning(f"Error checking residuals (assuming cleanup needed): {e}")
+            return (True, True)
+
     async def _kill_process_tree_batch(self, container_id: str, patterns: list) -> None:
         """Kill all processes matching multiple patterns inside the container.
 
@@ -305,6 +431,19 @@ class WebWiresharkManager:
                f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
         returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
         logger.debug(f"Cleanup xpra sockets: returncode={returncode}")
+
+    async def _cleanup_socket_files(self, container_id: str, display: int) -> None:
+        """Remove only xpra socket files for a display (faster, single docker exec).
+
+        Args:
+            container_id: Container ID
+            display: Display number (e.g., 10210)
+        """
+        cmd = (f"rm -f /run/user/1000/xpra/{display}/socket "
+               f"/run/user/1000/xpra/*-{display} "
+               f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
+        returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
+        logger.debug(f"Cleanup socket files: returncode={returncode}")
 
     @staticmethod
     def _parse_memory(memory_str: str) -> int:
@@ -630,17 +769,24 @@ class WebWiresharkManager:
         display = link_id_to_display(link_id)
         port = link_id_to_port(link_id)
 
-        # Clean up any existing processes on this display before starting
-        # This prevents "another window manager seems to be running" errors
-        logger.info(f"Cleaning up any existing processes on display :{display}")
-        patterns = [
-            f'xpra.*:{display}',
-            f'Xvfb.*:{display}',
-            f'wireshark.*:{display}',
-            f'pulseaudio.*display=:{display}'
-        ]
-        await self._kill_process_tree_batch(container_id, patterns)
-        await self._cleanup_x_lock(container_id, display)
+        # Check for residual processes/files from host perspective (fast ~20ms)
+        # Only execute docker exec cleanup (~850ms) if residuals are found
+        has_process_residuals, has_socket_residuals = await self._check_residuals_exist(container_id, display)
+
+        if has_process_residuals or has_socket_residuals:
+            logger.info(f"Found residual processes={has_process_residuals} sockets={has_socket_residuals} on display :{display}, cleaning up...")
+            if has_process_residuals:
+                patterns = [
+                    f'xpra.*:{display}',
+                    f'Xvfb.*:{display}',
+                    f'wireshark.*:{display}',
+                    f'pulseaudio.*display=:{display}'
+                ]
+                await self._kill_process_tree_batch(container_id, patterns)
+            if has_socket_residuals:
+                await self._cleanup_x_lock(container_id, display)
+        else:
+            logger.debug(f"No residual processes/files found on display :{display}")
 
         # Prepare xpra command
         session_name = f"link-{link_id}"
