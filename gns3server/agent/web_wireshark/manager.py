@@ -248,46 +248,57 @@ class WebWiresharkManager:
             logger.debug(f"Cannot get URL from Config: {e}")
         return None
 
-    async def _get_container_gateway_ip(self, container_id: str) -> Optional[str]:
+    async def _get_container_gateway_ip(self, container_id: str = None) -> Optional[str]:
         """Get the Docker bridge gateway IP for container to access host.
 
         Args:
-            container_id: Container ID
+            container_id: Container ID (optional, only used for fallback methods)
 
         Returns:
             Gateway IP (e.g., 172.31.0.1) or None if not detectable
         """
+        # Method 1: Get from Docker Network API (fastest, no container access needed)
         try:
-            # Method 1: Read from /proc/net/route
-            returncode, stdout, stderr = await self._exec_in_container(
-                container_id,
-                "cat /proc/net/route | grep -E '^eth0\\s+00000000' | awk '{print $3}' | head -1"
-            )
-            logger.info(f"Gateway detection - Method 1: returncode={returncode}, stdout='{stdout}', stderr='{stderr}'")
-            if returncode == 0 and stdout.strip():
-                gateway_hex = stdout.strip()
-                # Convert hex to dotted decimal
-                gateway_ip = socket.inet_ntoa(bytes.fromhex(gateway_hex)[::-1])
-                logger.info(f"Detected container gateway IP from route: {gateway_ip}")
-                return gateway_ip
-            else:
-                logger.info(f"Method 1 failed, trying Method 2")
+            network = await self.docker.get_network(self.network_name)
+            if network and "IPAM" in network:
+                for config in network["IPAM"].get("Config", []):
+                    if "Gateway" in config:
+                        gateway_ip = config["Gateway"]
+                        logger.info(f"Got gateway IP from Docker network API: {gateway_ip}")
+                        return gateway_ip
         except Exception as e:
-            logger.info(f"Cannot get gateway from /proc/net/route: {e}")
+            logger.debug(f"Cannot get gateway from Docker network API: {e}")
 
-        try:
-            # Method 2: Read from /etc/resolv.conf (nameserver)
-            returncode, stdout, _ = await self._exec_in_container(
-                container_id,
-                "grep nameserver /etc/resolv.conf | awk '{print $2}' | head -1"
-            )
-            if returncode == 0 and stdout:
-                nameserver = stdout.strip()
-                if nameserver not in ('127.0.0.53', '127.0.0.1'):
-                    logger.info(f"Detected nameserver as gateway: {nameserver}")
-                    return nameserver
-        except Exception as e:
-            logger.debug(f"Cannot get gateway from /etc/resolv.conf: {e}")
+        # Fallback: Read from /proc/net/route inside container (slower)
+        if container_id:
+            try:
+                returncode, stdout, stderr = await self._exec_in_container(
+                    container_id,
+                    "cat /proc/net/route | grep -E '^eth0\\s+00000000' | awk '{print $3}' | head -1"
+                )
+                logger.info(f"Gateway detection - fallback method: returncode={returncode}, stdout='{stdout}'")
+                if returncode == 0 and stdout.strip():
+                    gateway_hex = stdout.strip()
+                    # Convert hex to dotted decimal
+                    gateway_ip = socket.inet_ntoa(bytes.fromhex(gateway_hex)[::-1])
+                    logger.info(f"Detected container gateway IP from route: {gateway_ip}")
+                    return gateway_ip
+            except Exception as e:
+                logger.debug(f"Cannot get gateway from /proc/net/route: {e}")
+
+            # Fallback 2: Read from /etc/resolv.conf (nameserver)
+            try:
+                returncode, stdout, _ = await self._exec_in_container(
+                    container_id,
+                    "grep nameserver /etc/resolv.conf | awk '{print $2}' | head -1"
+                )
+                if returncode == 0 and stdout:
+                    nameserver = stdout.strip()
+                    if nameserver not in ('127.0.0.53', '127.0.0.1'):
+                        logger.info(f"Detected nameserver as gateway: {nameserver}")
+                        return nameserver
+            except Exception as e:
+                logger.debug(f"Cannot get gateway from /etc/resolv.conf: {e}")
 
         return None
 
