@@ -295,7 +295,9 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     Required privilege: Link.Capture
     """
 
-    if not link.capturing:
+    # Check both capturing flag and capture_node to avoid race condition
+    # when stop_capture() sets _capture_node = None before this check completes
+    if not link.capturing or not link.capture_node:
         raise ControllerError("This link has no active packet capture")
 
     compute = link.compute
