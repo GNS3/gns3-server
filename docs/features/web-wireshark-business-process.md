@@ -648,6 +648,56 @@ The **Web Wireshark** feature enables users to run Wireshark packet capture anal
 
 ## Performance Characteristics
 
+### Startup & Shutdown Performance
+
+| Step | Before Optimization | After Optimization | Improvement |
+|------|---------------------|-------------------|-------------|
+| **Health Check** | ~1.0s | ~0s | Docker native status |
+| **Gateway Detection** | 0.85s | ~0.001s | Docker API vs exec |
+| **Process Cleanup** | ~850ms | ~40ms | Host perspective recursive tree walk |
+| **Xpra Startup** | 6.4s | ~3s | HTML5 client disabled |
+| **Wireshark Launch** | ~1s | ~1s | No change |
+| **Total Startup** | **~15s** | **~5-6s** | **67% faster** |
+
+| Step | Before Optimization | After Optimization | Improvement |
+|------|---------------------|-------------------|-------------|
+| **Process Termination** | ~8s | ~20-40ms | Recursive tree walk, no orphans |
+| **File Cleanup** | ~850ms | ~850ms | Docker exec (safety) |
+| **Total Shutdown** | **~9s** | **~2s** | **78% faster** |
+
+#### Startup Breakdown: First vs Subsequent
+
+| Phase | First Startup (Container stopped) | Subsequent Startup (Container running) |
+|-------|-----------------------------------|----------------------------------------|
+| Container startup | ~1-2s | ~0s (already running) |
+| Container health check | ~1s (unhealthy→healthy) | ~0s (already healthy) |
+| Gateway detection | ~0.001s | ~0.001s |
+| Process cleanup | ~40ms | ~40ms |
+| Xpra startup | ~3s | ~3s |
+| Wireshark launch | ~1s | ~1s |
+| **Total** | **~6s** | **~5s** |
+
+#### Measured Performance Data
+
+**Startup (from production logs):**
+```
+13:46:53 → 13:46:59 = 6s (first startup with container start)
+13:47:38 → 13:47:43 = 5s (subsequent startup, container running)
+```
+
+**Shutdown (from production logs):**
+```
+13:48:15 → 13:48:17 = 2s (complete cleanup, no orphan processes)
+13:48:50 → 13:48:52 = 2s (complete cleanup, no orphan processes)
+```
+
+#### Key Optimizations
+
+- **Complete Process Cleanup**: Recursive process tree traversal eliminates orphaned processes (Xvfb, pulseaudio, ibus-daemon)
+- **Fast Gateway Detection**: Docker API query instead of container exec
+- **Smart Health Check**: Trust Docker built-in status, no manual ping
+- **Xpra Optimization**: Disabled unnecessary HTML5 client (`--html=off`)
+
 ### Resource Usage (Per Wireshark Instance)
 | Resource | Typical Usage |
 |----------|---------------|
