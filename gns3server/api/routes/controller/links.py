@@ -298,6 +298,7 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     # Check both capturing flag and capture_node to avoid race condition
     # when stop_capture() sets _capture_node = None before this check completes
     if not link.capturing or not link.capture_node:
+        log.info(f"Stream pcap ended for link {link.id}: capture stopped before stream completed")
         raise ControllerError("This link has no active packet capture")
 
     compute = link.compute
