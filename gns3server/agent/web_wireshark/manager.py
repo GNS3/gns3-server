@@ -385,19 +385,29 @@ class WebWiresharkManager:
         if container:
             logger.info(f"Container state: {container['State']}")
             if container["State"]["Running"]:
-                logger.info("Container is running, checking health...")
-                if await self._is_container_healthy(container["Id"]):
-                    logger.info(f"Container {container_name} already running and healthy")
-                    return container["Id"]
+                # Use Docker's built-in health check status instead of manual ping
+                health_status = container.get("Health", {}).get("Status", None)
+
+                if health_status == "unhealthy":
+                    # Only unhealthy containers need further verification
+                    logger.warning(f"Container {container_name} reports unhealthy status")
+                    if not await self._is_container_healthy(container["Id"]):
+                        # Container is truly unresponsive, force remove
+                        logger.warning(f"Container {container_name} is not responding, force removing...")
+                        try:
+                            await self.docker.remove_container(container["Id"], force=True)
+                            logger.info(f"Container {container_name} force removed")
+                        except Exception as e:
+                            logger.warning(f"Failed to remove unhealthy container: {e}")
+                        container = None  # Trigger recreation
+                    else:
+                        # Health check passed despite unhealthy status, use it
+                        logger.info(f"Container {container_name} is responsive despite unhealthy status")
+                        return container["Id"]
                 else:
-                    # Container is running but unresponsive, force remove
-                    logger.warning(f"Container {container_name} is not responding, force removing...")
-                    try:
-                        await self.docker.remove_container(container["Id"], force=True)
-                        logger.info(f"Container {container_name} force removed")
-                    except Exception as e:
-                        logger.warning(f"Failed to remove unhealthy container: {e}")
-                    container = None  # Trigger recreation
+                    # healthy, starting, or no health check configured - trust Docker
+                    logger.info(f"Container {container_name} is running (health: {health_status})")
+                    return container["Id"]
             else:
                 logger.info(f"Starting existing container {container_name}")
                 await self.docker.start_container(container["Id"])
