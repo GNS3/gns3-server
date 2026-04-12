@@ -42,7 +42,7 @@ class WebWiresharkManager:
     """Manages Web Wireshark sessions and containers."""
 
     # Container command execution timeout (seconds)
-    CONTAINER_EXEC_TIMEOUT = 5
+    CONTAINER_EXEC_TIMEOUT = 10
 
     def __init__(self):
         self.docker = DockerHTTPClient()
