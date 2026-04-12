@@ -153,6 +153,38 @@ class WebWiresharkManager:
         except Exception as e:
             logger.error(f"Error killing processes matching '{pattern}': {e}")
 
+    async def _kill_process_tree_batch(self, container_id: str, patterns: list) -> None:
+        """Kill all processes matching multiple patterns inside the container.
+
+        Uses a single pgrep with combined regex pattern to find all matching processes
+        at once, then kills them. This is much faster than multiple docker exec calls.
+
+        Args:
+            container_id: Container ID
+            patterns: List of process patterns to match (regex applied to COMMAND field)
+        """
+        if not patterns:
+            return
+
+        try:
+            # Combine all patterns into a single regex using OR operator
+            combined_pattern = '|'.join(f'({pattern})' for pattern in patterns)
+
+            # Single pgrep to find all matching processes
+            pgrep_cmd = f'pids=$(pgrep -f "{combined_pattern}" 2>/dev/null || true); if [ -n "$pids" ]; then echo "Found processes: $pids"; kill -9 $pids 2>/dev/null || true; fi'
+
+            returncode, stdout, stderr = await self._exec_in_container(
+                container_id,
+                pgrep_cmd,
+                timeout=5
+            )
+
+            if "Found processes:" in stdout:
+                logger.info(stdout.strip())
+
+        except Exception as e:
+            logger.error(f"Error in batch kill: {e}")
+
     async def _cleanup_x_lock(self, container_id: str, display: int) -> None:
         """Remove X lock file and xpra socket files for a display.
 
@@ -492,10 +524,13 @@ class WebWiresharkManager:
         # Clean up any existing processes on this display before starting
         # This prevents "another window manager seems to be running" errors
         logger.info(f"Cleaning up any existing processes on display :{display}")
-        await self._kill_process_tree(container_id, f'xpra.*:{display}')
-        await self._kill_process_tree(container_id, f'Xvfb.*:{display}')
-        await self._kill_process_tree(container_id, f'wireshark.*:{display}')
-        await self._kill_process_tree(container_id, f'pulseaudio.*display=:{display}')
+        patterns = [
+            f'xpra.*:{display}',
+            f'Xvfb.*:{display}',
+            f'wireshark.*:{display}',
+            f'pulseaudio.*display=:{display}'
+        ]
+        await self._kill_process_tree_batch(container_id, patterns)
         await self._cleanup_x_lock(container_id, display)
 
         # Prepare xpra command
@@ -600,11 +635,14 @@ class WebWiresharkManager:
             # Kill all processes associated with this display using process tree kill
             # This ensures child processes are properly terminated, not left as zombies
             logger.info(f"Stopping all processes on display :{display}")
-            await self._kill_process_tree(container["Id"], f'xpra.*:{display}')
-            await self._kill_process_tree(container["Id"], f'Xvfb.*:{display}')
-            await self._kill_process_tree(container["Id"], f'Xvfb-for-Xpra-{display}')
-            await self._kill_process_tree(container["Id"], f'wireshark.*:{display}')
-            await self._kill_process_tree(container["Id"], f'pulseaudio.*display=:{display}')
+            patterns = [
+                f'xpra.*:{display}',
+                f'Xvfb.*:{display}',
+                f'Xvfb-for-Xpra-{display}',
+                f'wireshark.*:{display}',
+                f'pulseaudio.*display=:{display}'
+            ]
+            await self._kill_process_tree_batch(container["Id"], patterns)
             await self._cleanup_x_lock(container["Id"], display)
 
             logger.info("Web Wireshark session stopped successfully")
@@ -672,10 +710,13 @@ class WebWiresharkManager:
 
             # Kill all wireshark, xpra and Xvfb processes for link sessions
             # This ensures clean removal of all session processes
-            await self._kill_process_tree(container["Id"], "xpra.*--session-name=link-")
-            await self._kill_process_tree(container["Id"], "Xvfb-for-Xpra-")
-            await self._kill_process_tree(container["Id"], "wireshark.*display :")
-            await self._kill_process_tree(container["Id"], "pulseaudio.*display :")
+            patterns = [
+                "xpra.*--session-name=link-",
+                "Xvfb-for-Xpra-",
+                "wireshark.*display :",
+                "pulseaudio.*display :"
+            ]
+            await self._kill_process_tree_batch(container["Id"], patterns)
 
             logger.info(f"All Web Wireshark sessions stopped for project {project_id}")
 
