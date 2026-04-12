@@ -159,6 +159,9 @@ class WebWiresharkManager:
         Uses host perspective to find and kill container processes much faster
         than docker exec (37x faster: ~23ms vs ~850ms).
 
+        This method finds ALL processes in the container (including grandchildren)
+        by walking the process tree from container init, not just direct children.
+
         Args:
             container_id: Container ID
             patterns: List of process patterns to match (regex applied to COMMAND field)
@@ -168,7 +171,6 @@ class WebWiresharkManager:
 
         try:
             # Get container init PID from host perspective
-            # This is faster than docker exec
             proc = await asyncio.create_subprocess_exec(
                 "docker", "inspect", container_id,
                 "--format", "{{.State.Pid}}",
@@ -180,49 +182,68 @@ class WebWiresharkManager:
 
             if not container_init_pid:
                 logger.warning("Could not get container init PID, falling back to docker exec")
-                # Fallback to docker exec method
                 await self._kill_process_tree_batch_via_exec(container_id, patterns)
                 return
 
-            # Find matching processes from host perspective
-            # pgrep -P $container_init_pid -a lists all child processes with their command lines
-            combined_pattern = '|'.join(f'({pattern})' for pattern in patterns)
-
+            # List all processes from host perspective with PID, PPID, and command
+            # This is faster than docker exec and allows us to walk the process tree
             proc = await asyncio.create_subprocess_exec(
-                "pgrep", "-P", container_init_pid, "-a",
+                "ps", "-eo", "pid,ppid,args",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
 
             if not stdout.strip():
-                logger.debug(f"No processes found matching patterns from host perspective")
+                logger.debug(f"No processes found from host perspective")
                 return
 
-            # Filter processes by pattern and extract PIDs
-            matching_pids = []
+            # Build parent->children mapping and collect process info
+            children_map = {}  # ppid -> [pid]
+            process_info = {}  # pid -> (ppid, command)
+
             for line in stdout.decode().strip().split('\n'):
-                if not line.strip():
+                parts = line.split(None, 2)
+                if len(parts) < 3:
                     continue
-                # Format: "PID COMMAND"
-                parts = line.split(None, 1)
-                if len(parts) < 2:
+                try:
+                    pid, ppid = int(parts[0]), int(parts[1])
+                    command = parts[2]
+
+                    children_map.setdefault(ppid, []).append(pid)
+                    process_info[pid] = (ppid, command)
+                except ValueError:
                     continue
-                pid, command = parts[0], parts[1]
+
+            # Recursively find all descendant processes of container init
+            descendant_pids = set()
+
+            def find_descendants(ppid):
+                """Recursively find all descendant PIDs."""
+                children = children_map.get(ppid, [])
+                for child_pid in children:
+                    descendant_pids.add(child_pid)
+                    find_descendants(child_pid)  # Recursively find grandchildren
+
+            find_descendants(int(container_init_pid))
+
+            # Filter descendant processes by pattern and extract PIDs
+            matching_pids = []
+            for pid in descendant_pids:
+                if pid not in process_info:
+                    continue
+                _, command = process_info[pid]
 
                 # Check if command matches any pattern
-                import re
                 for pattern in patterns:
                     if re.search(pattern, command):
-                        matching_pids.append(pid)
+                        matching_pids.append(str(pid))
                         logger.debug(f"Found process: PID={pid}, COMMAND={command[:100]}")
                         break
 
             if matching_pids:
                 logger.info(f"Killing {len(matching_pids)} processes: {matching_pids}")
                 # Kill all matching PIDs from host perspective
-                # This is much faster than docker exec
-                pids_str = ' '.join(matching_pids)
                 proc = await asyncio.create_subprocess_exec(
                     "kill", "-9", *matching_pids,
                     stdout=asyncio.subprocess.PIPE,
