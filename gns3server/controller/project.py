@@ -901,7 +901,7 @@ class Project:
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
 
-        # Stop Web Wireshark container (xpra sessions terminate when container stops)
+        # Stop Web Wireshark container (all xpra sessions terminate with container)
         await self._stop_web_wireshark_container()
 
         # Cleanup GNS3 Copilot AgentService for this project
@@ -951,9 +951,6 @@ class Project:
         while keeping the container for quick reuse when project is reopened.
         """
         try:
-            if not self._web_wireshark_container_created:
-                return
-
             log.info(f"Stopping xpra sessions for project '{self.name}' ({self._id})")
 
             # Call script to stop all sessions
@@ -969,7 +966,7 @@ class Project:
                 log.warning(f"Web Wireshark script not found: {script_path}")
                 return
 
-            # Stop all sessions
+            # Stop all sessions (script will handle case where container doesn't exist)
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -984,7 +981,8 @@ class Project:
             if proc.returncode == 0:
                 log.info(f"Web Wireshark xpra sessions stopped successfully")
             else:
-                log.warning(f"Failed to stop xpra sessions: {stderr.decode()}")
+                # Container might not exist, which is fine
+                log.debug(f"xpra sessions stop result: {stderr.decode().strip()}")
 
         except Exception as e:
             # Don't raise exception to avoid affecting project close flow
@@ -998,9 +996,6 @@ class Project:
         while keeping the container for quick startup when project is reopened.
         """
         try:
-            if not self._web_wireshark_container_created:
-                return
-
             container_name = f"gns3-wireshark-{self._id}"
             log.info(f"Stopping Web Wireshark container '{container_name}' for project '{self.name}'")
 
@@ -1013,9 +1008,10 @@ class Project:
             )
 
             if not os.path.exists(script_path):
+                log.warning(f"Web Wireshark script not found: {script_path}")
                 return
 
-            # Stop container
+            # Stop container (script will handle case where container doesn't exist)
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 script_path,
@@ -1029,10 +1025,13 @@ class Project:
 
             if proc.returncode == 0:
                 log.info(f"Web Wireshark container stopped successfully")
+                self._web_wireshark_container_created = False
             else:
-                log.warning(f"Failed to stop container: {stderr.decode()}")
+                # Container might not exist, which is fine
+                log.debug(f"Container stop result: {stderr.decode().strip()}")
 
         except Exception as e:
+            # Don't fail project close if container stop fails
             log.warning(f"Failed to stop container for project '{self.name}': {e}")
 
     async def _cleanup_web_wireshark_container(self):
