@@ -286,20 +286,6 @@ class WebWiresharkManager:
             except Exception as e:
                 logger.debug(f"Cannot get gateway from /proc/net/route: {e}")
 
-            # Fallback 2: Read from /etc/resolv.conf (nameserver)
-            try:
-                returncode, stdout, _ = await self._exec_in_container(
-                    container_id,
-                    "grep nameserver /etc/resolv.conf | awk '{print $2}' | head -1"
-                )
-                if returncode == 0 and stdout:
-                    nameserver = stdout.strip()
-                    if nameserver not in ('127.0.0.53', '127.0.0.1'):
-                        logger.info(f"Detected nameserver as gateway: {nameserver}")
-                        return nameserver
-            except Exception as e:
-                logger.debug(f"Cannot get gateway from /etc/resolv.conf: {e}")
-
         return None
 
     async def _fix_localhost_url(self, url: str, container_id: str) -> str:
