@@ -420,17 +420,14 @@ class WebWiresharkManager:
             container_id: Container ID
             display: Display number (e.g., 10210)
         """
-        # Clean up X lock files
-        cmd = f"rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} 2>/dev/null || true"
-        returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
-        logger.debug(f"Cleanup X locks: returncode={returncode}")
-
-        # Clean up xpra socket files
-        cmd = (f"rm -f /run/user/1000/xpra/{display}/socket "
+        # Clean up X lock files and xpra socket files in a single docker exec
+        # This reduces docker exec calls from 2 to 1, improving stop performance
+        cmd = (f"rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} "
+               f"/run/user/1000/xpra/{display}/socket "
                f"/run/user/1000/xpra/*-{display} "
                f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
         returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
-        logger.debug(f"Cleanup xpra sockets: returncode={returncode}")
+        logger.debug(f"Cleanup X locks and xpra sockets: returncode={returncode}")
 
     async def _cleanup_socket_files(self, container_id: str, display: int) -> None:
         """Remove only xpra socket files for a display (faster, single docker exec).

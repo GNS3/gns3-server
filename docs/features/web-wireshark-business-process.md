@@ -697,6 +697,47 @@ The **Web Wireshark** feature enables users to run Wireshark packet capture anal
 - **Fast Gateway Detection**: Docker API query instead of container exec
 - **Smart Health Check**: Trust Docker built-in status, no manual ping
 - **Xpra Optimization**: Disabled unnecessary HTML5 client (`--html=off`)
+- **Reduced Docker Exec Calls**: Combined X lock and xpra socket cleanup into single exec call
+
+### Docker Exec Performance Limitations
+
+**Important**: Docker daemon has internal queuing for concurrent exec requests to the same container.
+
+#### Test Results (Same Container)
+
+| Test Scenario | Execution Time | Avg Per Exec |
+|--------------|----------------|--------------|
+| Single docker exec | 0.854s | 0.854s |
+| Serial 7 docker exec | 7.225s | 1.032s |
+| Parallel 7 docker exec | 10.253s | 1.465s |
+
+**Key Finding**: Parallel execution is **42% slower** than serial execution.
+
+```
+Serial:   7.225s  (7 requests processed sequentially)
+Parallel: 10.253s (Docker daemon still processes sequentially + context switch overhead)
+```
+
+#### Impact on Web Wireshark
+
+When stopping multiple capture sessions quickly:
+- Each stop requires 1 docker exec (cleanup files)
+- Docker daemon processes exec requests sequentially
+- 7 sessions × ~1s each = ~7-10 seconds total
+- User requests appear to "queue" even though they're concurrent
+
+#### Optimization Strategy
+
+Since Docker exec cannot be parallelized effectively:
+1. **Minimize exec calls** - Already implemented: 2 calls → 1 call
+2. **Accept serial processing** - No benefit to parallel execution
+3. **Focus on fast exec content** - Use simple `rm -f` commands
+
+#### Future Optimization Options
+
+- Use Docker API instead of exec (requires container filesystem access)
+- Delay cleanup to next startup (increases startup complexity)
+- Batch multiple stops into single operation (requires API changes)
 
 ### Resource Usage (Per Wireshark Instance)
 | Resource | Typical Usage |
