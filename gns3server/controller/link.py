@@ -341,9 +341,6 @@ class Link:
                 jwt_token=jwt_token
             )
 
-            # Mark container as created
-            self._project._web_wireshark_container_created = True
-
             # Send notification
             self._project.emit_notification("link.web_wireshark_started", {
                 "link_id": self.id,

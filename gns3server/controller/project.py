@@ -215,9 +215,6 @@ class Project:
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
 
-        # Track if Web Wireshark container has been created for this project
-        self._web_wireshark_container_created = False
-
     @property
     def scene_height(self):
         return self._scene_height
@@ -1025,7 +1022,6 @@ class Project:
 
             if proc.returncode == 0:
                 log.info(f"Web Wireshark container stopped successfully")
-                self._web_wireshark_container_created = False
             else:
                 # Container might not exist, which is fine
                 log.debug(f"Container stop result: {stderr.decode().strip()}")
@@ -1070,7 +1066,6 @@ class Project:
 
             if proc.returncode == 0:
                 log.info(f"Web Wireshark container deleted successfully")
-                self._web_wireshark_container_created = False
             else:
                 # Container might not exist, which is fine
                 log.debug(f"Container delete result: {stderr.decode().strip()}")
