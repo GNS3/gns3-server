@@ -68,10 +68,11 @@ class StandardPortFactory:
         for adapter_number in range(adapter_number, ethernet_adapters + adapter_number):
 
             custom_adapter_settings = {}
-            for custom_adapter in custom_adapters:
-                if custom_adapter["adapter_number"] == adapter_number:
-                    custom_adapter_settings = custom_adapter
-                    break
+            if custom_adapters:
+                for custom_adapter in custom_adapters:
+                    if custom_adapter["adapter_number"] == adapter_number:
+                        custom_adapter_settings = custom_adapter
+                        break
 
             for port_number in range(0, port_by_adapter):
                 if first_port_name and adapter_number == 0:
