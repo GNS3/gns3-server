@@ -319,7 +319,7 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
 )
-async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> None:
+async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep_node)) -> None:
     """
     Start a node.
 
