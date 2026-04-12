@@ -25,6 +25,7 @@ import json
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+from gns3server.config import Config
 
 import logging
 
@@ -331,6 +332,9 @@ class Link:
         if not jwt_token:
             raise ControllerError("JWT token is required for Web Wireshark")
 
+        # Load WebWireshark configuration from config file
+        webwireshark_config = Config.instance().settings.WebWireshark
+
         manager = WebWiresharkManager()
         try:
             log.info(f"Starting Web Wireshark for link {self.id}")
@@ -338,7 +342,10 @@ class Link:
             result = await manager.start_wireshark_session(
                 project_id=self._project.id,
                 link_id=self.id,
-                jwt_token=jwt_token
+                jwt_token=jwt_token,
+                memory=webwireshark_config.memory,
+                cpus=webwireshark_config.cpus,
+                pids_limit=webwireshark_config.pids_limit
             )
 
             # Send notification
