@@ -321,7 +321,7 @@ class WebWiresharkManager:
             stdout, _ = await proc.communicate()
 
             if not stdout.strip():
-                logger.debug(f"No processes found from host perspective")
+                logger.debug("No processes found from host perspective")
                 return
 
             # Build parent->children mapping and collect process info
@@ -376,7 +376,7 @@ class WebWiresharkManager:
                     stderr=asyncio.subprocess.PIPE
                 )
                 await proc.communicate()
-                logger.debug(f"Kill completed from host perspective")
+                logger.debug("Kill completed from host perspective")
             else:
                 logger.debug(f"No processes found matching patterns: {patterns}")
 
@@ -878,7 +878,7 @@ class WebWiresharkManager:
             container = await self.docker.get_container(container_name)
 
             if not container:
-                logger.warning(f"Container {container_name} not found")
+                logger.info(f"Container {container_name} not found, nothing to stop")
                 return
 
             # Get display number
@@ -957,7 +957,7 @@ class WebWiresharkManager:
             container = await self.docker.get_container(container_name)
 
             if not container:
-                logger.warning(f"Container {container_name} not found")
+                logger.info(f"Container {container_name} not found, nothing to stop")
                 return
 
             # Kill all wireshark, xpra and Xvfb processes for link sessions
@@ -988,7 +988,7 @@ class WebWiresharkManager:
             container = await self.docker.get_container(container_name)
 
             if not container:
-                logger.warning(f"Container {container_name} not found")
+                logger.info(f"Container {container_name} not found, nothing to stop")
                 return
 
             if not container["State"]["Running"]:
