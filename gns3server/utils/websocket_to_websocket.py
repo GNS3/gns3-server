@@ -81,7 +81,7 @@ async def websocket_proxy(
                     try:
                         await client_ws.send_bytes(msg.data)
                     except Exception as e:
-                        log.warning(f"Failed to send to client (possibly disconnected): {e}")
+                        log.debug(f"Failed to send to client (possibly disconnected): {e}")
                         break
                 elif msg.type == aiohttp.WSMsgType.ERROR:
                     log.warning(f"Target WebSocket error: {msg.data}")
@@ -207,7 +207,7 @@ async def websocket_proxy_with_manual_accept(
                     try:
                         await client_ws.send_bytes(msg.data)
                     except Exception as e:
-                        log.warning(f"Failed to send to client (possibly disconnected): {e}")
+                        log.debug(f"Failed to send to client (possibly disconnected): {e}")
                         break
                 elif msg.type == aiohttp.WSMsgType.ERROR:
                     log.warning(f"Target WebSocket error: {msg.data}")
