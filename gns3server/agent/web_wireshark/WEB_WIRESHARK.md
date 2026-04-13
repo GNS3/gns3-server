@@ -2,6 +2,20 @@
 
 This document describes how to manage GNS3 Web Wireshark containers using the management script or Docker commands.
 
+## Installation
+
+Before using Web Wireshark, you need to set up the Docker image:
+
+```bash
+pip install . && gns3-wireshark-setup
+```
+
+This will:
+1. First try to pull the `gns3/web-wireshark:latest` image from Docker Hub
+2. If pull fails, build the image locally using the Dockerfile
+
+The setup command shows the output from `docker pull` or `docker build` directly, so you can see the progress.
+
 ## Architecture Overview
 
 ```
@@ -415,6 +429,19 @@ docker ps -a | grep 'gns3-wireshark-test' | awk '{print $1}' | xargs -r docker r
 
 # Delete test networks
 docker network ls | grep 'gns3-wireshark' | awk '{print $2}' | xargs -r docker network rm
+```
+
+## File Structure
+
+```
+gns3server/agent/web_wireshark/
+├── setup_wireshark_image.py      # Docker image setup tool (gns3-wireshark-setup)
+├── manage_wireshark.py           # CLI management tool
+├── manager.py                    # Session management logic
+├── docker_client.py             # Docker API client
+├── docker/
+│   └── Dockerfile               # Container image definition
+└── WEB_WIRESHARK.md             # This documentation
 ```
 
 ## Known Issues

@@ -13,6 +13,23 @@ The **Web Wireshark** feature enables users to run Wireshark packet capture anal
 
 ---
 
+## Installation
+
+Before using Web Wireshark, install the GNS3 server and set up the Docker image:
+
+```bash
+pip install . && gns3-wireshark-setup
+```
+
+This command will:
+1. Install the gns3-server package
+2. Pull the `gns3/web-wireshark:latest` image from Docker Hub
+3. If pull fails, build the image locally using the included Dockerfile
+
+The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `docker build`, allowing you to see the full progress.
+
+---
+
 ## Architecture Overview
 
 ```
@@ -784,6 +801,7 @@ gns3server/
 ├── api/routes/controller/
 │   └── links.py                   # REST/WebSocket API endpoints
 └── agent/web_wireshark/
+    ├── setup_wireshark_image.py   # Docker image setup tool
     ├── manage_wireshark.py        # CLI management tool
     ├── manager.py                 # Session management logic
     ├── docker_client.py           # Docker API client
