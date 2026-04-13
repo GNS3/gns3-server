@@ -96,6 +96,10 @@ class Link(LinkBase):
         None,
         description="Read only property. The compute identifier where a capture is running"
     )
+    wireshark: Optional[bool] = Field(
+        False,
+        description="Read only property. True if a Web Wireshark session is active on the link"
+    )
 
 
 class UDPPortInfo(BaseModel):
