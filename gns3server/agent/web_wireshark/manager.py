@@ -689,18 +689,28 @@ class WebWiresharkManager:
                 "Retries": 3
             }
 
-            container_id = await self.docker.create_container(
-                name=container_name,
-                image=image,
-                network=self.network_name,
-                host_config=host_config,
-                health_config=health_config,
-                environment={
-                    "XDG_RUNTIME_DIR": "/run/user/1000",
-                    "LANG": "C.UTF-8",
-                    "LC_ALL": "C.UTF-8"
-                }
-            )
+            try:
+                container_id = await self.docker.create_container(
+                    name=container_name,
+                    image=image,
+                    network=self.network_name,
+                    host_config=host_config,
+                    health_config=health_config,
+                    environment={
+                        "XDG_RUNTIME_DIR": "/run/user/1000",
+                        "LANG": "C.UTF-8",
+                        "LC_ALL": "C.UTF-8"
+                    }
+                )
+            except RuntimeError as e:
+                error_msg = str(e)
+                if "404" in error_msg or "not found" in error_msg.lower():
+                    raise RuntimeError(
+                        f"Docker image '{image}' not found. "
+                        f"Please pull the image from Docker Hub: docker pull {image} "
+                        f"Or build it locally using the Dockerfile in the GNS3 repository."
+                    ) from e
+                raise
 
             # Start container
             await self.docker.start_container(container_id)
