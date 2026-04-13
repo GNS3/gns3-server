@@ -358,6 +358,9 @@ class AgentService:
         # tool call arguments
         tool_call_accumulator = ToolCallStreamAccumulator()
 
+        # Track if stream was aborted
+        stream_aborted = False
+
         # Stream events
         try:
             async for event in graph.astream_events(
@@ -481,6 +484,26 @@ class AgentService:
                     if chunk:
                         log.debug("Yielding chunk: type=%s", chunk.get("type"))
                         yield chunk
+
+            # Check if stream was aborted and yield tool_end events for aborted tools
+            from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+                check_abort_flag,
+            )
+
+            if check_abort_flag(session_id):
+                log.info("Stream aborted, yielding tool_end events: session_id=%s", session_id)
+                # Get final state to find aborted tool messages
+                final_state = await graph.aget_state(config)
+                if final_state and "messages" in final_state.values:
+                    for msg in final_state.values["messages"]:
+                        # Check if this is an aborted tool message
+                        if hasattr(msg, "metadata") and msg.metadata.get("aborted"):
+                            yield {
+                                "type": "tool_end",
+                                "tool_name": getattr(msg, "name", "unknown"),
+                                "tool_output": msg.content if hasattr(msg, "content") else "",
+                                "session_id": session_id,
+                            }
 
             # Update session statistics after successful stream
             await repo.update_session(
