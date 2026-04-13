@@ -48,6 +48,7 @@ from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
 from .import_project import import_project, update_snapshots, regenerate_topology_ids
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 import logging
 
@@ -950,36 +951,12 @@ class Project:
         try:
             log.info(f"Stopping xpra sessions for project '{self.name}' ({self._id})")
 
-            # Call script to stop all sessions
-            script_path = os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "agent",
-                "web_wireshark",
-                "manage_wireshark.py"
-            )
-
-            if not os.path.exists(script_path):
-                log.warning(f"Web Wireshark script not found: {script_path}")
-                return
-
-            # Stop all sessions (script will handle case where container doesn't exist)
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
-                script_path,
-                "stop-all",
-                "--project-id", self._id,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            stdout, stderr = await proc.communicate()
-
-            if proc.returncode == 0:
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_all_sessions(self._id)
                 log.info(f"Web Wireshark xpra sessions stopped successfully")
-            else:
-                # Container might not exist, which is fine
-                log.debug(f"xpra sessions stop result: {stderr.decode().strip()}")
+            finally:
+                await manager.close()
 
         except Exception as e:
             # Don't raise exception to avoid affecting project close flow
@@ -996,35 +973,12 @@ class Project:
             container_name = f"gns3-wireshark-{self._id}"
             log.info(f"Stopping Web Wireshark container '{container_name}' for project '{self.name}'")
 
-            script_path = os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "agent",
-                "web_wireshark",
-                "manage_wireshark.py"
-            )
-
-            if not os.path.exists(script_path):
-                log.warning(f"Web Wireshark script not found: {script_path}")
-                return
-
-            # Stop container (script will handle case where container doesn't exist)
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
-                script_path,
-                "stop-container",
-                "--project-id", self._id,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            stdout, stderr = await proc.communicate()
-
-            if proc.returncode == 0:
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_container(self._id)
                 log.info(f"Web Wireshark container stopped successfully")
-            else:
-                # Container might not exist, which is fine
-                log.debug(f"Container stop result: {stderr.decode().strip()}")
+            finally:
+                await manager.close()
 
         except Exception as e:
             # Don't fail project close if container stop fails
@@ -1040,35 +994,12 @@ class Project:
             container_name = f"gns3-wireshark-{self._id}"
             log.info(f"Deleting Web Wireshark container '{container_name}' for project '{self.name}'")
 
-            script_path = os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "agent",
-                "web_wireshark",
-                "manage_wireshark.py"
-            )
-
-            if not os.path.exists(script_path):
-                log.warning(f"Web Wireshark script not found: {script_path}")
-                return
-
-            # Delete container (script will handle case where container doesn't exist)
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
-                script_path,
-                "delete-container",
-                "--project-id", self._id,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            stdout, stderr = await proc.communicate()
-
-            if proc.returncode == 0:
+            manager = WebWiresharkManager()
+            try:
+                await manager.delete_container(self._id)
                 log.info(f"Web Wireshark container deleted successfully")
-            else:
-                # Container might not exist, which is fine
-                log.debug(f"Container delete result: {stderr.decode().strip()}")
+            finally:
+                await manager.close()
 
         except Exception as e:
             # Don't fail project delete if container cleanup fails
