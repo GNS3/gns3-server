@@ -87,7 +87,7 @@ async def websocket_proxy(
                     log.warning(f"Target WebSocket error: {msg.data}")
                     break
                 elif msg.type == aiohttp.WSMsgType.CLOSE:
-                    log.info(f"Target WebSocket closed")
+                    log.info("Target WebSocket closed")
                     # Don't try to forward close to client if already disconnected
                     break
         except Exception as e:
@@ -185,10 +185,10 @@ async def websocket_proxy_with_manual_accept(
 
     async def forward_client_to_target(target_ws):
         """Client → Target: Forward binary WebSocket data."""
-        log.info(f"forward_client_to_target: started")
+        log.info("forward_client_to_target: started")
         try:
             while True:
-                log.info(f"forward_client_to_target: waiting for client data")
+                log.info("forward_client_to_target: waiting for client data")
                 data = await client_ws.receive_bytes()
                 log.info(f"forward_client_to_target: received {len(data)} bytes from client")
                 if data:
@@ -199,7 +199,7 @@ async def websocket_proxy_with_manual_accept(
 
     async def forward_target_to_client(target_ws):
         """Target → Client: Forward binary WebSocket data."""
-        log.info(f"forward_target_to_client: started, about to iterate")
+        log.info("forward_target_to_client: started, about to iterate")
         try:
             async for msg in target_ws:
                 log.info(f"forward_target_to_client: got message type={msg.type}")
@@ -213,9 +213,9 @@ async def websocket_proxy_with_manual_accept(
                     log.warning(f"Target WebSocket error: {msg.data}")
                     break
                 elif msg.type == aiohttp.WSMsgType.CLOSE:
-                    log.info(f"Target WebSocket closed")
+                    log.info("Target WebSocket closed")
                     break
-            log.info(f"forward_target_to_client: iteration ended")
+            log.info("forward_target_to_client: iteration ended")
         except Exception as e:
             log.warning(f"Error forwarding target to client: {e}")
 
@@ -234,7 +234,7 @@ async def websocket_proxy_with_manual_accept(
         async with aiohttp.ClientSession() as session:
             log.info(f"About to ws_connect to {target_url}")
             ws_conn = session.ws_connect(target_url, protocols=subprotocols, **timeout_config)
-            log.info(f"ws_connect coroutine created, about to enter")
+            log.info("ws_connect coroutine created, about to enter")
             async with ws_conn as target_ws:
                 negotiated_protocol = target_ws.protocol
                 log.info(f"Target WebSocket negotiated protocol: {negotiated_protocol}")
@@ -244,7 +244,7 @@ async def websocket_proxy_with_manual_accept(
                 # This is CRITICAL for xpra to work properly
                 log.info(f"Accepting client WebSocket with subprotocol: {negotiated_protocol}")
                 await client_ws.accept(subprotocol=negotiated_protocol)
-                log.info(f"Client WebSocket accepted")
+                log.info("Client WebSocket accepted")
 
                 log.info(f"WebSocket proxy established: {client_info} → {target_url}")
 
@@ -269,7 +269,7 @@ async def websocket_proxy_with_manual_accept(
                     log.info(f"asyncio.wait returned. done={len(done)}, pending={len(pending)}")
                 except Exception as e:
                     log.error(f"asyncio.wait raised exception: {e}")
-                log.info(f"After asyncio.wait check")
+                log.info("After asyncio.wait check")
 
                 # Check for exceptions
                 for task in done:
@@ -280,20 +280,20 @@ async def websocket_proxy_with_manual_accept(
 
                 # Cancel pending tasks
                 for task in pending:
-                    log.info(f"Cancelling pending task")
+                    log.info("Cancelling pending task")
                     task.cancel()
 
-                log.info(f"Cleanup complete, exiting websocket_proxy_with_manual_accept")
+                log.info("Cleanup complete, exiting websocket_proxy_with_manual_accept")
 
     except aiohttp.ClientError as e:
         log.error(f"WebSocket proxy connection error: {e}")
         try:
             await client_ws.close(code=status.WS_1011_INTERNAL_ERROR)
-        except:
+        except Exception:
             pass
     except Exception as e:
         log.error(f"WebSocket proxy unexpected error: {e}")
         try:
             await client_ws.close(code=status.WS_1011_INTERNAL_ERROR)
-        except:
+        except Exception:
             pass

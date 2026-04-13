@@ -19,9 +19,6 @@ import os
 import re
 import uuid
 import html
-import sys
-import asyncio
-import json
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
@@ -470,10 +467,6 @@ class Link:
     @property
     def id(self):
         return self._id
-
-    @property
-    def nodes(self):
-        return [node["node"] for node in self._nodes]
 
     @property
     def capturing(self):

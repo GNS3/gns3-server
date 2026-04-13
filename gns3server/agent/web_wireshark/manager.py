@@ -841,7 +841,7 @@ class WebWiresharkManager:
         logger.info(f"[Web Wireshark] Display: :{display}, Container IP: {container_ip}, Port: {port}")
 
         # Execute Wireshark command without waiting for completion
-        proc = await asyncio.create_subprocess_exec(
+        await asyncio.create_subprocess_exec(
             "docker", "exec", container_id,
             "bash", "-c", wireshark_cmd,
             stdout=asyncio.subprocess.PIPE,
