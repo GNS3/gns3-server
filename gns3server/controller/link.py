@@ -88,6 +88,7 @@ class Link:
         self._suspended = False
         self._filters = {}
         self._link_style = {}
+        self._wireshark = False
 
     @property
     def filters(self):
@@ -352,6 +353,7 @@ class Link:
             })
 
             log.info(f"Web Wireshark started for link {self.id}: {result.get('ws_url')}")
+            self._wireshark = True
 
         except ControllerError:
             # Re-raise ControllerError to return error to client
@@ -375,6 +377,7 @@ class Link:
             )
 
             log.info(f"Web Wireshark stopped for link {self.id}")
+            self._wireshark = False
 
         except Exception as e:
             log.error(f"Error stopping Web Wireshark: {e}")
@@ -568,4 +571,5 @@ class Link:
             "filters": self._filters,
             "suspend": self._suspended,
             "link_style": self._link_style,
+            "wireshark": self._wireshark,
         }
