@@ -9,7 +9,7 @@
     "product_name": "Alpine Linux Virt",
     "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
-    "status": "beta",
+    "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "By default, a \"cisco\" account with password \"cisco\" is created.",
