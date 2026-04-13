@@ -146,6 +146,45 @@ DEFAULT_CONVERSATION_TITLE = "New Conversation"
 UNTITLED_SESSION_FALLBACK = "Untitled Session"
 TITLE_MAX_LENGTH = 40
 
+# Abort flags storage for session-level abort tracking
+# This is checked by conditional edge functions to stop the graph
+_abort_flags: dict[str, bool] = {}
+
+
+def check_abort_flag(session_id: str) -> bool:
+    """
+    Check if abort flag is set for a session.
+
+    Args:
+        session_id: Session identifier
+
+    Returns:
+        True if abort is requested, False otherwise
+    """
+    return _abort_flags.get(session_id, False)
+
+
+def set_abort_flag(session_id: str):
+    """
+    Set abort flag for a session.
+
+    Args:
+        session_id: Session identifier
+    """
+    _abort_flags[session_id] = True
+    logger.debug("Abort flag set for session: %s", session_id)
+
+
+def clear_abort_flag(session_id: str):
+    """
+    Clear abort flag for a session.
+
+    Args:
+        session_id: Session identifier
+    """
+    _abort_flags[session_id] = False
+    logger.debug("Abort flag cleared for session: %s", session_id)
+
 
 # Define state
 class MessagesState(TypedDict):
@@ -165,6 +204,8 @@ class MessagesState(TypedDict):
         conversation_title: Optional conversation title for session
                           identification and management
         topology_info: Dictionary containing GNS3 project topology information
+        session_id: Session identifier for abort tracking
+        abort: Flag to signal abort request
     """
 
     messages: Annotated[list[AnyMessage], operator.add]
@@ -178,6 +219,12 @@ class MessagesState(TypedDict):
 
     # Store GNS3 topology information
     topology_info: dict | None
+
+    # Session identifier for abort tracking
+    session_id: str | None
+
+    # Abort flag to signal stop request
+    abort: bool
 
 
 # Define llm call  node
@@ -334,6 +381,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
         "messages": [response],
         "llm_calls": state.get("llm_calls", 0) + 1,
         "topology_info": topology_info,
+        "session_id": state.get("session_id"),
     }
 
 
@@ -352,7 +400,7 @@ def generate_title(
 
     if not llm_config:
         logger.error("LLM config not found in context, cannot generate title")
-        return {"conversation_title": UNTITLED_SESSION_FALLBACK}
+        return {"conversation_title": UNTITLED_SESSION_FALLBACK, "session_id": state.get("session_id")}
 
     # Only generate a title if it hasn't been set yet
     current_title = state.get("conversation_title")
@@ -403,7 +451,7 @@ def generate_title(
             )
 
             logger.info("Generated new title: %s", new_title)
-            return {"conversation_title": new_title}
+            return {"conversation_title": new_title, "session_id": state.get("session_id")}
 
         except Exception as e:
             logger.error(f"Title generation failed: {e}, using fallback")
@@ -428,14 +476,14 @@ def generate_title(
                             "Using fallback title from user message: '%s'",
                             fallback_title,
                         )
-                        return {"conversation_title": fallback_title}
+                        return {"conversation_title": fallback_title, "session_id": state.get("session_id")}
 
             # Final fallback
             logger.info(
                 "Using final fallback title: '%s'",
                 UNTITLED_SESSION_FALLBACK,
             )
-            return {"conversation_title": UNTITLED_SESSION_FALLBACK}
+            return {"conversation_title": UNTITLED_SESSION_FALLBACK, "session_id": state.get("session_id")}
 
     # Title already exists → no update needed
     return {}
@@ -481,21 +529,63 @@ def tool_node(state: dict, config: RunnableConfig | None = None):
         )
         result.append(tool_msg)
 
-    return {"messages": result}
+    return {"messages": result, "session_id": state.get("session_id")}
+
+
+# Abort handler node - provides tool results when aborting
+def abort_handler_node(state: dict) -> dict:
+    """
+    Handles abort by providing tool result messages for pending tool_calls.
+    This ensures message history consistency and prevents checkpoint corruption.
+    """
+    messages = state.get("messages", [])
+    if not messages:
+        return {"session_id": state.get("session_id")}
+
+    last_message = messages[-1]
+    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
+        return {"session_id": state.get("session_id")}
+
+    result = []
+    for tool_call in last_message.tool_calls:
+        tool_msg = ToolMessage(
+            content=json.dumps({
+                "status": "aborted",
+                "message": "Tool execution was aborted by user",
+                "tool_call_id": tool_call["id"],
+            }),
+            tool_call_id=tool_call["id"],
+            name=tool_call["name"],
+            metadata={"created_at": datetime.utcnow().isoformat(), "aborted": True},
+        )
+        result.append(tool_msg)
+
+    logger.info("Abort handler: generated %d aborted tool messages", len(result))
+    return {"messages": result, "session_id": state.get("session_id")}
 
 
 # Routing logic after the LLM node
 def should_continue(
     state: MessagesState,
-) -> Literal["tool_node", "title_generator_node", END]:
+) -> Literal["tool_node", "title_generator_node", "abort_handler_node", END]:
     """
     Determine the next step after the LLM has produced a response.
 
+    - If abort flag is set → end the conversation
     - If the LLM requested any tool calls → route to tool_node
     - If this is the first complete turn (llm_calls == 1) and no title
       exists → generate a title
     - Otherwise → conversation is complete, go to END
     """
+    # Check abort flag first
+    session_id = state.get("session_id")
+    if session_id and check_abort_flag(session_id):
+        last_message = state["messages"][-1]
+        # If there's a tool_calls message, we need to handle it properly
+        if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+            return "abort_handler_node"
+        return END
+
     last_message = state["messages"][-1]
     current_title = state.get("conversation_title")
 
@@ -526,9 +616,15 @@ def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", END]:
         "llm_call" to continue processing, END to terminate conversation
 
     Logic:
+        - If abort flag is set → end the conversation
         - If the last message is ToolMessage and steps >= 4: continue to LLM
         - Otherwise: end the conversation to prevent infinite loops
     """
+    # Check abort flag first
+    session_id = state.get("session_id")
+    if session_id and check_abort_flag(session_id):
+        return END
+
     last_message = state["messages"][-1]
     if isinstance(last_message, ToolMessage):
         if state["remaining_steps"] < 4:
@@ -546,6 +642,7 @@ agent_builder = StateGraph(MessagesState)
 agent_builder.add_node("llm_call", llm_call)
 agent_builder.add_node("tool_node", tool_node)
 agent_builder.add_node("title_generator_node", generate_title)
+agent_builder.add_node("abort_handler_node", abort_handler_node)
 
 # Add edges to connect nodes
 agent_builder.add_edge(START, "llm_call")
@@ -560,6 +657,7 @@ agent_builder.add_conditional_edges(
         # tools
         "title_generator_node": "title_generator_node",  # Generate title on
         # first interaction
+        "abort_handler_node": "abort_handler_node",  # Handle abort with tool calls
         END: END,  # End conversation if no tools needed
     },
 )
@@ -576,3 +674,4 @@ agent_builder.add_conditional_edges(
 )
 
 agent_builder.add_edge("title_generator_node", END)
+agent_builder.add_edge("abort_handler_node", END)

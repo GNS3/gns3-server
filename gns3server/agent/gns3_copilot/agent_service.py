@@ -91,6 +91,20 @@ class AgentService:
         self._init_lock = asyncio.Lock()
         self._initialized = False
 
+    def abort_session(self, session_id: str):
+        """
+        Signal abort for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+            set_abort_flag,
+        )
+
+        set_abort_flag(session_id)
+        log.info("Abort signal set for session: %s", session_id)
+
     def _get_checkpoint_dir(self) -> str:
         """Get or create the checkpoint directory for this project."""
         checkpoint_dir = os.path.join(self.project_path, "gns3-copilot")
@@ -313,8 +327,17 @@ class AgentService:
             ],
             "llm_calls": 0,
             "remaining_steps": 20,
-            "mode": mode,
+            "session_id": session_id,
+            "abort": False,
         }
+
+        # Clear abort flag for this session at the start of stream
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+            clear_abort_flag,
+        )
+
+        clear_abort_flag(session_id)
+        log.debug("Abort flag cleared for session: %s", session_id)
 
         # Get the compiled graph
         graph = await self._get_graph()
