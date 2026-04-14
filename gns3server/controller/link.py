@@ -98,13 +98,6 @@ class Link:
         return self._filters
 
     @property
-    def nodes(self):
-        """
-        Get the current nodes attached to this link
-        """
-        return self._nodes
-
-    @property
     def project(self):
         """
         Get the project this link belongs to.
@@ -470,6 +463,10 @@ class Link:
     @property
     def id(self):
         return self._id
+
+    @property
+    def nodes(self):
+        return [node["node"] for node in self._nodes]
 
     @property
     def capturing(self):
