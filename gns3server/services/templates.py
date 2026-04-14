@@ -110,7 +110,7 @@ BUILTIN_TEMPLATES = [
         "base_script_file": "vpcs_base_config.txt",
         "compute_id": None,
         "builtin": True,
-        "tags": ["platform:vpcs", "device_type:gns3_vpcs_telnet"],
+        "tags": ["device_type:gns3_vpcs_telnet"],
     },
     {
         "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_switch"),
