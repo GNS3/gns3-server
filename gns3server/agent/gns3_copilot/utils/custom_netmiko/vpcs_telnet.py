@@ -163,7 +163,7 @@ class VPCSTelnet(BaseConnection):
             logger.debug("Error waiting for VPCS prompt: %s", e)
 
         # Step 4: Return what we have (connection might still work)
-        logger.warning("VPCS prompt not clearly detected, returning current output")
+        logger.debug("VPCS prompt not clearly detected, returning current output")
         return return_msg
 
     def session_preparation(self) -> None:
