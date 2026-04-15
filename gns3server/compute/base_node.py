@@ -1045,7 +1045,8 @@ class BaseNode:
 
     def _get_custom_adapter_settings(self, adapter_number):
 
-        for custom_adapter in self.custom_adapters:
-            if custom_adapter["adapter_number"] == adapter_number:
-                return custom_adapter
+        if self.custom_adapters:
+            for custom_adapter in self.custom_adapters:
+                if custom_adapter["adapter_number"] == adapter_number:
+                    return custom_adapter
         return {}
