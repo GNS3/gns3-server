@@ -37,6 +37,7 @@ Usage:
 
 import logging
 import os
+import shlex
 import subprocess
 import tempfile
 
@@ -287,8 +288,43 @@ class PacketCaptureTool(BaseTool):
         Returns:
             str: tshark output
         """
-        # Build command
-        cmd = ["tshark", "-r", pcap_file] + tshark_args.split()
+        # Parse arguments and handle display filter conflicts
+        # If both -Y and positional filter are provided, combine them with "and"
+        # Use shlex.split() to properly handle quoted arguments
+        args_list = shlex.split(tshark_args)
+        cmd = ["tshark", "-r", pcap_file]
+        display_filter = None
+
+        i = 0
+        while i < len(args_list):
+            arg = args_list[i]
+            if arg == "-Y" or arg == "-R":
+                # -Y or -R specifies a display filter
+                if i + 1 < len(args_list):
+                    display_filter = args_list[i + 1]
+                    i += 2
+                else:
+                    i += 1
+            elif arg.startswith("-"):
+                # Other flags that take arguments
+                if arg in ("-e", "-T", "-c", "-w", "-F", "-b", "-a", "-f"):
+                    cmd.extend([arg, args_list[i + 1]])
+                    i += 2
+                else:
+                    cmd.append(arg)
+                    i += 1
+            else:
+                # Positional argument (likely a display filter without -Y)
+                if display_filter:
+                    # Combine with existing -Y filter using "and"
+                    display_filter = f"({display_filter}) and ({arg})"
+                else:
+                    display_filter = arg
+                i += 1
+
+        # Add the combined display filter with -Y
+        if display_filter:
+            cmd.extend(["-Y", display_filter])
 
         logger.info(f"Running tshark: {' '.join(cmd)}")
 
@@ -301,8 +337,10 @@ class PacketCaptureTool(BaseTool):
             )
 
             output = result.stdout
-            if result.stderr:
-                logger.warning(f"tshark stderr: {result.stderr}")
+            if result.stderr and "tshark:" in result.stderr:
+                # Only log tshark errors, not warnings like filter conflicts
+                if "error" in result.stderr.lower():
+                    logger.warning(f"tshark stderr: {result.stderr}")
 
             # Handle empty output
             if not output.strip():
