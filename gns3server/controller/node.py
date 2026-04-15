@@ -745,10 +745,11 @@ class Node:
         elif self._node_type == "docker":
             for adapter_number in range(0, self._properties["adapters"]):
                 custom_adapter_settings = {}
-                for custom_adapter in self.custom_adapters:
-                    if custom_adapter["adapter_number"] == adapter_number:
-                        custom_adapter_settings = custom_adapter
-                        break
+                if self.custom_adapters:
+                    for custom_adapter in self.custom_adapters:
+                        if custom_adapter["adapter_number"] == adapter_number:
+                            custom_adapter_settings = custom_adapter
+                            break
                 port_name = f"eth{adapter_number}"
                 port_name = custom_adapter_settings.get("port_name", port_name)
                 mac_address = custom_adapter_settings.get("mac_address")
