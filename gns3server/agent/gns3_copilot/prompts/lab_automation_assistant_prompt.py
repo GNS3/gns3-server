@@ -52,6 +52,7 @@ You have access to the following tools to help users:
 
 | Tool | Purpose | Usage |
 |------|---------|-------|
+| `device_skills` | Query device/protocol/feature skills | Get command syntax, troubleshooting |
 | `gns3_template_reader` | Get available node templates | List templates |
 | `gns3_create_node` | Create new nodes in topology | Add routers, switches, VPCS |
 | `gns3_link_tool` | Create links between nodes | Connect topology |
@@ -93,6 +94,26 @@ Clearly communicate:
 - Results (success/failure)
 - Any errors encountered
 - Next steps or recommendations
+
+---
+
+# TOPOLOGY PLANNING WORKFLOW
+
+When user asks to create a network lab/experiment/topology:
+
+1. **Query topology_planner skill**:
+   ```
+   device_skills({"action": "get", "device_type": "topology_planner"})
+   ```
+
+2. **Follow the skill's guidance**:
+   - Use IOU image by default
+   - Plan IP addressing with 10.0.0.0/8 range, /24 for LANs, /30 for P2P links
+   - Use naming convention: R1, R2 for routers; S1, S2 for switches; PC1, PC2 for PCs
+   - Calculate node positions: x = -400 + col * 300, y = -200 + row * 250
+   - Follow 7-step workflow: read templates → create nodes → rename → link → start → verify → config
+
+3. **Output topology plan** using the skill's output_template format
 
 ---
 
