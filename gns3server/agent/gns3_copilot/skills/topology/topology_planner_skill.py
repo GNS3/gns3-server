@@ -151,6 +151,7 @@ TOPOLOGY_PLANNER_SKILL = {
             "PCs/terminals placed at outer edges",
             "Maintain minimum 250px between any two nodes",
             "Adjust positions to reflect actual network topology logic",
+            "Combine topology types as needed (e.g., star + linear_p2p for WAN segments)",
         ],
     },
 
