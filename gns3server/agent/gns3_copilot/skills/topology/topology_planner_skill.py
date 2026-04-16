@@ -93,20 +93,65 @@ TOPOLOGY_PLANNER_SKILL = {
         "loopback": "Lo{number}, e.g., Lo0, Lo1",
     },
 
-    # Node positioning rules
+    # Node positioning rules based on topology type
     "positioning_rules": {
         "min_distance_px": 250,
-        "grid_cols": 4,
-        "grid_start": {"x": -400, "y": -200},
-        "grid_spacing": {"x": 300, "y": 250},
-        "formula": "x = -400 + col * 300, y = -200 + row * 250",
-        "example": {
-            "node_0": {"x": -400, "y": -200},
-            "node_1": {"x": -100, "y": -200},
-            "node_2": {"x": 200, "y": -200},
-            "node_3": {"x": 500, "y": -200},
-            "node_4": {"x": -400, "y": 50},
-        }
+        "topology_types": {
+            "star": {
+                "description": "Central node with peripherals around it",
+                "center_node": {"x": 0, "y": 0},
+                "peripheral_nodes": "Arrange in circle around center, angle = index * (360 / count)",
+                "radius": 300,
+                "example_3nodes": {"R1": (0, 0), "R2": (-300, 0), "R3": (300, 0)},
+                "example_5nodes": {"R1": (0, 0), "R2": (-250, -250), "R3": (250, -250), "R4": (-250, 250), "R5": (250, 250)},
+            },
+            "ring": {
+                "description": "Nodes connected in a closed loop",
+                "arrangement": "Circle arrangement, equal spacing",
+                "radius": 250,
+                "example_3nodes": {"R1": (0, -250), "R2": (216, 125), "R3": (-216, 125)},
+                "example_4nodes": {"R1": (0, -250), "R2": (250, 0), "R3": (0, 250), "R4": (-250, 0)},
+            },
+            "bus": {
+                "description": "Linear chain of nodes",
+                "arrangement": "Horizontal line, equal spacing",
+                "spacing_x": 300,
+                "spacing_y": 0,
+                "example_3nodes": {"R1": (-300, 0), "R2": (0, 0), "R3": (300, 0)},
+            },
+            "mesh": {
+                "description": "Fully or partially interconnected nodes",
+                "arrangement": "Grid pattern, rows and columns",
+                "cols": 2,
+                "spacing_x": 300,
+                "spacing_y": 250,
+                "example_4nodes": {"R1": (-150, -125), "R2": (150, -125), "R3": (-150, 125), "R4": (150, 125)},
+            },
+            "hierarchical": {
+                "description": "Three-tier: Core -> Distribution -> Access",
+                "layers": {
+                    "core": {"y": -250, "x": 0},
+                    "distribution": {"y": 0, "x_offset": 200},
+                    "access": {"y": 250, "x_offset": 300},
+                },
+                "example_5nodes": {"Core": (0, -250), "Dist1": (-200, 0), "Dist2": (200, 0), "Acc1": (-300, 250), "Acc2": (300, 250)},
+            },
+            "linear_p2p": {
+                "description": "Point-to-point links in a line (WAN links)",
+                "arrangement": "Horizontal or vertical line",
+                "spacing_x": 250,
+                "spacing_y": 0,
+                "example_3routers": {"R1": (-250, 0), "R2": (0, 0), "R3": (250, 0)},
+            },
+        },
+        "general_guidelines": [
+            "Place hub/spine nodes at center (0,0) or top center",
+            "Leaf/edge nodes radiate outward from center",
+            "WAN routers typically on left and right sides",
+            "PCs/terminals placed at outer edges",
+            "Maintain minimum 250px between any two nodes",
+            "Adjust positions to reflect actual network topology logic",
+        ],
     },
 
     # Tool call workflow
@@ -120,7 +165,7 @@ TOPOLOGY_PLANNER_SKILL = {
             "tool": "gns3_create_node",
             "purpose": "Create all router/switch/PC nodes",
             "params_required": ["project_id", "nodes: [{template_id, x, y, name?}]"],
-            "positioning": "Use grid layout: x = -400 + col * 300, y = -200 + row * 250, min 250px between nodes",
+            "positioning": "Choose topology type (star/ring/bus/mesh/hierarchical) based on network design. Place hub/spine at center, leaves at edges. Maintain 250px min distance.",
             "note": "Use 'name' field to set node names directly (e.g., R1, R2). No separate rename step needed."
         },
         "step_3_create_links": {

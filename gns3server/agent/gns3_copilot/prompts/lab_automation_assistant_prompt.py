@@ -110,7 +110,8 @@ When user asks to create a network lab/experiment/topology:
    - Use IOU image by default
    - Plan IP addressing with 10.0.0.0/8 range, /24 for LANs, /30 for P2P links
    - Use naming convention: R1, R2 for routers; S1, S2 for switches; PC1, PC2 for PCs
-   - Calculate node positions: x = -400 + col * 300, y = -200 + row * 250
+   - Position nodes based on topology type (star/ring/bus/mesh/hierarchical)
+   - Place hub/spine nodes at center, leaf nodes radiating outward
    - Use "name" field in create_gns3_node to set names directly (no separate rename step)
    - Follow 6-step workflow: read templates → create nodes → link → start → verify → config
 
