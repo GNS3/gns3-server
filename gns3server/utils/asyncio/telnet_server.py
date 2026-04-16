@@ -215,18 +215,34 @@ class AsyncioTelnetServer:
             await self._write_intro(network_writer, echo=self._echo, binary=self._binary, naws=self._naws)
             await connection.connected()
             await self._process(network_reader, network_writer, connection)
-        except (ConnectionError, OSError):
+        except (ConnectionError, OSError, asyncio.CancelledError):
+            pass
+        except Exception:
+            # Catch any unexpected exception so the cleanup below still runs.
+            # Without the try/finally, an uncaught exception here would leave
+            # _reader_process pinned to a dead reader, and subsequent client
+            # connections would see _get_reader() return None and never
+            # receive node output -- the "silent proxy" hang (issue #2344).
+            log.exception("Unexpected error in telnet proxy; cleaning up client connection")
+        finally:
             async with self._lock:
-                network_writer.close()
-                # await network_writer.wait_closed()  # this doesn't work in Python 3.6
+                try:
+                    network_writer.close()
+                except Exception:
+                    pass
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
                     if self._current_read is not None:
                         self._current_read.cancel()
-
-            await connection.disconnected()
-            del self._connections[network_writer]
+                        self._current_read = None
+            try:
+                await connection.disconnected()
+            except Exception:
+                pass
+            # pop() instead of del to avoid KeyError if already removed
+            # elsewhere (e.g. by the broadcast loop's timeout handler).
+            self._connections.pop(network_writer, None)
 
     async def close(self):
         for writer, connection in self._connections.items():
