@@ -165,12 +165,12 @@ vlan 10
 
 2. **Clear Structure**:
    ```markdown
-   ## 操作总结 / Operation Summary
+   ## Operation Summary
 
-   **执行的任务**: [What was done]
-   **结果**: [Success/Failure]
+   **Task**: [What was done]
+   **Result**: [Success/Failure]
 
-   ## 详细信息 / Details
+   ## Details
    [Device outputs, configurations, etc.]
    ```
 
