@@ -2432,13 +2432,13 @@ class Project:
                     "node_id": _node_a.node_id,
                     "adapter_number": _port_a["adapter_number"],
                     "port_number": _port_a["port_number"],
-                    "label": {"text": _port_a["name"]},
+                    "label": {"text": _port_a.get("short_name") or _port_a["name"]},
                 },
                 {
                     "node_id": _node_b.node_id,
                     "adapter_number": _port_b["adapter_number"],
                     "port_number": _port_b["port_number"],
-                    "label": {"text": _port_b["name"]},
+                    "label": {"text": _port_b.get("short_name") or _port_b["name"]},
                 },
             ],
         )
