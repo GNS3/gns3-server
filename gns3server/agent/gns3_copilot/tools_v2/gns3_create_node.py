@@ -52,7 +52,7 @@ class GNS3CreateNodeTool(BaseTool):
 
     **Input:**
     A JSON object with project_id and array of nodes with template_id,
-    x and y coordinates.
+    x, y coordinates, and optional name.
 
     Example input:
         {
@@ -61,12 +61,14 @@ class GNS3CreateNodeTool(BaseTool):
                 {
                     "template_id": "uuid-of-template",
                     "x": 100,
-                    "y": -200
+                    "y": -200,
+                    "name": "R1"
                 },
                 {
                     "template_id": "uuid-of-template2",
                     "x": -200,
-                    "y": 300
+                    "y": 300,
+                    "name": "R2"
                 }
             ]
         }
@@ -79,12 +81,12 @@ class GNS3CreateNodeTool(BaseTool):
             "created_nodes": [
                 {
                     "node_id": "uuid-of-node1",
-                    "name": "NodeName1",
+                    "name": "R1",
                     "status": "success"
                 },
                 {
                     "node_id": "uuid-of-node2",
-                    "name": "NodeName2",
+                    "name": "R2",
                     "status": "success"
                 }
             ],
@@ -99,6 +101,7 @@ class GNS3CreateNodeTool(BaseTool):
     description: str = """
     Creates multiple nodes in a GNS3 project using templates and coordinates.
     Input is a JSON object with project_id and array of nodes.
+    Each node requires: template_id, x, y. Optional: name (to set node name directly).
     Example input:
         {
             "project_id": "uuid-of-project",
@@ -106,12 +109,14 @@ class GNS3CreateNodeTool(BaseTool):
                 {
                     "template_id": "uuid-of-template",
                     "x": 100,
-                    "y": -200
+                    "y": -200,
+                    "name": "R1"
                 },
                 {
                     "template_id": "uuid-of-template2",
                     "x": -200,
-                    "y": 300
+                    "y": 300,
+                    "name": "R2"
                 }
             ]
         }
@@ -170,6 +175,7 @@ class GNS3CreateNodeTool(BaseTool):
                 template_id = node_data.get("template_id")
                 x = node_data.get("x")
                 y = node_data.get("y")
+                name = node_data.get("name")
 
                 if not all(
                     [
@@ -210,14 +216,16 @@ class GNS3CreateNodeTool(BaseTool):
                     template_id = node_data.get("template_id")
                     x = node_data.get("x")
                     y = node_data.get("y")
+                    name = node_data.get("name")
 
                     logger.info(
-                        "Creating node %d/%d with template %s at (%s, %s)...",
+                        "Creating node %d/%d with template %s at (%s, %s), name=%s...",
                         i + 1,
                         len(nodes),
                         template_id,
                         x,
                         y,
+                        name,
                     )
 
                     # Create node
@@ -226,6 +234,7 @@ class GNS3CreateNodeTool(BaseTool):
                         template_id=template_id,
                         x=x,
                         y=y,
+                        name=name,
                         connector=gns3_server,
                     )
                     node.create()
@@ -299,12 +308,14 @@ if __name__ == "__main__":
                     "template_id": "b923a635-b7cc-4cb5-9a86-9357e04c02f7",
                     "x": 100,
                     "y": -200,
+                    "name": "R1",
                 },
                 {
                     # TODO: Replace with actual template UUID
                     "template_id": "b923a635-b7cc-4cb5-9a86-9357e04c02f7",
                     "x": 200,
                     "y": -300,
+                    "name": "R2",
                 },
             ],
         }

@@ -119,32 +119,27 @@ TOPOLOGY_PLANNER_SKILL = {
         "step_2_create_nodes": {
             "tool": "gns3_create_node",
             "purpose": "Create all router/switch/PC nodes",
-            "params_required": ["project_id", "nodes: [{template_id, x, y}]"],
+            "params_required": ["project_id", "nodes: [{template_id, x, y, name?}]"],
             "positioning": "Use grid layout: x = -400 + col * 300, y = -200 + row * 250, min 250px between nodes",
-            "note": "Node names are auto-generated from template. Use step_3 to rename after creation"
+            "note": "Use 'name' field to set node names directly (e.g., R1, R2). No separate rename step needed."
         },
-        "step_3_rename_nodes": {
-            "tool": "gns3_update_node_name_tool",
-            "purpose": "Rename nodes to match naming convention if needed",
-            "params_required": ["node_id", "new_name"]
-        },
-        "step_4_create_links": {
+        "step_3_create_links": {
             "tool": "gns3_link_tool",
             "purpose": "Connect nodes according to topology design",
             "params_required": ["node1_id", "node1_port", "node2_id", "node2_port"]
         },
-        "step_5_start_nodes": {
+        "step_4_start_nodes": {
             "tool": "gns3_start_node_tool",
             "purpose": "Power on all nodes",
             "params_required": ["node_ids"],
             "note": "Start nodes before configuration"
         },
-        "step_6_verify": {
+        "step_5_verify": {
             "tool": "execute_multiple_device_commands",
             "purpose": "Verify connectivity before config",
             "example_commands": ["ping <neighbor_ip>"]
         },
-        "step_7_config": {
+        "step_6_config": {
             "tool": "execute_multiple_device_config_commands",
             "purpose": "Apply network configuration",
             "note": "Only after verifying physical connectivity"
@@ -199,10 +194,11 @@ TOPOLOGY_PLANNER_SKILL = {
 
 ### Configuration Steps
 1. Create nodes: gns3_create_node(...)
-2. Rename nodes: gns3_update_node_name_tool(...)
-3. Create links: gns3_link_tool(...)
-4. Start nodes: gns3_start_node_tool(...)
-5. Verify connectivity: ping ...
-6. Apply config: execute_multiple_device_config_commands(...)
+2. Create links: gns3_link_tool(...)
+3. Start nodes: gns3_start_node_tool(...)
+4. Verify connectivity: ping ...
+5. Apply config: execute_multiple_device_config_commands(...)
+
+Note: Use "name" field in gns3_create_node to set node names directly. No separate rename step needed.
 """,
 }
