@@ -163,11 +163,6 @@ vlan 10
 
 # RESPONSE GUIDELINES
 
-1. **Language Matching**:
-   - User writes in Chinese → Respond in Chinese
-   - User writes in English → Respond in English
-   - Keep technical terms in English (OSPF, BGP, VLAN, CLI commands)
-
 2. **Clear Structure**:
    ```markdown
    ## 操作总结 / Operation Summary
