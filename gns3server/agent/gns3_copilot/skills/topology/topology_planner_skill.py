@@ -35,26 +35,11 @@ Key Constraints:
 - Node naming: Router=R, Switch=S, PC=PC
 """
 
-# Standard lab IP subnet allocation (10.0.0.0/8)
-# Subnets are allocated sequentially, each /24 by default
-IP_SUBNET_POOL = [
-    "10.0.0.0/24",   # Management/console
-    "10.0.1.0/24",   # LAN segment 1
-    "10.0.2.0/24",   # LAN segment 2
-    "10.0.3.0/24",   # WAN segment 1 (P2P links)
-    "10.0.4.0/24",   # WAN segment 2
-    "10.0.5.0/24",   # WAN segment 3
-    "10.0.10.0/24",  # Loopback pools
-    "10.0.20.0/24",
-    "10.0.30.0/24",
-    "10.0.40.0/24",
-]
-
 # Default node naming convention
 NODE_NAMING = {
-    "router": "R",      # e.g., R1, R2, R3
-    "switch": "S",      # e.g., S1, S2
-    "pc": "PC",         # e.g., PC1, PC2
+    "router": "R",      # e.g., R-1, R-2, R-3
+    "switch": "SW",      # e.g., SW-1, SW-2
+    "pc": "PC",         # e.g., PC-1, PC-2
 }
 
 # Default IOU template name
@@ -72,25 +57,24 @@ TOPOLOGY_PLANNER_SKILL = {
     "defaults": {
         "image": "IOU",
         "ip_range": "10.0.0.0/8",
-        "subnet_size": "/24",
         "max_nodes": 10,
         "naming": NODE_NAMING,
     },
 
     # IP planning rules
     "ip_planning": {
-        "default_subnet_pool": IP_SUBNET_POOL,
-        "subnet_allocation": "Sequential from pool, /24 for LANs, /30 for P2P links",
-        "gateway_convention": ".254 for LAN subnets, .1/.2 for P2P links",
+        "subnet_format": "10.0.{node_pair}.0/30 for P2P links, 10.0.{node_pair}.0/24 for LANs",
+        "subnet_example": "10.0.12.x = R1-R2 (.1=R1, .2=R2)",
+        "gateway_convention": ".1/.2 for P2P, .254 for LAN gateway",
     },
 
     # Node naming conventions
     "naming_rules": {
-        "router": "R{number}, e.g., R1, R2, R3",
-        "switch": "S{number}, e.g., S1, S2",
-        "pc": "PC{number}, e.g., PC1, PC2",
-        "firewall": "FW{number}",
-        "loopback": "Lo{number}, e.g., Lo0, Lo1",
+        "router": "R{number}, e.g., R-1, R-2, R-3",
+        "switch": "SW{number}, e.g., SW-1, SW-2",
+        "pc": "PC{number}, e.g., PC-1, PC-2",
+        "firewall": "FW{number}, e.g., FW-1",
+        "loopback": "Lo{number}, e.g., Lo-0, Lo-1",
     },
 
     # Node positioning rules based on topology type
@@ -102,22 +86,22 @@ TOPOLOGY_PLANNER_SKILL = {
                 "center_node": {"x": 0, "y": 0},
                 "peripheral_nodes": "Arrange in circle around center, angle = index * (360 / count)",
                 "radius": 300,
-                "example_3nodes": {"R1": (0, 0), "R2": (-300, 0), "R3": (300, 0)},
-                "example_5nodes": {"R1": (0, 0), "R2": (-250, -250), "R3": (250, -250), "R4": (-250, 250), "R5": (250, 250)},
+                "example_3nodes": {"R-1": (0, 0), "R-2": (-300, 0), "R-3": (300, 0)},
+                "example_5nodes": {"R-1": (0, 0), "R-2": (-250, -250), "R-3": (250, -250), "R-4": (-250, 250), "R-5": (250, 250)},
             },
             "ring": {
                 "description": "Nodes connected in a closed loop",
                 "arrangement": "Circle arrangement, equal spacing",
                 "radius": 250,
-                "example_3nodes": {"R1": (0, -250), "R2": (216, 125), "R3": (-216, 125)},
-                "example_4nodes": {"R1": (0, -250), "R2": (250, 0), "R3": (0, 250), "R4": (-250, 0)},
+                "example_3nodes": {"R-1": (0, -250), "R-2": (216, 125), "R-3": (-216, 125)},
+                "example_4nodes": {"R-1": (0, -250), "R-2": (250, 0), "R-3": (0, 250), "R-4": (-250, 0)},
             },
             "bus": {
                 "description": "Linear chain of nodes",
                 "arrangement": "Horizontal line, equal spacing",
                 "spacing_x": 300,
                 "spacing_y": 0,
-                "example_3nodes": {"R1": (-300, 0), "R2": (0, 0), "R3": (300, 0)},
+                "example_3nodes": {"R-1": (-300, 0), "R-2": (0, 0), "R-3": (300, 0)},
             },
             "mesh": {
                 "description": "Fully or partially interconnected nodes",
@@ -125,7 +109,7 @@ TOPOLOGY_PLANNER_SKILL = {
                 "cols": 2,
                 "spacing_x": 300,
                 "spacing_y": 250,
-                "example_4nodes": {"R1": (-150, -125), "R2": (150, -125), "R3": (-150, 125), "R4": (150, 125)},
+                "example_4nodes": {"R-1": (-150, -125), "R-2": (150, -125), "R-3": (-150, 125), "R-4": (150, 125)},
             },
             "hierarchical": {
                 "description": "Three-tier: Core -> Distribution -> Access",
@@ -141,7 +125,7 @@ TOPOLOGY_PLANNER_SKILL = {
                 "arrangement": "Horizontal or vertical line",
                 "spacing_x": 250,
                 "spacing_y": 0,
-                "example_3routers": {"R1": (-250, 0), "R2": (0, 0), "R3": (250, 0)},
+                "example_3routers": {"R-1": (-250, 0), "R-2": (0, 0), "R-3": (250, 0)},
             },
         },
         "general_guidelines": [
@@ -223,19 +207,20 @@ TOPOLOGY_PLANNER_SKILL = {
 ### Devices
 | Node | Type | Image | Description |
 |------|------|-------|-------------|
-| R1 | Router | IOU | Core router |
+| R-1 | Router | IOU | Core router |
 | ... | ... | ... | ... |
 
 ### Connections
 | Node1 | Port | Node2 | Port |
 |-------|------|-------|------|
-| R1 | {short_name} | R2 | {short_name} |
+| R-1 | {short_name} | R-2 | {short_name} |
 | ... | ... | ... | ... |
 
 ### IP Addressing
 | Device | Interface | IP Address | Subnet |
 |--------|-----------|------------|--------|
-| R1 | {short_name} | 10.0.1.1 | /30 |
+| R-1 | {short_name} | 10.0.12.1 | /30 |
+| R-2 | {short_name} | 10.0.12.2 | /30 |
 | ... | ... | ... | ... |
 
 ### Configuration Steps
