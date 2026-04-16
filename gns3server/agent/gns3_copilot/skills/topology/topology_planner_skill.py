@@ -229,13 +229,13 @@ TOPOLOGY_PLANNER_SKILL = {
 ### Connections
 | Node1 | Port | Node2 | Port |
 |-------|------|-------|------|
-| R1 | Gi0/0 | R2 | Gi0/0 |
+| R1 | {short_name} | R2 | {short_name} |
 | ... | ... | ... | ... |
 
 ### IP Addressing
 | Device | Interface | IP Address | Subnet |
 |--------|-----------|------------|--------|
-| R1 | Gi0/0 | 10.0.1.1 | /30 |
+| R1 | {short_name} | 10.0.1.1 | /30 |
 | ... | ... | ... | ... |
 
 ### Configuration Steps
