@@ -60,6 +60,56 @@ NODE_NAMING = {
 # Default IOU template name
 DEFAULT_IOU_TEMPLATE = "IOU"
 
+# Node positioning rules
+# Minimum distance between nodes: 250px (for clear interface display)
+MIN_NODE_DISTANCE = 250
+
+# Grid layout constants
+GRID_COLS = 4  # Max nodes per row before wrapping
+GRID_START_X = -400  # Leftmost x coordinate
+GRID_START_Y = -200  # Top y coordinate
+GRID_SPACING_X = 300  # Horizontal spacing between nodes
+GRID_SPACING_Y = 250  # Vertical spacing between nodes
+
+
+def calculate_node_positions(node_count: int) -> list[dict[str, int]]:
+    """
+    Calculate x, y positions for nodes in a grid layout.
+
+    Args:
+        node_count: Number of nodes to position
+
+    Returns:
+        List of dicts with 'x' and 'y' coordinates for each node
+    """
+    positions = []
+    for i in range(node_count):
+        row = i // GRID_COLS
+        col = i % GRID_COLS
+        x = GRID_START_X + col * GRID_SPACING_X
+        y = GRID_START_Y + row * GRID_SPACING_Y
+        positions.append({"x": x, "y": y})
+    return positions
+
+
+def get_position_for_node(node_index: int) -> dict[str, int]:
+    """
+    Get x, y position for a specific node by index.
+
+    Args:
+        node_index: Zero-based index of the node
+
+    Returns:
+        dict with 'x' and 'y' coordinates
+    """
+    row = node_index // GRID_COLS
+    col = node_index % GRID_COLS
+    return {
+        "x": GRID_START_X + col * GRID_SPACING_X,
+        "y": GRID_START_Y + row * GRID_SPACING_Y,
+    }
+
+
 # Tool call sequence for topology creation
 TOPOLOGY_CREATION_STEPS = [
     {
@@ -177,6 +227,22 @@ TOPOLOGY_PLANNER_SKILL = {
         "loopback": "Lo{number}, e.g., Lo0, Lo1",
     },
 
+    # Node positioning rules
+    "positioning_rules": {
+        "min_distance_px": 250,
+        "grid_cols": 4,
+        "grid_start": {"x": -400, "y": -200},
+        "grid_spacing": {"x": 300, "y": 250},
+        "formula": "x = -400 + col * 300, y = -200 + row * 250",
+        "example": {
+            "node_0": {"x": -400, "y": -200},
+            "node_1": {"x": -100, "y": -200},
+            "node_2": {"x": 200, "y": -200},
+            "node_3": {"x": 500, "y": -200},
+            "node_4": {"x": -400, "y": 50},
+        }
+    },
+
     # Tool call workflow
     "workflow": {
         "step_1_read_templates": {
@@ -187,7 +253,8 @@ TOPOLOGY_PLANNER_SKILL = {
         "step_2_create_nodes": {
             "tool": "gns3_create_node",
             "purpose": "Create all router/switch/PC nodes",
-            "params_required": ["template_name", "node_name", "node_type"],
+            "params_required": ["project_id", "template_id", "x", "y"],
+            "positioning": "Use calculate_node_positions() - grid layout, min 250px between nodes",
             "note": "Create all nodes before linking"
         },
         "step_3_rename_nodes": {
