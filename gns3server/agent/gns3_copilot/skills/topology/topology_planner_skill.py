@@ -60,140 +60,6 @@ NODE_NAMING = {
 # Default IOU template name
 DEFAULT_IOU_TEMPLATE = "IOU"
 
-# Node positioning rules
-# Minimum distance between nodes: 250px (for clear interface display)
-MIN_NODE_DISTANCE = 250
-
-# Grid layout constants
-GRID_COLS = 4  # Max nodes per row before wrapping
-GRID_START_X = -400  # Leftmost x coordinate
-GRID_START_Y = -200  # Top y coordinate
-GRID_SPACING_X = 300  # Horizontal spacing between nodes
-GRID_SPACING_Y = 250  # Vertical spacing between nodes
-
-
-def calculate_node_positions(node_count: int) -> list[dict[str, int]]:
-    """
-    Calculate x, y positions for nodes in a grid layout.
-
-    Args:
-        node_count: Number of nodes to position
-
-    Returns:
-        List of dicts with 'x' and 'y' coordinates for each node
-    """
-    positions = []
-    for i in range(node_count):
-        row = i // GRID_COLS
-        col = i % GRID_COLS
-        x = GRID_START_X + col * GRID_SPACING_X
-        y = GRID_START_Y + row * GRID_SPACING_Y
-        positions.append({"x": x, "y": y})
-    return positions
-
-
-def get_position_for_node(node_index: int) -> dict[str, int]:
-    """
-    Get x, y position for a specific node by index.
-
-    Args:
-        node_index: Zero-based index of the node
-
-    Returns:
-        dict with 'x' and 'y' coordinates
-    """
-    row = node_index // GRID_COLS
-    col = node_index % GRID_COLS
-    return {
-        "x": GRID_START_X + col * GRID_SPACING_X,
-        "y": GRID_START_Y + row * GRID_SPACING_Y,
-    }
-
-
-# Tool call sequence for topology creation
-TOPOLOGY_CREATION_STEPS = [
-    {
-        "step": 1,
-        "tool": "gns3_template_reader",
-        "action": "List available templates to find IOU template name",
-        "output": "template_name for IOU devices"
-    },
-    {
-        "step": 2,
-        "tool": "gns3_create_node",
-        "action": "Create routers with naming convention",
-        "params": {
-            "template": "<IOU_template_name>",
-            "node_name": "R1, R2, ...",
-            "node_type": "iou"
-        }
-    },
-    {
-        "step": 3,
-        "tool": "gns3_update_node_name_tool",
-        "action": "Rename nodes if needed",
-        "params": {
-            "node_id": "<node_id>",
-            "new_name": "<desired_name>"
-        }
-    },
-    {
-        "step": 4,
-        "tool": "gns3_link_tool",
-        "action": "Connect nodes according to topology",
-        "params": {
-            "node1_id": "<node1_id>",
-            "node1_port": "<port>",
-            "node2_id": "<node2_id>",
-            "node2_port": "<port>"
-        }
-    },
-    {
-        "step": 5,
-        "tool": "gns3_start_node_tool",
-        "action": "Start all nodes",
-        "params": {
-            "node_ids": ["<node_id1>", "<node_id2>", ...]
-        }
-    },
-    {
-        "step": 6,
-        "tool": "execute_multiple_device_commands",
-        "action": "Verify connectivity before configuration",
-        "example": "ping 10.0.1.1"
-    },
-    {
-        "step": 7,
-        "tool": "execute_multiple_device_config_commands",
-        "action": "Apply planned configuration",
-        "example": [
-            "interface GigabitEthernet0/0",
-            "ip address 10.0.1.1 255.255.255.0",
-            "no shutdown"
-        ]
-    },
-]
-
-# IP address allocation helper
-def allocate_subnet(index: int) -> str:
-    """Allocate a /24 subnet from the pool."""
-    if index >= len(IP_SUBNET_POOL):
-        # Expand to /30 for P2P links if pool exhausted
-        base = 10 + index // 256
-        offset = index % 256
-        return f"10.{base}.{offset}.0/30"
-    return IP_SUBNET_POOL[index]
-
-
-def allocate_ip(subnet_index: int, host_index: int) -> str:
-    """Allocate an IP from a subnet. Gateway typically .254."""
-    subnet = IP_SUBNET_POOL[subnet_index] if subnet_index < len(IP_SUBNET_POOL) else f"10.0.{subnet_index}.0/24"
-    octets = subnet.split(".")[0:3]
-    gateway = f"{octets[0]}.{octets[1]}.{octets[2]}.254"
-    if host_index == 254:
-        return gateway
-    return f"{octets[0]}.{octets[1]}.{octets[2]}.{host_index}"
-
 
 # Topology Planner Skill Definition
 TOPOLOGY_PLANNER_SKILL = {
@@ -253,9 +119,9 @@ TOPOLOGY_PLANNER_SKILL = {
         "step_2_create_nodes": {
             "tool": "gns3_create_node",
             "purpose": "Create all router/switch/PC nodes",
-            "params_required": ["project_id", "template_id", "x", "y"],
-            "positioning": "Use calculate_node_positions() - grid layout, min 250px between nodes",
-            "note": "Create all nodes before linking"
+            "params_required": ["project_id", "nodes: [{template_id, x, y}]"],
+            "positioning": "Use grid layout: x = -400 + col * 300, y = -200 + row * 250, min 250px between nodes",
+            "note": "Node names are auto-generated from template. Use step_3 to rename after creation"
         },
         "step_3_rename_nodes": {
             "tool": "gns3_update_node_name_tool",
