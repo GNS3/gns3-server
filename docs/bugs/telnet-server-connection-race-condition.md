@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
 # Telnet Server Connection Race Condition Bug
 
 ## Bug Report

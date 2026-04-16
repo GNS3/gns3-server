@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
 # Netmiko Supported Devices
 
 **Netmiko Version:** 4.6.0

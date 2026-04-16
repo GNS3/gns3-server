@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
 # Template-Based System with HITL - Future Roadmap
 
 **Status:** 💡 Proposed

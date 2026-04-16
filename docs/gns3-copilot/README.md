@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
 # GNS3 AI Copilot Documentation
 
 This directory contains design documentation, implementation guides, and future plans for the GNS3 AI Copilot feature.
