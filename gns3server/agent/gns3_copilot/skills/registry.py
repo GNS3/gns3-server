@@ -43,10 +43,12 @@ logger = logging.getLogger(__name__)
 
 # Import all skill modules to register them
 from gns3server.agent.gns3_copilot.skills.vpcs import VPCS_SKILL
+from gns3server.agent.gns3_copilot.skills.topology import TOPOLOGY_PLANNER_SKILL
 
 # Global skill registry - maps device_type to skill definition
 SKILLS_REGISTRY: dict[str, dict[str, Any]] = {
     "gns3_vpcs_telnet": VPCS_SKILL,
+    "topology_planner": TOPOLOGY_PLANNER_SKILL,
     # Add more skills here as they are implemented
     # "huawei_telnet": HUAWEI_SKILL,
     # "ruijie_telnet": RUIJIE_SKILL,
