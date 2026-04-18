@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Docker API configuration
 DOCKER_SOCKET = "/var/run/docker.sock"
-DOCKER_MINIMUM_API_VERSION = "1.40"
+DOCKER_MINIMUM_API_VERSION = "1.44"
 DOCKER_PREFERRED_API_VERSION = "1.44"
 
 
