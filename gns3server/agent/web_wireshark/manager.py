@@ -749,6 +749,9 @@ class WebWiresharkManager:
         """
         logger.info(f"Starting Web Wireshark session for link {link_id}")
 
+        # Ensure Docker network exists before creating container
+        await self.ensure_network()
+
         # Auto-detect capture_stream_url if not provided
         if not capture_stream_url:
             gns3_url = self.detect_gns3_url()
