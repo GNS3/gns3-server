@@ -1,70 +1,52 @@
 ---
 name: documentation
-description: Use this skill when creating or updating technical documentation for GNS3
-version: 1.0.0
+description: Use this skill when creating or updating technical documentation under docs/ directory for GNS3 server
+version: 2.1.0
 ---
 
-# GNS3 Documentation Standard
+# GNS3 Server Technical Documentation Standard
 
 ## Core Principle
 
-Only three things allowed:
-- ✅ Architecture diagrams
-- ✅ Flow diagrams
-- ✅ Text descriptions
+Documentation answers: **What is this, how does it work at a high level.**
 
-Delete everything else.
+Code details are left to the codebase — readers can use AI to find implementation specifics.
 
 ---
 
-## Standard Structure
+## Document Structure
 
 ```markdown
 # Feature Name
 
-## Architecture Overview
-[Architecture diagram]
+## Overview
+[What it does, in 2-3 sentences]
 
-## Flow Description
-[Data flow / process flow diagram]
+## Architecture
+[ASCII diagram: components and their relationships]
 
-## Implementation Logic
-[Text description of implementation]
+## Business Process
+[ASCII sequence diagrams for key flows]
+
+## API Endpoints
+[Table: Method | Path | Description | Privilege]
+
+## Notes
+[Known limitations, performance data, security — only when relevant]
 ```
 
 ---
 
-## Diagram Requirements
+## What to Include
 
-### Architecture Diagram
-- Show component relationships
-- Show component responsibilities
-- Use Mermaid or SVG
+- ASCII architecture diagrams (component relationships, data paths)
+- ASCII sequence/flow diagrams (numbered steps, labeled arrows)
+- API endpoint tables
+- Request/response JSON examples (for interfaces)
+- Performance data (only measured numbers, no estimates)
 
-### Flow Diagram
-- Show data flow
-- Show processing steps
-- Use Mermaid or SVG
+## What to Skip
 
----
-
-## Text Description Requirements
-
-- Explain implementation principles
-- Explain key technical points
-- Explain component responsibilities
-- No code
-
----
-
-## Forbidden Content
-
-- ❌ Code examples
-- ❌ Code logic
-- ❌ User scenarios
-- ❌ Step-by-step guides
-- ❌ Redundant explanations
-
----
-
-**Last Updated**: 2026-04-18
+- Code snippets — let readers search the codebase
+- Verbose prose — use diagrams and tables
+- Implementation details — link file paths instead of pasting code
