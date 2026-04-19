@@ -16,7 +16,7 @@ sudo apt update
 Binary tools (Dynamips, VPCS, uBridge, etc.) are automatically installed as gns3-server dependencies
 
 ```bash
-sudo apt install gns3-server
+sudo apt install gns3-server tshark
 ```
 
 ### 3. Remove gns3-server While Keeping Dependencies
