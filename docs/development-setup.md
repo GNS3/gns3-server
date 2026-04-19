@@ -119,3 +119,28 @@ python3 -m gns3server
 ```bash
 python3 -m pip install .[ai-copilot,dev]
 ```
+
+## Optional: Expand LVM Root Partition
+
+If the root partition is low on space but the volume group has unallocated space:
+
+Check LVM status:
+
+```bash
+sudo lvm pvdisplay
+sudo lvm vgdisplay
+sudo lvm lvdisplay
+```
+
+Extend the root LV using all free space:
+
+```bash
+sudo lvm lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+```
+
+Verify:
+
+```bash
+df -h
+```
