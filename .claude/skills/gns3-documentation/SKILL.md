@@ -1,7 +1,7 @@
 ---
 name: documentation
 description: Use this skill when creating or updating technical documentation under docs/ directory for GNS3 server
-version: 2.1.0
+version: 3.0.0
 ---
 
 # GNS3 Server Technical Documentation Standard
@@ -23,10 +23,10 @@ Code details are left to the codebase — readers can use AI to find implementat
 [What it does, in 2-3 sentences]
 
 ## Architecture
-[ASCII diagram: components and their relationships]
+[Mermaid diagram: components and their relationships]
 
 ## Business Process
-[ASCII sequence diagrams for key flows]
+[Mermaid sequence/flowchart: key flows]
 
 ## API Endpoints
 [Table: Method | Path | Description | Privilege]
@@ -39,8 +39,10 @@ Code details are left to the codebase — readers can use AI to find implementat
 
 ## What to Include
 
-- ASCII architecture diagrams (component relationships, data paths)
-- ASCII sequence/flow diagrams (numbered steps, labeled arrows)
+- Mermaid diagrams for architecture and flow (GitHub renders natively)
+  - `graph` for component relationships
+  - `sequenceDiagram` for request/response flows
+  - `flowchart` for data processing steps
 - API endpoint tables
 - Request/response JSON examples (for interfaces)
 - Performance data (only measured numbers, no estimates)
