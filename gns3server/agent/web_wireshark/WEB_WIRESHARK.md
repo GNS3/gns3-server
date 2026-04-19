@@ -1,3 +1,6 @@
+> This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
+
+
 # GNS3 Web Wireshark Container Management Guide
 
 This document describes how to manage GNS3 Web Wireshark containers using the management script or Docker commands.
