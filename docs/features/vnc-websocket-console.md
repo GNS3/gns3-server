@@ -15,20 +15,15 @@ This implementation uses GNS3's API layer as a transparent WebSocket-to-TCP prox
 
 ### Connection Flow
 
+```mermaid
+graph LR
+    A[Browser noVNC] -->|WebSocket binary| B[GNS3 Controller]
+    B -->|WebSocket + BasicAuth + SSL| C[GNS3 Compute]
+    C -->|TCP| D[QEMU/Docker VNC :5900]
 ```
-┌─────────┐     WebSocket      ┌─────────────┐     HTTP/WS     ┌──────────┐
-│ Browser │ ◄─────────────────► │   GNS3      │ ◄──────────────► │  GNS3    │
-│ noVNC   │   (wss://port)      │  Controller │   (JWT + RBAC)   │ Compute  │
-└─────────┘                     └─────────────┘                  └─────┬────┘
-                                                                         │
-                                                                         │ TCP
-                                                                         │
-                                                                    ┌────▼────┐
-                                                                    │  QEMU   │
-                                                                    │  VNC    │
-                                                                    │ :5900   │
-                                                                    └─────────┘
-```
+
+**Controller** acts as a WebSocket-to-WebSocket relay (JWT auth, IPv6 handling).
+**Compute** acts as a WebSocket-to-TCP bridge (validates node state, opens VNC TCP connection).
 
 ### Components
 
@@ -40,13 +35,14 @@ This implementation uses GNS3's API layer as a transparent WebSocket-to-TCP prox
 2. **GNS3 Controller API**
    - WebSocket endpoint: `/v3/projects/{project_id}/nodes/{node_id}/console/vnc`
    - Authentication: JWT token via query parameter
-   - Authorization: RBAC privilege check (`Node.Console`)
-   - Forwards WebSocket connections to compute node
+   - Authorization: RBAC privilege check via `has_privilege_on_websocket("Node.Console")`
+   - Proxies WebSocket to compute node (WebSocket-to-WebSocket relay)
+   - Handles IPv6 addresses by wrapping in brackets
 
 3. **GNS3 Compute API**
-   - WebSocket endpoint: `/v3/compute/projects/{project_id}/qemu/nodes/{node_id}/console/vnc`
-   - Authentication: HTTP Basic Auth
-   - Transparent bidirectional binary forwarding
+   - WebSocket endpoint: `/v3/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/vnc`
+   - Authentication: HTTP Basic Auth via `ws_compute_authentication()`
+   - Establishes TCP connection to VNC server, bridges WebSocket ↔ TCP
 
 4. **Node (QEMU/Docker)**
    - VNC server listening on configured port (default: 5900+)
@@ -80,8 +76,8 @@ ws.binaryType = 'arraybuffer';
 **URL**: `ws://{compute_host}:{port}/v3/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/vnc`
 
 **Authentication**:
-- HTTP Basic Auth (controller credentials)
-- Configured via `settings.Server.compute_username` and `settings.Server.compute_password`
+- HTTP Basic Auth via `ws_compute_authentication()` dependency
+- Configured via `settings.Server.compute_username` (default: `gns3`) and `settings.Server.compute_password` (default: empty)
 
 **Response**:
 - Bidirectional binary WebSocket connection
@@ -130,120 +126,56 @@ ws.binaryType = 'arraybuffer';
 
 ## WebSocket Data Forwarding
 
-### Implementation Details
+### Compute Layer (WebSocket ↔ TCP)
 
-**Location**: `gns3server/compute/base_node.py:544-612`
+**Location**: `gns3server/compute/base_node.py` — `start_vnc_websocket_console()`
 
-```python
-async def start_vnc_websocket_console(self, websocket):
-    """Connect to VNC console using WebSocket."""
+1. Validates node is started and `console_type == "vnc"`; closes WebSocket with code 1000 otherwise
+2. Opens TCP connection to VNC server at `console_host:console_port`
+3. Runs two concurrent tasks via `asyncio.wait(FIRST_COMPLETED)`:
+   - `ws_forward()`: WebSocket → TCP (catches `WebSocketDisconnect`)
+   - `vnc_forward()`: TCP → WebSocket (reads 65536-byte buffer)
+4. Cancels pending tasks, closes TCP writer on completion
 
-    # 1. Validation
-    if self.status != "started":
-        await websocket.close(code=1000)
-        raise NodeError(f"Node {self.name} is not started")
-    if self._console_type != "vnc":
-        await websocket.close(code=1000)
-        raise NodeError(f"Node {self.name} console type is not vnc")
+### Controller Layer (WebSocket ↔ WebSocket)
 
-    # 2. Connect to VNC server
-    vnc_reader, vnc_writer = await asyncio.open_connection(
-        self._manager.port_manager.console_host,
-        self.console
-    )
+**Location**: `gns3server/api/routes/controller/nodes.py` — `vnc_console()`
 
-    # 3. Bidirectional forwarding
-    async def ws_forward(vnc_writer):
-        # Browser → VNC: Forward WebSocket data to VNC server
-        while True:
-            data = await websocket.receive_bytes()
-            if data:
-                vnc_writer.write(data)
-                await vnc_writer.drain()
-
-    async def vnc_forward(vnc_reader):
-        # VNC → Browser: Forward VNC data to WebSocket
-        while not vnc_reader.at_eof():
-            data = await vnc_reader.read(4096)
-            if data:
-                await websocket.send_bytes(data)
-
-    # 4. Run both forwarding tasks
-    aws = [
-        asyncio.create_task(ws_forward(vnc_writer)),
-        asyncio.create_task(vnc_forward(vnc_reader))
-    ]
-
-    done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
-
-    # 5. Cleanup
-    for task in pending:
-        task.cancel()
-    vnc_writer.close()
-    await vnc_writer.wait_closed()
-```
+1. Authenticates user via `has_privilege_on_websocket("Node.Console")` dependency
+2. Constructs compute URL with IPv6 bracket handling
+3. Connects to compute WebSocket using `aiohttp.ws_connect()` with HTTP Basic Auth and SSL context
+4. Uses `asyncio.ensure_future()` for client→compute forwarding, `async for msg` iteration for compute→client
 
 ### Data Flow
 
+```mermaid
+sequenceDiagram
+    participant B as Browser (noVNC)
+    participant C as Controller
+    participant W as Compute
+    participant V as VNC Server
+
+    B->>C: WebSocket connect (binary, JWT token)
+    C->>W: WebSocket connect (binary, BasicAuth, SSL)
+    W->>V: TCP connect (asyncio.open_connection)
+
+    Note over B,V: Bidirectional binary forwarding active
+
+    B->>C: WebSocket binary frame
+    C->>W: aiohttp send_bytes()
+    W->>V: TCP write(data)
+
+    V->>W: TCP data (read 65536)
+    W->>C: WebSocket binary frame
+    C->>B: send_bytes()
 ```
-Browser (noVNC)                    GNS3 Compute                  QEMU VNC
-     │                                  │                            │
-     │  WebSocket Frame (Binary)        │                            │
-     ├─────────────────────────────────►│                            │
-     │  receive_bytes()                 │                            │
-     │                                  │  TCP Socket                │
-     │                                  ├───────────────────────────►│
-     │                                  │  write(data)               │
-     │                                  │                            │
-     │                                  │  TCP Socket                │
-     │                                  │◄──────────────────────────┤
-     │  WebSocket Frame (Binary)        │  read(4096)                │
-     │◄─────────────────────────────────┤                            │
-     │  send_bytes(data)                │                            │
-```
-
-## Frontend Integration
-
-### noVNC Integration
-
-**Location**: `gns3-web-ui/src/assets/vnc-console/`
-
-**Files**:
-- `index.html` - VNC console page
-- `vnc-controller.js` - VNC connection controller
-- `novnc/` - noVNC library files
-
-**Connection Example**:
-```javascript
-const sc = new RFB(document.getElementById('vnc-canvas'), {
-  target: vncWsUrl,  // ws://controller:port/v3/projects/.../console/vnc?token=...
-  credentials: { password: vncPassword }
-});
-
-sc.addEventListener('connect', () => {
-  console.log('VNC connected');
-});
-
-sc.addEventListener('disconnect', (e) => {
-  console.log('VNC disconnected:', e);
-});
-```
-
-### Console Service
-
-**Location**: `gns3-web-ui/src/app/services/vnc-console.service.ts`
-
-**Methods**:
-- `buildVncWebSocketUrl()` - Construct WebSocket URL
-- `openVncConsole()` - Open console in new window
-- `buildVncConsolePageUrl()` - Build standalone page URL
 
 ## Authentication & Authorization
 
 ### Controller Layer
 
 1. **Authentication**:
-   - JWT token validation via `get_current_active_user_from_websocket()`
+   - JWT token validation via `has_privilege_on_websocket("Node.Console")` dependency
    - Token passed as query parameter: `?token={jwt}`
 
 2. **Authorization**:
@@ -282,8 +214,19 @@ port = 3080
 ```ini
 [Server]
 compute_username = gns3
-compute_password = gns3
+compute_password =    # empty by default, must be set for compute auth
 ```
+
+### VNC Port Range
+
+VNC console ports are allocated from a configurable range (`gns3server/schemas/config.py`):
+
+| Setting | Default | Range |
+|---------|---------|-------|
+| `vnc_console_start_port_range` | 5900 | 5900–65535 |
+| `vnc_console_end_port_range` | 10000 | 5900–65535 |
+
+Validation: `vnc_console_end_port_range` must be greater than `vnc_console_start_port_range`.
 
 ### Node Settings
 
@@ -381,32 +324,6 @@ grep "Connected to VNC server" /var/log/gns3/gns3.log
 RFB.messages.log = function(msg) { console.log(msg); };
 ```
 
-## Performance Considerations
-
-### Bandwidth
-
-- **Typical Usage**: 1-5 Mbps per active VNC session
-- **Full HD (1920x1080)**: Up to 10 Mbps with rapid screen changes
-- **Optimization**: Use lower resolution for slower connections
-
-### Latency
-
-- **Target**: < 50ms for local connections
-- **Factors**:
-  - Network latency
-  - WebSocket frame processing overhead
-  - VNC encoding efficiency
-- **Mitigation**:
-  - Use QXL driver for QEMU VMs
-  - Enable VNC password authentication (reduces overhead)
-  - Adjust console resolution
-
-### Concurrent Connections
-
-- **Multiple Clients**: Each VNC console supports one WebSocket connection
-- **Multi-viewer**: Not supported (VNC protocol limitation)
-- **Shared Sessions**: Use SPICE for multi-client support
-
 ## Security
 
 ### Authentication
@@ -417,8 +334,9 @@ RFB.messages.log = function(msg) { console.log(msg); };
    - Privilege: `Node.Console`
 
 2. **Controller → Compute**
-   - HTTP Basic Auth over TLS (recommended)
-   - Separate compute credentials
+   - HTTP Basic Auth via `aiohttp.BasicAuth`
+   - SSL context from `Controller.instance().ssl_context()`
+   - Raises `ControllerForbiddenError` if `compute_username` is not set
 
 3. **VNC Server**
    - Optional VNC password (QEMU only)
@@ -458,50 +376,13 @@ qemu-system-x86_64 -vnc :0,password
    - New connections disconnect existing clients
 
 2. **No Audio Redirection**
-   - VNC doesn't support audio
-   - Use SPICE for audio support
+   - VNC protocol does not support audio
 
 3. **No USB Redirection**
-   - VNC doesn't support device redirection
-   - Use SPICE for USB support
+   - VNC protocol does not support device redirection
 
-4. **Performance**
-   - Higher CPU usage than native VNC clients
-   - Binary forwarding adds processing overhead
-
-## Comparison with SPICE
-
-| Feature | VNC WebSocket | SPICE WebSocket |
-|---------|---------------|-----------------|
-| **Browser Support** | ✅ Excellent | ✅ Good (with spice-html5) |
-| **Audio Redirection** | ❌ No | ✅ Yes |
-| **USB Redirection** | ❌ No | ✅ Yes |
-| **Clipboard Sharing** | ⚠️ Limited | ✅ Full |
-| **Multi-monitor** | ✅ Yes | ✅ Yes |
-| **Performance** | ⚠️ Moderate | ✅ Better |
-| **Guest Agent** | ❌ No | ✅ Yes (spice-vdagent) |
-| **Stability** | ✅ Very Stable | ⚠️ Moderate |
-| **Implementation** | ✅ Complete | ❌ Removed (dependencies) |
-
-## Future Enhancements
-
-Planned improvements:
-
-1. **WebSocket Compression**
-   - Enable per-message compression
-   - Reduce bandwidth usage
-
-2. **Connection Pooling**
-   - Reuse WebSocket connections
-   - Reduce connection overhead
-
-3. **Recording Support**
-   - Record VNC sessions
-   - Playback functionality
-
-4. **Multi-viewer Mode**
-   - Read-only shared viewing
-   - Teacher/student scenarios
+4. **Performance Overhead**
+   - WebSocket-to-TCP bridging adds processing overhead compared to native VNC clients
 
 ## References
 
@@ -514,5 +395,5 @@ Planned improvements:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2026-04-19 | Review against code: fix buffer size, auth details, add port range config, remove unverified content |
 | 1.0 | 2026-03-17 | Initial VNC WebSocket documentation |
-| 0.9 | 2026-03-15 | Added VNC WebSocket support to QEMU and Docker |

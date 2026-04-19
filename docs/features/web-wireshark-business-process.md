@@ -23,7 +23,11 @@ The **Web Wireshark** feature enables users to run Wireshark packet capture anal
 Before using Web Wireshark, install the GNS3 server and set up the Docker image:
 
 ```bash
-pip install . && gns3-wireshark-setup
+# Development install
+pip install -e . && gns3-wireshark-setup
+
+# Production install
+pip install gns3-server && gns3-wireshark-setup
 ```
 
 This command will:
@@ -37,47 +41,40 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              GNS3 Server                                     │
-│                                                                             │
-│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────────────────────┐│
-│  │   Web UI    │───▶│  Controller  │───▶│   Link Controller                ││
-│  │  (Browser)  │◀───│              │◀───│   (start_capture, stop_capture)  ││
-│  └─────────────┘    └──────────────┘    └─────────────────────────────────┘│
-│        │                   │                          │                      │
-│        │                   │                          ▼                      │
-│        │                   │            ┌───────────────────────────────────┐│
-│        │                   │            │  manage_wireshark.py (CLI)        ││
-│        │                   │            │  - start / stop / restart         ││
-│        │                   │            │  - stop-all / delete-container    ││
-│        │                   │            └───────────────────────────────────┘│
-│        │                   │                          │                      │
-│        │                   │            ┌──────────────┴───────────────┐     │
-│        │                   │            │                              │     │
-│        │                   │            ▼                              ▼     │
-│        │                   │   ┌─────────────────┐      ┌─────────────────┐ │
-│        │                   │   │ Docker Client   │      │ WebWireshark    │ │
-│        │                   │   │ (HTTP API)      │      │ Manager         │ │
-│        │                   │   └─────────────────┘      └─────────────────┘ │
-│        │                   │                                     │         │
-└────────│───────────────────│─────────────────────────────────────│─────────┘
-         │                   │                                     │
-         │ WebSocket         │ Docker API                          │ Docker
-         │ (xpra proxy)      │ (Unix Socket)                        │ Protocol
-         ▼                   ▼                                     ▼
-┌─────────────────┐  /var/run/docker.sock                  ┌─────────────────────┐
-│  Client Browser │◀──────────────────────────────────────▶│  Docker Daemon      │
-│  (HTML5 Client) │        WebSocket Proxy                  │                     │
-└─────────────────┘                                        │  ┌───────────────┐  │
-                                                             │  │ gns3-wireshark│  │
-                                                             │  │ -PROJECT_ID   │  │
-                                                             │  │               │  │
-                                                             │  │ [xpra server] │  │
-                                                             │  │ [Xvfb]        │  │
-                                                             │  │ [Wireshark]   │  │
-                                                             │  └───────────────┘  │
-                                                             └─────────────────────┘
+```mermaid
+graph TD
+    subgraph GNS3Server["GNS3 Server"]
+        WebUI["Web UI<br/>(Browser)"]
+        Controller["GNS3 Controller"]
+        LinkCtrl["Link Controller<br/>(start_capture / stop_capture)"]
+        Manager["WebWiresharkManager<br/>(called directly, not via CLI)"]
+        DockerClient["DockerHTTPClient<br/>(HTTP via Unix Socket)"]
+    end
+
+    subgraph DockerDaemon["Docker Daemon"]
+        Container["gns3-wireshark-{project_id}"]
+        Xvfb["Xvfb (virtual framebuffer)"]
+        Xpra["xpra server"]
+        Wireshark["Wireshark"]
+    end
+
+    ClientBrowser["Client Browser<br/>(HTML5 Client)"]
+
+    ClientBrowser -->|REST API| WebUI
+    WebUI -->|capture/start| Controller
+    Controller --> LinkCtrl
+    LinkCtrl -->|start/stop/restart session| Manager
+    Manager -->|Docker API<br/>/var/run/docker.sock| DockerClient
+    DockerClient -->|container lifecycle| Container
+    Container --- Xvfb
+    Container --- Xpra
+    Container --- Wireshark
+    ClientBrowser -.->|WebSocket proxy| Xpra
+    Xpra -.->|xpra HTML5| ClientBrowser
+
+    style GNS3Server fill:#e8f4fd,stroke:#2196f3
+    style DockerDaemon fill:#fff3e0,stroke:#ff9800
+    style ClientBrowser fill:#e8f5e9,stroke:#4caf50
 ```
 
 ---
@@ -96,6 +93,7 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ### 3. manage_wireshark.py (Management CLI)
 - Command-line interface for container and session management
+- **For manual debugging and testing only** — the server calls `WebWiresharkManager` directly at runtime
 - Handles Docker container lifecycle
 - Manages xpra sessions per link
 
@@ -120,57 +118,27 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ### Process 1: Start Packet Capture with Web Wireshark
 
-```
-┌─────────┐     ┌────────────┐     ┌──────────────┐     ┌──────────────────┐
-│  User   │     │   Web UI   │     │  Controller   │     │ Link Controller  │
-└────┬────┘     └─────┬──────┘     └──────┬───────┘     └────────┬─────────┘
-     │                │                    │                       │
-     │ 1.Start Capture│                    │                       │
-     │───────────────▶│                    │                       │
-     │                │ 2.Start Capture   │                       │
-     │                │───────────────────▶│                       │
-     │                │                    │ 3._start_web_wireshark│
-     │                │                    │─────────────────────▶│
-     │                │                    │                       │
-     │                │                    │  4.manage_wireshark.py│
-     │                │                    │       start          │
-     │                │                    │─────────────────────▶│
-     │                │                    │                       │
-     │                │                    │                       │ 5.Ensure network
-     │                │                    │                       │   exists
-     │                │                    │                       │────┐
-     │                │                    │                       │    │
-     │                │                    │                       │◀───┘
-     │                │                    │                       │
-     │                │                    │                       │ 6.Get/create container
-     │                │                    │                       │────┐
-     │                │                    │                       │    │
-     │                │                    │                       │◀───┘
-     │                │                    │                       │
-     │                │                    │                       │ 7.Start xpra session
-     │                │                    │                       │   (display + port)
-     │                │                    │                       │────┐
-     │                │                    │                       │    │
-     │                │                    │                       │◀───┘
-     │                │                    │                       │
-     │                │                    │                       │ 8.Start Wireshark
-     │                │                    │                       │   (background)
-     │                │                    │                       │────┐
-     │                │                    │                       │    │
-     │                │                    │                       │◀───┘
-     │                │                    │                       │
-     │                │                    │◀───────────────────────│
-     │ 9.ws_url       │ 10.ws_url          │                       │
-     │◀───────────────│◀───────────────────│                       │
-     │                │                    │                       │
-     │                │ 11.Connect via     │                       │
-     │                │    WebSocket       │                       │
-     │                │───────────────────│─────────────────────▶│
-     │                │                    │                       │ 12.Proxy to container
-     │                │                    │                       │────┐
-     │                │                    │                       │    │
-     │                │◀───────────────────│───────────────────────│◀───┘
-     │                │                    │                       │
+```mermaid
+sequenceDiagram
+    actor User
+    participant WebUI as Web UI
+    participant Controller as Controller
+    participant LinkCtrl as Link Controller
+    participant Manager as WebWiresharkManager
+
+    User->>WebUI: 1. Start Capture
+    WebUI->>Controller: 2. POST /capture/start
+    Controller->>LinkCtrl: 3. _start_web_wireshark(jwt_token)
+    LinkCtrl->>Manager: 4. start_wireshark_session()
+    Note right of Manager: 5. Ensure network exists
+    Note right of Manager: 6. Get/create container
+    Note right of Manager: 7. Start xpra session<br/>(display + port)
+    Note right of Manager: 8. Start Wireshark<br/>(curl | wireshark -i - -k)
+    Manager-->>LinkCtrl: ws_url
+    LinkCtrl-->>Controller: ws_url
+    Controller-->>WebUI: 10. {capturing: true, ws_url: "ws://..."}
+    WebUI-->>User: 9. ws_url
+    Note over User,Manager: 11-12. Browser connects via WebSocket<br/>Server proxies to container xpra
 ```
 
 **API Endpoint**: `POST /v3/projects/{project_id}/links/{link_id}/capture/start`
@@ -195,213 +163,123 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ### Process 2: Container Lifecycle (Per Project)
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Project Lifecycle                             │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Project Open"] --> B["First Link Capture"]
+    B --> C["Container Created<br/>(one per project)"]
+    C --> D["Container Running"]
 
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Project Open │───▶│  First Link  │───▶│  Container   │
-│              │    │  Capture     │    │  Created     │
-└──────────────┘    └──────────────┘    └──────┬───────┘
-                                                │
-                    ┌────────────────────────────┼────────────────────────────┐
-                    │         Container Running │ (one per project)          │
-                    │                            │                             │
-                    │  ┌─────────────────────────▼─────────────────────────┐ │
-                    │  │                   Architecture                      │ │
-                    │  │                                                  │ │
-                    │  │  ┌──────────────────────────────────────────────┐  │ │
-                    │  │  │         gns3-wireshark-{project_id}         │  │ │
-                    │  │  │                                              │  │ │
-                    │  │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐     │  │ │
-                    │  │  │  │ Link 1  │  │ Link 2  │  │ Link N  │     │  │ │
-                    │  │  │  │ :10001  │  │ :10002  │  │ :10NNN  │     │  │ │
-                    │  │  │  │ xpra    │  │ xpra    │  │ xpra    │     │  │ │
-                    │  │  │  │ session │  │ session │  │ session │     │  │ │
-                    │  │  │  └────┬────┘  └────┬────┘  └────┬────┘     │  │ │
-                    │  │  │       │            │            │          │  │ │
-                    │  │  │       ▼            ▼            ▼          │  │ │
-                    │  │  │  ┌─────────────────────────────────────┐   │  │ │
-                    │  │  │  │         Xvfb :1 (virtual display) │   │  │ │
-                    │  │  │  │         1920x1080x24              │   │  │ │
-                    │  │  │  └─────────────────────────────────────┘   │  │ │
-                    │  │  │                                              │  │ │
-                    │  │  │  ┌─────────────────────────────────────┐   │  │ │
-                    │  │  │  │         Wireshark (per link)        │   │  │ │
-                    │  │  │  │         Reads pcap stream           │   │  │ │
-                    │  │  │  │         Displays in window          │   │  │ │
-                    │  │  │  └─────────────────────────────────────┘   │  │ │
-                    │  │  └──────────────────────────────────────────────┘  │ │
-                    │  └──────────────────────────────────────────────────────┘ │
-                    │                                                             │
-                    │  Each xpra session:                                        │
-                    │  - Binds to unique port (10000-19999, based on link_id)   │
-                    │  - Provides HTML5 access via WebSocket                      │
-                    │  - Runs Wireshark with curl-piped pcap stream             │
-                    │                                                             │
-                    └─────────────────────────────────────────────────────────────┘
+    subgraph SessionArchitecture["Container Session Architecture"]
+        direction TB
+        D --> E["gns3-wireshark-{project_id}"]
 
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Project Close│───▶│ Stop All     │───▶│  Container   │
-│              │    │  Sessions    │    │  Stopped     │
-└──────────────┘    └──────────────┘    └──────┬───────┘
-                                                │
-                    ┌────────────────────────────┼────────────────────────────┐
-                    │  Container Stopped         │ (preserved for reuse)       │
-                    │  Sessions Cleaned          │                             │
-                    └───────────────────────────────────────────────────────────┘
+        subgraph Link1Session["Link 1 Session"]
+            L1Xpra["xpra :14503"]
+            L1Xvfb["Xvfb :14503<br/>(1920x1080x24)"]
+            L1WS["Wireshark<br/>(curl | wireshark -i -)"]
+            L1Bind["bind-ws=0.0.0.0:14503"]
+            L1Xpra --- L1Xvfb
+            L1Xpra --- L1WS
+            L1Xpra --- L1Bind
+        end
 
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Project      │───▶│ Delete       │───▶│  Container   │
-│ Deleted      │    │  Container   │    │  Removed     │
-└──────────────┘    └──────────────┘    └──────────────┘
+        subgraph Link2Session["Link 2 Session"]
+            L2Xpra["xpra :11024"]
+            L2Xvfb["Xvfb :11024<br/>(1920x1080x24)"]
+            L2WS["Wireshark<br/>(curl | wireshark -i -)"]
+            L2Bind["bind-ws=0.0.0.0:11024"]
+            L2Xpra --- L2Xvfb
+            L2Xpra --- L2WS
+            L2Xpra --- L2Bind
+        end
+
+        E --> Link1Session
+        E --> Link2Session
+
+        Note1["display = port = 10000 + hash(link_id) % 10000<br/>Each xpra creates its own Xvfb (NOT shared)"]
+    end
+
+    D --> F["Project Close"]
+    F --> G["Stop Container<br/>(all sessions terminate)"]
+    G --> H["Container Stopped<br/>(preserved for reuse)"]
+    H -->|Project Reopened| D
+
+    I["Project Delete"] --> J["Delete Container"]
+    J --> K["Container Removed"]
+
+    style SessionArchitecture fill:#fff8e1,stroke:#ffa000
+    style Link1Session fill:#e3f2fd,stroke:#1976d2
+    style Link2Session fill:#e8f5e9,stroke:#388e3c
 ```
 
 ### Process 3: WebSocket Connection Flow
 
-```
-┌─────────────┐     ┌──────────────────┐     ┌────────────────────┐
-│ Client      │     │  GNS3 Server     │     │  Docker Container   │
-│ Browser     │     │  (API Route)     │     │  (xpra server)      │
-└──────┬──────┘     └────────┬─────────┘     └──────────┬─────────┘
-       │                      │                           │
-       │ 1.WSS Connect        │                           │
-       │ w/ JWT token         │                           │
-       │─────────────────────▶│                           │
-       │                      │                           │
-       │                      │ 2.Validate JWT            │
-       │                      │ (RBAC: Link.Capture)       │
-       │                      │────┐                       │
-       │                      │    │                       │
-       │                      │◀───┘                       │
-       │                      │                           │
-       │                      │ 3.Get container IP        │
-       │                      │ from Docker API            │
-       │                      │────┐                      │
-       │                      │    │                      │
-       │                      │◀───┘                      │
-       │                      │                           │
-       │ 4.Accept connection  │                           │
-       │◀─────────────────────│                           │
-       │                      │                           │
-       │ 5.Start WebSocket    │                           │
-       │    proxy             │                           │
-       │                      │                           │
-       │                      │ 6.Connect to xpra         │
-       │                      │    ws://container:port     │
-       │                      │─────────────────────────▶│
-       │                      │                           │
-       │                      │ 7.xpra validates          │
-       │                      │    subprotocol            │
-       │                      │◀─────────────────────────│
-       │                      │                           │
-       │ 8.Bidirectional      │ 9.Proxy data             │
-       │    WebSocket         │─────────────────────────▶│
-       │◀═════════════════════│◀══════════════════════════│
-       │                      │                           │
-       │ 10.HTML5 client      │                           │
-       │     renders          │                           │
-       │     Wireshark        │                           │
-       │     window           │                           │
-       │                      │                           │
+```mermaid
+sequenceDiagram
+    participant Browser as Client Browser
+    participant Server as GNS3 Server (API Route)
+    participant Container as Docker Container (xpra)
+
+    Browser->>Server: 1. WSS Connect (ws://.../web-wireshark?token=jwt)
+    Note right of Server: 2. Validate JWT<br/>(RBAC: Link.Capture)
+    Note right of Server: 3. Get container IP<br/>from Docker API
+    Server-->>Browser: 4. Accept connection
+    Note right of Server: 5. Start WebSocket proxy
+    Server->>Container: 6. Connect to xpra<br/>ws://container:port
+    Container-->>Server: 7. xpra validates subprotocol
+    Note over Browser,Container: 8-9. Bidirectional WebSocket proxy<br/>Browser ⟺ Server ⟺ Container
+    Note left of Browser: 10. HTML5 client renders<br/>Wireshark window
 ```
 
 **WebSocket Endpoint**: `ws://host/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark?token=<jwt_token>`
 
 ### Process 4: Capture Data Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Packet Capture Flow                                  │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph GNS3Node["GNS3 Node"]
+        Router["Router / Switch"]
+    end
 
-┌──────────────┐         ┌──────────────┐         ┌──────────────┐
-│  GNS3 Node   │         │   Compute    │         │   Link       │
-│  (Router/    │────────▶│   Node       │────────▶│   Capture    │
-│   Switch)    │  TAP    │              │  pcap   │   Buffer     │
-└──────────────┘         └──────────────┘         └──────┬───────┘
-                                                         │
-                                                         │ pcap stream
-                                                         ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                        GNS3 Server                                           │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │ API Route: GET /v3/projects/{id}/links/{id}/capture/stream            │ │
-│  │                                                                         │ │
-│  │ Proxies pcap stream from compute node to:                              │ │
-│  │   - Docker container (for live Wireshark analysis)                     │ │
-│  │   - Download endpoint (for file export)                                │ │
-│  └────────────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
-                              │
-                              │ curl -N -H "Authorization: Bearer {jwt}"
-                              │   '{server}/v3/projects/{id}/links/{id}/capture/stream'
-                              ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                     Docker Container (gns3-wireshark-{project_id})           │
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │  bash (curl)                                                         │   │
-│  │    │                                                                │   │
-│  │    │ reads pcap stream                                              │   │
-│  │    ▼                                                                │   │
-│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
-│  │  │ wireshark -i - -k                                              │  │   │
-│  │  │     │                                                         │  │   │
-│  │  │     │ reads from stdin (-)                                    │  │   │
-│  │  │     │ parses PCAP packets                                     │  │   │
-│  │  │     ▼                                                         │  │   │
-│  │  │  ┌────────────────────────────────────────────────────────┐   │  │   │
-│  │  │  │ Xvfb :display (virtual X11 framebuffer)              │   │  │   │
-│  │  │  │     │                                                   │   │  │   │
-│  │  │  │     │ renders Wireshark window                         │   │  │   │
-│  │  │  │     ▼                                                   │   │  │   │
-│  │  │  │  ┌─────────────────────────────────────────────────┐  │   │  │   │
-│  │  │  │  │ xpra :display                                    │  │   │  │   │
-│  │  │  │  │     │                                            │  │   │  │   │
-│  │  │  │  │     │ encodes X11 to HTML5                       │  │   │  │   │
-│  │  │  │  │     ▼                                            │  │   │  │   │
-│  │  │  │  │  ws://0.0.0.0:{port}                             │  │   │  │   │
-│  │  │  │  └─────────────────────────────────────────────────┘  │   │  │   │
-│  │  │  └────────────────────────────────────────────────────────┘   │  │   │
-│  │  └──────────────────────────────────────────────────────────────────┘   │
-│  └──────────────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
-                              │
-                              │ WebSocket
-                              ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           Client Browser                                      │
-│                                                                              │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │  HTML5/xpra Client                                                       │ │
-│  │    │                                                                    │ │
-│  │    │ WebSocket connection                                               │ │
-│  │    ▼                                                                    │ │
-│  │  ┌──────────────────────────────────────────────────────────────────┐   │ │
-│  │  │  Wireshark Web Interface                                           │   │ │
-│  │  │                                                                     │   │ │
-│  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │   │ │
-│  │  │  │ File     │  │ Edit     │  │ View     │  │ Capture          │   │   │ │
-│  │  │  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘   │   │ │
-│  │  │                                                                     │   │ │
-│  │  │  ┌─────────────────────────────────────────────────────────────┐   │   │ │
-│  │  │  │ Packet List          │ Packet Details                       │   │   │ │
-│  │  │  │ ─────────────────────┼─────────────────────────────────────│   │   │ │
-│  │  │  │ No. Time    Source   │ Frame: 74 bytes on wire...          │   │   │ │
-│  │  │  │ 1   0.000  10.0.0.1 │ Ethernet II, Src: Cisco_00:01:00... │   │   │ │
-│  │  │  │ 2   0.001  10.0.0.2 │ Internet Protocol Version 4...     │   │   │ │
-│  │  │  │ 3   0.002  10.0.0.1 │ ...                                 │   │   │ │
-│  │  │  └─────────────────────────────────────────────────────────────┘   │   │ │
-│  │  │                                                                     │   │ │
-│  │  │  ┌─────────────────────────────────────────────────────────────┐   │   │ │
-│  │  │  │ Packet Bytes                                                │   │   │ │
-│  │  │  │ 0000  00 00 00 00 00 01 00 00 00 00 00 02 08 00 45 00 00   │   │   │ │
-│  │  │  └─────────────────────────────────────────────────────────────┘   │   │ │
-│  │  └──────────────────────────────────────────────────────────────────────┘   │
-│  └──────────────────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
+    subgraph ComputeNode["Compute Node"]
+        Capture["Link Capture Buffer"]
+    end
+
+    Router -->|"TAP (raw packets)"| Capture
+
+    subgraph GNS3Server["GNS3 Server"]
+        APIRoute["GET /capture/stream<br/>Proxies pcap stream"]
+    end
+
+    Capture -->|"pcap stream"| APIRoute
+
+    subgraph DockerContainer["Docker Container"]
+        direction TB
+        Curl["curl -N -H 'Authorization: Bearer {jwt}'<br/>'{server}/capture/stream'"]
+        Wireshark["wireshark -i - -k"]
+        Xvfb["Xvfb :display<br/>(1920x1080x24)"]
+        Xpra["xpra :display<br/>ws://0.0.0.0:{port}"]
+
+        Curl -->|"stdin pipe"| Wireshark
+        Wireshark -->|"renders to"| Xvfb
+        Xvfb -->|"X11 display"| Xpra
+    end
+
+    APIRoute -.->|"pcap stream<br/>(curl fetches from container)"| Curl
+
+    subgraph Browser["Client Browser"]
+        HTML5Client["HTML5/xpra Client"]
+        WSUI["Wireshark Web Interface"]
+        HTML5Client --> WSUI
+    end
+
+    Xpra <-->|"WebSocket"| HTML5Client
+
+    style GNS3Node fill:#f3e5f5,stroke:#7b1fa2
+    style ComputeNode fill:#e8eaf6,stroke:#283593
+    style GNS3Server fill:#e8f4fd,stroke:#2196f3
+    style DockerContainer fill:#fff3e0,stroke:#ff9800
+    style Browser fill:#e8f5e9,stroke:#4caf50
 ```
 
 ---
@@ -410,29 +288,25 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ### Deterministic Port Mapping
 
+```mermaid
+flowchart LR
+    LinkID["link_id (UUID)"] --> Hash["MD5 Hash"] --> Modulo["hash % 10000"]
+    Modulo --> Offset["+ 10000"]
+    Offset --> Result["display = port<br/>Range: 10000 - 19999"]
+
+    style LinkID fill:#e3f2fd,stroke:#1976d2
+    style Result fill:#e8f5e9,stroke:#388e3c
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│              link_id_to_port(link_id)                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   port = 10000 + (hash(link_id) % 10000)                        │
-│                                                                  │
-│   Result: 10000 - 19999                                          │
-│                                                                  │
-│   Example:                                                       │
-│   ┌────────────────────────────────────────────────────────────┐ │
-│   │ link_id                              │ port               │ │
-│   ├────────────────────────────────────────────────────────────┤ │
-│   │ f233f27f-7432-49c3-9aa2-50e326a10eec │ 14503               │ │
-│   │ a1b2c3d4-1234-5678-90ab-cdef12345678 │ 11024               │ │
-│   │ 12345678-90ab-cdef-1234-567890abcdef │ 17892               │ │
-│   └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+| link_id | port/display |
+|---------|-------------|
+| `f233f27f-7432-49c3-9aa2-50e326a10eec` | 14503 |
+| `a1b2c3d4-1234-5678-90ab-cdef12345678` | 11024 |
+| `12345678-90ab-cdef-1234-567890abcdef` | 17892 |
 
 **Benefits**:
 - Same link always gets same port (deterministic)
+- Display number = port number (same hash)
 - No port conflicts between sessions
 - Easy to predict and debug
 
@@ -440,207 +314,90 @@ The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `d
 
 ## Network Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Docker Network Setup                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph HostMachine["Host Machine"]
+        subgraph GNS3ServerHost["GNS3 Server<br/>192.168.1.100:3080"]
+            WSProxy["WebSocket Proxy"]
+        end
 
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Host Machine                                                              │
-│                                                                          │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  Docker Bridge Network: gns3-wireshark                             │  │
-│  │  Subnet: 172.31.0.0/22 (configurable)                              │  │
-│  │                                                                        │  │
-│  │  ┌──────────────────────────────────────────────────────────────┐   │  │
-│  │  │ Gateway: 172.31.0.1                                           │   │  │
-│  │  │                                                              │   │  │
-│  │  │  ┌────────────────────────────────────────────────────────┐  │   │  │
-│  │  │  │ Container: gns3-wireshark-{project_id}               │  │   │  │
-│  │  │  │ IP: 172.31.0.x (DHCP assigned)                        │  │   │  │
-│  │  │  │                                                      │  │   │  │
-│  │  │  │ Ports exposed:                                        │  │   │  │
-│  │  │  │   :14501 -> xpra session for link 1                   │  │   │  │
-│  │  │  │   :14502 -> xpra session for link 2                   │  │   │  │
-│  │  │  │   :14503 -> xpra session for link 3                   │  │   │  │
-│  │  │  │   ...                                                 │  │   │  │
-│  │  │  └────────────────────────────────────────────────────────┘  │   │  │
-│  │  └──────────────────────────────────────────────────────────────┘   │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│                                                                          │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  DockerNAT/Host: 192.168.1.100 (GNS3 Server)                      │  │
-│  │                                                                        │  │
-│  │  WebSocket Proxy forwards:                                          │  │
-│  │    client --ws--> 192.168.1.100:3080 --proxy--> 172.31.0.x:{port}   │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────┘
+        subgraph DockerNetwork["Docker Bridge: gns3-wireshark<br/>Subnet: 172.31.0.0/22"]
+            Gateway["Bridge Gateway<br/>172.31.0.1"]
+            Container["gns3-wireshark-{project_id}<br/>172.31.0.x"]
+            Gateway --- Container
+        end
+    end
+
+    Client["Client Browser"] -->|"ws://192.168.1.100:3080<br/>/capture/web-wireshark"| WSProxy
+    WSProxy -->|"via gateway 172.31.0.1<br/>ws://172.31.0.x:{port}"| Container
+
+    style HostMachine fill:#fafafa,stroke:#9e9e9e
+    style DockerNetwork fill:#e3f2fd,stroke:#1976d2
+    style GNS3ServerHost fill:#e8f5e9,stroke:#388e3c
 ```
 
 ---
 
 ## Session Management Commands
 
+> **Note**: These commands are for manual debugging and testing only. The GNS3 server calls `WebWiresharkManager` directly at runtime.
+
+### start
+
+Starts Web Wireshark session for a specific link.
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `--project-id` | Yes | - | Project UUID |
+| `--link-id` | Yes | - | Link UUID |
+| `--jwt-token` | Yes | - | JWT authentication token |
+| `--capture-url` | No | auto-detected | PCAP stream URL |
+| `--image` | No | `gns3/web-wireshark:latest` | Docker image |
+| `--memory` | No | `2g` | Memory limit |
+| `--cpus` | No | `1.0` | CPU cores |
+| `--pids-limit` | No | `1000` | Process limit |
+
+```bash
+python manage_wireshark.py start \
+  --project-id "5af0fe00-..." \
+  --link-id "f233f27f-..." \
+  --jwt-token "eyJhbG..."
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    manage_wireshark.py Commands                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  start                                                                     │
-│  ─────                                                                     │
-│  Starts Web Wireshark session for a specific link                           │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                                 │
-│    --link-id        Link UUID (required)                                    │
-│    --jwt-token      JWT authentication token (required)                     │
-│    --capture-url    PCAP stream URL (auto-detected if not provided)         │
-│    --image          Docker image (default: gns3/web-wireshark:latest)        │
-│    --memory         Memory limit (default: 2g)                               │
-│    --cpus           CPU cores (default: 1.0)                                │
-│    --pids-limit     Process limit (default: 1000)                            │
-│                                                                              │
-│  Example:                                                                   │
-│    python manage_wireshark.py start \                                        │
-│      --project-id "5af0fe00-..." \                                          │
-│      --link-id "f233f27f-..." \                                            │
-│      --jwt-token "eyJhbG..."                                                │
-│                                                                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  stop                                                                      │
-│  ────                                                                      │
-│  Stops Web Wireshark session for a specific link                            │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                                 │
-│    --link-id        Link UUID (required)                                    │
-│                                                                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  restart                                                                   │
-│  ──────                                                                    │
-│  Restarts Web Wireshark session (reopens Wireshark window)                  │
-│  Used when user accidentally closes the Wireshark window                    │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                                 │
-│    --link-id        Link UUID (required)                                    │
-│    --jwt-token      JWT authentication token (required)                     │
-│                                                                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  stop-all                                                                  │
-│  ────────                                                                  │
-│  Stops all Web Wireshark sessions for a project                             │
-│  Called when project is closed                                              │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                                 │
-│                                                                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  stop-container                                                            │
-│  ─────────────                                                              │
-│  Stops the Docker container (without deleting)                              │
-│  Called when project is closed                                              │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                               │
-│                                                                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  delete-container                                                           │
-│  ────────────────                                                            │
-│  Deletes the Docker container                                                │
-│  Called when project is deleted                                              │
-│                                                                              │
-│  Arguments:                                                                 │
-│    --project-id     Project UUID (required)                                 │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+
+### Other Commands
+
+| Command | Description | Key Arguments |
+|---------|-------------|---------------|
+| `stop` | Stop session for a specific link | `--project-id`, `--link-id` |
+| `restart` | Restart session (reopens Wireshark window) | `--project-id`, `--link-id`, `--jwt-token` |
+| `stop-all` | Stop all sessions for a project | `--project-id` |
+| `delete` | Delete container (alias for delete-container) | `--project-id` |
+| `stop-container` | Stop container without deleting | `--project-id` |
+| `delete-container` | Delete the container | `--project-id` |
 
 ---
 
 ## Project Close/Delete Workflow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Project Lifecycle Events                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Project Close"] --> B["_stop_web_wireshark_container()"]
+    B --> C["WebWiresharkManager.stop_container(project_id)"]
+    C --> D["docker stop<br/>(all xpra/Xvfb/Wireshark terminate)"]
+    D --> E["Container Stopped<br/>(preserved for reuse)"]
 
-┌────────────────────────┐
-│    Project Close       │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         Step 1: Stop All Sessions                            │
-│                                                                            │
-│  Called: _cleanup_web_wireshark_xpra_sessions()                            │
-│                                                                            │
-│  Action:                                                                   │
-│    - Execute: manage_wireshark.py stop-all --project-id {id}               │
-│    - Kills all xpra, Xvfb, and Wireshark processes for the project          │
-│    - Container remains running                                               │
-│                                                                            │
-│  Reason:                                                                   │
-│    - Preserves container for quick reuse if project is reopened            │
-│    - Frees memory by stopping processes                                     │
-└────────────────────────────────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         Step 2: Stop Container                               │
-│                                                                            │
-│  Called: _stop_web_wireshark_container()                                   │
-│                                                                            │
-│  Action:                                                                   │
-│    - Execute: manage_wireshark.py stop-container --project-id {id}        │
-│    - Stops Docker container (docker stop)                                   │
-│                                                                            │
-│  Reason:                                                                   │
-│    - Container will be recreated on next capture start                     │
-│    - Frees container resources (memory, processes)                         │
-└────────────────────────────────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│    Project Reopened    │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         On First Capture Start                              │
-│                                                                            │
-│  Action:                                                                   │
-│    - Container is started (docker start)                                   │
-│    - New xpra sessions created as needed                                    │
-│                                                                            │
-│  Benefit:                                                                  │
-│    - Faster subsequent captures (container already exists)                  │
-└────────────────────────────────────────────────────────────────────────────┘
+    E -->|Project Reopened| F["First Capture Start"]
+    F --> G["docker start<br/>(container already exists, fast)"]
+    G --> H["New xpra sessions created"]
 
+    I["Project Delete"] --> J["_cleanup_web_wireshark_container()"]
+    J --> K["WebWiresharkManager.delete_container(project_id)"]
+    K --> L["docker rm<br/>(container removed)"]
 
-┌────────────────────────┐
-│   Project Delete       │
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         Delete Container                                    │
-│                                                                            │
-│  Called: _cleanup_web_wireshark_container()                                │
-│                                                                            │
-│  Action:                                                                   │
-│    - Execute: manage_wireshark.py delete-container --project-id {id}      │
-│    - Stops and removes Docker container                                    │
-│    - Resets _web_wireshark_container_created flag                          │
-│                                                                            │
-│  Reason:                                                                   │
-│    - Project is being deleted, container is no longer needed               │
-└────────────────────────────────────────────────────────────────────────────┘
+    style A fill:#e3f2fd,stroke:#1976d2
+    style I fill:#ffebee,stroke:#c62828
+    style E fill:#fff8e1,stroke:#ffa000
+    style L fill:#ffebee,stroke:#c62828
 ```
 
 ---
@@ -770,11 +527,17 @@ Since Docker exec cannot be parallelized effectively:
 | Disk I/O | Minimal |
 
 ### Container Configuration
-| Parameter | Default | Recommended |
-|-----------|---------|-------------|
-| Memory | 2GB | 2-4GB |
-| CPUs | 1.0 | 1.0-2.0 |
-| PIDs Limit | 1000 | 1000 |
+
+Configured via `WebWiresharkSettings` in `gns3server/schemas/config.py`:
+
+| Parameter | Default | Recommended | Description |
+|-----------|---------|-------------|-------------|
+| enabled | true | - | Enable/disable Web Wireshark feature |
+| image | gns3/web-wireshark:latest | - | Docker image name |
+| network_subnet | 172.31.0.0/22 | - | Docker bridge network subnet |
+| Memory | 2GB | 2-4GB | Container memory limit |
+| CPUs | 1.0 | 1.0-2.0 | Container CPU limit |
+| PIDs Limit | 1000 | 1000 | Container process limit |
 
 ### Scaling Guidelines
 | Instances | Memory | Use Case |
@@ -807,9 +570,10 @@ gns3server/
 │   └── links.py                   # REST/WebSocket API endpoints
 └── agent/web_wireshark/
     ├── setup_wireshark_image.py   # Docker image setup tool
-    ├── manage_wireshark.py        # CLI management tool
-    ├── manager.py                 # Session management logic
+    ├── manage_wireshark.py        # CLI management tool (manual/debug use only)
+    ├── manager.py                 # Session management logic (called by server)
     ├── docker_client.py           # Docker API client
+    ├── stats.py                   # Container statistics collection
     ├── docker/
     │   └── Dockerfile            # Container image definition
     └── WEB_WIRESHARK.md          # Technical documentation
