@@ -99,6 +99,10 @@ Setup virtual environment and install dependencies:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
+
+# For China mainland users, use mirror:
+# pip install -e . -i https://mirrors.aliyun.com/pypi/simple/
+
 pip install -e . && gns3-wireshark-setup
 pip install -e .[ai-copilot]
 pip install -e .[dev]
