@@ -92,6 +92,23 @@ def image_exists():
         return False
 
 
+def is_network_error(output):
+    """Check if the error is network-related."""
+
+    network_error_patterns = [
+        "connection reset",
+        "connection refused",
+        "timeout",
+        "no route to host",
+        "network unreachable",
+        "failed to fetch",
+        "failed to authorize",
+        "i/o timeout",
+    ]
+    output_lower = output.lower()
+    return any(pattern in output_lower for pattern in network_error_patterns)
+
+
 def pull_image():
     """Pull the Docker image from registry."""
 
@@ -100,10 +117,18 @@ def pull_image():
 
     result = subprocess.run(
         ["docker", "pull", DOCKER_IMAGE],
-        pass_fds=(1, 2)  # Pass stdout and stderr to inherit
+        capture_output=True,
+        text=True
     )
 
-    return result.returncode == 0
+    # Store output for network error detection
+    pull_output = result.stdout + result.stderr
+    pull_success = result.returncode == 0
+
+    # Print output
+    print(pull_output)
+
+    return pull_success, pull_output
 
 
 def build_image(dockerfile_path):
@@ -165,21 +190,41 @@ def main():
 
     # Try strategies in order
     success = False
+    pull_failed_due_to_network = False
 
     if not args.build_only:
         # Strategy 1: Pull from registry
         print("[Strategy 1/2] Attempting to pull image from Docker Hub...")
         print()
-        if pull_image():
+        pull_ok, pull_output = pull_image()
+        if pull_ok:
             success = True
             print()
             print(f"Successfully pulled {DOCKER_IMAGE}")
         else:
-            print()
-            print("Pull failed, trying local build...")
+            # Check if it's a network error
+            if is_network_error(pull_output):
+                pull_failed_due_to_network = True
+                print()
+                print("Pull failed due to network issues.")
+                print("The local build will also fail since it requires pulling the base image from Docker Hub.")
+                print()
+                print("Suggestions:")
+                print("  1. Configure Docker mirror accelerator (see /etc/docker/daemon.json)")
+                print("  2. Use a VPN/proxy")
+                print("  3. Manually import the image on a machine with Docker Hub access:")
+                print(f"     docker save -o web-wireshark.tar {DOCKER_IMAGE}")
+                print("     scp web-wireshark.tar your-server:/tmp/")
+                print("     docker load -i /tmp/web-wireshark.tar")
+                print()
+                print("Skipping local build...")
+            else:
+                print()
+                print("Pull failed, trying local build...")
 
-    if not success and not args.pull_only:
+    if not success and not args.pull_only and not pull_failed_due_to_network:
         # Strategy 2: Build locally
+        # Skip if pull failed due to network - local build will also fail
         print()
         print("[Strategy 2/2] Attempting local build...")
         print()
@@ -210,10 +255,13 @@ def main():
         print("  Setup failed!")
         print("=" * 60)
         print()
-        print("Please check the errors above and try again.")
-        print("You can also manually run:")
-        print(f"  docker pull {DOCKER_IMAGE}")
-        print(f"  docker build -t {DOCKER_IMAGE} -f <dockerfile_path> .")
+        if pull_failed_due_to_network:
+            print("Docker Hub is not accessible. Please fix the network issue and try again.")
+        else:
+            print("Please check the errors above and try again.")
+            print("You can also manually run:")
+            print(f"  docker pull {DOCKER_IMAGE}")
+            print(f"  docker build -t {DOCKER_IMAGE} -f <dockerfile_path> .")
         sys.exit(1)
 
 
