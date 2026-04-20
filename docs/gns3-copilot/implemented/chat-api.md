@@ -6,18 +6,20 @@ See LICENSE file for licensing information.
 > This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
 
 
-# GNS3 Copilot Agent Chat API Design Document
+# GNS3 Copilot Agent Chat API
 
 ## Overview
 
-This document describes the architectural design and implementation plan for the GNS3 Copilot Chat API. This API enables clients to interact with the GNS3 Copilot Agent through a RESTful interface, providing streaming conversations, session management, and project topology queries.
+This document describes the implementation of the GNS3 Copilot Chat API. This API enables clients to interact with the GNS3 Copilot Agent through a RESTful interface, providing streaming conversations, session management, session abort, and project topology queries.
 
 ## Core Features
 
 - **Project-level Isolation**: Each GNS3 project has its own Agent instance and session storage
 - **Streaming Responses**: Uses Server-Sent Events (SSE) for real-time streaming output
-- **Session Management**: Supports session listing, renaming, deletion, and history queries
+- **Session Management**: Supports session listing, renaming, deletion, pinning, and history queries
+- **Session Abort**: Supports aborting an ongoing streaming session mid-conversation
 - **Statistics Tracking**: Automatically records message counts, LLM call counts, and token usage
+- **Copilot Modes**: Supports `teaching_assistant` (diagnostic only) and `lab_automation_assistant` (full config) modes
 - **User Isolation**: Each user has independent LLM configurations and session spaces
 
 ## Architecture Design
@@ -39,10 +41,19 @@ AgentService (per project)
     │   ├─ checkpoints table (LangGraph state)
     │   └─ chat_sessions table (session metadata)
     │
-    └─ LangGraph Agent
+    └─ LangGraph Agent (StateGraph)
         ├─ llm_call node
-        ├─ should_continue node
-        └─ tool_node (GNS3 tools)
+        ├─ tool_node (GNS3 tools)
+        ├─ title_generator_node (auto title)
+        └─ abort_handler_node (abort handling)
+        │
+        ├─ Conditional Edges (routing functions):
+        │   ├─ should_continue (after llm_call)
+        │   └─ recursion_limit_continue (after tool_node)
+        │
+        └─ Copilot Modes:
+            ├─ teaching_assistant (diagnostic tools only)
+            └─ lab_automation_assistant (full diagnostic + config tools)
 ```
 
 ### Project-level Checkpoint Design
@@ -192,38 +203,34 @@ Statistics are collected in real-time during conversation, and updated to `chat_
 
 1. **message_count (number of messages)**
    - Initial value: 1 (user message)
-   - `on_chat_model_end` event: +1 (AI complete reply, not each chunk)
+   - `on_chat_model_end` event: +1 (AI complete reply, only counted once per turn via `ai_response_counted` flag, not each streaming chunk)
    - `on_tool_end` event: +1 (each tool execution result)
 
 2. **llm_calls_count (number of LLM calls)**
    - Listen to `on_chat_model_start` event
    - +1 each time LLM starts generation
+   - **Filtered**: `title_generator_node` events are excluded from count (internal use only)
 
 3. **input_tokens (input tokens)**
    - Extracted from `usage_metadata` in `on_chat_model_end` event
-   - **Important**: input_tokens returned by LangGraph already includes conversation history, accumulates previous conversation content on each LLM call
-   - Example: 1st call input=8674, 2nd call input=9421 (includes 1st conversation 8674+675+system prompt increment)
+   - Uses incremental addition (`+=`): each event's token count is added to the running total
+   - **Filtered**: `title_generator_node` events are excluded from token counting
+   - Tries multiple extraction methods: `response.usage_metadata` → `output.usage_metadata` → direct data fields
 
 4. **output_tokens (output tokens)**
    - Extracted from `usage_metadata` in `on_chat_model_end` event
-   - **Important**: output_tokens returned by LangGraph is also accumulated value, includes output from all LLM calls
-   - Example: 1st actual output=675, 2nd actual output=9, accumulated output=684 (675+9)
+   - Uses incremental addition (`+=`): each event's token count is added to the running total
+   - **Filtered**: `title_generator_node` events are excluded from token counting
 
 5. **total_tokens (total tokens)**
-   - Calculation formula: input_tokens + output_tokens
-   - Take the accumulated value from the last LLM call for calculation
-
-**Statistics Example** (real data):
-- 1st LLM call (AI reply): input=8674, output=675
-- 2nd LLM call (generate title): input=9421, output=684 (accumulated value: 675+9)
-- Final storage: input_tokens=9421, output_tokens=684, total_tokens=10105
-- Note: LangGraph automatically accumulates, code can directly take the last value
+   - Calculation formula: `input_tokens + output_tokens` (computed at update time)
 
 **Notes**:
 - message_count counts **complete messages**, not streaming chunks
+- `ai_response_counted` flag ensures AI responses are only counted once per turn, even if multiple `on_chat_model_end` events fire
+- `title_generator_node` is completely excluded from all statistics (llm_calls, tokens, streaming output)
 - Token data depends on LLM's returned `usage_metadata`, some models may not support
-- Statistics are incrementally updated to database via `update_session` method after stream ends
-- LangGraph automatically handles input and output history accumulation, code uses the last LLM call value
+- Statistics are incrementally updated to database via `update_session` method after stream ends (using SQL `field = field + ?` syntax)
 - **Message ID handling**: Assign ID when creating initial message (`HumanMessage(id=str(uuid4()))`), messages read from checkpoint without ID are also automatically generated
 - **Format conversion**: Use `message_converters.py` module to handle conversion between LangChain and OpenAI formats, ensuring tool_calls format conforms to OpenAI specification
 
@@ -249,20 +256,20 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
 
 | type | Description | Included Fields |
 |------|-------------|------------------|
-| content | AI text content (streaming) | content, message_id (optional) |
+| content | AI text content (streaming) | content, message_id (optional), session_id |
 | tool_call | LLM decides to call tool (streaming, parameters accumulated gradually) | tool_call (object, includes id, type, function), session_id, message_id (optional) |
 | tool_start | Tool starts execution | tool_name, tool_call_id, session_id |
 | tool_end | Tool execution complete | tool_name, tool_output, session_id |
 | error | Error message | error, session_id |
+| abort | Stream aborted by user | session_id |
 | done | Stream end | session_id |
+| heartbeat | *(Planned)* Heartbeat keepalive | session_id |
 
 **Tool Output Format** (`tool_output` field):
 - If the tool returns a non-string type (dict, list), it is automatically serialized to JSON format using `json.dumps(obj, ensure_ascii=False, indent=2)`
 - If the tool returns a string type, it is passed through as-is
 - This ensures all structured data is in standard JSON format, making it easy for the frontend to parse with `JSON.parse()`
 - Chinese and other non-ASCII characters are preserved (not escaped to `\uXXXX`)
-
-| heartbeat | Heartbeat keepalive | session_id |
 
 ### Message Examples
 
@@ -341,6 +348,9 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
 
 // Error
 {"type": "error", "error": "Project not found", "session_id": "xxx"}
+
+// Stream aborted by user
+{"type": "abort", "session_id": "xxx"}
 ```
 
 ### Streaming Tool Call Mechanism
@@ -392,13 +402,15 @@ function handleToolCallEvent(chunk) {
 }
 ```
 
-### Heartbeat Mechanism
+### Heartbeat Mechanism *(Planned)*
 
 **Purpose**: Prevent proxy server/load balancer from disconnecting SSE connection due to timeout.
 
-**Implementation**: Use `asyncio.wait` to set timeout, send `heartbeat` message after timeout, then continue waiting for next event.
+**Planned Implementation**: Use `asyncio.wait` to set timeout, send `heartbeat` message after timeout, then continue waiting for next event.
 
 **Frontend Handling**: When receiving `heartbeat` message, ignore it directly, don't render anything.
+
+**Note**: The `heartbeat` type is defined in the `ChatResponse` schema but not yet implemented in the streaming path. Currently, long-running tool executions may cause proxy timeouts.
 
 ## API Endpoints
 
@@ -411,6 +423,7 @@ All endpoints are under `/v3/projects/{project_id}/chat/` path.
 | GET | `/sessions/{session_id}/history` | Get session history |
 | PATCH | `/sessions/{session_id}` | Rename session |
 | DELETE | `/sessions/{session_id}` | Delete session |
+| POST | `/sessions/{session_id}/abort` | Abort ongoing streaming session |
 | PUT | `/sessions/{session_id}/pin` | Pin session |
 | DELETE | `/sessions/{session_id}/pin` | Unpin session |
 
@@ -522,7 +535,7 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
     {
       "id": "f0247568-071d-412f-9e3e-4cbe815834ea",
       "role": "user",
-      "content": "你能干点啥。",
+      "content": "What can you do?",
       "metadata": {
         "created_at": "2026-03-07T17:48:07.848519"
       }
@@ -530,7 +543,7 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
     {
       "id": "lc_run--019cc969-eb81-7dd1-a894-e819daf81cd0",
       "role": "assistant",
-      "content": "我可以作为GNS3网络实验的助教...",
+      "content": "I can serve as a teaching assistant for GNS3 network labs...",
       "tool_calls": [
         {
           "id": "call_00_xxx",
@@ -573,6 +586,34 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
 **Function**: Delete session and all its checkpoint data
 
 **Response**: 204 No Content
+
+### POST /v3/projects/{project_id}/chat/sessions/{session_id}/abort
+
+**Function**: Abort an ongoing streaming session
+
+**Behavior**:
+1. Sets an in-memory abort flag (`_abort_flags[session_id] = True`)
+2. The LangGraph graph checks this flag at conditional edges (`should_continue`, `recursion_limit_continue`)
+3. If abort is detected during a tool call, `abort_handler_node` generates placeholder `ToolMessage` results to maintain message history consistency
+4. The stream ends gracefully, and any aborted tool messages are yielded as `tool_end` events with `{"status": "aborted"}` content
+
+**Response Example**:
+```json
+{"status": "ok", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
+```
+
+**Abort Flow**:
+```
+POST /abort → set_abort_flag(session_id)
+         ↓
+Graph conditional edge checks flag
+         ↓
+    ┌─ Has pending tool_calls?
+    │   YES → abort_handler_node (generates placeholder ToolMessages)
+    │   NO  → END directly
+    ↓
+Stream ends → yields aborted tool_end events → done
+```
 
 ### PUT /v3/projects/{project_id}/chat/sessions/{session_id}/pin
 
@@ -692,9 +733,9 @@ OpenAI-compatible message model.
 **Responsibility**: Convert between LangChain message format and OpenAI-compatible format
 
 **Main Functions**:
-- `convert_langchain_to_openai()`: LangChain → OpenAI format
-- `convert_openai_to_langchain()`: OpenAI → LangChain format
-- `convert_stream_event_to_openai()`: Stream event → OpenAI SSE format
+- `convert_langchain_to_openai()`: LangChain → OpenAI format (used in `get_history` and message conversion)
+- `convert_openai_to_langchain()`: OpenAI → LangChain format (utility, not used in main streaming path)
+- `convert_stream_event_to_openai()`: *(Not used in main streaming path)* — streaming uses `ToolCallStreamAccumulator` for `on_chat_model_stream` and `AgentService._convert_event_to_chunk` for other events
 
 **Key Conversion Logic**:
 
@@ -726,12 +767,13 @@ OpenAI-compatible message model.
 
 **Responsibility**: LangGraph-based workflow orchestration for AI conversation
 
-**Main Components**:
+**Graph Nodes**:
 
 1. **llm_call Node**: Invokes LLM with tools and conversation history
    - Injects topology information into system prompt
    - Handles message trimming for context window management
-   - Routes to tool execution or generates response
+   - Selects tools based on copilot mode (`teaching_assistant` vs `lab_automation_assistant`)
+   - Creates fresh model instance with tools for each call
 
 2. **tool_node Function**: Executes tool calls and returns results
    - **Critical**: Serializes tool output to JSON before creating ToolMessage
@@ -750,7 +792,47 @@ OpenAI-compatible message model.
      )
      ```
 
-3. **generate_title Node**: Auto-generates conversation title on first interaction
+3. **title_generator_node** (`generate_title` function): Auto-generates conversation title on first interaction
+   - Uses a separate lightweight LLM (title_model) to generate a title from the first user message and assistant response
+   - Title is truncated to 40 characters max
+   - Fallback: uses first 30 chars of user's message if title generation fails
+   - This node is **filtered out** from statistics and SSE streaming (internal use only)
+
+4. **abort_handler_node**: Handles abort when pending tool_calls exist
+   - Generates placeholder `ToolMessage` with `{"status": "aborted"}` content
+   - Ensures message history consistency and prevents checkpoint corruption
+   - Only triggered when abort flag is set and the last AI message has tool_calls
+
+**Conditional Edges (Routing Functions)**:
+
+- **should_continue** (after `llm_call`): Routes to `tool_node`, `title_generator_node`, `abort_handler_node`, or `END` based on:
+  1. Check abort flag → `abort_handler_node` (if pending tool_calls) or `END`
+  2. Has tool_calls → `tool_node`
+  3. First interaction without title → `title_generator_node`
+  4. Otherwise → `END`
+
+- **recursion_limit_continue** (after `tool_node`): Routes to `llm_call` or `END` based on:
+  1. Check abort flag → `END`
+  2. Remaining steps < 4 → `END` (prevent infinite loops)
+  3. Otherwise → `llm_call`
+
+**State** (`MessagesState`):
+- `messages`: Conversation messages (cumulative with `operator.add`)
+- `llm_calls`: LLM invocation counter
+- `remaining_steps`: Recursion depth tracker (initial: 20)
+- `conversation_title`: Auto-generated title
+- `topology_info`: GNS3 project topology data
+- `session_id`: Session identifier (for abort tracking)
+- `abort`: Abort flag
+
+**Copilot Modes**:
+
+The agent supports two tool sets, selected by `copilot_mode` in the user's LLM configuration:
+
+| Mode | Tools | Description |
+|------|-------|-------------|
+| `teaching_assistant` (default) | GNS3Template, GNS3CreateNode, GNS3Link, GNS3StartNode, GNS3UpdateNodeName, ExecuteMultipleDeviceCommands, PacketCapture, DeviceSkills | Read-only diagnostic + node creation |
+| `lab_automation_assistant` | All teaching_assistant tools + GNS3StopNode, GNS3SuspendNode, ExecuteMultipleDeviceConfigCommands, VPCSCommands | Full diagnostic + configuration tools |
 
 **Why Serialize in tool_node?**
 
@@ -788,6 +870,8 @@ ToolMessage(content=JSON_string)
 - `list_sessions`: List sessions
 - `delete_session`: Delete session
 - `rename_session`: Rename session
+- `pin_session`: Pin or unpin session
+- `abort_session`: Signal abort for a running session (sets in-memory flag)
 - `close`: Close database connection
 
 **Core Flow** (stream_chat):
@@ -807,9 +891,11 @@ ToolMessage(content=JSON_string)
 - Statistics logic doesn't depend on converted SSE chunk, gets directly from original events
 
 **Key Event Handling**:
-- `on_chat_model_start`: LLM call count +1
-- `on_chat_model_end`: Extract token usage (from `output.usage_metadata`), AI message count +1
+- `on_chat_model_start`: LLM call count +1 (excludes `title_generator_node`)
+- `on_chat_model_end`: Extract token usage via `response.usage_metadata` → `output.usage_metadata` → data fields (excludes `title_generator_node`), AI message count +1 (once per turn via `ai_response_counted` flag)
 - `on_tool_end`: Tool message count +1
+- `on_chat_model_stream`: Processed by `ToolCallStreamAccumulator` for progressive tool call arguments (excludes `title_generator_node` from SSE output)
+- Abort flag is cleared at stream start, checked during streaming for graceful termination
 
 **Implementation Location**: `agent_service.py`
 
@@ -876,8 +962,9 @@ Handle different types based on SSE message's `type` field:
 | tool_start | Optional: show tool start execution status |
 | tool_end | Create tool_result type message, display tool execution result |
 | error | Display error message |
+| abort | Mark stream as aborted, stop loading state |
 | done | Mark stream end, stop loading state |
-| heartbeat | Ignore (keepalive signal) |
+| heartbeat | *(Planned)* Ignore (keepalive signal) |
 
 ### Session ID Management (Important)
 
@@ -985,15 +1072,15 @@ const displayTime = timestamp ? new Date(timestamp).toLocaleString() : 'Unknown'
 - Lower database lock contention
 - Improve real-time performance of streaming response
 
-**Implementation Location**: `agent_service.py` lines 283-294
+**Implementation Location**: `agent_service.py` `stream_chat` method (statistics collection in event loop + batch update after stream)
 
 ## Dependencies
 
 - `langchain` >= 0.3.0
 - `langgraph` >= 0.2.0
 - `langchain-core`
-- `langgraph-checkpoint-sqlite` >= 3.0.1
 - `aiosqlite`
+- `fastapi`
 
 ## Extensibility
 
