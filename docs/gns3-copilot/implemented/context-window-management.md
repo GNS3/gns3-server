@@ -6,258 +6,156 @@ See LICENSE file for licensing information.
 > This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
 
 
-# LLM Context Window Management Implementation Document
+# LLM Context Window Management
 
 ## Overview
 
-This document explains the context window management implementation mechanism for GNS3 Copilot, including message trimming, token counting, and configuration validation.
+GNS3 Copilot's context window management prevents LLM context overflow by trimming conversation history to fit within configured token limits. It uses tiktoken for accurate token counting, supports three context strategies (conservative/balanced/aggressive), and automatically injects GNS3 topology information into the system prompt before each LLM call.
 
-## Implementation Architecture
+## Architecture
 
-### 1. Core Modules
+```mermaid
+graph TD
+    subgraph "context_manager.py"
+        A[create_pre_model_hook] --> B[_inject_topology_into_system]
+        A --> C[estimate_tool_tokens]
+        A --> D[trim_messages via LangChain]
+        E[count_tokens via tiktoken]
+        E --> C
+        E --> F[_count_tokens_for_message]
+        F --> D
+    end
 
-**File Location**: `gns3server/agent/gns3_copilot/agent/context_manager.py`
+    subgraph "gns3_copilot.py"
+        G[llm_call node] --> H[Get topology via GNS3TopologyTool]
+        H --> A
+        A --> I[model_with_tools.invoke]
+    end
 
-#### Token Counting Strategy
-
-The system uses **tiktoken** for token counting (context_manager.py:60):
-
-```python
-_tiktoken_encoding = tiktoken.get_encoding("cl100k_base")
+    style A fill:#4a9eff,color:#fff
+    style D fill:#ff6b6b,color:#fff
+    style E fill:#51cf66,color:#fff
 ```
 
-**Required Dependency**:
-```bash
-pip install tiktoken>=0.8.0
+## Key Components
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `create_pre_model_hook()` | `context_manager.py` | Factory that creates the preprocessing hook |
+| `_inject_topology_into_system()` | `context_manager.py` | Injects topology into system prompt via `{{topology_info}}` placeholder |
+| `count_tokens()` | `context_manager.py` | Accurate token counting using tiktoken (`cl100k_base`) |
+| `estimate_tool_tokens()` | `context_manager.py` | Estimates token cost of tool definitions (JSON serialization) |
+| `_count_tokens_for_message()` | `context_manager.py` | Token counter adapter for LangChain's `trim_messages` |
+| `llm_call()` | `gns3_copilot.py` | StateGraph node that orchestrates the full LLM call pipeline |
+
+**Token Counting**: Uses tiktoken `cl100k_base` encoding (GPT-4 compatible, 95%+ accuracy for most modern LLMs).
+
+**tiktoken Cache**: Encoding files are cached locally at `<agent_package>/cache/tiktoken/` to avoid repeated downloads. This is configured before tiktoken import via `TIKTOKEN_CACHE_DIR` environment variable.
+
+**Required Dependency**: `tiktoken>=0.8.0` — if not installed, `ModuleNotFoundError` is raised at startup.
+
+## Trimming Process
+
+```mermaid
+flowchart TD
+    A[llm_call node invoked] --> B[Get topology via GNS3TopologyTool]
+    B --> C[Create pre_model_hook]
+    C --> D[Inject topology into system prompt]
+    D --> E{topology data available?}
+    E -->|Yes| F[Replace placeholder with topology content]
+    E -->|No| G[Replace placeholder with 'No topology information available']
+    F --> H[Estimate tool definition tokens]
+    G --> H
+    H --> I[Calculate trim_messages budget]
+    I --> J[trim_messages with strategy='last']
+    J --> K[Return prepared messages]
+    K --> L[model.invoke with prepared messages]
 ```
 
-If tiktoken is not installed, the system will throw a `ModuleNotFoundError` at startup.
+### Token Budget Calculation
 
-#### Key Functions
-
-**`count_tokens(text: str) -> int`** (context_manager.py:84-100)
-- Uses tiktoken to accurately count tokens in text
-- Uses `cl100k_base` encoding
-- Returns the exact token count
-
-**`estimate_tool_tokens(tools: list) -> int`** (context_manager.py:103-169)
-- Serializes tool schema to JSON
-- Uses tiktoken to count token consumption of tool definitions
-- Supports Pydantic v1/v2 compatibility
-- Falls back to 1000 tokens on failure
-
-**`create_pre_model_hook(...)`** (context_manager.py:195-402)
-- Creates a preprocessing function (pre_model_hook)
-- Automatically executes before each LLM call:
-  1. Injects topology information into system prompt
-  2. Estimates token consumption of tool definitions
-  3. Trims message history to fit context limits
-- Returns a callable function for preparing messages
-
-### 2. Detailed Trimming Logic
-
-#### 2.1 Token Budget Allocation
-
-When calling the LLM, the content sent consists of two parts:
-
-```
-Complete request sent to LLM:
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Messages (managed by us)                                  │
-│    ├─ SystemMessage: system prompt + topology (template injection) │
-│    └─ HumanMessage/AIMessage: user messages / history messages │
-├─────────────────────────────────────────────────────────────┤
-│ 2. Tool Definitions (LangChain adds automatically, not in messages) │
-│    ├─ Tool 1 schema (name, description, parameters)        │
-│    ├─ Tool 2 schema                                        │
-│    └─ ... (about 500-1500 tokens per tool)                │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A["context_limit<br/>(e.g. 128K)"] -->|"× strategy_ratio"| B["Input Budget<br/>(e.g. 96K @ balanced)"]
+    B -->|"− tool_tokens"| C["trim_messages Budget<br/>(includes system message)"]
+    C --> D["trim_messages<br/>max_tokens parameter"]
 ```
 
-**System Message Structure**:
-- Uses template variable `{{topology_info}}` to dynamically inject topology
-- System prompt contains placeholder: `"### CURRENT TOPOLOGY\n{{topology_info}}"`
-- If topology exists, replaces with actual content
-- If no topology, replaces with `"(No topology information available)"`
+**Key**: `max_tokens` passed to `trim_messages` **includes** the system message. System tokens are NOT subtracted separately — `trim_messages` handles system message preservation via `include_system=True`.
 
-#### 2.2 Trimming Process
+### Budget Calculation Example
 
-```
-Step 1: Calculate Input Budget
-┌─────────────────────────────────────────────────────────────┐
-│ context_limit: 128,000 tokens (128K)                        │
-│ strategy: balanced (75%)                                    │
-│                                                            │
-│ Input budget = 128 × 1000 × 0.75 = 96,000 tokens          │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-Step 2: Subtract Tool Definitions
-┌─────────────────────────────────────────────────────────────┐
-│ Input budget: 96,000 tokens                                │
-│ Tool definitions: 1,725 tokens                             │
-│                                                            │
-│ Available for messages = 96,000 - 1,725 = 94,275 tokens   │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-Step 3: trim_messages Processing
-┌─────────────────────────────────────────────────────────────┐
-│ Call LangChain's trim_messages:                            │
-│ - max_tokens = 94,275 (includes system message)           │
-│ - strategy = "last" (keep latest messages)                 │
-│ - token_counter = tiktoken counting function              │
-│ - include_system = True (always keep system)               │
-│                                                            │
-│ trim_messages will:                                        │
-│ 1. Keep SystemMessage (system + topology)                 │
-│ 2. Starting from latest messages, keep as much history     │
-│ 3. When exceeding limit, discard oldest messages          │
-└─────────────────────────────────────────────────────────────┘
-```
+| Step | Calculation | Result |
+|------|------------|--------|
+| Context limit | 128 (configured) | 128K tokens |
+| Strategy ratio | balanced = 0.75 | 128 × 1000 × 0.75 = 96,000 |
+| Tool definitions | estimated from JSON schema | ~1,725 tokens |
+| trim_messages budget | 96,000 − 1,725 | **94,275 tokens** (includes system) |
 
-#### 2.3 Trimming Priority
+### Trimming Priority
 
-The system preserves content in the following priority order:
+| Priority | Content | Behavior |
+|----------|---------|----------|
+| 1 | System Message (system prompt + topology) | Always kept (`include_system=True`) |
+| 2 | Latest conversation messages | Kept from newest to oldest |
+| 3 | Older conversation history | Discarded first when exceeding budget |
 
-| Priority | Content | Description |
-|----------|---------|-------------|
-| 1️⃣ | System Message (system prompt + topology) | Never removed |
-| 2️⃣ | Latest user message | Keep at least the last 1 |
-| 3️⃣ | Old conversation history | Discarded in chronological order |
+**Note**: System prompt and topology are merged into a single `SystemMessage` via the `{{topology_info}}` template variable and cannot be trimmed independently.
 
-**Note**: System prompt and topology info are merged into one SystemMessage via template variable and cannot be separated.
+### Edge Case Handling
 
-#### 2.4 Edge Case Handling
-
-| Scenario | Handling |
+| Scenario | Behavior |
 |----------|----------|
-| System (including topology) > budget | Keep complete SystemMessage (cannot separate system and topology) |
-| Tools > budget | ERROR log, suggest increasing context_limit or reducing tool count |
-| All history trimmed | Keep last 1 user message |
+| System + tools > input budget | ERROR log with recommendations (reduce prompt/tools, use larger model, switch to conservative). `trim_messages` is still called — `include_system=True` ensures system message is kept, but no history messages will fit. |
+| Trim budget < system × 1.5 | WARNING log: minimal room for conversation history |
+| Invalid context_strategy | Falls back to `balanced` with WARNING log |
+| `trim_messages` throws exception | Returns untrimmed messages (graceful degradation) |
+| Missing `{{topology_info}}` placeholder | Returns original messages without injection, WARNING log |
+| Topology retrieval fails | Injects `"(No topology information available)"` placeholder |
 
-**Important Notes**:
-- When system + topology exceed available budget, **both are preserved**
-- Cannot discard only topology while keeping system prompt (already merged)
+## Integration with GNS3 Copilot
 
-### 3. Integration with GNS3 Copilot
+**File**: `gns3server/agent/gns3_copilot/agent/gns3_copilot.py`
 
-**File Location**: `gns3server/agent/gns3_copilot/agent/gns3_copilot.py`
+### Why Direct Call, Not Config-based?
 
-#### Implementation Method
-
-**Key Point**: The system uses a **custom StateGraph**, not LangGraph's pre-built agent.
-
-Therefore, `pre_model_hook` cannot be passed via `model.invoke(config={"configurable": {"pre_model_hook": ...}})`.
-
-**Correct Usage**: **Directly call** the `pre_hook` function to prepare messages.
-
-```python
-def llm_call(state: dict, config: RunnableConfig | None = None):
-    """LLM decides whether to call a tool or not."""
-
-    # 1. Get topology information
-    project_id = config["configurable"].get("project_id")
-    topology_info = None
-    if project_id:
-        topology_tool = GNS3TopologyTool()
-        topology = topology_tool._run(project_id=project_id)
-        if topology and "error" not in topology:
-            topology_info = topology
-
-    # 2. Create pre_model_hook
-    system_prompt = load_system_prompt()
-    pre_hook = create_pre_model_hook(
-        system_prompt=system_prompt,
-        get_topology_func=lambda s: s.get("topology_info"),
-        get_llm_config_func=get_current_llm_config,
-        get_tools_func=lambda: tools,
-    )
-
-    # 3. Create model with tools
-    model_with_tools = create_base_model_with_tools(tools, llm_config=llm_config)
-
-    # 4. ⭐ Key: directly call pre_hook to prepare messages
-    logger.info("Calling pre_hook to prepare %d messages", len(messages))
-    prepared_state = pre_hook({"messages": messages, "topology_info": topology_info})
-    prepared_messages = prepared_state["messages"]
-
-    # 5. Use prepared messages to call LLM
-    response = model_with_tools.invoke(prepared_messages)
-
-    return {"messages": [response], ...}
-```
-
-#### Why Not Pass via Config?
-
-LangGraph's `pre_model_hook` parameter only applies to **pre-built agents**, not custom StateGraphs.
+The agent uses a **custom StateGraph** (`StateGraph(MessagesState)`), not LangGraph's pre-built agent. LangGraph's `pre_model_hook` config parameter only works with pre-built agents like `create_react_agent`.
 
 | Agent Type | pre_model_hook Support |
 |------------|------------------------|
-| `create_react_agent` | ✅ Via `pre_model_hook` parameter |
-| `chat_agent_executor` | ✅ Via `pre_model_hook` parameter |
-| **Custom StateGraph** | ❌ **Not supported**, need to call directly |
+| `create_react_agent` | Via `config={"configurable": {"pre_model_hook": ...}}` |
+| `chat_agent_executor` | Via `config={"configurable": {"pre_model_hook": ...}}` |
+| **Custom StateGraph** | **Not supported** — must call directly |
 
-Our implementation uses a custom StateGraph (`agent_builder = StateGraph(MessagesState)`), so we must call `pre_hook` directly.
+### Execution Flow
 
-### 4. Execution Flow
+In the `llm_call` node of `gns3_copilot.py`:
 
-```
-User sends message
-     ↓
-llm_call node is called
-     ↓
-Get project_id (from config["configurable"])
-     ↓
-Call GNS3TopologyTool._run(project_id) to get topology
-     ↓
-Store topology_info to state
-     ↓
-Create pre_model_hook (via create_pre_model_hook())
-     ↓
-[Key] Directly call pre_hook({"messages": messages, "topology_info": topology_info})
-     ├─ 1. Inject topology into system prompt
-     ├─ 2. Estimate tool definitions tokens
-     ├─ 3. Call trim_messages() to trim messages
-     └─ 4. Return prepared message list
-     ↓
-Call model.invoke() with prepared messages
-     ↓
-Return LLM response
-```
+1. Get `llm_config` from request-scoped context variable
+2. Get `project_id` from `config["configurable"]`
+3. Retrieve topology via `GNS3TopologyTool._run(project_id)`
+4. Select tools based on `copilot_mode` (`teaching_assistant` vs `lab_automation_assistant`)
+5. Load system prompt and create `pre_model_hook`
+6. **Directly call** `pre_hook({"messages": messages, "topology_info": topology_info})` to prepare messages
+7. Invoke `model_with_tools.invoke(prepared_messages)`
 
----
+> **Note**: The actual `llm_call` function also includes defensive checks for missing config, empty messages, and topology retrieval errors — see source code for full details.
 
 ## Strategy Implementation
 
 ### Context Strategy Ratios
 
-**Definition** (context_manager.py:68-72):
+Defined as `CONTEXT_STRATEGY_RATIOS` in `context_manager.py`, with default `DEFAULT_CONTEXT_STRATEGY = "balanced"`.
 
-```python
-CONTEXT_STRATEGY_RATIOS = {
-    "conservative": 0.60,
-    "balanced": 0.75,
-    "aggressive": 0.85,
-}
-```
-
-**Default Value** (context_manager.py:74):
-```python
-DEFAULT_CONTEXT_STRATEGY = "balanced"
-```
-
-### Strategy Comparison
-
-| Strategy | Input Ratio | Output Reserved | Calculation Formula |
-|----------|-------------|-----------------|---------------------|
+| Strategy | Input Ratio | Output Reserved | Calculation |
+|----------|-------------|-----------------|-------------|
 | Conservative | 60% | 40% | `context_limit × 1000 × 0.60` |
 | Balanced | 75% | 25% | `context_limit × 1000 × 0.75` |
 | Aggressive | 85% | 15% | `context_limit × 1000 × 0.85` |
 
----
-
 ## Log Output
 
-### Normal Case (topology successfully injected)
+### Normal Case (topology injected)
 
 ```
 INFO: Calling pre_hook to prepare 1 messages
@@ -276,7 +174,7 @@ INFO: Messages trimmed: 50 → 25 msgs. Total: ~82000 tokens + 1725 tools = 8372
 INFO: Messages prepared: 50 → 25
 ```
 
-### When topology is None
+### When Topology is None
 
 ```
 INFO: Calling pre_hook to prepare 1 messages
@@ -284,53 +182,22 @@ WARNING: ✗ Topology data is None, injecting placeholder
 INFO: Context ready: 2 msgs, ~800 tokens + 1725 tools = 2525 / 128K (2.0%), strategy=balanced
 ```
 
----
-
 ## Error Handling
 
-### tiktoken Not Installed
+| Error | Behavior | Resolution |
+|-------|----------|------------|
+| tiktoken not installed | `ModuleNotFoundError` at startup | `pip install tiktoken>=0.8.0` |
+| `context_limit` missing | `ValueError` raised | Add `context_limit` to LLM config |
+| Invalid `context_limit` | `ValueError` raised | Must be positive integer |
+| Invalid `context_strategy` | WARNING, fallback to `balanced` | Use `conservative`/`balanced`/`aggressive` |
+| `trim_messages` failure | ERROR log, returns untrimmed messages | Check message format compatibility |
 
-If tiktoken is not installed, the system will throw an error at startup:
+## Deprecated API
 
-```python
-ModuleNotFoundError: No module named 'tiktoken'
-```
-
-**Solution**:
-```bash
-pip install tiktoken>=0.8.0
-```
-
-### context_limit Missing or Invalid
-
-If there is no `context_limit` in the LLM configuration or the value is invalid (context_manager.py:285-295):
-
-```python
-if "context_limit" not in llm_config:
-    raise ValueError("context_limit is required in LLM config")
-
-limit = llm_config["context_limit"]
-if not isinstance(limit, int) or limit <= 0:
-    raise ValueError(f"Invalid context_limit: {limit}")
-```
-
-### Trimming Failure
-
-```python
-try:
-    trimmed = trim_messages(...)
-except Exception as e:
-    logger.error("Failed to trim messages: %s", e)
-    logger.warning("Returning original messages due to trimming error")
-    return {"messages": messages_with_system}
-```
-
----
+`prepare_context_messages()` is deprecated. It remains in `context_manager.py` for backward compatibility but emits `DeprecationWarning`. Use `create_pre_model_hook()` instead.
 
 ## Related Source Files
 
-- `gns3server/agent/gns3_copilot/agent/context_manager.py` - Context management core logic
-- `gns3server/agent/gns3_copilot/agent/gns3_copilot.py` - LLM call node (StateGraph)
-- `gns3server/agent/gns3_copilot/agent/model_factory.py` - Model creation and tool binding
-
-
+- `gns3server/agent/gns3_copilot/agent/context_manager.py` — Context management core logic
+- `gns3server/agent/gns3_copilot/agent/gns3_copilot.py` — LLM call node (StateGraph)
+- `gns3server/agent/gns3_copilot/agent/model_factory.py` — Model creation and tool binding
