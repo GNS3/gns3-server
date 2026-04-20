@@ -48,7 +48,7 @@ User's own config > User's group config
 | `config_id` | UUID | Primary key |
 | `name` | VARCHAR(100) | Configuration name (table-level for indexing) |
 | `model_type` | VARCHAR(50) | Model type (table-level for filtering) |
-| `config` | JSONB | Configuration data (provider, base_url, model, temperature, api_key, etc.) |
+| `config` | JSON (JSONB on PostgreSQL) | Configuration data (provider, base_url, model, temperature, api_key, etc.) |
 | `user_id` | UUID (nullable) | Foreign key to users table |
 | `group_id` | UUID (nullable) | Foreign key to user_groups table |
 | `is_default` | BOOLEAN | Default configuration flag |
@@ -85,13 +85,15 @@ GNS3-Copilot uses LangChain's `init_chat_model` function, which supports the fol
 
 | Provider | Provider Value | Default base_url | base_url Required? | Notes |
 |----------|---------------|------------------|-------------------|-------|
-| OpenAI | `openai` | `https://api.openai.com/v1` | ❌ No | Most popular, supports GPT-4, GPT-3.5 |
-| Anthropic | `anthropic` | `https://api.anthropic.com` | ❌ No | Claude 3.5 Sonnet, Claude 3 Opus |
-| Google | `google` | `https://generativelanguage.googleapis.com` | ❌ No | Gemini Pro, Gemini Flash |
+| OpenAI | `openai` | `https://api.openai.com/v1` | ✅ Yes (planned optional) | Most popular, supports GPT-4, GPT-3.5 |
+| Anthropic | `anthropic` | `https://api.anthropic.com` | ✅ Yes (planned optional) | Claude 3.5 Sonnet, Claude 3 Opus |
+| Google | `google` | `https://generativelanguage.googleapis.com` | ✅ Yes (planned optional) | Gemini Pro, Gemini Flash |
 | AWS Bedrock | `aws` | Varies by region | ✅ Yes | Requires AWS configuration |
 | Ollama | `ollama` | `http://localhost:11434` | ✅ Yes | Local models, typically running on localhost |
-| DeepSeek | `deepseek` | `https://api.deepseek.com` | ❌ No | DeepSeek Chat, DeepSeek Coder |
-| xAI | `xai` | `https://api.x.ai` | ❌ No | Grok models |
+| DeepSeek | `deepseek` | `https://api.deepseek.com` | ✅ Yes (planned optional) | DeepSeek Chat, DeepSeek Coder |
+| xAI | `xai` | `https://api.x.ai` | ✅ Yes (planned optional) | Grok models |
+
+> **Note:** The `base_url` field is currently **required** in the API schema for all providers. Entries marked "planned optional" indicate providers where `base_url` may become optional in a future release (see [Future Enhancements](#optional-base_url-field)). For now, use the default endpoint URL listed in the table.
 
 ### When to Specify `base_url`
 
@@ -177,7 +179,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | Method | Path | Description | Privilege |
 |--------|------|-------------|-----------|
 | GET | `/v3/access/users/{user_id}/llm-model-configs` | Get user's effective configs (own + inherited) | User.Audit |
-| GET | `/v3/access/users/{user_id}/llm-model-configs/own` | Get user's own configs only | User.Audit |
+| GET | `/v3/access/users/{user_id}/llm-model-configs/own` | Get user's own configs only (returns `List[LLMModelConfigResponse]`, a plain array) | User.Audit |
 | GET | `/v3/access/users/{user_id}/llm-model-configs/default` | Get user's default configuration | User.Audit |
 | POST | `/v3/access/users/{user_id}/llm-model-configs` | Create a new configuration | User.Modify |
 | PUT | `/v3/access/users/{user_id}/llm-model-configs/{config_id}` | Update a configuration | User.Modify |
@@ -250,12 +252,16 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | `context_limit` | integer (optional) | Model context window limit in K tokens |
 | `context_strategy` | string (optional) | Context trimming strategy |
 | `is_default` | boolean (optional) | Default flag |
+| `copilot_mode` | string (optional) | GNS3-Copilot mode: "teaching_assistant" or "lab_automation_assistant" |
 | `expected_version` | integer (optional) | **Optimistic locking version** |
 
 **Note:** When using `expected_version`, the API will verify the version hasn't changed since you read the data. If it has, you'll receive a 409 Conflict error.
 
 **Reserved Fields:**
 - `max_tokens`: Reserved for future implementation. Currently not used by the system. The maximum output tokens are controlled automatically by the LLM provider based on the model and input size.
+
+**Update Limitations:**
+- `context_strategy` and `copilot_mode` can be set to new values but **cannot be cleared to null** via update. This is because the API filters out null values before processing.
 
 ### LLMModelConfigResponse
 
