@@ -1,4 +1,4 @@
-pytest==8.4.2  # version 8.4.2 is the last one supporting Python 3.9
+pytest==9.0.3  # fix CVE-2025-71176; Python 3.10+ required
 flake8==7.3.0
 pytest-timeout==2.4.0
 pytest-asyncio==1.2.0; python_version == '3.9' # version 1.2.0 is the last one supporting Python 3.9
