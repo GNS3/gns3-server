@@ -58,7 +58,7 @@ def get_application() -> FastAPI:
         lifespan=tasks.lifespan,
         title="GNS3 controller API",
         description="This page describes the public controller API for GNS3",
-        version="v3",
+        version="3.0.0",
         docs_url=None,
         redoc_url=None
     )
