@@ -1,3 +1,11 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
+> This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
+
+
 # Multi-Vendor Network Device Support
 
 ## Overview
@@ -6,12 +14,12 @@ GNS3-Copilot supports network devices from multiple vendors through Netmiko and 
 
 ## Supported Vendors
 
-| Vendor | Platform | Device Type | Protocol | Status |
-|--------|----------|-------------|----------|--------|
-| **Cisco** | `cisco_ios` | `cisco_ios_telnet` | Telnet | ✅ Tested |
-| **Huawei** | `huawei` | `gns3_huawei_telnet_ce` | Telnet | ✅ Tested (Custom Driver) |
-| **Ruijie (锐捷)** | `ruijie_os` | `gns3_ruijie_telnet` | Telnet | ✅ Tested (Custom Driver) |
-| **VPCS** | `vpcs` | `gns3_vpcs_telnet` | Telnet | ✅ Tested (Custom Driver) |
+| Vendor | Device Type | Protocol | Status |
+|--------|-------------|----------|--------|
+| **Cisco** | `cisco_ios_telnet` | Telnet | ✅ Tested |
+| **Huawei** | `gns3_huawei_telnet_ce` | Telnet | ✅ Tested (Custom Driver) |
+| **Ruijie (锐捷)** | `gns3_ruijie_telnet` | Telnet | ✅ Tested (Custom Driver) |
+| **VPCS** | `gns3_vpcs_telnet` | Telnet | ✅ Tested (Custom Driver, Simulator) |
 
 ## Custom VPCS Driver (`VPCSTelnet`)
 
@@ -25,10 +33,13 @@ VPCS (Virtual PC Simulator) is a lightweight virtual PC simulator used in GNS3 l
 
 ### Solution: Lightweight Custom Driver
 
-```
-BaseConnection (Netmiko base class)
-    ↓
-VPCSTelnet (Custom GNS3 driver)
+```mermaid
+graph TD
+    A[BaseConnection<br/>Netmiko base class] --> B[VPCSTelnet<br/>Custom GNS3 driver]
+    B --> C[No authentication]
+    B --> D[Simple prompt: PC\d+]
+    B --> E[No config mode]
+    B --> F[ANSI stripping]
 ```
 
 **Why Not Use Standard Telnet Driver?**
@@ -81,26 +92,38 @@ def disable_paging(self) -> str:
     return ""  # VPCS doesn't use paging
 ```
 
+**5. Custom `send_command`**
+VPCS overrides `send_command` with non-standard defaults:
+- `strip_prompt=False`, `strip_command=False`, `normalize=False` — VPCS output doesn't need standard Netmiko processing
+- Uses `_strip_ansi_codes()` to clean terminal escape sequences from VPCS output
+
+**6. ANSI Escape Code Stripping**
+VPCS output often contains ANSI terminal codes. The `_strip_ansi_codes()` method strips bold, underline, reset, and color codes before returning output to callers.
+
 ### VPCS Tool Usage
 
 The VPCS driver is used by the `execute_vpcs_commands` tool:
 
-```python
-from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+> File: `gns3server/agent/gns3_copilot/tools_v2/vpcs_tools_netmiko.py`
 
-tool = VPCSCommands()
-result = tool._run(json.dumps({
-    "project_id": "<PROJECT_UUID>",
-    "device_configs": [
-        {
-            "device_name": "PC1",
-            "commands": [
-                "ip 10.10.0.12/24 10.10.0.254",
-                "ping 10.10.0.254"
-            ]
+**VPCS Connection Parameters:**
+
+VPCS devices use additional Netmiko parameters for reliable connections:
+| Parameter | Value | Reason |
+|-----------|-------|--------|
+| `fast_cli` | `False` | VPCS is slow, disable fast CLI mode |
+| `global_delay_factor` | `2.0` | Double the delay between commands |
+
+```python
+"connection_options": {
+    "netmiko": {
+        "extras": {
+            "device_type": "gns3_vpcs_telnet",
+            "fast_cli": False,
+            "global_delay_factor": 2.0,
         }
-    ]
-}))
+    }
+}
 ```
 
 ### VPCS Built-in Template Configuration
@@ -111,34 +134,23 @@ VPCS nodes created from the built-in template automatically include the necessar
 
 | Tag | Value | Purpose |
 |-----|-------|---------|
-| `platform` | `vpcs` | Platform identification |
 | `device_type` | `gns3_vpcs_telnet` | Netmiko driver selection |
 
 **Built-in Template Definition:**
-```python
-# gns3server/services/templates.py
-{
-    "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "vpcs"),
-    "template_type": "vpcs",
-    "name": "VPCS",
-    "default_name_format": "PC{0}",
-    "category": "guest",
-    "symbol": "vpcs_guest",
-    "builtin": True,
-    "tags": ["platform:vpcs", "device_type:gns3_vpcs_telnet"],  # ✅ Auto-applied
-}
-```
+> File: `gns3server/services/templates.py`
+
+The VPCS built-in template includes `"tags": ["device_type:gns3_vpcs_telnet"]`, which is automatically applied to all VPCS nodes created from the template.
 
 **User Benefits:**
-- ✅ **No manual tagging required** - Tags are applied automatically when creating VPCS nodes
-- ✅ **Automatic driver selection** - Copilot tools automatically use the correct Netmiko driver
-- ✅ **Consistent behavior** - All VPCS nodes from the built-in template work identically
-- ✅ **Zero configuration** - Users don't need to understand device_type tags
+- ✅ **No manual tagging required** — Tags are applied automatically when creating VPCS nodes
+- ✅ **Automatic driver selection** — Copilot tools automatically use the correct Netmiko driver
+- ✅ **Consistent behavior** — All VPCS nodes from the built-in template work identically
+- ✅ **Zero configuration** — Users don't need to understand device_type tags
 
 **How It Works:**
 1. User creates a VPCS node from the built-in "VPCS" template
-2. Node automatically inherits the tags: `platform:vpcs` and `device_type:gns3_vpcs_telnet`
-3. Copilot tools read these tags and select the appropriate VPCS Netmiko driver
+2. Node automatically inherits the tag: `device_type:gns3_vpcs_telnet`
+3. Copilot tools read the tag and select the appropriate VPCS Netmiko driver
 4. Commands execute using the VPCS-optimized driver (no authentication, simple prompts)
 
 ### Supported VPCS Commands
@@ -192,14 +204,14 @@ Telnet Connection → Direct access to command line (no login prompts)
 
 ### Solution: Custom Driver Architecture
 
-```
-BaseConnection (Netmiko base class)
-    ↓
-CiscoBaseConnection (Cisco-style base class)
-    ↓
-HuaweiBase (Huawei device base class) ← Inherits VRP support
-    ↓
-GNS3HuaweiTelnetCE (Custom GNS3 driver) ← Overrides telnet_login only
+```mermaid
+graph TD
+    A[BaseConnection] --> B[CiscoBaseConnection]
+    B --> C[HuaweiBase<br/>VRP support, system-view,<br/>prompt patterns, paging]
+    C --> D[GNS3HuaweiTelnetCE<br/>Overrides telnet_login only]
+    D --> E[Skip authentication]
+    D --> F[Auto-commit before exit]
+    D --> G[y/n auto-confirm]
 ```
 
 **Why Inherit from HuaweiBase?**
@@ -258,20 +270,18 @@ custom_netmiko/
 
 #### Limitations
 
-**Authentication Requirement:**
-- The `gns3_huawei_telnet_ce` driver is designed for GNS3 devices **without authentication**
-- If your Huawei device has been configured with a username/password:
-  - **Option 1**: Use the standard `huawei_telnet` driver (requires username/password)
-  - **Option 2**: Remove authentication from the device for GNS3 testing
-- The driver does **not** currently auto-detect authentication requirements
+**Why Not Use the Standard `huawei_telnet` Driver?**
+- The standard Netmiko Huawei driver (`huawei_telnet`) has known issues in GNS3 emulation environments
+- This is the primary reason the custom `gns3_huawei_telnet_ce` driver was developed
+- The custom driver is designed for GNS3 devices **without authentication**
+- If your GNS3 Huawei device has been configured with authentication, remove it for GNS3 testing to use the custom driver
 
-**When to Use Each Driver:**
+**When to Use:**
 
-| Scenario | Use Driver | Requires Credentials? |
-|----------|-----------|----------------------|
-| GNS3 Huawei (fresh, no auth) | `gns3_huawei_telnet_ce` | ❌ No |
-| GNS3 Huawei (configured with username/password) | `huawei_telnet` | ✅ Yes |
-| Real Huawei hardware | `huawei_telnet` | ✅ Yes |
+| Scenario | Recommendation |
+|----------|---------------|
+| GNS3 Huawei device | Always use `gns3_huawei_telnet_ce` |
+| GNS3 device has auth configured | Remove auth, then use `gns3_huawei_telnet_ce` |
 
 #### Method Overrides
 
@@ -393,14 +403,14 @@ Standard Netmiko's `send_config_set()` waits for a prompt pattern, but the `[yes
 
 ### Solution: Hybrid Strategy with Interactive Prompt Handling
 
-```
-BaseConnection (Netmiko base class)
-    ↓
-CiscoBaseConnection (Cisco-style base class)
-    ↓
-RuijieOSBase (Netmiko's Ruijie implementation)
-    ↓
-RuijieTelnetEnhanced (Custom GNS3 driver) ← Adds interactive prompt handling
+```mermaid
+graph TD
+    A[BaseConnection] --> B[CiscoBaseConnection]
+    B --> C[RuijieOSBase<br/>Netmiko built-in]
+    C --> D[RuijieTelnetEnhanced<br/>Interactive prompt handling]
+    D --> E[Preprocessing<br/>Insert yes after known commands]
+    D --> F[Batch send<br/>Fast path 2-3s]
+    D --> G[Fallback one-by-one<br/>Slow but reliable ~10s]
 ```
 
 **Why Hybrid Strategy?**
@@ -430,35 +440,22 @@ INTERACTIVE_PATTERNS = [
 ```
 
 **2. Hybrid Send Strategy**
-```
-┌─────────────────────────────────────┐
-│ Input Configuration Commands        │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│ Step 1: Preprocessing               │
-│ - Detect interactive commands       │
-│ - Insert 'yes' after them           │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│ Step 2: Try Batch Send (Fast)       │
-│ - Write all commands rapidly        │
-│ - Read output once                  │
-│ - last_read=2.0s (Netmiko standard) │
-└──────────────┬──────────────────────┘
-               ↓
-         Success? ──Yes──→ Return output
-               │
-               No
-               ↓
-┌─────────────────────────────────────┐
-│ Step 3: Fallback (Slow but Reliable)│
-│ - Send commands one-by-one          │
-│ - Detect prompts after each command │
-│ - Send 'yes' when needed            │
-│ - last_read=0.5s per command        │
-└─────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+    A[Input Configuration Commands] --> B[Preprocessing]
+    B --> B1[Detect interactive commands]
+    B1 --> B2[Insert 'yes' after them]
+    B2 --> C[Try Batch Send - Fast]
+    C --> C1[Write all commands rapidly]
+    C1 --> C2[Read output once, last_read=2.0s]
+    C2 --> D{Success?}
+    D -->|Yes| E[Return output]
+    D -->|No| F[Fallback: One-by-One]
+    F --> F1[Send each command individually]
+    F1 --> F2[Detect prompts after each]
+    F2 --> F3[Send 'yes' when needed, last_read=0.5s]
+    F3 --> E
 ```
 
 **3. Batch Send Performance**
@@ -482,7 +479,6 @@ if re.search(r"\[yes/no\]", new_output, re.IGNORECASE):
 **For Ruijie devices in GNS3:**
 ```
 device_type:gns3_ruijie_telnet
-platform:ruijie_os
 ```
 
 **Example Usage:**
@@ -514,38 +510,36 @@ with ConnectHandler(**device) as conn:
 - **Not Covered**: Unknown or vendor-specific interactive prompts
 - **Fallback**: If batch fails, falls back to one-by-one with real-time detection
 
-**When to Use Each Driver:**
+**When to Use:**
 
 | Scenario | Use Driver |
 |----------|------------|
-| GNS3 Ruijie (known commands) | `gns3_ruijie_telnet` (batch works) |
-| GNS3 Ruijie (unknown commands) | `gns3_ruijie_telnet` (auto-fallback) |
-| Real Ruijie hardware | `ruijie_os_telnet` (standard) |
+| GNS3 Ruijie (known interactive commands) | `gns3_ruijie_telnet` (batch + auto-fallback) |
+| GNS3 Ruijie (unknown interactive prompts) | `gns3_ruijie_telnet` (auto-fallback to one-by-one) |
 
 ## Dynamic Device Type Detection
 
 ### GNS3 Node Tags
 
-Device type and platform are extracted from GNS3 node tags:
+Device type is extracted from GNS3 node tags:
 
 ```
-device_type:gns3_huawei_telnet_ce    → Netmiko device type (precise)
-platform:huawei                  → Nornir platform (high-level)
+device_type:gns3_huawei_telnet_ce    → Netmiko driver selection
 ```
 
 **Tag Examples:**
 
-| Vendor | Device Type Tag | Platform Tag | Template Source |
-|--------|----------------|--------------|------------------|
-| Cisco IOS | `device_type:cisco_ios_telnet` | `platform:cisco_ios` | User appliance |
-| Huawei CE | `device_type:gns3_huawei_telnet_ce` | `platform:huawei` | User appliance |
-| Ruijie | `device_type:gns3_ruijie_telnet` | `platform:ruijie_os` | User appliance |
-| **VPCS** | `device_type:gns3_vpcs_telnet` | `platform:vpcs` | **Built-in ✅** |
+| Vendor | Device Type Tag | Template Source |
+|--------|----------------|-----------------|
+| Cisco IOS | `device_type:cisco_ios_telnet` | User appliance |
+| Huawei CE | `device_type:gns3_huawei_telnet_ce` | User appliance |
+| Ruijie | `device_type:gns3_ruijie_telnet` | User appliance |
+| **VPCS** | `device_type:gns3_vpcs_telnet` | **Built-in ✅** |
 
 **VPCS Built-in Template:**
-- VPCS has a **built-in template** with pre-configured tags
-- Tags are **automatically applied** when creating VPCS nodes
-- No manual configuration required - works out of the box
+- VPCS has a **built-in template** with pre-configured `device_type` tag
+- The tag is **automatically applied** when creating VPCS nodes
+- No manual configuration required — works out of the box
 - Other devices require users to import appliances and configure tags manually
 
 ### Nornir Best Practice: Host-Level Connection Configuration
@@ -556,7 +550,6 @@ The system uses **Nornir's configuration priority** (host > group > defaults) to
 # From get_gns3_device_port.py
 hosts_data[device_name] = {
     "port": console_port,
-    "platform": platform,  # Reserved for future use (NAPALM, scrapli)
     "groups": ["network_devices"],  # All devices share one group
     "connection_options": {
         "netmiko": {
@@ -570,305 +563,77 @@ hosts_data[device_name] = {
 - ✅ Each device has its own `device_type` (host-level config)
 - ✅ All devices share common settings via group inheritance (`hostname`, `timeout`)
 - ✅ No need to dynamically create multiple groups for each device type
-- ✅ Cleaner code structure - single generic group for all devices
+- ✅ Cleaner code structure — single generic group for all devices
 - ✅ Follows Nornir best practice: "configuration proximity"
 
 **Configuration Priority:**
-```
-Host Level (connection_options.device_type)
-    ↓ OVERRIDES
-Group Level (hostname, timeout, username, password)
-    ↓ OVERRIDES
-Defaults Level (data.location)
-```
-
-**Before (Old Approach - Dynamic Groups):**
-```python
-# Had to create multiple groups dynamically
-groups = {
-    "cisco_ios_telnet": {"device_type": "cisco_ios_telnet", ...},
-    "huawei_telnet": {"device_type": "gns3_huawei_telnet_ce", ...},
-    "juniper_junos": {"device_type": "juniper_junos_telnet", ...},
-}
-# Each host assigned to its vendor-specific group
+```mermaid
+graph TD
+    A["Host Level<br/>connection_options.device_type<br/>(gns3_huawei_telnet_ce, cisco_ios_telnet, etc.)"]
+    B["Group Level<br/>hostname=127.0.0.1, timeout=120<br/>username, password"]
+    C["Defaults Level<br/>data.location=gns3"]
+    A -->|overrides| B
+    B -->|overrides| C
 ```
 
-**After (Current Approach - Host-Level Config):**
-```python
-# Single group for shared settings
-groups = {
-    "network_devices": {
-        "hostname": "127.0.0.1",
-        "timeout": 120,
-        "username": "",
-        "password": "",
-    }
-}
-# Each host has device-specific connection_options
-# Host config overrides group config automatically
-```
+| Aspect | Old: Dynamic Groups | New: Host-Level Config |
+|--------|--------------------|-----------------------|
+| Group count | One per vendor type | Single `network_devices` group |
+| Device type location | Group `connection_options` | Host `connection_options` |
+| Complexity | Dynamic group creation logic | No dynamic group logic |
 
 ## Architecture Evolution
 
 ### Problem: Multi-Vendor Device Support
 
 **Initial Challenge:**
-```
-Topology: Cisco R1 + Huawei SW1 + Juniper SRX
-    ↓
-Need: Different Netmiko drivers for each device
-    ↓
-Question: How to configure Nornir for multiple device types?
+```mermaid
+graph TD
+    A[Topology: Cisco R1 + Huawei SW1 + Juniper SRX] --> B[Need: Different Netmiko drivers per device]
+    B --> C[Question: How to configure Nornir for multiple device types?]
 ```
 
 ### Solution Evolution
 
-#### ❌ Approach 1: Single Group with First Device's Type (Initial Implementation)
+| Approach | Strategy | Issue |
+|----------|----------|-------|
+| ❌ Approach 1 | Single group with first device's `device_type` | All devices use wrong driver |
+| ❌ Approach 2 | Dynamic groups per vendor (`huawei_telnet`, `cisco_telnet`, ...) | Complex logic, code duplication, not Nornir best practice |
+| ✅ Approach 3 (Current) | **Host-level `connection_options`** + single generic group | Clean, follows Nornir host > group > defaults priority |
 
-```python
-# PROBLEM: Only uses first device's configuration
-def _initialize_nornir(hosts_data):
-    first_device = next(iter(hosts_data.values()))
-    device_type = first_device["device_type"]  # Only one type!
-
-    return InitNornir(
-        inventory={
-            "options": {
-                "hosts": hosts_data,  # Has multiple device types
-                "groups": {
-                    "network_devices": {
-                        "connection_options": {
-                            "netmiko": {"extras": {"device_type": device_type}}
-                        }
-                    }
-                }
-            }
-        }
-    )
-```
-
-**Issue:** All devices use the first device's driver!
-- Cisco R1 → Uses Huawei driver (if Huawei is first) ❌
-- Huawei SW1 → Uses Cisco driver (if Cisco is first) ❌
-
-#### ❌ Approach 2: Dynamic Groups (Intermediate Solution)
-
-```python
-# COMPLEX: Create multiple groups dynamically
-groups = {}
-for host_data in hosts_data.values():
-    device_type = host_data["device_type"]
-    platform = host_data["platform"]
-    group_name = f"{platform}_telnet"  # e.g., "huawei_telnet"
-
-    if group_name not in groups:
-        groups[group_name] = {
-            "platform": platform,
-            "connection_options": {
-                "netmiko": {"extras": {"device_type": device_type}}
-            }
-        }
-
-    host_data["groups"] = [group_name]
-```
-
-**Issues:**
-- Complex logic to detect and create groups
-- Code duplication in multiple files
-- Had to delete helper functions (`_get_nornir_groups_config`, `_get_nornir_group`)
-- Not following Nornir best practices
-
-#### ✅ Approach 3: Host-Level Configuration (Current - Best Practice)
-
-```python
-# SIMPLE: Single group + host-level device_type
-hosts_data[device_name] = {
-    "port": console_port,
-    "platform": platform,  # Reserved for future use
-    "groups": ["network_devices"],  # All devices in one group
-    "connection_options": {  # Device-specific config
-        "netmiko": {
-            "extras": {"device_type": device_type}
-        }
-    }
-}
-
-# Single generic group for shared settings
-groups = {
-    "network_devices": {
-        "hostname": "127.0.0.1",
-        "timeout": 120,
-        "username": "",
-        "password": "",
-    }
-}
-```
-
-**Advantages:**
-- ✅ Clean, simple code
-- ✅ Follows Nornir best practice (host > group > defaults)
-- ✅ No dynamic group creation logic
-- ✅ Each device's `connection_options` overrides group settings automatically
-- ✅ Easy to extend with new device types
+> See `get_gns3_device_port.py:get_device_ports_from_topology()` for the current implementation.
 
 ### Configuration Priority Demonstration
 
-```python
-# Host level (highest priority)
-host["connection_options"]["netmiko"]["extras"]["device_type"] = "gns3_huawei_telnet_ce"
-
-    ↓ OVERRIDES
-
-# Group level (middle priority)
-group["hostname"] = "127.0.0.1"
-group["timeout"] = 120
-
-    ↓ OVERRIDES
-
-# Defaults level (lowest priority)
-defaults["data"]["location"] = "gns3"
+```mermaid
+graph TD
+    A["Host Level (highest)<br/>device_type: gns3_huawei_telnet_ce"]
+    B["Group Level (middle)<br/>hostname: 127.0.0.1, timeout: 120"]
+    C["Defaults Level (lowest)<br/>data.location: gns3"]
+    A -->|overrides| B -->|overrides| C
+    D[Result] --> D1["Each device uses its own device_type"]
+    D --> D2["All share hostname, timeout from group"]
+    D --> D3["All share data.location from defaults"]
 ```
-
-**Result:**
-- Each device uses its own `device_type` from host level
-- All devices share `hostname`, `timeout` from group level
-- All devices share `data.location` from defaults level
 
 ## Usage Examples
 
 ### Direct Netmiko Usage
 
-**Huawei Device (Custom Driver):**
-```python
-from netmiko import ConnectHandler
-from gns3server.agent.gns3_copilot.utils import custom_netmiko
+**Custom driver auto-registers on import. No username/password needed for GNS3 devices.**
 
-# Custom driver auto-registers on import
-device = {
-    "device_type": "gns3_huawei_telnet_ce",
-    "host": "127.0.0.1",
-    "port": 5000,
-    # No username/password needed!
-}
-
-with ConnectHandler(**device) as conn:
-    # Execute display command
-    output = conn.send_command("display version")
-
-    # Execute configuration commands
-    config = [
-        "interface GE1/0/1",
-        "description Uplink-to-Core",
-        "undo shutdown"
-    ]
-    output = conn.send_config_set(config)
-```
-
-**Cisco IOS Device (Standard Driver):**
-```python
-from netmiko import ConnectHandler
-
-device = {
-    "device_type": "cisco_ios_telnet",
-    "host": "127.0.0.1",
-    "port": 5001,
-    "username": "cisco",
-    "password": "cisco",
-}
-
-with ConnectHandler(**device) as conn:
-    output = conn.send_command("show version")
-    config = ["interface GigabitEthernet0/0", "description Test"]
-    output = conn.send_config_set(config)
-```
-
-### Nornir Multi-Vendor Automation
-
-```python
-from nornir import InitNornir
-from gns3server.agent.gns3_copilot.utils import custom_netmiko
-
-# Auto-register custom driver (happens automatically on import)
-from gns3server.agent.gns3_copilot.utils.custom_netmiko import huawei_ce
-huawei_ce.register_custom_device_type()
-
-# Initialize Nornir with mixed-vendor inventory
-# Using host-level connection_options (best practice)
-inventory = {
-    "plugin": "DictInventory",
-    "options": {
-        "hosts": {
-            "huawei-sw1": {
-                "hostname": "127.0.0.1",
-                "port": 5001,
-                "platform": "huawei",  # Reserved for future use
-                "groups": ["network_devices"],
-                "connection_options": {
-                    "netmiko": {
-                        "extras": {"device_type": "gns3_huawei_telnet_ce"}
-                    }
-                }
-            },
-            "cisco-r1": {
-                "hostname": "127.0.0.1",
-                "port": 5002,
-                "platform": "cisco_ios",
-                "groups": ["network_devices"],
-                "connection_options": {
-                    "netmiko": {
-                        "extras": {"device_type": "cisco_ios_telnet"}
-                    }
-                }
-            }
-        },
-        "groups": {
-            "network_devices": {
-                "hostname": "127.0.0.1",  # Shared by all devices
-                "timeout": 120,
-                "username": "",
-                "password": "",
-            }
-        },
-        "defaults": {
-            "data": {"location": "gns3"}
-        }
-    }
-}
-
-nr = InitNornir(inventory=inventory)
-
-# Execute commands on all devices (multi-vendor)
-result = nr.run(task=send_commands, commands=["display version"])
-
-# Each device gets vendor-specific command handling
-# huawei-sw1 uses gns3_huawei_telnet_ce driver
-# cisco-r1 uses cisco_ios_telnet driver
-```
+| Device Type | `device_type` | Auth | Notes |
+|-------------|---------------|------|-------|
+| Huawei CE | `gns3_huawei_telnet_ce` | None | Custom driver, skip auth |
+| Ruijie | `gns3_ruijie_telnet` | None | Custom driver, interactive prompts handled |
+| VPCS | `gns3_vpcs_telnet` | None | Custom driver, no config mode |
+| Cisco IOS | `cisco_ios_telnet` | Required | Standard Netmiko driver |
 
 ### GNS3 Copilot Tool Usage
 
-```python
-from gns3server.agent.gns3_copilot.tools_v2 import DisplayToolNornir
+> Tools: `tools_v2/display_tools_nornir.py`, `tools_v2/config_tools_nornir.py`, `tools_v2/vpcs_tools_netmiko.py`
 
-tool = DisplayToolNornir()
-result = tool._run(json.dumps({
-    "device_names": ["huawei-sw1", "cisco-r1"],
-    "commands": ["display version", "show version"],
-    "project_id": "project-uuid"
-}))
-
-# Returns:
-# {
-#   "huawei-sw1": {
-#     "display version": "<Huawei output>",
-#     "status": "success"
-#   },
-#   "cisco-r1": {
-#     "show version": "<Cisco output>",
-#     "status": "success"
-#   }
-# }
-```
+Each tool reads node tags to determine `device_type`, builds host-level Nornir inventory, and dispatches commands to the appropriate Netmiko driver. Multi-vendor topologies are handled transparently — each device uses its own driver.
 
 ## Module Structure
 
@@ -876,29 +641,24 @@ result = tool._run(json.dumps({
 gns3server/agent/gns3_copilot/
 ├── utils/
 │   ├── custom_netmiko/            # Custom Netmiko drivers package
-│   │   ├── __init__.py             # Package initialization
+│   │   ├── __init__.py             # Auto-registers all drivers on import
 │   │   ├── huawei_ce.py            # Huawei CloudEngine driver
 │   │   ├── ruijie_telnet.py        # Ruijie enhanced driver
-│   │   ├── vpcs_telnet.py          # VPCS simulator driver (NEW)
+│   │   ├── vpcs_telnet.py          # VPCS simulator driver
 │   │   ├── README.md               # Driver development guide
-│   │   └── tests/                  # Unit tests
+│   │   └── tests/                  # Unit tests (52 total)
 │   │       ├── __init__.py
-│   │       └── test_huawei_ce.py   # Huawei CE driver tests
-│   └── get_gns3_device_port.py     # Device port extraction with host-level config
-│       ├── _expand_multiline_commands()   # Expand banner commands
-│       └── _error_handling()              # device_type missing errors
+│   │       ├── test_huawei_ce.py   # Huawei CE driver tests (9)
+│   │       ├── test_ruijie_telnet.py # Ruijie driver tests (15)
+│   │       └── test_vpcs_telnet.py   # VPCS driver tests (28)
+│   └── get_gns3_device_port.py     # Device port extraction
+│       └── get_device_ports_from_topology()  # Extract ports + device_type from tags
 ├── tools_v2/
 │   ├── display_tools_nornir.py     # Multi-vendor display commands
-│   │   ├── _get_nornir_defaults()  # Returns default Nornir config
-│   │   └── _initialize_nornir()    # Single generic group + host-level device_type
 │   ├── config_tools_nornir.py      # Multi-vendor config commands
-│   │   ├── _get_nornir_defaults()  # Returns default Nornir config
-│   │   └── _initialize_nornir()    # Single generic group + host-level device_type
-│   │   ├── _expand_multiline_commands()   # Expand banner commands
-│   │   └── _error_handling()              # device_type validation
-│   └── vpcs_tools_netmiko.py      # VPCS commands using Nornir + Netmiko (NEW)
-│       ├── VPCSCommands           # VPCS tool class
-│       └── _initialize_nornir()    # VPCS device inventory setup
+│   │   └── _expand_multiline_commands()   # Expand banner commands
+│   └── vpcs_tools_netmiko.py      # VPCS commands using Nornir + Netmiko
+│       └── VPCSCommands           # VPCS tool class
 ```
 
 **Key Architectural Changes (2026-03-14):**
@@ -915,80 +675,51 @@ gns3server/agent/gns3_copilot/
 - ✅ Updated: `get_gns3_device_port.py()` - Returns host-level `connection_options`
 - ✅ Added: `ruijie_telnet.py` - Custom Ruijie driver with interactive prompt handling
 - ✅ Added: `_expand_multiline_commands()` - Auto-expands banner and multi-line commands
-- ✅ Added: `_error_handling()` - Validates device_type tags, returns error if missing
+- ✅ Added: device_type tag validation with error feedback (inline in `_run`)
 
 ## Unit Testing
 
 ### Test Coverage
 
-```python
-# test_netmiko_custom.py
+> Test files located at: `gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/`
 
-class TestGNS3HuaweiTelnetCEDriver(unittest.TestCase):
-    def test_device_type_registered(self):
-        """Verify gns3_huawei_telnet_ce is in Netmiko CLASS_MAPPER"""
-        from netmiko.ssh_dispatcher import CLASS_MAPPER
-        self.assertIn("gns3_huawei_telnet_ce", CLASS_MAPPER)
+**Total: 52 tests across 3 test files**
 
-    def test_inheritance_from_huawei_base(self):
-        """Verify inherits from HuaweiBase"""
-        from netmiko.huawei.huawei import HuaweiBase
-        self.assertTrue(issubclass(GNS3HuaweiTelnetCE, HuaweiBase))
+| Test File | Tests | Coverage Focus |
+|-----------|-------|----------------|
+| `test_huawei_ce.py` | 9 | Registration, inheritance, VRP methods, mock connection |
+| `test_ruijie_telnet.py` | 15 | Registration, interactive patterns, preprocessing, batch/fallback |
+| `test_vpcs_telnet.py` | 28 | Registration, login, command sending, ANSI stripping, config mode |
 
-    def test_vrp_methods_available(self):
-        """Verify VRP-specific methods are available"""
-        methods = ["config_mode", "check_config_mode", "exit_config_mode"]
-        for method in methods:
-            self.assertTrue(hasattr(GNS3HuaweiTelnetCE, method))
-```
+#### Huawei CE Tests (`TestHuaweiTelnetCEDriver` + `TestHuaweiTelnetCEIntegration`)
+- Device type registration in CLASS_MAPPER
+- Inheritance from HuaweiBase
+- VRP-specific methods (`config_mode`, `check_config_mode`, `exit_config_mode`)
+- Prompt pattern constants
+- Mock telnet connection
+
+#### Ruijie Tests (`TestRuijieTelnetEnhancedDriver` + `TestRuijieTelnetEnhancedIntegration`)
+- Device type registration
+- Inheritance from RuijieOSBase
+- Interactive pattern matching (`router-id`, `erase`, `delete`, etc.)
+- Preprocessing of interactive commands
+- Batch and fallback send strategies
+
+#### VPCS Tests (`TestVPCSTelnetDriver` + 5 more test classes)
+- Device type registration
+- Inheritance from BaseConnection
+- No-auth login with `PC\d+>` prompt
+- `send_command` / `send_command_timing` overrides
+- ANSI escape code stripping (8 dedicated tests)
+- Config mode always returns empty/false
 
 **Running Tests:**
 ```bash
 source venv/bin/activate
-python gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_huawei_ce.py
+python -m pytest gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/
 ```
 
-**Current Test Status:** ✅ All 9 tests passing
-
-## Platform vs Device Type
-
-### Key Concepts
-
-**Platform (Nornir):**
-- High-level vendor identifier
-- **Reserved for future use** with plugins like NAPALM, scrapli
-- Used for metadata and logging
-- Examples: `huawei`, `cisco_ios`
-- ⚠️ **Not used by nornir_netmiko** (only `device_type` matters)
-
-**Device Type (Netmiko):**
-- Precise driver type for Netmiko connection
-- Includes protocol information
-- **Actively used** to determine which Netmiko driver class to load
-- Examples: `gns3_huawei_telnet_ce`, `cisco_ios_telnet`
-
-### Why Keep `platform` Field?
-
-| Purpose | Plugin | Uses `platform`? |
-|---------|--------|------------------|
-| Connection driver | nornir_netmiko | ❌ No (uses `device_type`) |
-| Driver selection | NAPALM | ✅ Yes |
-| Driver selection | scrapli | ✅ Yes |
-| Metadata/Logging | General | ✅ Yes (future) |
-
-**Conclusion:** The `platform` field is kept for:
-1. **Future plugin support** (NAPALM, scrapli)
-2. **Debugging and logging** (vendor identification)
-3. **Data completeness** (industry standard practice)
-
-### Mapping
-
-| Platform | Device Type | Netmiko Usage | Notes |
-|----------|-------------|---------------|-------|
-| `huawei` | `gns3_huawei_telnet_ce` | ✅ Active | Custom driver for GNS3 |
-| `cisco_ios` | `cisco_ios_telnet` | ✅ Active | Standard Netmiko driver |
-
-**Important:** For nornir_netmiko, only `device_type` in `connection_options` matters. The `platform` field is informational only.
+**Current Test Status:** ✅ All 52 tests passing
 
 ## Related Documentation
 
@@ -1007,13 +738,13 @@ python gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_huawei_ce.p
 
 _Implementation Date: 2026-03-12_
 
-_Last Updated: 2026-03-14 (Added VPCS driver and unified tool architecture)_
+_Last Updated: 2026-04-20 (Documentation review: fixed VPCS template tags, updated test coverage, added Mermaid diagrams, removed code bloat)_
 
 _Status: ✅ Implemented - Custom drivers for Huawei, Ruijie, and VPCS; multi-vendor support with Cisco IOS, Huawei, Ruijie, and VPCS tested_
 
 _Architecture: Nornir best practice - host-level connection_options with single generic group_
 
-_Unit Tests: ✅ 9/9 passing_
+_Unit Tests: ✅ 52/52 passing (9 Huawei + 15 Ruijie + 28 VPCS)_
 
 _Changelog:_
 - **2026-03-14**: Added VPCS support and unified tool architecture
@@ -1038,5 +769,4 @@ _Changelog:_
   - Removed `_get_nornir_groups_config()` and `_get_nornir_group()` helper functions
   - Simplified `_initialize_nornir()` to use single generic group
   - Updated `get_gns3_device_port.py()` to return host-level configuration
-  - Reserved `platform` field for future NAPALM/scrapli plugin support
 - **2026-03-12**: Initial implementation with custom Huawei driver

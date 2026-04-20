@@ -292,6 +292,41 @@ async def delete_session(
         )
 
 
+@router.post(
+    "/sessions/{session_id}/abort",
+    status_code=status.HTTP_200_OK,
+    summary="Abort a streaming session",
+    description="Abort an ongoing streaming session for a specific session."
+)
+async def abort_session(
+    session_id: str,
+    project: Project = Depends(dep_project),
+    current_user: schemas.User = Depends(get_current_active_user),
+):
+    """
+    Abort a streaming session.
+
+    Sets the abort flag for the session, which will be checked on the next
+    conditional edge evaluation. The streaming will stop at that point.
+    """
+
+    # Check if project is opened
+    if project.status != "opened":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Project must be opened to abort chat session. Current status: {project.status}"
+        )
+
+    # Get AgentService for this project
+    agent_manager = await get_project_agent_manager()
+    agent_service = await agent_manager.get_agent(str(project.id), project.path)
+
+    # Abort the session
+    agent_service.abort_session(session_id)
+
+    return {"status": "ok", "session_id": session_id}
+
+
 @router.patch(
     "/sessions/{session_id}",
     response_model=schemas.ChatSession,

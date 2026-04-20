@@ -69,6 +69,12 @@ AI-powered assistant for network topology design and automation.
 python3 -m pip install gns3-server[dev]
 ```
 
+**Web Wireshark** (Optional):
+```shell
+pip install gns3-server && gns3-wireshark-setup
+```
+Browser-based packet capture analysis using Wireshark in a Docker container.
+
 **Combination Installation**:
 You can install multiple optional features together:
 ```shell

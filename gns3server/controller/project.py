@@ -47,6 +47,7 @@ from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
 from .import_project import import_project, update_snapshots, regenerate_topology_ids
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 import logging
 
@@ -897,6 +898,9 @@ class Project:
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
 
+        # Stop Web Wireshark container (all xpra sessions terminate with container)
+        await self._stop_web_wireshark_container()
+
         # Cleanup GNS3 Copilot AgentService for this project
         await self._cleanup_copilot_agent()
 
@@ -936,6 +940,70 @@ class Project:
         except OSError as e:
             log.warning(f"Could not delete unused pictures: {e}")
 
+    async def _cleanup_web_wireshark_xpra_sessions(self):
+        """
+        Cleanup all Web Wireshark xpra sessions (without deleting container).
+
+        Called when project is closed to stop all xpra sessions and Wireshark processes,
+        while keeping the container for quick reuse when project is reopened.
+        """
+        try:
+            log.info("Stopping xpra sessions for project '%s' (%s)", self.name, self._id)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_all_sessions(self._id)
+                log.info("Web Wireshark xpra sessions stopped successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't raise exception to avoid affecting project close flow
+            log.warning("Failed to cleanup xpra sessions for project '%s': %s", self.name, e)
+
+    async def _stop_web_wireshark_container(self):
+        """
+        Stop Web Wireshark container (without deleting).
+
+        Called when project is closed to stop the container and free memory,
+        while keeping the container for quick startup when project is reopened.
+        """
+        try:
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info("Stopping Web Wireshark container '%s' for project '%s'", container_name, self.name)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_container(self._id)
+                log.info("Web Wireshark container stopped successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't fail project close if container stop fails
+            log.warning("Failed to stop container for project '%s': %s", self.name, e)
+
+    async def _cleanup_web_wireshark_container(self):
+        """
+        Delete Web Wireshark container.
+
+        Called when project is deleted to stop and remove the container.
+        """
+        try:
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info("Deleting Web Wireshark container '%s' for project '%s'", container_name, self.name)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.delete_container(self._id)
+                log.info("Web Wireshark container deleted successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't fail project delete if container cleanup fails
+            log.warning("Failed to delete container for project '%s': %s", self.name, e)
+
     async def _cleanup_copilot_agent(self):
         """
         Cleanup GNS3 Copilot AgentService for this project.
@@ -947,11 +1015,11 @@ class Project:
 
             agent_manager = await get_project_agent_manager()
             if agent_manager.has_agent(self._id):
-                log.info(f"Cleaning up AgentService for project '{self.name}' ({self._id})")
+                log.info("Cleaning up AgentService for project '%s' (%s)", self.name, self._id)
                 await agent_manager.remove_agent(self._id)
         except Exception as e:
             # Don't fail project close if agent cleanup fails
-            log.warning(f"Failed to cleanup AgentService for project '{self.name}': {e}")
+            log.warning("Failed to cleanup AgentService for project '%s': %s", self.name, e)
 
     async def delete(self):
 
@@ -963,6 +1031,10 @@ class Project:
                 log.warning(f"Conflict while deleting project: {e}")
         await self.delete_on_computes()
         await self.close()
+
+        # Delete Web Wireshark container
+        await self._cleanup_web_wireshark_container()
+
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:

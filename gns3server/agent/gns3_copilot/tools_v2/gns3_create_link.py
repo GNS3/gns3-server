@@ -183,12 +183,12 @@ class GNS3LinkTool(BaseTool):
                         created_links.append({"error": error_msg})
                         continue
 
-                    # Find port information
+                    # Find port information - match by name or short_name
                     port1_info = next(
                         (
                             port
                             for port in node1.get("ports", [])
-                            if port.get("name") == port1
+                            if port.get("name") == port1 or port.get("short_name") == port1
                         ),
                         None,
                     )
@@ -196,7 +196,7 @@ class GNS3LinkTool(BaseTool):
                         (
                             port
                             for port in node2.get("ports", [])
-                            if port.get("name") == port2
+                            if port.get("name") == port2 or port.get("short_name") == port2
                         ),
                         None,
                     )
@@ -219,7 +219,7 @@ class GNS3LinkTool(BaseTool):
                                 "port_number": port1_info.get(
                                     "port_number", 0
                                 ),
-                                "label": {"text": port1},
+                                "label": {"text": port1_info.get("short_name") or port1},
                             },
                             {
                                 "node_id": node_id2,
@@ -229,7 +229,7 @@ class GNS3LinkTool(BaseTool):
                                 "port_number": port2_info.get(
                                     "port_number", 0
                                 ),
-                                "label": {"text": port2},
+                                "label": {"text": port2_info.get("short_name") or port2},
                             },
                         ],
                     )

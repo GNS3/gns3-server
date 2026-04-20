@@ -18,11 +18,13 @@
 API routes for links.
 """
 
+import asyncio
+import os
 import multidict
 import aiohttp
 
-from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, Request, status, WebSocket
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List, Union
 from uuid import UUID
@@ -32,10 +34,12 @@ from gns3server.controller.controller_error import ControllerError
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.controller.link import Link
 from gns3server.utils.http_client import HTTPClient
+from gns3server.utils.port_allocator import link_id_to_port
+from gns3server.utils.websocket_to_websocket import websocket_proxy
 from gns3server import schemas
 
 from .dependencies.database import get_repository
-from .dependencies.rbac import has_privilege
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 import logging
 
@@ -214,16 +218,26 @@ async def reset_link(link: Link = Depends(dep_link)) -> schemas.Link:
     response_model=schemas.Link,
     dependencies=[Depends(has_privilege("Link.Capture"))]
 )
-async def start_capture(capture_data: dict, link: Link = Depends(dep_link)) -> schemas.Link:
+async def start_capture(
+    capture_data: schemas.LinkCapture,
+    http_request: Request,
+    link: Link = Depends(dep_link)
+) -> schemas.Link:
     """
     Start packet capture on the link.
 
     Required privilege: Link.Capture
     """
 
+    # Extract JWT token from Authorization header
+    auth_header = http_request.headers.get("Authorization", "")
+    jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
+
     await link.start_capture(
-        data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
-        capture_file_name=capture_data.get("capture_file_name"),
+        data_link_type=capture_data.data_link_type,
+        capture_file_name=capture_data.capture_file_name,
+        wireshark=capture_data.wireshark,
+        jwt_token=jwt_token
     )
     return link.asdict()
 
@@ -243,6 +257,33 @@ async def stop_capture(link: Link = Depends(dep_link)) -> None:
     await link.stop_capture()
 
 
+@router.post(
+    "/{link_id}/capture/wireshark/restart",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(has_privilege("Link.Capture"))]
+)
+async def restart_wireshark(
+    http_request: Request,
+    link: Link = Depends(dep_link)
+) -> dict:
+    """
+    Restart Wireshark window without stopping the capture.
+
+    This allows recovery after accidentally closing the Wireshark window.
+
+    Required privilege: Link.Capture
+    """
+    # Extract JWT token from Authorization header
+    auth_header = http_request.headers.get("Authorization", "")
+    jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
+
+    if not jwt_token:
+        raise ControllerError("JWT token is required for Web Wireshark restart")
+
+    await link._restart_web_wireshark(jwt_token)
+    return {"status": "restarted"}
+
+
 @router.get(
     "/{link_id}/capture/stream",
     dependencies=[Depends(has_privilege("Link.Capture"))]
@@ -254,7 +295,10 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     Required privilege: Link.Capture
     """
 
-    if not link.capturing:
+    # Check both capturing flag and capture_node to avoid race condition
+    # when stop_capture() sets _capture_node = None before this check completes
+    if not link.capturing or not link.capture_node:
+        log.info(f"Stream pcap ended for link {link.id}: capture stopped before stream completed")
         raise ControllerError("This link has no active packet capture")
 
     compute = link.compute
@@ -285,6 +329,105 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
             raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
+
+
+@router.get(
+    "/{link_id}/capture/file",
+    dependencies=[Depends(has_privilege("Link.Capture"))],
+    response_class=FileResponse
+)
+async def download_capture_file(link: Link = Depends(dep_link)):
+    """
+    Download the PCAP capture file.
+
+    This endpoint allows downloading the capture file even while capture is active.
+    The file is streamed directly, so partial data may be received if capture is still running.
+
+    Required privilege: Link.Capture
+    """
+    if not link.capture_file_path:
+        raise ControllerError("No capture file path set for this link")
+
+    if not os.path.exists(link.capture_file_path):
+        raise ControllerError(f"Capture file not found: {link.capture_file_path}")
+
+    return FileResponse(
+        path=link.capture_file_path,
+        filename=os.path.basename(link.capture_file_path),
+        media_type="application/vnd.tcpdump.pcap"
+    )
+
+
+@router.websocket("/{link_id}/capture/web-wireshark")
+async def web_wireshark_websocket(
+    websocket: WebSocket,
+    link_id: str,
+    project_id: str,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Link.Capture"))
+):
+    """
+    WebSocket proxy endpoint for xpra container (Web Wireshark).
+
+    Path: ws://host/v3/projects/{project_id}/links/{link_id}/capture/web-wireshark?token=<jwt_token>
+
+    Required privilege: Link.Capture
+
+    Note: The WebSocket connection is accepted by the authentication dependency
+    (get_current_active_user_from_websocket) with the proper subprotocol negotiation.
+    """
+    log.info(f"New WebSocket connection for project {project_id}, link {link_id}, user {current_user.username}")
+
+    try:
+        # Get container information
+        container_name = f"gns3-wireshark-{project_id}"
+
+        # Calculate xpra port (using deterministic hash)
+        xpra_port = link_id_to_port(link_id)
+
+        # Get container IP
+        from gns3server.compute.docker import Docker
+
+        docker_manager = Docker.instance()
+        container_info = await docker_manager.query(
+            "GET",
+            f"containers/{container_name}/json"
+        )
+
+        networks = container_info["NetworkSettings"]["Networks"]
+        container_ip = None
+
+        # Find gns3-wireshark network
+        for network_name, network_config in networks.items():
+            if "wireshark" in network_name.lower():
+                container_ip = network_config["IPAddress"]
+                break
+
+        if not container_ip:
+            log.error(f"Container {container_name} not found in wireshark network")
+            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+            return
+
+        # Build container WebSocket URL
+        container_ws_url = f"ws://{container_ip}:{xpra_port}"
+        log.info(f"Proxying WebSocket to container: {container_ws_url}")
+
+        # Get client's requested subprotocols from request headers
+        scope = websocket.scope
+        headers = dict(scope.get("headers", []))
+        requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
+        requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
+        log.info(f"Client requested subprotocols: {requested_protocols}")
+
+        # The WebSocket connection has already been accepted by the authentication dependency
+        # with the proper subprotocol. Now we just proxy data to the backend.
+        await websocket_proxy(websocket, container_ws_url, requested_protocols)
+
+    except Exception as e:
+        log.error(f"Error in WebSocket proxy for link {link_id}: {e}")
+        try:
+            await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason=str(e))
+        except:
+            pass
 
 
 @router.get(

@@ -119,14 +119,6 @@ ip route, ip addr, tcpdump, ping, traceroute
 
 ---
 
-# RESPONSE LANGUAGE
-
-- User writes in Chinese → Respond in Chinese
-- User writes in English → Respond in English
-- Keep technical terms in English (OSPF, BGP, VLAN, CLI commands)
-
----
-
 # CURRENT TOPOLOGY
 
 {{topology_info}}

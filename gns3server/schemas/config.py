@@ -94,6 +94,17 @@ class VMwareSettings(BaseModel):
         return self
 
 
+class WebWiresharkSettings(BaseModel):
+
+    enabled: bool = True
+    image: str = "gns3/web-wireshark:latest"
+    network_subnet: str = "172.31.0.0/22"
+    memory: str = "2g"
+    cpus: float = 1.0
+    pids_limit: int = 1000
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+
+
 class ServerProtocol(str, Enum):
 
     http = "http"
@@ -196,3 +207,4 @@ class ServerConfig(BaseModel):
     Qemu: QemuSettings = QemuSettings()
     VirtualBox: VirtualBoxSettings = VirtualBoxSettings()
     VMware: VMwareSettings = VMwareSettings()
+    WebWireshark: WebWiresharkSettings = WebWiresharkSettings()

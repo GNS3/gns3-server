@@ -1,3 +1,11 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
+> This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
+
+
 # Node and Topology Management Tools
 
 ## Overview
@@ -80,7 +88,8 @@ The following built-in utility templates are excluded as they are not actual net
     {
       "template_id": "uuid-of-template",
       "x": 100,
-      "y": -200
+      "y": -200,
+      "name": "R1"
     },
     {
       "template_id": "uuid-of-template2",
@@ -98,7 +107,7 @@ The following built-in utility templates are excluded as they are not actual net
   "created_nodes": [
     {
       "node_id": "uuid-of-node1",
-      "name": "NodeName1",
+      "name": "R1",
       "status": "success"
     },
     {
@@ -117,6 +126,7 @@ The following built-in utility templates are excluded as they are not actual net
 - Batch create multiple nodes
 - Uses templates for consistent node configuration
 - X/Y coordinate positioning for topology layout
+- Optional `name` field to set node name directly (if omitted, GNS3 assigns default name)
 - **Important**: Ensure distance between any two nodes is greater than 250px for clear interface labels
 
 **Use Cases:**
@@ -307,6 +317,58 @@ The tool automatically detects node types and calculates optimal wait times:
 - Logs device types and selected wait strategy
 - Progress bar displays calculated wait time
 
+### GNS3StartNodeQuickTool 🆕
+
+**Tool Name:** `start_gns3_node_quick`
+
+**Description:** Starts one or multiple nodes in a GNS3 project WITHOUT waiting for startup completion. Suitable for automated deployment workflows where long waits would cause HTTP timeouts.
+
+**Input:**
+```json
+{
+  "project_id": "uuid-of-project",
+  "node_ids": ["uuid-of-node-1", "uuid-of-node-2"]
+}
+```
+
+**Output:**
+```json
+{
+  "project_id": "...",
+  "total_nodes": 2,
+  "successful": 2,
+  "failed": 0,
+  "nodes": [
+    {"node_id": "...", "name": "...", "status": "started"},
+    {"node_id": "...", "name": "...", "status": "started"}
+  ],
+  "note": "Start commands sent. Nodes are booting in background. Check node status later."
+}
+```
+
+**Features:**
+- Batch start multiple nodes
+- No progress bar or wait time
+- Immediate API response
+- Nodes boot in background after tool returns
+- Comprehensive error handling
+
+**When to Use Quick vs Regular Start:**
+
+| Scenario | Use `start_gns3_node` | Use `start_gns3_node_quick` |
+|----------|----------------------|-----------------------------|
+| Interactive lab startup | ✅ | ❌ |
+| CI/CD pipeline | ❌ | ✅ |
+| HTTP timeout risk | ❌ | ✅ |
+| Need verified status | ✅ | ❌ |
+| Automated bulk deployment | ❌ | ✅ |
+
+**Implementation Details:**
+- Calls `POST /projects/{project_id}/nodes/{node_id}/start` for each node
+- Returns immediately after sending start commands (no progress bar)
+- Status reflects command send result, not boot completion
+- Source: `gns3_start_node.py` (same file as `GNS3StartNodeTool`)
+
 ### GNS3StopNodeTool
 
 **Tool Name:** `stop_gns3_node`
@@ -444,9 +506,12 @@ gns3server/agent/gns3_copilot/tools_v2/
 ├── gns3_create_link.py     # Link creation tool 🆕
 ├── gns3_get_node_temp.py   # Template retrieval tool 🆕
 ├── gns3_update_node_name.py # Node rename tool 🆕
-├── gns3_start_node.py      # Start node tool
+├── gns3_start_node.py      # Start node tool (+ GNS3StartNodeQuickTool)
 ├── gns3_stop_node.py       # Stop node tool
-└── gns3_suspend_node.py    # Suspend node tool
+├── gns3_suspend_node.py    # Suspend node tool
+├── config_tools_nornir.py  # Configuration command execution
+├── display_tools_nornir.py # Display command execution
+└── packet_capture_tools.py # Packet capture analysis
 ```
 
 ### API Integration
@@ -478,44 +543,40 @@ node.start()   # or node.stop() / node.suspend()
 
 ### Progress Tracking
 
-**GNS3StartNodeTool** includes visual progress bar:
+**GNS3StartNodeTool** includes visual progress bar with dynamic wait time:
 
 ```
 Starting 3 node(s), please wait...
 [===========>                      ] 35.0%
 ```
 
-**Progress Calculation:**
-- Base duration: 140 seconds
-- Extra duration: 10 seconds per additional node
-- Formula: `total_duration = 140 + max(0, node_count - 1) * 10`
+Wait time is calculated by `calculate_startup_time()` based on node types (see Dynamic Wait Time Strategy above). No hardcoded duration.
+
+**GNS3StartNodeQuickTool** does NOT include progress tracking:
+- Returns immediately after sending start commands
+- Nodes boot in background
 
 **GNS3StopNodeTool** does not include progress tracking:
 - Stop operations are typically fast (< 5 seconds)
 - Immediate API response provides status feedback
-- No need for progress indication
 
 **GNS3SuspendNodeTool** does not include progress tracking:
 - Suspend operations are typically fast (< 10 seconds)
 - Immediate API response provides status feedback
-- No need for progress indication
 
 ## Node State Transitions
 
+```mermaid
+stateDiagram-v2
+    [*] --> Stopped
+    Stopped --> Started : start()
+    Started --> Stopped : stop()
+    Started --> Suspended : suspend()
+    Suspended --> Started : start() [resume]
+    Suspended --> Stopped : stop()
 ```
-                    ┌─────────┐
-                    │ Stopped │◀─────── stop()
-                    └────┬────┘
-                         │
-                         │ start()
-                         ▼
-                   ┌──────────┐
-                   │ Started  │───suspend()───▶ Suspended
-                   └──────────┘                          │
-                      ▲      │                          │
-                      │      │ stop()                   │ resume()
-                      └──────┴──────────────────────────┘
-```
+
+> **Note:** Resuming a suspended node uses `start()` — there is no separate `resume()` method.
 
 **State Change Allowed Operations:**
 
@@ -538,11 +599,15 @@ Note: These special node types are filtered out by GNS3TemplateTool and won't ap
 - `GNS3LinkTool` - Create links between nodes 🆕
 - `GNS3UpdateNodeNameTool` - Rename nodes 🆕
 - `GNS3StartNodeTool` - For diagnostics requiring started nodes
+- `ExecuteMultipleDeviceCommands` - Execute show/display/debug commands (READ-ONLY)
+- `PacketCaptureTool` - Analyze packets from active capture
+- `DeviceSkillsTool` - Get device-specific skills and command knowledge
 
 **Capabilities:**
 - READ-ONLY diagnostic tools
 - Can create and manage topology (nodes, links, names)
 - Cannot stop or suspend nodes (prevents disruption of active labs)
+- Cannot execute configuration commands
 
 ### Lab Automation Assistant Mode
 
@@ -554,10 +619,16 @@ Note: These special node types are filtered out by GNS3TemplateTool and won't ap
 - `GNS3StartNodeTool` - Full lab deployment
 - `GNS3StopNodeTool` - Full lab shutdown
 - `GNS3SuspendNodeTool` - Lab pause with state preservation
+- `ExecuteMultipleDeviceCommands` - Execute show/display/debug commands (READ-ONLY)
+- `ExecuteMultipleDeviceConfigCommands` - Execute configuration commands
+- `VPCSCommands` - Execute VPCS commands using Netmiko
+- `PacketCaptureTool` - Analyze packets from active capture
+- `DeviceSkillsTool` - Get device-specific skills and command knowledge
 
 **Capabilities:**
 - Full diagnostic and configuration tools
 - Complete topology and lifecycle management (create, connect, start/stop/suspend)
+- Device configuration via Nornir/Netmiko
 - Automated workflows with state preservation
 - Lab snapshot capabilities for later resumption
 
@@ -898,7 +969,9 @@ logger.info("Suspend command sent for node %s (%s)", node_id, node.name)
 | Create Node | < 1s per node | 0s | No | N/A |
 | Create Link | < 1s per link | 0s | No | N/A |
 | Update Name | < 1s per node | 0s | No | N/A |
-| Start | 60-180s | ~140s base | Yes | N/A |
+| Start (VPCS/IOU) | 15-37s | Dynamic | Yes | N/A |
+| Start (QEMU/etc.) | 120-160s+ | Dynamic | Yes | N/A |
+| Start Quick | < 2s | 0s | No | N/A |
 | Stop | < 5s | 0s | No | ❌ No |
 | Suspend | < 10s | 0s | No | ✅ Yes |
 
@@ -911,28 +984,6 @@ logger.info("Suspend command sent for node %s (%s)", node_id, node.name)
 - Create node/link operations are fast and require no waiting
 - Template retrieval is instant with no parameters needed
 
-## Future Enhancements
-
-### Planned Features
-
-- [ ] **Quick Start Tool**: Start nodes without waiting for completion (for CI/CD)
-- [ ] **Delete Node Tool**: Remove nodes from topology
-- [ ] **Delete Link Tool**: Remove links from topology
-- [ ] **Resume Tool**: Explicit resume operation for suspended nodes
-- [ ] **Restart Tool**: Combined stop + start operation
-- [ ] **Bulk Status Check**: Query multiple nodes without stopping
-- [ ] **Conditional Stop/Suspend**: Operate only if node is in specific state
-- [ ] **Graceful Shutdown**: Send halt commands before stopping
-
-### Potential Improvements
-
-- [ ] Auto-layout calculation (optimal node positioning)
-- [ ] Progress tracking for long suspend operations (rare but possible)
-- [ ] Concurrent create/link operations (parallel API calls)
-- [ ] Suspend node groups by name pattern
-- [ ] Dependency-aware suspend (suspend in dependency order)
-- [ ] Auto-suspend after idle timeout
-- [ ] State snapshots (save multiple suspend states)
 
 ## Related Documentation
 

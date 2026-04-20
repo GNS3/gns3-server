@@ -50,6 +50,9 @@ class ApplianceToTemplate:
         if "symbol" in appliance_config:
             new_template["symbol"] = appliance_config.get("symbol")
 
+        if "tags" in appliance_config:
+            new_template["tags"] = appliance_config.get("tags")
+
         if new_template.get("symbol") is None:
             if appliance_config["category"] == "guest":
                 if "docker" in appliance_config:

@@ -91,6 +91,20 @@ class AgentService:
         self._init_lock = asyncio.Lock()
         self._initialized = False
 
+    def abort_session(self, session_id: str):
+        """
+        Signal abort for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+            set_abort_flag,
+        )
+
+        set_abort_flag(session_id)
+        log.info("Abort signal set for session: %s", session_id)
+
     def _get_checkpoint_dir(self) -> str:
         """Get or create the checkpoint directory for this project."""
         checkpoint_dir = os.path.join(self.project_path, "gns3-copilot")
@@ -313,8 +327,17 @@ class AgentService:
             ],
             "llm_calls": 0,
             "remaining_steps": 20,
-            "mode": mode,
+            "session_id": session_id,
+            "abort": False,
         }
+
+        # Clear abort flag for this session at the start of stream
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+            clear_abort_flag,
+        )
+
+        clear_abort_flag(session_id)
+        log.debug("Abort flag cleared for session: %s", session_id)
 
         # Get the compiled graph
         graph = await self._get_graph()
@@ -334,6 +357,9 @@ class AgentService:
         # Initialize tool call stream accumulator for handling progressive
         # tool call arguments
         tool_call_accumulator = ToolCallStreamAccumulator()
+
+        # Track if stream was aborted
+        stream_aborted = False
 
         # Stream events
         try:
@@ -458,6 +484,26 @@ class AgentService:
                     if chunk:
                         log.debug("Yielding chunk: type=%s", chunk.get("type"))
                         yield chunk
+
+            # Check if stream was aborted and yield tool_end events for aborted tools
+            from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+                check_abort_flag,
+            )
+
+            if check_abort_flag(session_id):
+                log.info("Stream aborted, yielding tool_end events: session_id=%s", session_id)
+                # Get final state to find aborted tool messages
+                final_state = await graph.aget_state(config)
+                if final_state and "messages" in final_state.values:
+                    for msg in final_state.values["messages"]:
+                        # Check if this is an aborted tool message
+                        if hasattr(msg, "metadata") and msg.metadata.get("aborted"):
+                            yield {
+                                "type": "tool_end",
+                                "tool_name": getattr(msg, "name", "unknown"),
+                                "tool_output": msg.content if hasattr(msg, "content") else "",
+                                "session_id": session_id,
+                            }
 
             # Update session statistics after successful stream
             await repo.update_session(
@@ -688,9 +734,18 @@ class AgentService:
         async with self._init_lock:
             if self._checkpointer_conn:
                 try:
-                    await self._checkpointer_conn.close()
+                    # Add timeout to prevent blocking on database close
+                    await asyncio.wait_for(
+                        self._checkpointer_conn.close(),
+                        timeout=5.0
+                    )
                     log.debug(
                         "Checkpointer connection closed for: %s",
+                        self.project_path,
+                    )
+                except asyncio.TimeoutError:
+                    log.warning(
+                        "Checkpointer connection close timeout for: %s (forcing cleanup)",
                         self.project_path,
                     )
                 except Exception as e:

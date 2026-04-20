@@ -1,3 +1,11 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
+> This documentation is organized by AI with reference to actual code. AI can make mistakes — please verify against the source code when in doubt.
+
+
 # Telnet Server Connection Race Condition Bug
 
 ## Bug Report

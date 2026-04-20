@@ -2192,12 +2192,12 @@ class Project:
 
     def links_summary(
         self, is_print: bool = True
-    ) -> list[tuple[str, str, str, str]] | None:
+    ) -> list[dict[str, str]] | None:
         """
-        Returns a summary of the links insode the project. If `is_print` is False, it
-        will return a list of tuples like:
+        Returns a summary of the links inside the project. If `is_print` is False,
+        it will return a list of dicts like:
 
-        `[(node_a, port_a, node_b, port_b) ...]`
+        `[{"link_id": "xxx", "node_a": "R1", "port_a": "Eth0/0", "node_b": "R2", "port_b": "Eth0/0"}, ...]`
 
         **Required Attributes:**
 
@@ -2213,7 +2213,7 @@ class Project:
         assert self.links is not None, "Links must be loaded"
         assert self.nodes is not None, "Nodes must be loaded"
 
-        _links_summary: list[tuple[str, str, str, str]] = []
+        _links_summary: list[dict[str, str]] = []
 
         for _l in self.links:
             if not _l.nodes:
@@ -2258,7 +2258,13 @@ class Project:
                 if is_print:
                     print(f"{endpoint_a} ---- {endpoint_b}")
 
-                _links_summary.append((name_a, _port_a, name_b, _port_b))
+                _links_summary.append({
+                    "link_id": _l.link_id,
+                    "node_a": name_a,
+                    "port_a": _port_a,
+                    "node_b": name_b,
+                    "port_b": _port_b
+                })
 
             except (StopIteration, KeyError, AttributeError):
                 # Prevent errors when list comprehension can't match data
@@ -2426,13 +2432,13 @@ class Project:
                     "node_id": _node_a.node_id,
                     "adapter_number": _port_a["adapter_number"],
                     "port_number": _port_a["port_number"],
-                    "label": {"text": _port_a["name"]},
+                    "label": {"text": _port_a.get("short_name") or _port_a["name"]},
                 },
                 {
                     "node_id": _node_b.node_id,
                     "adapter_number": _port_b["adapter_number"],
                     "port_number": _port_b["port_number"],
-                    "label": {"text": _port_b["name"]},
+                    "label": {"text": _port_b.get("short_name") or _port_b["name"]},
                 },
             ],
         )

@@ -55,7 +55,8 @@ class ChatResponse(BaseModel):
         "tool_end",     # Tool execution completed
         "error",        # Error message
         "done",         # Stream ended
-        "heartbeat"     # Keep-alive signal
+        "heartbeat",    # Keep-alive signal
+        "abort"         # Stream aborted
     ] = Field(..., description="Response message type")
     content: Optional[str] = Field(None, description="Text content (for type=content)")
     message_id: Optional[str] = Field(None, description="Message ID")

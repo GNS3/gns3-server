@@ -223,6 +223,7 @@ async def test_json(project, compute):
         "filters": {},
         "link_style": {},
         "suspend": False,
+        'wireshark': False,
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,

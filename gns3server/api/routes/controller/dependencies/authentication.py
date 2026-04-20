@@ -90,7 +90,16 @@ async def get_current_active_user_from_websocket(
         user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> Optional[schemas.User]:
 
-    await websocket.accept()
+    # Extract requested subprotocols from headers for proper WebSocket negotiation
+    # This is critical for protocols like xpra that require specific subprotocols
+    scope = websocket.scope
+    headers = dict(scope.get("headers", []))
+    requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
+    requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
+
+    # Accept the connection with the first requested subprotocol (if any)
+    subprotocol = requested_protocols[0] if requested_protocols else None
+    await websocket.accept(subprotocol=subprotocol)
 
     try:
         token_data = auth_service.get_token_data(token)

@@ -96,6 +96,10 @@ class Link(LinkBase):
         None,
         description="Read only property. The compute identifier where a capture is running"
     )
+    wireshark: Optional[bool] = Field(
+        False,
+        description="Read only property. True if a Web Wireshark session is active on the link"
+    )
 
 
 class UDPPortInfo(BaseModel):
@@ -117,3 +121,13 @@ class EthernetPortInfo(BaseModel):
     node_id: UUID
     interface: str
     type: str
+
+
+class LinkCapture(BaseModel):
+    """
+    Link capture data.
+    """
+
+    data_link_type: str = "DLT_EN10MB"
+    capture_file_name: Optional[str] = None
+    wireshark: bool = False

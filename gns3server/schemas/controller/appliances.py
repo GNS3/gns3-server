@@ -634,6 +634,7 @@ class ApplianceV1_6(BaseModel):
     iou: Optional[Iou] = Field(None, title='IOU specific options')
     dynamips: Optional[Dynamips] = Field(None, title='Dynamips specific options')
     qemu: Optional[Qemu] = Field(None, title='Qemu specific options')
+    tags: Optional[List[str]] = Field(None, title='User-defined metadata tags for the appliance')
     images: Optional[List[ApplianceImage]] = Field(None, title='Images for this appliance')
     versions: Optional[List[ApplianceVersion]] = Field(None, title='Versions of the appliance')
 
@@ -672,6 +673,7 @@ class ApplianceV8(BaseModel):
     default_username: Optional[str] = Field(None, title='Default username for the appliance')
     default_password: Optional[str] = Field(None, title='Default password for the appliance')
     symbol: Optional[str] = Field(None, title='An optional symbol for the appliance')
+    tags: Optional[List[str]] = Field(None, title='User-defined metadata tags for the appliance')
     settings: List[TemplateSetting] = Field(..., title='Settings for running the appliance')
     images: Optional[List[ApplianceImage]] = Field(None, title='Images for this appliance')
     versions: Optional[List[ApplianceVersionV8]] = Field(None, title='Versions of the appliance')
