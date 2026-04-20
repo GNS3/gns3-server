@@ -55,7 +55,6 @@ tracert
 
 # Ping flood variants
 ping -f
-ping -f
 
 # Debug commands that may destabilize devices
 debug
