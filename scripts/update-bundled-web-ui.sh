@@ -28,12 +28,17 @@
 # And for proper tag:
 # $ ./scripts/update-bundled-web-ui.sh --tag=v2019.1.0-alpha.1
 #
+# With custom GitHub repo and branch:
+# $ ./scripts/update-bundled-web-ui.sh --url=https://github.com/USER/repo --branch=develop
+#
 set -e
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 GNS3SERVER_DIR=$(realpath "$CURRENT_DIR/..")
 REPO_DIR="/tmp/gns3-web-ui"
 CUSTOM_REPO=false
+GITHUB_URL=""
+BRANCH=""
 
 
 for i in "$@"
@@ -44,18 +49,34 @@ do
       CUSTOM_REPO=true
       REPO_DIR=$(realpath "$PWD/${REPOSITORY%/}")
       echo "Custom repo dir: $REPO_DIR"
-      shift 
+      shift
+      ;;
+      -u=*|--url=*)
+      GITHUB_URL="${i#*=}"
+      echo "GitHub URL: $GITHUB_URL"
+      shift
+      ;;
+      -b=*|--branch=*)
+      BRANCH="${i#*=}"
+      echo "Branch: $BRANCH"
+      shift
       ;;
       -t=*|--tag=*)
       TAG="${i#*=}"
       echo "Using tag: $TAG"
-      shift 
+      shift
       ;;
       *)
             # unknown option
       ;;
   esac
 done
+
+# Determine if we need to clone/fetch from a URL (vs using local repository)
+USE_GITHUB_URL=false
+if [[ -n "$GITHUB_URL" ]]; then
+    USE_GITHUB_URL=true
+fi
 
 
 echo "Removing: $GNS3SERVER_DIR/gns3server/static/web-ui/*"
@@ -68,14 +89,29 @@ mkdir -p "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 if [ "$CUSTOM_REPO" = false ] ; then
     if [ ! -d "$REPO_DIR" ]; then
-        git clone https://github.com/GNS3/gns3-web-ui.git "$REPO_DIR"
+        if [[ -n "$GITHUB_URL" ]]; then
+            git clone "$GITHUB_URL" "$REPO_DIR"
+        else
+            git clone https://github.com/GNS3/gns3-web-ui.git "$REPO_DIR"
+        fi
     fi
 
     cd "$REPO_DIR"
 
-    git checkout master-3.0
-    git fetch --tags
-    git pull
+    if [[ "$USE_GITHUB_URL" = true ]]; then
+        git fetch origin
+        if [[ -n "$BRANCH" ]]; then
+            git checkout "$BRANCH"
+            git pull
+        else
+            git checkout master-3.0
+            git pull
+        fi
+    else
+        git checkout master-3.0
+        git fetch --tags
+        git pull
+    fi
 
     if [[ -n "$TAG" ]]
     then
