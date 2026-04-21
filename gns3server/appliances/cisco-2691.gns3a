@@ -1,5 +1,6 @@
 {
     "appliance_id": "ed0f079e-a506-4cb4-b46c-714a80bbe2d3",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 2691",
     "category": "router",
     "description": "Cisco 2691 Router",

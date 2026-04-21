@@ -1,5 +1,6 @@
 {
     "appliance_id": "87bf6f58-1e5a-4ee2-afe7-715dabffcf18",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco IOU L3",
     "category": "router",
     "description": "Cisco IOS on UNIX Layer 3 image.",

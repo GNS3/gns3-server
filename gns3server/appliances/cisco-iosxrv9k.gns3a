@@ -19,13 +19,21 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
         "ram": 16384,
+        "cpus": 4,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-smp 4 -cpu host"
+        "options": "-cpu host"
     },
     "images": [
+        {
+            "filename": "xrv9k-fullk9-x-25.1.1.qcow2",
+            "version": "25.1.1",
+            "md5sum": "554d795d495badf90b6c75a2a342b409",
+            "filesize": 2002911232,
+            "download_url": "https://u.cisco.com/my-learning/my-account"
+        },
         {
             "filename": "xrv9k-fullk9-x-24.3.1.qcow2",
             "version": "24.3.1",
@@ -49,6 +57,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "25.1.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-25.1.1.qcow2"
+            }
+        },
         {
             "name": "24.3.1",
             "images": {

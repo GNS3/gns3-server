@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "asav9-23-1.qcow2",
+            "version": "9.23.1 CML",
+            "md5sum": "30454794b46fe07d1cd6a3ee72b511e1",
+            "filesize": 400687104,
+            "download_url": "https://u.cisco.com/my-learning/my-account"
+        },
+        {
             "filename": "asav9-22-1-1.qcow2",
             "version": "9.22.1.1 CML",
             "md5sum": "250a924cdc2370208eaac9d1dc8dc9e3",
@@ -133,6 +140,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.23.1 CML",
+            "images": {
+                "hda_disk_image": "asav9-23-1.qcow2"
+            }
+        },
         {
             "name": "9.22.1.1 CML",
             "images": {
