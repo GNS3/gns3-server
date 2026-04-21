@@ -66,6 +66,9 @@ Aggregated server statistics API (`GET /v3/statistics`) for monitoring dashboard
 ### VNC WebSocket Console (`features/vnc-websocket-console.md`)
 Browser-based VNC console access via WebSocket. The Controller acts as WebSocket-to-WebSocket relay, and Compute bridges WebSocket to TCP for QEMU/Docker VMs. Supports noVNC clients.
 
+### API Error Responses (`features/api-error-responses.md`)
+Unified error response format across all GNS3 API endpoints. Documents HTTP status codes, error types, and client-side error handling patterns.
+
 ### Web Wireshark (`features/web-wireshark-business-process.md`)
 Web-based packet capture analysis using Docker + xpra HTML5 client. Zero-install Wireshark experience directly in the browser, integrated with GNS3 topologies.
 
