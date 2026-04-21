@@ -1,0 +1,34 @@
+# Xpra HTML5 default settings
+#
+# ie:
+# port = 10000
+# keyboard_layout = gb
+# encoding = auto
+# bandwidth_limit = 10000000
+# debug_keyboard = true
+
+blocked-hosts = xpra.org,www.xpra.org
+
+min-quality = 10
+min-speed = 50
+
+# Configure xpra HTML5 client defaults - disable unused features
+file_transfer=false
+printing=false
+sound=false
+audio=false
+sound_button=false
+fullscreen_button=false
+keyboard_button=false
+cursor_lock_button=false
+keyboard=false
+mediasource=false
+aurora=false
+http-stream=false
+
+# Menu toolbar position: top-left, top, top-right, novnc
+toolbar_position=top-right
+
+# hide some menus:
+# xpramenu=false
+# cursor_lock_button=false

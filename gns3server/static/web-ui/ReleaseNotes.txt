@@ -1,179 +1,48 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: 2.2.24
+Current version: 3.1.0-dev.1
 
-Bug Fixes & enhancements
-- security fixes
+---
 
-Current version: 2020.4.0-beta.1
+## What's New
 
-Bug Fixes & enhancements
-- symbol is not properly selected in change symbol dialog
-- issue when using the scroll wheel on the web console
-- missing settings for Docker nodes
-- error on servers page
+- **Web Wireshark Inline Display**: Open Wireshark directly in the project map canvas
+  - Context menu integration: "Start Web Wireshark (Inline)"
+  - Support for multiple concurrent inline windows
+  - Draggable and resizable inline windows
+  - Minimize/restore with unified taskbar
+  - xpra-html5 client integration (MPL-2.0 licensed)
 
-What's new
-- double click nodes to open the console
+- **AI Chat Feature**: Integrated AI assistant for network automation
+  - LLM model configuration (OpenAI, Anthropic, local models)
+  - Profile management for different AI providers
+  - Context-aware assistance for network topology
 
-Current version: 2020.3.0-beta.3
+- **Unified Window Management**: Modern floating window system
+  - Unified taskbar for all minimized windows (Console, Wireshark)
+  - Focus-based z-index management (click to bring window to front)
+  - Minimize/restore functionality for all floating panels
+  - Window position persistence across sessions
 
-Bug Fixes & enhancements
-- direct download URL in template dialog
-- fix for issues with suspnded nodes
-- fix for bug with deleting templates
-- fix for importing images
+- **Modern UI Framework**: Angular 21 Zoneless architecture
+  - 100% migration to Angular 21 standalone components
+  - Zone.js removed for better performance
+  - Signal-based reactive state management
+  - OnPush change detection strategy
 
-What's new
-- Option to resize console
-- Improvements in creating templates
+- **Material Design 3**: Complete visual refresh
+  - Material Design 3 color system and theming
+  - Dynamic theme switching (light/dark)
+  - CSS variable-based theming architecture
+  - Centralized dialog styling system
 
-GNS3 Web UI 2020.3.0-beta.1
+## Bug Fixes & Enhancements
 
-Bug Fixes & enhancements
-- refreshing list of templates after adding new template from project map 
-- link to preferences from project page 
-- disallow user to create Qemu template when binary is not selected 
-- extending the time for notification to appear 
-- open first settings menu at start 
-- the menu for the map rearranged 
-- restyling SystemStatus page 
-- marking files which already exist in appliance wizard
-
-What's new
-- Option to import appliances
-
-GNS3 Web UI 2020.2.0-beta.5
-
-Bug Fixes
-
-- Bug in symbol selection
-- Same question is asked after going back to project
-- Cannot read property 'forEach' of undefined
-- Error when selecting existing Docker image
-- Invalid property when adding VMware VM template
-- Invalid type for adapters field when adding Docker template
-- Prevent user to move to another step when adding template
-- Web UI cannot set flag "Leave this project running in the background after closing"
-
-What's new
-- Default values in templates
-- New option for Qemu VMs
-- Ability to quickly change Hostname from right click
-- Progress bar for node creation
-
-GNS3 Web UI 2020.2.0-beta.4
-
-Bug Fixes
-- New port setting for GNS3 VM preferences
-- Option to auto-hide menu toolbar on the left side
--Controller  type in template preferences
-- Error when selecting existing Docker image
-- Default values in templates
-- TypeError: Cannot read property 'message' of undefined
-- TypeError: e.error is undefined
-- TypeError: Cannot read property 'placements' of null
-- Creating IOS templates -> fix for platforms and network adapters
-
-GNS3 Web UI 2020.2.0-beta.2
-
-What's New
-- Drag & drop to add new nodes on topology
-- Option to minimize/maximize and hide console widget
-- Ability to add IOS templates
-- Node names in HTTP console tabs
-- Default settings for templates
-- Support for adding IOS images
-- Node dialog updated
-- Messages with description in toasts
-- Adding interfaces to cloud nodes
-- Changes in notification box mechanism (once per day option)
-- Additional tooltips added
-- Copy/paste options in console (only Chrome full support)
-- More details for server failed connections
-
-Bug Fixes
-- Fix for console icons
-- Fix for creating ethernet switches and hubs
-- Fix for opening console from context menu
-- Qemu configurator now works properly
-- Fixes in snap to grid option
-- Symbols preview now works correctly
-- Error messages in preferences should be displayed
-- Default values for New Ethernet devices in configurator
-- Fix for wrong adapter types in Qemu
-- Fix for fit in view option on Firefox
-- Fix for navigation errors
-
-GNS3 Web UI 2020.2.0-beta.1
-
-What's New
-- Support for suspended status added
-- Suport for 404 page
-- Actions for group of nodes added
-- Updating packages
-- Button to close project added
-- Opening ads in new window
-- New dialog for adding nodes
-- Option to import config
-- Support for light theme added
-
-Bug Fixes
-- Fix for navigating to project that doesn't exist
-- Fix for AdButler errors
-- Fix for screenshot issue
-- Proper centering of icons
-- Fix for adding custom symbols
-- Fix for return command in console
-- Fix for deleting links
-- Fix for duplicating any node type
-- Fix for console errors on servers page
-- Fix for console errors on projects page
-
-GNS3 Web UI 2019.2.0 v10
-
-What's New
-- Qemu image configurator
-- Custom console for particular node
-- Option to connect console to all nodes
-- Option to start Winpcap
-- Filtering devices with packet filters on topology summary
-- Filtering devices with captures on topology summary
-- View options taken from map configuration
-- Servers summary widget
-- Ability to lock single item on the map
-- Editing & import & export config files
-- Context menu for inserted drawings
-- Ability to drag topology summary & servers summary & console widgets
-- Ability to resize topology summary & servers summary & console widgets
-- Option to show the grid
-- Option to snap to grid
-- Usage instructions available from context menu
-- Errors & warnings visible as notifications
-- Fit in view options
-- Support for global variables
-- Support for layers
-- Extending template preferences
-
-Bug Fixes
-- Input validation in styles editor
-- Fix for saving map as image
-- Removing errors with uncorrect subscriptions
-
-GNS3 Web UI 2019.2.0 v9
-
-What's New
-- Editing interface labels on double click
-- Support for keyboard shortcuts
-- Menu extended with option to delete currently opened project, export & import project
-- Possibility to save current state of project
-- Ability to duplicate project from projects page
-- Node information dialog available from context menu
-- Topology summary widget on map view
-- Improvements in dialog styles
-
-Bug Fixes
-- Removing issues with opening console
-- Context menu now is correctly placed
-- Text validation in dialogs
-- Removing errors with creating WebSockets
+- Test environment stability improvements (Vitest isolation)
+- Hardcoded color protection mechanism with multi-layer validation
+- Symbol loading with JWT authentication
+- Custom adapters support for template configuration
+- Compute status real-time updates via WebSocket
+- Curve drawing tool improvements
+- Window boundary constraint service for better UX
+- Console devices panel (v2.0.0) with improved device management

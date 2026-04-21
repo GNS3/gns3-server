@@ -1,0 +1,197 @@
+/*
+MIT License
+
+Copyright (c) 2019 Mark Harkin, 2016 Dylan Hicks (aka. dylanh333)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+#float_menu_button {
+  background: white;
+  height: 50px;
+  width: 12px;
+  border-radius: 0 10px 10px 0;
+
+  position: relative;
+  left: 30px;
+  top: -125px;
+}
+
+#float_menu_arrow {
+  color: black;
+  border-color: black;
+
+  position: relative;
+  right: 14px;
+  top: 5px;
+}
+
+#float_menu {
+  display: none;
+  position: fixed;
+  height: 30px;
+  padding: 0 20px 0 0;
+  z-index: 100000;
+  background: white;
+
+  border-color: grey;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.menu-divleft {
+  float: left;
+  clear: left;
+}
+
+.menu-divright {
+  float: right;
+  clear: right;
+}
+
+.menu-content-left {
+  white-space: nowrap;
+  float: left;
+  width: 0;
+  height: 24px;
+  padding: 3px 2px;
+  vertical-align: middle;
+  text-decoration: none;
+  display: inline;
+}
+
+.menu-content-right {
+  white-space: nowrap;
+  float: right;
+  width: 0;
+  height: 16px;
+  padding: 7px 2px;
+  vertical-align: middle;
+  text-decoration: none;
+  display: inline;
+}
+
+.windowlist-li {
+  min-width: 400px;
+}
+
+.Menu {
+  color: black;
+}
+
+.Menu.-vertical {
+  border-radius: 0 3px 3px 0;
+}
+
+/* Foreground */
+.Menu,
+.Menu li.-hasSubmenu>a:after {
+  color: black;
+  border-color: black;
+  /* chevron colour */
+}
+
+/* Background */
+.Menu,
+.Menu li ul {
+  background: white;
+}
+
+/* Border */
+.Menu,
+.Menu li ul {
+  box-shadow: none;
+}
+
+.Menu li ul,
+.Menu.-floating {
+  border-radius: 3px;
+}
+
+.Menu.-horizontal>li>ul {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.Menu:not(.-alignRight) li>ul,
+.Menu.-floating:not(.-alignRight) {
+  border-top-left-radius: 0;
+}
+
+.Menu.-alignRight li>ul,
+.Menu.-floating.-alignRight {
+  border-top-right-radius: 0;
+}
+
+/* Drop shadow on Menus and header */
+.Menu li ul,
+.Menu.-floating {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 3px 1px 0 rgba(0, 0, 0, 0.2), 0 6px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+#window_preview {
+  display: none;
+  width: 65%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 80000;
+  background-color: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  padding: 20px;
+}
+
+.slick-track {
+  display: flex !important;
+}
+
+.slick-slide {
+  margin: 7px;
+}
+
+.slick-current {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 65%);
+  border-radius: 2px;
+  border: 3px solid rgba(255, 255, 255, 50%);
+}
+
+.window-preview-item-container {
+  display: inline-block;
+  height: 100%;
+}
+
+.window-preview-item-img {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+}
+
+.window-preview-item-text {
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "auto";
+  padding: 4px;
+}
