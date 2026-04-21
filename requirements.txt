@@ -15,7 +15,7 @@ py-cpuinfo>=9.0.0,<10.0
 greenlet==3.4.0; python_version >= '3.13' # necessary to run sqlalchemy on Python >= 3.13
 sqlalchemy==2.0.49
 aiosqlite==0.22.1
-alembic==1.15.2
+alembic==1.18.4
 bcrypt==5.0.0
 joserfc==1.6.4
 email-validator==2.3.0
