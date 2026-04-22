@@ -27,10 +27,10 @@ Before using Web Wireshark, install the GNS3 server and set up the Docker image:
 
 ```bash
 # Development install
-pip install -e . && gns3-wireshark-setup
+pip install -e . && wireshark
 
 # Production install
-pip install gns3-server && gns3-wireshark-setup
+pip install gns3-server && wireshark
 ```
 
 This command will:
@@ -38,7 +38,7 @@ This command will:
 2. Pull the `gns3/web-wireshark:latest` image from Docker Hub
 3. If pull fails, build the image locally using the included Dockerfile
 
-The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `docker build`, allowing you to see the full progress.
+The `wireshark` command shows the raw output from `docker pull` or `docker build`, allowing you to see the full progress.
 
 ---
 
