@@ -552,6 +552,43 @@ Configured via `WebWiresharkSettings` in `gns3server/schemas/config.py`:
 
 ---
 
+## Docker API Compatibility
+
+### Version Negotiation Mechanism
+
+The Web Wireshark feature implements automatic Docker API version negotiation to ensure compatibility across different Docker versions:
+
+1. **Primary**: Try API version 1.44 first
+   - Supports Docker 29.3+ (API 1.54+), which requires minimum API 1.44
+
+2. **Fallback**: If server rejects 1.44 with 400 error, downgrade to API 1.40
+   - Supports Docker 20.10 (API 1.41)
+
+### Tested Configurations
+
+| Docker Version | API Version | API 1.40 | API 1.44 | Solution |
+|----------------|-------------|----------|----------|----------|
+| 20.10 | 1.41 | ✓ | ✗ | Fallback to 1.40 |
+| 29.3+ | 1.54+ | ✗ | ✓ | Use 1.44 |
+
+### Container IP Retrieval
+
+The `get_container_ip()` method implements a dual-strategy approach for retrieving container IP addresses:
+
+1. **Primary Method**: Query Docker Container API
+   - Uses `docker inspect` via HTTP API
+   - Safe access to `NetworkSettings.Networks` field using `.get()`
+   - Handles missing fields gracefully (fixes KeyError bug)
+
+2. **Fallback Method**: Execute `hostname -I` command inside container
+   - Works when Docker API response lacks network information
+   - Compatible with containers without `ip` command
+   - Returns first IP address from `hostname -I` output
+
+This dual approach ensures compatibility across different Docker API versions that may have varying response formats.
+
+---
+
 ## Known Limitations
 
 1. **JWT Token Visibility**: Token passed via command-line arguments (visible in `/proc/<pid>/cmdline`)
