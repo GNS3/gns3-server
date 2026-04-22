@@ -27,10 +27,10 @@ Before using Web Wireshark, install the GNS3 server and set up the Docker image:
 
 ```bash
 # Development install
-pip install -e . && gns3-wireshark-setup
+pip install -e . && wireshark
 
 # Production install
-pip install gns3-server && gns3-wireshark-setup
+pip install gns3-server && wireshark
 ```
 
 This command will:
@@ -38,7 +38,7 @@ This command will:
 2. Pull the `gns3/web-wireshark:latest` image from Docker Hub
 3. If pull fails, build the image locally using the included Dockerfile
 
-The `gns3-wireshark-setup` command shows the raw output from `docker pull` or `docker build`, allowing you to see the full progress.
+The `wireshark` command shows the raw output from `docker pull` or `docker build`, allowing you to see the full progress.
 
 ---
 
@@ -549,6 +549,43 @@ Configured via `WebWiresharkSettings` in `gns3server/schemas/config.py`:
 | 4-6 | 600-1.5 GB | Medium projects |
 | 7-10 | 1-2.5 GB | Large projects |
 | 10+ | >2.5 GB | Increase memory |
+
+---
+
+## Docker API Compatibility
+
+### Version Negotiation Mechanism
+
+The Web Wireshark feature implements automatic Docker API version negotiation to ensure compatibility across different Docker versions:
+
+1. **Primary**: Try API version 1.44 first
+   - Supports Docker 29.3+ (API 1.54+), which requires minimum API 1.44
+
+2. **Fallback**: If server rejects 1.44 with 400 error, downgrade to API 1.40
+   - Supports Docker 20.10 (API 1.41)
+
+### Tested Configurations
+
+| Docker Version | API Version | API 1.40 | API 1.44 | Solution |
+|----------------|-------------|----------|----------|----------|
+| 20.10 | 1.41 | ✓ | ✗ | Fallback to 1.40 |
+| 29.3+ | 1.54+ | ✗ | ✓ | Use 1.44 |
+
+### Container IP Retrieval
+
+The `get_container_ip()` method implements a dual-strategy approach for retrieving container IP addresses:
+
+1. **Primary Method**: Query Docker Container API
+   - Uses `docker inspect` via HTTP API
+   - Safe access to `NetworkSettings.Networks` field using `.get()`
+   - Handles missing fields gracefully (fixes KeyError bug)
+
+2. **Fallback Method**: Execute `hostname -I` command inside container
+   - Works when Docker API response lacks network information
+   - Compatible with containers without `ip` command
+   - Returns first IP address from `hostname -I` output
+
+This dual approach ensures compatibility across different Docker API versions that may have varying response formats.
 
 ---
 

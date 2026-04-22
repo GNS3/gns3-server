@@ -37,6 +37,7 @@ from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
 from gns3server.utils.websocket_to_websocket import websocket_proxy
 from gns3server import schemas
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
@@ -385,22 +386,8 @@ async def web_wireshark_websocket(
         xpra_port = link_id_to_port(link_id)
 
         # Get container IP
-        from gns3server.compute.docker import Docker
-
-        docker_manager = Docker.instance()
-        container_info = await docker_manager.query(
-            "GET",
-            f"containers/{container_name}/json"
-        )
-
-        networks = container_info["NetworkSettings"]["Networks"]
-        container_ip = None
-
-        # Find gns3-wireshark network
-        for network_name, network_config in networks.items():
-            if "wireshark" in network_name.lower():
-                container_ip = network_config["IPAddress"]
-                break
+        manager = WebWiresharkManager()
+        container_ip = await manager.get_container_ip(container_name)
 
         if not container_ip:
             log.error(f"Container {container_name} not found in wireshark network")

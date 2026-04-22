@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Docker API configuration
 DOCKER_SOCKET = "/var/run/docker.sock"
-DOCKER_MINIMUM_API_VERSION = "1.44"
+DOCKER_MINIMUM_API_VERSION = "1.40"
 DOCKER_PREFERRED_API_VERSION = "1.44"
 
 
@@ -46,7 +46,9 @@ class DockerHTTPClient:
         self._connector = None
         self._session = None
         self._connected = False
-        self._api_version = DOCKER_MINIMUM_API_VERSION
+        # Start with preferred API version (1.44) to support newer Docker
+        # Will fallback to minimum version (1.40) if server doesn't support it
+        self._api_version = DOCKER_PREFERRED_API_VERSION
 
     async def _get_connector(self):
         """Get or create Unix socket connector."""
@@ -142,6 +144,14 @@ class DockerHTTPClient:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for {endpoint}")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e
+        except RuntimeError as e:
+            # Retry with lower API version if Docker daemon doesn't support current version
+            error_msg = str(e)
+            if ("400" in error_msg or "not found" in error_msg.lower()) and self._api_version == DOCKER_PREFERRED_API_VERSION:
+                logger.warning(f"Docker daemon doesn't support API version {self._api_version}, falling back to {DOCKER_MINIMUM_API_VERSION}")
+                self._api_version = DOCKER_MINIMUM_API_VERSION
+                return await self._request(method, endpoint, check_connection=False, **kwargs)
+            raise
 
     async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
         """Create Docker network."""

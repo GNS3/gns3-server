@@ -526,6 +526,50 @@ class WebWiresharkManager:
 
         return None
 
+    async def get_container_ip(self, container_name: str, container_id: str = None) -> Optional[str]:
+        """Get the container IP address in the wireshark network.
+
+        Args:
+            container_name: Container name (e.g., "gns3-wireshark-project_id")
+            container_id: Container ID (optional, only used for fallback method)
+
+        Returns:
+            Container IP address (e.g., 172.31.0.2) or None if not found
+        """
+        # Method 1: Get from Docker Container API (fastest)
+        try:
+            container = await self.docker.get_container(container_name)
+            if container:
+                networks = container.get("NetworkSettings", {}).get("Networks", {})
+                # Find gns3-wireshark network
+                for network_name, network_config in networks.items():
+                    if "wireshark" in network_name.lower():
+                        container_ip = network_config.get("IPAddress")
+                        if container_ip:
+                            logger.info(f"Got container IP from Docker API: {container_ip}")
+                            return container_ip
+        except Exception as e:
+            logger.debug(f"Cannot get container IP from Docker API: {e}")
+
+        # Fallback: Execute command inside container to get IP (slower)
+        if container_id:
+            try:
+                # Use 'hostname -I' to get all IP addresses and take the first one
+                # This works on most Linux systems and is more portable than 'ip' command
+                returncode, stdout, stderr = await self._exec_in_container(
+                    container_id,
+                    "hostname -I 2>/dev/null | awk '{print $1}'"
+                )
+                if returncode == 0 and stdout.strip():
+                    container_ip = stdout.strip()
+                    logger.info(f"Got container IP from container command: {container_ip}")
+                    return container_ip
+            except Exception as e:
+                logger.debug(f"Cannot get container IP from container command: {e}")
+
+        logger.warning(f"Failed to get container IP for {container_name}")
+        return None
+
     async def _fix_localhost_url(self, url: str, container_id: str) -> str:
         """Fix URL with localhost/127.0.0.1 for container access.
 
