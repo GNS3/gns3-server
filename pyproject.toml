@@ -51,7 +51,7 @@ ai-copilot = {file = ['ai-requirements.txt']}
 gns3server = "gns3server.main:main"
 gns3vmnet = "gns3server.utils.vmnet:main"
 gns3server-uninstall-ai-copilot = "gns3server.utils.uninstall_ai_copilot:main"
-gns3-wireshark = "gns3server.agent.web_wireshark.setup_wireshark_image:main"
+gns3server-web-wireshark-setup = "gns3server.agent.web_wireshark.setup_wireshark_image:main"
 
 [tool.setuptools]
 packages = ["gns3server"]
