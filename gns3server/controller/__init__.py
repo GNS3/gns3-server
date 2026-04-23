@@ -174,6 +174,7 @@ class Controller:
                         compute_id=str(c.compute_id),
                         connect=False,
                         **c.dict(exclude_unset=True, exclude={"compute_id", "created_at", "updated_at"}),
+                        ssl_context=self._ssl_context
                     )
                 except (ControllerError, KeyError):
                     pass  # Skip not available servers at loading
