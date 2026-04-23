@@ -888,8 +888,10 @@ class WebWiresharkManager:
             raise RuntimeError("Container has no IP address")
 
         # Start Wireshark in background (fire-and-forget, no waiting)
+        # Use -k for HTTPS to skip certificate validation (for self-signed certs)
+        curl_insecure_flag = "-k" if capture_stream_url.startswith("https://") else ""
         wireshark_cmd = (
-            f"curl -N -H 'Authorization: Bearer {jwt_token}' "
+            f"curl {curl_insecure_flag} -N -H 'Authorization: Bearer {jwt_token}' "
             f"'{capture_stream_url}' | "
             f"wireshark -i - -k --fullscreen -display :{display} &"
         )
