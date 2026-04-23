@@ -185,11 +185,14 @@ class PacketCaptureTool(BaseTool):
             import requests
 
             headers = {"Authorization": f"Bearer {jwt_token}"}
+            # Use verify=False for HTTPS to skip certificate validation (for self-signed certs)
+            verify_cert = not capture_url.startswith("https://")
             response = requests.get(
                 capture_url,
                 headers=headers,
                 stream=True,
                 timeout=30,
+                verify=verify_cert,
             )
 
             if response.status_code != 200:
