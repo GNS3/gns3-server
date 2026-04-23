@@ -20,7 +20,7 @@
 Setup Web Wireshark Docker image.
 
 This script pulls or builds the gns3/web-wireshark Docker image.
-Run with: pip install gns3server && gns3-wireshark
+Run with: pip install gns3server && gns3server-web-wireshark-setup
 """
 
 import os

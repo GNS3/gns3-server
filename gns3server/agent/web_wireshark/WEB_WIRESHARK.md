@@ -10,7 +10,7 @@ This document describes how to manage GNS3 Web Wireshark containers using the ma
 Before using Web Wireshark, you need to set up the Docker image:
 
 ```bash
-pip install . && gns3-wireshark
+pip install . && gns3server-web-wireshark-setup
 ```
 
 This will:
