@@ -27,10 +27,10 @@ Before using Web Wireshark, install the GNS3 server and set up the Docker image:
 
 ```bash
 # Development install
-pip install -e . && wireshark
+pip install -e . && gns3server-web-wireshark-setup
 
 # Production install
-pip install gns3-server && wireshark
+pip install gns3-server && gns3server-web-wireshark-setup
 ```
 
 This command will:
