@@ -908,17 +908,17 @@ const LANGUAGE_TO_LAYOUT = {
 };
 
 function console_debug_safe() {
-  if (console) console.debug.apply(console, arguments);
+  // if (console) console.debug.apply(console, arguments);
 }
 
 function console_error_safe() {
-  if (console) console.error.apply(console, arguments);
+  // if (console) console.error.apply(console, arguments);
 }
 
 function console_warn_safe() {
-  if (console) console.warn.apply(console, arguments);
+  // if (console) console.warn.apply(console, arguments);
 }
 
 function console_log_safe() {
-  if (console) console.log.apply(console, arguments);
+  // if (console) console.log.apply(console, arguments);
 }
