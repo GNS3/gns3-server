@@ -80,7 +80,51 @@ sudo usermod -aG ubridge,docker,kvm $USER
 sudo apt install python3.12-venv
 ```
 
-### 7. Run Development Version from Source
+### 7. Build Web UI (Requires Node.js and yarn)
+
+Install Node.js (LTS version recommended):
+
+```bash
+# Using NodeSource repository for Debian/Ubuntu
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install nodejs
+
+# Verify installation
+node -v
+npm -v
+```
+
+Enable yarn (Node.js 18+ includes corepack):
+
+```bash
+# Enable yarn via corepack
+corepack enable
+
+# For China mainland users, use mirror:
+# corepack prepare yarn@stable --activate
+# yarn config set registry https://registry.npmmirror.com
+
+# Verify yarn installation
+yarn -v
+```
+
+Build the latest web UI static files:
+
+```bash
+# Default: clone from official gns3-web-ui repo
+./scripts/update-bundled-web-ui.sh
+
+# With custom repository
+./scripts/update-bundled-web-ui.sh --repository ../my-custom-web-ui-repo/
+
+# With custom GitHub repo and branch
+./scripts/update-bundled-web-ui.sh --url=https://github.com/USER/repo --branch=develop
+
+# With specific tag
+./scripts/update-bundled-web-ui.sh --tag=v2019.1.0-alpha.1
+```
+
+### 8. Run Development Version from Source
 
 Clone the repository (official or your fork):
 
