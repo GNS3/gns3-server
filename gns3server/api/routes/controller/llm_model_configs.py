@@ -242,7 +242,7 @@ async def create_user_llm_model_config(
         log.error(f"Failed to create LLM model config: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create LLM model configuration"
+            detail=f"Failed to create LLM model configuration: {e}"
         )
 
 
@@ -564,7 +564,7 @@ async def create_group_llm_model_config(
         log.error(f"Failed to create LLM model config: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create LLM model configuration"
+            detail=f"Failed to create LLM model configuration: {e}"
         )
 
 
