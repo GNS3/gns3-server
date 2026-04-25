@@ -24,19 +24,19 @@ $(function() {
     onAction,
     onClose
   ) {
-    console.debug(
-      "doNotification",
-      type,
-      nid,
-      title,
-      message,
-      timeout,
-      icon,
-      actions,
-      hints,
-      onAction,
-      onClose
-    );
+    // console.debug(
+    //   "doNotification",
+    //   type,
+    //   nid,
+    //   title,
+    //   message,
+    //   timeout,
+    //   icon,
+    //   actions,
+    //   hints,
+    //   onAction,
+    //   onClose
+    // );
     const nID = `notification${nid}`;
     const a = $(
       `<div id="${nID}" class="alert ${type}">` +

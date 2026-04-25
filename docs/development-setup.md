@@ -147,7 +147,7 @@ source venv/bin/activate
 # For China mainland users, use mirror:
 # pip install -e . -i https://mirrors.aliyun.com/pypi/simple/
 
-pip install -e . && wireshark
+pip install -e . && gns3server-web-wireshark-setup
 pip install -e .[ai-copilot]
 pip install -e .[dev]
 ```

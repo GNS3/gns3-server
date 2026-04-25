@@ -1,5 +1,93 @@
 # Change Log
 
+## 3.1.0a1 25/04/2026
+
+* New completely revamped Web interface.
+* Add GNS3 Copilot AI agent back-end
+* Web-wireshark: packet capture and live traffic analysis in the browser
+* Fix using SSL with remote computes. Fixes https://github.com/GNS3/gns3-gui/issues/3733
+* Add --url and --branch parameters to update-bundled-web-ui.sh
+* Fix bug when custom_adapters is None in port_factory.py
+* Have optional body in start node API endpoint
+* Fix snapshots after merging
+* Potential fix for pull request finding 'CodeQL / Information exposure through an exception'
+* Refactored the way snapshots are handled in the server
+* fix(symbols): add authentication to symbol raw endpoint
+* fix(symbols): add CORS headers to symbol file responses
+* Allow to find new project in sub dirs
+* Enhancement: Refresh projects list without restarting the GNS3 server
+* Fix accessing username in authentication.py
+* Improved exception handling and telnet client disconnect
+* Use get method for registry_version to avoid KeyError
+* Add support for appliance format version 8
+* Convert database template fields from PickleType to JSON
+* feat(statistics): distinguish open vs closed project nodes
+* fix(statistics): handle closed projects where nodes/links are dicts
+* feat(controller): extend /statistics API with project, node and link stats
+* Use FastAPI Lifespan Events
+* feat(link): add control_offset field to LinkStyle
+* feat(symbols): add DELETE API for removing custom symbol files
+* Enhancement: Re-write current Telnet server implementation using telnetlib3 library
+* feat: improve error handling for API configuration errors
+* Enhancement Added link type support on the server side
+* Ignore HTTPException received when closing a project
+* Prevent router to be duplicated when running and add tests
+* Fixed issue #1605 regarding Cisco slots causing configs to break
+* feat: add VNC WebSocket console support for Docker and QEMU nodes
+* Return 405 error for unsupported actions for other node types
+* feat(telnet_server): improve error handling and connection management
+* fix(telnet): handle connection race condition during broadcast
+* Change first() to one_or_none() for image query
+* Fix for duplicating Qemu nodes
+* Minor optimizations to logic
+* Fixed an issue with the server causing errors when uploading large images + Preparation for a smarter check when uploading images
+* Implemented a smarter node_type system
+* docs: restructure copilot docs and update node tools
+* fix(acl): correct endpoint paths for users, groups, and roles
+* fix(iou): return 405 error for unsupported suspend operation
+* feat(api): enhance max_tokens field with robust null handling
+* feat(docs): add AI prompting guide for configuration templates
+* Deactivate 'use default IOU values' by default and update RAM/NVRAM values
+* Make sure the node shows as stopped when the wrap console cannot be stopped. Ref https://github.com/GNS3/gns3-registry/pull/1010
+* chore: update author name and copyright headers
+* feat(docs): enhance AI chat API documentation with examples and details
+* feat: add .claude directory to gitignore for API key security
+* Revert "Fix QEMU serial console artifacts by filtering ANSI CPR responses in …"
+* docs: add troubleshooting guide for datetime timezone issue
+* Drop support for Python 3.9
+* feat: add multi-user concurrency control design document
+* docs: add troubleshooting guide for force kill residual processes
+* Fixed the path traversal check
+* Fix image handling
+* Qemu VMs: only compute MD5 checksums for existing disks
+* Copy config files and database from a previous version if it exists
+* Add enable_http_auth in gns3_server.conf sample
+* feat(compute): option to disable compute authentication
+* tests(controller,port): short_name finishes successfully when port name is None
+* fix(controller,port): handle None port name to prevent TypeError in short_name method
+* fix(docker): handle container name conflict automatically
+* feat(virtualbox): add fallback for VBoxManage executable detection
+* feat: simplify port name assignment logic
+* feat(ports): add null checks for port name in short name generation
+* Remove unneeded rbac_repo in get_templates
+* Use lists for tags instead of dicts
+* Fix for resizing Qemu VM disks
+* feat(templates): safely access settings dict keys
+* feat(api): fix ETag handling and JSON serialization in template endpoint
+* feat(api): add tag filtering to nodes and templates endpoints
+* Update project schema and fix tests
+* Add 'created_by' field to track project creator
+* Fix updating packet filters
+* Add vendor, model and netmiko_device_type fields to templates
+* fix: handle RuntimeError in notification_manager emit()
+* fix: busybox static link detection on Alpine/musl
+* Fix bug when updating compute password to be empty
+* Cancel tasks if controller cannot be started
+* Enable parallel compression with zstandard. Fixes #2324
+* Add Dynamips to Dockerfile dependencies
+* Take populated disks into consideration when calculating PCI device ID
+* Fix telnet keepalive options on macOS
+
 ## 2.2.58.1 12/04/2026
 
 * Sync appliances
