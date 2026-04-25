@@ -102,3 +102,23 @@ POST /v3/computes
 1. Verify Controller's `host` is set to its actual IP, not `0.0.0.0`
 2. Ensure both machines are on the same network
 3. Check firewall rules allow UDP communication
+
+### Controller Hostname Unreachable
+
+If the controller machine uses a hostname defined in `/etc/hosts` (e.g., `guobin.localhost`), and the compute node reports:
+
+```
+Cannot get an IP address on same subnet: No common subnet for compute X (controller) and Y
+```
+
+1. **Symptom**: The controller's hostname resolves to an IP that is unreachable from the compute node
+2. **Root Cause**: The `/etc/hosts` entry for the controller's hostname points to a stale or unreachable IP address
+3. **Solution**:
+   - Ensure the controller's hostname in `/etc/hosts` resolves to the correct, reachable IP address
+   - Example (correct):
+     ```
+     192.168.1.104  guobin.localhost
+     ```
+   - If the machine's IP is dynamic (DHCP), consider:
+     - Setting a DHCP static lease on the router for a fixed IP
+     - Using mDNS (`.local` domain) if supported by the compute node
