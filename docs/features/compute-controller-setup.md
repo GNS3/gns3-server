@@ -112,3 +112,35 @@ Cannot get an IP address on same subnet: No common subnet for compute X (control
 4. Verify both machines are on the same network and can ping each other
 5. Check firewall rules allow TCP/UDP communication on required ports
 
+### WebSocket Console Authentication Failed
+
+When connecting to a remote compute node's console via WebSocket, the connection may fail with errors in the logs:
+
+**Controller log:**
+```
+New client 192.168.1.104:33268 has connected to controller console WebSocket
+Forwarding console WebSocket to 'ws://192.168.1.3:3080/v3/compute/projects/.../console/ws'
+Client 192.168.1.104:33268 has disconnected from controller console WebSocket
+```
+
+**Compute log:**
+```
+WebSocket /v3/compute/projects/.../console/ws" [accepted]
+ERROR gns3server.api.routes.compute.dependencies.authentication:103 Could not authenticate while connecting to compute WebSocket: Could not validate credentials
+```
+
+**Cause**: The Controller forwards its own `compute_username` and `compute_password` credentials when connecting to the Compute's WebSocket endpoint. If the Compute node does not have matching credentials configured, authentication fails.
+
+**Solution**: Ensure the Compute node's configuration file has matching credentials:
+
+```ini
+[Server]
+enable_http_auth = True
+compute_username = gns3
+compute_password = your_password
+```
+
+The Controller automatically uses its configured `compute_username` and `compute_password` when establishing WebSocket connections to remote computes (see `gns3server/api/routes/controller/nodes.py` lines 627-628).
+
+**Note**: If `compute_password` is not explicitly set in the Compute's config, a random 16-character password is auto-generated at startup, making authentication impossible for any external Controller.
+
