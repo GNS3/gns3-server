@@ -1,0 +1,72 @@
+{
+    "appliance_id": "90afc191-6195-4ff2-905b-5470573a882b",
+    "name": "Westermo WeOS",
+    "category": "router",
+    "description": "Westermo Operating System (WeOS) is a leading-edge industrial network operating system that is being continuously developed whilst being subjected to exhaustive quality testing. It powers the most reliable switches and routers on the market, designed for harsh industrial environments. WeOS has extensive support for network and security protocols that have been made simple to configure and maintain. WeOS along with Westermo’s robust hardware provides the world’s most reliable network solutions.",
+    "vendor_name": "Westermo",
+    "vendor_url": "https://www.westermo.com/",
+    "vendor_logo_url": "https://api-0831ddf0-b06c-4a4e-bcf7-afba78872de1.digizuite.app/DigizuiteCore/CollaborationService/api/share/asset/4C90E538E869D47D2782840A06F726F6D7548D864857388E38218F",
+    "documentation_url": "https://docs.westermo.com/weos/weos-5/",
+    "product_name": "WeOS",
+    "product_url": "https://www.westermo.com/products/software/weos",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Westermo",
+    "maintainer_email": "info@westermo.com",
+    "usage": "\nFactory Configuration\n=====================\nAll ports are in VLAN1 untagged. The system will acquire a link-local\nIPv4 address (169.254.0.0/16) and will also request an address using\nDHCP. mDNS is enabled and the device is reachable under these names\n(where XX-XX-XX corresponds to the last three octets in the device's\nMAC address): zero-XX-XX-XX.local, zero.local, and weos.local.\n\nManagement\n==========\nAccessible via console, ssh, and http/https.\n\nUsername: admin\nPassword: admin\n\nUpgrade\n=======\nTo upgrade a device, simply download the new version and replace the\nHDA (Primary Master) image under the HDD tab in the configuration pane\nof the device.\n",
+    "symbol": ":/symbols/classic/router.svg",
+    "port_name_format": "eth{0}",
+    "linked_clone": true,
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 8,
+        "ram": 512,
+        "cpus": 1,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow",
+        "options": "-nographic --machine pc-i440fx-4.2"
+    },
+    "images": [
+        {
+            "filename": "Config-zero-1.0.0.disk",
+            "version": "1.0.0",
+            "md5sum": "afe7b74683971fec48802997f6470ca5",
+            "filesize": 17825792,
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=e6a7676d-85a7-4374-8961-c68aacb74921"
+        },
+        {
+            "filename": "WeOS-zero-5.28.0.disk",
+            "version": "5.28.0",
+            "md5sum": "7b4e29761091c12ec2cd482f7c1a0bea",
+            "filesize": 75497472,
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=4926adbe-0cd6-4851-b70f-e9d60b3b3f06"
+        },
+        {
+            "filename": "WeOS-zero-5.27.0.disk",
+            "version": "5.27.0",
+            "md5sum": "8bd4944b60eaeca391bb5d1dc0defb8b",
+            "filesize": 78643200,
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=1a7bf389-a4b1-4dae-b121-6fb3d6781542"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.28.0",
+            "images": {
+                "hda_disk_image": "WeOS-zero-5.28.0.disk",
+                "hdb_disk_image": "Config-zero-1.0.0.disk"
+            }
+        },
+        {
+            "name": "5.27.0",
+            "images": {
+                "hda_disk_image": "WeOS-zero-5.27.0.disk",
+                "hdb_disk_image": "Config-zero-1.0.0.disk"
+            }
+        }
+    ]
+}
