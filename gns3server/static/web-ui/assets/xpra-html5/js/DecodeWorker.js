@@ -190,11 +190,11 @@ function check_image_decode(
   fail_callback
 ) {
   if (console) {
-    console.info(
-      "checking",
-      format,
-      `with test image: ${image_bytes.length} bytes`
-    );
+    // console.info(
+    //   "checking",
+    //   format,
+    //   `with test image: ${image_bytes.length} bytes`
+    // );
   }
   try {
     const timer = setTimeout(function() {
