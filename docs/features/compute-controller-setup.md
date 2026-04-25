@@ -71,8 +71,10 @@ POST /v3/computes
 
 ### Host Configuration
 
-- **Controller `host`**: If set to `0.0.0.0`, it will be changed to `127.0.0.1`, which breaks cross-subnet link creation
-- **Solution**: Always use the actual IP address for Controller's `host` field
+- **Controller `host`**: If set to `0.0.0.0`, the controller will register itself as `127.0.0.1`, which breaks remote compute connections
+- **Symptom**: Compute nodes report "No common subnet for compute X (controller) and Y" even when on the same network
+- **Solution**: Always use the actual LAN IP address for the Controller's `host` field (e.g., `host = 192.168.1.104`)
+- **Dynamic IP**: If the controller machine uses DHCP, set a static lease on the router or use mDNS (`.local` domain)
 
 ### Password Configuration
 
@@ -99,9 +101,16 @@ POST /v3/computes
 
 ### No Common Subnet Error
 
-1. Verify Controller's `host` is set to its actual IP, not `0.0.0.0`
-2. Ensure both machines are on the same network
-3. Check firewall rules allow UDP communication
+If compute nodes report:
+```
+Cannot get an IP address on same subnet: No common subnet for compute X (controller) and Y
+```
+
+1. **Primary cause**: Controller's `host` is set to `0.0.0.0` - it registers as `127.0.0.1` which is unreachable from compute nodes
+2. Check the controller's `/v3/version` endpoint - if `controller_host` shows `127.0.0.1`, this is the issue
+3. Set the Controller's `host` to its actual LAN IP address (e.g., `192.168.1.104`)
+4. Verify both machines are on the same network and can ping each other
+5. Check firewall rules allow TCP/UDP communication on required ports
 
 ### Controller Hostname Unreachable
 
