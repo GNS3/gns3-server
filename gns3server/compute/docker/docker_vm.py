@@ -929,7 +929,39 @@ class DockerVM(BaseNode):
             else:
                 out.feed_eof()
                 await ws.close()
+                # Check if container has exited when Docker attach WebSocket closes
+                await self._check_container_state()
                 break
+
+    async def _check_container_state(self):
+        """
+        Check if the container has exited and notify the frontend if needed.
+        This is called when the Docker attach WebSocket closes unexpectedly.
+        """
+        try:
+            state = await self._get_container_state()
+            if state == "exited" and self.status == "started":
+                log.warning(f"Docker container '{self.name}' has exited")
+                # Get container exit code and logs for debugging
+                try:
+                    container_info = await self.manager.query("GET", f"containers/{self._cid}/json")
+                    exit_code = container_info["State"].get("ExitCode", "unknown")
+                    logdata = await self._get_log()
+                    self.project.emit(
+                        "log.error",
+                        {"message": f"Docker container '{self.name}' has exited with code {exit_code}\n{logdata}"},
+                    )
+                except DockerError as e:
+                    log.error(f"Could not get container exit information: {e}")
+                    self.project.emit(
+                        "log.error",
+                        {"message": f"Docker container '{self.name}' has exited"},
+                    )
+                # Clean up the stopped container
+                await self.stop()
+        except DockerError:
+            # Container might have been removed, ignore
+            pass
 
     async def reset_console(self):
         """
