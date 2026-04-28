@@ -17,8 +17,9 @@
 
 from . import Category, TemplateBase
 from ...common import ConsoleType, AuxType, CustomAdapter
+from gns3server.utils.hostname import is_rfc1123_hostname_valid
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional, List
 
 
@@ -28,6 +29,13 @@ class DockerTemplate(TemplateBase):
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "docker_guest"
     image: str = Field(..., description="Docker image name")
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None and not is_rfc1123_hostname_valid(v):
+            raise ValueError(f"'{v}' is an invalid name for a Docker template. Names must comply with RFC 1123 hostname rules: only letters, digits, and hyphens are allowed, and cannot start or end with a hyphen.")
+        return v
     adapters: Optional[int] = Field(1, ge=0, le=100, description="Number of adapters")
     mac_address: Optional[str] = Field("", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$")
     start_command: Optional[str] = Field("", description="Docker CMD entry")

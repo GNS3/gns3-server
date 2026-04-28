@@ -26,8 +26,9 @@ from gns3server.schemas.compute.qemu_nodes import (
     QemuProcessPriority,
     CustomAdapter,
 )
+from gns3server.utils.hostname import is_rfc1123_hostname_valid
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional, List
 
 
@@ -37,6 +38,13 @@ class QemuTemplate(TemplateBase):
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "qemu_guest"
     qemu_path: Optional[str] = Field("", description="Qemu executable path")
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None and not is_rfc1123_hostname_valid(v):
+            raise ValueError(f"'{v}' is an invalid name for a Qemu template. Names must comply with RFC 1123 hostname rules: only letters, digits, and hyphens are allowed, and cannot start or end with a hyphen.")
+        return v
     platform: Optional[QemuPlatform] = Field(QemuPlatform.x86_64, description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
