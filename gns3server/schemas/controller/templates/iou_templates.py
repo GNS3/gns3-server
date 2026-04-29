@@ -17,8 +17,9 @@
 
 from . import Category, TemplateBase
 from gns3server.schemas.compute.iou_nodes import ConsoleType
+from gns3server.utils.hostname import is_ios_hostname_valid
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional
 
 
@@ -28,6 +29,13 @@ class IOUTemplate(TemplateBase):
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
     path: str = Field(..., description="Path of IOU executable")
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None and not is_ios_hostname_valid(v):
+            raise ValueError(f"'{v}' is an invalid name for an IOU template. Names must start with a letter and contain only letters, digits, and hyphens.")
+        return v
     ethernet_adapters: Optional[int] = Field(2, ge=0, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, ge=0, description="Number of serial adapters")
     ram: Optional[int] = Field(1024, gt=0, description="Amount of RAM in MB")
