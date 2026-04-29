@@ -198,7 +198,7 @@ class TestTemplateRoutes:
 
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,
-                  "name": "qemu-template",
+                  "name": "QEMU_TEMPLATE",
                   "compute_id": "local",
                   "hda_disk_image": "image1.qcow2",
                   "hdb_disk_image": "image2.qcow2",
@@ -736,7 +736,7 @@ class TestDockerTemplate:
 
     async def test_docker_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "docker-template",
+        params = {"name": "Docker template",
                   "compute_id": "local",
                   "image": "gns3/endhost:latest",
                   "template_type": "docker"}
@@ -759,7 +759,7 @@ class TestDockerTemplate:
                              "environment": "",
                              "extra_hosts": "",
                              "image": "gns3/endhost:latest",
-                             "name": "docker-template",
+                             "name": "Docker template",
                              "start_command": "",
                              "symbol": unittest.mock.ANY,
                              "custom_adapters": []}
@@ -772,7 +772,7 @@ class TestQemuTemplate:
 
     async def test_qemu_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "qemu-template",
+        params = {"name": "Qemu template",
                   "compute_id": "local",
                   "platform": "i386",
                   "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
@@ -813,7 +813,7 @@ class TestQemuTemplate:
                                  "kernel_image": "",
                                  "linked_clone": True,
                                  "mac_address": "",
-                                 "name": "qemu-template",
+                                 "name": "Qemu template",
                                  "on_close": "power_off",
                                  "options": "",
                                  "platform": "i386",
@@ -1117,7 +1117,7 @@ class TestImageAssociationWithTemplate:
                         "qemu",
                         {
                             "template_id": "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
-                            "name": "qemu-template",
+                            "name": "Qemu template",
                             "compute_id": "local",
                             "platform": "i386",
                             "hda_disk_image": "<replace_image>",
@@ -1280,7 +1280,7 @@ class TestImageAssociationWithTemplate:
             tmpdir: str,
     ) -> None:
 
-        params = {"name": "qemu-template",
+        params = {"name": "Qemu template",
                   "version": "1.0",
                   "compute_id": "local",
                   "platform": "i386",
@@ -1306,7 +1306,7 @@ class TestImageAssociationWithTemplate:
 
     async def test_template_create_with_non_existing_image(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "qemu-template-with-non-existing-image",
+        params = {"name": "Qemu template with non existing image",
                   "compute_id": "local",
                   "platform": "i386",
                   "hda_disk_image": "unkown_image.qcow2",

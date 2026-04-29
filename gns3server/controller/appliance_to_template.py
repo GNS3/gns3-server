@@ -20,8 +20,6 @@
 import logging
 log = logging.getLogger(__name__)
 
-from ..utils.hostname import to_rfc1123_hostname
-
 
 class ApplianceToTemplate:
     """
@@ -35,7 +33,7 @@ class ApplianceToTemplate:
 
         new_template = {
             "compute_id": server,
-            "name": to_rfc1123_hostname(appliance_config["name"]),
+            "name": appliance_config["name"],
         }
 
         if version:
