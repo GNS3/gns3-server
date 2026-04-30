@@ -28,6 +28,7 @@ import subprocess
 import os
 import re
 
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio import wait_for_file_creation
@@ -667,7 +668,7 @@ class DockerVM(BaseNode):
                             log.error(line)
                         raise DockerError(logdata)
 
-            if self.console_type == "telnet":
+            if self.console_type in ("telnet", "ssh"):
                 await self._start_console()
             elif self.console_type == "http" or self.console_type == "https":
                 await self._start_http()
@@ -702,14 +703,19 @@ class DockerVM(BaseNode):
             )
         except OSError as e:
             raise DockerError(f"Could not start auxiliary console process: {e}")
-        server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
+        if self.aux_type == "telnet":
+            server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
+            transport = "Telnet"
+        else:
+            server = AsyncioSSHServer(reader=process.stdout, writer=process.stdin)
+            transport = "SSH"
         try:
             self._telnet_servers.append(await server.start(self._manager.port_manager.console_host, self.aux))
         except OSError as e:
             raise DockerError(
-                f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.aux}: {e}"
+                f"Could not start {transport} server on socket {self._manager.port_manager.console_host}:{self.aux}: {e}"
             )
-        log.debug(f"Docker container '{self.name}' started listen for auxiliary telnet on {self.aux}")
+        log.debug(f"Docker container '{self.name}' started listen for auxiliary {self.aux_type} on {self.aux}")
 
     async def _fix_permissions(self):
         """
@@ -872,7 +878,7 @@ class DockerVM(BaseNode):
 
     async def _start_console(self):
         """
-        Starts streaming the console via telnet
+        Starts streaming the console via telnet or ssh
         """
 
         class InputStream:
@@ -889,18 +895,23 @@ class DockerVM(BaseNode):
 
         output_stream = asyncio.StreamReader()
         input_stream = InputStream()
-        telnet = AsyncioTelnetServer(
-            reader=output_stream,
-            writer=input_stream,
-            echo=True,
-            naws=True,
-            window_size_changed_callback=self._window_size_changed_callback,
-        )
+        if self.console_type == "telnet":
+            telnet = AsyncioTelnetServer(
+                reader=output_stream,
+                writer=input_stream,
+                echo=True,
+                naws=True,
+                window_size_changed_callback=self._window_size_changed_callback,
+            )
+            transport = "Telnet"
+        else:
+            telnet = AsyncioSSHServer(reader=output_stream, writer=input_stream)
+            transport = "SSH"
         try:
             self._telnet_servers.append(await telnet.start(self._manager.port_manager.console_host, self.console))
         except OSError as e:
             raise DockerError(
-                f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"
+                f"Could not start {transport} server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"
             )
 
         self._console_websocket = await self.manager.websocket_query(
@@ -935,6 +946,9 @@ class DockerVM(BaseNode):
         """
         Reset the console.
         """
+
+        if self.console_type not in ("telnet", "ssh"):
+            return
 
         if self._console_websocket:
             await self._console_websocket.close()

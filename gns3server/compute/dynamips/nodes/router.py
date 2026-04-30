@@ -80,7 +80,9 @@ class Router(BaseNode):
             raise DynamipsError(f"{name} is an invalid name to create a Dynamips node")
 
         super().__init__(
-            name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type
+            name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type,
+            wrap_console=(console_type == "ssh"),
+            wrap_aux=(aux_type == "ssh"),
         )
 
         self._working_directory = os.path.join(
@@ -248,7 +250,10 @@ class Router(BaseNode):
             )
 
             if self._console is not None:
-                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._console}')
+                # For SSH console, tell Dynamips to listen on the internal port so that
+                # the AsyncioSSHServer proxy can wrap it on the external console port.
+                con_port = self._internal_console_port if self._wrap_console and self._internal_console_port else self._console
+                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
 
             if self.aux is not None:
                 await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self.aux}')
@@ -327,6 +332,12 @@ class Router(BaseNode):
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy="hash", delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
+        if self._console_type == "ssh":
+            try:
+                await self.start_wrap_console()
+            except OSError as e:
+                raise DynamipsError(f"Could not start SSH Dynamips console {e}")
+
     async def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
@@ -362,6 +373,7 @@ class Router(BaseNode):
             self._memory_watcher.close()
             self._memory_watcher = None
         await self.save_configs()
+        await self.stop_wrap_console()
 
     async def reload(self):
         """
@@ -1017,8 +1029,21 @@ class Router(BaseNode):
 
         self.console_type = console_type
 
-        if self._console and console_type == "telnet":
-            await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._console}')
+        if self._console:
+            if console_type == "ssh":
+                # Switching to SSH: ensure an internal port is allocated and redirect Dynamips to it.
+                self._wrap_console = True
+                if self._internal_console_port is None:
+                    self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
+                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._internal_console_port}')
+            elif console_type == "telnet":
+                # Switching to telnet: stop SSH wrapper if running and redirect Dynamips to external port.
+                await self.stop_wrap_console()
+                self._wrap_console = False
+                if self._internal_console_port is not None:
+                    self._manager.port_manager.release_tcp_port(self._internal_console_port, self._project)
+                    self._internal_console_port = None
+                await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self._console}')
 
     async def set_aux(self, aux):
         """
@@ -1047,8 +1072,20 @@ class Router(BaseNode):
 
         self.aux_type = aux_type
 
-        if self._aux and aux_type == "telnet":
-            await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self._aux}')
+        if self._aux:
+            if aux_type == "ssh":
+                # Switching to SSH: ensure an internal aux port is allocated and redirect Dynamips to it.
+                self._wrap_aux = True
+                if self._internal_aux_port is None:
+                    self._internal_aux_port = self._manager.port_manager.get_free_tcp_port(self._project)
+                await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self._internal_aux_port}')
+            elif aux_type == "telnet":
+                # Switching to telnet: clear SSH wrapper state and redirect Dynamips to external port.
+                self._wrap_aux = False
+                if self._internal_aux_port is not None:
+                    self._manager.port_manager.release_tcp_port(self._internal_aux_port, self._project)
+                    self._internal_aux_port = None
+                await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self._aux}')
 
     async def reset_console(self):
         """

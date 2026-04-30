@@ -55,6 +55,7 @@ class ConsoleType(str, Enum):
 
     vnc = "vnc"
     telnet = "telnet"
+    ssh = "ssh"
     http = "http"
     https = "https"
     spice = "spice"
@@ -68,4 +69,5 @@ class AuxType(str, Enum):
     """
 
     telnet = "telnet"
+    ssh = "ssh"
     none = "none"

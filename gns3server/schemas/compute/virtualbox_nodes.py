@@ -28,6 +28,7 @@ class VirtualBoxConsoleType(str, Enum):
     """
 
     telnet = "telnet"
+    ssh = "ssh"
     none = "none"
 
 

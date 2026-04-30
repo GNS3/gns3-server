@@ -28,6 +28,7 @@ class ConsoleType(str, Enum):
     """
 
     telnet = "telnet"
+    ssh = "ssh"
     none = "none"
 
 
