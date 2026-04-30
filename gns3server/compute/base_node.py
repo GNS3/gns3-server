@@ -584,7 +584,10 @@ class BaseNode:
         done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:
             if task.exception():
-                log.warning(f"Exception while forwarding WebSocket data to Telnet server {task.exception()}")
+                log.warning(
+                    f"Exception while forwarding WebSocket data to "
+                    f"{self._console_type.upper()} server: {task.exception()}"
+                )
         for task in pending:
             task.cancel()
 
