@@ -332,11 +332,11 @@ class Router(BaseNode):
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy="hash", delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
-        if self._console_type == "ssh":
+        if self._wrap_console or self._wrap_aux:
             try:
                 await self.start_wrap_console()
             except OSError as e:
-                raise DynamipsError(f"Could not start SSH Dynamips console {e}")
+                raise DynamipsError(f"Could not start Dynamips console wrapper: {e}")
 
     async def _termination_callback(self, returncode):
         """

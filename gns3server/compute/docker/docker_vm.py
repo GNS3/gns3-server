@@ -715,7 +715,7 @@ class DockerVM(BaseNode):
             raise DockerError(
                 f"Could not start {transport} server on socket {self._manager.port_manager.console_host}:{self.aux}: {e}"
             )
-        log.debug(f"Docker container '{self.name}' started listen for auxiliary {self.aux_type} on {self.aux}")
+        log.debug(f"Docker container '{self.name}' started listening for auxiliary {self.aux_type} on {self.aux}")
 
     async def _fix_permissions(self):
         """
