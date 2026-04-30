@@ -66,7 +66,7 @@ class AsyncioSSHServer:
         self._broadcast_task = None
         self._server = None
         self._server_handle = None
-        self._host_key = asyncssh.generate_private_key("ssh-rsa")
+        self._host_key = asyncssh.generate_private_key("ssh-ed25519")
 
     async def start(self, host, port):
         if self._server is not None:
