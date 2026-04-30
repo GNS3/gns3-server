@@ -256,7 +256,8 @@ class Router(BaseNode):
                 await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
 
             if self.aux is not None:
-                await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self.aux}')
+                aux_port = self._internal_aux_port if self._wrap_aux and self._internal_aux_port else self.aux
+                await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {aux_port}')
 
             # get the default base MAC address
             mac_addr = await self._hypervisor.send(f'{self._platform} get_mac_addr "{self._name}"')
@@ -1012,7 +1013,8 @@ class Router(BaseNode):
         """
 
         self.console = console
-        await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {self.console}')
+        con_port = self._internal_console_port if self._wrap_console and self._internal_console_port else self.console
+        await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
 
     async def set_console_type(self, console_type):
         """
@@ -1053,7 +1055,8 @@ class Router(BaseNode):
         """
 
         self.aux = aux
-        await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {aux}')
+        aux_port = self._internal_aux_port if self._wrap_aux and self._internal_aux_port else self.aux
+        await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {aux_port}')
 
     async def set_aux_type(self, aux_type):
         """
