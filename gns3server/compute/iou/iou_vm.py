@@ -367,7 +367,7 @@ class IOUVM(BaseNode):
         """
 
         if not is_ios_hostname_valid(new_name):
-            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'")
+            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer.")
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)

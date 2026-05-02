@@ -188,7 +188,7 @@ class DockerVM(BaseNode):
         """
 
         if not is_rfc1123_hostname_valid(new_name):
-            raise DockerError(f"'{new_name}' is an invalid name to rename Docker container '{self._name}'")
+            raise DockerError(f"'{new_name}' is an invalid name to rename Docker container '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen.")
         super(DockerVM, DockerVM).name.__set__(self, new_name)
 
     @property
