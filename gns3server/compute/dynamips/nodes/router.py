@@ -1682,7 +1682,7 @@ class Router(BaseNode):
         """
 
         if not is_ios_hostname_valid(new_name):
-            raise DynamipsError(f"{new_name} is an invalid name to rename router '{self._name}'")
+            raise DynamipsError(f"{new_name} is an invalid name to rename router '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer.")
 
         await self._hypervisor.send(f'vm rename "{self._name}" "{new_name}"')
 
