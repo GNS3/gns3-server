@@ -52,7 +52,7 @@ async def web_ui(file_path: str):
 
     static = get_resource(file_path)
 
-    if static is None or not os.path.exists(static):
+    if static is None or not os.path.exists(static) or os.path.isdir(static):
         static = get_resource(os.path.join("static", "web-ui", "index.html"))
 
     if static is None:

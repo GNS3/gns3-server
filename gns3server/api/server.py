@@ -73,7 +73,7 @@ def get_application() -> FastAPI:
 
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
-    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')]), name="static")
+    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')], html=True), name="static")
     application.mount("/v3/compute", compute_api, name="compute")
 
     return application
