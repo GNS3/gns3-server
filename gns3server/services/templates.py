@@ -281,6 +281,14 @@ class TemplatesService:
         if not db_template:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
 
+        # Check for duplicate name (excluding current template)
+        if template_update.name is not None:
+            existing_template = await self._templates_repo.get_template_by_name_and_version(
+                template_update.name, db_template.version
+            )
+            if existing_template and existing_template.template_id != template_id:
+                raise ControllerError(f"A template with name '{template_update.name}' already exists")
+
         try:
             # validate the update settings
             update_settings = jsonable_encoder(template_update, exclude_unset=True)
