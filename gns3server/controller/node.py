@@ -539,6 +539,12 @@ class Node:
                     del data[k]
                     del self._properties[k]  # We send the file only one time
         data["name"] = self._name
+
+        # For remote computes, convert absolute image paths to relative paths
+        # The remote compute will search for the image in its own configured directories
+        if self._compute.id != "local" and "path" in data and os.path.isabs(data["path"]):
+            data["path"] = os.path.basename(data["path"])
+
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
