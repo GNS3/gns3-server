@@ -539,6 +539,25 @@ class Node:
                     del data[k]
                     del self._properties[k]  # We send the file only one time
         data["name"] = self._name
+
+        # For remote computes, convert absolute image paths to relative paths
+        # The remote compute will search for the image in its own configured directories
+        if self._compute.id != "local":
+            # Image path fields for various node types
+            image_path_fields = {
+                # Common fields (IOU, Docker, etc.)
+                "path", "image",
+                # QEMU-specific fields
+                "hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image",
+                "cdrom_image", "bios_image", "initrd", "kernel_image",
+                # VMware-specific fields
+                "vmx_path",
+            }
+
+            for field in image_path_fields:
+                if field in data and data[field] and os.path.isabs(data[field]):
+                    data[field] = os.path.basename(data[field])
+
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
