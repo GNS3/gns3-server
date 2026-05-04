@@ -75,17 +75,30 @@ if os.path.isabs(orig_path):
 
 ### 实现方案
 
-修改控制器端的 `_node_data()` 方法，对远程计算节点发送相对路径（仅文件名）而非绝对路径。
+修改控制器端的 `_node_data()` 方法，对远程计算节点发送相对路径（仅文件名）而非绝对路径。此修复适用于所有节点类型（IOU、QEMU、Dynamips、VMware）。
 
 **文件**: `gns3server/controller/node.py`
 
-**修改位置**: 第541-546行
+**修改位置**: 第541-558行
 
 ```python
 # For remote computes, convert absolute image paths to relative paths
 # The remote compute will search for the image in its own configured directories
-if self._compute.id != "local" and "path" in data and os.path.isabs(data["path"]):
-    data["path"] = os.path.basename(data["path"])
+if self._compute.id != "local":
+    # Image path fields for various node types
+    image_path_fields = {
+        # Common fields (IOU, Docker, etc.)
+        "path", "image",
+        # QEMU-specific fields
+        "hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image",
+        "cdrom_image", "bios_image", "initrd", "kernel_image",
+        # VMware-specific fields
+        "vmx_path",
+    }
+
+    for field in image_path_fields:
+        if field in data and data[field] and os.path.isabs(data[field]):
+            data[field] = os.path.basename(data[field])
 ```
 
 ### 工作原理
@@ -137,13 +150,26 @@ except ComputeConflictError as e:
 
 ### 场景 1：镜像已存在于计算节点
 
+**IOU 节点：**
 1. 控制器创建节点，发送相对路径 `i86bi-linux-l3-adventerprisek9-15.4.1T.bin`
 2. 计算节点在 `~/GNS3/images/IOU/` 中找到镜像
 3. 节点创建成功 ✅
 
+**QEMU 节点：**
+1. 控制器创建节点，发送相对路径 `vios-adventerprisek9-m.qcow2`
+2. 计算节点在 `~/GNS3/images/QEMU/` 中找到镜像
+3. 节点创建成功 ✅
+
 ### 场景 2：镜像不存在于计算节点
 
+**IOU 节点：**
 1. 控制器创建节点，发送相对路径 `i86bi-linux-l3-adventerprisek9-15.4.1T.bin`
+2. 计算节点未找到镜像，返回 `ImageMissingError`
+3. 控制器自动上传镜像到计算节点
+4. 重试创建，节点创建成功 ✅
+
+**QEMU 节点：**
+1. 控制器创建节点，发送相对路径 `vios-adventerprisek9-m.qcow2`
 2. 计算节点未找到镜像，返回 `ImageMissingError`
 3. 控制器自动上传镜像到计算节点
 4. 重试创建，节点创建成功 ✅
@@ -156,8 +182,7 @@ except ComputeConflictError as e:
 
 ## 当前状态
 
-- ✅ IOU 节点已修复
-- ⏳ 其他节点类型（QEMU, Dynamips, VMware）需要类似的修复
+- ✅ 所有节点类型已修复（IOU, QEMU, Dynamips, VMware）
 
 ## 相关文件
 
