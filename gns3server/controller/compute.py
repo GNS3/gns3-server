@@ -375,6 +375,11 @@ class Compute:
                 log.info(f"Connecting to compute '{self._id}'")
                 response = await self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
+                # Update connection status and notify UI
+                self._connected = False
+                self._last_error = str(e)
+                self._controller.notification.controller_emit("compute.updated", self.asdict())
+
                 if report_failed_connection:
                     raise
                 log.warning(f"Cannot connect to compute '{self._id}': {e}")

@@ -1029,6 +1029,20 @@ class Project:
             except ControllerError as e:
                 # ignore missing images or other conflicts when deleting a project
                 log.warning(f"Conflict while deleting project: {e}")
+
+        # Check if all computes used by this project are connected before deletion
+        disconnected_computes = []
+        for compute in self._project_created_on_compute:
+            if not compute.connected:
+                disconnected_computes.append(compute)
+
+        if disconnected_computes:
+            compute_names = ", ".join([f"'{c.name}'" for c in disconnected_computes])
+            raise ControllerForbiddenError(
+                f"Cannot delete project '{self.name}': {len(disconnected_computes)} compute(s) are disconnected: {compute_names}. "
+                f"Please fix the connection or delete the project manually on those computes."
+            )
+
         await self.delete_on_computes()
         await self.close()
 
