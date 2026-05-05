@@ -162,6 +162,7 @@ class QemuConsoleType(str, Enum):
     """Qemu console type enum"""
 
     telnet = 'telnet'
+    ssh = 'ssh'
     vnc = 'vnc'
     spice = 'spice'
     spice_agent = 'spice+agent'
@@ -279,6 +280,7 @@ class DockerConsoleType(str, Enum):
     """Docker console type enum"""
 
     telnet = 'telnet'
+    ssh = 'ssh'
     vnc = 'vnc'
     http = 'http'
     https = 'https'

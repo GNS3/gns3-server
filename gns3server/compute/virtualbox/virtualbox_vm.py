@@ -30,6 +30,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.serial import asyncio_open_serial
 from gns3server.utils.asyncio import locking
@@ -1011,20 +1012,25 @@ class VirtualBoxVM(BaseNode):
         Starts remote console support for this VM.
         """
 
-        if self.console and self.console_type == "telnet":
+        if self.console and self.console_type in ("telnet", "ssh"):
             pipe_name = self._get_pipe_name()
             try:
                 self._remote_pipe = await asyncio_open_serial(pipe_name)
             except OSError as e:
                 raise VirtualBoxError(f"Could not open serial pipe '{pipe_name}': {e}")
-            server = AsyncioTelnetServer(reader=self._remote_pipe, writer=self._remote_pipe, binary=True, echo=True)
+            if self.console_type == "telnet":
+                server = AsyncioTelnetServer(reader=self._remote_pipe, writer=self._remote_pipe, binary=True, echo=True)
+                transport = "Telnet"
+            else:
+                server = AsyncioSSHServer(reader=self._remote_pipe, writer=self._remote_pipe)
+                transport = "SSH"
             try:
                 self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 self.project.emit(
                     "log.warning",
                     {
-                        "message": f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"
+                        "message": f"Could not start {transport} server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"
                     },
                 )
 

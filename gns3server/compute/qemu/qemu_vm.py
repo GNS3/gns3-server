@@ -1922,7 +1922,7 @@ class QemuVM(BaseNode):
 
     def _console_options(self):
 
-        if self._console_type == "telnet" and self._wrap_console:
+        if self._console_type in ("telnet", "ssh") and self._wrap_console:
             return self._serial_options(self._internal_console_port, self.console)
         elif self._console_type == "vnc":
             return self._vnc_options(self.console)
@@ -1938,7 +1938,7 @@ class QemuVM(BaseNode):
         if self._aux_type != "none" and self._aux_type == self._console_type:
             raise QemuError(f"Auxiliary console type {self._aux_type} cannot be the same as console type")
 
-        if self._aux_type == "telnet" and self._wrap_aux:
+        if self._aux_type in ("telnet", "ssh") and self._wrap_aux:
             return self._serial_options(self._internal_aux_port, self.aux)
         elif self._aux_type == "vnc":
             return self._vnc_options(self.aux)
@@ -2663,7 +2663,7 @@ class QemuVM(BaseNode):
             await self._clear_save_vm_stated()
         else:
             command.extend(await self._saved_state_option())
-        if self._console_type == "telnet":
+        if self._console_type in ("telnet", "ssh"):
             command.extend(await self._disable_graphics())
         if self._tpm:
             command.extend(self._tpm_options())

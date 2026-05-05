@@ -633,7 +633,7 @@ class Node:
         Reset the console
         """
 
-        if self._console and self._console_type == "telnet":
+        if self._console and self._console_type in ("telnet", "ssh"):
             try:
                 await self.post("/console/reset", timeout=240)
             except asyncio.TimeoutError:

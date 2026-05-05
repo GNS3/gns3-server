@@ -61,6 +61,7 @@ class QemuConsoleType(str, Enum):
 
     vnc = "vnc"
     telnet = "telnet"
+    ssh = "ssh"
     spice = "spice"
     spice_agent = "spice+agent"
     none = "none"

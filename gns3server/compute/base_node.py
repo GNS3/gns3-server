@@ -23,12 +23,14 @@ import tempfile
 import psutil
 import platform
 import re
+import asyncssh
 
 from fastapi import WebSocketDisconnect
 from gns3server.utils.interfaces import interfaces
 from gns3server.compute.compute_error import ComputeError
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor, locking
+from ..utils.asyncio.ssh_server import AsyncioSSHServer
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.compute.ubridge.hypervisor import Hypervisor
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
@@ -54,8 +56,8 @@ class BaseNode:
     :param aux: auxiliary console TCP port
     :param aux_type: auxiliary console type
     :param linked_clone: The node base image is duplicate/overlay (Each node data are independent)
-    :param wrap_console: The console is wrapped using AsyncioTelnetServer
-    :param wrap_aux: The auxiliary console is wrapped using AsyncioTelnetServer
+    :param wrap_console: The console is wrapped using a proxy transport server
+    :param wrap_aux: The auxiliary console is wrapped using a proxy transport server
     """
 
     def __init__(
@@ -409,10 +411,10 @@ class BaseNode:
 
         return vnc_console_start_port_range, vnc_console_end_port_range
 
-    async def _wrap_telnet_proxy(self, internal_port, external_port):
+    async def _wrap_console_proxy(self, internal_port, external_port, console_type):
         """
-        Start a telnet proxy for the console allowing multiple telnet clients
-        to be connected at the same time
+        Start a console proxy allowing multiple external clients to be
+        connected at the same time.
         """
 
         remaining_trial = 60
@@ -420,7 +422,7 @@ class BaseNode:
             try:
                 (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
                     host="127.0.0.1",
-                    port=self._internal_console_port
+                    port=internal_port
                 )
                 break
             except (OSError, ConnectionRefusedError) as e:
@@ -428,40 +430,46 @@ class BaseNode:
                     raise e
             await asyncio.sleep(0.1)
             remaining_trial -= 1
-        await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
-        server = AsyncioTelnetServer(
-            reader=self._wrap_console_reader,
-            writer=self._wrap_console_writer,
-            binary=True,
-            echo=True
-        )
+        if console_type == "telnet":
+            await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
+            server = AsyncioTelnetServer(
+                reader=self._wrap_console_reader,
+                writer=self._wrap_console_writer,
+                binary=True,
+                echo=True
+            )
+        elif console_type == "ssh":
+            server = AsyncioSSHServer(reader=self._wrap_console_reader, writer=self._wrap_console_writer)
+        else:
+            raise NodeError(f"Console wrapper does not support type {console_type}")
+
         # warning: this will raise OSError exception if there is a problem...
-        telnet_server = await server.start(self._manager.port_manager.console_host, external_port)
-        self._wrapper_telnet_servers.append(telnet_server)
+        proxy_server = await server.start(self._manager.port_manager.console_host, external_port)
+        self._wrapper_telnet_servers.append(proxy_server)
 
     async def start_wrap_console(self):
         """
-        Start a Telnet proxy servers for the console and auxiliary console allowing multiple telnet clients
+        Start console proxy servers for the console and auxiliary console allowing multiple clients
         to be connected at the same time
         """
 
-        if self._wrap_console and self._console_type == "telnet":
-            await self._wrap_telnet_proxy(self._internal_console_port, self.console)
+        if self._wrap_console and self._console_type in ("telnet", "ssh"):
+            await self._wrap_console_proxy(self._internal_console_port, self.console, self._console_type)
             log.info(
-                f"New Telnet proxy server for console started "
+                f"New {self._console_type.upper()} proxy server for console started "
                 f"(internal port = {self._internal_console_port}, external port = {self.console})"
             )
 
-        if self._wrap_aux and self._aux_type == "telnet":
-            await self._wrap_telnet_proxy(self._internal_aux_port, self.aux)
+        if self._wrap_aux and self._aux_type in ("telnet", "ssh"):
+            await self._wrap_console_proxy(self._internal_aux_port, self.aux, self._aux_type)
             log.info(
-                f"New Telnet proxy server for auxiliary console started "
+                f"New {self._aux_type.upper()} proxy server for auxiliary console started "
                 f"(internal port = {self._internal_aux_port}, external port = {self.aux})"
             )
 
     async def stop_wrap_console(self):
         """
-        Stops the telnet proxy servers.
+        Stops the console proxy servers.
         """
 
         if self._wrap_console_writer:
@@ -474,7 +482,7 @@ class BaseNode:
 
     async def reset_wrap_console(self):
         """
-        Reset the wrap console (restarts the Telnet proxy)
+        Reset the wrap console (restarts the console proxy)
         """
 
         await self.stop_wrap_console()
@@ -493,27 +501,66 @@ class BaseNode:
         )
 
         if self.status != "started":
-            raise NodeError(f"Node {self.name} is not started")
+            await websocket.close(code=1000)
+            log.warning(f"Cannot open console WebSocket: node {self.name} is not started")
+            return
 
-        if self._console_type != "telnet":
-            raise NodeError(f"Node {self.name} console type is not telnet")
+        if self._console_type not in ("telnet", "ssh"):
+            await websocket.close(code=1000)
+            log.warning(
+                f"Cannot open console WebSocket: node {self.name} console type '{self._console_type}' "
+                f"is not supported"
+            )
+            return
+
+        telnet_reader = None
+        telnet_writer = None
+        ssh_connection = None
+        ssh_process = None
 
         try:
             host = self._manager.port_manager.console_host
-            port = self.console
-            (telnet_reader, telnet_writer) = await asyncio.open_connection(host, port)
-            log.info(f"Connected to local Telnet server {host}:{port}")
-        except ConnectionError as e:
-            raise NodeError(f"Cannot connect to node {self.name} telnet server: {e}")
+            if self._console_type == "ssh":
+                # For SSH consoles (wrapped or not), connect to the external SSH port via an
+                # SSH client. The AsyncioSSHServer on that port handles multi-client broadcasting
+                # to/from the node's process streams. Connecting directly to _internal_console_port
+                # would conflict with the exclusive connection already held by the SSH proxy.
+                port = self.console
+                ssh_connection = await asyncssh.connect(
+                    host,
+                    port=port,
+                    username="gns3",
+                    known_hosts=None,
+                    encoding=None,
+                )
+                ssh_process = await ssh_connection.create_process(encoding=None, term_type="xterm")
+                telnet_reader = ssh_process.stdout
+                telnet_writer = ssh_process.stdin
+            else:
+                port = self.console
+                (telnet_reader, telnet_writer) = await asyncio.open_connection(host, port)
+
+            log.info(f"Connected to local console stream {host}:{port} (console type={self._console_type})")
+        except (ConnectionError, OSError, asyncssh.Error) as e:
+            await websocket.close(code=1000)
+            log.warning(f"Cannot connect to node {self.name} console server: {e}")
+            return
 
         async def ws_forward(telnet_writer):
 
             try:
                 while True:
-                    data = await websocket.receive_text()
-                    if data:
-                        telnet_writer.write(data.encode())
-                        await telnet_writer.drain()
+                    msg = await websocket.receive()
+                    if msg["type"] == "websocket.disconnect":
+                        break
+                    if "text" in msg and msg["text"]:
+                        data = msg["text"].encode()
+                    elif "bytes" in msg and msg["bytes"]:
+                        data = msg["bytes"]
+                    else:
+                        continue
+                    telnet_writer.write(data)
+                    await telnet_writer.drain()
             except WebSocketDisconnect:
                 log.info(
                     f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute"
@@ -537,9 +584,23 @@ class BaseNode:
         done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:
             if task.exception():
-                log.warning(f"Exception while forwarding WebSocket data to Telnet server {task.exception()}")
+                log.warning(
+                    f"Exception while forwarding WebSocket data to "
+                    f"{self._console_type.upper()} server: {task.exception()}"
+                )
         for task in pending:
             task.cancel()
+
+        if ssh_connection:
+            if ssh_process:
+                ssh_process.close()
+            ssh_connection.close()
+            await ssh_connection.wait_closed()
+
+        if telnet_writer and hasattr(telnet_writer, "close"):
+            telnet_writer.close()
+            if hasattr(telnet_writer, "wait_closed"):
+                await telnet_writer.wait_closed()
 
     async def start_vnc_websocket_console(self, websocket):
         """
@@ -555,10 +616,14 @@ class BaseNode:
 
         if self.status != "started":
             await websocket.close(code=1000)
-            raise NodeError(f"Node {self.name} is not started")
+            log.warning(f"Cannot open VNC WebSocket: node {self.name} is not started")
+            return
         if self._console_type != "vnc":
             await websocket.close(code=1000)
-            raise NodeError(f"Node {self.name} console type is not vnc")
+            log.warning(
+                f"Cannot open VNC WebSocket: node {self.name} console type '{self._console_type}' is not vnc"
+            )
+            return
 
         try:
             vnc_reader, vnc_writer = await asyncio.open_connection(
@@ -568,7 +633,8 @@ class BaseNode:
             log.info(f"Connected to VNC server {self._manager.port_manager.console_host}:{self.console}")
         except ConnectionError as e:
             await websocket.close(code=1000)
-            raise NodeError(f"Cannot connect to node {self.name} VNC server: {e}")
+            log.warning(f"Cannot connect to node {self.name} VNC server: {e}")
+            return
 
         async def ws_forward(vnc_writer):
             # Browser → VNC: Forward binary WebSocket data to VNC server

@@ -88,6 +88,7 @@ class UDPPort(BaseModel):
 class CloudConsoleType(str, Enum):
 
     telnet = "telnet"
+    ssh = "ssh"
     vnc = "vnc"
     spice = "spice"
     http = "http"

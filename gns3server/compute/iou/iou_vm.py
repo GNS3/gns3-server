@@ -41,6 +41,7 @@ from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.asyncio import locking
@@ -643,19 +644,25 @@ class IOUVM(BaseNode):
 
     async def start_console(self):
         """
-        Start the Telnet server to provide console access.
+        Start the console server to provide console access.
         """
 
-        if self.console and self.console_type == "telnet":
-            server = AsyncioTelnetServer(
-                reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
-            )
+        if self.console and self.console_type in ("telnet", "ssh"):
+            if self.console_type == "telnet":
+                server = AsyncioTelnetServer(
+                    reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
+                )
+                error_prefix = "Telnet"
+            else:
+                server = AsyncioSSHServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin)
+                error_prefix = "SSH"
             try:
                 self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 await self.stop()
                 raise IOUError(
-                    "Could not start Telnet server on socket {}:{}: {}".format(
+                    "Could not start {} server on socket {}:{}: {}".format(
+                        error_prefix,
                         self._manager.port_manager.console_host, self.console, e
                     )
                 )
