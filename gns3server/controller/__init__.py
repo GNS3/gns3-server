@@ -842,7 +842,14 @@ class Controller:
         compute = self.get_compute(compute_id)
         for project in list(self._projects.values()):
             if project.name == "AUTOIDLEPC":
-                await project.delete()
+                try:
+                    await project.delete()
+                except ControllerForbiddenError as e:
+                    # Project couldn't be deleted due to disconnected computes
+                    log.warning(f"Could not delete AUTOIDLEPC project '{project.id}': {e}")
+                except ControllerError as e:
+                    log.warning(f"Error deleting AUTOIDLEPC project '{project.id}': {e}")
+                # Always remove from controller to allow creating a new one
                 self.remove_project(project)
         project = await self.add_project(name="AUTOIDLEPC")
         node = await project.add_node(
