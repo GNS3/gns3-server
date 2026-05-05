@@ -1031,10 +1031,19 @@ class Project:
                 log.warning(f"Conflict while deleting project: {e}")
 
         # Check if all computes used by this project are connected before deletion
+        # We need to check from the topology file because _project_created_on_compute
+        # gets reset during open()
         disconnected_computes = []
-        for compute in self._project_created_on_compute:
-            if not compute.connected:
-                disconnected_computes.append(compute)
+        for compute_id in self._computes:
+            try:
+                compute = self._controller.get_compute(compute_id)
+                if not compute.connected:
+                    disconnected_computes.append(compute)
+            except ControllerError:
+                # Compute doesn't exist anymore, consider it disconnected
+                log.warning(f"Compute '{compute_id}' not found in controller")
+                # We can't add it to disconnected_computes without the compute object
+                pass
 
         if disconnected_computes:
             compute_names = ", ".join([f"'{c.name}'" for c in disconnected_computes])
