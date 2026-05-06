@@ -1147,7 +1147,9 @@ class Project:
 
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
-                await self.controller.add_compute(**compute)
+                compute_id = compute.get("compute_id")
+                if compute_id not in self._controller._computes:
+                    await self.controller.add_compute(**compute)
 
             # Get all compute used in the project
             # used to allocate application IDs for IOU nodes.
