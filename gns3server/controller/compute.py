@@ -383,14 +383,16 @@ class Compute:
                 if report_failed_connection:
                     raise
                 log.warning(f"Cannot connect to compute '{self._id}': {e}")
-                # Try to reconnect after 5 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
+                # Try to reconnect if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
                     self._connection_failure += 1
-                    # After 5 failure we close the project using the compute to avoid sync issues
+                    # After 10 failures we close the project using the compute to avoid sync issues
                     if self._connection_failure == 10:
                         log.error(f"Could not connect to compute '{self._id}' after multiple attempts: {e}")
                         await self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(5, lambda: asyncio.ensure_future(self._try_reconnect()))
+                    # Exponential backoff: 5s, 10s, 20s, 40s, 80s, then cap at 300s
+                    delay = min(5 * (2 ** (self._connection_failure - 1)), 300)
+                    asyncio.get_event_loop().call_later(delay, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
             except web.HTTPNotFound:
                 raise ControllerNotFoundError(f"The server {self._id} is not a GNS3 server or it's a 1.X server")
