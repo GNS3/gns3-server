@@ -1184,6 +1184,16 @@ class Project:
                 if compute_id not in self._computes:
                     self._computes.append(compute_id)
 
+            # Check compute connectivity before creating nodes to avoid
+            # 120-second timeout when a remote compute is unreachable
+            disconnected = self._get_disconnected_computes()
+            if disconnected:
+                compute_names = ", ".join([f"'{c.name}'" for c in disconnected])
+                raise ControllerError(
+                    f"Cannot open project '{self.name}': {len(disconnected)} compute(s) are disconnected: {compute_names}. "
+                    f"Please check the connection and try again."
+                )
+
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
