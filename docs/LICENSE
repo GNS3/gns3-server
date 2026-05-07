@@ -1,6 +1,6 @@
 Creative Commons Attribution-ShareAlike 4.0 International
 
-Copyright (c) 2026 GNS3 Web UI Project
+Copyright (c) 2026 GNS3 Server Project
 
 =======================================================================
 
@@ -395,7 +395,7 @@ Creative Commons may be contacted at creativecommons.org.
 
 =======================================================================
 
-For the GNS3 Web UI documentation:
+For the GNS3 Server documentation:
 
 - Documentation License: CC BY-SA 4.0
 - Project License: GPLv3 (see root LICENSE file)
@@ -416,7 +416,7 @@ a derivative of the documentation, you must:
 1. **License your derivative work under CC BY-SA 4.0 or a compatible
    license** (such as GPLv3, which is compatible with CC BY-SA 4.0)
 
-2. **Attribute the original documentation** to the GNS3 Web UI Project
+2. **Attribute the original documentation** to the GNS3 Server Project
 
 3. **Indicate if you modified the documentation** and retain
    indications of previous modifications
