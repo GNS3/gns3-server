@@ -890,9 +890,8 @@ class Project:
         for compute in list(self._project_created_on_compute):
             try:
                 await compute.post(f"/projects/{self._id}/close", dont_connect=True)
-            # We don't care if a compute is down at this step
-            except (ComputeError, ControllerError, TimeoutError):
-                pass
+            except (ComputeError, ControllerError, TimeoutError) as e:
+                log.warning(f"Could not close project '{self._id}' on compute '{compute.id}': {e}")
         self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
@@ -1075,7 +1074,10 @@ class Project:
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                await compute.delete(f"/projects/{self._id}")
+                try:
+                    await compute.delete(f"/projects/{self._id}")
+                except (ComputeError, TimeoutError) as e:
+                    log.warning(f"Could not delete project '{self._id}' on compute '{compute.id}': {e}")
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
