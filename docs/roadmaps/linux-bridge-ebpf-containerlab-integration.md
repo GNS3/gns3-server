@@ -2,20 +2,11 @@
 
 ---
 
-**Copyright (C) 2025 GNS3 Technologies Inc.**
+**Copyright (C) 2026 GNS3 Technologies Inc.**
 
-This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).
 
-You are free to:
-- **Share** — copy and redistribute the material in any medium or format
-- **Adapt** — remix, transform, and build upon the material
-
-Under the following terms:
-- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
-- **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
-
-To view a copy of this license, visit:
-http://creativecommons.org/licenses/by-sa/4.0/
+For full license terms, see: [../LICENSE](../LICENSE)
 
 ---
 
