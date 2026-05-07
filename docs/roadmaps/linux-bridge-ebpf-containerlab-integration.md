@@ -1,5 +1,24 @@
 # GNS3 Linux Bridge + eBPF + Containerlab Integration Roadmap
 
+---
+
+**Copyright (C) 2025 GNS3 Technologies Inc.**
+
+This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+
+You are free to:
+- **Share** — copy and redistribute the material in any medium or format
+- **Adapt** — remix, transform, and build upon the material
+
+Under the following terms:
+- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
+
+To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-sa/4.0/
+
+---
+
 ## Executive Summary
 
 **Objective**: Migrate GNS3 from ubridge-based networking to a hybrid **Linux bridge + eBPF + Containerlab** architecture.
