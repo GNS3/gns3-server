@@ -890,9 +890,8 @@ class Project:
         for compute in list(self._project_created_on_compute):
             try:
                 await compute.post(f"/projects/{self._id}/close", dont_connect=True)
-            # We don't care if a compute is down at this step
-            except (ComputeError, ControllerError, TimeoutError):
-                pass
+            except (ComputeError, ControllerError, TimeoutError) as e:
+                log.warning(f"Could not close project '{self._id}' on compute '{compute.id}': {e}")
         self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
@@ -1023,34 +1022,22 @@ class Project:
 
     async def delete(self):
 
+        # Check compute connectivity before open() to avoid 120s timeout
+        # when remote computes are unreachable
+        disconnected = self._get_disconnected_computes()
+        if disconnected:
+            compute_names = ", ".join([f"'{c.name}'" for c in disconnected])
+            raise ControllerForbiddenError(
+                f"Cannot delete project '{self.name}': {len(disconnected)} compute(s) are disconnected: {compute_names}. "
+                f"Please fix the connection or delete the project manually on those computes."
+            )
+
         if self._status != "opened":
             try:
                 await self.open()
             except ControllerError as e:
                 # ignore missing images or other conflicts when deleting a project
                 log.warning(f"Conflict while deleting project: {e}")
-
-        # Check if all computes used by this project are connected before deletion
-        # We need to check from the topology file because _project_created_on_compute
-        # gets reset during open()
-        disconnected_computes = []
-        for compute_id in self._computes:
-            try:
-                compute = self._controller.get_compute(compute_id)
-                if not compute.connected:
-                    disconnected_computes.append(compute)
-            except ControllerError:
-                # Compute doesn't exist anymore, consider it disconnected
-                log.warning(f"Compute '{compute_id}' not found in controller")
-                # We can't add it to disconnected_computes without the compute object
-                pass
-
-        if disconnected_computes:
-            compute_names = ", ".join([f"'{c.name}'" for c in disconnected_computes])
-            raise ControllerForbiddenError(
-                f"Cannot delete project '{self.name}': {len(disconnected_computes)} compute(s) are disconnected: {compute_names}. "
-                f"Please fix the connection or delete the project manually on those computes."
-            )
 
         await self.delete_on_computes()
         await self.close()
@@ -1069,13 +1056,52 @@ class Project:
             raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
         self.emit_controller_notification("project.deleted", self.asdict())
 
+    def _get_disconnected_computes(self):
+        """
+        Check compute connectivity by reading the topology file directly,
+        without opening the project (which would try to connect to computes).
+        Returns a list of disconnected Compute objects.
+        """
+        if self._status == "opened":
+            # Project is already open, use the already-loaded _computes list
+            compute_ids = self._computes
+        else:
+            # Read compute IDs from topology file without connecting
+            path = self._topology_file()
+            if not os.path.exists(path):
+                return []
+            try:
+                project_data = load_topology(path)
+            except (ValueError, OSError) as e:
+                log.warning(f"Could not read topology file for project '{self._name}': {e}")
+                return []
+            topology = project_data.get("topology", {})
+            compute_ids = set()
+            for node in topology.get("nodes", []):
+                compute_id = node.get("compute_id")
+                if compute_id:
+                    compute_ids.add(compute_id)
+
+        disconnected = []
+        for compute_id in compute_ids:
+            try:
+                compute = self._controller.get_compute(compute_id)
+                if not compute.connected:
+                    disconnected.append(compute)
+            except ControllerError:
+                log.warning(f"Compute '{compute_id}' not found in controller")
+        return disconnected
+
     async def delete_on_computes(self):
         """
         Delete the project on computes but not on controller
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                await compute.delete(f"/projects/{self._id}")
+                try:
+                    await compute.delete(f"/projects/{self._id}")
+                except (ComputeError, TimeoutError) as e:
+                    log.warning(f"Could not delete project '{self._id}' on compute '{compute.id}': {e}")
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
@@ -1147,7 +1173,9 @@ class Project:
 
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
-                await self.controller.add_compute(**compute)
+                compute_id = compute.get("compute_id")
+                if compute_id not in self._controller._computes:
+                    await self.controller.add_compute(**compute)
 
             # Get all compute used in the project
             # used to allocate application IDs for IOU nodes.
@@ -1155,6 +1183,16 @@ class Project:
                 compute_id = node.get("compute_id")
                 if compute_id not in self._computes:
                     self._computes.append(compute_id)
+
+            # Check compute connectivity before creating nodes to avoid
+            # 120-second timeout when a remote compute is unreachable
+            disconnected = self._get_disconnected_computes()
+            if disconnected:
+                compute_names = ", ".join([f"'{c.name}'" for c in disconnected])
+                raise ControllerError(
+                    f"Cannot open project '{self.name}': {len(disconnected)} compute(s) are disconnected: {compute_names}. "
+                    f"Please check the connection and try again."
+                )
 
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
