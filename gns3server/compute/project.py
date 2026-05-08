@@ -21,7 +21,7 @@ import hashlib
 import datetime
 
 from uuid import UUID, uuid4
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
 from .port_manager import PortManager
