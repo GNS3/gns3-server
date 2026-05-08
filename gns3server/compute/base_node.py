@@ -474,10 +474,18 @@ class BaseNode:
 
         if self._wrap_console_writer:
             self._wrap_console_writer.close()
-            await self._wrap_console_writer.wait_closed()
+            try:
+                await self._wrap_console_writer.wait_closed()
+            except (ConnectionResetError, BrokenPipeError, OSError):
+                # Connection already closed, ignore error
+                pass
         for telnet_proxy_server in self._wrapper_telnet_servers:
             telnet_proxy_server.close()
-            await telnet_proxy_server.wait_closed()
+            try:
+                await telnet_proxy_server.wait_closed()
+            except (ConnectionResetError, BrokenPipeError, OSError):
+                # Connection already closed, ignore error
+                pass
         self._wrapper_telnet_servers = []
 
     async def reset_wrap_console(self):
