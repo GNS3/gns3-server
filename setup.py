@@ -64,7 +64,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms="any",
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     setup_requires=["setuptools>=45.2"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
