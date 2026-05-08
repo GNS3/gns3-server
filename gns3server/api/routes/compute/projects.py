@@ -192,14 +192,14 @@ async def get_compute_project_files(project: Project = Depends(dep_project)) -> 
     return await project.list_files()
 
 
-@router.get("/projects/{project_id}/nodes/{node_type}/{node_id}/files", response_model=List[schemas.ProjectFile])
+@router.get("/projects/{project_id}/nodes/{node_type}/{node_id}/files", response_model=List[schemas.NodeFile])
 async def get_compute_node_files(
     node_type: str,
     node_id: str,
     project: Project = Depends(dep_project)
-) -> List[schemas.ProjectFile]:
+) -> List[schemas.NodeFile]:
     """
-    Return files belonging to a specific node.
+    Return files belonging to a specific node with detailed metadata.
     """
 
     node_path = f"project-files/{node_type}/{node_id}"

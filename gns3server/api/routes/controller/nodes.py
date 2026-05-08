@@ -522,10 +522,10 @@ async def delete_disk_image(
     await node.delete(f"/disk_image/{disk_name}")
 
 
-@router.get("/{node_id}/files", response_model=List[schemas.ProjectFile], dependencies=[Depends(has_privilege("Node.Audit"))])
-async def list_node_files(node: Node = Depends(dep_node)) -> List[schemas.ProjectFile]:
+@router.get("/{node_id}/files", response_model=List[schemas.NodeFile], dependencies=[Depends(has_privilege("Node.Audit"))])
+async def list_node_files(node: Node = Depends(dep_node)) -> List[schemas.NodeFile]:
     """
-    List files in a node directory.
+    List files in a node directory with detailed metadata.
 
     Required privilege: Node.Audit
     """

@@ -105,6 +105,19 @@ class ProjectFile(BaseModel):
     md5sum: str = Field(..., description="File checksum")
 
 
+class NodeFile(BaseModel):
+    """
+    Detailed file information for node files.
+    """
+
+    path: str = Field(..., description="File name")
+    md5sum: str = Field(..., description="File checksum")
+    size: int = Field(..., description="File size in bytes")
+    created_at: str = Field(..., description="File creation time (ISO 8601)")
+    modified_at: str = Field(..., description="File modification time (ISO 8601)")
+    extension: str = Field(..., description="File extension")
+
+
 class ProjectCompression(str, Enum):
     """
     Supported project compression.

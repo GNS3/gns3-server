@@ -18,6 +18,7 @@ import os
 import shutil
 import asyncio
 import hashlib
+import datetime
 
 from uuid import UUID, uuid4
 from fastapi import HTTPException
@@ -420,10 +421,10 @@ class Project:
 
     async def list_node_files(self, node_path: str):
         """
-        List files in a specific node directory.
+        List files in a specific node directory with detailed metadata.
 
         :param node_path: Relative path to node directory (e.g., "project-files/qemu/node-id")
-        :returns: Array of files in the node directory
+        :returns: Array of files in the node directory with metadata
         """
 
         node_full_path = os.path.normpath(os.path.join(self.path, node_path))
@@ -442,14 +443,37 @@ class Project:
             for filename in os.listdir(node_full_path):
                 file_path = os.path.join(node_full_path, filename)
                 if os.path.isfile(file_path) and not filename.endswith(".ghost"):
-                    file_info = {"path": filename}
                     try:
-                        file_info["md5sum"] = await wait_run_in_executor(
-                            self._hash_file, file_path
+                        # Get file stat information
+                        stat_info = await wait_run_in_executor(os.stat, file_path)
+
+                        # Get file extension
+                        _, extension = os.path.splitext(filename)
+                        extension = extension.lstrip('.')
+
+                        # Format timestamps as ISO 8601
+                        created_at = await wait_run_in_executor(
+                            lambda: datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         )
-                    except OSError:
+                        modified_at = await wait_run_in_executor(
+                            lambda: datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                        )
+
+                        # Get MD5 checksum
+                        md5sum = await wait_run_in_executor(self._hash_file, file_path)
+
+                        file_info = {
+                            "path": filename,
+                            "md5sum": md5sum,
+                            "size": stat_info.st_size,
+                            "created_at": created_at,
+                            "modified_at": modified_at,
+                            "extension": extension
+                        }
+                        files.append(file_info)
+                    except OSError as e:
+                        log.warning(f"Error getting metadata for file '{filename}': {e}")
                         continue
-                    files.append(file_info)
         except OSError as e:
             log.error(f"Error listing node files: {e}")
 
