@@ -316,7 +316,7 @@ async def update_snapshots(snapshots_dir, project_path, project_name, project_id
                     topology = json.load(f)
                     topology["name"] = project_name
                     topology["project_id"] = project_id
-                    regenerate_topology_ids(topology, project_path, reset_mac_addresses)
+                    regenerate_topology_ids(topology, tmpdir, reset_mac_addresses)
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:
