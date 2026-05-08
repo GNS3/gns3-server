@@ -440,42 +440,43 @@ class Project:
 
         files = []
         try:
-            for filename in os.listdir(node_full_path):
-                file_path = os.path.join(node_full_path, filename)
-                if os.path.isfile(file_path) and not filename.endswith(".ghost"):
-                    try:
-                        # Get file stat information
-                        stat_info = await wait_run_in_executor(os.stat, file_path)
-
-                        # Get file extension
-                        _, extension = os.path.splitext(filename)
-                        extension = extension.lstrip('.')
-
-                        # Format timestamps as ISO 8601
-                        created_at = await wait_run_in_executor(
-                            lambda: datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
-                        )
-                        modified_at = await wait_run_in_executor(
-                            lambda: datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
-                        )
-
-                        # Get MD5 checksum
-                        md5sum = await wait_run_in_executor(self._hash_file, file_path)
-
-                        file_info = {
-                            "path": filename,
-                            "md5sum": md5sum,
-                            "size": stat_info.st_size,
-                            "created_at": created_at,
-                            "modified_at": modified_at,
-                            "extension": extension
-                        }
-                        files.append(file_info)
-                    except OSError as e:
-                        log.warning(f"Error getting metadata for file '{filename}': {e}")
-                        continue
+            filenames = os.listdir(node_full_path)
         except OSError as e:
-            log.error(f"Error listing node files: {e}")
+            log.error(f"Error listing node directory: {e}")
+            return files
+
+        for filename in filenames:
+            file_path = os.path.join(node_full_path, filename)
+            if not os.path.isfile(file_path) or filename.endswith(".ghost"):
+                continue
+
+            try:
+                # Get file stat information
+                stat_info = await wait_run_in_executor(os.stat, file_path)
+
+                # Get file extension
+                _, extension = os.path.splitext(filename)
+                extension = extension.lstrip('.')
+
+                # Format timestamps as ISO 8601
+                try:
+                    created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                    modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                except (OSError, OverflowError, ValueError) as e:
+                    log.warning(f"Invalid timestamp for '{filename}': {e}")
+                    created_at = modified_at = ""
+
+                file_info = {
+                    "path": filename,
+                    "size": stat_info.st_size,
+                    "created_at": created_at,
+                    "modified_at": modified_at,
+                    "extension": extension
+                }
+                files.append(file_info)
+            except OSError as e:
+                log.warning(f"Error getting metadata for file '{filename}': {e}")
+                continue
 
         return files
 
