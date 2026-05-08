@@ -122,17 +122,6 @@ async def import_project(
     if not restoring_snapshot:
         # Do not re-generate IDs if we are restoring a snapshot because they should be the same in a project
         regenerate_topology_ids(topology, path, reset_mac_addresses=reset_mac_addresses)
-    else:
-        for node in topology["topology"]["nodes"]:
-            node_id = node["node_id"]
-            root = os.path.join(path, "project-files")
-            if os.path.exists(root):
-                for dirname in os.listdir(root):
-                    module_dir = os.path.join(root, dirname)
-                    if os.path.isdir(module_dir):
-                        node_dir = os.path.join(module_dir, node_id)
-                        log.debug("Restoring node ID {} in snapshot, moving files from {} to {}".format(node_id, node_dir, os.path.join(module_dir, node_id)))
-                        shutil.move(node_dir, os.path.join(module_dir, node_id))
 
     # Modify the compute id of the node depending on compute capacity
     if not keep_compute_ids:
