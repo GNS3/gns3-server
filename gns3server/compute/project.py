@@ -20,6 +20,7 @@ import asyncio
 import hashlib
 
 from uuid import UUID, uuid4
+from fastapi import HTTPException
 
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
 from .port_manager import PortManager
@@ -414,6 +415,43 @@ class Project:
                     except OSError:
                         continue
                     files.append(file_info)
+
+        return files
+
+    async def list_node_files(self, node_path: str):
+        """
+        List files in a specific node directory.
+
+        :param node_path: Relative path to node directory (e.g., "project-files/qemu/node-id")
+        :returns: Array of files in the node directory
+        """
+
+        node_full_path = os.path.normpath(os.path.join(self.path, node_path))
+
+        # Security check: ensure the path is within the project directory
+        if not os.path.commonpath([node_full_path, self.path]) == self.path:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                              detail="Path is outside the project directory")
+
+        if not os.path.exists(node_full_path):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                              detail="Node directory not found")
+
+        files = []
+        try:
+            for filename in os.listdir(node_full_path):
+                file_path = os.path.join(node_full_path, filename)
+                if os.path.isfile(file_path) and not filename.endswith(".ghost"):
+                    file_info = {"path": filename}
+                    try:
+                        file_info["md5sum"] = await wait_run_in_executor(
+                            self._hash_file, file_path
+                        )
+                    except OSError:
+                        continue
+                    files.append(file_info)
+        except OSError as e:
+            log.error(f"Error listing node files: {e}")
 
         return files
 
