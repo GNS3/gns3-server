@@ -28,6 +28,20 @@
     },
     "images": [
         {
+            "filename": "nexus9500v64.10.5.5.M.qcow2",
+            "version": "9500v 10.5.5.M",
+            "md5sum": "c1d34bb3331d958d3219a56b6885150e",
+            "filesize": 2919170048,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.5(5)"
+        },
+        {
+            "filename": "nexus9300v64.10.5.5.M.qcow2",
+            "version": "9300v 10.5.5.M",
+            "md5sum": "f1cc2342b920320654d232b68551ccfd",
+            "filesize": 2919104512,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.5(5)"
+        },
+        {
             "filename": "nexus9500v64.10.5.1.F.qcow2",
             "version": "9500v 10.5.1.F",
             "md5sum": "2fa6fb4dd4c5e49d53896d60fa746e59",
@@ -80,6 +94,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "9500v 10.5.5.M",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9500v64.10.5.5.M.qcow2"
+            }
+        },
+        {
+            "name": "9300v 10.5.5.M",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9300v64.10.5.5.M.qcow2"
+            }
+        },
         {
             "name": "9500v 10.5.1.F",
             "images": {

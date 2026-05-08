@@ -1,5 +1,6 @@
 {
     "appliance_id": "7ada6336-7280-4306-9f32-6b1e242ae989",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 3620",
     "category": "router",
     "description": "Cisco 3620 Router",

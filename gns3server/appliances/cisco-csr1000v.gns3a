@@ -17,7 +17,7 @@
     "qemu": {
         "adapter_type": "vmxnet3",
         "adapters": 4,
-        "ram": 3072,
+        "ram": 4096,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",

@@ -1,5 +1,6 @@
 {
     "appliance_id": "4368f802-ddec-4863-adbd-a36a6d83cd4c",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco IOSvL2",
     "category": "multilayer_switch",
     "description": "Cisco Virtual IOS L2 allows user to run a IOS switching image on a standard computer.",

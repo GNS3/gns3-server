@@ -578,7 +578,7 @@ class IOUVM(BaseNode):
                 callback = functools.partial(self._termination_callback, "IOU")
                 gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
             except FileNotFoundError as e:
-                raise IOUError("Could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
+                raise IOUError("Could not start IOU: {}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead".format(e))
             except (OSError, subprocess.SubprocessError) as e:
                 iou_stdout = self.read_iou_stdout()
                 log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))

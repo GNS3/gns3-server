@@ -26,6 +26,30 @@
     },
     "images": [
         {
+            "filename": "AlmaLinux-10-GenericCloud-10.0-20250528.0.x86_64.qcow2",
+            "version": "10.0",
+            "md5sum": "e5099e33f16014b6cc851482d865720d",
+            "filesize": 460062720,
+            "download_url": "https://vault.almalinux.org/10.0/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/10.0/cloud/x86_64/images/AlmaLinux-10-GenericCloud-10.0-20250528.0.x86_64.qcow2"
+        },
+        {
+            "filename": "AlmaLinux-9-GenericCloud-9.6-20250522.x86_64.qcow2",
+            "version": "9.6",
+            "md5sum": "ae02074389961caf08bbe44439603061",
+            "filesize": 530776064,
+            "download_url": "https://vault.almalinux.org/9.6/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/9.6/cloud/x86_64/images/AlmaLinux-9-GenericCloud-9.6-20250522.x86_64.qcow2"
+        },
+        {
+            "filename": "AlmaLinux-9-GenericCloud-9.5-20241120.x86_64.qcow2",
+            "version": "9.5",
+            "md5sum": "cb48bc1c609a1d3d62f48397acdd038e",
+            "filesize": 490995712,
+            "download_url": "https://vault.almalinux.org/9.5/cloud/x86_64/images/",
+            "direct_download_url": "https://vault.almalinux.org/9.5/cloud/x86_64/images/AlmaLinux-9-GenericCloud-9.5-20241120.x86_64"
+        },
+        {
             "filename": "AlmaLinux-9-GenericCloud-9.4-20240805.x86_64.qcow2",
             "version": "9.4",
             "md5sum": "7c5040c044a989c524d40824cebb4a4d",
@@ -75,6 +99,27 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.0",
+            "images": {
+                "hda_disk_image": "AlmaLinux-10-GenericCloud-10.0-20250528.0.x86_64.qcow2",
+                "cdrom_image": "almalinux-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "9.6",
+            "images": {
+                "hda_disk_image": "AlmaLinux-9-GenericCloud-9.6-20250522.x86_64.qcow2",
+                "cdrom_image": "almalinux-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "9.5",
+            "images": {
+                "hda_disk_image": "AlmaLinux-9-GenericCloud-9.5-20241120.x86_64.qcow2",
+                "cdrom_image": "almalinux-cloud-init-data.iso"
+            }
+        },
         {
             "name": "9.4",
             "images": {
