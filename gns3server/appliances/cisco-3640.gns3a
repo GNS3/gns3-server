@@ -1,5 +1,6 @@
 {
     "appliance_id": "ef119e49-19fe-4239-9c6b-16ea12f6ec01",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 3640",
     "category": "router",
     "description": "Cisco 3640 Router",

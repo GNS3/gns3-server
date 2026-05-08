@@ -1,5 +1,6 @@
 {
     "appliance_id": "ed474fea-cd3b-4e2e-be84-a855a133060a",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 2600",
     "category": "router",
     "description": "Cisco 2600 Router",

@@ -1,11 +1,12 @@
 {
     "appliance_id": "3bf492b6-5717-4257-9bfd-b34617c6f133",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco IOSv",
     "category": "router",
     "description": "Cisco Virtual IOS allows user to run IOS on a standard computer.",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
-    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/iol/",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/iosv/",
     "product_name": "IOSv",
     "product_url": "https://developer.cisco.com/modeling-labs/",
     "registry_version": 4,
@@ -25,6 +26,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "vios-adventerprisek9-m.spa.159-3.m10.qcow2",
+            "version": "15.9(3)M10",
+            "md5sum": "960ff630ce3fc030f6155a8e77d64105",
+            "filesize": 57323520,
+            "download_url": "https://u.cisco.com/my-learning/my-account"
+        },
         {
             "filename": "vios-adventerprisek9-m.spa.159-3.m9.qcow2",
             "version": "15.9(3)M9",
@@ -112,6 +120,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.9(3)M10",
+            "images": {
+                "hda_disk_image": "vios-adventerprisek9-m.spa.159-3.m10.qcow2",
+                "hdb_disk_image": "IOSv_startup_config.img"
+            }
+        },
         {
             "name": "15.9(3)M9",
             "images": {

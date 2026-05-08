@@ -1,5 +1,6 @@
 {
     "appliance_id": "18737edb-e43f-4fb0-8a0f-88982cff58b1",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 3745",
     "category": "router",
     "description": "Cisco 3745 Multiservice Access Router",

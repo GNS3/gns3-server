@@ -1,0 +1,69 @@
+{
+    "appliance_id": "4c7fd5da-be86-4168-8484-7071dc9c71fb",
+    "name": "Cisco NX-OSv 9000 Lite",
+    "category": "multilayer_switch",
+    "description": "The NX-OSv 9000 is a virtual platform that is designed to simulate the control plane aspects of a network element running Cisco Nexus 9000 software. The NX-OSv 9000 shares the same software image running on Cisco Nexus 9000 hardware platform although no specific hardware emulation is implemented. When the software runs as a virtual machine, line card (LC) ASIC provisioning or any interaction from the control plane to hardware ASIC is handled by the NX-OSv 9000 software data plane.\nThe NX-OSv 9000 for the Cisco Nexus 9000 Series provides a useful tool to enable the devops model and rapidly test changes to the infrastructure or to infrastructure automation tools. This enables network simulations in large scale for customers to validate configuration changes on a simulated network prior to applying them on a production network. Some users have also expressed interest in using the simulation system for feature test ,verification, and automation tooling development and test simualtion prior to deployment. NX-OSv 9000 can be used as a programmability vehicle to validate software defined networks (SDNs) and Network Function Virtualization (NFV) based solutions.\nThe lite version has a reduced memory footprint, resulting in a much smaller image size than the earlier images for Cisco Nexus 9300v and 9500v.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/nx-os-9000/",
+    "product_name": "NX-OSv 9000",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "service-contract",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "first_port_name": "mgmt0",
+    "port_name_format": "Ethernet1/{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 10,
+        "ram": 6144,
+        "cpus": 2,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "nexus9500v64-lite.10.5.5.M.qcow2",
+            "version": "9500v lite 10.5.5.M",
+            "md5sum": "a9aafd88f36a7f44a5a2ef3322cd9bde",
+            "filesize": 2617638912,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.5(5)"
+        },
+        {
+            "filename": "nexus9300v64-lite.10.5.5.M.qcow2",
+            "version": "9300v lite 10.5.5.M",
+            "md5sum": "78610953005faab9505252baf4c86b78",
+            "filesize": 2617573376,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.5(5)"
+        },
+        {
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9500v lite 10.5.5.M",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9500v64-lite.10.5.5.M.qcow2"
+            }
+        },
+        {
+            "name": "9300v lite 10.5.5.M",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9300v64-lite.10.5.5.M.qcow2"
+            }
+        }
+    ]
+}
