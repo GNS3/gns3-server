@@ -223,26 +223,24 @@ class AsyncioTelnetServer:
             # _reader_process pinned to a dead reader, and subsequent client
             # connections would see _get_reader() return None and never
             # receive node output -- the "silent proxy" hang (issue #2344).
-            log.exception("Unexpected error in telnet proxy; cleaning up client connection")
+            log.exception("Unexpected error in telnet proxy; cleaning up client connection...")
         finally:
             async with self._lock:
                 try:
                     network_writer.close()
-                except Exception:
-                    pass
-                if self._reader_process == network_reader:
-                    self._reader_process = None
-                    # Cancel current read from this reader
-                    if self._current_read is not None:
-                        self._current_read.cancel()
-                        self._current_read = None
+                finally:
+                    if self._reader_process == network_reader:
+                        self._reader_process = None
+                        # Cancel current read from this reader
+                        if self._current_read is not None:
+                            self._current_read.cancel()
+                            self._current_read = None
             try:
                 await connection.disconnected()
-            except Exception:
-                pass
-            # pop() instead of del to avoid KeyError if already removed
-            # elsewhere (e.g. by the broadcast loop's timeout handler).
-            self._connections.pop(network_writer, None)
+            finally:
+                # Use pop() to avoid KeyError if connection was already removed
+                # elsewhere (e.g. by the broadcast loop's timeout handler)
+                self._connections.pop(network_writer, None)
 
     async def close(self):
         for writer, connection in self._connections.items():
@@ -334,7 +332,7 @@ class AsyncioTelnetServer:
                         except (OSError, ConnectionError, asyncio.TimeoutError) as e:
                             log.debug(f"Error sending data to client {client_info}: {e}, closing and removing from connection table.")
                             connection.close()
-                            del self._connections[connection_key]
+                            self._connections.pop(connection_key, None)
 
     async def _read(self, cmd, buffer, location, reader):
         """ Reads next op from the buffer or reader"""
