@@ -110,15 +110,26 @@ def create_base_model(
         raise ValueError("LLM configuration requires 'provider' field")
 
     try:
-        model = init_chat_model(
-            config_vars["model_name"],
-            model_provider=config_vars["model_provider"],
-            api_key=config_vars["api_key"],
-            base_url=config_vars["base_url"],
-            temperature=config_vars["temperature"],
-            configurable_fields="any",
-            config_prefix="foo",
-        )
+        # Prepare parameters for init_chat_model
+        init_params = {
+            "model": config_vars["model_name"],
+            "model_provider": config_vars["model_provider"],
+            "api_key": config_vars["api_key"],
+            "base_url": config_vars["base_url"],
+            "temperature": config_vars["temperature"],
+            "configurable_fields": "any",
+            "config_prefix": "foo",
+        }
+
+        # Disable DeepSeek thinking mode to avoid reasoning_content handling issues
+        # DeepSeek models enable thinking mode by default, which returns reasoning_content
+        # that must be passed back to the API in subsequent requests. To simplify
+        # message handling and avoid 400 errors, we disable it here.
+        if config_vars["model_provider"] == "deepseek":
+            init_params["extra_body"] = {"thinking": {"type": "disabled"}}
+            logger.info("DeepSeek thinking mode disabled")
+
+        model = init_chat_model(**init_params)
 
         logger.info("Base model created successfully")
         return model
@@ -167,15 +178,26 @@ def create_title_model(
         raise ValueError("LLM configuration requires 'provider' field")
 
     try:
-        model = init_chat_model(
-            config_vars["model_name"],
-            model_provider=config_vars["model_provider"],
-            api_key=config_vars["api_key"],
-            base_url=config_vars["base_url"],
-            temperature="1.0",  # Higher temperature for more creative titles
-            configurable_fields="any",
-            config_prefix="foo",
-        )
+        # Prepare parameters for init_chat_model
+        init_params = {
+            "model": config_vars["model_name"],
+            "model_provider": config_vars["model_provider"],
+            "api_key": config_vars["api_key"],
+            "base_url": config_vars["base_url"],
+            "temperature": "1.0",  # Higher temperature for more creative titles
+            "configurable_fields": "any",
+            "config_prefix": "foo",
+        }
+
+        # Disable DeepSeek thinking mode to avoid reasoning_content handling issues
+        # DeepSeek models enable thinking mode by default, which returns reasoning_content
+        # that must be passed back to the API in subsequent requests. To simplify
+        # message handling and avoid 400 errors, we disable it here.
+        if config_vars["model_provider"] == "deepseek":
+            init_params["extra_body"] = {"thinking": {"type": "disabled"}}
+            logger.info("DeepSeek thinking mode disabled for title model")
+
+        model = init_chat_model(**init_params)
 
         logger.info("Title model created successfully")
         return model
