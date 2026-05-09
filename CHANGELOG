@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.59 08/05/2026
+
+* Sync appliances
+* Fix snapshot restore does not work after export/import of project
+* Warn to use 64-bit IOU images. Fixes #2716 32-bit IOU image support has been removed from the GNS3 VM.
+* Fix telnet console silent-proxy hang on non-ConnectionError exit (#2344)
+
 ## 3.1.0a1 25/04/2026
 
 * New completely revamped Web interface.

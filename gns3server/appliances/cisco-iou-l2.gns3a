@@ -38,18 +38,6 @@
             "version": "17.12.1",
             "md5sum": "2b5055e4cef8fd257416d74a94adb626",
             "filesize": 240355720
-        },
-        {
-            "filename": "i86bi_linux_l2-adventerprisek9-ms.SSA.high_iron_20190423.bin",
-            "version": "15.2(20190423)",
-            "md5sum": "ffe884f8e762b762d7886c51d8ee015c",
-            "filesize": 126249700
-        },
-        {
-            "filename": "i86bi_LinuxL2-AdvEnterpriseK9-M_152_May_2018.bin",
-            "version": "15.2(20180510)",
-            "md5sum": "d704b68c5f4c4f92e56b754b49b92012",
-            "filesize": 126226692
         }
     ],
     "versions": [
@@ -69,18 +57,6 @@
             "name": "17.12.1",
             "images": {
                 "image": "x86_64_crb_linux_l2-adventerprisek9-ms"
-            }
-        },
-        {
-            "name": "15.2(20190423)",
-            "images": {
-                "image": "i86bi_linux_l2-adventerprisek9-ms.SSA.high_iron_20190423.bin"
-            }
-        },
-        {
-            "name": "15.2(20180510)",
-            "images": {
-                "image": "i86bi_LinuxL2-AdvEnterpriseK9-M_152_May_2018.bin"
             }
         }
     ]
