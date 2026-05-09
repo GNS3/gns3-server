@@ -134,9 +134,16 @@ async def import_project(
                     node["compute_id"] = "vm"
         else:
             # Round-robin through available compute resources.
-            compute_nodes = itertools.cycle(controller.computes)
-            for node in topology["topology"]["nodes"]:
-                node["compute_id"] = next(compute_nodes)
+            # Only use computes that are connected to avoid import failures
+            available_computes = {compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected}
+            if available_computes:
+                compute_nodes = itertools.cycle(available_computes)
+                for node in topology["topology"]["nodes"]:
+                    node["compute_id"] = next(compute_nodes)
+            else:
+                # No remote computes are connected, use local only
+                for node in topology["topology"]["nodes"]:
+                    node["compute_id"] = "local"
 
     compute_created = set()
     for node in topology["topology"]["nodes"]:
