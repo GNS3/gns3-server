@@ -24,26 +24,47 @@
 #
 
 """
-Device Skills Package
+Skills Package
 
-This package provides device-specific skills for GNS3 Copilot.
-Skills are organized by vendor and product series for easy extensibility.
+This package provides skills management for GNS3 Copilot.
+All skills are loaded from the external GNS3-Skills repository.
 
 Directory Structure:
 - skills/
   - registry.py      # SKILLS_REGISTRY and get_skill()
-  - cisco/           # Cisco devices
-  - huawei/          # Huawei devices
-  - h3c/             # H3C devices
-  - ruijie/          # Ruijie devices
-  - vpcs/            # GNS3 VPCS
-  - generic/          # Base templates
+  - manager.py       # SkillsManager - Git clone/pull and hot reload
+  - loader.py        # SkillsLoader - YAML/Markdown file loading
 """
 
-from .registry import SKILLS_REGISTRY, get_skill, DeviceSkillsTool
+from .registry import (
+    SKILLS_REGISTRY,
+    INJECTION_SKILLS_REGISTRY,
+    get_skill,
+    get_injection_skill,
+    DeviceSkillsTool,
+    InjectionSkillsTool,
+    set_skills_manager,
+    get_skills_manager,
+    reload_injection_skills,
+    reload_forbidden_commands,
+    reload_skills_repository,
+    get_skills_repository_info,
+)
+from .manager import SkillsManager
+from .loader import SkillsLoader
 
 __all__ = [
     "SKILLS_REGISTRY",
+    "INJECTION_SKILLS_REGISTRY",
     "get_skill",
+    "get_injection_skill",
     "DeviceSkillsTool",
+    "InjectionSkillsTool",
+    "SkillsManager",
+    "SkillsLoader",
+    "set_skills_manager",
+    "get_skills_manager",
+    "reload_injection_skills",
+    "reload_skills_repository",
+    "get_skills_repository_info",
 ]

@@ -22,15 +22,19 @@ from gns3server.agent import AI_COPILOT_AVAILABLE
 # Conditionally import AI-dependent routes
 if AI_COPILOT_AVAILABLE:
     from . import chat
+    from . import copilot
     from . import llm_model_configs
     _chat_router = chat.router
+    _copilot_router = copilot.router
     _llm_router = llm_model_configs.router
 else:
     # Create stub routers that return 501 for all AI endpoints
     _chat_router = APIRouter()
+    _copilot_router = APIRouter()
     _llm_router = APIRouter()
 
     @_chat_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
+    @_copilot_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
     @_llm_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
     async def ai_not_available(path: str = ""):
         raise HTTPException(
@@ -176,8 +180,15 @@ router.include_router(
 )
 
 router.include_router(
-    _chat_router,
-    prefix="/projects/{project_id}/chat",
+    _copilot_router,
+    prefix="/copilot",
     dependencies=[Depends(get_current_active_user)],
-    tags=["Chat"]
+    tags=["GNS3 Copilot"]
+)
+
+router.include_router(
+    _chat_router,
+    prefix="/copilot/projects/{project_id}/chat",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["GNS3 Copilot"]
 )

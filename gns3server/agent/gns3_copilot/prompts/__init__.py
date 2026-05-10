@@ -26,35 +26,27 @@
 """
 Prompts Module for GNS3-Copilot
 
-This package contains system prompts and prompt loading utilities for
-the GNS3-Copilot AI agent.
+This package provides system prompts loading utilities for the GNS3-Copilot AI agent.
 
-Available prompts:
-- teaching_assistant_prompt: Teaching assistant mode (diagnostics only)
-- lab_automation_assistant_prompt: Lab automation mode (diagnostics + config)
+All system prompts are now loaded from the external GNS3-Skills repository:
+https://github.com/yueguobin/GNS3-Skills
 
+Available prompts (loaded from external repository):
+- lab_automation_assistant.md: Lab automation mode (diagnostics + config)
+- teaching_assistant.md: Teaching assistant mode (diagnostics only)
+- troubleshooting_injection.md: Fault injection specialist
+- title.md: Title generation prompt template
+
+Use the SkillsManager to load these prompts:
+    from gns3server.agent.gns3_copilot.skills.manager import skills_manager
+
+    # Load prompts
+    lab_prompt = skills_manager.load_prompt("lab_automation_assistant")
+    teaching_prompt = skills_manager.load_prompt("teaching_assistant")
+    injection_prompt = skills_manager.load_prompt("troubleshooting_injection")
+    title_prompt = skills_manager.load_prompt("title")
 """
 
-from .teaching_assistant_prompt import TEACHING_ASSISTANT_PROMPT
-from .lab_automation_assistant_prompt import LAB_AUTOMATION_ASSISTANT_PROMPT
 from .prompt_loader import load_system_prompt
-from .title_prompt import TITLE_PROMPT
 
-# Dynamic version management
-try:
-    from importlib.metadata import version
-
-    __version__ = version("gns3-copilot")
-except Exception:
-    __version__ = "unknown"
-
-__author__ = "Yue Guobin (岳国宾)"
-__description__ = "AI-powered network automation assistant for GNS3"
-__url__ = "https://github.com/yueguobin/gns3-copilot"
-
-__all__ = [
-    "TEACHING_ASSISTANT_PROMPT",
-    "LAB_AUTOMATION_ASSISTANT_PROMPT",
-    "TITLE_PROMPT",
-    "load_system_prompt",
-]
+__all__ = ["load_system_prompt"]

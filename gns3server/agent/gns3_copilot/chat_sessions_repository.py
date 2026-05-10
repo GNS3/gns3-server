@@ -124,6 +124,7 @@ class ChatSessionsRepository:
         user_id: str,
         project_id: str,
         title: str = "New Conversation",
+        copilot_mode: Optional[str] = None,
     ) -> ChatSession:
         """
         Create a new chat session.
@@ -133,25 +134,31 @@ class ChatSessionsRepository:
             user_id: User ID
             project_id: Project ID
             title: Session title
+            copilot_mode: Copilot mode (optional)
 
         Returns:
             Created ChatSession
         """
         now = datetime.utcnow().isoformat()
+        # Build metadata JSON
+        metadata = {"copilot_mode": copilot_mode} if copilot_mode else {}
+        metadata_json = json.dumps(metadata)
+
         cursor = await self.conn.execute(
             """
             INSERT INTO chat_sessions (
                 thread_id, user_id, project_id, title,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                metadata, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (thread_id, user_id, project_id, title, now, now),
+            (thread_id, user_id, project_id, title, metadata_json, now, now),
         )
         await self.conn.commit()
 
         session_id = cursor.lastrowid
         log.info(
-            "Created chat session: id=%s, thread_id=%s", session_id, thread_id
+            "Created chat session: id=%s, thread_id=%s, copilot_mode=%s",
+            session_id, thread_id, copilot_mode
         )
 
         return await self.get_session_by_id(session_id)
@@ -202,6 +209,7 @@ class ChatSessionsRepository:
         self,
         user_id: Optional[str] = None,
         project_id: Optional[str] = None,
+        copilot_mode: Optional[str] = None,
         limit: int = 100,
     ) -> List[ChatSession]:
         """
@@ -210,6 +218,7 @@ class ChatSessionsRepository:
         Args:
             user_id: Filter by user ID
             project_id: Filter by project ID
+            copilot_mode: Filter by copilot mode (metadata field)
             limit: Maximum number of sessions to return
 
         Returns:
@@ -225,6 +234,10 @@ class ChatSessionsRepository:
         if project_id:
             conditions.append("project_id = ?")
             params.append(project_id)
+        if copilot_mode:
+            # Filter by JSON metadata field
+            conditions.append("json_extract(metadata, '$.copilot_mode') = ?")
+            params.append(copilot_mode)
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)

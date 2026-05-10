@@ -23,7 +23,7 @@ Nested under projects: /v3/projects/{project_id}/chat/...
 import json
 import logging
 import uuid
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
@@ -34,6 +34,7 @@ from gns3server.controller import Controller
 from gns3server.controller.project import Project
 from gns3server.controller.controller_error import ControllerNotFoundError
 from gns3server.agent.gns3_copilot.project_agent_manager import get_project_agent_manager
+from gns3server.db.tasks import get_user_llm_config_full
 
 from .dependencies.authentication import get_current_active_user
 
@@ -118,7 +119,6 @@ async def stream_chat(
     app = http_request.app
 
     # Get user's LLM config (with decrypted API key)
-    from gns3server.db.tasks import get_user_llm_config_full
     llm_config = await get_user_llm_config_full(user_id, app)
     if not llm_config:
         log.warning("LLM config not found for user: %s", user_id)
@@ -195,14 +195,18 @@ async def stream_chat(
     "/sessions",
     response_model=List[schemas.ChatSession],
     summary="List chat sessions",
-    description="List all chat sessions for a project."
+    description="List all chat sessions for a project, optionally filtered by copilot_mode."
 )
 async def list_sessions(
     project: Project = Depends(dep_project),
+    copilot_mode: Optional[str] = None,
     current_user: schemas.User = Depends(get_current_active_user),
 ) -> list[schemas.ChatSession]:
     """
     List chat sessions for a project.
+
+    Query Parameters:
+    - copilot_mode: Optional filter by copilot mode (e.g., "troubleshooting_injection", "teaching_assistant", "lab_automation_assistant")
     """
 
     # Check if project is opened
@@ -216,8 +220,11 @@ async def list_sessions(
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
 
-    # List sessions
-    sessions = await agent_service.list_sessions(user_id=str(current_user.user_id))
+    # List sessions with optional copilot_mode filter
+    sessions = await agent_service.list_sessions(
+        user_id=str(current_user.user_id),
+        copilot_mode=copilot_mode
+    )
 
     # Convert to schemas
     return [schemas.ChatSession(**s) for s in sessions]
@@ -440,3 +447,130 @@ async def unpin_session(
         )
 
     return schemas.ChatSession(**session)
+
+
+@router.post(
+    "/inject",
+    response_model=None,
+    summary="Inject a network fault for troubleshooting practice",
+    description="Inject a realistic network fault into the GNS3 lab for troubleshooting training."
+)
+async def inject_issue(
+    request: schemas.ChatRequest,
+    http_request: Request,
+    project: Project = Depends(dep_project),
+    current_user: schemas.User = Depends(get_current_active_user),
+) -> StreamingResponse:
+    """
+    Inject a network fault for troubleshooting practice.
+
+    This endpoint uses the GNS3 Copilot agent in troubleshooting_injection mode
+    to analyze the topology, select an appropriate fault, and inject it.
+
+    The fault injection process is streamed via Server-Sent Events (SSE),
+    and the complete conversation is stored in the chat history for later review.
+
+    The project must be opened to use fault injection.
+    """
+
+    # Get user authentication info
+    user_id = str(current_user.user_id)
+
+    # Check if project is opened
+    if project.status != "opened":
+        log.warning(
+            "Fault injection rejected: project not opened. user_id=%s, project_id=%s, status=%s",
+            user_id,
+            project.id,
+            project.status
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Project must be opened to use fault injection. Current status: {project.status}"
+        )
+
+    log.info(
+        "Fault injection started: user_id=%s, project_id=%s, project_name=%s, session_id=%s",
+        user_id,
+        project.id,
+        project.name,
+        request.session_id or "(new)",
+    )
+
+    # Get JWT token from Authorization header
+    auth_header = http_request.headers.get("Authorization", "")
+    jwt_token = auth_header.replace("Bearer ", "") if auth_header else None
+
+    # Get FastAPI app reference (for database access)
+    app = http_request.app
+
+    # Get user's LLM config (with decrypted API key)
+    llm_config = await get_user_llm_config_full(user_id, app)
+    if not llm_config:
+        log.warning("LLM config not found for user: %s", user_id)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="LLM configuration not found. Please configure your LLM settings first."
+        )
+
+    # Override copilot_mode to troubleshooting_injection
+    llm_config["copilot_mode"] = "troubleshooting_injection"
+    log.debug(
+        "LLM config loaded and mode set to troubleshooting_injection: user_id=%s, provider=%s, model=%s",
+        user_id,
+        llm_config.get("provider"),
+        llm_config.get("model"),
+    )
+
+    # Get or create AgentService for this project
+    agent_manager = await get_project_agent_manager()
+    agent_service = await agent_manager.get_agent(str(project.id), project.path)
+    log.debug("AgentService obtained for project: %s", project.id)
+
+    # Generate session_id if not provided
+    session_id = request.session_id or str(uuid.uuid4())
+    if not request.session_id:
+        log.debug("New session created for fault injection: %s", session_id)
+
+    # Use default message if not provided
+    message = request.message or "Inject a network fault for troubleshooting practice"
+
+    async def generate():
+        """Generator for SSE streaming."""
+        try:
+            log.debug("Starting fault injection stream: session_id=%s", session_id)
+            async for chunk in agent_service.stream_chat(
+                message=message,
+                session_id=session_id,
+                project_id=str(project.id),
+                user_id=user_id,
+                jwt_token=jwt_token,
+                mode=request.mode,
+                llm_config=llm_config
+            ):
+                try:
+                    # Validate and serialize chunk
+                    validated = schemas.ChatResponse(**chunk)
+                    yield f"data: {json.dumps(validated.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
+                except Exception as e:
+                    log.warning("Error serializing chunk: %s", e)
+                    # Skip invalid chunks but continue streaming
+                    continue
+
+            # Final done message
+            log.debug("Fault injection stream completed: session_id=%s", session_id)
+            yield f"data: {json.dumps({'type': 'done', 'session_id': session_id})}\n\n"
+
+        except Exception as e:
+            log.error("Error in fault injection stream: %s", e, exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        }
+    )

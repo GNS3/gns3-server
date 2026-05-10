@@ -78,8 +78,8 @@ from gns3server.agent.gns3_copilot.gns3_client import GNS3TopologyTool
 from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     get_current_llm_config,
 )
-from gns3server.agent.gns3_copilot.prompts import TITLE_PROMPT
 from gns3server.agent.gns3_copilot.prompts import load_system_prompt
+from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 from gns3server.agent.gns3_copilot.tools_v2 import (
     ExecuteMultipleDeviceCommands,
 )
@@ -96,6 +96,7 @@ from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
 from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
 from gns3server.agent.gns3_copilot.tools_v2 import PacketCaptureTool
 from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool
+from gns3server.agent.gns3_copilot.skills import InjectionSkillsTool
 
 # Set up logger for GNS3-Copilot
 logger = logging.getLogger(__name__)
@@ -135,14 +136,29 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     DeviceSkillsTool(),  # Get device-specific skills and command knowledge
 ]
 
+# Troubleshooting injection mode: Tools for injecting network faults
+# Focused on configuration commands and injection skills for fault injection
+TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
+    ExecuteMultipleDeviceCommands(),  # Get device configurations (READ-ONLY)
+    ExecuteMultipleDeviceConfigCommands(),  # Inject configuration changes
+    InjectionSkillsTool(),  # Query injection skills and fault types
+    GNS3TopologyTool(),  # Get topology information
+]
+
 # Default tools (legacy support - will be overridden by mode-specific tools)
 tools = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 
-# Create combined tool lookup for tool_node (supports both modes)
+# Create combined tool lookup for tool_node (supports all modes)
 # tool_node will receive tool calls based on mode-specific tools bound to the
 # model
+# Combine all tools from all modes and deduplicate by tool name
 ALL_TOOLS = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 tools_by_name = {tool.name: tool for tool in ALL_TOOLS}
+
+# Add troubleshooting injection tools to the global tool registry
+for tool in TROUBLESHOOTING_INJECTION_MODE_TOOLS:
+    if tool.name not in tools_by_name:
+        tools_by_name[tool.name] = tool
 
 # Log application startup
 logger.info("GNS3-Copilot application starting up")
@@ -243,7 +259,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     history preservation in state["messages"].
     """
 
-    logger.info("LLM call node invoked")
+    logger.debug("LLM call node invoked")
 
     # Get llm_config from request-scoped context variable
     llm_config = get_current_llm_config()
@@ -318,6 +334,11 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
             "Using LAB_AUTOMATION_ASSISTANT mode tools (includes "
             "configuration tools)"
         )
+    elif copilot_mode == "troubleshooting_injection":
+        mode_tools = TROUBLESHOOTING_INJECTION_MODE_TOOLS
+        logger.info(
+            "Using TROUBLESHOOTING_INJECTION mode tools (fault injection)"
+        )
     else:  # teaching_assistant mode (default)
         mode_tools = TEACHING_ASSISTANT_MODE_TOOLS
         logger.info(
@@ -351,7 +372,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     # trimming)
     # Note: LangGraph's pre_model_hook only works with prebuilt agents, not
     # custom StateGraph
-    logger.info("Calling pre_hook to prepare %d messages", len(messages))
+    logger.debug("Calling pre_hook to prepare %d messages", len(messages))
     prepared_state = pre_hook(
         {"messages": messages, "topology_info": topology_info}
     )
@@ -411,12 +432,18 @@ def generate_title(
     # Only generate a title if it hasn't been set yet
     current_title = state.get("conversation_title")
     if current_title in [None, "New Conversation"]:
-        logger.info("Title generation triggered for session")
+        logger.debug("Title generation triggered for session")
         messages = state["messages"]
+
+        # Load title prompt from external repository
+        title_prompt = get_prompt("title")
+        if not title_prompt:
+            logger.error("Title prompt not found in external repository")
+            return {"conversation_title": UNTITLED_SESSION_FALLBACK, "session_id": state.get("session_id")}
 
         # Build the prompt for title generation
         title_prompt_messages = [
-            SystemMessage(content=TITLE_PROMPT),
+            SystemMessage(content=title_prompt),
             messages[0],  # User's first message
             messages[-1],  # Assistant's final response in this turn
         ]
@@ -456,7 +483,7 @@ def generate_title(
                 new_title.replace("\n", " ").replace('"', "").replace("'", "")
             )
 
-            logger.info("Generated new title: %s", new_title)
+            logger.debug("Generated new title: %s", new_title)
             return {"conversation_title": new_title, "session_id": state.get("session_id")}
 
         except Exception as e:
@@ -500,7 +527,7 @@ def tool_node(state: dict, config: RunnableConfig | None = None):
     """Performs the tool call"""
 
     tool_calls = state["messages"][-1].tool_calls
-    logger.info("Tool node invoked: tool_calls=%d", len(tool_calls))
+    logger.debug("Tool node invoked: tool_calls=%d", len(tool_calls))
 
     result = []
     for tool_call in tool_calls:

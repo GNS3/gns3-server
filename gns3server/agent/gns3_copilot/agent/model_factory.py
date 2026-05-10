@@ -127,11 +127,11 @@ def create_base_model(
         # message handling and avoid 400 errors, we disable it here.
         if config_vars["model_provider"] == "deepseek":
             init_params["extra_body"] = {"thinking": {"type": "disabled"}}
-            logger.info("DeepSeek thinking mode disabled")
+            logger.debug("DeepSeek thinking mode disabled")
 
         model = init_chat_model(**init_params)
 
-        logger.info("Base model created successfully")
+        logger.debug("Base model created successfully")
         return model
 
     except Exception as e:
@@ -195,11 +195,11 @@ def create_title_model(
         # message handling and avoid 400 errors, we disable it here.
         if config_vars["model_provider"] == "deepseek":
             init_params["extra_body"] = {"thinking": {"type": "disabled"}}
-            logger.info("DeepSeek thinking mode disabled for title model")
+            logger.debug("DeepSeek thinking mode disabled for title model")
 
         model = init_chat_model(**init_params)
 
-        logger.info("Title model created successfully")
+        logger.debug("Title model created successfully")
         return model
 
     except Exception as e:
@@ -226,7 +226,7 @@ def create_model_with_tools(
     """
     try:
         model_with_tools = model.bind_tools(tools)
-        logger.info("Model bound with %d tools successfully", len(tools))
+        logger.debug("Model bound with %d tools successfully", len(tools))
         return model_with_tools
     except Exception as e:
         logger.error("Failed to bind tools to model: %s", e)
