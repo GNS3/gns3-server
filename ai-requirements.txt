@@ -43,4 +43,8 @@ python-dotenv>=1.2.1
 PyJWT>=2.10.1
 psycopg-pool>=3.1.0
 
+# Skills Repository Management
+PyYAML>=6.0.0
+GitPython>=3.1.0
+
 # Note: httpx is only for testing (in dev-requirements.txt)
