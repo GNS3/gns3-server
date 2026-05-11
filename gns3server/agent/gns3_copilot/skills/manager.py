@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 _GIT_TIMEOUT_ENV = {
     'GIT_HTTP_TIMEOUT': '10',           # Connection timeout (default: 120s)
     'GIT_HTTP_LOW_SPEED_TIME': '5',     # Slow speed threshold window
-    'GIT_HTTP_LOW_SPEED_LIMIT': '1000', # < 1 KB/s = slow → abort
+    'GIT_HTTP_LOW_SPEED_LIMIT': '10240', # < 10 KB/s = slow → abort
 }
 
 

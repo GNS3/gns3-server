@@ -57,7 +57,6 @@ INJECTION_SKILLS_REGISTRY: dict[str, dict[str, Any]] = {}
 # Global skills manager instance for hot reload
 _skills_manager = None
 _init_in_progress = False
-_init_complete = False
 
 
 def set_skills_manager(manager):
@@ -75,16 +74,21 @@ def set_skills_manager(manager):
 
 def _ensure_skills_manager():
     """
-    Initialize the SkillsManager (runs once, idempotent).
+    Initialize the SkillsManager (idempotent, retryable on failure).
 
     Reads config, creates SkillsManager, clones/pulls repo,
     and loads skills/prompts into memory. Safe to call from
     background threads - uses _init_in_progress to prevent
     concurrent initialization.
-    """
-    global _skills_manager, _init_in_progress, _init_complete
 
-    if _skills_manager is not None or _init_complete:
+    On failure, resets _init_in_progress so future calls
+    (e.g., /reload/skills API) can retry. On success, the
+    manager is stored in _skills_manager and subsequent
+    calls return immediately.
+    """
+    global _skills_manager, _init_in_progress
+
+    if _skills_manager is not None:
         return
 
     if _init_in_progress:
@@ -130,7 +134,7 @@ def _ensure_skills_manager():
     except Exception as e:
         logger.error(f"Error initializing skills manager: {e}", exc_info=True)
     finally:
-        _init_complete = True
+        _init_in_progress = False
 
 
 def get_skills_manager():
