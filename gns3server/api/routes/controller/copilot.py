@@ -20,7 +20,8 @@ API routes for GNS3 Copilot global operations (non-project).
 
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from gns3server import schemas
 from .dependencies.authentication import get_current_active_user
 
 log = logging.getLogger(__name__)
@@ -32,13 +33,21 @@ router = APIRouter()
     "/reload/skills",
     dependencies=[Depends(get_current_active_user)],
 )
-async def reload_skills() -> dict:
+async def reload_skills(current_user: schemas.User = Depends(get_current_active_user)) -> dict:
     """
     Hot reload skills and prompts from the external GNS3-Skills repository.
 
     Reloads injection skills, system prompts, and forbidden commands
     from the skills repository without restarting the server.
+
+    Requires superadmin privileges.
     """
+    if not current_user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can reload skills",
+        )
+
     try:
         from gns3server.agent.gns3_copilot.skills.registry import (
             reload_skills_repository,
