@@ -59,7 +59,6 @@ from .gns3_start_node import GNS3StartNodeTool
 from .gns3_stop_node import GNS3StopNodeTool
 from .gns3_suspend_node import GNS3SuspendNodeTool
 from .gns3_update_node_name import GNS3UpdateNodeNameTool
-from .packet_capture_tools import PacketCaptureTool
 from .packet_analysis_tool import PacketAnalysisTool
 
 # Dynamic version management
@@ -86,7 +85,6 @@ __all__ = [
     "GNS3SuspendNodeTool",
     "GNS3UpdateNodeNameTool",
     "GNS3TemplateTool",
-    "PacketCaptureTool",
     "PacketAnalysisTool",
 ]
 

@@ -94,7 +94,6 @@ from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3TemplateTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
 from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
-from gns3server.agent.gns3_copilot.tools_v2 import PacketCaptureTool
 from gns3server.agent.gns3_copilot.tools_v2 import PacketAnalysisTool
 from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool
 from gns3server.agent.gns3_copilot.skills import InjectionSkillsTool
@@ -116,7 +115,6 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
     GNS3UpdateNodeNameTool(),  # Update node name
     ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
     # (READ-ONLY)
-    PacketCaptureTool(),  # Analyze packets from active capture
     PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
     DeviceSkillsTool(),  # Get device-specific skills and command knowledge
 ]
@@ -134,7 +132,6 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     # (READ-ONLY)
     ExecuteMultipleDeviceConfigCommands(),  # Execute configuration commands
     VPCSCommands(),  # Execute VPCS commands using Netmiko
-    PacketCaptureTool(),  # Analyze packets from active capture
     PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
     DeviceSkillsTool(),  # Get device-specific skills and command knowledge
 ]
