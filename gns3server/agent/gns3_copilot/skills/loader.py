@@ -188,6 +188,46 @@ class SkillsLoader:
             logger.error(f"Failed to load forbidden commands from {config_file}: {e}")
             return []
 
+    def load_packet_analysis_protocols(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Load packet analysis protocol definitions from YAML files.
+
+        Returns:
+            Dictionary mapping protocol keys to protocol definitions.
+            Each protocol contains tshark_field, display_filter, and filter_examples.
+        """
+        if yaml is None:
+            logger.error("PyYAML is not installed. Cannot load packet analysis protocols.")
+            return {}
+
+        protocols = {}
+        packet_analysis_dir = self.skills_dir / "packet_analysis"
+
+        if not packet_analysis_dir.exists():
+            logger.debug(f"Packet analysis directory not found: {packet_analysis_dir}")
+            return {}
+
+        for yaml_file in packet_analysis_dir.glob("*.yaml"):
+            try:
+                protocol_data = self._load_yaml(yaml_file)
+                if not protocol_data:
+                    logger.warning(f"Skipping empty YAML file: {yaml_file}")
+                    continue
+
+                # Use protocol_key field from YAML as the key
+                protocol_key = protocol_data.get("protocol_key")
+                if not protocol_key:
+                    logger.warning(f"No 'protocol_key' field in {yaml_file}, skipping")
+                    continue
+
+                protocols[protocol_key] = protocol_data
+                logger.debug(f"Loaded packet analysis protocol: {protocol_key} from {yaml_file}")
+            except Exception as e:
+                logger.error(f"Failed to load protocol from {yaml_file}: {e}")
+
+        logger.info(f"Loaded {len(protocols)} packet analysis protocols from {packet_analysis_dir}")
+        return protocols
+
     def _load_yaml(self, file_path: Path) -> Dict[str, Any]:
         """
         Load a YAML file and return its content.

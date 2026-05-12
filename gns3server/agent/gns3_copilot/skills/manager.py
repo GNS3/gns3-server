@@ -247,6 +247,34 @@ class SkillsManager:
             logger.error(f"Failed to reload skills: {e}")
             return False
 
+    def reload_packet_analysis_protocols(self) -> bool:
+        """
+        Hot reload packet analysis protocol definitions from YAML files.
+
+        Loads the latest protocol definitions from YAML files and updates
+        the PACKET_ANALYSIS_REGISTRY.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            from .registry import PACKET_ANALYSIS_REGISTRY
+
+            # Load new packet analysis protocols from YAML files
+            new_protocols = self.loader.load_packet_analysis_protocols()
+
+            # Update registry (safe replace - never leaves dict empty)
+            for k in list(PACKET_ANALYSIS_REGISTRY):
+                if k not in new_protocols:
+                    del PACKET_ANALYSIS_REGISTRY[k]
+            PACKET_ANALYSIS_REGISTRY.update(new_protocols)
+
+            logger.info(f"Successfully reloaded {len(new_protocols)} packet analysis protocols")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to reload packet analysis protocols: {e}")
+            return False
+
     def reload_prompts(self) -> bool:
         """
         Hot reload prompts from Markdown files.

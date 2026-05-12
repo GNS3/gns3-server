@@ -54,6 +54,10 @@ SKILLS_REGISTRY: dict[str, dict[str, Any]] = {}
 # This registry can be hot-reloaded via SkillsManager
 INJECTION_SKILLS_REGISTRY: dict[str, dict[str, Any]] = {}
 
+# Packet analysis protocols registry - loaded from external repository
+# Contains protocol definitions for tshark-based packet analysis
+PACKET_ANALYSIS_REGISTRY: dict[str, dict[str, Any]] = {}
+
 # Global skills manager instance for hot reload
 _skills_manager = None
 _init_in_progress = False
@@ -171,6 +175,7 @@ def reload_skills_repository() -> dict[str, Any]:
     # Reload everything from local files
     skills_ok = manager.reload_skills()
     prompts_ok = manager.reload_prompts()
+    protocols_ok = manager.reload_packet_analysis_protocols()
 
     # Reload forbidden commands (local import to avoid circular dependency)
     from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload_fc
@@ -180,11 +185,13 @@ def reload_skills_repository() -> dict[str, Any]:
     forbidden_commands = get_forbidden_commands()
 
     return {
-        "success": skills_ok or prompts_ok,
+        "success": skills_ok or prompts_ok or protocols_ok,
         "skills": skills_ok,
         "skill_count": manager.get_skill_count(),
         "prompts": prompts_ok,
         "prompt_count": manager.get_prompt_count(),
+        "protocols": protocols_ok,
+        "protocol_count": len(PACKET_ANALYSIS_REGISTRY),
         "forbidden_commands": len(forbidden_commands),
         "version": manager.get_current_version(),
     }
@@ -566,6 +573,53 @@ def list_available_injection_skills(context: list[str] | None = None) -> list[di
             "category": category,
         })
     return skills
+
+
+def get_packet_analysis_protocol(protocol: str) -> dict[str, Any]:
+    """
+    Get a packet analysis protocol definition.
+
+    Args:
+        protocol: The protocol key (e.g., "ospf", "bgp", "icmp")
+
+    Returns:
+        Protocol definition dictionary with available_fields, base_filter, etc.
+        Returns error dict if protocol not found.
+    """
+    protocol_data = PACKET_ANALYSIS_REGISTRY.get(protocol)
+
+    if not protocol_data:
+        # Try case-insensitive match
+        for key, data in PACKET_ANALYSIS_REGISTRY.items():
+            if key.lower() == protocol.lower():
+                protocol_data = data
+                protocol = key
+                break
+
+    if not protocol_data:
+        return {
+            "error": f"Unknown protocol: {protocol}",
+            "available_protocols": list(PACKET_ANALYSIS_REGISTRY.keys()),
+        }
+
+    return protocol_data
+
+
+def list_available_packet_analysis_protocols() -> list[dict[str, str]]:
+    """
+    List all available packet analysis protocols.
+
+    Returns:
+        List of protocol info dicts with protocol, name, and description.
+    """
+    protocols = []
+    for key, data in PACKET_ANALYSIS_REGISTRY.items():
+        protocols.append({
+            "protocol": key,
+            "name": data.get("name", key),
+            "description": data.get("description", ""),
+        })
+    return protocols
 
 
 class DeviceSkillsTool(BaseTool):
