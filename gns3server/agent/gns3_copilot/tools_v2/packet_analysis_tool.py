@@ -447,6 +447,13 @@ class PacketAnalysisTool(BaseTool):
                     logger.warning(f"tshark stderr: {result.stderr}")
 
             if not output.strip():
+                if "-c" in tshark_args:
+                    return json.dumps({
+                        "error": "No matching packets found",
+                        "hint": "The -c flag limits total packets READ, not matched results. "
+                                "Try removing -c so tshark scans the entire capture file. "
+                                'Use pipe to "head -N" to limit output instead.',
+                    })
                 return "No matching packets found"
 
             logger.info(f"tshark output: {len(output)} characters")
