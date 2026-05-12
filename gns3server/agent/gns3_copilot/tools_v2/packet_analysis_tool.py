@@ -30,6 +30,7 @@ Analyzes packets from an active GNS3 capture using tshark with user-provided arg
 The LLM constructs tshark commands based on protocol knowledge from packet analysis skills.
 """
 
+import json
 import logging
 import os
 import subprocess
@@ -43,6 +44,9 @@ from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Cache of valid tshark field names, loaded lazily from `tshark -G fields`
+_tshark_valid_fields: set | None = None
 
 
 class PacketAnalysisTool(BaseTool):
@@ -87,6 +91,82 @@ class PacketAnalysisTool(BaseTool):
                           alone instead.
     """
 
+    @classmethod
+    def _load_valid_tshark_fields(cls) -> set:
+        """
+        Load and cache valid tshark field names from `tshark -G fields`.
+
+        Returns:
+            Set of valid field names, or empty set on failure.
+        """
+        global _tshark_valid_fields
+        if _tshark_valid_fields is not None:
+            return _tshark_valid_fields
+
+        try:
+            result = subprocess.run(
+                ["tshark", "-G", "fields"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            fields = set()
+            for line in result.stdout.splitlines():
+                parts = line.split("\t")
+                if len(parts) >= 3:
+                    fields.add(parts[2])
+            _tshark_valid_fields = fields
+            logger.debug(f"Loaded {len(fields)} valid tshark field names")
+        except Exception as e:
+            logger.warning(f"Could not load tshark field names: {e}")
+            _tshark_valid_fields = set()
+
+        return _tshark_valid_fields
+
+    def _validate_tshark_args(self, tshark_args: str) -> str | None:
+        """
+        Validate tshark arguments before execution.
+
+        Checks `-e` field names against the tshark field registry.
+        Returns an error JSON string if invalid, or None if valid.
+
+        Args:
+            tshark_args: tshark command arguments string
+
+        Returns:
+            Error JSON string, or None if validation passes.
+        """
+        import shlex
+
+        try:
+            args = shlex.split(tshark_args)
+        except ValueError as e:
+            return json.dumps({"error": f"Invalid tshark_args syntax: {e}"})
+
+        valid_fields = self._load_valid_tshark_fields()
+        if not valid_fields:
+            return None
+
+        invalid_fields = []
+        i = 0
+        while i < len(args):
+            if args[i] == "-e" and i + 1 < len(args):
+                field = args[i + 1]
+                if field not in valid_fields:
+                    invalid_fields.append(field)
+                i += 2
+            else:
+                i += 1
+
+        if invalid_fields:
+            return json.dumps({
+                "error": f"Invalid tshark field names: {', '.join(invalid_fields)}",
+                "hint": "Use packet_analysis_skills tool to look up valid field names for the protocol",
+                "invalid_fields": invalid_fields,
+            })
+
+        return None
+
     def _run(
         self,
         project_id: str,
@@ -118,6 +198,11 @@ class PacketAnalysisTool(BaseTool):
             return '{"error": "link_id is required"}'
         if not tshark_args or not tshark_args.strip():
             return '{"error": "tshark_args is required"}'
+
+        # Pre-validate tshark field names before downloading capture
+        validation_error = self._validate_tshark_args(tshark_args)
+        if validation_error:
+            return validation_error
 
         temp_file = None
         try:
