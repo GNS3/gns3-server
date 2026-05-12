@@ -29,23 +29,18 @@ Command filter module for GNS3-Copilot.
 This module provides functionality to filter out dangerous or long-running
 commands that may cause issues with tool execution timeouts or device console
 availability.
+
+Forbidden commands are loaded from the external GNS3-Skills repository
+(config/forbidden_commands.txt) via SkillsManager.
 """
 
 import logging
-from pathlib import Path
+
+from gns3server.agent.gns3_copilot.skills.registry import get_skills_manager
 
 logger = logging.getLogger(__name__)
 
-
-def _get_gns3_copilot_root() -> Path:
-    """Get the root directory of the GNS3-Copilot project."""
-    # Get the directory containing this file
-    current_file = Path(__file__).resolve()
-    # Go up to the gns3_copilot directory (utils parent)
-    return current_file.parent.parent
-
-
-# Default forbidden commands (fallback if file not found)
+# Default forbidden commands (fallback if skills repository is not available)
 DEFAULT_FORBIDDEN_COMMANDS = [
     "traceroute",
     "tracepath",
@@ -55,22 +50,19 @@ DEFAULT_FORBIDDEN_COMMANDS = [
     "test",
 ]
 
-# Cache for forbidden commands to avoid repeated file reads
+# Cache for forbidden commands
 _forbidden_commands_cache: list[str] | None = None
-
-
-def _get_forbidden_commands_file_path() -> Path:
-    """Get the path to the forbidden commands configuration file."""
-    return _get_gns3_copilot_root() / "config" / "forbidden_commands.txt"
 
 
 def _load_forbidden_commands() -> list[str]:
     """
-    Load forbidden commands from the configuration file.
+    Load forbidden commands, preferring the skills repository.
+
+    Tries to load from the external GNS3-Skills repository first.
+    Falls back to hardcoded defaults if the repo is unavailable.
 
     Returns:
-        List of forbidden command patterns. If the file cannot be read,
-        returns the default list.
+        List of forbidden command patterns.
     """
     global _forbidden_commands_cache
 
@@ -78,69 +70,48 @@ def _load_forbidden_commands() -> list[str]:
     if _forbidden_commands_cache is not None:
         return _forbidden_commands_cache
 
-    file_path = _get_forbidden_commands_file_path()
+    # Try to load from skills repository
+    manager = get_skills_manager()
+    if manager is not None:
+            commands = manager.load_forbidden_commands()
+            if commands:
+                logger.info(
+                    "Loaded %d forbidden command patterns from skills repository",
+                    len(commands),
+                )
+                _forbidden_commands_cache = commands
+                return _forbidden_commands_cache
 
-    try:
-        if not file_path.exists():
-            logger.warning(
-                "Forbidden commands file not found: %s. Using default list.",
-                file_path,
-            )
-            _forbidden_commands_cache = DEFAULT_FORBIDDEN_COMMANDS.copy()
-            return _forbidden_commands_cache
-
-        with open(file_path, "r", encoding="utf-8") as f:
-            forbidden_commands = []
-            for line in f:
-                line = line.strip()
-
-                # Skip empty lines and comments
-                if not line or line.startswith("#"):
-                    continue
-
-                forbidden_commands.append(line.lower())
-
-        if not forbidden_commands:
-            logger.warning(
-                "No forbidden commands found in %s. Using default list.",
-                file_path,
-            )
-            _forbidden_commands_cache = DEFAULT_FORBIDDEN_COMMANDS.copy()
-        else:
-            logger.info(
-                "Loaded %d forbidden command patterns from %s",
-                len(forbidden_commands),
-                file_path,
-            )
-            _forbidden_commands_cache = forbidden_commands
-
-        return _forbidden_commands_cache
-
-    except Exception as e:
-        logger.error(
-            "Error reading forbidden commands file %s: %s. Using default list.",
-            file_path,
-            e,
-        )
-        _forbidden_commands_cache = DEFAULT_FORBIDDEN_COMMANDS.copy()
-        return _forbidden_commands_cache
+    # Fallback to defaults
+    logger.warning("Using default forbidden commands list")
+    _forbidden_commands_cache = DEFAULT_FORBIDDEN_COMMANDS.copy()
+    return _forbidden_commands_cache
 
 
 def reload_forbidden_commands() -> None:
     """
-    Reload the forbidden commands list from the configuration file.
+    Reload the forbidden commands list from the skills repository.
 
-    This clears the cache and forces a reload from the file on the next
-    call to filter_forbidden_commands() or get_forbidden_commands().
-
-    Use this after modifying the forbidden_commands.txt file to apply
-    changes without restarting the GNS3 server.
+    Directly loads and caches the commands from the repository.
+    Falls back to defaults if the repository is unavailable.
     """
     global _forbidden_commands_cache
-    _forbidden_commands_cache = None
-    logger.info(
-        "Forbidden commands cache cleared. Will reload on next access."
-    )
+
+    from gns3server.agent.gns3_copilot.skills.registry import get_skills_manager
+
+    manager = get_skills_manager()
+    if manager is not None:
+        commands = manager.load_forbidden_commands()
+        if commands:
+            logger.info(
+                "Loaded %d forbidden command patterns from skills repository",
+                len(commands),
+            )
+            _forbidden_commands_cache = commands
+            return
+
+    logger.warning("Using default forbidden commands list")
+    _forbidden_commands_cache = DEFAULT_FORBIDDEN_COMMANDS.copy()
 
 
 def get_forbidden_commands() -> list[str]:

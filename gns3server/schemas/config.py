@@ -159,6 +159,9 @@ class ServerSettings(BaseModel):
     allow_remote_console: bool = False
     enable_builtin_templates: bool = True
     install_builtin_appliances: bool = True
+    skills_repo_url: str = "https://github.com/yueguobin/GNS3-Skills.git"
+    skills_repo_branch: str = "main"
+    skills_auto_update: bool = True
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
     @field_validator("additional_images_paths", mode="before")

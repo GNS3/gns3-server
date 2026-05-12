@@ -102,7 +102,7 @@ class GNS3TopologyTool(BaseTool):
                 }
 
             # Initialize Gns3Connector using factory function
-            logger.info("Connecting to GNS3 server...")
+            logger.debug("Connecting to GNS3 server...")
             server = get_gns3_connector()
 
             if server is None:

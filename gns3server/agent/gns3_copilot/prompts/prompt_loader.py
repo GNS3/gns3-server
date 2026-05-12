@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GNS3-Copilot. If not, see <https://www.gnu.org/licenses/>.
 #
-# Copyright (C) 2025 Yue Guobin (岳国宾)
+# Copyright (C) 2025 Yue Guobin (� Yue Guobin)
 # Author: Yue Guobin (岳国宾)
 #
 # Project Home: https://github.com/yueguobin/gns3-copilot
@@ -26,7 +26,8 @@
 """
 Prompt Loader for GNS3-Copilot
 
-This module provides utilities for loading system prompts.
+This module provides utilities for loading system prompts from the external
+GNS3-Skills repository.
 Supports multiple prompt variants based on LLM model configuration.
 
 Available Modes (controlled by config.copilot_mode in llm_model_configs):
@@ -34,20 +35,21 @@ Available Modes (controlled by config.copilot_mode in llm_model_configs):
   no configuration
 - "lab_automation_assistant": Full lab automation assistant mode - diagnostics
   and configuration enabled
+- "troubleshooting_injection": Troubleshooting issue injection mode
 
+All prompts are loaded from the external GNS3-Skills repository via SkillsManager.
 """
 
 import logging
 
-from .teaching_assistant_prompt import TEACHING_ASSISTANT_PROMPT
-from .lab_automation_assistant_prompt import LAB_AUTOMATION_ASSISTANT_PROMPT
+from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 
 logger = logging.getLogger(__name__)
 
 
 def load_system_prompt(llm_config: dict | None = None) -> str:
     """
-    Load the system prompt for GNS3-Copilot.
+    Load the system prompt for GNS3-Copilot from the external repository.
 
     The prompt mode is controlled by the `copilot_mode` field in the LLM
     model config:
@@ -55,31 +57,59 @@ def load_system_prompt(llm_config: dict | None = None) -> str:
       only, no configuration
     - "lab_automation_assistant": Full lab automation assistant mode -
       diagnostics and configuration enabled
+    - "troubleshooting_injection": Troubleshooting issue injection mode -
+      inject network faults for practice
+
+    Prompts are loaded from the external GNS3-Skills repository via SkillsManager.
 
     Args:
         llm_config: LLM model configuration dictionary (flattened structure
                    from get_user_llm_config_full)
 
     Returns:
-        str: The system prompt string.
+        str: The system prompt string, or empty string if not found.
     """
     if not llm_config:
-        logger.info(
+        logger.debug(
             "No LLM config provided, using default TEACHING_ASSISTANT "
             "prompt mode"
         )
-        return TEACHING_ASSISTANT_PROMPT
+        return _load_prompt("teaching_assistant")
 
     # llm_config is a flattened dict with copilot_mode at the top level
     # Example: {"provider": "...", "model": "...", "copilot_mode": "...", ...}
     mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
 
     if mode == "lab_automation_assistant":
-        logger.info(
+        logger.debug(
             "Using LAB_AUTOMATION_ASSISTANT prompt mode (diagnostics + "
             "configuration)"
         )
-        return LAB_AUTOMATION_ASSISTANT_PROMPT
+        return _load_prompt("lab_automation_assistant")
+    elif mode == "troubleshooting_injection":
+        logger.debug(
+            "Using TROUBLESHOOTING_INJECTION prompt mode (fault injection)"
+        )
+        return _load_prompt("troubleshooting_injection")
     else:
-        logger.info("Using TEACHING_ASSISTANT prompt mode (diagnostics only)")
-        return TEACHING_ASSISTANT_PROMPT
+        logger.debug("Using TEACHING_ASSISTANT prompt mode (diagnostics only)")
+        return _load_prompt("teaching_assistant")
+
+
+def _load_prompt(prompt_name: str) -> str:
+    """
+    Load a prompt from the external skills repository.
+
+    Args:
+        prompt_name: Name of the prompt (e.g., "teaching_assistant")
+
+    Returns:
+        Prompt content as string, or empty string if not found
+    """
+    prompt = get_prompt(prompt_name)
+    if prompt:
+        logger.debug(f"Loaded prompt '{prompt_name}' from external repository")
+        return prompt
+
+    logger.warning(f"Prompt '{prompt_name}' not found in external repository")
+    return ""
