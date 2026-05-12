@@ -55,7 +55,7 @@ class PacketAnalysisTool(BaseTool):
     Input:
         project_id (str, required): UUID of the GNS3 project
         link_id (str, required): UUID of the link to analyze
-        tshark_args (str, required): tshark command arguments (e.g., '-Y "ospf" -T fields -e ip.src')
+        tshark_args (str, required): tshark command arguments (after '-r <pcap>')
 
     Output:
         str: tshark output in text format (tab-separated fields or JSON)
