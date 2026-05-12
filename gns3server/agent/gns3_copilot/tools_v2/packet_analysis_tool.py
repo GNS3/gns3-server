@@ -89,7 +89,62 @@ class PacketAnalysisTool(BaseTool):
                           total packets scanned, it can hide results when used
                           with -Y. Prefer piping to head -10 or rely on -Y
                           alone instead.
+
+    Instead of analysis, you can also search tshark's field registry directly:
+      {"action": "search_fields", "query": "ospf"}
+    This returns matching field names, types, and descriptions from tshark.
+    Use this to find correct field names before constructing tshark_args.
     """
+
+    @classmethod
+    def _search_fields(cls, query: str) -> str:
+        """
+        Search tshark field registry via `tshark -G fields | grep -i <query>`.
+
+        Args:
+            query: Search term
+
+        Returns:
+            JSON string with matching fields.
+        """
+        try:
+            grep = subprocess.Popen(
+                ["grep", "-i", query, "-"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True,
+            )
+            tshark = subprocess.Popen(
+                ["tshark", "-G", "fields"],
+                stdout=grep.stdin, stderr=subprocess.DEVNULL, text=True,
+            )
+            stdout, _ = grep.communicate(timeout=30)
+            tshark.wait(timeout=30)
+        except Exception as e:
+            return json.dumps({"error": f"tshark query failed: {e}"})
+
+        results = []
+        seen = set()
+        for line in stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 3 and parts[0] == "F":
+                name = parts[2]
+                if name not in seen:
+                    seen.add(name)
+                    results.append({
+                        "field": name,
+                        "type": parts[3] if len(parts) > 3 else "",
+                        "protocol": parts[4] if len(parts) > 4 else "",
+                        "description": parts[7] if len(parts) > 7 else "",
+                    })
+            if len(results) >= 40:
+                break
+
+        return json.dumps({
+            "query": query,
+            "count": len(results),
+            "fields": results,
+            "hint": "Use the 'field' values in tshark_args with -e",
+        }, ensure_ascii=False, indent=2)
 
     @classmethod
     def _load_valid_tshark_fields(cls) -> set:
@@ -161,7 +216,7 @@ class PacketAnalysisTool(BaseTool):
         if invalid_fields:
             return json.dumps({
                 "error": f"Invalid tshark field names: {', '.join(invalid_fields)}",
-                "hint": "Use packet_analysis_skills tool to look up valid field names for the protocol",
+                "hint": 'Use {"action": "search_fields", "query": "<protocol>"} to look up valid field names',
                 "invalid_fields": invalid_fields,
             })
 
@@ -169,9 +224,11 @@ class PacketAnalysisTool(BaseTool):
 
     def _run(
         self,
-        project_id: str,
-        link_id: str,
-        tshark_args: str,
+        project_id: str | None = None,
+        link_id: str | None = None,
+        tshark_args: str | None = None,
+        action: str | None = None,
+        query: str | None = None,
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
         """
@@ -181,11 +238,17 @@ class PacketAnalysisTool(BaseTool):
             project_id: UUID of the GNS3 project
             link_id: UUID of the link to analyze
             tshark_args: tshark command arguments (after '-r <pcap>')
+            action: "search_fields" to query tshark field registry instead
+            query: Search term for action="search_fields" (e.g., "ospf")
             run_manager: LangChain run manager (unused)
 
         Returns:
             str: tshark output
         """
+        # Field search mode: query tshark directly without capture
+        if action == "search_fields":
+            return self._search_fields(query or "")
+
         logger.info(
             f"PacketAnalysisTool invoked: project_id={project_id}, "
             f"link_id={link_id}, tshark_args={tshark_args}"
