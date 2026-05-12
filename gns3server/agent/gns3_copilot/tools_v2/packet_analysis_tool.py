@@ -65,33 +65,37 @@ class PacketAnalysisTool(BaseTool):
     description: str = """
     Analyze packets from an active GNS3 capture using tshark.
 
-    Use this tool to analyze network packets for troubleshooting. Construct tshark
-    arguments based on the protocol's available fields from packet_analysis skills.
+    Use this tool to analyze network packets captured on a link.
+
+    `WORKFLOW`:
+    1. Call `device_skills` or `get_packet_analysis_protocol` to query the protocol definition
+       (available fields, display filters, filter examples) from packet_analysis skills.
+    2. Based on the user's issue, select relevant fields and construct tshark_args.
+    3. Call this tool with the constructed tshark_args.
+    4. Analyze the returned data and identify issues.
+    5. Repeat step 2-4 with different filters/fields as needed for deeper analysis.
 
     Input (JSON format):
         - project_id (str, required): UUID of the GNS3 project
         - link_id (str, required): UUID of the link to analyze
-        - tshark_args (str, required): tshark command arguments (everything after 'tshark -r <pcap>')
+        - tshark_args (str, required): tshark command arguments (after '-r <pcap>')
 
     Common tshark arguments:
         -Y "<filter>": Display filter (e.g., 'ospf', 'bgp', 'icmp')
         -T fields: Output as tab-separated fields
         -e <field>: Extract specific field (can use multiple -e)
         -T json: Output as JSON
-        -c <count>: Limit packet count
+        -c <count>: Limit packet count to N
 
     Examples:
-        # OSPF Hello packets with specific fields
+        # Step 1: Query protocol fields from skills
+        packet_analysis_skills protocol=ospf → get fields
+        # Step 2: Call tool with constructed args
         {"project_id": "xxx", "link_id": "yyy",
-         "tshark_args": "-Y 'ospf.msg == 1' -T fields -e ip.src -e ospf.hello.interval -e ospf.dead.interval"}
-
-        # BGP messages
+         "tshark_args": "-Y 'ospf.msg == 1' -T fields -e ip.src -e ospf.hello.hello_interval -e ospf.hello.router_dead_interval"}
+        # Step 3: Further drill-down
         {"project_id": "xxx", "link_id": "yyy",
-         "tshark_args": "-Y 'bgp' -T fields -e ip.src -e bgp.type"}
-
-        # First 50 ICMP packets
-        {"project_id": "xxx", "link_id": "yyy",
-         "tshark_args": "-Y 'icmp' -T fields -e icmp.type -e icmp.code -c 50"}
+         "tshark_args": "-Y 'ospf.msg == 4' -T fields -e ip.src -e ospf.lsa.type"}
     """
 
     def _run(
