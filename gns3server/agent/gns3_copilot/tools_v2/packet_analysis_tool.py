@@ -442,19 +442,37 @@ class PacketAnalysisTool(BaseTool):
             )
 
             output = result.stdout
-            if result.stderr:
-                if "tshark:" in result.stderr.lower():
-                    logger.warning(f"tshark stderr: {result.stderr}")
+            stderr = result.stderr.strip() if result.stderr else ""
+
+            # Surface tshark field/filter errors to the LLM
+            if stderr and "tshark:" in stderr.lower():
+                stderr_clean = stderr.replace("tshark: ", "")
+                hints = [
+                    f"tshark reported: {stderr_clean}",
+                ]
+                if "is not a valid protocol" in stderr.lower() or "aren't valid" in stderr.lower():
+                    hints.append(
+                        'Use {"action": "search_fields", "query": "<protocol>"} '
+                        "to find correct field names."
+                    )
+                logger.warning(f"tshark stderr: {stderr}")
+                return json.dumps({"error": "tshark argument error", "hints": hints})
+
+            if stderr:
+                logger.warning(f"tshark stderr: {stderr}")
 
             if not output.strip():
+                hints = []
                 if "-c" in tshark_args:
-                    return json.dumps({
-                        "error": "No matching packets found",
-                        "hint": "The -c flag limits total packets READ, not matched results. "
-                                "Try removing -c so tshark scans the entire capture file. "
-                                'Use pipe to "head -N" to limit output instead.',
-                    })
-                return "No matching packets found"
+                    hints.append(
+                        "The -c flag limits total packets READ, not matched results. "
+                        'Try removing -c and pipe to "head -N" instead.'
+                    )
+                hints.append(
+                    'Use {"action": "search_fields", "query": "<protocol>"} to '
+                    "verify your display filter and field names are correct."
+                )
+                return json.dumps({"result": "No matching packets found", "hints": hints})
 
             logger.info(f"tshark output: {len(output)} characters")
             return output
