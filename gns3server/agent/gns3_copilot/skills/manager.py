@@ -241,7 +241,7 @@ class SkillsManager:
                     del SKILLS_REGISTRY[k]
             SKILLS_REGISTRY.update(new_device_skills)
 
-            logger.debug(f"Successfully reloaded {len(new_injection_skills)} injection skills and {len(new_device_skills)} device skills")
+            logger.info(f"Loaded {len(new_injection_skills)} injection skills and {len(new_device_skills)} device skills")
             return True
         except Exception as e:
             logger.error(f"Failed to reload skills: {e}")
@@ -308,7 +308,7 @@ class SkillsManager:
                 return False
 
             self._prompt_count = loaded_count
-            logger.debug(f"Successfully reloaded {loaded_count} prompts")
+            logger.info(f"Loaded {loaded_count} prompts")
             return True
         except Exception as e:
             logger.error(f"Failed to reload prompts: {e}")
