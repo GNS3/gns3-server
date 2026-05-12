@@ -83,7 +83,7 @@ class PacketAnalysisTool(BaseTool):
 
     Input (JSON format) — field search mode (no capture needed):
         - action (str): "search_fields"
-        - query (str): Protocol or keyword to search (e.g., "ospf", "bgp")
+        - query (str): Single keyword for literal substring search (e.g., "ospf.lsa", "bgp")
 
     Common tshark argument patterns:
         -Y "<filter>"     Display filter
@@ -95,10 +95,13 @@ class PacketAnalysisTool(BaseTool):
                           with -Y. Prefer piping to head -10 or rely on -Y
                           alone instead.
 
-    Instead of analysis, you can also search tshark's field registry directly:
-      {"action": "search_fields", "query": "ospf"}
-    This returns matching field names, types, and descriptions from tshark.
-    Use this to find correct field names before constructing tshark_args.
+    Instead of analysis, you can search tshark's field registry directly for
+    valid field names:
+      {"action": "search_fields", "query": "ospf.lsa"}
+      {"action": "search_fields", "query": "bgp"}
+    Uses literal substring matching (not regex). Returns matching field names,
+    types, and descriptions. Use this to find correct -e field names before
+    building tshark_args.
     """
 
     @classmethod
@@ -113,17 +116,28 @@ class PacketAnalysisTool(BaseTool):
             JSON string with matching fields.
         """
         try:
-            grep = subprocess.Popen(
-                ["grep", "-i", query, "-"],
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL, text=True,
-            )
+            if not query or not query.strip():
+                return json.dumps({"error": "query is required"})
+
+            query = query.strip()
+            if len(query.split()) > 1:
+                return json.dumps({
+                    "error": "Only one keyword allowed",
+                    "hint": 'Use a single keyword like "ospf.lsa" or "bgp", not multiple words',
+                })
+
             tshark = subprocess.Popen(
                 ["tshark", "-G", "fields"],
-                stdout=grep.stdin, stderr=subprocess.DEVNULL, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
             )
+            grep = subprocess.Popen(
+                ["grep", "-iF", query, "-"],
+                stdin=tshark.stdout, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True,
+            )
+            tshark.stdout.close()
             stdout, _ = grep.communicate(timeout=30)
-            tshark.wait(timeout=30)
+            tshark.wait(timeout=5)
         except Exception as e:
             return json.dumps({"error": f"tshark query failed: {e}"})
 
