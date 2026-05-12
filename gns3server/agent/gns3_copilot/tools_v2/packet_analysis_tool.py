@@ -83,7 +83,8 @@ class PacketAnalysisTool(BaseTool):
 
     Input (JSON format) — field search mode (no capture needed):
         - action (str): "search_fields"
-        - query (str): Single keyword for literal substring search (e.g., "ospf.lsa", "bgp")
+        - query (str): Single keyword, e.g. "ospf.lsa", "bgp.open", "bgp.type"
+                        Use dot-notation like "protocol.field" for precise results.
 
     Common tshark argument patterns:
         -Y "<filter>"     Display filter
@@ -98,10 +99,11 @@ class PacketAnalysisTool(BaseTool):
     Instead of analysis, you can search tshark's field registry directly for
     valid field names:
       {"action": "search_fields", "query": "ospf.lsa"}
-      {"action": "search_fields", "query": "bgp"}
-    Uses literal substring matching (not regex). Returns matching field names,
-    types, and descriptions. Use this to find correct -e field names before
-    building tshark_args.
+      {"action": "search_fields", "query": "bgp.open"}
+    Uses literal substring matching (not regex). Only one keyword allowed.
+    Use dot-notation like "ospf", "ospf.lsa", "bgp.peer" for precise results.
+    Returns matching field names, types, and descriptions. Use this to find
+    correct -e field names before building tshark_args.
     """
 
     @classmethod
