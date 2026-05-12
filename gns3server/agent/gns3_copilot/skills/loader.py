@@ -131,7 +131,7 @@ class SkillsLoader:
             except Exception as e:
                 logger.error(f"Failed to load skill from {yaml_file}: {e}")
 
-        logger.info(f"Loaded {len(skills)} device skills from {device_dir}")
+        logger.debug(f"Loaded {len(skills)} device skills from {device_dir}")
         return skills
 
     def load_prompt(self, prompt_name: str) -> str:
@@ -225,7 +225,7 @@ class SkillsLoader:
             except Exception as e:
                 logger.error(f"Failed to load protocol from {yaml_file}: {e}")
 
-        logger.info(f"Loaded {len(protocols)} packet analysis protocols from {packet_analysis_dir}")
+        logger.debug(f"Loaded {len(protocols)} packet analysis protocols from {packet_analysis_dir}")
         return protocols
 
     def _load_yaml(self, file_path: Path) -> Dict[str, Any]:
