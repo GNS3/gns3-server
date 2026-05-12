@@ -81,7 +81,10 @@ class PacketAnalysisTool(BaseTool):
         -T fields         Tab-separated field output
         -e <field>        Extract field (use multiple -e for multiple fields)
         -T json           JSON output
-        -c <count>        Limit packet count
+        -c <count>        Limit packets READ (not matched count). Since -c limits
+                          total packets scanned, it can hide results when used
+                          with -Y. Prefer piping to head -10 or rely on -Y
+                          alone instead.
     """
 
     def _run(
