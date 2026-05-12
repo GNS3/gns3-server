@@ -783,3 +783,70 @@ class InjectionSkillsTool(BaseTool):
         skill = get_injection_skill(device_type, detail=detail, issue=issue)
 
         return json.dumps(skill, ensure_ascii=False, indent=2)
+
+
+class PacketAnalysisSkillsTool(BaseTool):
+    """
+    LangChain tool for querying packet analysis protocol definitions.
+
+    Use this tool to list available protocols and get protocol-specific
+    tshark fields, display filters, and check rules.
+    """
+
+    name: str = "packet_analysis_skills"
+    description: str = """
+    Get or list packet analysis protocol definitions.
+
+    Before calling packet_analysis tool, use this to query the protocol's
+    available tshark fields, display filters, and check rules.
+
+    USAGE:
+    - List available protocols:
+      {"action": "list"}
+
+    - Get protocol definition with fields:
+      {"action": "get", "protocol": "ospf"}
+
+    PARAMETERS:
+    - action: "list" or "get" (required)
+    - protocol: Protocol key for action="get" (e.g., "ospf", "bgp", "arp", "icmp")
+    """
+
+    def _run(
+        self,
+        tool_input: str | dict[str, Any],
+        run_manager: CallbackManagerForToolRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Execute the packet analysis skills lookup."""
+        logger.debug("PacketAnalysisSkillsTool invoked with input: %s", tool_input)
+
+        if isinstance(tool_input, str):
+            try:
+                params = json.loads(tool_input)
+            except json.JSONDecodeError as e:
+                return json.dumps({
+                    "error": f"Invalid JSON input: {e}",
+                    "hint": 'Expected format: {"action": "get", "protocol": "ospf"}'
+                }, ensure_ascii=False, indent=2)
+        else:
+            params = tool_input
+
+        action = params.get("action", "get")
+
+        if action == "list":
+            protocols = list_available_packet_analysis_protocols()
+            return json.dumps({
+                "count": len(protocols),
+                "protocols": protocols
+            }, ensure_ascii=False, indent=2)
+
+        protocol = params.get("protocol")
+        if not protocol:
+            return json.dumps({
+                "error": "Missing required field: protocol",
+                "available_protocols": list(PACKET_ANALYSIS_REGISTRY.keys()),
+            }, ensure_ascii=False, indent=2)
+
+        result = get_packet_analysis_protocol(protocol)
+        return json.dumps(result, ensure_ascii=False, indent=2)

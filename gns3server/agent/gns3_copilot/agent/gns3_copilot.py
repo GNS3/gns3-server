@@ -97,6 +97,7 @@ from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSComman
 from gns3server.agent.gns3_copilot.tools_v2 import PacketAnalysisTool
 from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool
 from gns3server.agent.gns3_copilot.skills import InjectionSkillsTool
+from gns3server.agent.gns3_copilot.skills import PacketAnalysisSkillsTool
 
 # Set up logger for GNS3-Copilot
 logger = logging.getLogger(__name__)
@@ -116,6 +117,7 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
     ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
     # (READ-ONLY)
     PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
     DeviceSkillsTool(),  # Get device-specific skills and command knowledge
 ]
 
@@ -133,6 +135,7 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     ExecuteMultipleDeviceConfigCommands(),  # Execute configuration commands
     VPCSCommands(),  # Execute VPCS commands using Netmiko
     PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
     DeviceSkillsTool(),  # Get device-specific skills and command knowledge
 ]
 
