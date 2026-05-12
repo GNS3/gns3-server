@@ -132,6 +132,11 @@ def _ensure_skills_manager():
         else:
             logger.warning("Failed to reload prompts")
 
+        if manager.reload_packet_analysis_protocols():
+            logger.debug(f"Loaded {len(PACKET_ANALYSIS_REGISTRY)} packet analysis protocols")
+        else:
+            logger.warning("Failed to reload packet analysis protocols")
+
         _skills_manager = manager
         logger.debug("SkillsManager initialized successfully")
 
