@@ -71,14 +71,19 @@ class PacketAnalysisTool(BaseTool):
 
     Use this to analyze captured packets when diagnosing network issues.
 
-    **Before calling this tool**, first query `get_packet_analysis_protocol`
-    to get the correct tshark field names and display filter for the protocol.
-    Construct `tshark_args` from the skills data, not from memory.
+    **Before calling this tool**, use `search_fields` action to look up
+    valid tshark field names from the live tshark field registry, or query
+    `get_packet_analysis_protocol` for protocol-level skill definitions.
+    Construct `tshark_args` using accurate field names.
 
-    Input (JSON format):
+    Input (JSON format) — capture analysis mode:
         - project_id (str, required): UUID of the GNS3 project
         - link_id (str, required): UUID of the link to analyze
         - tshark_args (str, required): tshark command arguments (after '-r <pcap>')
+
+    Input (JSON format) — field search mode (no capture needed):
+        - action (str): "search_fields"
+        - query (str): Protocol or keyword to search (e.g., "ospf", "bgp")
 
     Common tshark argument patterns:
         -Y "<filter>"     Display filter
