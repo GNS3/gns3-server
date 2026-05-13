@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pydantic import ConfigDict, BaseModel, Field
-from typing import Optional, Union
+from typing import Optional, List
 from enum import Enum
 from uuid import UUID
 
@@ -48,6 +48,10 @@ class TemplateBase(BaseModel):
     template_type: Optional[NodeType] = None
     compute_id: Optional[str] = None
     usage: Optional[str] = ""
+    tags: Optional[List[str]] = Field(
+        default_factory=list,
+        description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+    )
 
 
 class TemplateCreate(TemplateBase):

@@ -15,6 +15,7 @@ from httpx import AsyncClient
 from httpx_ws.transport import ASGIWebSocketTransport
 from unittest.mock import MagicMock, patch
 from pathlib import Path
+from typing import AsyncGenerator, Any
 
 from gns3server.controller import Controller
 from gns3server.config import Config
@@ -35,7 +36,7 @@ sys.original_platform = sys.platform
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
-async def app() -> FastAPI:
+async def app() -> AsyncGenerator[Any, Any]:
 
     from gns3server.api.server import app as gns3app
     yield gns3app
@@ -46,8 +47,10 @@ async def db_engine():
 
     db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
-    yield engine
-    #await engine.sync_engine.dispose()
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
@@ -72,7 +75,7 @@ async def db_session(db_engine):
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
-async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
+async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncGenerator[AsyncClient, Any]:
 
     async def _get_test_db():
         try:

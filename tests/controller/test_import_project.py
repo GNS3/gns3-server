@@ -130,19 +130,6 @@ async def test_import_project_containing_symlink(tmpdir, controller):
     path = project.path
 
     project_id = str(uuid.uuid4())
-    topology = {
-        "project_id": str(uuid.uuid4()),
-        "name": "test",
-        "auto_open": True,
-        "auto_start": True,
-        "topology": {
-        },
-        "version": "2.0.0"
-    }
-
-    with open(os.path.join(path, "project.gns3"), 'w+') as f:
-        json.dump(topology, f)
-
     os.makedirs(os.path.join(path, "vm1", "dynamips"))
     symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
     symlink_target = "/tmp/anywhere"

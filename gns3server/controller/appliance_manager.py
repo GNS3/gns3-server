@@ -15,12 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
 import json
 import asyncio
-import aiofiles
-import shutil
 import platformdirs
 
 
@@ -29,6 +26,7 @@ from aiohttp.client_exceptions import ClientError
 
 from uuid import UUID
 from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from .appliance import Appliance
 from ..config import Config
@@ -36,10 +34,10 @@ from ..utils.asyncio import locking
 from ..utils.http_client import HTTPClient
 from .controller_error import ControllerBadRequestError, ControllerNotFoundError, ControllerError
 from .appliance_to_template import ApplianceToTemplate
-from ..utils.images import InvalidImageError, write_image, md5sum
-from ..utils.asyncio import wait_run_in_executor
+from ..utils.images import InvalidImageError, write_image, read_image_info
 
 from gns3server import schemas
+from gns3server.schemas.controller.appliances import ApplianceModel
 from gns3server.utils.images import default_images_directory
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -183,17 +181,16 @@ class ApplianceManager:
                         if image_in_db:
                             version_images[appliance_key] = image_in_db.filename
                         else:
-                            # check if the image is on disk
-                            # FIXME: still necessary? the image should have been discovered and saved in the db already
+                            # check if the image is on disk but it not yet in the database
                             image_path = os.path.join(image_dir, appliance_file)
-                            if os.path.exists(image_path) and \
-                                    await wait_run_in_executor(
-                                        md5sum,
-                                        image_path,
-                                        cache_to_md5file=False
-                                    ) == image_checksum:
-                                async with aiofiles.open(image_path, "rb") as f:
-                                    await write_image(appliance_file, image_path, f, images_repo, allow_raw_image=True)
+                            if os.path.exists(image_path):
+                                image_info = await read_image_info(image_path)
+                                if image_info.get("checksum") == image_checksum:
+                                    log.info(f"Adding image '{image_path}' to the database")
+                                    try:
+                                        await images_repo.add_image(**image_info)
+                                    except SQLAlchemyError as e:
+                                        log.warning(f"Error while adding image '{image['path']}' to the database: {e}")
                             else:
                                 # download the image if there is a direct download URL
                                 direct_download_url = image.get("direct_download_url")
@@ -252,7 +249,8 @@ class ApplianceManager:
         appliances_info = self._find_appliances_from_image_checksum(image_checksum)
         for appliance, image_version in appliances_info:
             try:
-                schemas.Appliance.model_validate(appliance.asdict())
+                # Validate with discriminated union - automatically routes to correct version
+                ApplianceModel.model_validate(appliance.asdict())
             except ValidationError as e:
                 log.warning(f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
@@ -283,7 +281,8 @@ class ApplianceManager:
             raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
 
         try:
-            schemas.Appliance.model_validate(appliance.asdict())
+            # Validate with discriminated union - automatically routes to correct version
+            ApplianceModel.model_validate(appliance.asdict())
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate appliance '{appliance_id}': {e}")
 
@@ -310,7 +309,7 @@ class ApplianceManager:
                                                         f"appliance '{appliance_id}'")
 
             template_data = await self._appliance_to_template(appliance)
-            await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+            return await self._create_template(template_data, templates_repo, rbac_repo, current_user)
 
     def load_appliances(self, symbol_theme: str = None) -> None:
         """
@@ -338,7 +337,9 @@ class ApplianceManager:
                             appliance = Appliance(path, json.load(f), builtin=builtin)
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
-                                schemas.Appliance.model_validate(json_data)
+                                # Validate using discriminated union - automatically routes to correct version
+                                log.debug(f"Validating appliance '{appliance.id}' with registry version {appliance.registry_version}")
+                                ApplianceModel.model_validate(json_data)
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol

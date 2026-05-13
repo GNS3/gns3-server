@@ -233,6 +233,7 @@ async def update_vmware_node_nio(
     """
 
     nio = node.get_nio(adapter_number)
+    nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.adapter_update_nio_binding(adapter_number, nio)

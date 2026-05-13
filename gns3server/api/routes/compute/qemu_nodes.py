@@ -27,10 +27,14 @@ from typing import Union
 from uuid import UUID
 
 from gns3server import schemas
+from gns3server.compute import qemu
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
+
+import logging
+log = logging.getLogger(__name__)
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}}
 
@@ -73,6 +77,15 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
         aux_type=node_data.pop("aux_type", "none"),
         platform=node_data.pop("platform", None),
     )
+
+    # update the disk image with the backing file if provided
+    # this is needed when duplicating a node that uses backed disk images
+    drives = ["a", "b", "c", "d"]
+    for disk_index, drive in enumerate(drives):
+        disk_image_backing_file = node_data.get(f"hd{drive}_disk_image_backing_file")
+        if disk_image_backing_file:
+            log.info(f"Updating disk image for drive {drive} with backing file {disk_image_backing_file}")
+            node_data[f"hd{drive}_disk_image"] = disk_image_backing_file
 
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
@@ -304,10 +317,10 @@ async def update_qemu_node_nio(
     """
 
     nio = node.get_nio(adapter_number)
+    nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
-    if nio_data.suspend:
-        nio.suspend = nio_data.suspend
+    nio.suspend = nio_data.suspend
     await node.adapter_update_nio_binding(adapter_number, nio)
     return nio.asdict()
 
@@ -400,6 +413,21 @@ async def console_ws(
 
     if websocket:
         await node.start_websocket_console(websocket)
+
+
+@router.websocket(
+    "/{node_id}/console/vnc"
+)
+async def vnc_console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: QemuVM = Depends(dep_node)
+) -> None:
+    """
+    VNC Console WebSocket.
+    """
+
+    if websocket:
+        await node.start_vnc_websocket_console(websocket)
 
 
 @router.post(

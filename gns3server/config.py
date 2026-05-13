@@ -97,8 +97,20 @@ class Config:
 
         if self._main_config_file is None:
 
-            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 3.0) + support profiles
-            # migrate post version 2.2.0 config files if they exist
+            if not os.path.exists(versioned_user_dir):
+                # Try to migrate the configuration files and database from the previous version if it exists
+                previous_version = f"{__version_info__[0]}.{int(__version_info__[1]) - 1}"
+                if self._profile:
+                    previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version, "profiles", self._profile)
+                else:
+                    previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version)
+                if os.path.exists(previous_versioned_user_dir):
+                    try:
+                        shutil.copytree(previous_versioned_user_dir, versioned_user_dir, symlinks=True, ignore_dangling_symlinks=True)
+                        log.info(f"Migrated configuration files and database from '{previous_versioned_user_dir}' to '{versioned_user_dir}'")
+                    except OSError as e:
+                        log.error(f"Cannot migrate old config files and database from '{previous_versioned_user_dir}: {e}")
+
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:
                 # migrate the server config file
@@ -225,6 +237,17 @@ class Config:
         except OSError as e:
             log.error(f"Could not read JWT secret key file '{jwt_secret_key_path}': {e}")
 
+    def _load_encryption_key(self):
+        """
+        Load the encryption key for sensitive data (API keys, etc.).
+        """
+        from .utils.encryption import init_encryption
+
+        try:
+            init_encryption(self._settings.Server.secrets_dir)
+        except Exception as e:
+            log.error(f"Could not initialize encryption: {e}")
+
     def _load_secret_files(self):
         """
         Load the secret files.
@@ -234,6 +257,7 @@ class Config:
             self._settings.Server.secrets_dir = os.path.dirname(self.server_config)
 
         self._load_jwt_secret_key()
+        self._load_encryption_key()
 
     def read_config(self):
         """
@@ -249,6 +273,8 @@ class Config:
         if not parsed_files:
             log.warning("No configuration file could be found or read")
             self._settings = ServerConfig()
+            # Still load secret files even without a config file
+            self._load_secret_files()
             return
 
         for file in parsed_files:

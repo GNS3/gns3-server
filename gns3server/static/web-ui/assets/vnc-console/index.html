@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <title>VNC Console</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        overflow: hidden;
+        background: #000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      #vnc-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: padding-top 0.3s ease;
+      }
+
+      #vnc-container.with-toolbar {
+        padding-top: 50px;
+      }
+
+      #vnc-container > canvas {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      #status-bar {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 1000;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      #status-bar.success {
+        background: rgba(76, 175, 80, 0.9);
+      }
+
+      #status-bar.error {
+        background: rgba(244, 67, 54, 0.9);
+      }
+
+      #status-bar.warning {
+        background: rgba(255, 152, 0, 0.9);
+      }
+
+      #error-dialog {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 450px;
+        display: none;
+        z-index: 1001;
+      }
+
+      #error-dialog h3 {
+        color: #d32f2f;
+        margin-bottom: 12px;
+        font-size: 20px;
+      }
+
+      #error-dialog p {
+        color: #555;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+
+      #error-dialog .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      #error-dialog button {
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+
+      #error-dialog button:hover {
+        background: #1565c0;
+      }
+
+      #error-dialog button.secondary {
+        background: #f5f5f5;
+        color: #333;
+      }
+
+      #error-dialog button.secondary:hover {
+        background: #e0e0e0;
+      }
+
+      /* Loading indicator */
+      .loading-spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        color: #fff;
+      }
+
+      .loading-text {
+        font-size: 16px;
+        opacity: 0.8;
+      }
+
+      /* Toolbar styles */
+      #vnc-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: rgba(30, 30, 30, 0.95);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+        flex-wrap: wrap;
+      }
+
+      #vnc-toolbar.hidden {
+        transform: translateY(-100%);
+      }
+
+      #vnc-toolbar .toolbar-section {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      #vnc-toolbar .toolbar-section:last-child {
+        border-right: none;
+      }
+
+      /* Dropdown menu */
+      .dropdown {
+        position: relative;
+      }
+
+      .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: -35px;
+        margin-top: 4px;
+        background: rgba(40, 40, 40, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 12px;
+        min-width: 320px;
+        max-width: 500px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 2000;
+      }
+
+      .dropdown-menu.show {
+        display: block;
+        animation: dropdownFadeIn 0.2s ease;
+      }
+
+      @keyframes dropdownFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .dropdown-menu .menu-section {
+        margin-bottom: 12px;
+      }
+
+      .dropdown-menu .menu-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .dropdown-menu .menu-section-label {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .dropdown-menu .button-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+
+      .dropdown-menu .button-row:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Modifier checkboxes */
+      .modifier-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+
+      .modifier-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+      }
+
+      .modifier-checkbox:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .modifier-checkbox input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #1976d2;
+      }
+
+      .modifier-checkbox input[type='checkbox']:checked + span {
+        color: #1976d2;
+        font-weight: 600;
+      }
+
+      .modifier-checkbox.active {
+        background: rgba(25, 118, 210, 0.2);
+      }
+
+      .function-keys-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .function-keys-grid button {
+        padding: 6px 12px;
+        font-size: 13px;
+        min-width: 40px;
+        height: 32px;
+        min-height: 32px;
+        box-sizing: border-box;
+      }
+
+      .quick-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .dropdown-menu button {
+        padding: 6px 12px;
+        font-size: 13px;
+        min-width: 40px;
+        height: 32px;
+        min-height: 32px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .dropdown-menu button:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .dropdown-toggle {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .dropdown-toggle:hover {
+        opacity: 0.8;
+      }
+
+      .dropdown-toggle::after {
+        content: '▼';
+        font-size: 10px;
+        margin-left: 2px;
+      }
+
+      .dropdown.active .dropdown-toggle::after {
+        content: '▲';
+      }
+
+      /* Record mode select */
+      #record-mode {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        height: 32px;
+        min-height: 32px;
+        box-sizing: border-box;
+      }
+
+      #record-mode option {
+        background: rgba(40, 40, 40, 0.98);
+        color: #fff;
+      }
+
+      #vnc-toolbar button {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+        height: 32px;
+        min-height: 32px;
+        box-sizing: border-box;
+      }
+
+      #vnc-toolbar button:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+
+      #vnc-toolbar button:active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(1px);
+      }
+
+      #vnc-toolbar button.danger {
+        background: rgba(244, 67, 54, 0.2);
+        border-color: rgba(244, 67, 54, 0.4);
+      }
+
+      #vnc-toolbar button.danger:hover {
+        background: rgba(244, 67, 54, 0.3);
+      }
+
+      #vnc-toolbar button.success {
+        background: rgba(76, 175, 80, 0.2);
+        border-color: rgba(76, 175, 80, 0.4);
+      }
+
+      #vnc-toolbar button.success:hover {
+        background: rgba(76, 175, 80, 0.3);
+      }
+
+      #vnc-toolbar button.recording {
+        background: rgba(244, 67, 54, 0.3);
+        border-color: rgba(244, 67, 54, 0.6);
+        animation: recording-pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes recording-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
+        }
+      }
+
+      /* Recording indicator - no background bar */
+      #recording-indicator {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #fff;
+        font-size: 32px;
+        font-weight: bold;
+        font-family: monospace;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        z-index: 2000;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        background: transparent;
+      }
+
+      #recording-indicator.show {
+        display: flex;
+      }
+
+      #recording-indicator .recording-dot {
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        animation: dot-pulse 1s ease-in-out infinite;
+      }
+
+      @keyframes dot-pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      #vnc-toolbar .toolbar-label {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-right: 4px;
+      }
+
+      #vnc-toolbar .connection-status {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        padding: 0 8px;
+      }
+
+      /* Toolbar toggle button */
+      #toolbar-toggle {
+        position: fixed;
+        top: 10px;
+        right: 100px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+
+      #toolbar-toggle:hover {
+        background: rgba(0, 0, 0, 0.8);
+      }
+
+      /* Change icon when toolbar is visible */
+      #toolbar-toggle.active::before {
+        content: '▼';
+      }
+
+      #toolbar-toggle:not(.active)::before {
+        content: '⌨';
+      }
+
+      /* Move toggle button down when toolbar is visible */
+      #vnc-toolbar:not(.hidden) ~ #toolbar-toggle {
+        top: 58px;
+      }
+
+      /* Clipboard modal */
+      #clipboard-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #2a2a2a;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        min-width: 400px;
+        z-index: 1002;
+        display: none;
+      }
+
+      #clipboard-modal h3 {
+        color: #fff;
+        margin-bottom: 16px;
+        font-size: 18px;
+      }
+
+      #clipboard-modal textarea {
+        width: 100%;
+        min-height: 120px;
+        background: #1a1a1a;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 12px;
+        font-family: monospace;
+        font-size: 13px;
+        resize: vertical;
+        margin-bottom: 16px;
+      }
+
+      #clipboard-modal .button-group {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      #clipboard-modal button {
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+
+      #clipboard-modal button:hover {
+        background: #1565c0;
+      }
+
+      #clipboard-modal button.secondary {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      #clipboard-modal button.secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      /* Modal overlay */
+      #modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1001;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="vnc-container">
+      <!-- Camera preview overlay -->
+      <video
+        id="camera-preview"
+        autoplay
+        muted
+        playsinline
+        style="
+          display: none;
+          position: absolute;
+          bottom: 60px;
+          right: 10px;
+          width: 180px;
+          height: 135px;
+          border: 2px solid rgba(255, 255, 255, 0.5);
+          border-radius: 8px;
+          z-index: 50;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        "
+      ></video>
+      <div class="loading-container" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing VNC Console...</div>
+      </div>
+    </div>
+
+    <!-- Toolbar Toggle Button -->
+    <button id="toolbar-toggle" title="Toggle Toolbar"></button>
+
+    <!-- Recording Indicator -->
+    <div id="recording-indicator">
+      <span class="recording-dot"></span>
+      <span id="recording-time">00:00</span>
+    </div>
+
+    <!-- VNC Toolbar -->
+    <div id="vnc-toolbar" class="hidden">
+      <!-- Connection Controls -->
+      <div class="toolbar-section">
+        <span class="connection-status" id="connection-status">● Connecting...</span>
+        <button id="btn-fullscreen" title="Toggle Fullscreen (F11)">⛶ Fullscreen</button>
+        <button id="btn-connect" class="success" title="Connect/Reconnect">↻ Connect</button>
+        <button id="btn-disconnect" class="danger" title="Disconnect">✕ Disconnect</button>
+      </div>
+
+      <!-- Send Keys - Dropdown -->
+      <div class="toolbar-section dropdown" id="send-keys-dropdown">
+        <span class="toolbar-label dropdown-toggle" id="send-keys-toggle">Send Keys</span>
+        <div class="dropdown-menu" id="send-keys-menu">
+          <!-- Modifiers -->
+          <div class="menu-section">
+            <div class="menu-section-label">Modifiers (hold Ctrl/Alt to select multiple)</div>
+            <div class="modifier-row">
+              <label class="modifier-checkbox">
+                <input type="checkbox" id="mod-ctrl" value="ctrl" />
+                <span>Ctrl</span>
+              </label>
+              <label class="modifier-checkbox">
+                <input type="checkbox" id="mod-alt" value="alt" />
+                <span>Alt</span>
+              </label>
+              <label class="modifier-checkbox">
+                <input type="checkbox" id="mod-shift" value="shift" />
+                <span>Shift</span>
+              </label>
+              <label class="modifier-checkbox">
+                <input type="checkbox" id="mod-ctrl-alt" value="ctrl+alt" />
+                <span>Ctrl+Alt</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Function Keys -->
+          <div class="menu-section">
+            <div class="menu-section-label">Function Keys</div>
+            <div class="function-keys-grid">
+              <button id="btn-f1" title="Send F1">F1</button>
+              <button id="btn-f2" title="Send F2">F2</button>
+              <button id="btn-f3" title="Send F3">F3</button>
+              <button id="btn-f4" title="Send F4">F4</button>
+              <button id="btn-f5" title="Send F5">F5</button>
+              <button id="btn-f6" title="Send F6">F6</button>
+              <button id="btn-f7" title="Send F7">F7</button>
+              <button id="btn-f8" title="Send F8">F8</button>
+              <button id="btn-f9" title="Send F9">F9</button>
+              <button id="btn-f10" title="Send F10">F10</button>
+              <button id="btn-f11" title="Send F11">F11</button>
+              <button id="btn-f12" title="Send F12">F12</button>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="menu-section">
+            <div class="menu-section-label">Quick Actions</div>
+            <div class="quick-actions">
+              <button id="btn-ctrlaltdel" title="Send Ctrl+Alt+Del">Ctrl+Alt+Del</button>
+              <button id="btn-ctrlaltbs" title="Send Ctrl+Alt+Backspace">Ctrl+Alt+BS</button>
+              <button id="btn-tab" title="Send Tab">Tab</button>
+              <button id="btn-esc" title="Send Esc">Esc</button>
+              <button id="btn-print" title="Send Print Screen">Print</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scale Controls -->
+      <div class="toolbar-section">
+        <button id="btn-scale-up" title="Scale Up">+</button>
+        <button id="btn-scale-down" title="Scale Down">−</button>
+        <button id="btn-scale-fit" title="Scale to Fit">Fit</button>
+      </div>
+
+      <!-- Screen Capture -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">Capture</span>
+        <select id="record-mode" title="Recording Mode">
+          <option value="vnc">VNC</option>
+          <option value="vnc-camera">VNC + Camera</option>
+          <option value="camera">Camera</option>
+        </select>
+        <button id="btn-mute" title="Toggle Microphone">🔊 Mic</button>
+        <button id="btn-screenshot" title="Take Screenshot">📷 Screenshot</button>
+        <button id="btn-record-pause" title="Start/Pause Recording">⏺ Record</button>
+        <button id="btn-record-stop" class="danger" title="Stop Recording" style="display: none">⏹ Stop</button>
+      </div>
+
+      <!-- Clipboard -->
+      <div class="toolbar-section">
+        <button id="btn-clipboard" title="Open Clipboard">📋 Clipboard</button>
+      </div>
+    </div>
+
+    <!-- Clipboard Modal -->
+    <div id="modal-overlay"></div>
+    <div id="clipboard-modal">
+      <h3>Clipboard</h3>
+      <textarea id="clipboard-text" placeholder="Paste text here to send to remote VNC server..."></textarea>
+      <div class="button-group">
+        <button class="secondary" id="btn-clipboard-cancel">Cancel</button>
+        <button id="btn-clipboard-send">Send to Remote</button>
+      </div>
+    </div>
+
+    <div id="status-bar">Connecting...</div>
+
+    <div id="error-dialog">
+      <h3 id="error-title">Connection Failed</h3>
+      <p id="error-message"></p>
+      <div class="button-group">
+        <button class="secondary" onclick="window.close()">Close</button>
+        <button onclick="location.reload()">Retry</button>
+      </div>
+    </div>
+
+    <!-- noVNC RFB library will be loaded as ES module -->
+    <script type="module" src="./vnc-controller.js"></script>
+  </body>
+</html>

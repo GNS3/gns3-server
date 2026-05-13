@@ -110,6 +110,7 @@ BUILTIN_TEMPLATES = [
         "base_script_file": "vpcs_base_config.txt",
         "compute_id": None,
         "builtin": True,
+        "tags": ["device_type:gns3_vpcs_telnet"],
     },
     {
         "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_switch"),
@@ -197,7 +198,7 @@ class TemplatesService:
 
         images_to_add_to_template = []
         if template_type == "dynamips":
-            if settings["image"]:
+            if settings.get("image"):
                 image = await self._find_image(settings["image"])
                 if image.image_type != "ios":
                     raise ControllerBadRequestError(
@@ -205,7 +206,7 @@ class TemplatesService:
                     )
                 images_to_add_to_template.append(image)
         elif template_type == "iou":
-            if settings["path"]:
+            if settings.get("path"):
                 image = await self._find_image(settings["path"])
                 if image.image_type != "iou":
                     raise ControllerBadRequestError(
@@ -279,6 +280,14 @@ class TemplatesService:
         db_template = await self._templates_repo.get_template(template_id)
         if not db_template:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
+
+        # Check for duplicate name (excluding current template)
+        if template_update.name is not None:
+            existing_template = await self._templates_repo.get_template_by_name_and_version(
+                template_update.name, db_template.version
+            )
+            if existing_template and existing_template.template_id != template_id:
+                raise ControllerError(f"A template with name '{template_update.name}' already exists")
 
         try:
             # validate the update settings

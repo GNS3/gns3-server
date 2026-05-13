@@ -87,6 +87,7 @@ class DynamipsConsoleType(str, Enum):
     """
 
     telnet = "telnet"
+    ssh = "ssh"
     none = "none"
 
 

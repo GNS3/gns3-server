@@ -36,8 +36,8 @@ async def root():
 @router.get("/debug", response_class=HTMLResponse, deprecated=True, include_in_schema=False)
 def debug(request: Request):
 
-    kwargs = {"request": request, "gns3_version": __version__, "gns3_host": request.client.host}
-    return templates.TemplateResponse("index.html", kwargs)
+    kwargs = {"gns3_version": __version__, "gns3_host": request.client.host}
+    return templates.TemplateResponse(request=request, name="index.html", context=kwargs)
 
 
 @router.get("/static/web-ui/{file_path:path}", description="Web user interface", include_in_schema=False)
@@ -46,13 +46,13 @@ async def web_ui(file_path: str):
     file_path = os.path.normpath(file_path).strip("/")
     file_path = os.path.join("static", "web-ui", file_path)
 
-    # Raise error if user try to escape
-    if file_path[0] == ".":
+    # Raise error if user tries to escape the web-ui directory
+    if not os.path.normpath(file_path).startswith(os.path.join("static", "web-ui")):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     static = get_resource(file_path)
 
-    if static is None or not os.path.exists(static):
+    if static is None or not os.path.exists(static) or os.path.isdir(static):
         static = get_resource(os.path.join("static", "web-ui", "index.html"))
 
     if static is None:

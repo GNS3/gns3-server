@@ -113,6 +113,7 @@ async def get_projects(
 )
 async def create_project(
         project_data: schemas.ProjectCreate,
+        current_user: schemas.User = Depends(get_current_active_user),
 ) -> schemas.Project:
     """
     Create a new project.
@@ -121,7 +122,9 @@ async def create_project(
     """
 
     controller = Controller.instance()
-    project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
+    project_dict = jsonable_encoder(project_data, exclude_unset=True)
+    project_dict["created_by"] = current_user.username
+    project = await controller.add_project(**project_dict)
     return project.asdict()
 
 

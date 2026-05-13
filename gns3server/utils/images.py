@@ -34,7 +34,6 @@ import gns3server.db.models as models
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.asyncio import wait_run_in_executor
 
-
 import logging
 
 log = logging.getLogger(__name__)
@@ -259,14 +258,15 @@ def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
     else:
         md5sum_file = path + ".md5sum"
 
-    try:
-        with open(md5sum_file) as f:
-            md5 = f.read().strip()
-            if len(md5) == 32:
-                return md5
-    # Unicode error is when user rename an image to .md5sum ....
-    except (OSError, UnicodeDecodeError):
-        pass
+    if os.path.exists(md5sum_file):
+        try:
+            with open(md5sum_file) as f:
+                md5 = f.read().strip()
+                if len(md5) == 32:
+                    return md5
+        # Unicode error is when user rename an image to .md5sum ....
+        except (OSError, UnicodeDecodeError):
+            pass
 
     try:
         m = hashlib.md5()
@@ -275,7 +275,7 @@ def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
             while True:
                 if stopped_event is not None and stopped_event.is_set():
                     log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
-                    return
+                    return None
                 buf = f.read(DEFAULT_BUFFER_SIZE)
                 if not buf:
                     break
@@ -342,20 +342,15 @@ async def write_image(
         allow_raw_image=False
 ) -> models.Image:
 
-    db_image = await images_repo.get_image(image_path)
-    if db_image and os.path.exists(image_path):
-        # the image already exists in the database and on disk
-        log.info(f"Image {image_path} already exists")
-        return db_image
-
     image_dir, image_name = os.path.split(image_filename)
-    log.info(f"Writing image file to '{image_path}'")
     # Store the file under its final name only when the upload is completed
     tmp_path = image_path + ".tmp"
+    log.info(f"Writing image file to '{tmp_path}'")
     os.makedirs(os.path.dirname(image_path), exist_ok=True)
     checksum = hashlib.md5()
     header_magic_len = 7
     image_type = None
+    image_size = 0
     try:
         async with aiofiles.open(tmp_path, "wb") as f:
             async for chunk in stream:
@@ -369,15 +364,22 @@ async def write_image(
         if not image_size or image_size < header_magic_len:
             raise InvalidImageError("The image content is empty or too small to be valid")
 
-        checksum = checksum.hexdigest()
-        duplicate_image = await images_repo.get_image_by_checksum(checksum)
-        if duplicate_image and os.path.dirname(duplicate_image.path) == os.path.dirname(image_path):
-            raise InvalidImageError(f"Image {duplicate_image.filename} with "
-                                    f"same checksum already exists in the same directory")
         if not image_dir:
             directory = default_images_directory(image_type)
             os.makedirs(directory, exist_ok=True)
             image_path = os.path.abspath(os.path.join(directory, image_filename))
+
+        if os.path.exists(image_path):
+            raise InvalidImageError(f"File '{image_path}' already exists, "
+                                    f"please choose a different name or remove the existing image")
+
+        checksum = checksum.hexdigest()
+        image_dir = os.path.dirname(image_path)
+        duplicate_image = await images_repo.get_image_by_checksum(checksum, image_dir)
+        if duplicate_image:
+            raise InvalidImageError(f"Image '{duplicate_image.filename}' with the "
+                                    f"same checksum already exists in '{image_dir}'")
+
         shutil.move(tmp_path, image_path)
         os.chmod(image_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
     finally:
@@ -386,10 +388,6 @@ async def write_image(
                 os.remove(tmp_path)
         except OSError:
             log.warning(f"Could not remove '{tmp_path}'")
-
-    if db_image:
-        # the image already exists in the database, no need to add it again
-        return db_image
 
     return await images_repo.add_image(
         image_name,

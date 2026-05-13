@@ -28,6 +28,24 @@
     },
     "images": [
         {
+            "filename": "chr-7.22.1.img",
+            "version": "7.22.1",
+            "md5sum": "a67290634f489071eae2fd99dcadba86",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.22.1/chr-7.22.1.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.20.8.img",
+            "version": "7.20.8",
+            "md5sum": "a432cf89f405115163952eefd82934e4",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.20.8/chr-7.20.8.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-7.16.img",
             "version": "7.16",
             "md5sum": "a4c2d00a87e73b3129cd66a4e0743c9a",
@@ -74,6 +92,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.22.1",
+            "images": {
+                "hda_disk_image": "chr-7.22.1.img"
+            }
+        },
+        {
+            "name": "7.20.8",
+            "images": {
+                "hda_disk_image": "chr-7.20.8.img"
+            }
+        },
         {
             "name": "7.16",
             "images": {

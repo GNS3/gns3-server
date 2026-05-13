@@ -41,6 +41,7 @@ from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.asyncio import locking
@@ -97,11 +98,11 @@ class IOUVM(BaseNode):
         self._serial_adapters = []
         self.ethernet_adapters = 2  # one adapter = 4 interfaces
         self.serial_adapters = 2  # one adapter = 4 interfaces
-        self._use_default_iou_values = True  # for RAM & NVRAM values
-        self._nvram = 128  # Kilobytes
+        self._use_default_iou_values = False  # for RAM & NVRAM values
+        self._nvram = 256  # Kilobytes
         self._startup_config = ""
         self._private_config = ""
-        self._ram = 256  # Megabytes
+        self._ram = 1024  # Megabytes
         self._application_id = application_id
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
@@ -367,7 +368,7 @@ class IOUVM(BaseNode):
         """
 
         if not is_ios_hostname_valid(new_name):
-            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'")
+            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer.")
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
@@ -630,7 +631,7 @@ class IOUVM(BaseNode):
                 callback = functools.partial(self._termination_callback, "IOU")
                 gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
             except FileNotFoundError as e:
-                raise IOUError(f"Could not start IOU: {e}: 32-bit binary support is probably not installed")
+                raise IOUError(f"Could not start IOU: {e}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead")
             except (OSError, subprocess.SubprocessError) as e:
                 iou_stdout = self.read_iou_stdout()
                 log.error(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
@@ -643,21 +644,25 @@ class IOUVM(BaseNode):
 
     async def start_console(self):
         """
-        Start the Telnet server to provide console access.
+        Start the console server to provide console access.
         """
 
-        if self.console and self.console_type == "telnet":
-            server = AsyncioTelnetServer(
-                reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
-            )
-            try:
-                self._telnet_server = await asyncio.start_server(
-                    server.run, self._manager.port_manager.console_host, self.console
+        if self.console and self.console_type in ("telnet", "ssh"):
+            if self.console_type == "telnet":
+                server = AsyncioTelnetServer(
+                    reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
                 )
+                error_prefix = "Telnet"
+            else:
+                server = AsyncioSSHServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin)
+                error_prefix = "SSH"
+            try:
+                self._telnet_server = await server.start(self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 await self.stop()
                 raise IOUError(
-                    "Could not start Telnet server on socket {}:{}: {}".format(
+                    "Could not start {} server on socket {}:{}: {}".format(
+                        error_prefix,
                         self._manager.port_manager.console_host, self.console, e
                     )
                 )

@@ -261,7 +261,7 @@ async def test_install_busybox_dynamic_linked():
     mock_process.communicate = AsyncioMagicMock(return_value=(b"Dynamically linked library", b""))
 
     with patch("os.path.isfile", return_value=False):
-        with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
+        with patch("gns3server.compute.docker.shutil.which", side_effect=lambda name: "/usr/bin/busybox" if name == "busybox" else None):
             with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process):
                 with pytest.raises(DockerError) as e:
                     dst_dir = Docker.resources_path()

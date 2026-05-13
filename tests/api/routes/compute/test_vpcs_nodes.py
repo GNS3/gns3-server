@@ -128,7 +128,8 @@ class TestVPCSNodesRoutes:
             "type": "nio_udp",
             "lport": 4242,
             "rport": 4343,
-            "rhost": "127.0.0.1"
+            "rhost": "127.0.0.1",
+            "filters": {"packet_loss": 10}
         }
     
         url = app.url_path_for("compute:create_vpcs_node_nio",
@@ -140,8 +141,9 @@ class TestVPCSNodesRoutes:
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.add_ubridge_udp_connection"):
             response = await compute_client.post(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
-    
-        params["filters"] = {}
+        assert response.json()["filters"] == {"packet_loss": 10}
+        params["filters"].clear()
+
         url = app.url_path_for("compute:update_vpcs_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
@@ -150,7 +152,7 @@ class TestVPCSNodesRoutes:
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
-    
+        assert response.json()["filters"] == {}
     
     async def test_vpcs_delete_nio(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
     
@@ -217,8 +219,20 @@ class TestVPCSNodesRoutes:
                                                             node_id=vm["node_id"]))
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
+
+    async def test_vpcs_suspend(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
+
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:suspend_vpcs_node",
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]
+            )
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
     async def test_vpcs_duplicate(
             self,
             app: FastAPI,

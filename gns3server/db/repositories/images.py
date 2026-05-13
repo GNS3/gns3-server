@@ -50,14 +50,20 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().one_or_none()
 
-    async def get_image_by_checksum(self, checksum: str) -> Optional[models.Image]:
+    async def get_image_by_checksum(self, checksum: str, image_dir: str = None) -> Optional[models.Image]:
         """
         Get an image by its checksum.
         """
 
-        query = select(models.Image).where(models.Image.checksum == checksum)
-        result = await self._db_session.execute(query)
-        return result.scalars().first()
+        if image_dir:
+            query = select(models.Image).\
+                where(models.Image.checksum == checksum, models.Image.path.startswith(image_dir))
+            result = await self._db_session.execute(query)
+            return result.scalars().one_or_none()
+        else:
+            query = select(models.Image).where(models.Image.checksum == checksum)
+            result = await self._db_session.execute(query)
+            return result.scalars().first()
 
     async def get_images(self, image_type=None) -> List[models.Image]:
         """
@@ -114,7 +120,7 @@ class ImagesRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        image_db = await self.get_image_by_checksum(checksum)
+        image_db = await self.get_image(image_path)
         if image_db:
             await self._db_session.refresh(image_db)  # force refresh of updated_at value
         return image_db

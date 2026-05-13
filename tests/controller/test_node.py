@@ -139,6 +139,7 @@ def test_json(node, compute):
         "port_name_format": "Ethernet{0}",
         "port_segment_size": 0,
         "first_port_name": None,
+        "tags": [],
         "custom_adapters": [],
         "console_auto_start": False,
         "ports": [
@@ -176,6 +177,7 @@ def test_json(node, compute):
         "port_segment_size": 0,
         "first_port_name": None,
         "custom_adapters": [],
+        "tags": [],
         "console_auto_start": False,
     }
 

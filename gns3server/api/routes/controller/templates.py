@@ -26,7 +26,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, HTTPException, Depends, Response, status
+from fastapi import APIRouter, Request, HTTPException, Depends, Response, status, Query
 from typing import List, Optional
 from uuid import UUID
 
@@ -88,10 +88,10 @@ async def get_template(
 
     request_etag = request.headers.get("If-None-Match", "")
     template = await TemplatesService(templates_repo).get_template(template_id)
-    data = json.dumps(template)
+    data = json.dumps(template, default=str)
     template_etag = '"' + hashlib.md5(data.encode()).hexdigest() + '"'
     if template_etag == request_etag:
-        raise HTTPException(status_code=status.HTTP_304_NOT_MODIFIED)
+        return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers={"ETag": template_etag})
     else:
         response.headers["ETag"] = template_etag
         return template
@@ -169,15 +169,34 @@ async def delete_template(
 async def get_templates(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)")
 ) -> List[schemas.Template]:
     """
     Return all templates.
 
     Required privilege: Template.Audit
+
+    Query Parameters:
+    - tags: Filter by tags. Multiple tags are ANDed together.
+            Example: ?tags=vendor:cisco&tags=model:7200
     """
 
     templates = await TemplatesService(templates_repo).get_templates()
+
+    # Filter by tags if provided (all filter tags have to match the node tags)
+    if tags:
+        filtered_templates = []
+        for template in templates:
+            template_tags = template.get("tags") or []
+            match = True
+            for tag_filter in tags:
+                if tag_filter not in template_tags:
+                    match = False
+                    break
+            if match:
+                filtered_templates.append(template)
+        templates = filtered_templates
+
     if current_user.is_superadmin:
         return templates
     else:

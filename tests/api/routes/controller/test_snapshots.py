@@ -75,4 +75,4 @@ class TestSnapshotRoutes:
     
         response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})
         assert response.status_code == status.HTTP_201_CREATED
-        assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 1
+        assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 2

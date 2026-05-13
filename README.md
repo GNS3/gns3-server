@@ -54,6 +54,51 @@ python3 -m pip install gns3-gui
 python3 -m pip install gns3-server
 ```
 
+#### Optional Features
+
+GNS3 server supports optional features that can be installed as needed:
+
+**AI Copilot** (Optional):
+```shell
+python3 -m pip install gns3-server[ai-copilot]
+```
+AI-powered assistant for network topology design and automation.
+
+**Development** (For contributors):
+```shell
+python3 -m pip install gns3-server[dev]
+```
+
+**Web Wireshark** (Optional):
+```shell
+pip install gns3-server && gns3server-web-wireshark-setup
+```
+Browser-based packet capture analysis using Wireshark in a Docker container.
+
+**Combination Installation**:
+You can install multiple optional features together:
+```shell
+python3 -m pip install gns3-server[ai-copilot,dev]
+```
+
+**Why optional?**
+- Reduces installation size for users who don't need specific features
+- Supports restricted environments (government, education, corporate) where certain libraries may not be allowed
+- Faster installation for basic GNS3 usage
+- Allows users to choose only the features they need
+
+**Note:** If you install without optional extras, the server will work normally but optional features will be disabled. You can add features later by running the appropriate install command.
+
+**Uninstalling AI Copilot:**
+
+To remove AI Copilot dependencies:
+
+```shell
+gns3server-uninstall-ai-copilot
+```
+
+This will remove all AI Copilot dependencies while keeping the core functionality intact. The server will continue to work, but AI features will return a 501 (Not Implemented) status code.
+
 The downside of this method is you will have to manually install all dependencies (see below).
 
 Please see our [documentation](https://docs.gns3.com/docs/getting-started/installation/linux) for more details.
@@ -77,7 +122,7 @@ Note that Docker needs the script program (`bsdutils` or `util-linux` package), 
 
 ### Setting up
 
-These commands will install the server as well as all Python dependencies:
+These commands will install the server with core Python dependencies:
 
 ```shell
 git clone https://github.com/GNS3/gns3-server
@@ -87,6 +132,18 @@ python3 -m venv venv-gns3server
 source venv-gns3server/bin/activate
 python3 -m pip install .
 python3 -m gns3server
+```
+
+**For AI Copilot development**, install with additional dependencies:
+
+```shell
+python3 -m pip install .[ai-copilot,dev]
+```
+
+**For development (tests and linting)**:
+
+```shell
+python3 -m pip install .[dev]
 ```
 
 You will have to manually install other software dependencies (see above), for Dynamips, VPCS and uBridge the easiest is to install from our PPA.

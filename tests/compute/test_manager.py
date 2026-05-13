@@ -26,6 +26,7 @@ from gns3server.compute.vpcs import VPCS
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.error import NodeError, ImageMissingError
+from gns3server.compute.compute_error import ComputeError
 from gns3server.utils import force_unix_path
 
 
@@ -290,6 +291,9 @@ async def test_duplicate_vpcs(vpcs, compute_project):
     with open(os.path.join(destination_node.working_dir, "startup.vpc")) as f:
         startup = f.read().strip()
         assert startup == "set pcname PC-2\nip dhcp\n".strip()
+    with pytest.raises(ComputeError):
+        source_node.status = "started"
+        await vpcs.duplicate_node(source_node_id, destination_node_id)
 
 
 @pytest.mark.asyncio

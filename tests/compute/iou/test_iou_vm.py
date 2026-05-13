@@ -264,7 +264,7 @@ def test_create_netmap_config(vm):
 @pytest.mark.asyncio
 async def test_build_command(vm):
 
-    assert await vm._build_command() == [vm.path, str(vm.application_id)]
+    assert await vm._build_command() == [vm.path, "-n", "256", "-m", "1024", str(vm.application_id)]
 
 
 def test_get_startup_config(vm):

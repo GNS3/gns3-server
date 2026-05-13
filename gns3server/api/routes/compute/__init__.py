@@ -59,7 +59,7 @@ log = logging.getLogger(__name__)
 compute_api = FastAPI(
     title="GNS3 compute API",
     description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
-    version="v3",
+    version="3.0.0",
 )
 
 compute_api.state.controller_host = None

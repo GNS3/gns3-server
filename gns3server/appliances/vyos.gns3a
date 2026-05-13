@@ -9,27 +9,54 @@
     "documentation_url": "https://docs.vyos.io/",
     "product_name": "VyOS Universal Router",
     "product_url": "https://vyos.io/vyos-universal-router",
-    "registry_version": 4,
+    "registry_version": 8,
     "status": "stable",
     "availability": "service-contract",
     "maintainer": "VyOS Inc.",
     "maintainer_email": "support@vyos.io",
-    "usage": "\nDefault credentials:\nUser: vyos\nPassword: vyos",
+    "installation_instructions": "To install the appliance, you must:\n\n1. Have an active VyOS subscription (for details, visit https://vyos.io/).\n2. Download the QEMU/KVM image for your target version from the support portal: https://support.vyos.io/.\n3. Import the downloaded image for installation in the next step.\n\nAlternatively, you can:\n- Build your own image, or\n- Use any compatible qcow2 images (including rolling or stream releases) by selecting \"Create a new version\" and enabling the \"Allow custom files\" feature.",
+    "usage": "No extra installation steps are required - simply boot the router.\nFor more details, please refer to the documentation: https://docs.vyos.io/",
+    "default_username": "vyos",
+    "default_password": "vyos",
     "symbol": "vyos.svg",
-    "port_name_format": "eth{0}",
-    "qemu": {
-        "adapter_type": "virtio-net-pci",
-        "adapters": 10,
-        "ram": 2048,
-        "cpus": 4,
-        "hda_disk_interface": "virtio",
-        "arch": "x86_64",
-        "console_type": "telnet",
-        "boot_priority": "c",
-        "kvm": "require",
-        "on_close": "shutdown_signal"
-    },
+    "settings": [
+        {
+            "name": "default x86_64",
+            "default": true,
+            "template_type": "qemu",
+            "template_properties": {
+                "adapter_type": "virtio-net-pci",
+                "adapters": 10,
+                "port_name_format": "eth{0}",
+                "ram": 2048,
+                "cpus": 4,
+                "hda_disk_interface": "virtio",
+                "platform": "x86_64",
+                "console_type": "telnet",
+                "boot_priority": "c",
+                "options": "-cpu host",
+                "uefi": false,
+                "on_close": "shutdown_signal"
+            }
+        },
+        {
+            "name": "1.5 x86_64",
+            "inherit_default_properties": true,
+            "template_type": "qemu",
+            "template_properties": {
+                "ram": 8192,
+                "cpus": 4
+            }
+        }
+    ],
     "images": [
+        {
+            "filename": "vyos-1.5.0-kvm-amd64.qcow2",
+            "version": "1.5.0",
+            "md5sum": "f84587bd6c45b139563a1d1d2fe0b2e8",
+            "filesize": 618528768,
+            "download_url": "https://support.vyos.io/"
+        },
         {
             "filename": "vyos-1.4.4-kvm-amd64.qcow2",
             "version": "1.4.4",
@@ -132,11 +159,18 @@
             "filename": "vyos-1.2.5-amd64.qcow2",
             "version": "1.2.5",
             "md5sum": "110c22309ec480600446fd2fb4f27a0d",
-            "filesize": 411500544 ,
+            "filesize": 411500544,
             "download_url": "https://support.vyos.io/"
         }
     ],
     "versions": [
+        {
+            "name": "1.5.0",
+            "settings": "1.5 x86_64",
+            "images": {
+                "hda_disk_image": "vyos-1.5.0-kvm-amd64.qcow2"
+            }
+        },
         {
             "name": "1.4.4",
             "images": {

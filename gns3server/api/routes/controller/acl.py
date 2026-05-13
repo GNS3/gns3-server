@@ -115,19 +115,19 @@ async def endpoints(
     add_to_endpoints("/access/users", "All users", "user")
     users = await users_repo.get_users()
     for user in users:
-        add_to_endpoints(f"/users/{user.user_id}", f'User "{user.username}"', "user")
+        add_to_endpoints(f"/access/users/{user.user_id}", f'User "{user.username}"', "user")
 
     # groups
     add_to_endpoints("/access/groups", "All groups", "group")
     groups = await users_repo.get_user_groups()
     for group in groups:
-        add_to_endpoints(f"/groups/{group.user_group_id}", f'Group "{group.name}"', "group")
+        add_to_endpoints(f"/access/groups/{group.user_group_id}", f'Group "{group.name}"', "group")
 
     # roles
     add_to_endpoints("/access/roles", "All roles", "role")
     roles = await rbac_repo.get_roles()
     for role in roles:
-        add_to_endpoints(f"/roles/{role.role_id}", f'Role "{role.name}"', "role")
+        add_to_endpoints(f"/access/roles/{role.role_id}", f'Role "{role.name}"', "role")
 
     # images
     add_to_endpoints("/images", "All images", "image")

@@ -66,6 +66,7 @@ class Topology(BaseModel):
     show_interface_labels: Optional[bool] = Field(None, description="Show interface labels on the drawing area")
     supplier: Optional[Supplier] = Field(None, description="Supplier of the project")
     variables: Optional[List[Variable]] = Field(None, description="Variables required to run the project")
+    created_by: Optional[str] = Field(None, description="Username of the user who created the project")
 
 
 def main():

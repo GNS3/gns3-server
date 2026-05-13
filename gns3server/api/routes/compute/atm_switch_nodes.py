@@ -20,7 +20,7 @@ API routes for ATM switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, Response, status
+from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -121,20 +121,24 @@ async def delete_atm_switch_node(node: ATMSwitch = Depends(dep_node)) -> None:
 def start_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     """
     Start an ATM switch node.
-    This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Start is not supported for ATM switches"
+    )
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 def stop_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     """
     Stop an ATM switch node.
-    This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Stop is not supported for ATM switches"
+    )
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
@@ -144,7 +148,10 @@ def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for ATM switches"
+    )
 
 
 @router.post(

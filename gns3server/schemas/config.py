@@ -94,6 +94,17 @@ class VMwareSettings(BaseModel):
         return self
 
 
+class WebWiresharkSettings(BaseModel):
+
+    enabled: bool = True
+    image: str = "gns3/web-wireshark:latest"
+    network_subnet: str = "172.31.0.0/22"
+    memory: str = "2g"
+    cpus: float = 1.0
+    pids_limit: int = 1000
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
+
+
 class ServerProtocol(str, Enum):
 
     http = "http"
@@ -114,6 +125,7 @@ class BuiltinSymbolTheme(str, Enum):
 class ServerSettings(BaseModel):
 
     local: bool = False
+    enable_http_auth: bool = True
     name: str = f"{socket.gethostname()} (controller)"
     protocol: ServerProtocol = ServerProtocol.http
     host: str = "0.0.0.0"
@@ -147,6 +159,9 @@ class ServerSettings(BaseModel):
     allow_remote_console: bool = False
     enable_builtin_templates: bool = True
     install_builtin_appliances: bool = True
+    skills_repo_url: str = "https://github.com/yueguobin/GNS3-Skills.git"
+    skills_repo_branch: str = "main"
+    skills_auto_update: bool = True
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
     @field_validator("additional_images_paths", mode="before")
@@ -195,3 +210,4 @@ class ServerConfig(BaseModel):
     Qemu: QemuSettings = QemuSettings()
     VirtualBox: VirtualBoxSettings = VirtualBoxSettings()
     VMware: VMwareSettings = VMwareSettings()
+    WebWireshark: WebWiresharkSettings = WebWiresharkSettings()

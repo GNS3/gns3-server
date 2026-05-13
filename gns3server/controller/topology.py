@@ -87,6 +87,7 @@ def project_to_topology(project):
         "show_interface_labels": project.show_interface_labels,
         "variables": project.variables,
         "supplier": project.supplier,
+        "created_by": project.created_by,
         "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
         "type": "topology",
         "revision": GNS3_FILE_FORMAT_REVISION,
@@ -174,7 +175,8 @@ def load_topology(path):
     # Version GNS3 2.2 dev (for project created with 2.2dev).
     # Appliance ID has been replaced by Template ID
     if topo["revision"] == 9:
-        for node in topo.get("topology", {}).get("nodes", []):
+        nodes = topo.get("topology", {}).get("nodes", [])
+        for node in nodes:
             if "appliance_id" in node:
                 node["template_id"] = node["appliance_id"]
                 del node["appliance_id"]
@@ -217,7 +219,8 @@ def _convert_2_2_0(topo, topo_path):
 
     topo["revision"] = 10
 
-    for node in topo.get("topology", {}).get("nodes", []):
+    nodes = topo.get("topology", {}).get("nodes", [])
+    for node in nodes:
         if "properties" in node:
             if node["node_type"] in ("qemu", "docker") and not is_rfc1123_hostname_valid(node["name"]):
                 new_name = to_rfc1123_hostname(node["name"])
@@ -245,7 +248,8 @@ def _convert_2_1_0(topo, topo_path):
         # to avoid overlapping grids
         topo["drawing_grid_size"] = topo["grid_size"]
 
-    for node in topo.get("topology", {}).get("nodes", []):
+    nodes = topo.get("topology", {}).get("nodes", [])
+    for node in nodes:
         # make sure console_type is not None but "none" string
         if "console_type" in node and node["console_type"] is None:
             node["console_type"] = "none"
@@ -271,7 +275,8 @@ def _convert_2_0_0(topo, topo_path):
     """
     topo["revision"] = 8
 
-    for node in topo.get("topology", {}).get("nodes", []):
+    nodes = topo.get("topology", {}).get("nodes", [])
+    for node in nodes:
         if "properties" in node:
             if node["node_type"] == "vpcs":
                 if "startup_script_path" in node["properties"]:
@@ -300,7 +305,8 @@ def _convert_2_0_0_beta_2(topo, topo_path):
     topo_dir = os.path.dirname(topo_path)
     topo["revision"] = 7
 
-    for node in topo.get("topology", {}).get("nodes", []):
+    nodes = topo.get("topology", {}).get("nodes", [])
+    for node in nodes:
         if node["node_type"] == "dynamips":
             node_id = node["node_id"]
             dynamips_id = node["properties"]["dynamips_id"]
@@ -327,7 +333,8 @@ def _convert_2_0_0_alpha(topo, topo_path):
      * No more option for VMware / VirtualBox remote console (always use telnet)
     """
     topo["revision"] = 6
-    for node in topo.get("topology", {}).get("nodes", []):
+    nodes = topo.get("topology", {}).get("nodes", [])
+    for node in nodes:
         if node.get("console_type") == "serial":
             node["console_type"] = "telnet"
         if node["node_type"] in ("vmware", "virtualbox"):

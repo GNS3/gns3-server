@@ -67,3 +67,21 @@ env
 venv
 *venv
 .ropeproject
+
+# Claude Code settings (may contain API keys)
+.claude/settings*.json
+.claude/minmax-settings.json
+.claude/zhipu-settings.json
+.claude/settings.local.json
+.claude/deepseek-settings.json
+.claude/claude-settings.json
+.claude/gemini-settings.json
+.claude/grok-settings.json
+!.claude/development.md  # Exception: allow development docs
+!.claude/skills/         # Exception: allow project skills
+!.claude/memory/         # Exception: allow project memory
+# PROJECT_CONTEXT.md  # Commented out: allow tracking project context
+
+# Tiktoken cache files
+gns3server/agent/gns3_copilot/cache/tiktoken/
+

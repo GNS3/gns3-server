@@ -46,7 +46,6 @@ from gns3server.controller.controller_error import (
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.core import tasks
-from gns3server.version import __version__
 
 import logging
 
@@ -56,9 +55,10 @@ log = logging.getLogger(__name__)
 def get_application() -> FastAPI:
 
     application = FastAPI(
+        lifespan=tasks.lifespan,
         title="GNS3 controller API",
         description="This page describes the public controller API for GNS3",
-        version="v3",
+        version="3.0.0",
         docs_url=None,
         redoc_url=None
     )
@@ -71,11 +71,9 @@ def get_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    application.add_event_handler("startup", tasks.create_startup_handler(application))
-    application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
-    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')]), name="static")
+    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')], html=True), name="static")
     application.mount("/v3/compute", compute_api, name="compute")
 
     return application
@@ -195,7 +193,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(SQLAlchemyError)
-async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
+async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
     log.error(f"Controller database error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -207,7 +205,7 @@ async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"message": str(exc)}
     )
 

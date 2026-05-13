@@ -28,6 +28,7 @@ class VMwareConsoleType(str, Enum):
     """
 
     telnet = "telnet"
+    ssh = "ssh"
     none = "none"
 
 

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <!--
+	Copyright (c) 2024 Antoine Martin <antoine@xpra.org>
+	Licensed under MPL 2.0
+	-->
+
+    <title>Xpra HTML5 AES Test Page</title>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <script type="text/javascript" src="js/Utilities.js"></script>
+
+  </head>
+
+  <body>
+    <div class="container">
+      <div>
+        <pre id="info"></pre>
+      </div>
+
+    </div>
+
+    <script>
+      const info = document.getElementById("info");
+      const lines = [];
+
+      function show(newtext) {
+        // console.log(newtext);
+        lines.push(newtext);
+        info.innerText = lines.join("\n");
+      }
+
+      function show_digest(digest_name, v1, v2, expected) {
+        Utilities.gendigest(digest_name, v1, v2)
+          .then(digest => {
+            show("got response: " + Utilities.convertToHex(digest));
+            if (expected != undefined && digest != expected) {
+              show("does not match expected value: " + expected);
+            }
+            show("");
+          })
+          .catch(err => {
+            // console.error("digest error: ", err);
+            show("failed to generate " + digest_name + ": " + err)
+            show("");
+          });
+      }
+
+      show_digest("xor", "hello", "foo00", Utilities.hexToString("0e0a035c5f"));
+
+      show_digest("test-invalid", "", "");
+
+      let password = Utilities.hexToString("4a87629131cdd27f0baa7bdbfa7f53ca7d11fc954937c2f0c025be326c7d8f742624daf578a146d1c7f10e3b0b158a725d6073af111ef517f7f12694fd1ab7cd");
+      let salt = Utilities.hexToString("0aa4ecbebd55488d6a976628616c9170032083a0385feefcde7cd0ecb82ed87c");
+      // show("password=" + password);
+      // show("salt=" + password);
+      show("hex(password)=" + Utilities.convertToHex(password));
+      show("hex(salt)=" + Utilities.convertToHex(password));
+
+      show_digest("hmac+sha512", salt, password);
+
+      // similar to login obfuscation:
+      password = "foobar12";
+      salt = Utilities.hexToString("a54ca3f2777c2ce00090389e328fc9a2249cc1cfe99c84125f6d1d92abc113212bc96c4907f8f9492cf43dd4c22a889c4d170cc7ac62f41b0dcf28d488588f27");
+      Utilities.gendigest("xor", password, salt)
+        .then(value => {
+          show("xored password:" + value);
+          Utilities.gendigest("xor", value, salt)
+            .then(restored => {
+              show("unxored password:" + restored);
+              if (restored != password) {
+                show("error! xor is not symmetrical!")
+              }
+            });
+        });
+
+    </script>
+  </body>
+
+</html>

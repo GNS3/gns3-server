@@ -62,4 +62,4 @@ class TestVersionRoutes:
     
         params = "BOUM"
         response = await client.post(app.url_path_for("check_version"), json=params)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

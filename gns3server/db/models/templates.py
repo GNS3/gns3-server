@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey, PickleType
+from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from .base import BaseTable, generate_uuid, GUID
@@ -36,6 +36,7 @@ class Template(BaseTable):
     builtin = Column(Boolean, default=False)
     usage = Column(String)
     template_type = Column(String)
+    tags = Column(JSON)
     compute_id = Column(String)
     images = relationship("Image", secondary=image_template_map, back_populates="templates")
 
@@ -50,7 +51,7 @@ class CloudTemplate(Template):
     __tablename__ = "cloud_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
-    ports_mapping = Column(PickleType)
+    ports_mapping = Column(JSON)
     remote_console_host = Column(String)
     remote_console_port = Column(Integer)
     remote_console_type = Column(String)
@@ -76,10 +77,10 @@ class DockerTemplate(Template):
     console_http_path = Column(String)
     console_resolution = Column(String)
     extra_hosts = Column(String)
-    extra_volumes = Column(PickleType)
+    extra_volumes = Column(JSON)
     memory = Column(Integer)
     cpus = Column(Float)
-    custom_adapters = Column(PickleType)
+    custom_adapters = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "docker", "polymorphic_load": "selectin"}
 
@@ -132,7 +133,7 @@ class EthernetHubTemplate(Template):
     __tablename__ = "ethernet_hub_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
-    ports_mapping = Column(PickleType)
+    ports_mapping = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "ethernet_hub", "polymorphic_load": "selectin"}
 
@@ -142,7 +143,7 @@ class EthernetSwitchTemplate(Template):
     __tablename__ = "ethernet_switch_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
-    ports_mapping = Column(PickleType)
+    ports_mapping = Column(JSON)
     console_type = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "ethernet_switch", "polymorphic_load": "selectin"}
@@ -210,7 +211,7 @@ class QemuTemplate(Template):
     cpu_throttling = Column(Integer)
     process_priority = Column(String)
     options = Column(String)
-    custom_adapters = Column(PickleType)
+    custom_adapters = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "qemu", "polymorphic_load": "selectin"}
 
@@ -233,7 +234,7 @@ class VirtualBoxTemplate(Template):
     on_close = Column(String)
     console_type = Column(String)
     console_auto_start = Column(Boolean)
-    custom_adapters = Column(PickleType)
+    custom_adapters = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "virtualbox", "polymorphic_load": "selectin"}
 
@@ -255,7 +256,7 @@ class VMwareTemplate(Template):
     on_close = Column(String)
     console_type = Column(String)
     console_auto_start = Column(Boolean)
-    custom_adapters = Column(PickleType)
+    custom_adapters = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "vmware", "polymorphic_load": "selectin"}
 

@@ -197,7 +197,7 @@ class QemuVM(BaseNode):
         """
 
         if not is_rfc1123_hostname_valid(new_name):
-            raise QemuError(f"'{new_name}' is an invalid name to rename Qemu node '{self._name}'")
+            raise QemuError(f"'{new_name}' is an invalid name to rename Qemu node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen.")
         super(QemuVM, QemuVM).name.__set__(self, new_name)
 
     @property
@@ -1131,7 +1131,6 @@ class QemuVM(BaseNode):
         await cancellable_wait_run_in_executor(md5sum, self._hdb_disk_image, self.working_dir)
         await cancellable_wait_run_in_executor(md5sum, self._hdc_disk_image, self.working_dir)
         await cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image, self.working_dir)
-
         super().create()
 
     async def start(self):
@@ -1744,11 +1743,14 @@ class QemuVM(BaseNode):
         :param extend: new size
         """
 
+        if self.is_running():
+            raise QemuError(f"Cannot resize '{disk_name}' while the VM is running")
+
         try:
             qemu_img_path = self._get_qemu_img()
             disk_path = os.path.join(self.working_dir, disk_name)
             if not os.path.exists(disk_path):
-                raise QemuError(f"Qemu disk image '{disk_name}' does not exist")
+                raise QemuError(f"Qemu disk image '{disk_name}' does not exist in the working directory")
 
             command = [qemu_img_path, "resize", disk_path, f"+{extend}M"]
             retcode = await self._qemu_img_exec(command)
@@ -1770,7 +1772,7 @@ class QemuVM(BaseNode):
 
         disk_path = os.path.join(self.working_dir, disk_name)
         if not os.path.exists(disk_path):
-            raise QemuError(f"Qemu disk image '{disk_name}' does not exist")
+            raise QemuError(f"Qemu disk image '{disk_name}' does not exist in the working directory")
 
         try:
             os.remove(disk_path)
@@ -1920,7 +1922,7 @@ class QemuVM(BaseNode):
 
     def _console_options(self):
 
-        if self._console_type == "telnet" and self._wrap_console:
+        if self._console_type in ("telnet", "ssh") and self._wrap_console:
             return self._serial_options(self._internal_console_port, self.console)
         elif self._console_type == "vnc":
             return self._vnc_options(self.console)
@@ -1936,7 +1938,7 @@ class QemuVM(BaseNode):
         if self._aux_type != "none" and self._aux_type == self._console_type:
             raise QemuError(f"Auxiliary console type {self._aux_type} cannot be the same as console type")
 
-        if self._aux_type == "telnet" and self._wrap_aux:
+        if self._aux_type in ("telnet", "ssh") and self._wrap_aux:
             return self._serial_options(self._internal_aux_port, self.aux)
         elif self._aux_type == "vnc":
             return self._vnc_options(self.aux)
@@ -2257,24 +2259,6 @@ class QemuVM(BaseNode):
                 options.extend(await self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
-
-    async def resize_disk(self, drive_name, extend):
-
-        if self.is_running():
-            raise QemuError(f"Cannot resize {drive_name} while the VM is running")
-
-        if self.linked_clone:
-            disk_image_path = os.path.join(self.working_dir, f"{drive_name}_disk.qcow2")
-            if not os.path.exists(disk_image_path):
-                disk_image = getattr(self, f"_{drive_name}_disk_image")
-                await self._create_linked_clone(drive_name, disk_image, disk_image_path)
-        else:
-            disk_image_path = getattr(self, f"{drive_name}_disk_image")
-
-        if not os.path.exists(disk_image_path):
-            raise QemuError(f"Disk path '{disk_image_path}' does not exist")
-        qemu_img_path = self._get_qemu_img()
-        await self.manager.resize_disk(qemu_img_path, disk_image_path, extend)
 
     def _cdrom_option(self):
 
@@ -2679,7 +2663,7 @@ class QemuVM(BaseNode):
             await self._clear_save_vm_stated()
         else:
             command.extend(await self._saved_state_option())
-        if self._console_type == "telnet":
+        if self._console_type in ("telnet", "ssh"):
             command.extend(await self._disable_graphics())
         if self._tpm:
             command.extend(self._tpm_options())
@@ -2715,17 +2699,19 @@ class QemuVM(BaseNode):
             if not disk_image:
                 continue
             answer[f"hd{drive}_disk_image"] = self.manager.get_relative_image_path(disk_image, self.working_dir)
-            answer[f"hd{drive}_disk_image_md5sum"] = md5sum(disk_image, self.working_dir)
-
             local_disk = os.path.join(self.working_dir, f"hd{drive}_disk.qcow2")
             if os.path.exists(local_disk):
                 try:
                     qcow2 = Qcow2(local_disk)
                     if qcow2.backing_file:
-                        answer[f"hd{drive}_disk_image_backed"] = os.path.basename(local_disk)
+                        # update disk image path to the local disk image and add the backing file name in the answer
+                        answer[f"hd{drive}_disk_image_backing_file"] = os.path.basename(qcow2.backing_file)
+                        answer[f"hd{drive}_disk_image"] = os.path.basename(local_disk)
                 except (Qcow2Error, OSError) as e:
                     log.error(f"Could not read qcow2 disk image '{local_disk}': {e}")
                     continue
+                # only compute the md5sum if the disk exists to avoid computing one for a backing file
+                answer[f"hd{drive}_disk_image_md5sum"] = md5sum(local_disk, self.working_dir)
 
         answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image, self.working_dir)
         answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image, self.working_dir)

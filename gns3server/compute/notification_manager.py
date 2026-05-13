@@ -53,8 +53,13 @@ class NotificationManager:
         :param kwargs: Add this meta to the notification (project_id for example)
         """
 
-        for listener in self._listeners:
-            asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
+        try:
+            for listener in self._listeners:
+                asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, kwargs))
+        except RuntimeError:
+            # asyncio.get_running_loop() raises RuntimeError when called from
+            # a threadpool with no active event loop (e.g. disk space warnings)
+            pass
 
     @staticmethod
     def reset():

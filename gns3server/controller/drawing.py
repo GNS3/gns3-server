@@ -115,7 +115,7 @@ class Drawing:
 
                 data = base64.decodebytes(data.split(",", 1)[1].encode())
 
-                # We compute an hash of the image file to avoid duplication
+                # We compute a hash of the image file to avoid duplication
                 filename = hashlib.md5(data).hexdigest() + "." + extension
                 elem.set(href, filename)
 

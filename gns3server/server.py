@@ -240,7 +240,10 @@ class Server:
 
         self._set_config_defaults_from_command_line(args)
         config = Config.instance().settings
-        if not config.Server.compute_password.get_secret_value():
+
+        if not config.Server.enable_http_auth:
+            log.info("Compute authentication is disabled")
+        elif not config.Server.compute_password.get_secret_value():
             alphabet = string.ascii_letters + string.digits + string.punctuation
             generated_password = ''.join(secrets.choice(alphabet) for _ in range(16))
             config.Server.compute_password = SecretStr(generated_password)

@@ -39,7 +39,7 @@ class IOUBase(BaseModel):
     ram: Optional[int] = Field(None, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, gt=0, description="Amount of NVRAM in KB")
     l1_keepalives: Optional[bool] = Field(None, description="Use default IOU values")
-    use_default_iou_values: Optional[bool] = Field(None, description="Always up Ethernet interfaces")
+    use_default_iou_values: Optional[bool] = Field(None, description="Use default IOU values")
     startup_config_content: Optional[str] = Field(None, description="Content of IOU startup configuration file")
     private_config_content: Optional[str] = Field(None, description="Content of IOU private configuration file")
 

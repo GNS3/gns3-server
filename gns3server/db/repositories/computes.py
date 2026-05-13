@@ -69,10 +69,8 @@ class ComputesRepository(BaseRepository):
     async def update_compute(self, compute_id: UUID, compute_update: schemas.ComputeUpdate) -> Optional[models.Compute]:
 
         update_values = compute_update.model_dump(exclude_unset=True)
-
-        password = compute_update.password
-        if password:
-            update_values["password"] = password.get_secret_value()
+        if compute_update.password is not None:
+            update_values["password"] = compute_update.password.get_secret_value()
 
         query = update(models.Compute).\
             where(models.Compute.compute_id == compute_id).\

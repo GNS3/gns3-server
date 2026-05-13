@@ -42,7 +42,7 @@ if 'compresslevel' in inspect.signature(zipfile._get_compressor).parameters:
         if compress_type == zipfile.ZIP_ZSTANDARD:
             if compresslevel is None:
                 compresslevel = 3
-            return zstd.ZstdCompressor(level=compresslevel, threads=12).compressobj()
+            return zstd.ZstdCompressor(level=compresslevel, threads=-1).compressobj()
         else:
             return patch.originals['_get_compressor'](compress_type, compresslevel=compresslevel)
 else:
@@ -51,7 +51,7 @@ else:
         if compress_type == zipfile.ZIP_ZSTANDARD:
             if compresslevel is None:
                 compresslevel = 3
-            return zstd.ZstdCompressor(level=compresslevel, threads=12).compressobj()
+            return zstd.ZstdCompressor(level=compresslevel, threads=-1).compressobj()
         else:
             return patch.originals['_get_compressor'](compress_type)
 

@@ -20,7 +20,7 @@ API routes for Frame Relay switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, Response, status
+from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -124,30 +124,36 @@ async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) 
 def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Start a Frame Relay switch node.
-    This endpoint results in no action since Frame Relay switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Start is not supported for Frame Relay switches"
+    )
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Stop a Frame Relay switch node.
-    This endpoint results in no action since Frame Relay switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Stop is not supported for Frame Relay switches"
+    )
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Suspend a Frame Relay switch node.
-    This endpoint results in no action since Frame Relay switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for Frame Relay switches"
+    )
 
 
 @router.post(

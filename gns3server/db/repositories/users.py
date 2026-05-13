@@ -113,6 +113,18 @@ class UsersRepository(BaseRepository):
             await self._db_session.refresh(user_db)  # force refresh of updated_at value
         return user_db
 
+    async def logout_user(self, user_id: UUID) -> None:
+        """
+        Increment token_version to invalidate all existing tokens for the user.
+        """
+
+        query = update(models.User).\
+            where(models.User.user_id == user_id).\
+            values(token_version=models.User.token_version + 1)
+
+        await self._db_session.execute(query)
+        await self._db_session.commit()
+
     async def delete_user(self, user_id: UUID) -> bool:
         """
         Delete a user.

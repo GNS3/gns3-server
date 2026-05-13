@@ -34,7 +34,7 @@ class UDPNIO(BaseModel):
     lport: int = Field(..., gt=0, le=65535, description="Local port")
     rhost: str = Field(..., description="Remote host")
     rport: int = Field(..., gt=0, le=65535, description="Remote port")
-    suspend: Optional[int] = Field(None, description="Suspend the NIO")
+    suspend: Optional[bool] = Field(None, description="Suspend the NIO")
     filters: Optional[dict] = Field(None, description="Packet filters")
 
 

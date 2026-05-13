@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -47,6 +47,10 @@ class LinkStyle(BaseModel):
     color: Optional[str] = None
     width: Optional[int] = None
     type: Optional[int] = None
+    link_type: Optional[str] = None
+    bezier_curviness: Optional[int] = None
+    flowchart_roundness: Optional[int] = None
+    control_offset: Optional[Tuple[float, float]] = None
 
 
 class LinkBase(BaseModel):
@@ -92,6 +96,10 @@ class Link(LinkBase):
         None,
         description="Read only property. The compute identifier where a capture is running"
     )
+    wireshark: Optional[bool] = Field(
+        False,
+        description="Read only property. True if a Web Wireshark session is active on the link"
+    )
 
 
 class UDPPortInfo(BaseModel):
@@ -113,3 +121,13 @@ class EthernetPortInfo(BaseModel):
     node_id: UUID
     interface: str
     type: str
+
+
+class LinkCapture(BaseModel):
+    """
+    Link capture data.
+    """
+
+    data_link_type: str = "DLT_EN10MB"
+    capture_file_name: Optional[str] = None
+    wireshark: bool = False

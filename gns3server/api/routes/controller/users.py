@@ -65,7 +65,10 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
+    token = schemas.Token(
+        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
+        token_type="bearer"
+    )
     return token
 
 
@@ -87,8 +90,23 @@ async def authenticate(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
+    token = schemas.Token(
+        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
+        token_type="bearer"
+    )
     return token
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> None:
+    """
+    Logout the current user by revoking all existing tokens.
+    """
+
+    await users_repo.logout_user(current_user.user_id)
 
 
 @router.get("/me", response_model=schemas.User)

@@ -41,15 +41,18 @@ class TestTemplateRoutes:
 
     async def test_route_exist(self, app: FastAPI, client: AsyncClient) -> None:
 
-        new_template = {"base_script_file": "vpcs_base_config.txt",
-                        "category": "guest",
-                        "console_auto_start": False,
-                        "console_type": "telnet",
-                        "default_name_format": "PC{0}",
-                        "name": "VPCS_TEST",
-                        "compute_id": "local",
-                        "symbol": ":/symbols/vpcs_guest.svg",
-                        "template_type": "vpcs"}
+        new_template = {
+            "base_script_file": "vpcs_base_config.txt",
+            "category": "guest",
+            "console_auto_start": False,
+            "console_type": "telnet",
+            "default_name_format": "PC{0}",
+            "name": "VPCS_TEST",
+            "compute_id": "local",
+            "symbol": ":/symbols/vpcs_guest.svg",
+            "template_type": "vpcs",
+            "tags": ["tag1", "tag2"]
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=new_template)
         assert response.status_code == status.HTTP_201_CREATED
@@ -60,6 +63,36 @@ class TestTemplateRoutes:
         response = await client.get(app.url_path_for("get_templates"))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) > 0
+
+    @pytest.mark.parametrize(
+        "tags, expected_match",
+        (
+            ([], True),
+            (["tag1"], True),
+            (["tag1", "tag2"], True),
+            (["tag42"], False),
+            (["tag1", "tag3"], False),
+        ),
+    )
+    async def test_template_list_with_tags(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            tags: list,
+            expected_match: bool
+    ) -> None:
+
+        params = {"tags": tags}
+        response = await client.get(app.url_path_for("get_templates"), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        if expected_match:
+            if not tags:
+                assert len(response.json()) == 8
+            else:
+                assert response.json()[0]["name"] == "VPCS_TEST"
+                assert len(response.json()) == 1
+        else:
+            assert len(response.json()) == 0
 
     async def test_template_get(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -100,16 +133,19 @@ class TestTemplateRoutes:
                   "template_type": "invalid_template_type"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_template_update(self, app: FastAPI, client: AsyncClient) -> None:
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "VPCS_TEST",
-                  "version": "3.0",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {
+            "template_id": template_id,
+            "name": "VPCS_TEST",
+            "version": "3.0",
+            "compute_id": "local",
+            "template_type": "vpcs",
+            "tags": ["tag1", "tag2"]
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -117,6 +153,7 @@ class TestTemplateRoutes:
         response = await client.get(app.url_path_for("get_template", template_id=template_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["template_id"] == template_id
+        assert response.json()["tags"] == ["tag1", "tag2"]
 
         params = {"name": "VPCS_TEST_RENAMED", "console_auto_start": True}
         response = await client.put(app.url_path_for("update_template", template_id=template_id), json=params)
@@ -681,14 +718,14 @@ class TestIOUTemplate:
                                  "default_name_format": "IOU{0}",
                                  "ethernet_adapters": 2,
                                  "name": "IOU template",
-                                 "nvram": 128,
+                                 "nvram": 256,
                                  "path": image_path,
                                  "private_config": "",
-                                 "ram": 256,
+                                 "ram": 1024,
                                  "serial_adapters": 2,
                                  "startup_config": "iou_l3_base_startup-config.txt",
                                  "symbol": unittest.mock.ANY,
-                                 "use_default_iou_values": True,
+                                 "use_default_iou_values": False,
                                  "l1_keepalives": False}
 
             for item, value in expected_response.items():

@@ -20,7 +20,7 @@ API routes for NAT nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Path, Response, status
+from fastapi import APIRouter, Depends, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union
@@ -115,20 +115,24 @@ async def start_nat_node(node: Nat = Depends(dep_node)) -> None:
 async def stop_nat_node(node: Nat = Depends(dep_node)) -> None:
     """
     Stop a NAT node.
-    This endpoint results in no action since cloud nodes cannot be stopped.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Stop is not supported for NAT nodes"
+    )
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_nat_node(node: Nat = Depends(dep_node)) -> None:
     """
     Suspend a NAT node.
-    This endpoint results in no action since NAT nodes cannot be suspended.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for NAT nodes"
+    )
 
 
 @router.post(
@@ -171,6 +175,7 @@ async def update_nat_node_nio(
     """
 
     nio = node.get_nio(port_number)
+    nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.update_nio(port_number, nio)

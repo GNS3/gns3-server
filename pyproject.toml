@@ -10,7 +10,7 @@ authors = [
   { name = "Jeremy Grossmann", email = "developers@gns3.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -21,7 +21,6 @@ classifiers = [
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -31,15 +30,17 @@ classifiers = [
 
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
-[tool.setuptools]
-packages = ["gns3server"]
-
 [tool.setuptools.dynamic]
 version = {attr = "gns3server.version.__version__"}
 dependencies = {file = "requirements.txt"}
 
 [tool.setuptools.dynamic.optional-dependencies]
+# Development dependencies
 dev = {file = ['dev-requirements.txt']}
+
+# Optional components (can be installed individually or combined)
+ai-copilot = {file = ['ai-requirements.txt']}
+# terraform = {file = ['terraform-requirements.txt']}  # Future component
 
 [project.urls]
 "Homepage" = "http://gns3.com"
@@ -49,3 +50,8 @@ dev = {file = ['dev-requirements.txt']}
 [project.scripts]
 gns3server = "gns3server.main:main"
 gns3vmnet = "gns3server.utils.vmnet:main"
+gns3server-uninstall-ai-copilot = "gns3server.utils.uninstall_ai_copilot:main"
+gns3server-web-wireshark-setup = "gns3server.agent.web_wireshark.setup_wireshark_image:main"
+
+[tool.setuptools]
+packages = ["gns3server"]

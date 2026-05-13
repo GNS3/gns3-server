@@ -23,6 +23,7 @@ from .privileges import Privilege
 from .computes import Compute
 from .images import Image
 from .pools import Resource, ResourcePool
+from .llm_model_configs import LLMModelConfig
 from .templates import (
     Template,
     CloudTemplate,

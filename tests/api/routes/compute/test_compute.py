@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import patch, MagicMock
 import pytest
 
 from fastapi import FastAPI, status
@@ -22,6 +23,8 @@ from httpx import AsyncClient
 
 from gns3server.version import __version__
 from gns3server.compute.project import Project
+from gns3server.config import Config
+from gns3server.schemas.config import ServerSettings
 
 pytestmark = pytest.mark.asyncio
 
@@ -71,3 +74,20 @@ class TestComputeRoutes:
 
         response = await compute_client.get(app.url_path_for("compute:compute_statistics"))
         assert response.status_code == status.HTTP_200_OK
+
+
+    async def test_compute_auth_disabled(self, app: FastAPI, compute_client: AsyncClient) -> None:
+
+        mock_settings = MagicMock()
+        mock_server_settings = MagicMock()
+        mock_server_settings.enable_http_auth = False
+        mock_server_settings.compute_username = "gns3"
+        mock_server_settings.compute_password.get_secret_value.return_value = "testpass"
+        mock_settings.settings.Server = mock_server_settings
+
+        with patch("gns3server.api.routes.compute.dependencies.authentication.Config.instance", return_value=mock_settings):
+            response = await compute_client.get(
+                app.url_path_for("compute:compute_version"),
+                auth=("wrong_user", "wrong_password")
+            )
+            assert response.status_code == status.HTTP_200_OK

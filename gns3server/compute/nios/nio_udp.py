@@ -78,5 +78,7 @@ class NIOUDP(NIO):
             "type": "nio_udp",
             "lport": self._lport,
             "rport": self._rport,
-            "rhost": self._rhost
+            "rhost": self._rhost,
+            "suspend": self._suspended,
+            "filters": self._filters
         }

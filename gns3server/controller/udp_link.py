@@ -18,6 +18,7 @@
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from .link import Link
+from .node_types import BUILTIN_NODE_TYPES
 
 
 class UDPLink(Link):
@@ -32,6 +33,18 @@ class UDPLink(Link):
         Use for the debug exports
         """
         return self._link_data
+    
+    def _get_node_filters(self, node1, node2):
+        """
+        Determine which node gets the active filters applied.
+        
+        :returns: Tuple of (node1_filters, node2_filters)
+        """
+        filter_node = self._get_filter_node()
+        return (
+            self.get_active_filters() if filter_node == node1 else {},
+            self.get_active_filters() if filter_node == node2 else {},
+        )
 
     async def create(self):
         """
@@ -57,13 +70,7 @@ class UDPLink(Link):
         response = await node2.compute.post(f"/projects/{self._project.id}/ports/udp")
         self._node2_port = response.json["udp_port"]
 
-        node1_filters = {}
-        node2_filters = {}
-        filter_node = self._get_filter_node()
-        if filter_node == node1:
-            node1_filters = self.get_active_filters()
-        elif filter_node == node2:
-            node2_filters = self.get_active_filters()
+        node1_filters, node2_filters = self._get_node_filters(node1, node2)
 
         # Create the tunnel on both side
         self._link_data.append(
@@ -108,13 +115,7 @@ class UDPLink(Link):
         node1 = self._nodes[0]["node"]
         node2 = self._nodes[1]["node"]
 
-        node1_filters = {}
-        node2_filters = {}
-        filter_node = self._get_filter_node()
-        if filter_node == node1:
-            node1_filters = self.get_active_filters()
-        elif filter_node == node2:
-            node2_filters = self.get_active_filters()
+        node1_filters, node2_filters = self._get_node_filters(node1, node2)
 
         adapter_number1 = self._nodes[0]["adapter_number"]
         port_number1 = self._nodes[0]["port_number"]
@@ -174,7 +175,7 @@ class UDPLink(Link):
         await self.delete()
         await self.create()
 
-    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None, wireshark=False, jwt_token=None):
         """
         Start capture on a link
         """
@@ -188,7 +189,7 @@ class UDPLink(Link):
             ),
             data=data,
         )
-        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
+        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name, wireshark=wireshark, jwt_token=jwt_token)
 
     async def stop_capture(self):
         """
@@ -213,18 +214,16 @@ class UDPLink(Link):
         :returns: Node where the capture should run
         """
 
-        ALWAYS_RUNNING_NODES_TYPE = ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch")
-
         for node in self._nodes:
             if (
                 node["node"].compute.id == "local"
-                and node["node"].node_type in ALWAYS_RUNNING_NODES_TYPE
+                and node["node"].node_type in BUILTIN_NODE_TYPES
                 and node["node"].status == "started"
             ):
                 return node
 
         for node in self._nodes:
-            if node["node"].node_type in ALWAYS_RUNNING_NODES_TYPE and node["node"].status == "started":
+            if node["node"].node_type in BUILTIN_NODE_TYPES and node["node"].status == "started":
                 return node
 
         for node in self._nodes:

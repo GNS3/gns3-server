@@ -128,3 +128,6 @@ async def test_duplicate_node(manager, compute_project):
         with open(destination_node.startup_config_path) as f:
             content = f.read()
             assert content == '!\nhostname R2\necho TEST'
+        with pytest.raises(DynamipsError):
+            source_node.status = "started"
+            await manager.duplicate_node(source_node.id, destination_node.id)

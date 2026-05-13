@@ -297,7 +297,7 @@ class TestEthernetSwitchNodesRoutes:
                 node_id=ethernet_switch["node_id"]),
             json=port_params
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
     async def test_ethernet_switch_delete(
@@ -326,9 +326,10 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:start_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"])
+                node_id=ethernet_switch["node_id"]
+            )
         )
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
     async def test_ethernet_switch_stop(
@@ -341,9 +342,10 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:stop_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"])
+                node_id=ethernet_switch["node_id"]
+            )
         )
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
     async def test_ethernet_switch_suspend(
@@ -356,9 +358,10 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:suspend_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"])
+                node_id=ethernet_switch["node_id"]
+            )
         )
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
     async def test_ethernet_switch_reload(
@@ -371,9 +374,10 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:reload_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"])
+                node_id=ethernet_switch["node_id"]
+            )
         )
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
     async def test_ethernet_switch_create_udp(

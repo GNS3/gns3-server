@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import re
 import os
 import json
@@ -30,6 +29,7 @@ import zipfile
 import pathlib
 
 from uuid import UUID, uuid4
+from fastapi import HTTPException, status
 
 from .node import Node
 from .compute import ComputeError
@@ -45,8 +45,9 @@ from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
 from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
-from .import_project import import_project, _move_node_file
+from .import_project import import_project, update_snapshots, regenerate_topology_ids
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 import logging
 
@@ -97,6 +98,7 @@ class Project:
         show_interface_labels=False,
         variables=None,
         supplier=None,
+        created_by=None,
     ):
 
         self._controller = controller
@@ -117,6 +119,8 @@ class Project:
         self._show_interface_labels = show_interface_labels
         self._variables = variables
         self._supplier = supplier
+        self._created_by = created_by
+        self._snapshots_config_file = "snapshots.conf"
 
         self._loading = False
         self._closing = False
@@ -207,19 +211,7 @@ class Project:
         self._drawings = {}
         self._snapshots = {}
         self._computes = []
-
-        # List the available snapshots
-        snapshot_dir = os.path.join(self.path, "snapshots")
-        if os.path.exists(snapshot_dir):
-            for snap in os.listdir(snapshot_dir):
-                if snap.endswith(".gns3project"):
-                    try:
-                        snapshot = Snapshot(self, filename=snap)
-                    except ValueError:
-                        log.error("Invalid snapshot file: {}".format(snap))
-                        continue
-                    self._snapshots[snapshot.id] = snapshot
-
+        self._load_snapshot_config()
         # Create the project on demand on the compute node
         self._project_created_on_compute = set()
 
@@ -381,6 +373,21 @@ class Project:
         self._supplier = supplier
 
     @property
+    def created_by(self):
+        """
+        Username of the user who created the project
+        :return: str or None
+        """
+        return self._created_by
+
+    @created_by.setter
+    def created_by(self, created_by):
+        """
+        Setter for the username of the user who created the project
+        """
+        self._created_by = created_by
+
+    @property
     def auto_start(self):
         """
         Should project auto start when opened
@@ -509,7 +516,7 @@ class Project:
                     name = base_name.format(number, id=number, name="Node")
                 except KeyError as e:
                     raise ControllerError("{" + e.args[0] + "} is not a valid replacement string in the node name")
-                except (ValueError, IndexError) as e:
+                except (ValueError, IndexError):
                     raise ControllerError(f"{base_name} is not a valid replacement string in the node name")
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
@@ -791,6 +798,59 @@ class Project:
         except KeyError:
             raise ControllerNotFoundError(f"Snapshot ID {snapshot_id} doesn't exist")
 
+    def _load_snapshot_config(self):
+
+        snapshot_dir = os.path.join(self.path, "snapshots")
+        self._snapshot_conf_path = os.path.join(snapshot_dir, self._snapshots_config_file)
+        self._snapshot_conf = []
+        if os.path.isfile(self._snapshot_conf_path):
+            try:
+                with open(self._snapshot_conf_path, encoding="utf-8") as f:
+                    self._snapshot_conf = json.load(f)
+            except (OSError, UnicodeDecodeError, ValueError) as e:
+                raise ControllerError(f"Could not read snapshot config {e}")
+
+        # Load all legacy snapshots (.gns3project files) to create an initial snapshot config if it doesn't exist
+        if os.path.exists(snapshot_dir) and not self._snapshot_conf:
+            for snap in os.listdir(snapshot_dir):
+                if snap.endswith(".gns3project"):
+                    try:
+                        snapshot = Snapshot(self, filename=snap)
+                    except ValueError:
+                        log.error("Invalid snapshot file: {}".format(snap))
+                        continue
+                    self._snapshots[snapshot.id] = snapshot
+        else:
+            # Create the Snapshot instances from the snapshot config file
+            for snapshot_entry in self._snapshot_conf:
+                try:
+                    path = os.path.join(snapshot_dir, snapshot_entry["filename"])
+                    if not os.path.isfile(path):
+                        log.warning("Snapshot file '{}' does not exist".format(path))
+                        continue
+                    snapshot_entry.pop("project_id")
+                    snapshot = Snapshot(self, **snapshot_entry)
+                    self._snapshots[snapshot.id] = snapshot
+                except KeyError:
+                    log.error("Invalid entry in snapshot config file: {}".format(snapshot_entry))
+                    continue
+
+        self._save_snapshot_config()
+
+    def _save_snapshot_config(self):
+
+        if not self._snapshots:
+            return
+
+        self._snapshot_conf = []
+        for snapshot in self._snapshots.values():
+            self._snapshot_conf.append(snapshot.asdict())
+        try:
+            with open(self._snapshot_conf_path, 'w+') as f:
+                json.dump(self._snapshot_conf, f, indent=4)
+        except OSError as e:
+            log.error("Cannot write snapshot config '{}': {}".format(self._snapshot_conf_path, e))
+
     @open_required
     async def snapshot(self, name):
         """
@@ -804,12 +864,14 @@ class Project:
         snapshot = Snapshot(self, name=name)
         await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
+        self._save_snapshot_config()
         return snapshot
 
     @open_required
     async def delete_snapshot(self, snapshot_id):
         snapshot = self.get_snapshot(snapshot_id)
         del self._snapshots[snapshot.id]
+        self._save_snapshot_config()
         os.remove(snapshot.path)
 
     @locking
@@ -820,17 +882,26 @@ class Project:
             log.warning(f"Closing project '{self.name}' ignored because it is being loaded")
             return
         self._closing = True
-        await self.stop_all()
+        try:
+            await self.stop_all()
+        except HTTPException as e:
+            if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+                raise
         for compute in list(self._project_created_on_compute):
             try:
                 await compute.post(f"/projects/{self._id}/close", dont_connect=True)
-            # We don't care if a compute is down at this step
-            except (ComputeError, ControllerError, TimeoutError):
-                pass
+            except (ComputeError, ControllerError, TimeoutError) as e:
+                log.warning(f"Could not close project '{self._id}' on compute '{compute.id}': {e}")
         self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
             self.emit_controller_notification("project.closed", self.asdict())
+
+        # Stop Web Wireshark container (all xpra sessions terminate with container)
+        await self._stop_web_wireshark_container()
+
+        # Cleanup GNS3 Copilot AgentService for this project
+        await self._cleanup_copilot_agent()
 
         self.reset()
         self._closing = False
@@ -868,7 +939,98 @@ class Project:
         except OSError as e:
             log.warning(f"Could not delete unused pictures: {e}")
 
+    async def _cleanup_web_wireshark_xpra_sessions(self):
+        """
+        Cleanup all Web Wireshark xpra sessions (without deleting container).
+
+        Called when project is closed to stop all xpra sessions and Wireshark processes,
+        while keeping the container for quick reuse when project is reopened.
+        """
+        try:
+            log.info("Stopping xpra sessions for project '%s' (%s)", self.name, self._id)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_all_sessions(self._id)
+                log.info("Web Wireshark xpra sessions stopped successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't raise exception to avoid affecting project close flow
+            log.warning("Failed to cleanup xpra sessions for project '%s': %s", self.name, e)
+
+    async def _stop_web_wireshark_container(self):
+        """
+        Stop Web Wireshark container (without deleting).
+
+        Called when project is closed to stop the container and free memory,
+        while keeping the container for quick startup when project is reopened.
+        """
+        try:
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info("Stopping Web Wireshark container '%s' for project '%s'", container_name, self.name)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.stop_container(self._id)
+                log.info("Web Wireshark container stopped successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't fail project close if container stop fails
+            log.warning("Failed to stop container for project '%s': %s", self.name, e)
+
+    async def _cleanup_web_wireshark_container(self):
+        """
+        Delete Web Wireshark container.
+
+        Called when project is deleted to stop and remove the container.
+        """
+        try:
+            container_name = f"gns3-wireshark-{self._id}"
+            log.info("Deleting Web Wireshark container '%s' for project '%s'", container_name, self.name)
+
+            manager = WebWiresharkManager()
+            try:
+                await manager.delete_container(self._id)
+                log.info("Web Wireshark container deleted successfully")
+            finally:
+                await manager.close()
+
+        except Exception as e:
+            # Don't fail project delete if container cleanup fails
+            log.warning("Failed to delete container for project '%s': %s", self.name, e)
+
+    async def _cleanup_copilot_agent(self):
+        """
+        Cleanup GNS3 Copilot AgentService for this project.
+
+        This should be called when the project is closed to free resources.
+        """
+        try:
+            from gns3server.agent.gns3_copilot.project_agent_manager import get_project_agent_manager
+
+            agent_manager = await get_project_agent_manager()
+            if agent_manager.has_agent(self._id):
+                log.info("Cleaning up AgentService for project '%s' (%s)", self.name, self._id)
+                await agent_manager.remove_agent(self._id)
+        except Exception as e:
+            # Don't fail project close if agent cleanup fails
+            log.warning("Failed to cleanup AgentService for project '%s': %s", self.name, e)
+
     async def delete(self):
+
+        # Check compute connectivity before open() to avoid 120s timeout
+        # when remote computes are unreachable
+        disconnected = self._get_disconnected_computes()
+        if disconnected:
+            compute_names = ", ".join([f"'{c.name}'" for c in disconnected])
+            raise ControllerForbiddenError(
+                f"Cannot delete project '{self.name}': {len(disconnected)} compute(s) are disconnected: {compute_names}. "
+                f"Please fix the connection or delete the project manually on those computes."
+            )
 
         if self._status != "opened":
             try:
@@ -876,8 +1038,13 @@ class Project:
             except ControllerError as e:
                 # ignore missing images or other conflicts when deleting a project
                 log.warning(f"Conflict while deleting project: {e}")
+
         await self.delete_on_computes()
         await self.close()
+
+        # Delete Web Wireshark container
+        await self._cleanup_web_wireshark_container()
+
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:
@@ -889,20 +1056,59 @@ class Project:
             raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
         self.emit_controller_notification("project.deleted", self.asdict())
 
+    def _get_disconnected_computes(self):
+        """
+        Check compute connectivity by reading the topology file directly,
+        without opening the project (which would try to connect to computes).
+        Returns a list of disconnected Compute objects.
+        """
+        if self._status == "opened":
+            # Project is already open, use the already-loaded _computes list
+            compute_ids = self._computes
+        else:
+            # Read compute IDs from topology file without connecting
+            path = self._topology_file()
+            if not os.path.exists(path):
+                return []
+            try:
+                project_data = load_topology(path)
+            except (ValueError, OSError) as e:
+                log.warning(f"Could not read topology file for project '{self._name}': {e}")
+                return []
+            topology = project_data.get("topology", {})
+            compute_ids = set()
+            for node in topology.get("nodes", []):
+                compute_id = node.get("compute_id")
+                if compute_id:
+                    compute_ids.add(compute_id)
+
+        disconnected = []
+        for compute_id in compute_ids:
+            try:
+                compute = self._controller.get_compute(compute_id)
+                if not compute.connected:
+                    disconnected.append(compute)
+            except ControllerError:
+                log.warning(f"Compute '{compute_id}' not found in controller")
+        return disconnected
+
     async def delete_on_computes(self):
         """
         Delete the project on computes but not on controller
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                await compute.delete(f"/projects/{self._id}")
+                try:
+                    await compute.delete(f"/projects/{self._id}")
+                except (ComputeError, TimeoutError) as e:
+                    log.warning(f"Could not delete project '{self._id}' on compute '{compute.id}': {e}")
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
     def _get_default_project_directory(cls):
         """
         Return the default location for the project directory
-        depending of the operating system
+        depending on the operating system
         """
 
         server_config = Config.instance().settings.Server
@@ -967,7 +1173,9 @@ class Project:
 
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
-                await self.controller.add_compute(**compute)
+                compute_id = compute.get("compute_id")
+                if compute_id not in self._controller._computes:
+                    await self.controller.add_compute(**compute)
 
             # Get all compute used in the project
             # used to allocate application IDs for IOU nodes.
@@ -975,6 +1183,16 @@ class Project:
                 compute_id = node.get("compute_id")
                 if compute_id not in self._computes:
                     self._computes.append(compute_id)
+
+            # Check compute connectivity before creating nodes to avoid
+            # 120-second timeout when a remote compute is unreachable
+            disconnected = self._get_disconnected_computes()
+            if disconnected:
+                compute_names = ", ".join([f"'{c.name}'" for c in disconnected])
+                raise ControllerError(
+                    f"Cannot open project '{self.name}': {len(disconnected)} compute(s) are disconnected: {compute_names}. "
+                    f"Please check the connection and try again."
+                )
 
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
@@ -1109,8 +1327,8 @@ class Project:
                         self,
                         tmpdir,
                         keep_compute_ids=True,
-                        allow_all_nodes=True,
-                        reset_mac_addresses=reset_mac_addresses,
+                        include_snapshots=True,
+                        allow_all_nodes=True
                     )
 
                     # export the project to a temporary location
@@ -1120,13 +1338,15 @@ class Project:
                         async for chunk in zstream:
                             await f.write(chunk)
 
-                    # import the temporary project
+                    new_project_id = str(uuid.uuid4())
+                    # import the duplicated project
                     with open(project_path, "rb") as f:
                         project = await import_project(
                             self._controller,
-                            str(uuid.uuid4()),
+                            new_project_id,
                             f,
                             name=name,
+                            reset_mac_addresses=reset_mac_addresses,
                             keep_compute_ids=True
                         )
 
@@ -1137,6 +1357,62 @@ class Project:
         if previous_status == "closed":
             await self.close()
 
+        return project
+
+    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+        """
+        Fast duplication of a project.
+
+        Copy the project files directly rather than in an import-export fashion.
+
+        :param name: Name of the new project. A new one will be generated in case of conflicts
+        :param location: Parent directory of the new project
+        :param reset_mac_addresses: Reset MAC addresses for the duplicated project
+        """
+
+        # remote replication is not supported with remote computes
+        for compute in self.computes:
+            if compute.id != "local":
+                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
+                return None
+        # work dir
+        p_work = pathlib.Path(location or self.path).parent.absolute()
+        t0 = time.time()
+        new_project_id = str(uuid.uuid4())
+        if location:
+            new_project_path = p_work.joinpath(location)
+        else:
+            new_project_path = p_work.joinpath(new_project_id)
+        # copy dir
+        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
+        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
+        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
+        project_name = name or topology["name"]
+        # If the project name is already used we generate a new one
+        project_name = self.controller.get_free_project_name(project_name)
+        topology["name"] = project_name
+        # To avoid unexpected behavior (project start without manual operations just after import)
+        topology["auto_start"] = False
+        topology["auto_open"] = False
+        topology["auto_close"] = False
+
+        # regenerate IDs for the duplicated project
+        regenerate_topology_ids(topology, new_project_path, reset_mac_addresses)
+
+        # dump the updated .gns3 project file
+        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
+        topology["project_id"] = new_project_id
+        with open(dot_gns3_path, "w+") as f:
+            json.dump(topology, f, indent=4, sort_keys=True)
+
+        # update the snapshots with new IDs
+        snapshots_dir = os.path.join(new_project_path, "snapshots")
+        if os.path.isdir(snapshots_dir):
+            await update_snapshots(snapshots_dir, new_project_path, project_name, new_project_id)
+
+        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
+        project = await self.controller.load_project(dot_gns3_path, load=False)
+        log.info("Project '{}': fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
         return project
 
     def is_running(self):
@@ -1263,9 +1539,6 @@ class Project:
         :returns: New node
         """
 
-        if node.status != "stopped" and not node.is_always_running():
-            raise ControllerError("Cannot duplicate node data while the node is running")
-
         data = copy.deepcopy(node.asdict(topology_dump=True))
         # Some properties like internal ID should not be duplicated
         for unique_property in (
@@ -1286,7 +1559,13 @@ class Project:
         data["z"] = z
         data["locked"] = False  # duplicated node must not be locked
         new_node_uuid = str(uuid.uuid4())
-        new_node = await self.add_node(node.compute, node.name, new_node_uuid, node_type=node_type, **data)
+        new_node = await self.add_node(
+            node.compute,
+            node.name,
+            new_node_uuid,
+            node_type=node_type,
+            **data
+        )
         try:
             await node.post("/duplicate", timeout=None, data={"destination_node_id": new_node_uuid})
         except ControllerNotFoundError:
@@ -1327,73 +1606,9 @@ class Project:
             "show_interface_labels": self._show_interface_labels,
             "supplier": self._supplier,
             "variables": self._variables,
+            "created_by": self._created_by,
         }
 
     def __repr__(self):
         return f"<gns3server.controller.Project {self._name} {self._id}>"
 
-    async def _fast_duplication(self, name=None, reset_mac_addresses=True):
-        """
-        Fast duplication of a project.
-
-        Copy the project files directly rather than in an import-export fashion.
-
-        :param name: Name of the new project. A new one will be generated in case of conflicts
-        :param reset_mac_addresses: Reset MAC addresses for the new project
-        """
-
-        # remote replication is not supported with remote computes
-        for compute in self.computes:
-            if compute.id != "local":
-                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
-                return None
-        # work dir
-        p_work = pathlib.Path(self.path).parent.absolute()
-        t0 = time.time()
-        new_project_id = str(uuid.uuid4())
-        new_project_path = p_work.joinpath(new_project_id)
-        # copy dir
-        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
-        log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
-        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
-        project_name = name or topology["name"]
-        # If the project name is already used we generate a new one
-        project_name = self.controller.get_free_project_name(project_name)
-        topology["name"] = project_name
-        # To avoid unexpected behavior (project start without manual operations just after import)
-        topology["auto_start"] = False
-        topology["auto_open"] = False
-        topology["auto_close"] = False
-        # change node ID
-        node_old_to_new = {}
-        for node in topology["topology"]["nodes"]:
-            new_node_id = str(uuid.uuid4())
-            if "node_id" in node:
-                node_old_to_new[node["node_id"]] = new_node_id
-                _move_node_file(new_project_path, node["node_id"], new_node_id)
-            node["node_id"] = new_node_id
-            if reset_mac_addresses:
-                if "properties" in node:
-                    for prop, value in node["properties"].items():
-                        # reset the MAC address
-                        if prop in ("mac_addr", "mac_address"):
-                            node["properties"][prop] = None
-        # change link ID
-        for link in topology["topology"]["links"]:
-            link["link_id"] = str(uuid.uuid4())
-            for node in link["nodes"]:
-                node["node_id"] = node_old_to_new[node["node_id"]]
-        # Generate new drawings id
-        for drawing in topology["topology"]["drawings"]:
-            drawing["drawing_id"] = str(uuid.uuid4())
-
-        # And we dump the updated.gns3
-        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
-        topology["project_id"] = new_project_id
-        with open(dot_gns3_path, "w+") as f:
-            json.dump(topology, f, indent=4)
-
-        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
-        project = await self.controller.load_project(dot_gns3_path, load=False)
-        log.info("Project '{}' fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
-        return project

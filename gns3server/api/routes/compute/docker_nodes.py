@@ -289,6 +289,7 @@ async def update_docker_node_nio(
     """
 
     nio = node.get_nio(adapter_number)
+    nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.adapter_update_nio_binding(adapter_number, nio)
@@ -381,6 +382,21 @@ async def console_ws(
 
     if websocket:
         await node.start_websocket_console(websocket)
+
+
+@router.websocket(
+    "/{node_id}/console/vnc"
+)
+async def vnc_console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: DockerVM = Depends(dep_node)
+) -> None:
+    """
+    VNC Console WebSocket.
+    """
+
+    if websocket:
+        await node.start_vnc_websocket_console(websocket)
 
 
 @router.post(

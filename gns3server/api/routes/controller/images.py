@@ -154,6 +154,17 @@ async def upload_image(
     if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
+    # If the client sends X-MD5-Checksum, check for a duplicate before consuming the upload stream
+    checksum_header = request.headers.get("X-MD5-Checksum")
+    if checksum_header:
+        check_dir = os.path.dirname(full_path) if image_dir else None
+        duplicate = await images_repo.get_image_by_checksum(checksum_header, check_dir)
+        if duplicate:
+            location = f" in '{check_dir}'" if check_dir else ""
+            raise ControllerError(
+                f"Image '{duplicate.filename}' with the same checksum already exists{location}"
+            )
+
     try:
         allow_raw_image = Config.instance().settings.Server.allow_raw_images
         image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)

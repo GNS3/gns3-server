@@ -20,7 +20,7 @@ API routes for Ethernet hub nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, Response, status
+from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -123,27 +123,34 @@ def start_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Start is not supported for Ethernet hubs"
+    )
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 def stop_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Stop an Ethernet hub.
-    This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Stop is not supported for Ethernet hubs"
+    )
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 def suspend_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Suspend an Ethernet hub.
-    This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for Ethernet hubs"
+    )
 
 
 @router.post(

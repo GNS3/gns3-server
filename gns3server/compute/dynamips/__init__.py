@@ -32,7 +32,7 @@ import re
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.interfaces import interfaces, is_interface_up
+from gns3server.utils.interfaces import is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output
 from gns3server.utils import parse_version
 from uuid import uuid4
@@ -478,36 +478,40 @@ class Dynamips(BaseManager):
                 adapter = ADAPTER_MATRIX[adapter_name]()
                 try:
                     if vm.slots[slot_id] and not isinstance(vm.slots[slot_id], type(adapter)):
-                        await vm.slot_remove_binding(slot_id)
+                        if vm.slots[slot_id].removable():
+                            await vm.slot_remove_binding(slot_id)
+                        else:
+                            log.warning(f"Slot {slot_id} on router '{vm.name}' has a non-removable adapter, skipping replacement")
+                            continue
                     if not isinstance(vm.slots[slot_id], type(adapter)):
                         await vm.slot_add_binding(slot_id, adapter)
                 except IndexError:
-                    raise DynamipsError(f"Slot {slot_id} doesn't exist on this router")
+                    log.warning(f"Slot {slot_id} doesn't exist on router '{vm.name}', skipping")
             elif name.startswith("slot") and (value is None or value == ""):
                 slot_id = int(name[-1])
                 try:
-                    if vm.slots[slot_id]:
+                    if vm.slots[slot_id] and vm.slots[slot_id].removable():
                         await vm.slot_remove_binding(slot_id)
                 except IndexError:
-                    raise DynamipsError(f"Slot {slot_id} doesn't exist on this router")
+                    log.warning(f"Slot {slot_id} doesn't exist on router '{vm.name}', skipping")
             elif name.startswith("wic") and value in WIC_MATRIX:
                 wic_slot_id = int(name[-1])
                 wic_name = value
                 wic = WIC_MATRIX[wic_name]()
                 try:
-                    if vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
+                    if vm.slots[0] and vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                         await vm.uninstall_wic(wic_slot_id)
-                    if not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
+                    if vm.slots[0] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                         await vm.install_wic(wic_slot_id, wic)
-                except IndexError:
-                    raise DynamipsError(f"WIC slot {wic_slot_id} doesn't exist on this router")
+                except (IndexError, AttributeError):
+                    log.warning(f"WIC slot {wic_slot_id} doesn't exist on router '{vm.name}', skipping")
             elif name.startswith("wic") and (value is None or value == ""):
                 wic_slot_id = int(name[-1])
                 try:
-                    if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
+                    if vm.slots[0] and vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
                         await vm.uninstall_wic(wic_slot_id)
-                except IndexError:
-                    raise DynamipsError(f"WIC slot {wic_slot_id} doesn't exist on this router")
+                except (IndexError, AttributeError):
+                    log.warning(f"WIC slot {wic_slot_id} doesn't exist on router '{vm.name}', skipping")
 
         mmap_support = self.config.settings.Dynamips.mmap_support
         if mmap_support is False:
@@ -639,6 +643,9 @@ class Dynamips(BaseManager):
         # Not a Dynamips router
         if not hasattr(source_node, "startup_config_path"):
             return await super().duplicate_node(source_node_id, destination_node_id)
+
+        if hasattr(source_node, "status") and source_node.status != "stopped":
+            raise DynamipsError("Cannot duplicate router data while the router is running")
 
         try:
             with open(source_node.startup_config_path) as f:

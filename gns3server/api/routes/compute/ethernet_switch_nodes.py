@@ -20,7 +20,7 @@ API routes for Ethernet switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, Response, status
+from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -124,30 +124,36 @@ async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> No
 def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Start an Ethernet switch.
-    This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Start is not supported for Ethernet switches"
+    )
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Stop an Ethernet switch.
-    This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Stop is not supported for Ethernet switches"
+    )
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Suspend an Ethernet switch.
-    This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for Ethernet switches"
+    )
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
@@ -157,7 +163,10 @@ def reload_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Reload is not supported for Ethernet switches"
+    )
 
 
 @router.post(

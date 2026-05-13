@@ -61,6 +61,7 @@ class QemuConsoleType(str, Enum):
 
     vnc = "vnc"
     telnet = "telnet"
+    ssh = "ssh"
     spice = "spice"
     spice_agent = "spice+agent"
     none = "none"
@@ -167,19 +168,19 @@ class QemuBase(BaseModel):
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[QemuConsoleType] = Field(None, description="Auxiliary console type")
     hda_disk_image: Optional[str] = Field(None, description="QEMU hda disk image path")
-    hda_disk_image_backed: Optional[str] = Field(None, description="QEMU hda backed disk image path")
+    hda_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hda backing file disk image path")
     hda_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hda disk image checksum")
     hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hda interface")
     hdb_disk_image: Optional[str] = Field(None, description="QEMU hdb disk image path")
-    hdb_disk_image_backed: Optional[str] = Field(None, description="QEMU hdb backed disk image path")
+    hdb_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hdb backing file disk image path")
     hdb_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdb disk image checksum")
     hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdb interface")
     hdc_disk_image: Optional[str] = Field(None, description="QEMU hdc disk image path")
-    hdc_disk_image_backed: Optional[str] = Field(None, description="QEMU hdc backed disk image path")
+    hdc_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hdc backing file disk image path")
     hdc_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdc disk image checksum")
     hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdc interface")
     hdd_disk_image: Optional[str] = Field(None, description="QEMU hdd disk image path")
-    hdd_disk_image_backed: Optional[str] = Field(None, description="QEMU hdd backed disk image path")
+    hdd_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hdd backing file disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
     cdrom_image: Optional[str] = Field(None, description="QEMU cdrom image path")

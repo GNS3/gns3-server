@@ -21,6 +21,8 @@ import uuid
 import html
 
 from .controller_error import ControllerError, ControllerNotFoundError
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+from gns3server.config import Config
 
 import logging
 
@@ -86,6 +88,7 @@ class Link:
         self._suspended = False
         self._filters = {}
         self._link_style = {}
+        self._wireshark = False
 
     @property
     def filters(self):
@@ -93,13 +96,6 @@ class Link:
         Get an array of filters
         """
         return self._filters
-
-    @property
-    def nodes(self):
-        """
-        Get the current nodes attached to this link
-        """
-        return self._nodes
 
     @property
     def project(self):
@@ -284,10 +280,14 @@ class Link:
 
         raise NotImplementedError
 
-    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None, wireshark=False, jwt_token=None):
         """
         Start capture on the link
 
+        :param data_link_type: PCAP data link type
+        :param capture_file_name: PCAP capture file name
+        :param wireshark: Enable Web Wireshark
+        :param jwt_token: JWT token for authentication
         :returns: Capture object
         """
 
@@ -295,13 +295,123 @@ class Link:
         self._capture_file_name = capture_file_name
         self._project.emit_notification("link.updated", self.asdict())
 
+        # Start Web Wireshark if requested
+        if wireshark:
+            await self._start_web_wireshark(jwt_token)
+
     async def stop_capture(self):
         """
         Stop capture on the link
         """
 
+        # Stop Web Wireshark
+        if self._capturing:
+            await self._stop_web_wireshark()
+
         self._capturing = False
         self._project.emit_notification("link.updated", self.asdict())
+
+    async def _start_web_wireshark(self, jwt_token: str):
+        """Start Web Wireshark.
+
+        Args:
+            jwt_token: JWT authentication token
+
+        Raises:
+            ControllerError: If startup fails
+        """
+        if not jwt_token:
+            raise ControllerError("JWT token is required for Web Wireshark")
+
+        # Load WebWireshark configuration from config file
+        webwireshark_config = Config.instance().settings.WebWireshark
+
+        manager = WebWiresharkManager()
+        try:
+            log.info(f"Starting Web Wireshark for link {self.id}")
+
+            result = await manager.start_wireshark_session(
+                project_id=self._project.id,
+                link_id=self.id,
+                jwt_token=jwt_token,
+                memory=webwireshark_config.memory,
+                cpus=webwireshark_config.cpus,
+                pids_limit=webwireshark_config.pids_limit
+            )
+
+            # Send notification
+            self._project.emit_notification("link.web_wireshark_started", {
+                "link_id": self.id,
+                "ws_url": result.get("ws_url", result.get("url"))
+            })
+
+            log.info(f"Web Wireshark started for link {self.id}: {result.get('ws_url')}")
+            self._wireshark = True
+
+        except ControllerError:
+            # Re-raise ControllerError to return error to client
+            raise
+        except Exception as e:
+            error_msg = f"Error starting Web Wireshark: {str(e)}"
+            log.error(error_msg)
+            raise ControllerError(error_msg)
+        finally:
+            await manager.close()
+
+    async def _stop_web_wireshark(self):
+        """Stop Web Wireshark"""
+        manager = WebWiresharkManager()
+        try:
+            log.info(f"Stopping Web Wireshark for link {self.id}")
+
+            await manager.stop_wireshark_session(
+                project_id=self._project.id,
+                link_id=self.id
+            )
+
+            log.info(f"Web Wireshark stopped for link {self.id}")
+            self._wireshark = False
+
+        except Exception as e:
+            log.error(f"Error stopping Web Wireshark: {e}")
+        finally:
+            await manager.close()
+
+    async def _restart_web_wireshark(self, jwt_token: str):
+        """Restart Web Wireshark after window was closed.
+
+        Args:
+            jwt_token: JWT authentication token
+
+        Raises:
+            ControllerError: If restart fails
+        """
+        # Get capture stream URL from compute
+        manager = WebWiresharkManager()
+        try:
+            log.info(f"Restarting Web Wireshark for link {self.id}")
+
+            result = await manager.restart_wireshark_session(
+                project_id=self._project.id,
+                link_id=self.id,
+                jwt_token=jwt_token
+            )
+
+            self._project.emit_notification("link.web_wireshark_started", {
+                "link_id": self.id,
+                "ws_url": result.get("ws_url", result.get("url"))
+            })
+
+            log.info(f"Web Wireshark restarted for link {self.id}: {result.get('ws_url')}")
+
+        except ControllerError:
+            raise
+        except Exception as e:
+            error_msg = f"Error restarting Web Wireshark: {str(e)}"
+            log.error(error_msg)
+            raise ControllerError(error_msg)
+        finally:
+            await manager.close()
 
     def pcap_streaming_url(self):
         """
@@ -458,4 +568,5 @@ class Link:
             "filters": self._filters,
             "suspend": self._suspended,
             "link_style": self._link_style,
+            "wireshark": self._wireshark,
         }

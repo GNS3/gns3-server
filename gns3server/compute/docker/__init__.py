@@ -32,7 +32,7 @@ from gns3server.config import Config
 from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
 
 log = logging.getLogger(__name__)
 
@@ -78,8 +78,10 @@ class Docker(BaseManager):
                         stderr=asyncio.subprocess.DEVNULL
                     )
                     stdout, _ = await proc.communicate()
-                    if proc.returncode == 1:
+                    if proc.returncode == 1 or "static" in busybox_exec:
                         # ldd returns 1 if the file is not a dynamic executable
+                        # on Alpine/musl, ldd returns 0 even for static binaries,
+                        # so also trust binaries named busybox-static or busybox.static
                         log.info(f"Installing busybox from '{busybox_path}' to '{dst_busybox}'")
                         shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
                         return
@@ -238,6 +240,8 @@ class Docker(BaseManager):
                 raise DockerHttp304Error(f"Docker has returned an error: {response.status} {body}")
             elif response.status == 404:
                 raise DockerHttp404Error(f"Docker has returned an error: {response.status} {body}")
+            elif response.status == 409:
+                raise DockerHttp409Error(f"Docker has returned an error: {response.status} {body}")
             else:
                 raise DockerError(f"Docker has returned an error: {response.status} {body}")
         return response

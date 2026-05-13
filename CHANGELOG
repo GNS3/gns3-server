@@ -1,5 +1,185 @@
 # Change Log
 
+## 3.1.0a2 12/05/2026
+
+* Bundle web-ui v3.1.0a2
+* fix: surface tshark stderr errors to LLM, not just log them
+* fix: hint LLM about -c behavior when tshark returns empty with -c
+* fix: update search_fields examples to use existing field names
+* fix: reject multi-keyword search_fields, single keyword only
+* fix: document action/query params in PacketAnalysisTool description
+* feat: add search_fields action to PacketAnalysisTool for real-time field lookup
+* feat: validate tshark -e field names before running analysis
+* fix: document -c behavior caveat in PacketAnalysisTool description
+* fix: demote loader-level load logs to DEBUG, info already reported by manager
+* fix: promote skills/prompts load logs to INFO level
+* fix: load packet analysis protocols during skills initialization
+* feat: add PacketAnalysisSkillsTool
+* fix: remove remaining quoted example from tool input docstring
+* fix: use shlex.split for tshark_args parsing
+* feat: add packet analysis workflow to tool description
+* refactor: remove old PacketCaptureTool, replaced by PacketAnalysisTool
+* feat: add protocol-oriented packet analysis tool
+* docs: add roadmap docs for planned features
+* feat: require superadmin for /reload/skills endpoint
+* fix: remove background init timeout and allow skills reload retry
+* deps: add PyYAML and GitPython to ai-requirements.txt
+* feat: add fault injection system and external skills repository
+* fix: Disable DeepSeek thinking mode to avoid reasoning_content errors
+* fix: Skip offline compute nodes during project import
+* fix: Import status module in project.py
+* fix: Handle connection errors when stopping node console
+* refactor: Remove MD5 calculation from node files listing
+* fix: Export NodeFile schema to schemas module
+* feat: Add detailed metadata to node files listing
+* feat: Add API endpoint to list node files
+* Fix snapshot restore does not work after export/import of project
+* Warn to use 64-bit IOU images. Fixes #2716 32-bit IOU image support has been removed from the GNS3 VM.
+* Fix: Improve Docker container deletion error logging
+* Fix: Add exponential backoff to compute reconnection attempts
+* Fix: Check compute connectivity before node creation in open()
+* Fix: Check compute connectivity before open() during project deletion
+* Fix: Add error logging when closing/deleting projects on computes
+* Fix: Skip add_compute for existing computes when opening projects
+* feat: add AI provider config files to .gitignore
+* Fix: Use _computes instead of _project_created_on_compute for deletion check
+* Fix: Check compute connection status before project deletion
+* fix: extend remote compute image path conversion to all node types
+* fix: send relative image path to remote compute nodes
+* fix: handle directory access for static web-ui routes
+* fix: add duplicate name validation when updating templates
+* fix: avoid AttributeError when password is not provided in compute update
+* fix: improve hostname validation error messages with allowed characters
+* feat(compute):  Fix Dynamips to listen on the internal port when ssh is used for auxiliary console
+* feat(compute): Fix ambiguous log message related to the  active console transport.
+* feat(compute): Updated server host key to use the secure ssh-ed25519 instead of old ssh-rsa algorithm
+* feat(compute):  Fix missing SSH wrapping for auxiliary console
+* feat(compute): Added AsyncioSSHServer dedicated tests
+* feat(compute): add SSH console type support
+* fix: include error details in LLM model config failure response
+* Fix telnet console silent-proxy hang on non-ConnectionError exit (#2344)
+
+## 2.2.59 08/05/2026
+
+* Sync appliances
+* Fix snapshot restore does not work after export/import of project
+* Warn to use 64-bit IOU images. Fixes #2716 32-bit IOU image support has been removed from the GNS3 VM.
+* Fix telnet console silent-proxy hang on non-ConnectionError exit (#2344)
+
+## 3.1.0a1 25/04/2026
+
+* New completely revamped Web interface.
+* Add GNS3 Copilot AI agent back-end
+* Web-wireshark: packet capture and live traffic analysis in the browser
+* Fix using SSL with remote computes. Fixes https://github.com/GNS3/gns3-gui/issues/3733
+* Add --url and --branch parameters to update-bundled-web-ui.sh
+* Fix bug when custom_adapters is None in port_factory.py
+* Have optional body in start node API endpoint
+* Fix snapshots after merging
+* Potential fix for pull request finding 'CodeQL / Information exposure through an exception'
+* Refactored the way snapshots are handled in the server
+* fix(symbols): add authentication to symbol raw endpoint
+* fix(symbols): add CORS headers to symbol file responses
+* Allow to find new project in sub dirs
+* Enhancement: Refresh projects list without restarting the GNS3 server
+* Fix accessing username in authentication.py
+* Improved exception handling and telnet client disconnect
+* Use get method for registry_version to avoid KeyError
+* Add support for appliance format version 8
+* Convert database template fields from PickleType to JSON
+* feat(statistics): distinguish open vs closed project nodes
+* fix(statistics): handle closed projects where nodes/links are dicts
+* feat(controller): extend /statistics API with project, node and link stats
+* Use FastAPI Lifespan Events
+* feat(link): add control_offset field to LinkStyle
+* feat(symbols): add DELETE API for removing custom symbol files
+* Enhancement: Re-write current Telnet server implementation using telnetlib3 library
+* feat: improve error handling for API configuration errors
+* Enhancement Added link type support on the server side
+* Ignore HTTPException received when closing a project
+* Prevent router to be duplicated when running and add tests
+* Fixed issue #1605 regarding Cisco slots causing configs to break
+* feat: add VNC WebSocket console support for Docker and QEMU nodes
+* Return 405 error for unsupported actions for other node types
+* feat(telnet_server): improve error handling and connection management
+* fix(telnet): handle connection race condition during broadcast
+* Change first() to one_or_none() for image query
+* Fix for duplicating Qemu nodes
+* Minor optimizations to logic
+* Fixed an issue with the server causing errors when uploading large images + Preparation for a smarter check when uploading images
+* Implemented a smarter node_type system
+* docs: restructure copilot docs and update node tools
+* fix(acl): correct endpoint paths for users, groups, and roles
+* fix(iou): return 405 error for unsupported suspend operation
+* feat(api): enhance max_tokens field with robust null handling
+* feat(docs): add AI prompting guide for configuration templates
+* Deactivate 'use default IOU values' by default and update RAM/NVRAM values
+* Make sure the node shows as stopped when the wrap console cannot be stopped. Ref https://github.com/GNS3/gns3-registry/pull/1010
+* chore: update author name and copyright headers
+* feat(docs): enhance AI chat API documentation with examples and details
+* feat: add .claude directory to gitignore for API key security
+* Revert "Fix QEMU serial console artifacts by filtering ANSI CPR responses in …"
+* docs: add troubleshooting guide for datetime timezone issue
+* Drop support for Python 3.9
+* feat: add multi-user concurrency control design document
+* docs: add troubleshooting guide for force kill residual processes
+* Fixed the path traversal check
+* Fix image handling
+* Qemu VMs: only compute MD5 checksums for existing disks
+* Copy config files and database from a previous version if it exists
+* Add enable_http_auth in gns3_server.conf sample
+* feat(compute): option to disable compute authentication
+* tests(controller,port): short_name finishes successfully when port name is None
+* fix(controller,port): handle None port name to prevent TypeError in short_name method
+* fix(docker): handle container name conflict automatically
+* feat(virtualbox): add fallback for VBoxManage executable detection
+* feat: simplify port name assignment logic
+* feat(ports): add null checks for port name in short name generation
+* Remove unneeded rbac_repo in get_templates
+* Use lists for tags instead of dicts
+* Fix for resizing Qemu VM disks
+* feat(templates): safely access settings dict keys
+* feat(api): fix ETag handling and JSON serialization in template endpoint
+* feat(api): add tag filtering to nodes and templates endpoints
+* Update project schema and fix tests
+* Add 'created_by' field to track project creator
+* Fix updating packet filters
+* Add vendor, model and netmiko_device_type fields to templates
+* fix: handle RuntimeError in notification_manager emit()
+* fix: busybox static link detection on Alpine/musl
+* Fix bug when updating compute password to be empty
+* Cancel tasks if controller cannot be started
+* Enable parallel compression with zstandard. Fixes #2324
+* Add Dynamips to Dockerfile dependencies
+* Take populated disks into consideration when calculating PCI device ID
+* Fix telnet keepalive options on macOS
+
+## 2.2.58.1 12/04/2026
+
+* Sync appliances
+
+## 2.2.58 10/04/2026
+
+* Bundle web-ui v2.2.58
+* Sync appliances
+* Snapshot refactoring
+
+## 2.2.57 23/03/2026
+
+* feat(telnet_server): improve error handling and connection management
+* Deactivate 'use default IOU values' by default and update RAM/NVRAM values
+* Make sure the node shows as stopped when the wrap console cannot be stopped
+* tests(controller,port): short_name finishes successfully when port name is None
+* fix(controller,port): handle None port name to prevent TypeError in short_name method
+* fix: busybox static link detection on Alpine/musl
+* Take populated disks into consideration when calculating PCI device ID
+
+## 2.2.56.1 28/01/2026
+
+* Fix telnet keepalive options on macOS
+* Upgrade dependencies
+* Drop Python 3.8 support
+
 ## 3.0.6 28/01/2026
 
 * Sync appliances

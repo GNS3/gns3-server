@@ -1,5 +1,6 @@
 {
     "appliance_id": "cc2b1802-3520-4963-8ff7-c19b1f6418c5",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco 1700",
     "category": "router",
     "description": "Cisco 1700 Router",

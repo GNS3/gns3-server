@@ -1,0 +1,50 @@
+# ==============================================================================
+# GNS3 Copilot AI Agent Dependencies
+# ==============================================================================
+# Install with: pip install gns3-server[ai-copilot]
+# Or directly: pip install -r ai-requirements.txt
+# ==============================================================================
+
+# Core AI and Automation Framework
+# Note: aiosqlite is in core requirements.txt
+langchain>=1.2.10
+langchain-core>=1.2.16
+langgraph>=1.0.9
+langgraph-checkpoint>=4.0.0
+langgraph-checkpoint-sqlite>=3.0.3
+langgraph-checkpoint-postgres>=3.0.4
+
+# Model Providers
+langchain-openai>=1.1.10
+langchain-anthropic>=1.3.4
+langchain-google-genai>=4.2.1
+langchain-aws>=1.3.1
+langchain-ollama>=1.0.1
+langchain-deepseek>=1.0.1
+langchain-xai>=1.2.2
+
+# Token Counting
+tiktoken>=0.8.0
+
+# LangSmith SDK
+langsmith>=0.7.7
+
+# Network Automation
+netmiko>=4.6.0
+nornir>=3.5.0
+nornir-netmiko>=1.0.1
+nornir-utils>=0.2.0
+nornir-salt>=0.23.0
+
+# Environment & Configuration
+python-dotenv>=1.2.1
+
+# Authentication
+PyJWT>=2.10.1
+psycopg-pool>=3.1.0
+
+# Skills Repository Management
+PyYAML>=6.0.0
+GitPython>=3.1.0
+
+# Note: httpx is only for testing (in dev-requirements.txt)

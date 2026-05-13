@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <!--
+            Copyright (c) 2013 Antoine Martin <antoine@xpra.org>
+            Copyright (c) 2014 Joshua Higgins <josh@kxes.net>
+            Licensed under MPL 2.0
+    -->
+
+    <title>xpra websockets client</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="xpra websockets client" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="shortcut icon" type="image/png" href="favicon.png" id="favicon" />
+    <link rel="stylesheet" href="css/client.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="css/spinner.css" />
+
+    <script type="text/javascript" src="js/lib/jquery.js"></script>
+    <script type="text/javascript" src="js/lib/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/lib/jquery.ba-throttle-debounce.js"></script>
+    <script type="text/javascript" src="js/lib/jquery-transform-draggable.js"></script>
+
+    <script type="text/javascript" src="js/lib/rencode.js"></script>
+    <script type="text/javascript" src="js/lib/lz4.js"></script>
+    <script type="text/javascript" src="js/lib/brotli_decode.js"></script>
+    <script type="text/javascript" src="js/lib/hmac.js"></script>
+
+    <script type="text/javascript" src="js/lib/jsmpeg.js"></script>
+    <script type="text/javascript" src="js/lib/aurora/aurora.js"></script>
+    <script type="text/javascript" src="js/lib/aurora/aurora-xpra.js"></script>
+
+    <script type="text/javascript" src="js/lib/web-streams-ponyfill.es6.js"></script>
+    <script type="text/javascript" src="js/lib/StreamSaver.js"></script>
+    <script type="text/javascript" src="js/lib/FileSaver.js"></script>
+    <script type="text/javascript" src="js/lib/detect-zoom.js"></script>
+
+    <script type="text/javascript" src="js/Utilities.js"></script>
+    <script type="text/javascript" src="js/Keycodes.js"></script>
+    <script type="text/javascript" src="js/Protocol.js"></script>
+    <script type="text/javascript" src="js/WebTransport.js"></script>
+    <script type="text/javascript" src="js/Constants.js"></script>
+    <script type="text/javascript" src="js/Window.js"></script>
+    <script type="text/javascript" src="js/Notifications.js"></script>
+    <script type="text/javascript" src="js/MediaSourceUtil.js"></script>
+    <script type="text/javascript" src="js/RgbHelpers.js"></script>
+    <script type="text/javascript" src="js/VideoDecoder.js"></script>
+    <script type="text/javascript" src="js/OffscreenDecodeWorkerHelper.js"></script>
+    <script type="text/javascript" src="js/Client.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/menu.css" />
+    <script type="application/javascript" src="js/Menu.js"></script>
+    <script type="application/javascript" src="js/MenuCustom.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/menu-skin.css" />
+    <link rel="stylesheet" type="text/css" href="css/icon.css" />
+
+    <!-- slick carousel for window preview feature -->
+    <link rel="stylesheet" type="text/css" href="css/slick.css" />
+    <script type="text/javascript" src="js/lib/slick.js"></script>
+
+    <!-- simple-keyboard -->
+    <script type="application/javascript" src="js/lib/simple-keyboard.js"></script>
+    <link rel="stylesheet" href="css/simple-keyboard.css" />
+  </head>
+
+  <body>
+    <div id="dpi" style="
+        width: 1in;
+        height: 1in;
+        left: -100%;
+        top: -100%;
+        position: absolute;
+      "></div>
+
+    <div id="progress" class="overlay" style="display: none">
+      <p id="progress-label"></p>
+      <p id="progress-details"></p>
+      <progress id="progress-bar" max="100" value="10"></progress>
+    </div>
+
+    <div id="login-overlay">
+      <div id="login-box">
+        <form id="login_form">
+          <div id="login-innerbox">
+            <span id="login-header"></span>
+            <br />
+            <input type="text" name="username" id="username" value="" autocomplete="username" style="display: none;">
+            <div id="password-box">
+              <input title="Password" type="password" id="password" autocomplete="current-password" placeholder="Password" size="16" maxlength="256" tabindex="1" required />
+            </div>
+            <br />
+            <div id="login-buttons">
+              <a class="login-button" role="button" tabindex="2" id="login_cancel" onclick="login_cancel();">Cancel</a>
+              <a class="login-button" role="button" tabindex="3" id="login_connect" onclick="login_connect();">Connect</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="float_menu">
+      <ul class="Menu -horizontal">
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" title="Xpra" class="noDrag" data-icon="menu" id="xpramenu"></a>
+          <ul id="menu_list">
+            <li class="-hasSubmenu" id="startmenuentry" style="display: none">
+              <a data-icon="apps" href="#">Start</a>
+              <ul id="startmenu"></ul>
+            </li>
+            <li class="-hasSubmenu">
+              <a href="#" data-icon="kitchen">Server</a>
+              <ul>
+                <li id="clock_menu_entry">
+                  <a href="#" data-icon="access_time" onclick="return false" id="clock_menu_text"></a>
+                </li>
+                <li id="upload_menu_entry">
+                  <a href="#" data-icon="cloud_upload" onclick="upload_file(event); return false">Upload
+                    file</a>
+                </li>
+                <li id="download_menu_entry">
+                  <a href="#" data-icon="cloud_download" onclick="download_file(event); return false">Download file</a>
+                </li>
+                <li id="shutdown_menu_entry">
+                  <a href="#" data-icon="exit_to_app" onclick="confirm_shutdown_server(event); return false">Shutdown Server</a>
+                </li>
+              </ul>
+            </li>
+            <li class="-hasSubmenu">
+              <a href="#" data-icon="info">Information</a>
+              <ul>
+                <li>
+                  <a href="#" data-icon="info" onclick="show_about(event); return false">About Xpra</a>
+                </li>
+                <li>
+                  <a href="#" data-icon="trending_up" onclick="show_sessioninfo(event); return false">Session Info</a>
+                </li>
+                <li>
+                  <a href="#" data-icon="bug_report" onclick="show_bugreport(event); return false">Bug
+                    Report</a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a href="#" data-icon="refresh" onclick="location.reload()">Reload</a>
+            </li>
+            <li>
+              <a href="#" data-icon="exit_to_app" onclick="client.disconnect_reason='User request'; client.close(); return false">Disconnect</a>
+            </li>
+          </ul>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" title="Open Windows" data-icon="filter" id="open_windows"></a>
+          <ul id="open_windows_list"></ul>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" id="fullscreen_button" title="Fullscreen" data-icon="fullscreen"></a>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" id="keyboard_button" title="Keyboard" data-icon="keyboard"></a>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" id="clipboard_button" title="Clipboard Copy" data-icon="content_copy"></a>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" id="sound_button" title="Audio" data-icon="volume_off"></a>
+        </li>
+        <li class="-hasSubmenu -noChevron">
+          <a href="#" id="cursor_lock_button" title="Lock Cursor (Gaming cursor mode)" data-icon="videogame_asset"></a>
+        </li>
+      </ul>
+      <div id="float_menu_button">
+        <a href="#" id="float_menu_arrow" title="Expand Menu" data-icon="chevron_right"></a>
+      </div>
+      <div id="float_tray" class="menu-divright"></div>
+    </div>
+
+    <div id="screen" style="width: 100%; height: 100%">
+      <img id="shadow_pointer" alt="shadow pointer" />
+    </div>
+
+    <div id="window_preview"></div>
+
+    <div class="notifications"></div>
+
+    <form id="upload_form">
+      <input type="file" id="upload" style="display: none" />
+    </form>
+
+    <div id="about">
+      <h2>Xpra HTML5 Client</h2>
+      <h3>Version 19</h3>
+      <span>
+        Copyright (c) 2013 Antoine Martin &lt;antoine@xpra.org&gt;
+        <br />
+        Copyright (c) 2014 Joshua Higgins &lt;josh@kxes.net&gt;
+      </span>
+      <br />
+      <br />
+      <span class="info">
+        This code is available under the
+        <a href="./LICENSE">Mozilla Public License Version 2.0</a>
+        <br />
+        For more information, see
+        <a rel="noopener" href="https://github.com/Xpra-org/xpra-html5">xpra HTML5 project</a>.
+      </span>
+    </div>
+
+    <div id="sessioninfo">
+      <h2>Session Information</h2>
+      <h3>Connection Data</h3>
+      <table id="sessiondata">
+        <caption>
+          Session Connection Data Information
+        </caption>
+        <tr>
+          <th scope="row">Server Endpoint</th>
+          <td id="endpoint"></td>
+        </tr>
+        <tr>
+          <th scope="row">Server Display</th>
+          <td id="server_display"></td>
+        </tr>
+        <tr>
+          <th scope="row">Server Platform</th>
+          <td id="server_platform"></td>
+        </tr>
+        <tr>
+          <th scope="row">Server Load</th>
+          <td id="server_load"></td>
+        </tr>
+        <tr>
+          <th scope="row">Session Connected</th>
+          <td id="session_connected"></td>
+        </tr>
+        <tr>
+          <th scope="row">Server Latency</th>
+          <td id="server_latency"></td>
+        </tr>
+        <tr>
+          <th scope="row">Client Latency</th>
+          <td id="client_latency"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div id="bugreport">
+      <h2>Xpra Bug Report</h2>
+      <br />
+      <form>
+        Summary:
+        <input id="bugreport_summary" type="text" size="48" maxlength="128" value="" />
+        <br />
+        Description:
+        <br />
+        <textarea id="bugreport_description" cols="60" rows="6"></textarea>
+        <br />
+        <button id="bugreport_cancel" type="button" onclick="hide_bugreport()">
+          Cancel
+        </button>
+        <button id="bugreport_submit" type="button" onclick="generate_bugreport()" disabled>
+          Generate Report
+        </button>
+      </form>
+    </div>
+
+    <div>
+      <textarea id="pasteboard" readonly style="display: block; position: absolute; left: -99em"></textarea>
+    </div>
+
+    <div class="simple-keyboard" style="display: block; position: fixed; bottom: 0; width: 100%"></div>
+
+    <script>
+      const default_settings = {};
+      const getparam = function(prop) {
+        let v = Utilities.getparam(prop);
+        if (v == undefined && prop in default_settings) {
+          v = default_settings[prop];
+          clog("using", prop, "=", v, " from default settings");
+        } else if (v != null && v != "") {
+          clog("using", prop, "=", v, " from parameters");
+        }
+        return v;
+      };
+
+      const ALLOWED_CHARS = "0-9A-Za-z _+-:";
+      const getstrparam = function(prop, allowed_chars) {
+        const value = getparam(prop) || "";
+        const chars = allowed_chars || ALLOWED_CHARS;
+        const re = new RegExp(`[^${chars}]`, "g");
+        return value.replace(re, "");
+      }
+
+      const getboolparam = function(prop, default_value) {
+        const v = getparam(prop);
+        return Utilities.stristrue(v, default_value);
+      };
+      const getboolautoparam = function(prop, default_value) {
+        const v = getparam(prop);
+        if (v == "auto") {
+          return "auto";
+        }
+        return Utilities.stristrue(v, default_value);
+      };
+      const getintparam = function(prop, default_value) {
+        let v = getparam(prop);
+        try {
+          v = parseInt(v);
+        } catch (e) {
+          return default_value;
+        }
+        if (v === null || isNaN(v)) {
+          return default_value;
+        }
+        return v;
+      };
+      const getfloatparam = function(prop, default_value) {
+        let v = getparam(prop);
+        try {
+          v = parseFloat(v);
+        } catch (e) {
+          return default_value;
+        }
+        if (v === null || isNaN(v)) {
+          return default_value;
+        }
+        return v;
+      };
+
+      let float_menu_item_count = 7;
+      const float_menu_item_size = 30;
+      const float_menu_padding = 20;
+      let float_menu_width = float_menu_item_size * float_menu_item_count + float_menu_padding;
+
+      let cdebug = function() {
+        Utilities.clog.apply(Utilities, arguments);
+      };
+      let clog = function() {
+        Utilities.clog.apply(Utilities, arguments);
+      };
+
+      //start calculating the fps asap:
+      let animation_times = [];
+      let fps = -1;
+      let vrefresh = -1;
+
+      function animation_cb(now) {
+        let l = animation_times.push(now);
+        if (l > 100) {
+          animation_times.shift();
+        }
+        let t0 = animation_times[0];
+        if (now > t0) {
+          fps = Math.floor((1000 * (l - 1)) / (now - t0));
+        }
+        cdebug("draw", "animation_cb", now, "fps", fps, "vrefresh", vrefresh);
+        if (vrefresh < 0) {
+          window.requestAnimationFrame(animation_cb);
+        }
+      }
+      window.requestAnimationFrame(animation_cb);
+
+      function confirm_shutdown_server() {
+        if (confirm("Shutdown this server?")) {
+          client.reconnect = false;
+          client.send(["shutdown-server"]);
+        }
+      }
+
+      function upload_file(event) {
+        $(".menu-content").slideUp();
+        $("#upload").click();
+      }
+
+      function download_file(event) {
+        $(".menu-content").slideUp();
+        const command = ["xpra", "send-file"]
+        client.send(["start-command", "Client-Download-File", command, true, true]);
+      }
+
+      function cleanup_dialogs() {
+        $(".menu-content").slideUp();
+        $("#about").hide();
+        hide_sessioninfo();
+        hide_bugreport();
+      }
+
+      function connection_established() {
+        //this may be a re-connection,
+        //so make sure we cleanup any left-overs
+        clog("connection-established");
+        cleanup_dialogs();
+        $("button.menu-button").prop("disabled", false);
+      }
+
+      function connection_lost() {
+        clog("connection-lost");
+        cleanup_dialogs();
+        $("button.menu-button").prop("disabled", true);
+      }
+      document.addEventListener("connection-established", connection_established);
+      document.addEventListener("connection-lost", connection_lost);
+
+      $("body").click(function() {
+        $(".menu-content").slideUp();
+        $("#about").hide();
+        hide_sessioninfo();
+      });
+
+      function enable_clipboard_autofocus() {
+        $("#pasteboard").blur(function() {
+          //force focus back to our capture widget:
+          if (client.capture_keyboard) {
+            $("#pasteboard").focus();
+          }
+        });
+        const pasteboard_element = $("#pasteboard");
+        pasteboard_element.prop("autofocus");
+        pasteboard_element.focus();
+      }
+
+      function cancel_clipboard_autofocus() {
+        $("#pasteboard").removeAttr("autofocus");
+      }
+
+      function show_about(event) {
+        $(".menu-content").slideUp();
+        $("#about").show();
+        hide_sessioninfo();
+        event.stopPropagation();
+      }
+
+      //session-info handling:
+      function show_sessioninfo(event) {
+        $(".menu-content").slideUp();
+        $("#about").hide();
+        $("#sessiondata td").html("");
+        $("#sessioninfo").show();
+        client.start_info_timer();
+        event.stopPropagation();
+      }
+
+      function hide_sessioninfo() {
+        $("#sessioninfo").hide();
+        client.stop_info_timer();
+      }
+      document.addEventListener(
+        "info-response",
+        function(e) {
+          const info = e.data;
+          $("#endpoint").html(client.uri);
+          $("#server_display").html(client.server_display);
+          $("#server_platform").html(client.server_platform);
+          if (client.server_load == null) {
+            $("#server_load").html("n/a");
+          } else {
+            $("#server_load").html("" + client.server_load);
+          }
+
+          function toHHMMSS(t) {
+            let s = "";
+            const hh = Math.floor(t / 1000 / 60 / 60);
+            if (hh > 0) s += "" + hh + ":";
+            const mm = Math.floor(t / 1000 / 60) % 60;
+            s += ("0" + mm).slice(-2); //left pad with "0"
+            const ss = Math.floor(t / 1000) % 60;
+            s += ":" + ("0" + ss).slice(-2); //left pad with "0"
+            return s;
+          }
+          const elapsed = new Date().getTime() - client.client_start_time;
+          $("#session_connected").html(toHHMMSS(elapsed));
+          if (client.server_ping_latency >= 0)
+            $("#server_latency").html(client.server_ping_latency);
+          if (client.client_ping_latency >= 0)
+            $("#client_latency").html(client.client_ping_latency);
+          //TODO:
+          // * add packet counter to Protocol.js
+          //"Packets Received"
+          //"Encoding + Compression"
+        },
+        false
+      );
+
+      function enable_bugreport_submit() {
+        $("#bugreport_submit").prop("disabled", false);
+        document.removeEventListener("info-response", enable_bugreport_submit);
+      }
+
+      function hide_bugreport() {
+        $("#bugreport").hide();
+        if (client.clipboard_enabled) {
+          enable_clipboard_autofocus();
+        }
+      }
+
+      function show_bugreport(event) {
+        //stop capturing input, so we can interact with the bugreport form:
+        client.capture_keyboard = false;
+        cancel_clipboard_autofocus();
+        //hide menu:
+        $(".menu-content").slideUp();
+        $("#bugreport").show();
+        event.stopPropagation();
+        //disable submit until we get an info-response:
+        $("#bugreport_submit").prop("disabled", true);
+        document.addEventListener("info-response", enable_bugreport_submit);
+        client.send_info_request();
+      }
+
+      function generate_bugreport() {
+        client.capture_keyboard = true;
+        const zip = new JSZip();
+        zip.file(
+          "Summary.txt",
+          "" +
+          $("#bugreport_summary").val() +
+          "\n\n" +
+          $("#bugreport_description").val()
+        );
+        zip.file(
+          "Server-Info.txt",
+          "" + JSON.stringify(client.server_last_info)
+        );
+        //screenshot:
+        if (!client.offscreen_api) {
+          const canvas = document.createElement("canvas");
+          canvas.width = client.desktop_width;
+          canvas.height = client.desktop_height;
+          const ctx = canvas.getContext("2d");
+          for (let i in client.id_to_window) {
+            const iwin = client.id_to_window[i];
+            ctx.drawImage(iwin.draw_canvas, iwin.x, iwin.y);
+          }
+          const png_base64 = canvas.toDataURL("image/png");
+          zip.file(
+            "screenshot.png",
+            Utilities.convertDataURIToBinary(png_base64)
+          );
+        }
+        zip.generateAsync({
+          type: "blob"
+        }).then(function(content) {
+          saveAs(content, "bugreport.zip");
+        });
+        hide_bugreport();
+      }
+      const password_input = document.getElementById("password");
+      let login_callback = null;
+
+      function login_cancel() {
+        $("#login-overlay").fadeOut();
+        password_input.removeEventListener("keydown", password_special_keys);
+        password_input.value = "";
+        login_callback(null);
+      }
+
+      function login_connect() {
+        $("#login-overlay").fadeOut();
+        const password = password_input.value;
+        password_input.removeEventListener("keydown", password_special_keys);
+        password_input.value = "";
+        login_callback(password);
+      }
+
+      function password_special_keys(e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          login_connect();
+        }
+        if (e.keyCode == 27) {
+          e.preventDefault();
+          login_cancel();
+        }
+      }
+
+      function password_prompt_fn(heading, callback) {
+        login_callback = callback;
+        $("#login-overlay").fadeIn();
+        $("#login-header").text(heading);
+        password_input.focus();
+        password_input.addEventListener("keydown", password_special_keys);
+      }
+
+      function keycloak_prompt_fn(url, callback) {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const error = params.get("error");
+        if (error) {
+          const error_description = params.get("error_description");
+          callback(JSON.stringify({
+            error,
+            error_description
+          }));
+        } else if (!code) {
+          window.location.href = url;
+        } else {
+          history.replaceState({}, "", window.location.pathname);
+          callback(JSON.stringify({
+            code
+          }));
+        }
+      }
+
+      let touchaction_scroll = true;
+
+      function toggle_touchaction() {
+        touchaction_scroll = !touchaction_scroll;
+        set_touchaction();
+      }
+
+      function set_touchaction() {
+        let touchaction, label;
+        if (touchaction_scroll) {
+          touchaction = "none";
+          label = "zoom";
+        } else {
+          touchaction = "auto";
+          label = "scroll";
+        }
+        cdebug("mouse", "set_touchaction() touchaction=", touchaction, "label=", label);
+        $("div.window canvas").css("touch-action", touchaction);
+        $("#touchaction_link").html("Set Touch Action: " + label);
+        if (!Utilities.isEdge()) {
+          $("#touchaction_link").hide();
+        }
+      }
+
+      function init_client() {
+        if (typeof jQuery == "undefined") {
+          window.alert("Incomplete Xpra HTML5 client installation: jQuery is missing, cannot continue.");
+          return;
+        }
+        const https = document.location.protocol == "https:";
+
+        // look at url parameters
+        const username = getparam("username") || getparam("handle") || null;
+        const passwords = [];
+        for (let i = 0; i < 10; i++) {
+          let password = getparam("password" + i) || getparam("token" + i) || null;
+          if (!password && i == 0) {
+            //try with no suffix:
+            password = getparam("password") || getparam("token") || null;
+          }
+          if (password) {
+            passwords.push(password);
+          } else {
+            break;
+          }
+        }
+        const sound = getboolparam("sound", true) || null;
+        const audio_codec = getstrparam("audio_codec") || null;
+        const offscreen = getboolparam("offscreen", XpraOffscreenWorker.isAvailable(https));
+        const encoding = getstrparam("encoding") || null;
+        const bandwidth_limit = getintparam("bandwidth_limit", 0) || 0;
+        const action = getstrparam("action") || "connect";
+        const display = getstrparam("display") || "";
+        const shadow_display = getstrparam("shadow_display") || "";
+        const submit = getboolparam("submit", true);
+        const server = getstrparam("server") || window.location.hostname;
+        const port = getintparam("port") || window.location.port;
+        const ssl = getboolparam("ssl", https);
+        const webtransport = getboolparam("webtransport", false);
+        const path = getstrparam("path", ALLOWED_CHARS + "/?=&") || window.location.pathname;
+        const encryption = getstrparam("encryption") || "";
+        const key = getstrparam("key") || null;
+        const keyboard_layout = getstrparam("keyboard_layout") || null;
+        const start = getstrparam("start");
+        const exit_with_children = getboolparam("exit_with_children", false);
+        const exit_with_client = getboolparam("exit_with_client", false);
+        const sharing = getboolparam("sharing", false);
+        const video = getboolparam("video", true);
+        const mediasource_video = getboolparam("mediasource_video", false);
+        const remote_logging = getboolparam("remote_logging", true);
+        const insecure = getboolparam("insecure", false);
+        const ignore_audio_blacklist = getboolparam("ignore_audio_blacklist", false);
+        const keyboard = getboolparam("keyboard", Utilities.isMobile());
+        // Some browsers trigger ugly popups if we try to read the clipboard
+        // Safari: https://github.com/Xpra-org/xpra-html5/issues/226
+        // Firefox: https://github.com/Xpra-org/xpra-html5/issues/301
+        const clipboard = getboolparam("clipboard", true);
+        let cpoll = !Utilities.isFirefox();
+        if (Utilities.isSafari()) {
+          cpoll = !ssl;
+        }
+        const clipboard_poll = getboolparam("clipboard_poll", cpoll);
+        const clipboard_preferred_format = getstrparam("clipboard_preferred_format") || "text/plain";
+        const printing = getboolparam("printing", true);
+        const file_transfer = getboolparam("file_transfer", true);
+        const steal = getboolparam("steal", true);
+        const reconnect = getboolparam("reconnect", true);
+        const swap_keys = getboolparam("swap_keys", Utilities.isMacOS());
+        const scroll_reverse_x = getboolparam("scroll_reverse_x", false);
+        const scroll_reverse_y = getboolautoparam("scroll_reverse_y", null);
+        const floating_menu = getboolparam("floating_menu", true);
+        const toolbar_position = getstrparam("toolbar_position");
+        const autohide = getboolparam("autohide", false);
+        const override_width = getfloatparam("override_width", window.innerWidth);
+        vrefresh = getintparam("vrefresh", -1);
+        if (vrefresh < 0 && fps >= 30) {
+          vrefresh = fps;
+        }
+
+        try {
+          Utilities.setSessionStorageValue("password", null);
+        } catch (e) {
+          //ignore
+        }
+        try {
+          Utilities.setSessionStorageValue("token", null);
+        } catch (e) {
+          //ignore
+        }
+
+        const username_input = document.getElementById("username");
+        username_input.value = username || "none";
+
+        var scale = 1;
+        if (window.innerWidth !== override_width) {
+          scale = override_width / window.innerWidth;
+        }
+
+        let progress_timer;
+        let progress_value = 0;
+        let progress_offset = 0;
+        // show connection progress:
+        function connection_progress(state, details, progress) {
+          clog("connection_progress(", state, ", ", details, ", ", progress, ")");
+          if (progress >= 100) {
+            $("#progress").hide();
+          } else {
+            $("#progress").show();
+          }
+          progress_value = progress;
+          $("#progress-label").text(state || " ");
+          $("#progress-details").text(details || " ");
+          $("#progress-bar").val(progress);
+          if (progress_timer) {
+            window.clearTimeout(progress_timer);
+            progress_timer = null;
+            progress_offset = 0;
+          }
+          if (progress < 100) {
+            progress_move_offset();
+          }
+        }
+        // the offset is just to make the user feel better
+        // nothing changes, but we just show a slow progress
+        function progress_move_offset() {
+          progress_timer = null;
+          $("#progress-bar").val(progress_value + progress_offset);
+          if (progress_offset < 10) {
+            progress_offset++;
+            progress_timer = window.setTimeout(progress_move_offset, (10 + 5 * progress_offset) ** 2);
+          }
+          else {
+            progress_offset = 0;
+          }
+        }
+
+        let debug;
+        const debug_categories = [];
+        const categories = [
+          "main",
+          "keyboard",
+          "geometry",
+          "mouse",
+          "clipboard",
+          "draw",
+          "audio",
+          "network",
+          "file",
+        ];
+
+        for (let i = 0; i < categories.length; i++) {
+          const category = categories[i];
+          debug = getboolparam("debug_" + category, false);
+          if (debug) {
+            debug_categories.push(category);
+          }
+        }
+        clog("debug enabled for:", debug_categories);
+
+        // create the client
+        const client = new XpraClient("screen");
+        client.debug_categories = debug_categories;
+        client.remote_logging = remote_logging;
+        client.sharing = sharing;
+        client.insecure = insecure;
+        client.clipboard_enabled = clipboard;
+        client.clipboard_poll = clipboard_poll;
+        client.clipboard_preferred_format = clipboard_preferred_format;
+        client.printing = printing;
+        client.file_transfer = file_transfer;
+        client.bandwidth_limit = bandwidth_limit;
+        client.steal = steal;
+        client.reconnect = reconnect;
+        client.swap_keys = swap_keys;
+        client.on_connection_progress = connection_progress;
+        client.scroll_reverse_x = scroll_reverse_x;
+        client.scroll_reverse_y = scroll_reverse_y;
+        client.vrefresh = vrefresh;
+        client.scale = scale;
+        // example overrides:
+        //   `client.HELLO_TIMEOUT = 3600000;`
+        //   `client.PING_TIMEOUT = 60000;`
+        //   `client.PING_GRACE = 30000;`
+        //   `client.PING_FREQUENCY = 15000;`
+
+        if (debug) {
+          //example of client event hooks:
+          client.on_open = function() {
+            cdebug("network", "connection open");
+          };
+          client.on_connect = function() {
+            cdebug("network", "connection established");
+          };
+          client.on_first_ui_event = function() {
+            cdebug("network", "first ui event");
+          };
+          client.on_last_window = function() {
+            cdebug("network", "last window disappeared");
+          };
+        }
+
+        if (video) {
+          // VPX checks. Will only succeed if we can use VideoDecoder.js
+          client.check_encodings.push("h264");
+          client.check_encodings.push("vp8");
+          client.check_encodings.push("vp9");
+
+          if (JSMpeg && JSMpeg.Renderer && JSMpeg.Decoder) {
+            //TODO: should be moved to 'check_encodings'
+            //and added to the decode worker:
+            client.supported_encodings.push("mpeg1");
+          }
+          if (mediasource_video) {
+            client.supported_encodings.push(
+              "vp8+webm",
+              "h264+mp4",
+              "mpeg4+mp4"
+            );
+          }
+        }
+        if (encoding) {
+          // the primary encoding
+          client.set_encoding(encoding);
+        }
+        for (const key of [
+            "scaling.control",
+            "initial_quality",
+            "initial_speed",
+            "auto_refresh_delay",
+            "speed",
+            "min-speed",
+            "quality",
+            "min-quality",
+          ]) {
+          const v = getintparam(key, -1);
+          if (v >= 0) {
+            client.set_encoding_option(key, v);
+          }
+        }
+        client.offscreen_api = offscreen;
+
+        if (action && action != "connect") {
+          const sns = {
+            mode: action,
+          };
+          if (exit_with_children) {
+            sns["exit-with-children"] = true;
+            if (start) {
+              sns["start-child"] = [start];
+            }
+          } else {
+            if (start) {
+              sns["start"] = [start];
+            }
+          }
+          if (exit_with_client) {
+            sns["exit-with-client"] = true;
+          }
+          client.start_new_session = sns;
+        }
+
+        // sound support
+        if (sound) {
+          client.audio_enabled = true;
+          clog("sound enabled, audio codec string: " + audio_codec);
+          if (audio_codec && audio_codec.includes(":")) {
+            const acparts = audio_codec.split(":");
+            client.audio_framework = acparts[0];
+            client.audio_codec = acparts[1];
+          }
+          client.audio_mediasource_enabled = getboolparam("mediasource", true);
+          client.audio_aurora_enabled = getboolparam("aurora", true);
+          client.audio_httpstream_enabled = getboolparam("http-stream", true);
+        }
+
+        if (keyboard_layout) {
+          client.keyboard_layout = keyboard_layout;
+        }
+
+        // check for username and password
+        if (username) {
+          client.username = username;
+        }
+        if (passwords) {
+          client.passwords = passwords;
+        }
+        if (action == "connect") {
+          client.server_display = display;
+        } else if (action == "shadow") {
+          client.server_display = shadow_display;
+        }
+
+        // check for encryption parameters
+        if (encryption && ["0", "false", "no", "disabled"].indexOf(encryption.toLowerCase()) < 0) {
+          client.encryption = encryption.toUpperCase().replace(/[^0-9A-Z_\+-]/gi, '');
+          if (key) {
+            client.encryption_key = key;
+          }
+          // console.log("encryption:", client.encryption);
+        }
+
+        // attach a callback for when client closes
+        // Don't redirect or show error - just log the close reason
+        client.callback_close = function(reason) {
+          clog("connection closed: ", reason);
+        };
+        client.init(ignore_audio_blacklist);
+
+        client.host = server;
+        client.port = port;
+        client.ssl = ssl;
+        client.webtransport = webtransport;
+        client.path = path.split("index.html")[0];
+        return client;
+      }
+
+      function init_tablet_input(client) {
+        //keyboard input for tablets:
+        const pasteboard = $("#pasteboard");
+        pasteboard.on("input", function(e) {
+          const txt = pasteboard.val();
+          pasteboard.val("");
+          cdebug("keyboard", "oninput: '" + txt + "'");
+          if (!client.topwindow) {
+            return;
+          }
+          for (let i = 0; i < txt.length; i++) {
+            const str = txt[i];
+            const keycode = str.charCodeAt(0);
+            let keyname = str;
+            if (str in CHAR_TO_NAME) {
+              keyname = CHAR_TO_NAME[str];
+              if (keyname.includes("_")) {
+                //ie: Thai_dochada
+                const lang = keyname.split("_")[0];
+                const key_language = KEYSYM_TO_LAYOUT[lang];
+                client._check_browser_language(key_language);
+              }
+            }
+            try {
+              const modifiers = [];
+              const keyval = keycode;
+              const group = 0;
+              const wid = client.topwindow;
+              let packet = ["key-action", wid, keyname, true, modifiers, keyval, str, keycode, group];
+              cdebug("keyboard", packet);
+              client.send(packet);
+              packet = ["key-action", wid, keyname, false, modifiers, keyval, str, keycode, group];
+              cdebug("keyboard", packet);
+              client.send(packet);
+            } catch (e) {
+              client.exc(e, "input handling error");
+            }
+          }
+        });
+      }
+
+      function init_clipboard(client) {
+        client.init_clipboard();
+      }
+
+      function init_keyboard(client) {
+        const Keyboard = window.SimpleKeyboard.default;
+        let kb = new Keyboard({
+          onKeyPress: (button) => onKeyPress(button),
+          onKeyReleased: (button) => onKeyReleased(button),
+          display: {
+            ".com": "|",
+            "{tab}": "tab",
+            "{lock}": "lock",
+            "{shift}": "shift",
+            "{bksp}": "bksp",
+            "{space}": "space",
+            "{enter}": "return",
+          },
+        });
+        window.kb = kb;
+        window.keyboardShifted = false;
+
+        function onChange(input) {
+          clog("Input changed", input);
+        }
+
+        function onKeyPress(button) {
+          forward_key(true, button);
+          if (button == "{shift}" || button == "{lock}") {
+            if (window.keyboardShifted) {
+              window.kb.setOptions({
+                layoutName: "default"
+              });
+            } else {
+              window.kb.setOptions({
+                layoutName: "shift"
+              });
+            }
+            window.keyboardShifted = !window.keyboardShifted;
+          }
+        }
+
+        function onKeyReleased(button) {
+          forward_key(false, button);
+        }
+
+        function forward_key(pressed, button) {
+          let key = {
+            "{bksp}": "Backspace",
+            "{enter}": "Return",
+            "{space}": "Space",
+            "{tab}": "Tab",
+            "{lock}": "CapsLock",
+            "{shift}": "Shift",
+            ".com": "|",
+          } [button] || button;
+          let e = {
+            which: 0,
+            keyCode: 0,
+            key: key,
+            code: key,
+          };
+          client._keyb_process(pressed, e);
+        }
+        const keyboard = getboolparam("keyboard", Utilities.isMobile());
+        if (!keyboard) {
+          $(".simple-keyboard").hide();
+          $("#keyboard_button").removeClass("icon-toggled");
+        } else {
+          $(".simple-keyboard").show();
+          $("#keyboard_button").addClass("icon-toggled");
+        }
+      }
+
+      function toggle_keyboard() {
+        $(".simple-keyboard").toggle();
+        if ($(".simple-keyboard").is(":visible")) {
+          $("#keyboard_button").addClass("icon-toggled");
+        } else {
+          $("#keyboard_button").removeClass("icon-toggled");
+        }
+      }
+
+      function init_file_transfer(client) {
+        if (!client.file_transfer) {
+          $("upload_link").removeAttr("href");
+          return;
+        }
+
+        function handleFileSelect(evt) {
+          evt.stopPropagation();
+          evt.preventDefault();
+          client.send_all_files(evt.dataTransfer.files);
+        }
+
+        function handleDragOver(evt) {
+          evt.stopPropagation();
+          evt.preventDefault();
+          evt.dataTransfer.dropEffect = "copy";
+        }
+        const screen = document.getElementById("screen");
+        screen.addEventListener("dragover", handleDragOver, false);
+        screen.addEventListener("drop", handleFileSelect, false);
+
+        $("#upload").on("change", function(evt) {
+          evt.stopPropagation();
+          evt.preventDefault();
+          client.send_all_files(this.files);
+          return false;
+        });
+        $("#upload_form").on("submit", function(evt) {
+          evt.preventDefault();
+        });
+      }
+
+      function init_clock(client, enabled) {
+        $("#clock_menu_entry").hide();
+        if (!enabled) {
+          return;
+        }
+
+        function update_clock() {
+          const now = new Date().getTime();
+          const server_time =
+            client.last_ping_server_time +
+            (now - client.last_ping_local_time) +
+            client.server_ping_latency;
+          const date = new Date(server_time);
+          const clock_text = $("#clock_text");
+          const width = clock_text.width();
+          clock_text.text(
+            date.toLocaleDateString() + " " + date.toLocaleTimeString()
+          );
+          const clock_menu_text = $("#clock_menu_text");
+          clock_menu_text.text(
+            date.toLocaleDateString() + " " + date.toLocaleTimeString()
+          );
+          if (width != clock_text.width()) {
+            //trays have been shifted left or right:
+            client.reconfigure_all_trays();
+          }
+          //try to land at the half-second point,
+          //so that we never miss displaying a second:
+          let delay = (1500 - (server_time % 1000)) % 1000;
+          if (delay < 10) {
+            delay = 1000;
+          }
+          setTimeout(update_clock, delay);
+        }
+
+        function wait_for_time() {
+          if (client.last_ping_local_time > 0) {
+            $("#clock_menu_entry").show();
+            update_clock();
+          } else {
+            //check again soon:
+            //(ideally, we should register a callback on the ping packet)
+            setTimeout(wait_for_time, 1000);
+          }
+        }
+        wait_for_time();
+      }
+
+      function init_audio(client) {
+        client.on_audio_state_change = function(newstate, details) {
+          if (client.audio_state === newstate) {
+            return;
+          }
+          client.audio_state = newstate;
+          let tooltip;
+          let data_icon;
+          const sound_button_element = $("#sound_button");
+          if (newstate === "disabled") {
+            data_icon = "volume_up";
+            tooltip = "audio is not available";
+            sound_button_element.css("color", "#777");
+          } else if (newstate === "playing") {
+            data_icon = "volume_up";
+            tooltip = "audio playing,\nclick to stop";
+          } else if (newstate === "waiting") {
+            data_icon = "volume_up";
+            tooltip = "audio buffering";
+          } else {
+            data_icon = "volume_off";
+            tooltip = "audio off,\nclick to start";
+          }
+          clog("audio-state:", newstate);
+          sound_button_element.attr("data-icon", data_icon);
+          sound_button_element.attr("title", tooltip);
+        };
+        $("#sound_button").click(function() {
+          clog("speaker icon clicked, audio_enabled=", client.audio_enabled);
+          if (!client.audio_enabled) {
+            client.audio_state = "disabled";
+          } else if (
+            client.audio_state === "playing" ||
+            client.audio_state === "waiting"
+          ) {
+            client.on_audio_state_change("stopped", "user action");
+            client.close_audio();
+          } else {
+            client.on_audio_state_change("waiting", "user action");
+            client._audio_start_stream();
+            client._sound_start_receiving();
+          }
+        });
+      }
+
+      function toggle_fullscreen() {
+        const f_e = document.fullscreenEnabled;
+        // console.log("toggle_fullscreen() fullscreenEnabled=", f_e);
+        if (!f_e) {
+          return;
+        }
+        const elem = document.getElementById("fullscreen_button");
+        // console.log("toggle_fullscreen() elem=", elem);
+        var is_fullscreen = document.fullscreen;
+        // console.log("toggle_fullscreen() is_fullscreen=", is_fullscreen);
+        if (!is_fullscreen) {
+          const req = elem.requestFullscreen;
+          if (!req) {
+            clog("unable to request fullscreen");
+            return;
+          }
+          req.call(document.body);
+
+          // event codes: https://www.w3.org/TR/uievents-code/#key-alphanumeric-writing-system
+          const keys = [
+            "AltLeft",
+            "AltRight",
+            "Tab",
+            "Escape",
+            "ContextMenu",
+            "MetaLeft",
+            "MetaRight",
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8",
+            "F9",
+            "F10",
+            "F11",
+          ];
+          // Keyboard Lock API not supported in all browsers/contexts
+          if (navigator.keyboard && navigator.keyboard.lock) {
+            navigator.keyboard
+              .lock(keys)
+              .then(() => {
+                // console.log("keyboard lock success");
+              })
+              .catch((e) => {
+                // console.log("keyboard lock failed: ", e);
+              });
+          }
+
+          $("#fullscreen").attr("src", "./icons/unfullscreen.png");
+          elem.title = "Exit Fullscreen";
+          $("#fullscreen_button").attr("data-icon", "fullscreen_exit");
+        } else {
+          document.exitFullscreen();
+          $("#fullscreen").attr("src", "./icons/fullscreen.png");
+          elem.title = "Fullscreen";
+          $("#fullscreen_button").attr("data-icon", "fullscreen");
+        }
+      }
+
+      let float_menu_expanded = true;
+
+      function expand_float_menu() {
+        const expanded_width = float_menu_item_size * float_menu_item_count;
+        const float_menu = document.getElementById("float_menu");
+        float_menu.style.display = "inline-block";
+        float_menu.style.width = expanded_width + "px";
+        $("#float_menu").children(".Menu").show();
+        if (client) {
+          client.reconfigure_all_trays();
+        }
+
+        $("#float_menu_arrow").attr("data-icon", "chevron_left");
+
+        $("#float_menu_button").css({
+          left: "30px",
+          top: "-125px"
+        });
+
+        float_menu_expanded = true;
+      }
+
+      function retract_float_menu() {
+        document.getElementById("float_menu").style.width = "0px";
+        $("#float_menu").children(".Menu").hide();
+
+        $("#float_menu_arrow").attr("data-icon", "chevron_right");
+
+        $("#float_menu_button").css({
+          left: "0px",
+          top: "70px"
+        });
+
+        float_menu_expanded = false;
+      }
+
+      function toggle_float_menu() {
+        if (float_menu_expanded) {
+          retract_float_menu();
+          return;
+        }
+
+        expand_float_menu();
+      }
+
+      function init_float_menu() {
+        const toolbar_position = getstrparam("toolbar_position");
+        const floating_menu = getboolparam("floating_menu", true);
+        const autohide = getboolparam("autohide", false);
+        const float_menu_element = $("#float_menu");
+        if (toolbar_position === "novnc") {
+          float_menu_element
+            .children(".Menu.-horizontal")
+            .removeClass("-horizontal")
+            .addClass("-vertical");
+          float_menu_element
+            .children(".Menu.-vertical")
+            .removeClass("ui-draggable ui-draggable-handle");
+          float_menu_element.css({
+            background: "none",
+            border: "none",
+            "box-shadow": "none",
+            padding: "0px",
+          });
+        } else {
+          $("#float_menu_button").hide();
+          float_menu_element.css({
+            "max-width": "232px"
+          });
+        }
+        // choose which top level widgets / menus are shown:
+        const widget_ids = [
+          "xpramenu", "open_windows", "fullscreen_button",
+          "keyboard_button", "clipboard_button", "sound_button",
+          "cursor_lock_button",
+        ];
+        let widget_count = 0;
+        for (const widget_id of widget_ids) {
+            const enabled = getboolparam(widget_id, true);
+            /* console.log(widget_id, "=", enabled); */
+            if (!enabled) {
+                document.querySelector("#"+widget_id).parentElement.style.display = 'none';
+            }
+            else {
+                widget_count++;
+            }
+        }
+        float_menu_item_count = widget_count;
+        float_menu_width = float_menu_item_size * float_menu_item_count + float_menu_padding;
+        if (!floating_menu) {
+          //nothing to do, it starts hidden
+          return;
+        }
+        float_menu_element.fadeIn();
+        if (client) {
+          client.toolbar_position = toolbar_position;
+        }
+        if (autohide) {
+          float_menu_element.on("mouseover", expand_float_menu);
+          float_menu_element.on("mouseout", retract_float_menu);
+          // Expand and retract the floating menu so it
+          // is correctly positioned and collapsed
+          expand_float_menu();
+          retract_float_menu();
+        } else {
+          expand_float_menu();
+        }
+
+        const float_menu_button_element = $("#float_menu_button");
+        float_menu_button_element.on("click", toggle_float_menu);
+      }
+
+      function init_auth_autosubmit() {
+        document.querySelector("#login_connect").addEventListener("keyup", password_special_keys);
+        document.querySelector("#login_cancel").addEventListener("keyup", event => {
+          if (event.keyCode == 27 || event.keyCode == 13) {
+            event.preventDefault();
+            login_cancel();
+          }
+        });
+      }
+
+      let client;
+
+      function init_page() {
+        clog("initializing page");
+        const touchaction = getstrparam("touchaction") || "scroll";
+        touchaction_scroll = touchaction == "scroll";
+        set_touchaction();
+
+        window.cursor_lock = false;
+
+        init_auth_autosubmit();
+
+        client = init_client();
+        addEventListener(
+          "unload",
+          () => {
+            clog("onunload()");
+            client.close();
+          }, {
+            capture: true
+          }
+        );
+
+        addEventListener(
+          "beforeunload",
+          (event) => {
+            const aft = client.active_file_transfers();
+            clog("beforeunload(", event, ") active_file_transfers()=", aft);
+            if (aft > 0) {
+              //This text is now ignored by all browsers...
+              event.returnValue = "There are file transfers in progress.\nAre you sure you want to leave?";
+            }
+            return event.returnValue;
+          }, {
+            capture: true
+          }
+        );
+        client.on_connect = function() {
+          init_float_menu();
+          if (client.clipboard_enabled) {
+            enable_clipboard_autofocus();
+          }
+          client.capture_keyboard = true;
+        };
+        const blocked_hosts = (getstrparam("blocked-hosts") || "").split(",");
+        if (blocked_hosts.indexOf(client.host.toLowerCase()) >= 0) {
+          const sane_host = client.host.replace(/[^A-Za-z0-9\.\:]/g, "");
+          client.callback_close("connection to host '" + sane_host + "' blocked");
+        } else {
+          client.connect();
+        }
+
+        //from now on, send log and debug to client function
+        //which may forward it to the server once connected:
+        clog = function() {
+          if (client) {
+            client.log.apply(client, arguments);
+          }
+        };
+        cdebug = function() {
+          if (client) {
+            client.debug.apply(client, arguments);
+          }
+        };
+        clog("initializing subsystems");
+        init_tablet_input(client);
+        init_clipboard(client);
+        init_file_transfer(client);
+        init_keyboard(client);
+        init_clock(client, getboolparam("clock", true));
+        init_audio(client);
+        document.addEventListener("visibilitychange", function(e) {
+          const window_ids = Object.keys(client.id_to_window).map(Number);
+          clog("visibilitychange hidden=", document.hidden, "connected=", client.connected);
+          if (client.connected) {
+            if (document.hidden) {
+              client.suspend();
+            } else {
+              client.resume();
+            }
+          }
+        });
+        client.password_prompt_fn = password_prompt_fn;
+        client.keycloak_prompt_fn = keycloak_prompt_fn;
+        $("#fullscreen").on("click", function(e) {
+          toggle_fullscreen();
+        });
+
+        $("#fullscreen_button").on("click", function(e) {
+          toggle_fullscreen();
+        });
+
+        $("#keyboard_button").on("click", function(e) {
+          toggle_keyboard();
+        });
+
+        $("#clipboard_button").on("click", function(e) {
+          client.read_clipboard(e);
+        });
+
+        $(".windowinfocus").children("canvas").on("click", function(e) {
+          const isPointerLocked = Boolean(document.pointerLockElement);
+
+          if (isPointerLocked) {
+            return;
+          }
+
+          if (window.cursor_lock && !isPointerLocked) {
+            const focusedWindow = document.getElementById(client.topwindow.toString());
+            focusedWindow.querySelector("canvas").requestPointerLock();
+
+            $("#cursor_lock_button").removeClass("icon-paused");
+          }
+        });
+
+        $("#cursor_lock_button").on("click", function(e) {
+          if (!window.cursor_lock) {
+            window.cursor_lock = true;
+
+            window.alert("You are now in cursor lock mode. Press ESC to temporarily exit, and click on the screen to enter it again.");
+
+            const focusedWindow = client.id_to_window[client.topwindow];
+            focusedWindow.canvas.requestPointerLock();
+
+            $("#cursor_lock_button").addClass("icon-toggled");
+
+            return;
+          }
+
+          window.cursor_lock = false;
+
+          document.exitPointerLock();
+
+          $("#cursor_lock_button").removeClass("icon-toggled icon-paused");
+        });
+
+        document.addEventListener("pointerlockchange", function(e) {
+          if (!(Boolean(document.pointerLockElement)) && window.cursor_lock) {
+            $("#cursor_lock_button").addClass("icon-paused");
+          }
+        });
+
+        // Configure Xpra tray window list right click behavior.
+        $("#open_windows_list")
+          .siblings("a")
+          .on("mousedown", (e) => {
+            if (e.buttons === 2) {
+              client.toggle_window_preview();
+            }
+          });
+
+        $(document).on("fullscreenchange", function() {
+          const f_el = document.fullscreenElement;
+          clog("fullscreenchange:", f_el);
+          if (f_el == null) {
+            //we're not in fullscreen mode now, so show fullscreen icon again:
+            $("#fullscreen_button").attr("data-icon", "fullscreen");
+          }
+        });
+        // disable right click menu:
+        window.oncontextmenu = function(e) {
+          const direction = client.clipboard_direction;
+          if (client.clipboard_enabled && (direction === "to-client" || direction === "both")) {
+            client._poll_clipboard(e);
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        };
+
+        // Send clipboard from browser on focus if client-to-server clipboard is enabled.
+        $(window).on("focus", (e) => {
+          const direction = client.clipboard_direction;
+          if (direction === "to-server" || direction === "both") {
+            client._poll_clipboard(e);
+          }
+        });
+
+        // Prevent stuck keys.
+        $(window).on("blur", (e) => {
+          if (
+            client.last_key_packet.length > 2 &&
+            client.last_keycode_pressed > 0
+          ) {
+            // console.log("clearing keycode: " + client.last_keycode_pressed);
+            let key_packet = client.last_key_packet;
+            // Set pressed = false to indicate key up.
+            key_packet[3] = false;
+            client.send(key_packet);
+            client.last_key_packet = [];
+          }
+        });
+      }
+
+      function load_default_settings() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "./default-settings.txt");
+        xhr.onload = function() {
+          const tmp_default_settings = Utilities.parseINIString(xhr.responseText);
+          clog("network", "got default settings:", tmp_default_settings);
+          //update the default settings object
+          //so getparam will look there
+          for (const key in tmp_default_settings) {
+            default_settings[key] = tmp_default_settings[key];
+          }
+          init_page();
+        };
+        xhr.onerror = function() {
+          clog("network", "default settings request failed with code", xhr.status);
+          init_page();
+        };
+        xhr.onabort = function() {
+          clog("network", "default settings request aborted");
+          init_page();
+        };
+        xhr.send();
+      }
+
+      $(document).ready(function() {
+        clog("document is ready, browser is", navigator.platform, "64-bit:", Utilities.is_64bit());
+        load_default_settings();
+      });
+
+    </script>
+  </body>
+
+</html>

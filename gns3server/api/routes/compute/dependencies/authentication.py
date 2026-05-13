@@ -26,12 +26,29 @@ from gns3server.config import Config
 from typing import Optional, Union
 
 log = logging.getLogger(__name__)
-security = HTTPBasic()
+security = HTTPBasic(auto_error=False)
 
 
 def compute_authentication(credentials: Optional[HTTPBasicCredentials] = Depends(security)) -> None:
+    """
+    Authenticate compute requests.
+    
+    Returns None if authentication is disabled or if authentication succeeds
+    Raises HTTPException if authentication is required but credentials are invalid
+    """
 
     server_settings = Config.instance().settings.Server
+
+    if not server_settings.enable_http_auth:
+        return None
+
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid compute username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
     username = secrets.compare_digest(credentials.username, server_settings.compute_username)
     password = secrets.compare_digest(credentials.password, server_settings.compute_password.get_secret_value())
     if not (username and password):
@@ -44,6 +61,12 @@ def compute_authentication(credentials: Optional[HTTPBasicCredentials] = Depends
 async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSocket]:
     """
     """
+
+    server_settings = Config.instance().settings.Server
+
+    if not server_settings.enable_http_auth:
+        await websocket.accept()
+        return websocket
 
     await websocket.accept()
 
@@ -68,7 +91,6 @@ async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSock
         if not separator:
             raise invalid_user_credentials_exc
 
-        server_settings = Config.instance().settings.Server
         username = secrets.compare_digest(username, server_settings.compute_username)
         password = secrets.compare_digest(password, server_settings.compute_password.get_secret_value())
         if not (username and password):

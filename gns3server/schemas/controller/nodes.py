@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, model_validator
-from typing import List, Optional, Union, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional, Union
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -128,11 +128,15 @@ class NodeBase(BaseModel):
     z: Optional[int] = 1
     locked: Optional[bool] = Field(False, description="Whether the element locked or not")
     port_name_format: Optional[str] = Field(
-        None, descript_port_name_formation="Formatting for port name {0} will be replace by port number"
+        None, description="Formatting for port name {0} will be replace by port number"
     )
     port_segment_size: Optional[int] = Field(None, description="Size of the port segment")
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None
+    tags: Optional[List[str]] = Field(
+        default_factory=list,
+        description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+    )
 
 
 class NodeCreate(NodeBase):

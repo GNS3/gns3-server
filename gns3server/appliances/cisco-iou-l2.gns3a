@@ -1,5 +1,6 @@
 {
     "appliance_id": "9593db48-558a-4914-bb78-a20605f39c65",
+    "tags": ["device_type:cisco_ios_telnet"],
     "name": "Cisco IOU L2",
     "category": "multilayer_switch",
     "description": "Cisco IOS on UNIX Layer 2 image.",
@@ -15,11 +16,17 @@
     "iou": {
         "ethernet_adapters": 4,
         "serial_adapters": 0,
-        "nvram": 512,
-        "ram": 512,
+        "nvram": 256,
+        "ram": 1024,
         "startup_config": "iou_l2_base_startup-config.txt"
     },
     "images": [
+        {
+            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.17.16.1a.iol",
+            "version": "17.16.1a",
+            "md5sum": "d55879318e51c5401fb9314d45c67728",
+            "filesize": 244265240
+        },
         {
             "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.iol",
             "version": "17.15.1",
@@ -31,27 +38,15 @@
             "version": "17.12.1",
             "md5sum": "2b5055e4cef8fd257416d74a94adb626",
             "filesize": 240355720
-        },
-        {
-            "filename": "i86bi-linux-l2-ipbasek9-15.1g.bin",
-            "version": "15.1g",
-            "md5sum": "0b8b9e14ca99b68c654e44c4296857ba",
-            "filesize": 62137336
-        },
-        {
-            "filename": "i86bi-linux-l2-adventerprisek9-15.1a.bin",
-            "version": "15.1a",
-            "md5sum": "9549a20a7391fb849da32caa77a0d254",
-            "filesize": 72726092
-        },
-        {
-            "filename": "i86bi-linux-l2-adventerprisek9-15.2d.bin",
-            "version": "15.2d",
-            "md5sum": "f16db44433beb3e8c828db5ddad1de8a",
-            "filesize": 105036380
         }
     ],
     "versions": [
+        {
+            "name": "17.16.1a",
+            "images": {
+                "image": "x86_64_crb_linux_l2-adventerprisek9-ms.17.16.1a.iol"
+            }
+        },
         {
             "name": "17.15.1",
             "images": {
@@ -62,24 +57,6 @@
             "name": "17.12.1",
             "images": {
                 "image": "x86_64_crb_linux_l2-adventerprisek9-ms"
-            }
-        },
-        {
-            "name": "15.1g",
-            "images": {
-                "image": "i86bi-linux-l2-ipbasek9-15.1g.bin"
-            }
-        },
-        {
-            "name": "15.1a",
-            "images": {
-                "image": "i86bi-linux-l2-adventerprisek9-15.1a.bin"
-            }
-        },
-        {
-            "name": "15.2d",
-            "images": {
-                "image": "i86bi-linux-l2-adventerprisek9-15.2d.bin"
             }
         }
     ]

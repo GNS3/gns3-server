@@ -20,16 +20,41 @@ from .common import ErrorMessage
 from .version import Version
 
 # Controller schemas
-from .controller.links import LinkCreate, LinkUpdate, Link, UDPPortInfo, EthernetPortInfo
+from .controller.links import LinkCreate, LinkUpdate, Link, UDPPortInfo, EthernetPortInfo, LinkCapture
 from .controller.computes import ComputeCreate, ComputeUpdate, ComputeVirtualBoxVM, ComputeVMwareVM, ComputeDockerImage, AutoIdlePC, Compute
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
 from .controller.images import Image, ImageType
-from .controller.appliances import ApplianceVersion, Appliance
+from .controller.appliances import ApplianceVersion, ApplianceVersionV8, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
 from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
-from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile, ProjectCompression
+from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile, ProjectCompression, NodeFile
 from .controller.users import UserCreate, UserUpdate, LoggedInUserUpdate, User, Credentials, UserGroupCreate, UserGroupUpdate, UserGroup
+
+# Conditionally import AI-related schemas
+try:
+    from .controller.llm_model_configs import (
+        LLMModelConfigData,
+        LLMModelConfigCreate,
+        LLMModelConfigUpdate,
+        LLMModelConfigResponse,
+        LLMModelConfigWithSource,
+        LLMModelConfigInheritedResponse,
+        LLMModelConfigListResponse
+    )
+    from .controller.chat import (
+        OpenAIToolCall,
+        ChatRequest,
+        ChatResponse,
+        OpenAIMessage,
+        ConversationHistory,
+        ChatSession,
+        RenameSession
+    )
+except ImportError:
+    # AI schemas are not available (should not happen as they don't depend on external libs)
+    pass
+
 from .controller.rbac import RoleCreate, RoleUpdate, Role, Privilege, ACECreate, ACEUpdate, ACE
 from .controller.pools import Resource, ResourceCreate, ResourcePoolCreate, ResourcePoolUpdate, ResourcePool
 from .controller.tokens import Token

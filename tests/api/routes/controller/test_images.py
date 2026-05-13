@@ -173,15 +173,26 @@ class TestImageRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["filename"] == image_name
 
-    # async def test_same_image_is_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
-    #
-    #     image_name = os.path.basename(qcow2_image)
-    #     with open(qcow2_image, "rb") as f:
-    #         image_data = f.read()
-    #     response = await client.post(
-    #         app.url_path_for("upload_image", image_path=image_name),
-    #         content=image_data)
-    #     assert response.status_code == status.HTTP_201_CREATED
+    async def test_same_image_is_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
+
+        with open(qcow2_image, "rb") as f:
+            image_data = f.read()
+        response = await client.post(
+            app.url_path_for("upload_image", image_path="image1.qcow2"),
+            content=image_data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # same image with same name is uploaded again, it should return 409 Conflict
+        response = await client.post(
+            app.url_path_for("upload_image", image_path="image1.qcow2"),
+            content=image_data)
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+        # same image with different name but same checksum is uploaded again, it should return 409 Conflict
+        response = await client.post(
+           app.url_path_for("upload_image", image_path="image2.qcow2"),
+           content=image_data)
+        assert response.status_code == status.HTTP_409_CONFLICT
 
     async def test_image_delete(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 

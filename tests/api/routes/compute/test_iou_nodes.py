@@ -86,8 +86,8 @@ class TestIOUNodesRoutes:
         assert response.json()["project_id"] == compute_project.id
         assert response.json()["serial_adapters"] == 2
         assert response.json()["ethernet_adapters"] == 2
-        assert response.json()["ram"] == 256
-        assert response.json()["nvram"] == 128
+        assert response.json()["ram"] == 1024
+        assert response.json()["nvram"] == 256
         assert response.json()["l1_keepalives"] is False
 
 
@@ -190,8 +190,8 @@ class TestIOUNodesRoutes:
         assert response.json()["project_id"] == compute_project.id
         assert response.json()["serial_adapters"] == 2
         assert response.json()["ethernet_adapters"] == 2
-        assert response.json()["ram"] == 256
-        assert response.json()["nvram"] == 128
+        assert response.json()["ram"] == 1024
+        assert response.json()["nvram"] == 256
         assert response.json()["l1_keepalives"] is False
 
 
@@ -246,6 +246,16 @@ class TestIOUNodesRoutes:
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
+    async def test_iou_suspend(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
+
+        response = await compute_client.delete(
+            app.url_path_for(
+                "compute:suspend_iou_node",
+                project_id=vm["project_id"],
+                node_id=vm["node_id"])
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
     async def test_iou_update(
             self, app: FastAPI,
             compute_client: AsyncClient,
@@ -297,10 +307,13 @@ class TestIOUNodesRoutes:
 
     async def test_iou_nio_update_udp(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-        params = {"type": "nio_udp",
-                  "lport": 4242,
-                  "rport": 4343,
-                  "rhost": "127.0.0.1"}
+        params = {
+            "type": "nio_udp",
+            "lport": 4242,
+            "rport": 4343,
+            "rhost": "127.0.0.1",
+            "filters": {"packet_loss": 10}
+        }
 
         url = app.url_path_for("compute:create_iou_node_nio",
                                project_id=vm["project_id"],
@@ -308,8 +321,10 @@ class TestIOUNodesRoutes:
                                adapter_number="1",
                                port_number="0")
 
-        await compute_client.post(url, json=params)
-        params["filters"] = {}
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["filters"] == {"packet_loss": 10}
+        params["filters"].clear()
 
         url = app.url_path_for("compute:update_iou_node_nio",
                                project_id=vm["project_id"],
@@ -319,6 +334,7 @@ class TestIOUNodesRoutes:
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
+        assert response.json()["filters"] == {}
 
 
     async def test_iou_nio_create_ethernet(

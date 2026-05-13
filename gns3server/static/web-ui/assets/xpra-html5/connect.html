@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <!--
+	Copyright (c) 2013 Antoine Martin <antoine@xpra.org>
+	Copyright (c) 2014 Joshua Higgins <josh@kxes.net>
+	Licensed under MPL 2.0
+	-->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Custom styles for this template -->
+    <link href="css/connect.css" rel="stylesheet" />
+    <title>Xpra HTML5 Client</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <script type="text/javascript" src="js/RgbHelpers.js"></script>
+    <script type="text/javascript" src="js/VideoDecoder.js"></script>
+    <script type="text/javascript" src="js/Utilities.js"></script>
+    <script type="text/javascript" src="js/OffscreenDecodeWorkerHelper.js"></script>
+
+    <script src="js/lib/jquery.js"></script>
+    <script src="js/MediaSourceUtil.js"></script>
+    <script src="js/lib/aurora/aurora.js"></script>
+    <!--
+	<script src="js/lib/aurora/mp3.js"></script>
+	<script src="js/lib/aurora/flac.js"></script>
+	<script src="js/lib/aurora/aac.js"></script>
+	-->
+  </head>
+
+  <body>
+    <div class="container">
+      <form class="form-signin" action="./index.html">
+        <img src="icons/xpra-logo.png" alt="xpra logo" />
+        <h2 class="form-signin-heading">Xpra HTML5 Client</h2>
+        <h5>Version 19</h5>
+
+        <div id="alert-disconnect" class="alert alert-info" role="alert" style="display: none">
+          <p>You were disconnected for the following reason:</p>
+          <p><span id="disconnect-reason"></span></p>
+        </div>
+
+        <div class="form-group form-inline">
+          <label class="sr-only" for="server">Server</label>
+          <input title="Server" type="text" class="form-control" id="server" placeholder="Server" maxlength="256" />
+          <label class="sr-only" for="port">Port</label>
+          <input title="Port" type="text" class="form-control" id="port" placeholder="Port" size="5" maxlength="5" />
+          <br />
+          <div id="server-info-box">
+            <span id="server-info"></span>
+            <br />
+          </div>
+          <label class="sr-only" for="username">Username</label>
+          <input title="Username" type="text" class="form-control" id="username" autocomplete="username" placeholder="Username" size="16" maxlength="256" />
+          <label class="sr-only" for="password">Password</label>
+          <input title="Password" type="password" class="form-control" id="password" autocomplete="current-password" placeholder="Password" size="16" maxlength="256" />
+          <img id="toggle-password" class="field-icon" src="./icons/eye-slash.png" alt="toggle password visibility" />
+          <br />
+          <div class="security-box">
+            <span id="ssl-span">
+              <input type="checkbox" id="ssl" /> Secure Sockets
+            </span>
+            <br />
+            <span id="webtransport-span">
+              <input type="checkbox" id="webtransport" /> WebTransport
+            </span>
+            <br />
+            <span id="encryption-span">
+              <input type="checkbox" id="aes" />
+              <span id="aes-label"> AES</span>
+              <select id="encryption">
+                <option value="AES-CBC">AES-CBC</option>
+                <option value="AES-CTR">AES-CTR</option>
+                <option value="AES-GCM">AES-GCM</option>
+              </select>
+            </span>
+            <span id="encryption-key-span">
+              <input type="password" class="form-control" id="key" autocomplete="on" placeholder="AES-KEY" size="32" maxlength="256" />
+              <img id="toggle-key" class="field-icon" src="./icons/eye-slash.png" alt="toggle encryption key visibility" />
+            </span>
+            <br />
+            <span id="insecure-span">
+              <input type="checkbox" id="insecure" /> Insecure plain-text passwords
+            </span>
+          </div>
+
+          <div class="panel-group">
+            <ul class="list-style-none action">
+              <li id="action_connect_group">
+                <label><input type="radio" name="action" class="radiobox" value="connect" id="action_connect" checked="checked" />
+                  Connect:</label>
+                <input title="display" type="text" class="form-control command" id="display" placeholder="Display (optional)" size="20" maxlength="256" />
+                <select id="select_display" style="display: none"></select><span id="select_display_warning" class="warning"></span>
+              </li>
+              <li id="action_start_group">
+                <div style="display: inline-block; vertical-align: top">
+                  <label><input type="radio" name="action" class="radiobox" value="start" id="action_start" checked="checked" />
+                    Start Command:</label>
+                  <input title="command" type="text" class="form-control command" id="start_command" placeholder="Command" size="20" maxlength="256" />
+                </div>
+                <div style="display: inline-block">
+                  <select id="command_category" style="display: none"></select>
+                  <img class="command-icon" id="command_category_icon" alt="desktop command category icon" src="./icons/noicon.png" />
+                  <br />
+                  <select id="command_entry" style="display: none"></select>
+                  <img class="command-icon" id="command_entry_icon" alt="desktop command icon" src="./icons/noicon.png" />
+                </div>
+              </li>
+              <li id="action_start_desktop_group">
+                <label><input type="radio" name="action" class="radiobox" value="start-desktop" id="action_start_desktop" checked="checked" />
+                  Start Desktop:</label>
+                <input title="desktop command" type="text" class="form-control command" id="start_desktop_command" placeholder="Desktop Command" size="20" maxlength="256" />
+                <img class="command-icon" id="desktop_entry_icon" alt="desktop command icon" src="./icons/noicon.png" />
+                <select id="desktop_entry" style="display: none"></select><span id="desktop_entry_warning" class="warning"></span>
+              </li>
+              <li id="action_shadow_group">
+                <label><input type="radio" name="action" class="radiobox" value="shadow" id="action_shadow" checked="checked" />
+                  Shadow:</label>
+                <input title="display" type="text" class="form-control command" id="shadow_display" placeholder="Display (optional)" size="20" maxlength="256" />
+                <select id="select_shadow_display" style="display: none"></select><span id="select_shadow_display_warning" class="warning"></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <a class="btn btn-lg btn-success" role="button" id="main_action_button" onclick="doConnect();">Connect</a>
+          <a class="btn btn-lg btn-success" role="button" onclick="doConnectURI();">Client URI</a>
+          <a class="btn btn-lg btn-success" role="button" onclick="downloadConnectionFile();">Connection File</a>
+        </div>
+
+        <div class="panel-group" role="tablist">
+          <div class="panel panel-default">
+            <div id="expandopts" class="panel-heading" role="tab">
+              <h4 class="panel-title">Advanced options</h4>
+            </div>
+
+            <div id="hiddenopts" class="panel-collapse collapse in" role="tabpanel" style="display: none">
+              <ul class="list-group">
+                <li class="list-group-item">
+                  <select id="bandwidth_limit">
+                    <option value="0">None</option>
+                    <option value="100000000">100Mbps</option>
+                    <option value="10000000">10Mbps</option>
+                    <option value="1000000">1Mbps</option>
+                  </select>
+                  Bandwith Constraint
+                </li>
+
+                <li class="list-group-item">
+                  <select id="encoding">
+                    <option value="auto">Automatic</option>
+                    <option value="webp">WebP</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="png">PNG</option>
+                    <option value="rgb">Raw RGB</option>
+                  </select>
+                  Encoding &nbsp; <input type="checkbox" id="offscreen" />
+                  <span id="offscreen_label">offscreen decoding</span>
+                </li>
+
+                <li class="list-group-item">
+                  <select id="keyboard_layout">
+                    <option value="us">English USA</option>
+                    <option value="gb">United Kingdom</option>
+                    <option value="fr">France</option>
+                    <option value="de">Germany</option>
+                    <option value="es">Spain</option>
+                    <option value="" disabled>----------------</option>
+                    <option value="ad">Andorra</option>
+                    <option value="af">Afghanistan</option>
+                    <option value="al">Albania</option>
+                    <option value="ara">Arabic</option>
+                    <option value="am">Armenia</option>
+                    <option value="az">Azerbaijan</option>
+                    <option value="bd">Bangladesh</option>
+                    <option value="by">Belarus</option>
+                    <option value="be">Belgium</option>
+                    <option value="bt">Bhutan</option>
+                    <option value="ba">Bosnia</option>
+                    <option value="br">Brazil</option>
+                    <option value="bg">Bulgaria</option>
+                    <option value="kh">Cambodia</option>
+                    <option value="ca">Canada</option>
+                    <option value="cn">China</option>
+                    <option value="cd">Congo,</option>
+                    <option value="hr">Croatia</option>
+                    <option value="cz">Czechia</option>
+                    <option value="dk">Denmark</option>
+                    <option value="epo">Esperanto</option>
+                    <option value="ee">Estonia</option>
+                    <option value="et">Ethiopia</option>
+                    <option value="ir">Iran</option>
+                    <option value="iq">Iraq</option>
+                    <option value="fo">Faroe</option>
+                    <option value="fi">Finland</option>
+                    <option value="fr">France</option>
+                    <option value="ge">Georgia</option>
+                    <option value="gh">Ghana</option>
+                    <option value="gr">Greece</option>
+                    <option value="gn">Guinea</option>
+                    <option value="hu">Hungary</option>
+                    <option value="is">Iceland</option>
+                    <option value="in">India</option>
+                    <option value="ie">Ireland</option>
+                    <option value="il">Israel</option>
+                    <option value="it">Italy</option>
+                    <option value="jp">Japan</option>
+                    <option value="kz">Kazakhstan</option>
+                    <option value="kr">Korea,</option>
+                    <option value="kg">Kyrgyzstan</option>
+                    <option value="latam">Latin</option>
+                    <option value="lv">Latvia</option>
+                    <option value="la">Laos</option>
+                    <option value="lt">Lithuania</option>
+                    <option value="mao">Maori</option>
+                    <option value="mk">Macedonia</option>
+                    <option value="mv">Maldives</option>
+                    <option value="ml">Mali</option>
+                    <option value="mt">Malta</option>
+                    <option value="mn">Mongolia</option>
+                    <option value="me">Montenegro</option>
+                    <option value="ma">Morocco</option>
+                    <option value="mm">Myanmar</option>
+                    <option value="np">Nepal</option>
+                    <option value="nl">Netherlands</option>
+                    <option value="ng">Nigeria</option>
+                    <option value="no">Norway</option>
+                    <option value="pk">Pakistan</option>
+                    <option value="pl">Poland</option>
+                    <option value="pt">Portugal</option>
+                    <option value="ro">Romania</option>
+                    <option value="ru">Russia</option>
+                    <option value="sn">Senegal</option>
+                    <option value="rs">Serbia</option>
+                    <option value="sk">Slovakia</option>
+                    <option value="si">Slovenia</option>
+                    <option value="za">South Africa</option>
+                    <option value="lk">Sri Lanka</option>
+                    <option value="se">Sweden</option>
+                    <option value="ch">Switzerland</option>
+                    <option value="sy">Syria</option>
+                    <option value="tw">Taiwan</option>
+                    <option value="tj">Tajikistan</option>
+                    <option value="tz">Tanzania</option>
+                    <option value="th">Thailand</option>
+                    <option value="tr">Turkey</option>
+                    <option value="tm">Turkmenistan</option>
+                    <option value="ua">Ukraine</option>
+                    <option value="uz">Uzbekistan</option>
+                    <option value="vn">Vietnam</option>
+                  </select>
+                  Keyboard Layout
+                </li>
+                <li class="list-group-item keyboard">
+                  <input type="checkbox" id="keyboard" />
+                  <span>On-screen keyboard</span>
+                </li>
+
+                <li class="list-group-item clipboard">
+                  <input type="checkbox" id="clipboard" />
+                  <span>Clipboard sharing, preferred format:</span>
+                  <select id="clipboard_preferred_format">
+                    <option value="text/plain">text/plain</option>
+                    <option value="UTF8_STRING">UTF8</option>
+                    <option value="text/html">text/html</option>
+                  </select>
+                </li>
+                <li class="list-group-item printing">
+                  <input type="checkbox" id="printing" /> <span>Printing</span>
+                </li>
+                <li class="list-group-item file_transfer">
+                  <input type="checkbox" id="file_transfer" />
+                  <span>File transfers</span>
+                </li>
+                <li class="list-group-item sound">
+                  <input type="checkbox" id="sound" />
+                  <span>Audio forwarding, codec: </span>
+                  <select id="audio_codec"></select>
+                  <input type="hidden" id="ignore_audio_blacklist" value="" />
+                </li>
+                <li class="list-group-item exit_with_children">
+                  <input type="checkbox" id="exit_with_children" />
+                  <span>Terminate server when command exits</span>
+                </li>
+                <li class="list-group-item exit_with_client">
+                  <input type="checkbox" id="exit_with_client" />
+                  <span>Terminate server when client disconnects</span>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="sharing" />
+                  <span>Share session</span>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="steal" />
+                  <span>Steal session from existing client</span>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="reconnect" />
+                  <span>Re-connect automatically to the session</span>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="swap_keys" />
+                  <span>Swap command and control key</span>
+                </li>
+                <li class="list-group-item">
+                  <span>Reverse vertical scrolling</span>
+                  <select id="scroll_reverse_y">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                    <option value="auto">Auto</option>
+                  </select>
+                  <br />
+                  <input type="checkbox" id="scroll_reverse_x" />
+                  <span>Reverse horizontal scrolling</span>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="floating_menu" />
+                  <span>Floating Menu</span>,
+                  <input type="checkbox" id="autohide" />
+                  <span>Auto Hide</span>, <input type="checkbox" id="clock" />
+                  <span>Server clock</span> <br />
+                </li>
+
+                <li class="list-group-item">
+                  Menu position:
+                  <select id="toolbar_position">
+                    <option value="top-left">Top Left</option>
+                    <option value="top">Top</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="novnc">noVNC (vertical left)</option>
+                  </select>
+                </li>
+                <li class="list-group-item">
+                  <input type="checkbox" id="video" />
+                  <span>Video
+                    <input type="checkbox" id="mediasource_video" /> Native
+                    decoding</span>
+                </li>
+                <li class="list-group-item">
+                  <span>Server Path:</span>
+                  <input title="path" type="text" class="form-control" id="path" placeholder="" size="16" maxlength="256" />
+                </li>
+                <li class="list-group-item">
+                  <span>Client Screen Width:</span>
+                  <input title="override_width" type="text" class="form-control" id="override_width" size="16" maxlength="256" />
+                </li>
+                <li class="list-group-item">
+                  <span>Debugging</span>:<br />
+                  <input type="checkbox" id="debug_main" /> <span>Main</span>,
+                  <input type="checkbox" id="debug_keyboard" /> <span>keyboard</span>,
+                  <input type="checkbox" id="debug_geometry" /> <span>geometry</span>,
+                  <input type="checkbox" id="debug_mouse" /> <span>mouse</span>,
+                  <input type="checkbox" id="debug_clipboard" /> <span>clipboard</span>,
+                  <input type="checkbox" id="debug_draw" /> <span>draw</span>,
+                  <input type="checkbox" id="debug_audio" /> <span>audio</span>,
+                  <input type="checkbox" id="debug_network" /> <span>network</span>,
+                  <input type="checkbox" id="debug_file" /> <span>file</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" id="vrefresh" value="0" />
+      </form>
+    </div>
+    <!-- /container -->
+    <div class="bg-image"></div>
+
+    <script>
+      const VALUE_PROPERTIES = [
+        "server",
+        "port",
+        "path",
+        "username",
+        "password",
+        "key",
+        "bandwidth_limit",
+        "encoding",
+        "keyboard_layout",
+        "audio_codec",
+        "toolbar_position",
+        "display",
+        "shadow_display",
+        "override_width",
+        "encryption",
+        "scroll_reverse_y",
+        "vrefresh",
+        "clipboard_preferred_format",
+      ];
+      const BOOLEAN_PROPERTIES = [
+        "keyboard",
+        "clipboard",
+        "printing",
+        "file_transfer",
+        "sound",
+        "ignore_audio_blacklist",
+        "offscreen",
+        "exit_with_children",
+        "exit_with_client",
+        "sharing",
+        "steal",
+        "reconnect",
+        "swap_keys",
+        "scroll_reverse_x",
+        "video",
+        "mediasource_video",
+        "ssl",
+        "insecure",
+        "webtransport",
+        "floating_menu",
+        "autohide",
+        "clock",
+        "debug_main",
+        "debug_keyboard",
+        "debug_geometry",
+        "debug_mouse",
+        "debug_clipboard",
+        "debug_draw",
+        "debug_audio",
+        "debug_network",
+        "debug_file",
+      ];
+      const FILE_PROPERTIES = [
+        "server",
+        "port",
+        "path",
+        "username",
+        "password",
+        "exit_with_children",
+        "exit_with_client",
+        "sharing",
+        "swap_keys",
+      ];
+      const DEFAULT_ON = [
+        "steal",
+        "printing",
+        "clipboard",
+        "file_transfer",
+        "reconnect",
+        "floating_menu",
+        "clock",
+        "exit_with_children",
+        "exit_with_client",
+      ];
+      if (Utilities.isMacOS()) {
+        DEFAULT_ON.push("swap_keys");
+      }
+      if (Utilities.isMobile()) {
+        //show the on-screen keyboard by default on mobile:
+        DEFAULT_ON.push("keyboard");
+      }
+      const FILE_TRANSLATION = {
+        server: "host"
+      };
+
+      function add_prop(prop, value, first) {
+        if (Utilities.hasSessionStorage()) {
+          Utilities.setSessionStorageValue(prop, value);
+          return "";
+        }
+        do_add_prop(prop, value, first);
+      }
+
+      function do_add_prop(prop, value, first) {
+        if (value === null || value === "undefined") {
+          value = "";
+        }
+        let sep = "&";
+        if (first) {
+          sep = "?";
+        }
+        return sep + prop + "=" + encodeURIComponent("" + value); //ie: "&port=10000"
+      }
+
+      function doConnect() {
+        let url = "./index.html" + add_prop("submit", true, true);
+        let i = 0;
+        for (const [prop, value] of get_URL_action()) {
+          add_prop(prop, value, i == 0);
+          i++;
+        }
+        for (const [prop, value] of get_URL_props(VALUE_PROPERTIES.concat(BOOLEAN_PROPERTIES))) {
+          add_prop(prop, value, i == 0);
+          i++;
+        }
+        window.location = url;
+      }
+
+      function doConnectURI() {
+        let url = "xpra+ws://";
+        const ssl = document.getElementById("ssl").checked;
+        // the python client does not support webtransport yet:
+        // const webtransport = document.getElementById("webtransport").checked;
+        if (ssl) {
+          url = "xpra+wss://";
+        }
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        if (username) {
+          url += username;
+        }
+        if (password && is_password_safe()) {
+          url += ":" + password;
+        }
+        if (username || password) {
+          url += "@";
+        }
+        url += document.getElementById("server").value;
+        const port = document.getElementById("port").value;
+        if (port) {
+          url += ":" + port;
+        }
+        const path = document.getElementById("path").value;
+        if (path) {
+          url += path;
+        } else {
+          url += "/";
+        }
+        const url_action = get_URL_action();
+        // console.log("url_action=", url_action);
+        let display = url_action.get("display");
+        if (display) {
+          if (display.startsWith(":")) {
+            display = display.substring(1);
+          }
+          url += display;
+        }
+        let i = 0;
+        for (const [prop, value] of url_action) {
+          if (prop != "display" && prop != "action") {
+            url += do_add_prop(prop, value, i == 0);
+            i++;
+          }
+        }
+        const props = get_URL_props(FILE_PROPERTIES);
+        props.delete("server");
+        props.delete("port");
+        props.delete("username");
+        props.delete("password");
+        props.delete("path");
+        for (const [prop, value] of props) {
+          if (!prop.startsWith("debug_")) {
+            url += do_add_prop(prop.replaceAll("_", "-"), value, i == 0);
+            i++;
+          }
+        }
+        // console.log("opening client url=", url);
+        // Validate URL to prevent open redirect and XSS
+        // Only allow safe protocols for navigation
+        if (!url.match(/^(xpra\+ws|xpra\+wss):\/\/[a-zA-Z0-9._~:\/?#\[\]@!$&'()*+,;=%\-]*$/)) {
+          Utilities.error("Invalid URL, rejecting:", url);
+          return;
+        }
+        window.location = url;
+      }
+
+      function downloadConnectionFile() {
+        let data = "autoconnect=true\n";
+        //set a mode:
+        const ssl = document.getElementById("ssl").checked;
+        if (ssl) {
+          data += "mode=wss\n";
+        } else {
+          data += "mode=ws\n";
+        }
+        const url_action = get_URL_action();
+        const display = url_action.get("display");
+        if (display) {
+          data += "display=" + display + "\n";
+        }
+        for (let i = 0; i < FILE_PROPERTIES.length; i++) {
+          const prop = FILE_PROPERTIES[i];
+          const prop_name = (FILE_TRANSLATION[prop] || prop).replaceAll("_", "-");
+          let value = "";
+          if (BOOLEAN_PROPERTIES.includes(prop)) {
+            value = document.getElementById(prop).checked;
+            const default_value = DEFAULT_ON.includes(prop);
+            if (value == default_value) {
+              continue;
+            }
+          } else {
+            value = document.getElementById(prop).value;
+          }
+          if (value !== "") {
+            data += prop_name + "=" + value + "\n";
+          }
+        }
+        //convert debug switches to a list of debug categories:
+        let debug = "";
+        const DEBUG_CATEGORIES = [
+          "main",
+          "keyboard",
+          "geometry",
+          "mouse",
+          "clipboard",
+          "draw",
+          "audio",
+          "network",
+          "file",
+        ];
+        for (let i = 0; i < DEBUG_CATEGORIES.length; i++) {
+          let category = DEBUG_CATEGORIES[i];
+          const el = document.getElementById("debug_" + category);
+          if (el && el.checked) {
+            //"main" enables "client" debugging:
+            let s = category == "main" ? "client" : category;
+            if (debug) {
+              debug += "," + category;
+            } else {
+              debug = category;
+            }
+          }
+        }
+        if (debug) {
+          data += "debug=" + debug + "\n";
+        }
+        const filename = (document.getElementById("server").value || "session") + ".xpra";
+        Utilities.saveFile(filename, data, {
+          type: "text/plain"
+        });
+      }
+
+      function get_visible_value(entry, select) {
+        const entry_widget = document.getElementById(entry);
+        let style = entry_widget.style;
+        if (style.display != "none" && (style.visibility !== "hidden" || style.visibility !== "collapse")) {
+          return entry_widget.value;
+        }
+        const select_widget = document.getElementById(select);
+        style = select_widget.style;
+        if (style.display != "none" && (style.visibility !== "hidden" || style.visibility !== "collapse")) {
+          return select_widget.value;
+        }
+        return "";
+      }
+
+      function get_URL_action() {
+        let start = "";
+        let display = "";
+        let action = "";
+        if (document.getElementById("action_connect").checked) {
+          action = "connect";
+          display = get_visible_value("display", "select_display");
+        } else if (document.getElementById("action_start").checked) {
+          action = "start";
+          start = get_visible_value("start_command", "command_entry");
+        } else if (document.getElementById("action_start_desktop").checked) {
+          action = "start-desktop";
+          start = get_visible_value("start_desktop_command", "desktop_entry");
+        } else if (document.getElementById("action_shadow").checked) {
+          action = "shadow";
+          display = get_visible_value("shadow_display", "select_shadow_display");
+        }
+        const url_action = new Map();
+        if (action) {
+          url_action.set("action", action);
+        }
+        if (start) {
+          url_action.set("start", start);
+        }
+        if (display) {
+          url_action.set("display", display);
+        }
+        return url_action;
+      }
+
+      function get_URL_props(properties) {
+        Utilities.log("get_URL_props:", properties);
+        const url_props = new Map();
+        for (let i = 0; i < properties.length; i++) {
+          const prop = properties[i];
+          const element = document.getElementById(prop);
+          if (!element) {
+            Utilities.log("bug? missing element", prop);
+            continue;
+          }
+          let value = "";
+          if (BOOLEAN_PROPERTIES.includes(prop)) {
+            value = element.checked;
+          } else {
+            value = element.value;
+            if (value === null || value === "undefined") {
+              value = "";
+            }
+          }
+          url_props.set(prop, value);
+        }
+        return url_props;
+      }
+
+      function fill_form(default_settings) {
+        const getparam = function(prop) {
+          let v = Utilities.getparam(prop);
+          if (v === undefined && prop in default_settings) {
+            v = default_settings[prop];
+          }
+          return v;
+        };
+
+        const ALLOWED_CHARS = "0-9A-Za-z _+-:";
+        const getstrparam = function(prop, allowed_chars) {
+          const value = getparam(prop) || "";
+          const chars = allowed_chars || ALLOWED_CHARS;
+          const re = new RegExp(`[^${chars}]`, "g");
+          return value.replace(re, "");
+        }
+
+        const getboolparam = function(prop, default_value) {
+          let v = Utilities.getparam(prop);
+          if (v === undefined && prop in default_settings) {
+            v = default_settings[prop];
+          }
+          if (v === undefined) {
+            return default_value;
+          }
+          return (
+            ["true", "on", "1", "yes", "enabled"].indexOf(
+              String(v).toLowerCase()
+            ) !== -1
+          );
+        };
+        const getintparam = function(prop, default_value) {
+          let v = getparam(prop);
+          try {
+            v = parseInt(v);
+          } catch (e) {
+            return default_value;
+          }
+          if (v === null || isNaN(v)) {
+            return default_value;
+          }
+          return v;
+        };
+
+        const disconnect_reason = getstrparam("disconnect");
+        if (disconnect_reason) {
+          document.getElementById("alert-disconnect").style.display = "block";
+          document.getElementById("disconnect-reason").innerText = disconnect_reason;
+        }
+
+        //Populate the form:
+        const url = window.location.href;
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        let pathname = link.pathname;
+        if (pathname && pathname.endsWith("connect.html")) {
+          pathname = pathname.substring(0, pathname.length - "connect.html".length);
+        }
+        if (pathname && pathname == "/") {
+          pathname = "";
+        }
+        var path = getstrparam("path", ALLOWED_CHARS + "/");
+        if (path && path.endsWith("/index.html")) {
+          path = path.substr(0, path.lastIndexOf("/"));
+        }
+        const https = document.location.protocol == "https:";
+        var protocol_port = 80;
+        if (https) {
+          protocol_port = 443;
+        }
+        document.getElementById("server").value = getstrparam("server") || link.hostname;
+        document.getElementById("port").value = getintparam("port", 0) || link.port || protocol_port;
+        document.getElementById("path").value = path || pathname;
+        document.getElementById("username").value = getstrparam("username", ALLOWED_CHARS + "@") || "";
+
+        const override_width = getintparam("override_width", 0);
+        if (override_width) {
+          document.getElementById("override_width").value = override_width;
+        } else {
+          document.getElementById("override_width").placeholder = window.innerWidth;
+        }
+
+        const ssl = getboolparam("ssl", https);
+        const insecure = getboolparam("insecure", false);
+        const webtransport = getboolparam("webtransport", false);
+        const ssl_input = document.getElementById("ssl");
+        const insecure_input = document.getElementById("insecure");
+        const insecure_span = document.getElementById("insecure-span");
+        const webtransport_input = document.getElementById("webtransport");
+        const aes_input = document.getElementById("aes");
+        const password_input = document.getElementById("password");
+        ssl_input.checked = ssl;
+        insecure_input.checked = insecure;
+        webtransport_input.checked = webtransport;
+        const has_session_storage = Utilities.hasSessionStorage();
+
+        function is_secure_connection() {
+          return webtransport_input.checked || ssl_input.checked || aes_input.checked;
+        }
+
+        function is_password_safe() {
+          if (insecure_input.checked) {
+            return true;
+          }
+          if (!has_session_storage) {
+            // don't show the password on the URL
+            // which can be seen in the top bar and captured in the server logs
+            return false;
+          }
+          const host = document.getElementById("server").value;
+          return is_secure_connection() || Utilities.isSafeHost(host);
+        }
+
+        function update_offscreen() {
+          const ssl_enabled = document.getElementById("ssl").checked;
+          const offscreen = getboolparam("offscreen", XpraOffscreenWorker.isAvailable(ssl_enabled));
+          document.getElementById("offscreen").checked = offscreen;
+          const offscreen_available = XpraOffscreenWorker.isAvailable(ssl_enabled);
+          const offscreen_input = document.getElementById("offscreen");
+          const offscreen_label = document.getElementById("offscreen_label");
+          offscreen_input.disabled = !offscreen_available;
+          let status_message = "";
+          if (offscreen_available) {
+            offscreen_label.classList.remove("disabled");
+          } else {
+            status_message = "not available in your browser";
+            offscreen_label.classList.add("disabled");
+          }
+
+          offscreen_input.setAttribute("title", status_message);
+          offscreen_label.setAttribute("title", status_message);
+        }
+
+        function update_password_input() {
+          const safe = is_password_safe();
+          password_input.disabled = !safe && !insecure_input.checked;
+          if (password_input.disabled) {
+            password_input.value = "";
+            password_input.title = "Typing a password would be insecure with these settings";
+          } else {
+            password_input.title = "Session Password";
+          }
+        }
+        insecure_input.onchange = function() {
+          update_password_input();
+        };
+
+        function update_insecure() {
+          const host = document.getElementById("server").value;
+          const safe = is_secure_connection() || Utilities.isSafeHost(host);
+          insecure_span.style.display = safe ? "none" : "block";
+          insecure_input.disabled = safe;
+          if (safe) {
+            // uncheck it since it is not needed
+            insecure_input.checked = false;
+          }
+          update_password_input();
+        }
+
+        function update_aes() {
+          if (aes_input.checked) {
+            $("select#encryption").find("option[value='']").remove();
+            $("select#encryption").show();
+            $("img#toggle-key").show();
+            $("span#aes-label").hide();
+            $("span#encryption-key-span").show();
+            const key_input = document.getElementById("key");
+            if (!key_input.value) {
+              key_input.focus();
+            }
+          } else {
+            $("select#encryption").hide();
+            $("select#encryption").append('<option value="" selected="selected"></option>');
+            $("img#toggle-key").hide();
+            $("span#aes-label").show();
+            $("span#encryption-key-span").hide();
+          }
+          update_insecure();
+        }
+        const encryption = (getstrparam("encryption") || "").toUpperCase();
+        if (encryption) {
+          let enc = encryption.split("-")[0];
+          if (enc == "AES") {
+            aes_input.checked = true;
+            let enc_mode = encryption.split("-")[1] || "CBC";
+            document.getElementById("encryption").value = "AES-" + enc_mode;
+          }
+        }
+        webtransport_input.onchange = function() {
+          // disable ssl and aes:
+          ssl_input.disabled = webtransport_input.checked;
+          aes_input.disabled = webtransport_input.checked;
+          if (webtransport_input.checked) {
+            // ssl is implied, so show it as enabled:
+            ssl_input.checked = true;
+            aes_input.checked = false;
+          }
+          update_aes();
+          host_address_changed();
+          update_insecure();
+        }
+        ssl_input.onchange = function() {
+          if (ssl_input.checked) {
+            aes_input.checked = false;
+          }
+          update_insecure();
+          update_offscreen();
+        }
+        aes_input.onchange = update_aes;
+        update_aes();
+        update_offscreen();
+        webtransport_input.onchange();
+
+        //vrefresh:
+        let animation_times = [];
+        let vrefresh = -1;
+
+        function animation_cb(now) {
+          let l = animation_times.push(now);
+          if (l > 100) {
+            animation_times.shift();
+          }
+          let t0 = animation_times[0];
+          if (now > t0 && l > 20) {
+            fps = Math.floor((1000 * (l - 1)) / (now - t0));
+            document.getElementById("vrefresh").value = "" + fps;
+            if (l <= 40) {
+              Utilities.debug("draw", "animation_cb", now, "fps", fps);
+            }
+          }
+          window.requestAnimationFrame(animation_cb);
+        }
+        window.requestAnimationFrame(animation_cb);
+
+        //reveal password and aes key:
+        function toggle_reveal(el) {
+          let x = document.getElementById(el);
+          if (x.type === "password") {
+            x.type = "text";
+            return "eye.png";
+          } else {
+            x.type = "password";
+            return "eye-slash.png";
+          }
+        }
+        $("#toggle-password").on("click", function() {
+          $("#toggle-password").attr("src", "./icons/" + toggle_reveal("password"));
+        });
+        $("#toggle-key").on("click", function() {
+          $("#toggle-key").attr("src", "./icons/" + toggle_reveal("key"));
+        });
+
+        // keep track of the currently selected action
+        // and update the label of the main action button:
+        const main_action_button = document.getElementById("main_action_button");
+        const action_shadow = document.getElementById("action_shadow");
+        const action_start_desktop = document.getElementById("action_start_desktop");
+        const action_start = document.getElementById("action_start");
+        const action_connect = document.getElementById("action_connect");
+        const action_elements = new Map();
+        action_elements.set("Shadow", action_shadow);
+        action_elements.set("Start Desktop", action_start_desktop);
+        action_elements.set("Start Command", action_start);
+        action_elements.set("Connect", action_connect);
+        for (const [action_label, action_element] of action_elements) {
+          // console.log(`${action_label} = ${action_element}`);
+          action_element.addEventListener('click', function() {
+            // console.log(action_label);
+            main_action_button.text = action_label;
+          }, false);
+        }
+
+        const action = getstrparam("action") || "";
+        if (action == "shadow") {
+          action_shadow.checked = true;
+          main_action_button.text = "Shadow";
+        } else if (action == "start-desktop") {
+          action_start_desktop.checked = true;
+          main_action_button.text = "Start Desktop";
+        } else if (action == "start") {
+          action_start.checked = true;
+          main_action_button.text = "Start Command";
+        } else {
+          action_connect.checked = true;
+          main_action_button.text = "Connect";
+        }
+        const start = getstrparam("start") || "";
+
+        function get_host_address(skip_credentials) {
+          let url = "http";
+          if (document.getElementById("ssl").checked) {
+            url += "s";
+          }
+          url += "://";
+          if (!skip_credentials) {
+            const username = document.getElementById("username").value;
+            if (username) {
+              url += username + "@";
+            }
+          }
+          const server = document.getElementById("server").value;
+          if (!server) {
+            //nothing we can do
+            error_fn("no server address");
+            return;
+          }
+          url += server;
+          const port = document.getElementById("port").value;
+          const iport = parseInt(port) || 0;
+          if (port && !iport) {
+            error_fn("invalid port number '" + port + "'");
+            return;
+          }
+          if (iport) {
+            url += ":" + port;
+          }
+          const path = document.getElementById("path").value;
+          if (path) {
+            if (!path.startsWith("/")) {
+              url += "/";
+            }
+            url += path;
+          }
+          if (!url.endsWith("/")) {
+            url += "/";
+          }
+          return url;
+        }
+
+        function json_action(uri, success_fn, error_fn) {
+          const url = get_host_address() + uri;
+          Utilities.json_action(url, success_fn, error_fn);
+        }
+
+        const command_category_icon = document.getElementById("command_category_icon");
+        const command_category = document.getElementById("command_category");
+        const command_entry_icon = document.getElementById("command_entry_icon");
+        const command_entry = document.getElementById("command_entry");
+
+        function load_icon(icon, src) {
+          const url = get_host_address(true) + src;
+          // Validate image URL to prevent XSS
+          if (!url.match(/^(https?:|data:image\/)[\x00-\x7F]*$/i)) {
+            Utilities.error("Invalid icon URL, rejecting:", url);
+            return;
+          }
+          icon.onload = function() {
+            Utilities.log("loaded icon", url);
+          };
+          icon.onerror = function(e) {
+            Utilities.error("error loading icon", url, ":", e);
+          };
+          icon.onabort = function(e) {
+            Utilities.error("aborted loading icon", url, ":", e);
+          };
+          icon.src = url;
+        }
+
+        function command_entry_changed() {
+          var cc = command_category.options[command_category.selectedIndex].innerHTML;
+          var c = command_entry.options[command_entry.selectedIndex].innerHTML;
+          Utilities.log("command_category=", cc, ", command_entry=", c);
+          load_icon(command_entry_icon, `MenuIcon/${cc}/${c}`);
+          $("#command_entry_icon").show();
+        }
+        command_entry.addEventListener("change", command_entry_changed);
+
+        function command_category_changed() {
+          var cc = command_category.options[command_category.selectedIndex].innerHTML;
+          Utilities.log("command_category=", cc);
+          load_icon(command_category_icon, `MenuIcon/${cc}`);
+          $("#command_category_icon").show();
+        }
+        command_category.addEventListener("change", command_category_changed);
+
+        function safe_command(command) {
+          return Utilities.removeChars('a-zA-Z0-9%_/\\"\\-', command);
+        }
+
+        function safe_name(name) {
+          return Utilities.removeChars('a-zA-Z0-9%"\\-', name);
+        }
+
+        function init_command_menu() {
+          $("#command_category_icon").hide();
+          $("#command_entry_icon").hide();
+          json_action(
+            "Menu",
+            function(xhr, response) {
+              let categories = Object.keys(response);
+              //find the category matching "start":
+              let default_start = start || "xterm";
+              let current_category = "";
+              for (let c in categories) {
+                let category = categories[c];
+                let entries = response[category].Entries;
+                for (let e in entries) {
+                  let entry = entries[e];
+                  let command_exec = entry.TryExec || entry.Exec;
+                  if (default_start == command_exec) {
+                    current_category = category;
+                  }
+                }
+              }
+
+              function populate_commands() {
+                let selected_category = command_category.value;
+                let entries = response[selected_category].Entries;
+                command_entry.innerText = null;
+                for (let e in entries) {
+                  let entry = entries[e];
+                  const command_exec = safe_command(entry.TryExec || entry.Exec);
+                  const name = safe_name(entry.Name);
+                  if (default_start == command_exec) {
+                    $("select#command_entry").append(
+                      '<option selected="selected" value="' + command_exec + '">' + name + "</option>"
+                    );
+                  } else {
+                    $("select#command_entry").append(
+                      '<option value="' + command_exec + '">' + name + "</option>"
+                    );
+                  }
+                }
+                $("select#command_entry").show();
+                $("#start_command").hide();
+                command_entry_changed();
+              }
+              command_category.addEventListener("change", populate_commands);
+              command_category.innerText = null;
+              for (let c in categories) {
+                let category = safe_name(categories[c]);
+                if (category == current_category) {
+                  $("select#command_category").append(
+                    '<option selected="selected">' + category + "</option>"
+                  );
+                } else {
+                  $("select#command_category").append(
+                    "<option>" + category + "</option>"
+                  );
+                }
+              }
+              command_category_changed();
+              $("select#command_category").show();
+              populate_commands();
+              command_entry_changed();
+            },
+            function(error) {
+              $("select#command_category").hide();
+              $("select#command_entry").hide();
+              $("#start_command").show();
+            }
+          );
+        }
+
+        const desktop_entry_icon = document.getElementById("desktop_entry_icon");
+        const desktop_entry = document.getElementById("desktop_entry");
+
+        function desktop_entry_changed() {
+          var de = desktop_entry.options[desktop_entry.selectedIndex].innerHTML;
+          Utilities.log("desktop_session=", de);
+          load_icon(desktop_entry_icon, `DesktopMenuIcon/${de}`);
+        }
+        desktop_entry.addEventListener("change", desktop_entry_changed);
+
+        function init_desktop_menu() {
+          $("#desktop_entry_icon").hide();
+          json_action(
+            "DesktopMenu",
+            function(xhr, response) {
+              var desktop_sessions = Object.keys(response);
+              desktop_entry.innerText = null;
+              let default_start_desktop = start;
+              if (!default_start_desktop) {
+                const PDE = ["xfce", "xfce session", "openbox", "gnome"];
+                for (let p in PDE) {
+                  let de = PDE[p];
+                  for (let d in desktop_sessions) {
+                    let desktop_session = desktop_sessions[d];
+                    if (desktop_session.toLowerCase() == de) {
+                      let attributes = response[desktop_session];
+                      default_start_desktop = attributes.TryExec || attributes.Exec;
+                      break;
+                    }
+                  }
+                  if (default_start_desktop) {
+                    break;
+                  }
+                }
+              }
+              for (let d in desktop_sessions) {
+                let desktop_session = desktop_sessions[d];
+                let attributes = response[desktop_session];
+                let command_exec = safe_command(attributes.TryExec || attributes.Exec);
+                let selected = "";
+                if (default_start_desktop && default_start_desktop == command_exec) {
+                  selected = ' selected="selected" ';
+                  default_start_desktop = null;
+                }
+                $("select#desktop_entry").append(
+                  "<option" + selected + ' value="' + command_exec + '">' + safe_name(desktop_session) + "</option>"
+                );
+              }
+              desktop_entry_changed();
+              $("select#desktop_entry").show();
+              $("#desktop_entry_icon").show();
+              $("#start_desktop_command").hide();
+            },
+            function(error) {
+              $("select#desktop_entry").hide();
+              $("#start_desktop_command").show();
+            }
+          );
+        }
+
+        function safe_session(name) {
+          return Utilities.removeChars('a-zA-Z0-9\\:% \\(\\)\\"\\-', name);
+        }
+        const display = getstrparam("display") || "";
+
+        function init_shadow_display() {
+          json_action(
+            "Displays",
+            function(xhr, response) {
+              var displays = Object.keys(response);
+              const select_shadow_display = document.getElementById("select_shadow_display");
+              select_shadow_display.innerText = null;
+              for (let d in displays) {
+                let display_option = displays[d];
+                let label = safe_session(display_option);
+                let selected = "";
+                let attr = response[display_option];
+                if (attr && attr.wmname) {
+                  label = attr.wmname + " on " + display_option;
+                }
+                if (display == display_option) {
+                  selected = ' selected="selected" ';
+                }
+                $("select#select_shadow_display").append(
+                  "<option" + selected + ">" + label + "</option>"
+                );
+              }
+              if (displays.length == 0) {
+                $("span#select_shadow_display_warning").show();
+                $("span#select_shadow_display_warning").text("no displays found");
+              } else {
+                $("span#select_shadow_display_warning").hide();
+                $("span#select_shadow_display_warning").text("");
+              }
+              $("select#select_shadow_display").show();
+              $("#shadow_display").hide();
+            },
+            function(error) {
+              $("select#select_shadow_display").hide();
+              $("#shadow_display").show();
+            }
+          );
+        }
+
+        function init_connect_display() {
+          json_action(
+            "Sessions",
+            function(xhr, response) {
+              var sessions = Object.keys(response);
+              const select_display = document.getElementById("select_display");
+              select_display.innerText = null;
+              let count = 0;
+              for (let s in sessions) {
+                let session = sessions[s];
+                let attributes = response[session];
+                let session_type = attributes["session-type"];
+                if (session_type == "proxy") {
+                  //cannot attach to a proxy
+                  continue;
+                }
+                let session_string = "";
+                if (attributes["session-name"]) {
+                  session_string = attributes["session-name"] + " ";
+                }
+                session_string += session;
+                if (attributes.username) {
+                  session_string += " (" + attributes.username + ")";
+                }
+                let selected = "";
+                if (display == session) {
+                  selected = ' selected="selected" ';
+                }
+                $("select#select_display").append(
+                  "<option" + selected + " value=" + session + ">" + safe_session(session_string) + "</option>"
+                );
+                count += 1;
+              }
+              if (count == 0) {
+                $("span#select_display_warning").show();
+                $("span#select_display_warning").text("no sessions found");
+              } else {
+                $("span#select_display_warning").hide();
+                $("span#select_display_warning").text("");
+              }
+              $("select#select_display").show();
+              $("#display").hide();
+
+              function display_populate_username() {
+                //populate the username if we have it
+                let session = select_display.value;
+                if (session) {
+                  let attributes = response[session];
+                  if (attributes && attributes.username) {
+                    document.getElementById("username").value = attributes.username;
+                  }
+                }
+              }
+
+              select_display.onchange = display_populate_username;
+              display_populate_username();
+            },
+            function(error) {
+              $("select#select_display").hide();
+              $("#display").show();
+            }
+          );
+        }
+
+        function show_mode(mode) {
+          const is_proxy = mode == "" || (mode.indexOf("seamless") < 0 && mode.indexOf("desktop") < 0 && mode.indexOf("shadow") < 0);
+          Utilities.debug("show_mode(", mode, ")");
+          let server_info = "";
+          let host_address = get_host_address(true);
+          const got_mode = mode.length > 0;
+          if (got_mode > 0) {
+            server_info = host_address + " is a '" + mode + "' server";
+          } else {
+            server_info = "no information available for " + host_address;
+          }
+          document.getElementById("server-info").innerText = server_info;
+          document.getElementById("server-info").className = got_mode ? "" : "warning";
+          if (is_proxy) {
+            //show all options:
+            $("#action_connect_group").show();
+            $("#action_start_group").show();
+            $("#action_start_desktop_group").show();
+            $("#action_shadow_group").show();
+            //(re)populate the drop down menus:
+            init_connect_display();
+            init_command_menu();
+            init_desktop_menu();
+            init_shadow_display();
+          } else {
+            //only attach is possible, select it and hide everything:
+            $("#action_connect").prop("checked", true);
+            $("#action_connect_group").hide();
+            $("#action_start_group").hide();
+            $("#action_start_desktop_group").hide();
+            $("#action_shadow_group").hide();
+            $("#command_category_icon").hide();
+            $("#command_entry_icon").hide();
+            $("#desktop_entry_icon").hide();
+          }
+        }
+
+        function init_mode() {
+          json_action(
+            "Info",
+            function(xhr, response) {
+              Utilities.log("Info=", response);
+              let mode = response.mode || "";
+              show_mode(mode);
+            },
+            function(error) {
+              show_mode("");
+            }
+          );
+        }
+        init_mode();
+
+        var target_changed_timer = 0;
+        let ajax_delay = 2000;
+        let watched_elements = ["server", "port", "ssl", "encryption", "aes"];
+        var host_address = "";
+
+        function cancel_changed_timer() {
+          if (target_changed_timer) {
+            clearTimeout(target_changed_timer);
+            target_changed_timer = 0;
+          }
+        }
+
+        function host_address_changed() {
+          cancel_changed_timer();
+          const url = get_host_address();
+          if (url != host_address) {
+            host_address = url;
+            Utilities.debug("host address changed to", url);
+            init_mode();
+          }
+        }
+        for (var i = 0, l = watched_elements.length; i < l; i++) {
+          let watched_element = watched_elements[i];
+          let el = $("#" + watched_element);
+          el.on("change", function() {
+            Utilities.log(watched_element, "changed");
+            update_password_input();
+            host_address_changed();
+          });
+          el.on("paste", function() {
+            Utilities.log(watched_element, "pasted");
+            update_password_input();
+            host_address_changed();
+          });
+          el.on("keyup", function() {
+            Utilities.log(watched_element, "key event");
+            update_password_input();
+            cancel_changed_timer();
+            target_changed_timer = setTimeout(host_address_changed, ajax_delay);
+          });
+          el.on("keydown", function() {
+            update_password_input();
+            cancel_changed_timer();
+          });
+        }
+
+        function set_exit_actions(disabled) {
+          const opacity = disabled ? 0.6 : 1;
+          $("input#exit_with_children").prop("disabled", disabled);
+          $("input#exit_with_client").prop("disabled", disabled);
+          $("li.exit_with_children span").css("opacity", opacity);
+          $("li.exit_with_client span").css("opacity", opacity);
+          if (disabled) {
+            $("input#exit_with_children").prop("checked", false);
+            $("input#exit_with_client").prop("checked", false);
+          }
+        }
+        $(document).on("click", '[name="action"]', function() {
+          const action = $(this).val();
+          set_exit_actions(action == "connect");
+        });
+        $('input:radio[value="' + action + '"]').click();
+
+        const clipboard_preferred_format = getstrparam("clipboard_preferred_format") || "text/plain";
+        document.getElementById("clipboard_preferred_format").value = clipboard_preferred_format;
+
+        const encoding = getstrparam("encoding") || "auto";
+        document.getElementById("encoding").value = encoding;
+
+        let bandwidth_limit = getintparam("bandwidth_limit", 0);
+        if (bandwidth_limit > 0) {
+          const ci = Utilities.getConnectionInfo();
+          if (ci) {
+            bandwidth_limit = ci["downlink"];
+          }
+        }
+        document.getElementById("bandwidth_limit").value = bandwidth_limit || 0;
+
+        let keyboard_layout = getstrparam("keyboard_layout");
+        if (keyboard_layout == null) {
+          keyboard_layout = Utilities.getKeyboardLayout();
+        }
+        document.getElementById("keyboard_layout").value = keyboard_layout;
+        json_action("favicon.png?echo-headers", function(xhr, response) {
+          const headers = Utilities.ParseResponseHeaders(xhr.getAllResponseHeaders());
+          Utilities.debug("headers:", headers);
+          let lang = headers["Echo-Accept-Language"];
+          //ie: lang = "en-gb,en-us;q=0.8,en;q=0.6"
+          if (lang) {
+            //just the first option:
+            Utilities.debug("accept-language:", lang);
+            lang = lang.split(",")[0]; //ie: lang="en-gb"
+            Utilities.debug("first language:", lang);
+            let locale = lang.split("-")[1];
+            if (locale) {
+              locale = locale.toLowerCase();
+              Utilities.debug("request locale:", locale);
+              if (locale != keyboard_layout) {
+                keyboard_layout = locale;
+                document.getElementById("keyboard_layout").value = keyboard_layout;
+              }
+            }
+          }
+        });
+        const audio_codec = getstrparam("audio_codec") || "";
+        const audio_codec_select = document.getElementById("audio_codec");
+        const ignore_audio_blacklist = getboolparam("ignore_audio_blacklist", false);
+        if (ignore_audio_blacklist) {
+          $("input#ignore_audio_blacklist").prop("value", true);
+        }
+
+        const codecs_supported = MediaSourceUtil.get_supported_codecs(
+          getboolparam("mediasource", true),
+          getboolparam("aurora", true),
+          getboolparam("http-stream", true),
+          ignore_audio_blacklist
+        );
+        let best_codec = audio_codec;
+        if (!best_codec) {
+          best_codec = MediaSourceUtil.get_best_codec(codecs_supported);
+        }
+        for (let codec_option in codecs_supported) {
+          const option = document.createElement("option");
+          option.value = codec_option;
+          option.textContent = MediaSourceConstants.CODEC_DESCRIPTION[codec_option] || codecs_supported[codec_option];
+          option.selected = codec_option == best_codec;
+          audio_codec_select.add(option);
+        }
+        if (!codecs_supported) {
+          $("input#sound").prop("disabled", true);
+        } else {
+          //enable sound checkbox if the codec is changed:
+          audio_codec_select.onchange = function() {
+            document.getElementById("sound").checked = true;
+          };
+        }
+        const sound = getboolparam("sound");
+        $("input#sound").prop("checked", sound && Object.keys(codecs_supported).length > 0);
+
+        const bool_props = [
+          "keyboard",
+          "clipboard",
+          "printing",
+          "file_transfer",
+          "exit_with_children",
+          "exit_with_client",
+          "sharing",
+          "steal",
+          "reconnect",
+          "swap_keys",
+          "video",
+          "mediasource_video",
+          "floating_menu",
+          "autohide",
+          "clock",
+          "scroll_reverse_x",
+          "debug_main",
+          "debug_keyboard",
+          "debug_geometry",
+          "debug_mouse",
+          "debug_clipboard",
+          "debug_draw",
+          "debug_audio",
+          "debug_network",
+        ];
+        for (let i = 0; i < bool_props.length; i++) {
+          const prop = bool_props[i];
+          const def = DEFAULT_ON.includes(prop);
+          document.getElementById(prop).checked = getboolparam(prop, def);
+        }
+        //scroll_reverse_y has 3 options: Yes, No, Auto
+        const scroll_reverse_y = getboolparam("scroll_reverse_y", "auto");
+        document.getElementById("scroll_reverse_y").value = scroll_reverse_y;
+
+        function toggle_mediasource_video() {
+          $("#mediasource_video").prop("disabled", !video.checked);
+        }
+        const video = document.getElementById("video");
+        video.onchange = toggle_mediasource_video;
+        toggle_mediasource_video();
+
+        const floating_menu_checkbox = $("#floating_menu");
+
+        function set_menu_attributes_visibility() {
+          if (floating_menu_checkbox.is(":checked")) {
+            $("#clock").removeAttr("disabled");
+            $("#autohide").removeAttr("disabled");
+          } else {
+            $("#clock").attr("disabled", true);
+            $("#autohide").attr("disabled", true);
+          }
+        }
+        floating_menu_checkbox.change(set_menu_attributes_visibility);
+        set_menu_attributes_visibility();
+        let toolbar_position = getstrparam("toolbar_position") || "top";
+        if (toolbar_position) {
+          document.getElementById("toolbar_position").value = toolbar_position;
+        }
+
+        aes_input.onchange();
+
+        //this may override default values (ie: terminate flags are off for connect mode):
+        set_exit_actions(action == "connect" || action == "");
+
+        $("#expandopts").click(function() {
+          $("#hiddenopts").slideToggle();
+        });
+        //delete session params:
+        try {
+          Utilities.clearSessionStorage();
+        } catch (e) {
+          //ignore
+        }
+
+        function submit_if_enter(e) {
+          if (!e) {
+            const e = window.event;
+          }
+          if (e.keyCode == 13) {
+            e.preventDefault();
+            doConnect();
+          }
+        }
+        const submit_text_fields = ["server", "port", "username", "password"];
+        for (let i = 0; i < submit_text_fields.length; i++) {
+          document
+            .getElementById(submit_text_fields[i])
+            .addEventListener("keydown", submit_if_enter);
+        }
+      }
+
+      $(document).ready(function() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "./default-settings.txt");
+        xhr.onload = function() {
+          fill_form(Utilities.parseINIString(xhr.responseText));
+        };
+        xhr.onerror = function() {
+          fill_form({});
+        };
+        xhr.onabort = function() {
+          fill_form({});
+        };
+        xhr.send();
+      });
+
+    </script>
+  </body>
+
+</html>

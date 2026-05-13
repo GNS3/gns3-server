@@ -75,10 +75,10 @@ class TestUserRoutes:
         (
                 ("email", "user2@email.com", status.HTTP_400_BAD_REQUEST),
                 ("username", "user2", status.HTTP_400_BAD_REQUEST),
-                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("password", "short", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("username", "ab", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
         )
     )
     async def test_user_registration_fails_when_credentials_are_taken(
@@ -101,10 +101,10 @@ class TestUserRoutes:
                 ("email", "user@email.com", status.HTTP_200_OK),
                 ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
                 ("username", "user2", status.HTTP_400_BAD_REQUEST),
-                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("password", "short", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_ENTITY),
-                ("username", "ab", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
+                ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
                 ("full_name", "John Doe", status.HTTP_200_OK),
                 ("password", "password123", status.HTTP_200_OK),
                 ("is_active", True, status.HTTP_200_OK),
@@ -201,7 +201,7 @@ class TestAuthTokens:
         (
                 ("use correct secret", "asdf"),  # use wrong token
                 ("use correct secret", ""),  # use wrong token
-                ("ABC123", "use correct token"),  # use wrong secret
+                (OctKey.generate_key().as_dict()['k'], "use correct token"),  # use wrong secret
         ),
     )
     async def test_error_when_token_or_secret_is_wrong(
@@ -247,6 +247,7 @@ class TestUserLogin:
         key = OctKey.import_key(jwt_secret)
         payload = jwt.decode(token, key, algorithms=["HS256"])
         assert "sub" in payload.claims
+        assert "ver" in payload.claims
         username = payload.claims.get("sub")
         assert username == test_user.username
 
@@ -259,7 +260,7 @@ class TestUserLogin:
         (
             ("wrong_username", "user1_password", status.HTTP_401_UNAUTHORIZED),
             ("user1", "wrong_password", status.HTTP_401_UNAUTHORIZED),
-            ("user1", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+            ("user1", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
         ),
     )
     async def test_user_with_wrong_creds_doesnt_receive_token(
@@ -371,6 +372,117 @@ class TestUserMe:
             json=update_user
         )
         assert response.status_code == status_code
+
+
+class TestLogout:
+
+    async def test_logout_returns_no_content(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # login to get a fresh token that includes token_version
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        token = response.json()["access_token"]
+
+        response = await unauthorized_client.post(
+            app.url_path_for("logout"),
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_token_is_rejected_after_logout(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession,
+    ) -> None:
+
+        # login and get a token
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        token = response.json()["access_token"]
+
+        # logout — increments token_version
+        await unauthorized_client.post(
+            app.url_path_for("logout"),
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        # old token must now be rejected
+        response = await unauthorized_client.get(
+            app.url_path_for("get_logged_in_user"),
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["message"] == f"Token has been revoked for '{test_user.username}'"
+
+    async def test_new_token_works_after_logout_and_relogin(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        credentials = {"username": test_user.username, "password": "user1_password"}
+
+        # login, then logout
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        old_token = response.json()["access_token"]
+        await unauthorized_client.post(
+            app.url_path_for("logout"),
+            headers={"Authorization": f"Bearer {old_token}"}
+        )
+
+        # login again to get a fresh token
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        new_token = response.json()["access_token"]
+
+        # new token must work
+        response = await unauthorized_client.get(
+            app.url_path_for("get_logged_in_user"),
+            headers={"Authorization": f"Bearer {new_token}"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["username"] == test_user.username
+
+    async def test_stale_version_token_is_rejected(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession,
+    ) -> None:
+
+        # craft a token with ver=0 while the user's token_version is already higher
+        user_repo = UsersRepository(db_session)
+        user_in_db = await user_repo.get_user_by_username(test_user.username)
+
+        # force token_version ahead so any ver=0 token is stale
+        await user_repo.logout_user(user_in_db.user_id)
+
+        stale_token = auth_service.create_access_token(test_user.username, token_version=0)
+        response = await unauthorized_client.get(
+            app.url_path_for("get_logged_in_user"),
+            headers={"Authorization": f"Bearer {stale_token}"}
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_logout_without_token_returns_unauthorized(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+    ) -> None:
+
+        response = await unauthorized_client.post(app.url_path_for("logout"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 class TestSuperAdmin:

@@ -223,6 +223,7 @@ async def test_json(project, compute):
         "filters": {},
         "link_style": {},
         "suspend": False,
+        'wireshark': False,
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
@@ -381,3 +382,40 @@ async def test_available_filters(project, compute):
     node2._ports = [EthernetPort("E0", 0, 0, 4)]
     await link.add_node(node2, 0, 4)
     assert len(link.available_filters()) > 0
+
+
+@pytest.mark.asyncio
+async def test_update_link_style(project, compute):
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 1, 3)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    project.dump = MagicMock()
+
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 1, 3)
+
+    await link.update_link_style({
+        "color": "#00ff00",
+        "width": 3,
+        "type": 1,
+        "link_type": "flowchart",
+        "bezier_curviness": 150,
+        "flowchart_roundness": 20,
+    })
+
+    assert link.asdict()["link_style"] == {
+        "color": "#00ff00",
+        "width": 3,
+        "type": 1,
+        "link_type": "flowchart",
+        "bezier_curviness": 150,
+        "flowchart_roundness": 20,
+    }
+    link._project.emit_notification.assert_called_with("link.updated", link.asdict())
+    assert project.dump.called

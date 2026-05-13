@@ -47,12 +47,18 @@ async def get_user_from_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    username = auth_service.get_username_from_token(token)
-    user = await user_repo.get_user_by_username(username)
+    token_data = auth_service.get_token_data(token)
+    user = await user_repo.get_user_by_username(token_data.username)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if token_data.token_version != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token has been revoked for '{token_data.username}'",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
@@ -84,16 +90,30 @@ async def get_current_active_user_from_websocket(
         user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> Optional[schemas.User]:
 
-    await websocket.accept()
+    # Extract requested subprotocols from headers for proper WebSocket negotiation
+    # This is critical for protocols like xpra that require specific subprotocols
+    scope = websocket.scope
+    headers = dict(scope.get("headers", []))
+    requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
+    requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
+
+    # Accept the connection with the first requested subprotocol (if any)
+    subprotocol = requested_protocols[0] if requested_protocols else None
+    await websocket.accept(subprotocol=subprotocol)
 
     try:
-        username = auth_service.get_username_from_token(token)
-        user = await user_repo.get_user_by_username(username)
+        token_data = auth_service.get_token_data(token)
+        user = await user_repo.get_user_by_username(token_data.username)
 
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Could not validate credentials for '{username}'"
+                detail=f"Could not validate credentials for '{token_data.username}'"
+            )
+        if token_data.token_version != user.token_version:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Token has been revoked for '{token_data.username}'"
             )
 
         # Super admin is always authorized
@@ -103,7 +123,7 @@ async def get_current_active_user_from_websocket(
         if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"'{username}' is not an active user"
+                detail=f"'{token_data.username}' is not an active user"
             )
 
         return user

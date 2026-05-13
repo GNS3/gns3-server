@@ -22,10 +22,10 @@ import aiohttp
 import asyncio
 import ipaddress
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status, Query, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
-from typing import List, Callable
+from typing import List, Callable, Optional
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -105,6 +105,16 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)) -> No
     return node
 
 
+def _check_node_type(node: Node, *required_types: str) -> None:
+    """
+    Raise ControllerBadRequestError if node is not one of the required types.
+    """
+
+    if node.node_type not in required_types:
+        type_str = "/".join(required_types)
+        raise ControllerBadRequestError(f"This endpoint is only supported on a {type_str} node")
+
+
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
@@ -135,17 +145,40 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
     response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Node.Audit"))]
 )
-def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
+def get_nodes(
+    project: Project = Depends(dep_project),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)")
+) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
 
     Required privilege: Node.Audit
+
+    Query Parameters:
+    - tags: Filter by tags. Multiple tags are ANDed together.
+            Example: ?tags=vendor:cisco&tags=model:7200
     """
 
     if project.status == "closed":
         # allow to retrieve nodes from a closed project
-        return project.nodes.values()
-    return [v.asdict() for v in project.nodes.values()]
+        nodes = list(project.nodes.values())
+    else:
+        nodes = [v.asdict() for v in project.nodes.values()]
+
+    # Filter by tags if provided (all filter tags have to match the node tags)
+    if tags:
+        filtered_nodes = []
+        for node in nodes:
+            node_tags = node.get("tags") or []
+            match = True
+            for tag_filter in tags:
+                if tag_filter not in node_tags:
+                    match = False
+                    break
+            if match:
+                filtered_nodes.append(node)
+        return filtered_nodes
+    return nodes
 
 
 @router.post("/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
@@ -156,7 +189,11 @@ async def start_all_nodes(project: Project = Depends(dep_project)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await project.start_all()
+    try:
+        await project.start_all()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.post("/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
@@ -167,7 +204,11 @@ async def stop_all_nodes(project: Project = Depends(dep_project)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await project.stop_all()
+    try:
+        await project.stop_all()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
@@ -178,7 +219,11 @@ async def suspend_all_nodes(project: Project = Depends(dep_project)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await project.suspend_all()
+    try:
+        await project.suspend_all()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.post("/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
@@ -189,8 +234,12 @@ async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await project.stop_all()
-    await project.start_all()
+    try:
+        await project.stop_all()
+        await project.start_all()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.get("/{node_id}", response_model=schemas.Node, dependencies=[Depends(has_privilege("Node.Audit"))])
@@ -270,15 +319,18 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
 )
-async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> None:
+async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep_node)) -> None:
     """
     Start a node.
 
     Required privilege: Node.PowerMgmt
     """
 
-    await node.start(data=start_data)
-
+    try:
+        await node.start(data=start_data)
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 @router.post(
     "/{node_id}/stop",
@@ -292,7 +344,11 @@ async def stop_node(node: Node = Depends(dep_node)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await node.stop()
+    try:
+        await node.stop()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.post(
@@ -307,7 +363,11 @@ async def suspend_node(node: Node = Depends(dep_node)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await node.suspend()
+    try:
+        await node.suspend()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 
 @router.post(
@@ -322,8 +382,11 @@ async def reload_node(node: Node = Depends(dep_node)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await node.reload()
-
+    try:
+        await node.reload()
+    except HTTPException as e:
+        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+            raise
 
 @router.post(
     "/{node_id}/isolate",
@@ -384,8 +447,7 @@ async def auto_idlepc(node: Node = Depends(dep_node)) -> dict:
     Required privilege: Node.Audit
     """
 
-    if node.node_type != "dynamips":
-        raise ControllerBadRequestError("Auto Idle-PC is only supported on a Dynamips node")
+    _check_node_type(node, "dynamips")
     return await node.dynamips_auto_idlepc()
 
 
@@ -397,8 +459,7 @@ async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
     Required privilege: Node.Audit
     """
 
-    if node.node_type != "dynamips":
-        raise ControllerBadRequestError("Idle-PC proposals is only supported on a Dynamips node")
+    _check_node_type(node, "dynamips")
     return await node.dynamips_idlepc_proposals()
 
 
@@ -418,8 +479,7 @@ async def create_disk_image(
     Required privilege: Node.Allocate
     """
 
-    if node.node_type != "qemu":
-        raise ControllerBadRequestError("Creating a disk image is only supported on a Qemu node")
+    _check_node_type(node, "qemu")
     await node.post(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
@@ -439,8 +499,7 @@ async def update_disk_image(
     Required privilege: Node.Allocate
     """
 
-    if node.node_type != "qemu":
-        raise ControllerBadRequestError("Updating a disk image is only supported on a Qemu node")
+    _check_node_type(node, "qemu")
     await node.put(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
@@ -459,9 +518,25 @@ async def delete_disk_image(
     Required privilege: Node.Allocate
     """
 
-    if node.node_type != "qemu":
-        raise ControllerBadRequestError("Deleting a disk image is only supported on a Qemu node")
+    _check_node_type(node, "qemu")
     await node.delete(f"/disk_image/{disk_name}")
+
+
+@router.get("/{node_id}/files", response_model=List[schemas.NodeFile], dependencies=[Depends(has_privilege("Node.Audit"))])
+async def list_node_files(node: Node = Depends(dep_node)) -> List[schemas.NodeFile]:
+    """
+    List files in a node directory with detailed metadata.
+
+    Required privilege: Node.Audit
+    """
+
+    node_type = node.node_type
+    res = await node.compute.http_query(
+        "GET",
+        f"/projects/{node.project.id}/nodes/{node_type}/{node.id}/files",
+        timeout=None
+    )
+    return res.json
 
 
 @router.get("/{node_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Node.Audit"))])
@@ -588,6 +663,80 @@ async def ws_console(
     except aiohttp.ClientError as e:
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
+@router.websocket("/{node_id}/console/vnc")
+async def vnc_console(
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
+        node: Node = Depends(dep_node)
+) -> None:
+    """
+    VNC WebSocket console.
+
+    Required privilege: Node.Console
+    """
+
+    if current_user is None:
+        return
+
+    compute = node.compute
+    log.info(
+        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller VNC console WebSocket"
+    )
+
+    compute_host = compute.host
+    try:
+        # handle IPv6 address
+        ip = ipaddress.ip_address(compute_host)
+        if isinstance(ip, ipaddress.IPv6Address):
+            compute_host = '[' + compute_host + ']'
+    except ValueError:
+        pass
+
+    vnc_console_compute_url = (
+        f"{websocket.url.scheme}://{compute_host}:{compute.port}/v3/compute/projects/"
+        f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/vnc"
+    )
+
+    async def vnc_receive(vnc_console_compute):
+        """
+        Receive binary WebSocket data from client and forward to compute VNC console WebSocket.
+        """
+
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                if data:
+                    await vnc_console_compute.send_bytes(data)
+        except WebSocketDisconnect:
+            await vnc_console_compute.close()
+            log.info(
+                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+                f" VNC console WebSocket"
+            )
+
+    try:
+        # receive binary data from compute VNC console WebSocket and forward to client
+        log.info(f"Forwarding VNC console WebSocket to '{vnc_console_compute_url}'")
+        server_config = Config.instance().settings.Server
+        user = server_config.compute_username
+        password = server_config.compute_password
+        if not user:
+            raise ControllerForbiddenError("Compute username is not set")
+        user = user.strip()
+        if user and password:
+            auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+        else:
+            auth = aiohttp.BasicAuth(user, "")
+        ssl_context = Controller.instance().ssl_context()
+        async with HTTPClient.get_client().ws_connect(vnc_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
+            asyncio.ensure_future(vnc_receive(ws))
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+    except aiohttp.ClientError as e:
+        log.error(f"Client error received when forwarding to compute VNC console WebSocket: {e}")
 
 @router.post(
     "/console/reset",

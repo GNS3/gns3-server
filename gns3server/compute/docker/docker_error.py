@@ -31,3 +31,7 @@ class DockerHttp304Error(DockerError):
 
 class DockerHttp404Error(DockerError):
     pass
+
+
+class DockerHttp409Error(DockerError):
+    pass

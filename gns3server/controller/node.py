@@ -27,6 +27,7 @@ from .controller_error import (
     ComputeError,
     ComputeConflictError
 )
+from .node_types import BUILTIN_NODE_TYPES
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
 from ..utils import macaddress_to_int, int_to_macaddress
@@ -97,6 +98,7 @@ class Node:
         self._y = 0
         self._z = 1  # default z value is 1
         self._locked = False
+        self._tags = []
         self._ports = None
         self._symbol = None
         self._custom_adapters = []
@@ -111,7 +113,7 @@ class Node:
         self._first_port_name = None
         self._console_auto_start = False
 
-        # This properties will be recompute
+        # This properties will be recomputed
         ignore_properties = ("width", "height", "hover_symbol")
         self.properties = kwargs.pop("properties", {})
 
@@ -217,6 +219,14 @@ class Node:
     @properties.setter
     def properties(self, val):
         self._properties = val
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, val):
+        self._tags = val
 
     def _base_config_file_content(self, path):
         if not os.path.isabs(path):
@@ -416,6 +426,7 @@ class Node:
                 await self.parse_node_response(response.json)
                 return True
             trial += 1
+        return False
 
     async def update(self, **kwargs):
         """
@@ -443,8 +454,7 @@ class Node:
                     if (
                         prop == "name"
                         and self.status == "started"
-                        and self._node_type
-                        not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch")
+                        and self._node_type not in BUILTIN_NODE_TYPES
                     ):
                         raise ControllerError("Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
@@ -529,37 +539,43 @@ class Node:
                     del data[k]
                     del self._properties[k]  # We send the file only one time
         data["name"] = self._name
+
+        # For remote computes, convert absolute image paths to relative paths
+        # The remote compute will search for the image in its own configured directories
+        if self._compute.id != "local":
+            # Image path fields for various node types
+            image_path_fields = {
+                # Common fields (IOU, Docker, etc.)
+                "path", "image",
+                # QEMU-specific fields
+                "hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image",
+                "cdrom_image", "bios_image", "initrd", "kernel_image",
+                # VMware-specific fields
+                "vmx_path",
+            }
+
+            for field in image_path_fields:
+                if field in data and data[field] and os.path.isabs(data[field]):
+                    data[field] = os.path.basename(data[field])
+
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
-        if self._console_type and self._node_type not in (
-            "cloud",
-            "nat",
-            "ethernet_hub",
-            "frame_relay_switch",
-            "atm_switch",
-        ):
+        if self._console_type and self._node_type not in (BUILTIN_NODE_TYPES - {"ethernet_switch"}):
             # console_type is not supported by all builtin nodes excepting Ethernet switch
             data["console_type"] = self._console_type
         if self._aux:
             # aux is optional for builtin nodes
             data["aux"] = self._aux
-        if self._aux_type and self._node_type not in (
-            "cloud",
-            "nat",
-            "ethernet_switch",
-            "ethernet_hub",
-            "frame_relay_switch",
-            "atm_switch",
-        ):
+        if self._aux_type and self._node_type not in BUILTIN_NODE_TYPES:
             # aux_type is not supported by all builtin nodes
             data["aux_type"] = self._aux_type
         if self.custom_adapters:
             data["custom_adapters"] = self.custom_adapters
 
         # None properties are not be sent because it can mean the emulator doesn't support it
-        for key in list(data.keys()):
-            if data[key] is None or data[key] == {} or key in self.CONTROLLER_ONLY_PROPERTIES:
+        for key, value in list(data.items()):
+            if value is None or value == {} or key in self.CONTROLLER_ONLY_PROPERTIES:
                 del data[key]
 
         return data
@@ -617,7 +633,7 @@ class Node:
         Reset the console
         """
 
-        if self._console and self._console_type == "telnet":
+        if self._console and self._console_type in ("telnet", "ssh"):
             try:
                 await self.post("/console/reset", timeout=240)
             except asyncio.TimeoutError:
@@ -748,10 +764,11 @@ class Node:
         elif self._node_type == "docker":
             for adapter_number in range(0, self._properties["adapters"]):
                 custom_adapter_settings = {}
-                for custom_adapter in self.custom_adapters:
-                    if custom_adapter["adapter_number"] == adapter_number:
-                        custom_adapter_settings = custom_adapter
-                        break
+                if self.custom_adapters:
+                    for custom_adapter in self.custom_adapters:
+                        if custom_adapter["adapter_number"] == adapter_number:
+                            custom_adapter_settings = custom_adapter
+                            break
                 port_name = f"eth{adapter_number}"
                 port_name = custom_adapter_settings.get("port_name", port_name)
                 mac_address = custom_adapter_settings.get("mac_address")
@@ -823,6 +840,7 @@ class Node:
                 "port_segment_size": self._port_segment_size,
                 "first_port_name": self._first_port_name,
                 "custom_adapters": self._custom_adapters,
+                "tags": self._tags,
         }
 
         if topology_dump:

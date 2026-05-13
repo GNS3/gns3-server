@@ -97,19 +97,25 @@ class TestCloudNodesRoutes:
             vm: dict
     ) -> None:
 
-        params = {"type": "nio_udp",
-                  "lport": 4242,
-                  "rport": 4343,
-                  "rhost": "127.0.0.1"}
+        params = {
+            "type": "nio_udp",
+            "lport": 4242,
+            "rport": 4343,
+            "rhost": "127.0.0.1",
+            "filters": {"packet_loss": 10}
+        }
 
-        url = app.url_path_for("compute:create_cloud_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
-        await compute_client.post(url, json=params)
+        url = app.url_path_for(
+            "compute:create_cloud_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0")
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["filters"] == {"packet_loss": 10}
+        params["filters"].clear()
 
-        params["filters"] = {}
         url = app.url_path_for("compute:create_cloud_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
@@ -118,6 +124,7 @@ class TestCloudNodesRoutes:
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
+        assert response.json()["filters"] == {}
 
 
     async def test_cloud_delete_nio(
@@ -156,8 +163,48 @@ class TestCloudNodesRoutes:
             vm: dict
     ) -> None:
 
-        response = await compute_client.delete(app.url_path_for("compute:delete_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await compute_client.delete(
+            app.url_path_for(
+                "compute:delete_cloud",
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]
+            )
+        )
         assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+    async def test_cloud_stop(
+            self, app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            vm: dict
+    ) -> None:
+
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:stop_cloud",
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]
+            )
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+    async def test_cloud_suspend(
+            self, app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            vm: dict
+    ) -> None:
+
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:suspend_cloud",
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]
+            )
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
     async def test_cloud_update(

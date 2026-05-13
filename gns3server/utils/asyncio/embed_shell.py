@@ -357,12 +357,12 @@ if __name__ == "__main__":
     # Demo using telnet
     shell = Demo(welcome_message="Welcome!\n")
     server = create_telnet_shell(shell, loop=loop)
-    coro = asyncio.start_server(server.run, "127.0.0.1", 4444)
-    s = loop.run_until_complete(coro)
+    loop.run_until_complete(server.start("127.0.0.1", 4444))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         pass
+    loop.run_until_complete(server.close())
 
     # Demo using stdin
     # loop.run_until_complete(create_stdin_shell(Demo()))

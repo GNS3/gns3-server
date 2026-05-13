@@ -86,7 +86,59 @@ class TestNodeRoutes:
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()[0]["name"] == "test"
-    
+
+
+    @pytest.mark.parametrize(
+        "tags, expected_match",
+        (
+            ([], True),
+            (["tag1"], True),
+            (["tag1", "tag2"], True),
+            (["tag42"], False),
+            (["tag1", "tag3"], False),
+        ),
+    )
+    async def test_list_nodes_with_tags(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            project: Project,
+            compute: Compute,
+            tags: list,
+            expected_match: bool
+    ) -> None:
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+
+        await client.post(app.url_path_for("create_node", project_id=project.id), json={
+            "name": "test",
+            "node_type": "vpcs",
+            "compute_id": "example.com",
+            "tags": ["tag1", "tag2"],
+            "properties": {
+                "startup_script": "echo test"
+            }
+        })
+
+        await client.post(app.url_path_for("create_node", project_id=project.id), json={
+            "name": "test2",
+            "node_type": "vpcs",
+            "compute_id": "example.com",
+            "tags": ["tag3", "tag4"],
+            "properties": {
+                "startup_script": "echo test"
+            }
+        })
+
+        params = {"tags": tags}
+        response = await client.get(app.url_path_for("get_nodes", project_id=project.id), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        if expected_match:
+            assert len(response.json()) > 0
+        else:
+            assert len(response.json()) == 0
+
     
     async def test_get_node(
             self,
@@ -131,6 +183,7 @@ class TestNodeRoutes:
             "name": "test",
             "node_type": "vpcs",
             "compute_id": "example.com",
+            "tags": ["tag1", "tag2"],
             "properties": {
                     "startup_script": "echo test"
             }
@@ -139,8 +192,9 @@ class TestNodeRoutes:
         assert response.status_code == 200
         assert response.json()["name"] == "test"
         assert "name" not in response.json()["properties"]
-    
-    
+        assert response.json()["tags"] == ["tag1", "tag2"]
+
+
     async def test_start_all_nodes(
             self,
             app: FastAPI,

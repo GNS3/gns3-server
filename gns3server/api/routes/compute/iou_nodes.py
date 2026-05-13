@@ -20,7 +20,7 @@ API routes for IOU nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union
@@ -186,17 +186,18 @@ async def stop_iou_node(node: IOUVM = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/stop",
-    status_code=status.HTTP_204_NO_CONTENT,
+    "/{node_id}/suspend",
     dependencies=[Depends(compute_authentication)]
 )
 def suspend_iou_node(node: IOUVM = Depends(dep_node)) -> None:
     """
     Suspend an IOU node.
-    Does nothing since IOU doesn't support being suspended.
     """
 
-    pass
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Suspend is not supported for IOU nodes"
+    )
 
 
 @router.post(
@@ -250,6 +251,7 @@ async def update_iou_node_nio(
     """
 
     nio = node.get_nio(adapter_number, port_number)
+    nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.adapter_update_nio_binding(adapter_number, port_number, nio)

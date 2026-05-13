@@ -1,24 +1,44 @@
-uvicorn==0.39.0  # version 0.39.0 is the last version supporting Python 3.9
-pydantic==2.12.5
-fastapi==0.128.0
-python-multipart==0.0.20  # version 0.0.20 is the last to support Python 3.9
-websockets==15.0.1  # version 15.0.1 is the last to support Python 3.9
-aiohttp>=3.13.3,<3.14
+# GNS3 Server Core Dependencies
+uvicorn==0.46.0
+pydantic==2.13.4
+fastapi==0.136.1
+python-multipart==0.0.27
+websockets==16.0
+aiohttp>=3.13.5,<3.14
 aiofiles>=25.1.0,<26.0
 Jinja2>=3.1.6,<3.2
-sentry-sdk>=2.50.0,<3  # optional dependency
-psutil>=7.2.1
+sentry-sdk>=2.59.0,<3  # optional dependency
+psutil>=7.2.2
 async-timeout>=5.0.1,<5.1; python_version < '3.11'  # this library has effectively been upstreamed into Python 3.11+
 distro>=1.9.0
 py-cpuinfo>=9.0.0,<10.0
-greenlet==3.3.1; python_version >= '3.13' # necessary to run sqlalchemy on Python >= 3.13
-sqlalchemy==2.0.43
-aiosqlite==0.21.0
-alembic==1.15.2
+greenlet==3.4.0; python_version >= '3.13' # necessary to run sqlalchemy on Python >= 3.13
+sqlalchemy==2.0.49
+aiosqlite==0.22.1
+alembic==1.18.4
 bcrypt==5.0.0
-joserfc==1.6.1
+joserfc==1.6.4
 email-validator==2.3.0
 watchdog==6.0.0
 zstandard==0.25.0
 platformdirs>=2.4.0,<3  # platformdirs >=3 conflicts when building Debian packages
 truststore>=0.10.4; python_version >= '3.10'
+
+# Shared dependencies (also used by AI Copilot)
+telnetlib3==4.0.2
+asyncssh>=2.21.0,<3
+typing-extensions>=4.15.0
+requests>=2.33.1
+urllib3>=2.6.2
+
+# ==============================================================================
+# AI Copilot Optional Dependencies
+# ==============================================================================
+# AI Copilot features are now optional. Install with:
+#   pip install gns3-server[ai-copilot]
+# Or:
+#   pip install -r ai-requirements.txt
+#
+# This reduces installation size and supports restricted environments where
+# AI dependencies may not be allowed.
+# ==============================================================================

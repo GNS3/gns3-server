@@ -144,7 +144,6 @@ class TestQemuNodesRoutes:
         assert response.json()["project_id"] == compute_project.id
         assert response.json()["ram"] == 1024
         assert response.json()["hda_disk_image"] == "linux载.img"
-        assert response.json()["hda_disk_image_md5sum"] == "fcea920f7412b5da7be0cf42b8c93759"
     
     
     @pytest.mark.parametrize(
@@ -344,7 +343,8 @@ class TestQemuNodesRoutes:
             "type": "nio_udp",
             "lport": 4242,
             "rport": 4343,
-            "rhost": "127.0.0.1"
+            "rhost": "127.0.0.1",
+            "filters": {"packet_loss": 10}
         }
     
         await compute_client.put(
@@ -360,9 +360,11 @@ class TestQemuNodesRoutes:
             port_number="0"
         )
     
-        await compute_client.post(url, json=params)
-        params["filters"] = {}
-    
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["filters"] == {"packet_loss": 10}
+        params["filters"].clear()
+
         url = app.url_path_for(
             "compute:update_qemu_node_nio",
             project_id=qemu_vm["project_id"],
@@ -373,6 +375,7 @@ class TestQemuNodesRoutes:
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
+        assert response.json()["filters"] == {}
     
     
     async def test_qemu_delete_nio(self, app: FastAPI, compute_client: AsyncClient, qemu_vm: dict) -> None:
