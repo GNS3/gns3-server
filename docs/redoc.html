@@ -1,12 +1,14 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-See LICENSE file for licensing information.
--->
 
     <!DOCTYPE html>
     <html>
     <head>
-    <link type="text/css" rel="stylesheet" href="/static/swagger-ui.css">
+    <title>GNS3 controller API - ReDoc</title>
+    <!-- needed for adaptive design -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    
     <link rel="shortcut icon" href="https://fastapi.tiangolo.com/img/favicon.png">
     <!--
     ReDoc doesn't change outer page styles
@@ -19,25 +21,11 @@ See LICENSE file for licensing information.
     </style>
     </head>
     <body>
-    <div id="swagger-ui">
-    </div>
-    <script src="/static/swagger-ui-bundle.js"></script>
-    <!-- `SwaggerUIBundle` is now available on the page -->
-    <script>
-    const ui = SwaggerUIBundle({
-        url: 'openapi.json',
-    oauth2RedirectUrl: window.location.origin + '/docs/oauth2-redirect',
-        dom_id: '#swagger-ui',
-        presets: [
-        SwaggerUIBundle.presets.apis,
-        SwaggerUIBundle.SwaggerUIStandalonePreset
-        ],
-        layout: "BaseLayout",
-        deepLinking: true,
-        showExtensions: true,
-        showCommonExtensions: true
-    })
-    </script>
+    <noscript>
+        ReDoc requires Javascript to function. Please enable it to browse the documentation.
+    </noscript>
+    <redoc spec-url="openapi.json"></redoc>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js"> </script>
     </body>
     </html>
     
