@@ -22,6 +22,7 @@ from gns3server.schemas.template import TEMPLATE_USAGE_SCHEMA
 
 import hashlib
 import json
+import os
 
 from gns3server.schemas.template import (
     TEMPLATE_OBJECT_SCHEMA,
@@ -173,3 +174,131 @@ class TemplateHandler:
                                                     compute_id=request.json.get("compute_id"))
         response.set_status(201)
         response.json(node)
+
+    @Route.get(
+        r"/templates/{template_id}/base-config/{filename}",
+        description="Get base configuration file content",
+    )
+    def get_base_config(request, response):
+
+        controller = Controller.instance()
+
+        template_id = request.match_info["template_id"]
+
+        template = controller.template_manager.get_template(template_id)
+
+        filename = os.path.basename(request.match_info["filename"])
+
+        path = os.path.join(controller.configs_path(), filename)
+
+        try:
+            if not os.path.exists(path):
+                response.set_status(404)
+                response.json({"message": "File not found"})
+                return
+
+            with open(path, encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+        except Exception as e:
+            response.set_status(500)
+            response.json({"message": str(e)})
+            return
+
+        response.set_status(200)
+        response.json({
+            "template_id": template.id,
+            "filename": filename,
+            "content": content
+        })
+
+    @Route.put(
+        r"/templates/{template_id}/base-config/{filename}",
+        description="Update base configuration file content",
+        parameters={
+            "template_id": "Template UUID",
+            "filename": "Base config filename"
+        },
+        status_codes={
+            200: "File updated",
+            400: "Invalid request",
+            404: "Template or file not found"
+        },
+    )
+    def update_base_config(request, response):
+
+        controller = Controller.instance()
+
+        template_id = request.match_info["template_id"]
+        filename = os.path.basename(request.match_info["filename"])
+
+        try:
+            template = controller.template_manager.get_template(template_id)
+        except Exception:
+            response.set_status(404)
+            response.json({"message": "Template not found"})
+            return
+
+        path = os.path.join(controller.configs_path(), filename)
+
+        body = request.json
+
+        if not body or "content" not in body:
+            response.set_status(400)
+            response.json({"message": "Missing 'content' field"})
+            return
+
+        content = body["content"]
+
+        try:
+            os.makedirs(controller.configs_path(), exist_ok=True)
+
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+        except OSError as e:
+            response.set_status(500)
+            response.json({"message": str(e)})
+            return
+
+        response.set_status(200)
+        response.json({
+            "template_id": template.id,
+            "filename": filename,
+            "content": content
+        })
+
+    @Route.get(
+        r"/templates/base-configs",
+        description="List all available base configuration files",
+        status_codes={
+            200: "List of base configuration files returned"
+        }
+    )
+    def list_base_configs(request, response):
+
+        controller = Controller.instance()
+
+        configs_path = controller.configs_path()
+
+        try:
+            files = []
+
+            if os.path.exists(configs_path):
+                for filename in os.listdir(configs_path):
+
+                    path = os.path.join(configs_path, filename)
+
+                    if os.path.isfile(path):
+                        files.append({"filename": filename})
+
+        except OSError as e:
+            response.set_status(500)
+            response.json({
+                "message": str(e)
+            })
+            return
+
+        files = sorted(files, key=lambda x: x["filename"])
+        response.set_status(200)
+        response.json(files)

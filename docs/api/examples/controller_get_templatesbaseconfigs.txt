@@ -1,0 +1,44 @@
+curl -i -X 'http://localhost:3080/v2/templates/base-configs'
+
+GET /v2/templates/base-configs HTTP/1.1
+
+HTTP/1.1 200 OK
+Connection: close
+X-Route: /v2/templates/base-configs
+Server: Python/3.14 GNS3/2.2.60.dev1+713dbb7f
+Content-Type: application/json
+Content-Length: 576
+Date: Mon, 18 May 2026 18:28:53 GMT
+
+[
+  {
+    "filename": "config1.txt"
+  },
+  {
+    "filename": "config2.txt"
+  },
+  {
+    "filename": "ios_base_startup-config.txt"
+  },
+  {
+    "filename": "ios_etherswitch_startup-config.txt"
+  },
+  {
+    "filename": "iou_l2_base_startup-config.txt"
+  },
+  {
+    "filename": "iou_l3_base_startup-config.txt"
+  },
+  {
+    "filename": "test_config.txt"
+  },
+  {
+    "filename": "update_test.txt"
+  },
+  {
+    "filename": "vpcs_base_config.txt"
+  },
+  {
+    "filename": "vpcs_base_config2.txt"
+  }
+]

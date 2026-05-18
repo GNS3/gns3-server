@@ -1,0 +1,17 @@
+curl -i -X 'http://localhost:3080/v2/templates/19021f99-e36f-394d-b4a1-8aaa902ab9cc/base-config/vpcs_base_config.txt'
+
+GET /v2/templates/19021f99-e36f-394d-b4a1-8aaa902ab9cc/base-config/vpcs_base_config.txt  HTTP/1.1
+
+HTTP/1.1 200 OK
+Connection: close
+X-Route: /v2/templates/{template_id}/base-config/{filename}
+Server: Python/3.14 GNS3/2.2.60.dev1+713dbb7f
+Content-Type: application/json
+Content-Length: 144
+Date: Mon, 18 May 2026 18:34:10 GMT
+
+{
+  "content": "# test config\n\ndhcp\n",
+  "filename": "vpcs_base_config.txt",
+  "template_id": "19021f99-e36f-394d-b4a1-8aaa902ab9cc"
+}
