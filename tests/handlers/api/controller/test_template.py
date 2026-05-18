@@ -14,8 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
+import os
 import uuid
 
 from tests.utils import asyncio_patch
@@ -955,3 +954,81 @@ async def test_create_node_from_template(controller_api, controller, project):
     mock.assert_called_with(id, x=42, y=12, name=None, compute_id=None)
     assert response.route == "/projects/{project_id}/templates/{template_id}"
     assert response.status == 201
+
+
+async def test_get_base_config(controller_api, controller):
+
+    template_id = str(uuid.uuid4())
+
+    controller.template_manager._templates[template_id] = Template(template_id, {
+        "template_type": "vpcs",
+        "category": 0,
+        "name": "test",
+        "symbol": "guest.svg",
+        "default_name_format": "{name}-{0}",
+        "compute_id": "local"
+    })
+
+    config_path = os.path.join(controller.configs_path(), "test_config.txt")
+
+    with open(config_path, "w") as f:
+        f.write("hello config")
+
+    response = await controller_api.get(
+        f"/templates/{template_id}/base-config/test_config.txt"
+    )
+
+    assert response.status == 200
+    assert response.json["filename"] == "test_config.txt"
+    assert response.json["content"] == "hello config"
+
+async def test_update_base_config(controller_api, controller):
+
+    template_id = str(uuid.uuid4())
+
+    controller.template_manager._templates[template_id] = Template(template_id, {
+        "template_type": "vpcs",
+        "category": 0,
+        "name": "test",
+        "symbol": "guest.svg",
+        "default_name_format": "{name}-{0}",
+        "compute_id": "local"
+    })
+
+    config_path = os.path.join(controller.configs_path(), "update_test.txt")
+
+    with open(config_path, "w") as f:
+        f.write("old content")
+
+    response = await controller_api.put(
+        f"/templates/{template_id}/base-config/update_test.txt",
+        {
+            "content": "new updated content"
+        }
+    )
+
+    assert response.status == 200
+    assert response.json["content"] == "new updated content"
+
+    with open(config_path) as f:
+        assert f.read() == "new updated content"
+
+async def test_list_base_configs(controller_api, controller):
+
+    config1 = os.path.join(controller.configs_path(), "config1.txt")
+    config2 = os.path.join(controller.configs_path(), "config2.txt")
+
+    with open(config1, "w") as f:
+        f.write("test1")
+
+    with open(config2, "w") as f:
+        f.write("test2")
+
+    response = await controller_api.get("/templates/base-configs")
+
+    assert response.status == 200
+
+    filenames = [item["filename"] for item in response.json]
+
+    assert "config1.txt" in filenames
+    assert "config2.txt" in filenames
