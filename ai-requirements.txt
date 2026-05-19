@@ -31,7 +31,6 @@ langsmith>=0.7.7
 
 # Network Automation
 netmiko>=4.7.0
-paramiko>=5.0.0
 nornir>=3.5.0
 nornir-netmiko>=1.0.1
 nornir-utils>=0.2.0
