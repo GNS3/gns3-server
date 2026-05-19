@@ -14,11 +14,13 @@ For full license terms, see: [../LICENSE](../LICENSE)
 
 **Objective**: Migrate GNS3 from ubridge-based networking to a hybrid **Linux bridge + eBPF + Containerlab** architecture.
 
-**Key Benefits**:
-- ⚡ **Performance**: 5-10x throughput improvement for local connections
+**Key Benefits (Design Targets)**:
+- ⚡ **Performance**: Target 4x throughput improvement for local connections
 - 🔌 **Ecosystem**: Access to containerlab's rich network device catalog
 - 🔥 **eBPF Support**: Kernel-space packet processing with near-zero overhead
 - 🚀 **CI/CD Ready**: Better automation and cloud-native integration
+
+> **Note**: Performance figures throughout this document are **design targets**, not measured benchmarks. Actual gains depend on workload, kernel version, NIC offloading, and node type. A Phase 1 POC is required to validate these assumptions before committing to subsequent phases.
 
 ---
 
@@ -157,6 +159,68 @@ graph LR
 | `apply_filters()` | Apply packet filters | eBPF XDP/TC / ubridge filters |
 | `delete()` | Cleanup resources | Remove bridge / stop ubridge |
 
+### Node Type Adaptation Strategy
+
+Connecting each node type to a Linux bridge requires different strategies. The current codebase has no uniform "attach to bridge" path — each node type implements `adapter_add_nio_binding()` independently.
+
+| Node Type | Current Connection | Linux Bridge Adapter | Complexity | Work Required |
+|-----------|-------------------|---------------------|------------|---------------|
+| **Docker** | ubridge TAP + UDP NIO | TAP already present; replace ubridge bridge with `ip link set tapX master brY` | Low | Add namespace-aware veth, keep tap for container-side |
+| **QEMU** | UDP NIO → ubridge bridge | Add `-netdev tap` or use vhost-user intermediary | Medium | QEMU must connect to a tap on the Linux bridge; replace UDP NIO with tap on `brY` |
+| **VPCS** | UDP NIO → ubridge bridge | Host-level veth pair, one end on Linux bridge, other to VPCS UDP | Medium | VPCS is a userspace process; needs a local UDP ↔ veth bridge helper if direct tap impossible |
+| **IOU** | UDP NIO → ubridge bridge | Same as VPCS — veth + local helper | Medium | IOU is also userspace; similar helper approach |
+| **Dynamips** | UDP NIO → ubridge bridge | Same as VPCS/IOU | Medium | Dynamips is userspace |
+| **Cloud** | ubridge bridge (per-port) | Direct Linux bridge via `ip link` | Low | Cloud already manages interface attachments; replace ubridge bridge with `brctl`/`ip link` |
+| **Ethernet Switch** | ubridge bridge | Direct Linux bridge (kernel already has bridging) | Low | Native `ip link add brX type bridge` |
+
+**Userspace Node Helper**: For VPCS, IOU, and Dynamips (processes that speak UDP directly), a lightweight local shim (`localhost:UDP ⇄ veth`) is needed. This could be a new `gns3-bridge-helper` process or a small eBPF program, and is one of the highest-risk items in Phase 1.
+
+### Controller Layer Refactoring
+
+The current `UDPLink.create()` (`gns3server/controller/udp_link.py:49`) hard-codes a UDP tunnel flow:
+
+```
+allocate UDP port on compute A → allocate UDP port on compute B → create NIOUDP on both
+```
+
+For local links on a Linux bridge, a new `LocalLink` subclass (or feature flag on `UDPLink`) is needed:
+
+```
+detect same-compute → skip UDP allocation → attach both nodes to shared Linux bridge via veth
+```
+
+The decision logic belongs in `controller/link.py` or a new link factory. The `Link` base class (`controller/link.py:69`) provides `create()` / `update()` / `delete()` — these must be overridden without assuming UDP endpoints.
+
+### Configuration Schema Additions
+
+The config schema at `gns3server/schemas/config.py` must be extended with new settings:
+
+```python
+class LinuxBridgeSettings(BaseModel):
+    enable_local_bridge: bool = False
+    bridge_prefix: str = "gns3"
+    veth_prefix: str = "veth"
+    mtu: int = 1500
+
+class EBPSettings(BaseModel):
+    enabled: bool = False
+    program_directory: str = "/var/lib/gns3/ebpf"
+
+class ContainerlabSettings(BaseModel):
+    enabled: bool = False
+    api_endpoint: str = "http://localhost:5000"
+
+class HybridSettings(BaseModel):
+    auto_detect_local: bool = True
+    prefer_linux_bridge: bool = True
+```
+
+These are then composed into `ServerConfig` — none exist today.
+
+### Port Management Implications
+
+`PortManager` (`gns3server/compute/port_manager.py`) currently reserves UDP ports for all links. With Linux bridges for local connections, same-compute links would not consume UDP ports at all. The `get_free_udp_port()` / `release_udp_port()` calls in `UDPLink.create()` must become conditional on the backend decision.
+
 ---
 
 ## Phase 2: Linux Bridge + Hybrid Ubridge Architecture
@@ -261,6 +325,47 @@ sequenceDiagram
 | Compute 1 | Compute 3 | Hybrid (LB + Ubridge UDP) | Kernel → User → Network |
 | Compute 1 (non-Linux) | Compute 1 | Pure Ubridge | User-space |
 
+### Network Namespace Handling for Container Nodes
+
+Docker containers run in isolated network namespaces. Connecting them to a host Linux bridge requires crossing namespace boundaries — this is a critical complexity that differs from ubridge's approach (which operates in host context via TAP interfaces).
+
+**Current ubridge path** (Docker VM in `gns3server/compute/docker/docker_vm.py`):
+```
+Container eth0 ↔ host TAP (created in container ns) ↔ ubridge userspace bridge ↔ UDP NIO
+```
+
+**Proposed Linux bridge path**:
+```
+Container eth0 ↔ host TAP ↔ Linux bridge (host ns)
+```
+
+| Component | Namespace | Challenge |
+|-----------|-----------|-----------|
+| Linux bridge | Host | Always in host namespace |
+| veth pair end | Host → Container | One end moved with `ip link set netns` |
+| Docker container | Isolated | TAP already created inside; need to find host-side ifindex |
+
+**Implementation approach**:
+
+```python
+# Attach Docker container interface to host bridge
+tap_iface = f"tap{adapter_number}"  # already exists in container ns
+host_tag = f"veth{node_id[:8]}{adapter_number}"
+
+# Create veth pair and move one end into container
+await run(f"ip link add {host_tag} type veth peer name {tap_iface}")
+await run(f"ip link set {tap_iface} netns {container_id}")
+await run(f"ip link set {host_tag} master {bridge_name}")
+await run(f"ip link set {host_tag} up")
+await run(f"ip netns exec {container_id} ip link set {tap_iface} up")
+```
+
+**Key risks**:
+- Requires `CAP_NET_ADMIN` and `CAP_SYS_ADMIN` for namespace operations
+- Container restart loses interfaces — GNS3 must re-attach on restart
+- Mixed namespace environments (some Docker, some QEMU, some VPCS) increase complexity
+- The current `_add_ubridge_connection()` in `docker_vm.py:1112` would need a parallel code path
+
 ---
 
 ## Phase 3: eBPF Integration
@@ -358,6 +463,68 @@ graph LR
 | **Stateful Filters** | Connection tracking | High | Stateful inspection |
 | **Analytics** | Packet counting, timing | Medium | Monitoring |
 | **Custom** | User-defined | Variable | Specialized needs |
+
+### eBPF Build Pipeline & Distribution
+
+eBPF programs are written in C and compiled to BPF bytecode. This introduces a build dependency not present in the Python-only codebase today.
+
+**Source Structure**:
+```
+gns3-server/
+├── gns3server/
+│   ├── ebpf/                    # eBPF C source programs
+│   │   ├── Makefile
+│   │   ├── drop.c
+│   │   ├── delay.c
+│   │   ├── bandwidth.c
+│   │   ├── monitor.c
+│   │   └── include/
+│   │       └── common.h
+│   └── compute/
+│       ├── ebpf/
+│       │   ├── loader.py        # Load/attach/detach eBPF programs
+│       │   └── maps.py          # eBPF map management
+```
+
+**Build Requirements**:
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| `clang` | >= 12.0 | Compile C to BPF bytecode |
+| `llvm` | >= 12.0 | BPF backend for target `bpf` |
+| `libbpf` | >= 1.0 | Userspace library for loading (or `ctypes` bindings) |
+| `kernel-headers` | Match running kernel | Required for `vmlinux.h` / BTF |
+
+**CO-RE (Compile Once, Run Everywhere) Strategy**:
+
+Pre-compiled `.o` files should be shipped with the Python package using BTF relocation:
+
+1. Build: `clang -target bpf -O2 -c drop.c -o drop.o`
+2. Ship: Include `drop.o` in the Python package (`gns3server/ebpf/programs/`)
+3. Load: libbpf performs CO-RE relocation against the running kernel's BTF info
+4. Fallback: If `/sys/kernel/btf/vmlinux` is unavailable → log warning, ubridge filter fallback
+
+**Runtime Loading**:
+```python
+# gns3server/compute/ebpf/loader.py
+async def load_xdp_program(interface: str, program_path: str) -> int:
+    """Load eBPF XDP program onto interface using libbpf."""
+    # Uses ctypes or pyroute2 to:
+    # 1. Open and load .o file via libbpf
+    # 2. Pin maps to bpffs
+    # 3. Attach XDP program to interface
+    # Returns fd for later detach
+```
+
+**Fallback Architecture**:
+- If eBPF is unavailable (kernel < 5.8, no BTF, no permissions): ubridge filters are used
+- If eBPF loading fails at runtime: per-link fallback to ubridge filter path
+- Config knob: `[eBPF] enabled = false` to skip eBPF entirely
+
+**Cross-Platform Constraints**:
+- eBPF is Linux-only. On macOS/Windows, all eBPF config is ignored and ubridge remains the sole backend.
+- Unit tests can use `unittest.mock` to simulate eBPF loader responses.
+- Integration tests require a VM with kernel >= 5.8.
 
 ---
 
@@ -462,6 +629,69 @@ sequenceDiagram
 | Vendor Images | Community | Official | ✅ Official support |
 | CI/CD Integration | Basic | Excellent | ✅ Inherits advantages |
 | Development Speed | Medium | Fast | ✅ Accelerated |
+
+### Containerlab Lifecycle Management
+
+Containerlab is an external process, not a Python library. GNS3 must manage its lifecycle explicitly.
+
+**Process Model**:
+
+| Responsibility | Owner | Details |
+|----------------|-------|---------|
+| **Start containerlab** | GNS3 Server | `subprocess.run(["containerlab", "deploy", "-t", topo.yml])` when a containerlab-backed project opens |
+| **Stop containerlab** | GNS3 Server | `containerlab destroy -t topo.yml` when project closes |
+| **Detect changes** | Polling / Hook | Containerlab has no push API; GNS3 must either poll `containerlab inspect` or hook into containerlab logs |
+| **Error recovery** | GNS3 Server | Detect `containerlab` process exit, reconcile with project state |
+
+**Topology Synchronization Challenges**:
+
+| Direction | Challenge | Approach |
+|-----------|-----------|----------|
+| GNS3 → Containerlab | GNS3 links modified after deploy | Must regenerate `.clab.yml` and call `containerlab deploy --reconfigure` |
+| Containerlab → GNS3 | External `containerlab` CLI commands modify topology | Periodic `containerlab inspect` → diff → update GNS3 project model |
+| Concurrent modification | User changes both GNS3 GUI and containerlab CLI | Last-writer-wins with warning; document as unsupported |
+
+**Implementation Sketch**:
+```python
+class ContainerlabManager:
+    """Manages a containerlab instance for a GNS3 project."""
+
+    def __init__(self, project_id: str):
+        self._project_id = project_id
+        self._process: asyncio.subprocess.Process | None = None
+        self._topology_path: str | None = None
+
+    async def deploy(self, topology: ClabTopology) -> bool:
+        """Convert GNS3 topology to .clab.yml and run containerlab deploy."""
+        yaml_content = self._convert_to_clab(topology)
+        self._topology_path = os.path.join(
+            self._project_dir, "containerlab.yml"
+        )
+        with open(self._topology_path, "w") as f:
+            f.write(yaml_content)
+        proc = await asyncio.create_subprocess_exec(
+            "containerlab", "deploy", "-t", self._topology_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        return proc.returncode == 0
+
+    async def destroy(self):
+        """Tear down containerlab topology."""
+        if self._topology_path:
+            proc = await asyncio.create_subprocess_exec(
+                "containerlab", "destroy", "-t", self._topology_path,
+                "--cleanup"
+            )
+            await proc.wait()
+```
+
+**Dependencies**:
+- Containerlab must be installed and in `$PATH`
+- Requires Docker (containerlab dependency)
+- Root/CAP_NET_ADMIN for bridge operations
+- Not available on macOS/Windows
 
 ---
 
@@ -570,7 +800,9 @@ graph TB
 
 ---
 
-## Performance Expectations
+## Performance Expectations (Design Targets)
+
+All figures below are **design targets**, not empirical measurements. They are estimated based on the architectural differences between kernel-space bridging (proposed) and userspace bridging via ubridge (current). Actual results depend on hardware, kernel version, NIC offloading, node count, and traffic patterns. A Phase 1 benchmark suite should validate these assumptions before committing architectural decisions.
 
 ### Throughput Comparison
 
@@ -605,27 +837,38 @@ graph TB
 
 | Risk | Impact | Probability | Mitigation Strategy |
 |------|--------|-------------|-------------------|
-| Linux bridge performance issues | High | Low | Early benchmarking, optimization |
-| eBPF security vulnerabilities | High | Low | Code review, sandboxing, kernel verifier |
-| Containerlab API compatibility | Medium | Medium | Version locking, adapter layer |
-| User experience disruption | Medium | Low | Gradual rollout, documentation |
-| Cross-platform compatibility | Medium | High | Maintain ubridge fallback |
-| Deployment complexity | Medium | Medium | Automated tooling, guides |
+| **Node type adaptation complexity** | High | High | Prototype with Docker first; add shim for userspace-only nodes (VPCS/IOU/Dynamips) |
+| **Network namespace management** | High | High (Docker nodes common) | Careful `ip netns` integration; restart-detection hooks |
+| **eBPF security vulnerabilities** | High | Low | Code review, sandboxing, kernel verifier, privilege proxy |
+| **eBPF build pipeline + distribution** | Medium | High | Ship pre-compiled .o files; CO-RE BTF support; graceful fallback |
+| **Controller link refactoring scope** | High | Medium | Ship parallel Link subclass (not rewrite); feature-gated |
+| **Containerlab API compatibility** | Medium | Medium | Version locking, adapter layer; containerlab may break CLI flags |
+| **Containerlab lifecycle management** | Medium | High | Defensive process mgmt; health-check polling; state reconciliation |
+| **Performance claims unvalidated** | Medium | High | Phase 1 benchmark gate before Phase 2 investment |
+| **User experience disruption** | Medium | Low | Graduated rollout (per-project toggle); ubridge fallback retained |
+| **Cross-platform compatibility** | Medium | High | Linux bridge/eBPF/containerlab Linux-only; macOS/Windows retain ubridge |
+| **Deployment complexity** | Medium | Medium | Automated tooling, documentation, config validation |
 
 ### Migration Strategy
 
 **Phased Approach**:
-1. **Phase 1**: Foundation & Abstraction Layer
-2. **Phase 2**: Linux Bridge Implementation
-3. **Phase 3**: eBPF Integration
-4. **Phase 4**: Containerlab Integration
-5. **Phase 5**: Testing & Production
+1. **Phase 1**: Foundation & Abstraction Layer — Node adaptation, controller refactoring, config schema, POC benchmark
+2. **Phase 2**: Linux Bridge Implementation — Bridge Manager, Veth Manager, Docker + QEMU support, namespace handling
+3. **Phase 3**: eBPF Integration — Build pipeline, loader, filter parity, monitor integration
+4. **Phase 4**: Containerlab Integration — Lifecycle management, topology conversion, bridge sync
+5. **Phase 5**: Testing & Production — Benchmark gate passes; phased rollout
 
 **Rollback Capabilities**:
-- Configuration-based backend selection
-- Runtime fallback to ubridge
-- Per-project backend choice
-- Automatic detection of suitable backend
+- Configuration-based backend selection: `[Server] use_linux_bridge = false`
+- Runtime fallback to ubridge: if Linux bridge operations fail, per-project fallback
+- Per-project backend choice (stored in .gns3 topology file)
+- Automatic detection of suitable backend (Linux-only features auto-disabled on other platforms)
+
+**Migration Path for Existing Projects**:
+- Projects saved before Phase 2 load with `ubridge_fallback = true` by default
+- User can opt in per-project: project settings → "Use Linux Bridge"
+- Running nodes are NOT migrated mid-session; apply on next project open
+- GNS3 topology format (.gns3) gains optional `"linux_bridge": true` flag in the project object
 
 ---
 
@@ -1318,23 +1561,82 @@ stats_display_format = bandwidth_and_pps  # bandwidth_only | bandwidth_and_pps |
 
 ---
 
+### 6. Node Type Adaptation Strategy
+
+**Problem**: Each GNS3 node type connects to the network differently (Docker via TAP, QEMU via UDP socket, VPCS via direct UDP, etc.). A Linux bridge backend cannot use a one-size-fits-all adapter.
+
+```mermaid
+graph TB
+    subgraph "Current: All via Ubridge"
+        D[Docker] -->|TAP| UB1[ubridge bridge]
+        Q[QEMU] -->|UDP NIO| UB1
+        V[VPCS] -->|UDP NIO| UB1
+        I[IOU] -->|UDP NIO| UB1
+        UB1 -->|UDP Tunnel| Remote
+    end
+
+    subgraph "Proposed: Node-Type Adapters"
+        D2[Docker] -->|TAP| TAP1[TAP → veth adapter]
+        Q2[QEMU] -->|tap/nic| TAP2[TAP → veth adapter]
+        V2[VPCS] -->|UDP| SHIM[Local UDP ⇄ veth shim]
+        I2[IOU] -->|UDP| SHIM
+        TAP1 --> LB[Linux Bridge]
+        TAP2 --> LB
+        SHIM --> LB
+        LB -->|veth| UB2[ubridge UDP]
+        UB2 -->|UDP Tunnel| Remote
+    end
+```
+
+**Adapter Matrix**:
+
+| Node Type | Connector | Direction | Notes |
+|-----------|-----------|-----------|-------|
+| **Docker** | TAP to veth | Container ↔ Host bridge | Native TAP already exists inside container; needs host-side veth with namespace crossing |
+| **QEMU** | `-netdev tap` | QEMU process ↔ Host bridge | Replace `-netdev socket` with `-netdev tap`; requires privileged or pre-configured tap |
+| **VPCS** | UDP local shim | VPCS UDP port ↔ veth on bridge | New small helper process: `gns3-bridge-shim` listens on localhost UDP, forwards to veth |
+| **IOU** | UDP local shim | Same as VPCS | Share the same shim process design |
+| **Dynamips** | UDP local shim | Same as VPCS | Share the same shim process design |
+| **Cloud (host iface)** | Direct bridge attach | Host iface ↔ Linux bridge | Use `ip link set ethX master brY` instead of ubridge raw socket |
+| **Ethernet Switch** | Native Linux bridge | Already a bridge | Map to kernel bridge directly |
+
+**Implementation Priority**:
+
+```
+Phase 1 POC: Docker only (simplest adaptation path)
+Phase 2a:    Docker + Cloud + Ethernet Switch
+Phase 2b:    QEMU (tap adapter)
+Phase 2c:    VPCS / IOU / Dynamips (UDP shim — highest risk)
+```
+
+---
+
 ## Technical Requirements
 
 ### Dependencies
 
 ```
 # Python packages
-bcc>=0.25.0              # eBPF toolchain
-libbpf>=1.0.0            # eBPF library
-clang>=12.0.0            # eBPF compiler
-llvm>=12.0.0             # eBPF JIT backend
-aiohttp>=3.8.0           # HTTP client
-pyyaml>=6.0              # YAML parser
+pyroute2>=0.7.0           # Netlink (bridge, veth, addr management)
+pyyaml>=6.0               # YAML parser (for .clab.yml)
+aiohttp>=3.8.0            # HTTP client (containerlab API)
+
+# Build dependencies (not runtime)
+clang>=12.0               # eBPF C → BPF bytecode compilation
+llvm>=12.0                # BPF backend (target bpf)
+libbpf>=1.0.0             # eBPF CO-RE library (or shipped as .so)
+kernel-headers            # For BTF/CO-RE generation
 
 # System requirements
-- Linux kernel >= 5.8    # eBPF support
-- CAP_NET_ADMIN          # Network management
-- bridge-utils           # Linux bridge tools
+- Linux kernel >= 5.8     # eBPF support (XDP, TC, BPF_MAP_TYPE_ARRAY)
+- CAP_NET_ADMIN           # Bridge/veth creation, network management
+- CAP_BPF + CAP_PERFMON   # eBPF program loading (via privilege proxy)
+- iproute2                # `ip link`, `ip netns`, `bridge` commands
+- containerlab            # External binary for containerlab integration
+
+# Optional system packages
+- openvswitch-switch      # OVS bridge sync (Phase 4, advanced option)
+- bridge-utils            # Legacy `brctl` (prefer `ip link` / `bridge` from iproute2)
 ```
 
 ### System Capabilities
@@ -1347,5 +1649,5 @@ pyyaml>=6.0              # YAML parser
 ---
 
 **Version**: 1.0
-**Status**: 🎯 Proposal
-**Last Updated**: January 7, 2025
+**Status**: 🎯 Proposal (reviewed and corrected based on codebase audit)
+**Last Updated**: May 19, 2026
