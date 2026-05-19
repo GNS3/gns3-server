@@ -1,5 +1,71 @@
 # Change Log
 
+## 3.1.0a2 12/05/2026
+
+* Bundle web-ui v3.1.0a2
+* fix: surface tshark stderr errors to LLM, not just log them
+* fix: hint LLM about -c behavior when tshark returns empty with -c
+* fix: update search_fields examples to use existing field names
+* fix: reject multi-keyword search_fields, single keyword only
+* fix: document action/query params in PacketAnalysisTool description
+* feat: add search_fields action to PacketAnalysisTool for real-time field lookup
+* feat: validate tshark -e field names before running analysis
+* fix: document -c behavior caveat in PacketAnalysisTool description
+* fix: demote loader-level load logs to DEBUG, info already reported by manager
+* fix: promote skills/prompts load logs to INFO level
+* fix: load packet analysis protocols during skills initialization
+* feat: add PacketAnalysisSkillsTool
+* fix: remove remaining quoted example from tool input docstring
+* fix: use shlex.split for tshark_args parsing
+* feat: add packet analysis workflow to tool description
+* refactor: remove old PacketCaptureTool, replaced by PacketAnalysisTool
+* feat: add protocol-oriented packet analysis tool
+* docs: add roadmap docs for planned features
+* feat: require superadmin for /reload/skills endpoint
+* fix: remove background init timeout and allow skills reload retry
+* deps: add PyYAML and GitPython to ai-requirements.txt
+* feat: add fault injection system and external skills repository
+* fix: Disable DeepSeek thinking mode to avoid reasoning_content errors
+* fix: Skip offline compute nodes during project import
+* fix: Import status module in project.py
+* fix: Handle connection errors when stopping node console
+* refactor: Remove MD5 calculation from node files listing
+* fix: Export NodeFile schema to schemas module
+* feat: Add detailed metadata to node files listing
+* feat: Add API endpoint to list node files
+* Fix snapshot restore does not work after export/import of project
+* Warn to use 64-bit IOU images. Fixes #2716 32-bit IOU image support has been removed from the GNS3 VM.
+* Fix: Improve Docker container deletion error logging
+* Fix: Add exponential backoff to compute reconnection attempts
+* Fix: Check compute connectivity before node creation in open()
+* Fix: Check compute connectivity before open() during project deletion
+* Fix: Add error logging when closing/deleting projects on computes
+* Fix: Skip add_compute for existing computes when opening projects
+* feat: add AI provider config files to .gitignore
+* Fix: Use _computes instead of _project_created_on_compute for deletion check
+* Fix: Check compute connection status before project deletion
+* fix: extend remote compute image path conversion to all node types
+* fix: send relative image path to remote compute nodes
+* fix: handle directory access for static web-ui routes
+* fix: add duplicate name validation when updating templates
+* fix: avoid AttributeError when password is not provided in compute update
+* fix: improve hostname validation error messages with allowed characters
+* feat(compute):  Fix Dynamips to listen on the internal port when ssh is used for auxiliary console
+* feat(compute): Fix ambiguous log message related to the  active console transport.
+* feat(compute): Updated server host key to use the secure ssh-ed25519 instead of old ssh-rsa algorithm
+* feat(compute):  Fix missing SSH wrapping for auxiliary console
+* feat(compute): Added AsyncioSSHServer dedicated tests
+* feat(compute): add SSH console type support
+* fix: include error details in LLM model config failure response
+* Fix telnet console silent-proxy hang on non-ConnectionError exit (#2344)
+
+## 2.2.59 08/05/2026
+
+* Sync appliances
+* Fix snapshot restore does not work after export/import of project
+* Warn to use 64-bit IOU images. Fixes #2716 32-bit IOU image support has been removed from the GNS3 VM.
+* Fix telnet console silent-proxy hang on non-ConnectionError exit (#2344)
+
 ## 3.1.0a1 25/04/2026
 
 * New completely revamped Web interface.

@@ -134,9 +134,16 @@ async def import_project(
                     node["compute_id"] = "vm"
         else:
             # Round-robin through available compute resources.
-            compute_nodes = itertools.cycle(controller.computes)
-            for node in topology["topology"]["nodes"]:
-                node["compute_id"] = next(compute_nodes)
+            # Only use computes that are connected to avoid import failures
+            available_computes = {compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected}
+            if available_computes:
+                compute_nodes = itertools.cycle(available_computes)
+                for node in topology["topology"]["nodes"]:
+                    node["compute_id"] = next(compute_nodes)
+            else:
+                # No remote computes are connected, use local only
+                for node in topology["topology"]["nodes"]:
+                    node["compute_id"] = "local"
 
     compute_created = set()
     for node in topology["topology"]["nodes"]:
@@ -329,7 +336,7 @@ async def update_snapshots(snapshots_dir, project_path, project_name, project_id
                     topology = json.load(f)
                     topology["name"] = project_name
                     topology["project_id"] = project_id
-                    regenerate_topology_ids(topology, project_path, reset_mac_addresses)
+                    regenerate_topology_ids(topology, tmpdir, reset_mac_addresses)
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:

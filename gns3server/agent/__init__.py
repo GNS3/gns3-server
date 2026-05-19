@@ -26,6 +26,7 @@ Installation:
 """
 
 import logging
+import threading
 
 # Feature flag: AI Copilot is available
 AI_COPILOT_AVAILABLE = False
@@ -35,6 +36,15 @@ try:
     from .gns3_copilot.project_agent_manager import get_project_agent_manager
     from .gns3_copilot.project_agent_manager import ProjectAgentManager
     AI_COPILOT_AVAILABLE = True
+
+    # Start skills repository initialization in background.
+    # Clones/pulls GNS3-Skills during server startup.
+    # Git network timeouts are configured in SkillsManager (_GIT_TIMEOUT_ENV).
+    # The daemon thread auto-terminates when the process exits.
+    from gns3server.agent.gns3_copilot.skills.registry import _ensure_skills_manager
+
+    threading.Thread(target=_ensure_skills_manager, daemon=True).start()
+
 except ImportError as e:
     # AI dependencies not installed, disable AI Copilot feature
     logging.warning(

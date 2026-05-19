@@ -1089,8 +1089,13 @@ class DockerVM(BaseNode):
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
             try:
                 await self.manager.query("DELETE", f"containers/{self._cid}", params={"force": 1, "v": 1})
-            except DockerError:
+            except DockerHttp404Error:
+                # Container already removed (normal case)
                 pass
+            except DockerError as e:
+                # Container deletion failed - log warning but don't block project close
+                # The stale container will be cleaned up when the project is opened again
+                log.warning(f"Failed to delete Docker container '{self.docker_name}': {e}")
             log.info("Docker container '{name}' [{image}] removed".format(name=self._name, image=self._image))
 
             if release_nio_udp_ports:

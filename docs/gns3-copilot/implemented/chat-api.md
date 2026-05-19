@@ -414,20 +414,30 @@ function handleToolCallEvent(chunk) {
 
 ## API Endpoints
 
-All endpoints are under `/v3/projects/{project_id}/chat/` path.
+All Copilot endpoints are under `/v3/copilot/` path.
+
+### Chat Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/stream` | Streaming Chat (main interface) |
-| GET | `/sessions` | List sessions (sorted by pin and update time) |
-| GET | `/sessions/{session_id}/history` | Get session history |
-| PATCH | `/sessions/{session_id}` | Rename session |
-| DELETE | `/sessions/{session_id}` | Delete session |
-| POST | `/sessions/{session_id}/abort` | Abort ongoing streaming session |
-| PUT | `/sessions/{session_id}/pin` | Pin session |
-| DELETE | `/sessions/{session_id}/pin` | Unpin session |
+| POST | `/copilot/projects/{project_id}/chat/stream` | Streaming Chat (main interface) |
+| GET | `/copilot/projects/{project_id}/chat/sessions` | List sessions (sorted by pin and update time) |
+| GET | `/copilot/projects/{project_id}/chat/sessions/{session_id}/history` | Get session history |
+| PATCH | `/copilot/projects/{project_id}/chat/sessions/{session_id}` | Rename session |
+| DELETE | `/copilot/projects/{project_id}/chat/sessions/{session_id}` | Delete session |
+| POST | `/copilot/projects/{project_id}/chat/sessions/{session_id}/abort` | Abort ongoing streaming session |
+| PUT | `/copilot/projects/{project_id}/chat/sessions/{session_id}/pin` | Pin session |
+| DELETE | `/copilot/projects/{project_id}/chat/sessions/{session_id}/pin` | Unpin session |
 
-### POST /v3/projects/{project_id}/chat/stream
+### Skills Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/copilot/reload/skills` | Hot reload skills, prompts, and forbidden commands |
+
+See [Skills Repository](skills-repository.md) for details on the reload process and configuration.
+
+### POST /v3/copilot/projects/{project_id}/chat/stream
 
 **Function**: Streaming conversation interface
 
@@ -478,7 +488,7 @@ data: {"type": "content", "content": "! I can help", "session_id": "d7e76375-696
 data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
 ```
 
-### GET /v3/projects/{project_id}/chat/sessions
+### GET /v3/copilot/projects/{project_id}/chat/sessions
 
 **Function**: List all sessions in a project
 
@@ -514,7 +524,7 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
 ]
 ```
 
-### GET /v3/projects/{project_id}/chat/sessions/{session_id}/history
+### GET /v3/copilot/projects/{project_id}/chat/sessions/{session_id}/history
 
 **Function**: Get complete history of a session
 
@@ -563,7 +573,7 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
 }
 ```
 
-### PATCH /v3/projects/{project_id}/chat/sessions/{session_id}
+### PATCH /v3/copilot/projects/{project_id}/chat/sessions/{session_id}
 
 **Function**: Rename session
 
@@ -581,13 +591,13 @@ data: {"type": "done", "session_id": "d7e76375-6960-419a-9367-211ef64af877"}
 
 **Response**: Updated session information
 
-### DELETE /v3/projects/{project_id}/chat/sessions/{session_id}
+### DELETE /v3/copilot/projects/{project_id}/chat/sessions/{session_id}
 
 **Function**: Delete session and all its checkpoint data
 
 **Response**: 204 No Content
 
-### POST /v3/projects/{project_id}/chat/sessions/{session_id}/abort
+### POST /v3/copilot/projects/{project_id}/chat/sessions/{session_id}/abort
 
 **Function**: Abort an ongoing streaming session
 
@@ -615,7 +625,7 @@ Graph conditional edge checks flag
 Stream ends → yields aborted tool_end events → done
 ```
 
-### PUT /v3/projects/{project_id}/chat/sessions/{session_id}/pin
+### PUT /v3/copilot/projects/{project_id}/chat/sessions/{session_id}/pin
 
 **Function**: Pin session to top of list
 
@@ -630,7 +640,7 @@ Stream ends → yields aborted tool_end events → done
 }
 ```
 
-### DELETE /v3/projects/{project_id}/chat/sessions/{session_id}/pin
+### DELETE /v3/copilot/projects/{project_id}/chat/sessions/{session_id}/pin
 
 **Function**: Unpin session
 

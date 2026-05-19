@@ -67,13 +67,13 @@ logger = logging.getLogger(__name__)
 
 # Initialize tiktoken encoding (required dependency)
 import time
-logger.info("Initializing tiktoken encoding (cl100k_base)...")
-logger.info(f"Cache directory: {_cache_dir}")
-logger.info("This may take a moment on first run (downloading ~1.6MB encoding file from openaipublic.blob.core.windows.net)")
+logger.debug("Initializing tiktoken encoding (cl100k_base)...")
+logger.debug(f"Cache directory: {_cache_dir}")
+logger.debug("This may take a moment on first run (downloading ~1.6MB encoding file from openaipublic.blob.core.windows.net)")
 start_time = time.time()
 _tiktoken_encoding = tiktoken.get_encoding("cl100k_base")
 elapsed = time.time() - start_time
-logger.info(f"✓ tiktoken encoding loaded successfully (took {elapsed:.2f}s)")
+logger.debug(f"✓ tiktoken encoding loaded successfully (took {elapsed:.2f}s)")
 
 # ============================================================================
 # Constants

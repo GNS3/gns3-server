@@ -387,27 +387,30 @@ async def web_wireshark_websocket(
 
         # Get container IP
         manager = WebWiresharkManager()
-        container_ip = await manager.get_container_ip(container_name)
+        try:
+            container_ip = await manager.get_container_ip(container_name)
 
-        if not container_ip:
-            log.error(f"Container {container_name} not found in wireshark network")
-            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-            return
+            if not container_ip:
+                log.error(f"Container {container_name} not found in wireshark network")
+                await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+                return
 
-        # Build container WebSocket URL
-        container_ws_url = f"ws://{container_ip}:{xpra_port}"
-        log.info(f"Proxying WebSocket to container: {container_ws_url}")
+            # Build container WebSocket URL
+            container_ws_url = f"ws://{container_ip}:{xpra_port}"
+            log.info(f"Proxying WebSocket to container: {container_ws_url}")
 
-        # Get client's requested subprotocols from request headers
-        scope = websocket.scope
-        headers = dict(scope.get("headers", []))
-        requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
-        requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
-        log.info(f"Client requested subprotocols: {requested_protocols}")
+            # Get client's requested subprotocols from request headers
+            scope = websocket.scope
+            headers = dict(scope.get("headers", []))
+            requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
+            requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
+            log.info(f"Client requested subprotocols: {requested_protocols}")
 
-        # The WebSocket connection has already been accepted by the authentication dependency
-        # with the proper subprotocol. Now we just proxy data to the backend.
-        await websocket_proxy(websocket, container_ws_url, requested_protocols)
+            # The WebSocket connection has already been accepted by the authentication dependency
+            # with the proper subprotocol. Now we just proxy data to the backend.
+            await websocket_proxy(websocket, container_ws_url, requested_protocols)
+        finally:
+            await manager.close()
 
     except Exception as e:
         log.error(f"Error in WebSocket proxy for link {link_id}: {e}")

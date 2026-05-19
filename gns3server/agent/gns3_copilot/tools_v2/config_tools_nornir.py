@@ -183,7 +183,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
              configuration results.
         """
         # Log received input
-        logger.info("Received input: %s", tool_input)
+        logger.debug("Received input: %s", tool_input)
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
@@ -353,7 +353,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             # Handle models (like DeepSeek) that return a raw JSON string.
             try:
                 parsed_input = json.loads(tool_input)
-                logger.info("Successfully parsed tool input from JSON string.")
+                logger.debug("Successfully parsed tool input from JSON string.")
             except json.JSONDecodeError as e:
                 logger.error(
                     "Invalid JSON string received as tool input: %s", e

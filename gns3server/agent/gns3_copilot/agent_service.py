@@ -285,13 +285,19 @@ class AgentService:
 
         if is_new_session:
             # Create new session
+            copilot_mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
             session = await repo.create_session(
                 thread_id=session_id,
                 user_id=user_id or "",
                 project_id=project_id or "",
                 title="New Conversation",
+                copilot_mode=copilot_mode,
             )
-            log.debug("Created new chat session: thread_id=%s", session_id)
+            log.debug(
+                "Created new chat session: thread_id=%s, copilot_mode=%s",
+                session_id,
+                copilot_mode
+            )
 
         # Set request-scoped context variables (memory-only, not persisted)
         if jwt_token:
@@ -306,6 +312,14 @@ class AgentService:
             )
 
         # Build config - only thread-safe identifiers
+        # Determine recursion_limit based on copilot_mode
+        copilot_mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
+        if copilot_mode == "troubleshooting_injection":
+            recursion_limit = 100  # Need more recursion depth for fault injection workflow
+            log.debug("Using extended recursion_limit for troubleshooting_injection mode: 100")
+        else:
+            recursion_limit = 25  # Default recursion limit
+
         config = {
             "configurable": {
                 "thread_id": session_id,
@@ -313,10 +327,20 @@ class AgentService:
             },
             "metadata": {
                 "user_id": user_id,
+                "copilot_mode": copilot_mode,  # Store mode in checkpoint metadata
             },
+            "recursion_limit": recursion_limit,
         }
 
         # Build inputs
+        # Determine remaining_steps based on copilot_mode
+        # Troubleshooting injection mode needs more steps for multi-tool workflow
+        if copilot_mode == "troubleshooting_injection":
+            remaining_steps = 50  # Need more steps for fault injection workflow
+            log.debug("Using extended remaining_steps for troubleshooting_injection mode: 50")
+        else:
+            remaining_steps = 20  # Default for other modes
+
         inputs = {
             "messages": [
                 HumanMessage(
@@ -326,7 +350,7 @@ class AgentService:
                 )
             ],
             "llm_calls": 0,
-            "remaining_steps": 20,
+            "remaining_steps": remaining_steps,
             "session_id": session_id,
             "abort": False,
         }
@@ -650,13 +674,14 @@ class AgentService:
         return convert_langchain_to_openai(msg)
 
     async def list_sessions(
-        self, user_id: Optional[str] = None, limit: int = 100
+        self, user_id: Optional[str] = None, copilot_mode: Optional[str] = None, limit: int = 100
     ) -> List[Dict[str, Any]]:
         """
         List chat sessions for this project.
 
         Args:
             user_id: Filter by user ID (optional)
+            copilot_mode: Filter by copilot mode (optional)
             limit: Maximum number of sessions to return
 
         Returns:
@@ -666,7 +691,7 @@ class AgentService:
             await self._get_checkpointer()
 
         repo = ChatSessionsRepository(self._checkpointer_conn)
-        sessions = await repo.list_sessions(user_id=user_id, limit=limit)
+        sessions = await repo.list_sessions(user_id=user_id, copilot_mode=copilot_mode, limit=limit)
         return [s.to_dict() for s in sessions]
 
     async def delete_session(self, session_id: str) -> bool:

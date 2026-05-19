@@ -86,14 +86,14 @@ flowchart TD
 
 ### Forbidden Commands Configuration
 
-**File:** `gns3server/agent/gns3_copilot/config/forbidden_commands.txt`
+The forbidden commands list is loaded from the external [GNS3-Skills](https://github.com/yueguobin/GNS3-Skills) repository at `config/forbidden_commands.txt`.
 
 **Format:**
 - One command pattern per line
 - **Prefix matching** (case-insensitive) — matches the beginning of each command
 - Empty lines and lines starting with `#` are ignored
 
-**Default patterns (used when config file is missing):**
+**Default patterns (used when skills repository is unavailable):**
 
 | Pattern | Reason |
 |---------|--------|
@@ -140,7 +140,7 @@ flowchart TD
 | `filter_forbidden_commands(commands)` | Returns `(allowed_commands, blocked_commands_info)` |
 | `is_command_forbidden(command)` | Check if a single command matches a forbidden pattern |
 | `get_forbidden_commands()` | Get current forbidden patterns list |
-| `reload_forbidden_commands()` | Clear cache, reload from file on next access |
+| `reload_forbidden_commands()` | Directly load and cache commands from skills repository |
 
 **Integration points:**
 - `display_tools_nornir.py` — `_filter_forbidden_commands_from_device_configs()`
@@ -168,7 +168,7 @@ Applies to any command with embedded newlines: `banner`, multi-line ACLs, route-
 
 ### Customizing Forbidden Commands
 
-Edit `gns3server/agent/gns3_copilot/config/forbidden_commands.txt` and either restart the server or call `reload_forbidden_commands()` to apply changes without restart.
+Edit `config/forbidden_commands.txt` in the [GNS3-Skills repository](https://github.com/yueguobin/GNS3-Skills) and push the changes, then call `POST /copilot/reload/skills` to apply them without restarting the server.
 
 ## Implementation Verification
 
@@ -214,11 +214,11 @@ Edit `gns3server/agent/gns3_copilot/config/forbidden_commands.txt` and either re
 |---------|----------|
 | Command blocked unexpectedly | Check `blocked_commands` in result, identify matching pattern, edit `forbidden_commands.txt` |
 | "File not found, using defaults" | Verify `config/forbidden_commands.txt` exists and is readable |
-| Changes not taking effect | Restart server or call `reload_forbidden_commands()` |
+| Changes not taking effect | Call `POST /copilot/reload/skills` or restart server |
 
 ## Related Documentation
 
-- [Tool Implementation](../gns3-copilot/tools_v2/README.md)
-- [GNS3-Copilot Documentation](../README.md)
-- [Contributing Guide](../../CONTRIBUTING.md)
+- [Skills Repository](skills-repository.md)
+- [Fault Injection](fault-injection.md)
+- [Chat API](chat-api.md)
 

@@ -18,8 +18,10 @@ import os
 import shutil
 import asyncio
 import hashlib
+import datetime
 
 from uuid import UUID, uuid4
+from fastapi import HTTPException, status
 
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
 from .port_manager import PortManager
@@ -414,6 +416,67 @@ class Project:
                     except OSError:
                         continue
                     files.append(file_info)
+
+        return files
+
+    async def list_node_files(self, node_path: str):
+        """
+        List files in a specific node directory with detailed metadata.
+
+        :param node_path: Relative path to node directory (e.g., "project-files/qemu/node-id")
+        :returns: Array of files in the node directory with metadata
+        """
+
+        node_full_path = os.path.normpath(os.path.join(self.path, node_path))
+
+        # Security check: ensure the path is within the project directory
+        if not os.path.commonpath([node_full_path, self.path]) == self.path:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                              detail="Path is outside the project directory")
+
+        if not os.path.exists(node_full_path):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                              detail="Node directory not found")
+
+        files = []
+        try:
+            filenames = os.listdir(node_full_path)
+        except OSError as e:
+            log.error(f"Error listing node directory: {e}")
+            return files
+
+        for filename in filenames:
+            file_path = os.path.join(node_full_path, filename)
+            if not os.path.isfile(file_path) or filename.endswith(".ghost"):
+                continue
+
+            try:
+                # Get file stat information
+                stat_info = await wait_run_in_executor(os.stat, file_path)
+
+                # Get file extension
+                _, extension = os.path.splitext(filename)
+                extension = extension.lstrip('.')
+
+                # Format timestamps as ISO 8601
+                try:
+                    created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                    modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                except (OSError, OverflowError, ValueError) as e:
+                    log.warning(f"Invalid timestamp for '{filename}': {e}")
+                    created_at = modified_at = ""
+
+                file_info = {
+                    "path": filename,
+                    "size": stat_info.st_size,
+                    "created_at": created_at,
+                    "modified_at": modified_at,
+                    "extension": extension
+                }
+                files.append(file_info)
+            except OSError as e:
+                log.warning(f"Error getting metadata for file '{filename}': {e}")
+                continue
 
         return files
 

@@ -114,7 +114,7 @@ class GNS3LinkTool(BaseTool):
             list: A list with created link details or error messages.
         """
         # Log received input
-        logger.info("Received input: %s", tool_input)
+        logger.debug("Received input: %s", tool_input)
 
         try:
             # Parse input JSON

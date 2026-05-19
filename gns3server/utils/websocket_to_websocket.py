@@ -127,7 +127,7 @@ async def websocket_proxy(
                 try:
                     done, pending = await asyncio.wait(
                         aws,
-                        return_when=asyncio.ALL_COMPLETED
+                        return_when=asyncio.FIRST_COMPLETED
                     )
                 except Exception as e:
                     log.error(f"asyncio.wait raised exception: {e}")
@@ -264,7 +264,7 @@ async def websocket_proxy_with_manual_accept(
                 try:
                     done, pending = await asyncio.wait(
                         aws,
-                        return_when=asyncio.ALL_COMPLETED
+                        return_when=asyncio.FIRST_COMPLETED
                     )
                     log.info(f"asyncio.wait returned. done={len(done)}, pending={len(pending)}")
                 except Exception as e:
