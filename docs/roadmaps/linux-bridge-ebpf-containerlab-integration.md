@@ -20,7 +20,7 @@ For full license terms, see: [../LICENSE](../LICENSE)
 - 🔥 **eBPF Support**: Kernel-space packet processing with near-zero overhead
 - 🚀 **CI/CD Ready**: Better automation and cloud-native integration
 
-> **Note**: Performance figures throughout this document are **design targets**, not measured benchmarks. Actual gains depend on workload, kernel version, NIC offloading, and node type. A Phase 1 POC is required to validate these assumptions before committing to subsequent phases.
+> **Note**: Performance figures throughout this document are **design targets**, not measured benchmarks. Actual gains depend on workload, kernel version, NIC offloading, and node type. A Phase 1 POC — starting with **Docker nodes only** — is required to validate these assumptions before committing to subsequent phases and additional node types.
 
 ---
 
@@ -220,6 +220,45 @@ These are then composed into `ServerConfig` — none exist today.
 ### Port Management Implications
 
 `PortManager` (`gns3server/compute/port_manager.py`) currently reserves UDP ports for all links. With Linux bridges for local connections, same-compute links would not consume UDP ports at all. The `get_free_udp_port()` / `release_udp_port()` calls in `UDPLink.create()` must become conditional on the backend decision.
+
+### Docker-First POC (Phase 1 Validation Gate)
+
+**Decision**: Phase 1 implementation should target **Docker nodes only** as the sole validation gate before expanding to other node types.
+
+**Rationale**:
+| Factor | Docker | QEMU | VPCS/IOU/Dynamips |
+|--------|--------|------|-------------------|
+| Already uses TAP | ✅ Yes (`docker_vm.py:1112`) | ❌ Uses UDP NIO | ❌ Uses UDP NIO |
+| Clear ns boundary | ✅ Container ns ↔ host | ❌ Same namespace | ❌ Same namespace |
+| Userspace shim needed | ❌ No | ❌ Yes | ❌ Yes |
+| Adoption weight | ⭐ Heavily used | ⭐ Heavily used | ⭐ Less used |
+
+Docker has the lowest adaptation barrier and highest validation value.
+
+**POC Scope**:
+
+```python
+# docker_vm.py — minimal parallel path
+async def adapter_add_nio_binding(self, adapter_number, nio):
+    if self._use_linux_bridge and self._is_local_same_compute(nio):
+        await self._add_linux_bridge_connection(adapter_number, nio)
+    else:
+        await self._add_ubridge_connection(nio, adapter_number)  # unchanged
+
+async def _add_linux_bridge_connection(self, adapter_number, nio):
+    bridge = BridgeManager.get_or_create(f"gns3-{self._project.id}")
+    veth_pair = VethManager.create(f"v{adapter_number}-{self._id[:8]}", f"tap{adapter_number}")
+    VethManager.move_to_ns(veth_pair.host_end, self._container_id)
+    BridgeManager.attach(bridge, veth_pair.host_end)
+```
+
+**Success Criteria**:
+1. Two Docker containers on same compute can communicate via Linux bridge (iperf3)
+2. Latency and throughput are measured and compared against ubridge baseline
+3. No regressions when `use_linux_bridge = false` (default)
+4. Container restart does not orphan bridge/veth state
+
+**Exit Gate**: Only after Docker POC meets all success criteria should QEMU, VPCS, IOU, and Dynamips adaptation begin.
 
 ---
 
@@ -1600,10 +1639,12 @@ graph TB
 | **Cloud (host iface)** | Direct bridge attach | Host iface ↔ Linux bridge | Use `ip link set ethX master brY` instead of ubridge raw socket |
 | **Ethernet Switch** | Native Linux bridge | Already a bridge | Map to kernel bridge directly |
 
-**Implementation Priority**:
+**Implementation Priority — Docker-First Strategy**:
+
+> **Why Docker first?** See "Docker-First POC" in Phase 1 for full rationale. In short: Docker already uses TAP interfaces, has clear namespace boundaries, requires no userspace shim, and is the most widely used node type — making it the lowest-risk, highest-value validation target.
 
 ```
-Phase 1 POC: Docker only (simplest adaptation path)
+Phase 1 POC: Docker only              ← VALIDATION GATE — no further phases proceed without passing
 Phase 2a:    Docker + Cloud + Ethernet Switch
 Phase 2b:    QEMU (tap adapter)
 Phase 2c:    VPCS / IOU / Dynamips (UDP shim — highest risk)
