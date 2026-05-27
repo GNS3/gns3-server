@@ -1042,6 +1042,66 @@ class Link:
         # Update object
         self._update(_response.json())
 
+    @verify_connector_and_id
+    def available_filters(self) -> list[dict[str, Any]]:
+        """
+        Gets the list of available packet filters for this link.
+
+        **NOTE:** This endpoint is only available in GNS3 API v3 or later.
+        Attempting to call this method with a v2 connector will raise an error.
+
+        **Required Attributes:**
+
+        - `project_id`
+        - `connector` (must be API v3 or later)
+        - `link_id`
+
+        **Returns:**
+
+        List of available filter types with their parameters (e.g., frequency_drop,
+        packet_loss, delay, corrupt, bpf).
+
+        **Example:**
+
+        ```python
+        >>> link = Link(project_id=<pr_id>, link_id=<link_id>, connector=<connector>)
+        >>> filters = link.available_filters()
+        >>> print(filters)
+        [
+            {
+                "type": "frequency_drop",
+                "name": "Frequency drop",
+                "description": "It will drop everything with a -1 frequency...",
+                "parameters": [...]
+            },
+            ...
+        ]
+        ```
+        """
+        _conn = self.connector
+        _project_id = self.project_id
+
+        if _conn is None:
+            raise ValueError("Gns3Connector not assigned under 'connector'")
+        if _project_id is None:
+            raise ValueError("Need to submit project_id")
+
+        # Check API version - available_filters endpoint is only available in v3+
+        if not hasattr(_conn, "api_version") or _conn.api_version < 3:
+            raise ValueError(
+                "The available_filters() method requires GNS3 API v3 or later. "
+                f"Current connector version: v{getattr(_conn, 'api_version', 2)}. "
+                "Please use api_version=3 when creating the Gns3Connector."
+            )
+
+        _url = (
+            f"{_conn.base_url}/projects/{_project_id}/links/{self.link_id}/"
+            "available_filters"
+        )
+        _response = _conn.http_call("get", _url)
+
+        return cast(list[dict[str, Any]], _response.json())
+
 
 @dataclass(config=config)
 class Node:

@@ -107,6 +107,8 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schema
         await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
+    if "show_filters_icon" in link_data:
+        await link.update_show_filters_icon(link_data["show_filters_icon"])
     try:
         for node in link_data["nodes"]:
             await link.add_node(
@@ -171,6 +173,8 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
         await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
+    if "show_filters_icon" in link_data:
+        await link.update_show_filters_icon(link_data["show_filters_icon"])
     if "nodes" in link_data:
         await link.update_nodes(link_data["nodes"])
     return link.asdict()

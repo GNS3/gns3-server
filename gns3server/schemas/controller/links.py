@@ -62,6 +62,10 @@ class LinkBase(BaseModel):
     suspend: Optional[bool] = None
     link_style: Optional[LinkStyle] = None
     filters: Optional[dict] = None
+    show_filters_icon: Optional[bool] = Field(
+        True,
+        description="Show filters icon in Web UI"
+    )
 
 
 class LinkCreate(LinkBase):

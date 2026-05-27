@@ -88,6 +88,7 @@ from gns3server.agent.gns3_copilot.tools_v2 import (
 )
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3CreateNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3LinkTool
+from gns3server.agent.gns3_copilot.tools_v2 import GNS3PacketFilterTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3StartNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3StopNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
@@ -144,6 +145,7 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
 TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
     ExecuteMultipleDeviceCommands(),  # Get device configurations (READ-ONLY)
     ExecuteMultipleDeviceConfigCommands(),  # Inject configuration changes
+    GNS3PacketFilterTool(),  # Manage packet filters on links (delay, loss, corrupt, etc.)
     InjectionSkillsTool(),  # Query injection skills and fault types
     GNS3TopologyTool(),  # Get topology information
 ]

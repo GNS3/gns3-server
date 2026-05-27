@@ -32,6 +32,7 @@ This package provides various tools for interacting with GNS3 network simulator:
 - Multiple device command execution using Nornir
 - VPCS device configuration using Netmiko
 - Node and link management
+- Packet filter management
 
 Main modules:
 - config_tools_nornir: Multiple device configuration command execution tool using Nornir
@@ -42,6 +43,7 @@ Main modules:
 - gns3_start_node: GNS3 node startup tool
 - gns3_get_node_temp: GNS3 template retrieval tool
 - gns3_update_node_name: GNS3 node name update tool
+- gns3_packet_filter: GNS3 packet filter management tool
 
 Note: GNS3TopologyTool is now available from gns3_client package
 
@@ -54,6 +56,7 @@ from .display_tools_nornir import ExecuteMultipleDeviceCommands
 from .gns3_create_link import GNS3LinkTool
 from .gns3_create_node import GNS3CreateNodeTool
 from .gns3_get_node_temp import GNS3TemplateTool
+from .gns3_packet_filter import GNS3PacketFilterTool
 from .gns3_start_node import GNS3StartNodeQuickTool
 from .gns3_start_node import GNS3StartNodeTool
 from .gns3_stop_node import GNS3StopNodeTool
@@ -79,6 +82,7 @@ __all__ = [
     "ExecuteMultipleDeviceCommands",
     "GNS3CreateNodeTool",
     "GNS3LinkTool",
+    "GNS3PacketFilterTool",
     "GNS3StartNodeTool",
     "GNS3StartNodeQuickTool",
     "GNS3StopNodeTool",

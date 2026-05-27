@@ -1,7 +1,7 @@
 # GNS3 server repository
 
 [![Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![GitHub Actions tests](https://github.com/GNS3/gns3-server/workflows/testing/badge.svg?branch=3.0)](https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting+branch%3A3.0)
+[![GitHub Actions tests](https://github.com/GNS3/gns3-server/workflows/testing/badge.svg?branch=3.1)](https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting+branch%3A3.0)
 [![Latest PyPi version](https://img.shields.io/pypi/v/gns3-server.svg)](https://pypi.python.org/pypi/gns3-server)
 [![Snyk scanning](https://snyk.io/test/github/GNS3/gns3-server/badge.svg)](https://snyk.io/test/github/GNS3/gns3-server)
 
@@ -127,7 +127,7 @@ These commands will install the server with core Python dependencies:
 ```shell
 git clone https://github.com/GNS3/gns3-server
 cd gns3-server
-git checkout 3.0
+git checkout 3.1
 python3 -m venv venv-gns3server
 source venv-gns3server/bin/activate
 python3 -m pip install .

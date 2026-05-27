@@ -89,6 +89,7 @@ class Link:
         self._filters = {}
         self._link_style = {}
         self._wireshark = False
+        self._show_filters_icon = True
 
     @property
     def filters(self):
@@ -96,6 +97,13 @@ class Link:
         Get an array of filters
         """
         return self._filters
+
+    @property
+    def show_filters_icon(self):
+        """
+        Get whether to show filters icon in Web UI
+        """
+        return getattr(self, '_show_filters_icon', True)
 
     @property
     def project(self):
@@ -164,6 +172,17 @@ class Link:
         if value != self._suspended:
             self._suspended = value
             await self.update()
+            self._project.emit_notification("link.updated", self.asdict())
+            self._project.dump()
+
+    async def update_show_filters_icon(self, value):
+        """
+        Update the show_filters_icon property.
+
+        :param value: Boolean indicating whether to show filters icon in Web UI
+        """
+        if value != self._show_filters_icon:
+            self._show_filters_icon = value
             self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
 
@@ -555,6 +574,7 @@ class Link:
                 "filters": self._filters,
                 "link_style": self._link_style,
                 "suspend": self._suspended,
+                "show_filters_icon": getattr(self, '_show_filters_icon', True),
             }
         return {
             "nodes": res,
@@ -569,4 +589,5 @@ class Link:
             "suspend": self._suspended,
             "link_style": self._link_style,
             "wireshark": self._wireshark,
+            "show_filters_icon": getattr(self, '_show_filters_icon', True),
         }
