@@ -76,12 +76,12 @@ class SkillsManager:
         Initialize the skills manager.
 
         Args:
-            repo_url: Git repository URL (default: https://github.com/yueguobin/GNS3-Skills.git)
+            repo_url: Git repository URL (default: https://github.com/gns3/gns3-skills.git)
             branch: Git branch to use (default: "main")
             auto_update: Whether to automatically pull updates on reload
         """
         if repo_url is None:
-            repo_url = "https://github.com/yueguobin/GNS3-Skills.git"
+            repo_url = "https://github.com/gns3/gns3-skills.git"
 
         # Get local path from GNS3 config directory
         config_dir = Config.instance().config_dir

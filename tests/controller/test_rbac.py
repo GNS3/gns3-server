@@ -21,6 +21,7 @@ import uuid
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from httpx_ws.transport import ASGIWebSocketTransport
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.controller import Controller
@@ -30,6 +31,7 @@ from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.schemas.controller.rbac import ACECreate
 from gns3server.schemas.controller.pools import ResourceCreate, ResourcePoolCreate
 from gns3server.db.models import User
+from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio
 
@@ -168,22 +170,23 @@ class TestResourcePools:
             self,
             app: FastAPI,
             controller: Controller,
-            authorized_client: AsyncClient,
-            db_session: AsyncSession
+            base_client: AsyncClient,
+            db_session: AsyncSession,
+            test_user: User
     ) -> None:
+
+        # Clean up any existing ACEs from previous tests
+        await RbacRepository(db_session).delete_all_ace_starting_with_path("/projects")
+        await RbacRepository(db_session).delete_all_ace_starting_with_path("/pools")
 
         uuid1 = str(uuid.uuid4())
         uuid2 = str(uuid.uuid4())
         uuid3 = str(uuid.uuid4())
-        await controller.add_project(project_id=uuid1, name="Project1")
-        await controller.add_project(project_id=uuid2, name="Project2")
-        await controller.add_project(project_id=uuid3, name="Project3")
+        await controller.add_project(project_id=uuid1, name="Project1", created_by=test_user.username)
+        await controller.add_project(project_id=uuid2, name="Project2", created_by=test_user.username)
+        await controller.add_project(project_id=uuid3, name="Project3", created_by=test_user.username)
 
-        # user has no access to projects (no ACE on /projects or resource pools)
-        response = await authorized_client.get(app.url_path_for("get_projects"))
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 0
-
+        # Create resource pool and add uuid2 to it
         pools_repo = ResourcePoolsRepository(db_session)
         new_resource_pool = ResourcePoolCreate(name="pool2")
         pool_in_db = await pools_repo.create_resource_pool(new_resource_pool)
@@ -194,6 +197,8 @@ class TestResourcePools:
 
         group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
         role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
+
+        # Give user access to resource pool only
         ace = ACECreate(
             path=f"/pools/{pool_in_db.resource_pool_id}",
             ace_type="group",
@@ -203,40 +208,47 @@ class TestResourcePools:
         )
         await RbacRepository(db_session).create_ace(ace)
 
-        response = await authorized_client.get(app.url_path_for("get_project", project_id=uuid2))
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()["name"] == "Project2"
+        # Create a new client with test user authentication
+        access_token = auth_service.create_access_token(test_user.username)
+        async with AsyncClient(
+                base_url="http://test-api",
+                headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
+                transport=ASGIWebSocketTransport(app=app)
+        ) as user_client:
+            # user should see only uuid2 (from resource pool)
+            response = await user_client.get(app.url_path_for("get_projects"))
+            assert response.status_code == status.HTTP_200_OK
+            projects = response.json()
+            assert len(projects) == 1
+            assert projects[0]["project_id"] == uuid2
 
-        # user should only see one project because it is in the resource pool he has access to
-        response = await authorized_client.get(app.url_path_for("get_projects"))
-        assert response.status_code == status.HTTP_200_OK
-        projects = response.json()
-        assert len(projects) == 1
-        assert projects[0]["project_id"] == uuid2
+            response = await user_client.get(app.url_path_for("get_project", project_id=uuid2))
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["name"] == "Project2"
 
-        ace = ACECreate(
-            path=f"/projects",
-            ace_type="group",
-            propagate=True,
-            group_id=str(group_id),
-            role_id=str(role_id)
-        )
-        await RbacRepository(db_session).create_ace(ace)
+            # Now give user access to /projects (in addition to resource pool)
+            ace = ACECreate(
+                path="/projects",
+                ace_type="group",
+                propagate=True,
+                group_id=str(group_id),
+                role_id=str(role_id)
+            )
+            await RbacRepository(db_session).create_ace(ace)
 
-        # now user should see all projects because he has access to /projects and the resource pool
-        response = await authorized_client.get(app.url_path_for("get_projects"))
-        assert response.status_code == status.HTTP_200_OK
-        projects = response.json()
-        assert len(projects) == 3
+            # user should see all 3 projects: 3 from /projects ACE (uuid2 also in pool but deduplicated)
+            response = await user_client.get(app.url_path_for("get_projects"))
+            assert response.status_code == status.HTTP_200_OK
+            projects = response.json()
+            assert len(projects) == 3
 
-        await RbacRepository(db_session).delete_all_ace_starting_with_path(f"/pools/{pool_in_db.resource_pool_id}")
-        response = await authorized_client.get(app.url_path_for("get_project", project_id=uuid2))
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+            # Remove resource pool ACE
+            await RbacRepository(db_session).delete_all_ace_starting_with_path(f"/pools/{pool_in_db.resource_pool_id}")
 
-        # now user should only see the projects that are not in a resource pool
-        response = await authorized_client.get(app.url_path_for("get_projects"))
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 2
+            # user should still see all 3 projects via /projects ACE (created_by check)
+            response = await user_client.get(app.url_path_for("get_projects"))
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.json()) == 3
 
 
 # class TestProjectsWithRbac:

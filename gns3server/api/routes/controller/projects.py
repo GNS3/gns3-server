@@ -76,7 +76,6 @@ def dep_project(project_id: UUID) -> Project:
 async def get_projects(
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
 ) -> List[schemas.Project]:
     """
     Return all projects.
@@ -86,19 +85,32 @@ async def get_projects(
 
     controller = Controller.instance()
     projects = []
+    seen_project_ids = set()  # track seen projects to avoid duplicates
 
     if current_user.is_superadmin:
         # super admin sees all projects
         return [p.asdict() for p in controller.projects.values()]
-    elif await rbac_repo.check_user_has_privilege(current_user.user_id, "/projects", "Project.Audit"):
-        # user with Project.Audit privilege on '/projects' sees all projects except those in resource pools
-        project_ids_in_pools = [str(r.resource_id) for r in await pools_repo.get_resources() if r.resource_type == "project"]
-        projects.extend([p.asdict() for p in controller.projects.values() if p.id not in project_ids_in_pools])
 
-    # user with Project.Audit privilege on resource pools sees the projects in these pools
-    user_pool_resources = await rbac_repo.get_user_pool_resources(current_user.user_id, "Project.Audit")
-    project_ids_in_pools = [str(r.resource_id) for r in user_pool_resources if r.resource_type == "project"]
-    projects.extend([p.asdict() for p in controller.projects.values() if p.id in project_ids_in_pools])
+    # Batch ACE + resource pool check (3 DB queries regardless of project count)
+    all_project_ids = list(controller.projects.keys())
+    direct_ace_ids, pool_accessible_ids = await rbac_repo.get_accessible_project_ids(
+        current_user.user_id, "Project.Audit", all_project_ids
+    )
+
+    # Step 2: Filter direct ACE projects by created_by
+    # Direct project sharing is only available through resource pools
+    for p in controller.projects.values():
+        if p.id in direct_ace_ids and p.created_by == current_user.username:
+            if p.id not in seen_project_ids:
+                projects.append(p.asdict())
+                seen_project_ids.add(p.id)
+
+    # Step 3: Resource pool projects (no created_by filter)
+    for p in controller.projects.values():
+        if p.id in pool_accessible_ids:
+            if p.id not in seen_project_ids:
+                projects.append(p.asdict())
+                seen_project_ids.add(p.id)
 
     return projects
 

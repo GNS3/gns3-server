@@ -147,10 +147,38 @@ async def delete_resource_pool(
     if not resource_pool:
         raise ControllerNotFoundError(f"Resource pool '{resource_pool_id}' not found")
 
+    # Check if there are any ACE configurations using this resource pool path
+    pool_path = f"/pools/{resource_pool_id}"
+    using_aces = await rbac_repo.get_aces_for_path(pool_path)
+
+    if using_aces:
+        # Build detailed error message with ACE information
+        ace_details = []
+        for ace in using_aces:
+            identifier = ""
+            if ace.ace_type == "user" and ace.user:
+                identifier = f"User '{ace.user.username}'"
+            elif ace.ace_type == "group" and ace.group:
+                identifier = f"Group '{ace.group.name}'"
+            else:
+                identifier = f"{ace.ace_type.capitalize()} '{ace.user_id or ace.group_id}'"
+
+            if ace.role:
+                identifier += f" with role '{ace.role.name}'"
+
+            ace_details.append(f"- {identifier}")
+
+        error_message = (
+            f"Resource pool '{resource_pool.name}' cannot be deleted because it is being used by {len(using_aces)} ACE configuration(s):\n"
+            + "\n".join(ace_details)
+            + f"\n\nPlease delete the ACE configuration(s) for resource pool '{resource_pool.name}' first."
+        )
+        raise ControllerBadRequestError(error_message)
+
     success = await pools_repo.delete_resource_pool(resource_pool_id)
     if not success:
         raise ControllerError(f"Resource pool '{resource_pool_id}' could not be deleted")
-    await rbac_repo.delete_all_ace_starting_with_path(f"/pools/{resource_pool_id}")
+    await rbac_repo.delete_all_ace_starting_with_path(pool_path)
 
 
 @router.get(

@@ -121,7 +121,7 @@ sequenceDiagram
 
 ## Injection Skills Repository
 
-Skills are organized by protocol/category in the external [GNS3-Skills](https://github.com/yueguobin/GNS3-Skills) repository:
+Skills are organized by protocol/category in the external [GNS3-Skills](https://github.com/gns3/gns3-skills) repository:
 
 | Category | File | Example Issues |
 |----------|------|----------------|

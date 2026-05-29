@@ -38,7 +38,6 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
@@ -58,8 +57,7 @@ async def endpoints(
         users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> List[dict]:
     """
     List all endpoints to be used in ACL entries.
@@ -141,11 +139,9 @@ async def endpoints(
     for template in templates:
         add_to_endpoints(f"/templates/{template.template_id}", f'Template "{template.name}"', "template")
 
-    # resource pools
-    add_to_endpoints("/pools", "All resource pools", "pool")
-    pools = await pools_repo.get_resource_pools()
-    for pool in pools:
-        add_to_endpoints(f"/pools/{pool.resource_pool_id}", f'Resource pool "{pool.name}"', "pool")
+    # Resource pools are not included in "all endpoints" to prevent accidental access
+    # They must be explicitly configured for team sharing
+
     return endpoints
 
 

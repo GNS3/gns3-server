@@ -38,7 +38,7 @@ graph TD
 
     subgraph "Remote"
         GH[GitHub API<br/>Pull Requests]
-        REPO[yueguobin/GNS3-Skills]
+        REPO[gns3/gns3-skills]
     end
 
     UI -->|CRUD + PR| API
@@ -147,7 +147,7 @@ All endpoints require **superadmin** authentication. Prefix: `/v3/copilot/skills
     {"category": "config", "file_count": 1, "path": "config/"}
   ],
   "repository": {
-    "repo_url": "https://github.com/yueguobin/GNS3-Skills.git",
+    "repo_url": "https://github.com/gns3/gns3-skills.git",
     "branch": "main",
     "current_version": "abc123def456...",
     "is_dirty": false
@@ -241,7 +241,7 @@ Response:
 ```json
 {
   "success": true,
-  "pr_url": "https://github.com/yueguobin/GNS3-Skills/pull/42",
+  "pr_url": "https://github.com/gns3/gns3-skills/pull/42",
   "pr_number": 42,
   "branch": "fix/ospf-descriptions"
 }

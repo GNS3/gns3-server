@@ -86,7 +86,7 @@ flowchart TD
 
 ### Forbidden Commands Configuration
 
-The forbidden commands list is loaded from the external [GNS3-Skills](https://github.com/yueguobin/GNS3-Skills) repository at `config/forbidden_commands.txt`.
+The forbidden commands list is loaded from the external [GNS3-Skills](https://github.com/gns3/gns3-skills) repository at `config/forbidden_commands.txt`.
 
 **Format:**
 - One command pattern per line
@@ -168,7 +168,7 @@ Applies to any command with embedded newlines: `banner`, multi-line ACLs, route-
 
 ### Customizing Forbidden Commands
 
-Edit `config/forbidden_commands.txt` in the [GNS3-Skills repository](https://github.com/yueguobin/GNS3-Skills) and push the changes, then call `POST /copilot/reload/skills` to apply them without restarting the server.
+Edit `config/forbidden_commands.txt` in the [GNS3-Skills repository](https://github.com/gns3/gns3-skills) and push the changes, then call `POST /copilot/reload/skills` to apply them without restarting the server.
 
 ## Implementation Verification
 

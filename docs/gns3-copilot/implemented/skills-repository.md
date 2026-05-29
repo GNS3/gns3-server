@@ -10,7 +10,7 @@ See LICENSE file for licensing information.
 
 ## Overview
 
-GNS3 Copilot loads all skills, prompts, and security configurations from an external Git repository at [github.com/yueguobin/GNS3-Skills](https://github.com/yueguobin/GNS3-Skills). This enables dynamic updates without server redeployment.
+GNS3 Copilot loads all skills, prompts, and security configurations from an external Git repository at [github.com/gns3/gns3-skills](https://github.com/gns3/gns3-skills). This enables dynamic updates without server redeployment.
 
 The repository provides:
 - **Injection skills** (39 categories): Network fault scenarios for troubleshooting practice
@@ -74,14 +74,14 @@ Skills repository settings are configured in `gns3_server.conf` under the `[Serv
 
 ```ini
 [Server]
-skills_repo_url = https://github.com/yueguobin/GNS3-Skills.git
+skills_repo_url = https://github.com/gns3/gns3-skills.git
 skills_repo_branch = main
 skills_auto_update = true
 ```
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `skills_repo_url` | `https://github.com/yueguobin/GNS3-Skills.git` | Git repository URL |
+| `skills_repo_url` | `https://github.com/gns3/gns3-skills.git` | Git repository URL |
 | `skills_repo_branch` | `main` | Git branch to track |
 | `skills_auto_update` | `true` | Automatically pull on reload |
 
