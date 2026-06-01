@@ -23,6 +23,7 @@ import html
 from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.config import Config
+from gns3server.utils.packet_filter_validation import validate_all_filters, filter_inactive_filters, FilterValidationError
 
 import logging
 
@@ -47,7 +48,7 @@ FILTERS = [
         "name": "Delay",
         "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
         "parameters": [
-            {"name": "Latency", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
+            {"name": "Latency", "minimum": 1, "maximum": 32767, "unit": "ms", "type": "int"},
             {"name": "Jitter (-/+)", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
         ],
     },
@@ -147,19 +148,17 @@ class Link:
         """
         Modify the filters list.
 
-        Filter with value 0 will be dropped because not active
+        Filters with value 0 will be filtered out as inactive, with special
+        handling for delay filter to distinguish between "disabled" and "invalid config".
         """
-        new_filters = {}
-        for (filter, values) in filters.items():
-            new_values = []
-            for value in values:
-                if isinstance(value, str):
-                    new_values.append(value.strip("\n "))
-                else:
-                    new_values.append(int(value))
-            values = new_values
-            if len(values) != 0 and values[0] != 0 and values[0] != "":
-                new_filters[filter] = values
+        # Filter out inactive filters using the utility function
+        new_filters = filter_inactive_filters(filters)
+
+        # Validate filter parameters before applying
+        try:
+            validate_all_filters(new_filters)
+        except FilterValidationError as e:
+            raise ControllerError(f"Invalid packet filter parameters: {str(e)}")
 
         if new_filters != self.filters:
             self._filters = new_filters
@@ -576,7 +575,7 @@ class Link:
                 "suspend": self._suspended,
                 "show_filters_icon": getattr(self, '_show_filters_icon', True),
             }
-        return {
+        result = {
             "nodes": res,
             "link_id": self._id,
             "project_id": self._project.id,
@@ -591,3 +590,4 @@ class Link:
             "wireshark": self._wireshark,
             "show_filters_icon": getattr(self, '_show_filters_icon', True),
         }
+        return result

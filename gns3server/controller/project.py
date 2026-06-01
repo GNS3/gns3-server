@@ -95,7 +95,7 @@ class Project:
         show_grid=False,
         grid_size=75,
         drawing_grid_size=25,
-        show_interface_labels=False,
+        show_interface_labels=True,
         variables=None,
         supplier=None,
         created_by=None,
@@ -1194,18 +1194,34 @@ class Project:
                     f"Please check the connection and try again."
                 )
 
+            # Parallel node creation for improved performance
+            # especially for projects with multiple Docker containers
+            nodes_to_create = []
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id", str(uuid.uuid4()))
-                await self.add_node(compute, name, node_id, dump=False, **node)
+                nodes_to_create.append((compute, name, node_id, node))
+
+            # Create nodes in parallel with limited concurrency
+            # to avoid overwhelming the system with too many simultaneous operations
+            pool = Pool(concurrency=5)
+            for compute, name, node_id, node_data in nodes_to_create:
+                pool.append(self.add_node, compute, name, node_id, dump=False, **node_data)
+            await pool.join()
             for link_data in topology.get("links", []):
                 if "link_id" not in link_data.keys():
                     # skip the link
                     continue
                 link = await self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
-                    await link.update_filters(link_data["filters"])
+                    try:
+                        await link.update_filters(link_data["filters"])
+                    except ControllerError as e:
+                        log.warning(
+                            "Dropping invalid filters on link %s: %s",
+                            link_data.get("link_id"), e
+                        )
                 if "link_style" in link_data:
                     await link.update_link_style(link_data["link_style"])
                 if "show_filters_icon" in link_data:

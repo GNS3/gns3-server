@@ -511,8 +511,18 @@ class DockerVM(BaseNode):
             variables = []
 
         for var in variables:
-            formatted = self._format_env(variables, var.get("value", ""))
-            params["Env"].append("{}={}".format(var["name"], formatted))
+            # Handle both Pydantic Variable objects and dictionaries
+            if hasattr(var, "name"):
+                # Pydantic Variable object
+                var_name = var.name
+                var_value = getattr(var, "value", "")
+            else:
+                # Dictionary format
+                var_name = var.get("name", "")
+                var_value = var.get("value", "")
+
+            formatted = self._format_env(variables, var_value)
+            params["Env"].append("{}={}".format(var_name, formatted))
 
         if self._environment:
             for e in self._environment.strip().split("\n"):
@@ -581,7 +591,17 @@ class DockerVM(BaseNode):
 
     def _format_env(self, variables, env):
         for variable in variables:
-            env = env.replace("${" + variable["name"] + "}", variable.get("value", ""))
+            # Handle both Pydantic Variable objects and dictionaries
+            if hasattr(variable, "name"):
+                # Pydantic Variable object
+                var_name = variable.name
+                var_value = getattr(variable, "value", "")
+            else:
+                # Dictionary format
+                var_name = variable.get("name", "")
+                var_value = variable.get("value", "")
+
+            env = env.replace("${" + var_name + "}", var_value)
         return env
 
     def _format_extra_hosts(self, extra_hosts):

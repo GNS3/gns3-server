@@ -235,6 +235,7 @@ async def delete_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
 
     await node.delete()
+    await node.project.remove_node(node)
 
 
 @router.post(

@@ -293,9 +293,14 @@ class Project:
 
         # we need to update docker nodes when variables changes
         if original_variables != variables:
+            # Parallelize node updates for better performance
+            tasks = []
             for node in self.nodes:
                 if hasattr(node, "update"):
-                    await node.update()
+                    tasks.append(node.update())
+
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def close(self):
         """

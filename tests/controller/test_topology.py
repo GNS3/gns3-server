@@ -45,7 +45,7 @@ async def test_project_to_topology_empty(tmpdir):
             "revision": GNS3_FILE_FORMAT_REVISION,
             "zoom": 100,
             "show_grid": False,
-            "show_interface_labels": False,
+            "show_interface_labels": True,
             "show_layers": False,
             "snap_to_grid": False,
             "grid_size": 75,

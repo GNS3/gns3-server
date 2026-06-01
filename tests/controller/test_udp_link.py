@@ -46,7 +46,7 @@ async def test_create(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"delay": [10, 0]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -77,7 +77,7 @@ async def test_create(project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"latency": [10]},
+        "filters": {"delay": [10, 0]},
         "suspend": False,
     }, timeout=120)
 
@@ -313,7 +313,7 @@ async def test_update(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"delay": [10, 0]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -345,7 +345,7 @@ async def test_update(project):
         "rport": 2048,
         "type": "nio_udp",
         "suspend": False,
-        "filters": {"latency": [10]}
+        "filters": {"delay": [10, 0]}
     }, timeout=120)
 
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
@@ -358,7 +358,7 @@ async def test_update(project):
     }, timeout=120)
 
     assert link.created
-    await link.update_filters({"drop": [5], "bpf": ["icmp[icmptype] == 8"]})
+    await link.update_filters({"frequency_drop": [5], "bpf": ["icmp[icmptype] == 8"]})
     compute1.put.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
         "rhost": "192.168.1.2",
@@ -366,7 +366,7 @@ async def test_update(project):
         "type": "nio_udp",
         "suspend": False,
         "filters": {
-            "drop": [5],
+            "frequency_drop": [5],
             "bpf": ["icmp[icmptype] == 8"]
         }
     }, timeout=120)
@@ -392,7 +392,7 @@ async def test_update_suspend(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"frequency_drop": [-1]})
     await link.update_suspend(True)
 
     async def compute1_callback(path, data={}, **kwargs):

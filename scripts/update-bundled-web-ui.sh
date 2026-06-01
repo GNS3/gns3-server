@@ -104,11 +104,11 @@ if [ "$CUSTOM_REPO" = false ] ; then
             git checkout "$BRANCH"
             git pull
         else
-            git checkout master-3.0
+            git checkout 3.1
             git pull
         fi
     else
-        git checkout master-3.0
+        git checkout 3.1
         git fetch --tags
         git pull
     fi
