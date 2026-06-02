@@ -428,7 +428,21 @@ class Project:
 
     @name.setter
     def name(self, val):
+        old_filename = self._filename
         self._name = val
+        self._filename = val + ".gns3"
+
+        # Rename the .gns3 file on disk when the project name changes
+        if old_filename != self._filename:
+            old_path = os.path.join(self._path, old_filename)
+            new_path = os.path.join(self._path, self._filename)
+            if os.path.exists(old_path):
+                try:
+                    shutil.move(old_path, new_path)
+                    log.info(f"Project file renamed from '{old_filename}' to '{self._filename}'")
+                except OSError as e:
+                    log.warning(f"Could not rename project file from '{old_filename}' to '{self._filename}': {e}")
+                    self._filename = old_filename
 
     @property
     def id(self):
@@ -1404,7 +1418,11 @@ class Project:
         # copy dir
         await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True)
         log.info("Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0))
-        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
+
+        # Read the topology file using the actual filename (self._filename), not self.name
+        # This handles the case where a project has been renamed but we need to read the actual file
+        old_gns3_file = new_project_path.joinpath(self._filename)
+        topology = json.loads(old_gns3_file.read_bytes())
         project_name = name or topology["name"]
         # If the project name is already used we generate a new one
         project_name = self.controller.get_free_project_name(project_name)
@@ -1428,7 +1446,8 @@ class Project:
         if os.path.isdir(snapshots_dir):
             await update_snapshots(snapshots_dir, new_project_path, project_name, new_project_id)
 
-        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
+        # Remove the old .gns3 file (which has the original project name)
+        os.remove(old_gns3_file)
         project = await self.controller.load_project(dot_gns3_path, load=False)
         log.info("Project '{}': fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
         return project
