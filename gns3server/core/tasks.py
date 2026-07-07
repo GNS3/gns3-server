@@ -26,6 +26,7 @@ from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
 from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db, discover_images_on_filesystem
+from gns3server.controller.proxy import start_socks5_server
 
 
 import logging
@@ -92,6 +93,29 @@ async def startup(app: FastAPI) -> None:
         set_mcp_server_ready(True)
     log.info("GNS3 server startup completed")
 
+    # Start SOCKS5 proxy if enabled
+    await _start_socks5_proxy(app)
+
+
+async def _start_socks5_proxy(app):
+    """
+    Start the SOCKS5 proxy server based on configuration.
+    """
+
+    server_config = Config.instance().settings.Server
+    if not server_config.socks5_enabled:
+        log.info("SOCKS5 proxy is disabled")
+        return
+
+    socks5_host = server_config.socks5_host or server_config.host
+    socks5_port = server_config.socks5_port
+
+    try:
+        proxy_server = await start_socks5_server(socks5_host, socks5_port, app)
+        app.state.socks5_proxy_server = proxy_server
+    except OSError as e:
+        log.error(f"Failed to start SOCKS5 proxy on {socks5_host}:{socks5_port}: {e}")
+
 
 async def shutdown(app: FastAPI) -> None:
     """
@@ -115,3 +139,10 @@ async def shutdown(app: FastAPI) -> None:
         log.warning(f"UDP ports are still used {PortManager.instance().udp_ports}")
 
     await disconnect_from_db(app)
+
+    # Stop SOCKS5 proxy if running
+    proxy_server = getattr(app.state, "socks5_proxy_server", None)
+    if proxy_server:
+        proxy_server.close()
+        await proxy_server.wait_closed()
+        log.info("SOCKS5 proxy server stopped")

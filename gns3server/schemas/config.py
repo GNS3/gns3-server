@@ -164,6 +164,11 @@ class ServerSettings(BaseModel):
     skills_repo_branch: str = "main"
     skills_auto_update: bool = True
 
+    # SOCKS5 proxy settings for management network access
+    socks5_enabled: bool = True
+    socks5_port: int = Field(3090, gt=0, le=65535)
+    socks5_host: str = None
+
     # MCP (Model Context Protocol) transport security settings
     # DNS rebinding protection is disabled by default to allow connections
     # from any host (aligns with GNS3 server's 0.0.0.0 binding).
