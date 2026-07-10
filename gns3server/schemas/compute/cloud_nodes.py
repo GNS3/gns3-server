@@ -28,6 +28,28 @@ class HostInterfaceType(str, Enum):
     tap = "tap"
 
 
+class IPAddressFamily(str, Enum):
+
+    ipv4 = "ipv4"
+    ipv6 = "ipv6"
+
+
+class InterfaceStatus(str, Enum):
+
+    up = "up"
+    down = "down"
+
+
+class HostInterfaceIPAddress(BaseModel):
+    """
+    An IP address (with optional netmask) bound to a host interface.
+    """
+
+    family: IPAddressFamily = Field(..., description="Address family (ipv4 or ipv6)")
+    address: str = Field(..., description="IP address")
+    netmask: Optional[str] = Field(None, description="Network mask, if available")
+
+
 class HostInterface(BaseModel):
     """
     Interface on this host.
@@ -36,6 +58,13 @@ class HostInterface(BaseModel):
     name: str = Field(..., description="Interface name")
     type: HostInterfaceType = Field(..., description="Interface type")
     special: bool = Field(..., description="Whether the interface is non standard")
+    ip_addresses: List[HostInterfaceIPAddress] = Field(
+        default_factory=list, description="All IPv4 and IPv6 addresses on this interface"
+    )
+    status: InterfaceStatus = Field(InterfaceStatus.down, description="Interface status (up or down)")
+    speed: int = Field(0, description="Interface speed in Mbit/s (0 if unknown)")
+    mtu: int = Field(0, description="Interface MTU")
+    flags: List[str] = Field(default_factory=list, description="Interface flags")
 
 
 class EthernetType(str, Enum):

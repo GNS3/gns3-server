@@ -325,9 +325,9 @@ def on_gns3vm(linux_platform):
     """
 
     with patch("gns3server.utils.interfaces.interfaces", return_value=[
-            {"name": "eth0", "special": False, "type": "ethernet"},
-            {"name": "eth1", "special": False, "type": "ethernet"},
-            {"name": "virbr0", "special": True, "type": "ethernet"}]):
+            {"name": "eth0", "special": False, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 1000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]},
+            {"name": "eth1", "special": False, "type": "ethernet", "ip_addresses": [], "status": "down", "speed": 0, "mtu": 1500, "flags": ["broadcast"]},
+            {"name": "virbr0", "special": True, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 10000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]}]):
         with patch("socket.gethostname", return_value="gns3vm"):
             yield
 

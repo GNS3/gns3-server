@@ -83,7 +83,16 @@ class Cloud(BaseNode):
         network_interfaces = gns3server.utils.interfaces.interfaces()
         for interface in network_interfaces:
             host_interfaces.append(
-                {"name": interface["name"], "type": interface["type"], "special": interface["special"]}
+                {
+                    "name": interface["name"],
+                    "type": interface["type"],
+                    "special": interface["special"],
+                    "ip_addresses": interface.get("ip_addresses", []),
+                    "status": interface.get("status", "down"),
+                    "speed": interface.get("speed", 0),
+                    "mtu": interface.get("mtu", 0),
+                    "flags": interface.get("flags", []),
+                }
             )
 
         return {

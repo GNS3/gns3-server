@@ -198,6 +198,7 @@ def interfaces():
     results = []
     allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
     net_if_addrs = psutil.net_if_addrs()
+    net_if_stats = psutil.net_if_stats()
     for interface in sorted(net_if_addrs.keys()):
         if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):
             log.warning(f"Interface '{interface}' is not allowed to be used on this server")
@@ -206,16 +207,48 @@ def interfaces():
         mac_address = ""
         netmask = ""
         interface_type = "ethernet"
+        # Collect every IPv4 and IPv6 address on this interface. An interface may
+        # carry several addresses of each family (or none at all), so we keep a
+        # list in addition to the legacy single IPv4 value retained for backward
+        # compatibility with existing callers (compute link detection, GNS3 VM,
+        # VMware, has_netmask(), ...).
+        ip_addresses = []
         for addr in net_if_addrs[interface]:
-            # get the first available IPv4 address only
             if addr.family == socket.AF_INET:
+                # legacy single-value behavior (keeps the last IPv4 seen)
                 ip_address = addr.address
                 netmask = addr.netmask
+                ip_addresses.append(
+                    {"family": "ipv4", "address": addr.address, "netmask": addr.netmask or None}
+                )
+            elif addr.family == socket.AF_INET6:
+                ip_addresses.append(
+                    {"family": "ipv6", "address": addr.address, "netmask": addr.netmask or None}
+                )
             if addr.family == psutil.AF_LINK:
                 mac_address = addr.address
         if interface.startswith("tap"):
             # found no way to reliably detect a TAP interface
             interface_type = "tap"
+        # Operational state and link attributes (speed/mtu/flags) come from
+        # psutil.net_if_stats(). An interface present in net_if_addrs is normally
+        # also present here; fall back to neutral defaults when it is not.
+        status = "down"
+        speed = 0
+        mtu = 0
+        flags = []
+        stats = net_if_stats.get(interface)
+        if stats is not None:
+            status = "up" if stats.isup else "down"
+            speed = stats.speed
+            mtu = stats.mtu
+            # psutil returns flags either as a comma-separated string (>= 6.0) or
+            # as a list (older versions); normalize to a list for a stable shape.
+            f = stats.flags
+            if isinstance(f, str):
+                flags = [flag for flag in f.split(",") if flag]
+            else:
+                flags = f
         results.append(
             {
                 "id": interface,
@@ -224,6 +257,11 @@ def interfaces():
                 "netmask": netmask,
                 "mac_address": mac_address,
                 "type": interface_type,
+                "ip_addresses": ip_addresses,
+                "status": status,
+                "speed": speed,
+                "mtu": mtu,
+                "flags": flags,
             }
         )
 
