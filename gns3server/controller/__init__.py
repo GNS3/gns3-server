@@ -38,6 +38,7 @@ from ..utils.images import default_images_directory
 from ..utils.asyncio import wait_run_in_executor
 
 from .project import Project
+from .node import Node
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
@@ -89,6 +90,35 @@ class _ProjectsDirectoryEventHandler(FileSystemEventHandler):
                 if path and path.endswith(".gns3"):
                     self._controller._notify_projects_directory_event()
                     return
+
+
+def _iter_string_values(value):
+    """
+    Yield every string contained in value, recursing into dicts and lists.
+    """
+
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for child in value.values():
+            yield from _iter_string_values(child)
+    elif isinstance(value, (list, tuple, set)):
+        for child in value:
+            yield from _iter_string_values(child)
+
+
+def _image_referenced(node_properties, image_filename: str) -> bool:
+    """
+    Whether a node's properties reference an image by file name.
+
+    Image references live under type-specific property keys
+    (hda_disk_image, hda_disk_image_backing_file, image, initrd, path...)
+    and are stored either as bare file names or as absolute paths
+    depending on topology age, so every string value is matched on its
+    base name instead of walking a fixed key list.
+    """
+
+    return any(os.path.basename(string) == image_filename for string in _iter_string_values(node_properties))
 
 
 class Controller:
@@ -810,6 +840,84 @@ class Controller:
             if i > 1000000:
                 raise ControllerError("A project name could not be allocated (node limit reached?)")
         return new_name
+
+    def _iter_project_nodes(self):
+        """
+        Iterate over (project, node) for every known project, opened or closed.
+
+        Opened projects yield controller Node objects; closed projects yield
+        the raw node dicts read from their .gns3 file. A project whose
+        topology cannot be read is skipped — it must not block the usage
+        checks that rely on this iterator.
+        """
+
+        for project in self._projects.values():
+            try:
+                nodes = project.nodes.values()
+            except ControllerError:
+                continue
+            for node in nodes:
+                yield project, node
+
+    def find_projects_using_template(self, template_id) -> list:
+        """
+        Return the names of the projects with at least one node created
+        from this template.
+
+        Used to forbid template deletion while any project still
+        references it.
+        """
+
+        template_id = str(template_id)
+        project_names = []
+        for project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_template_id = node.template_id
+            else:
+                node_template_id = node.get("template_id")
+            if node_template_id and str(node_template_id) == template_id:
+                project_names.append(project.name)
+                break
+        return project_names
+
+    def find_projects_using_image(self, image_filename: str) -> list:
+        """
+        Return the names of the projects with at least one node whose
+        properties reference this image file.
+
+        Used to forbid image deletion while any project still uses it.
+        """
+
+        project_names = []
+        for project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_properties = node.properties
+            else:
+                node_properties = node.get("properties") or {}
+            if _image_referenced(node_properties, image_filename):
+                project_names.append(project.name)
+                break
+        return project_names
+
+    def collect_referenced_image_filenames(self) -> set:
+        """
+        Return every file name referenced by a node property across all
+        projects (opened or closed).
+
+        The set deliberately over-approximates (any property string counts):
+        it protects images from pruning, so a false positive only keeps a
+        file alive. Used as a single-pass skip list for image pruning.
+        """
+
+        filenames = set()
+        for _project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_properties = node.properties
+            else:
+                node_properties = node.get("properties") or {}
+            for string in _iter_string_values(node_properties):
+                filenames.add(os.path.basename(string))
+        return filenames
 
     @property
     def projects(self):

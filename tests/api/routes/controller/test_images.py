@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
+import uuid
 import pytest
 import hashlib
 
@@ -281,6 +283,99 @@ class TestImageRoutes:
 
         images_in_db = await images_repo.get_images()
         assert len(images_in_db) == 0
+
+    @staticmethod
+    async def _add_closed_project_with_node(controller: Controller, name: str, node: dict):
+        """
+        Register a closed project whose .gns3 contains a single node,
+        mirroring how the controller picks up existing projects from disk.
+        """
+
+        project_dir = os.path.join(controller.projects_directory(), name)
+        os.makedirs(project_dir)
+        project_id = str(uuid.uuid4())
+        topology = {
+            "name": name,
+            "project_id": project_id,
+            "topology": {"computes": [], "links": [], "drawings": [], "nodes": [node]},
+        }
+        with open(os.path.join(project_dir, f"{name}.gns3"), "w+") as f:
+            json.dump(topology, f)
+        return await controller.add_project(
+            project_id=project_id, name=name, path=project_dir,
+            filename=f"{name}.gns3", status="closed",
+        )
+
+    async def test_image_delete_used_by_project(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller,
+            db_session: AsyncSession,
+            tmpdir: str,
+    ) -> None:
+        """
+        An image referenced by a node in a project must not be deleted,
+        even when the project is closed and no template uses the image.
+        """
+
+        image_path = os.path.join(tmpdir, "used.qcow2")
+        with open(image_path, "wb+") as f:
+            f.write(b'\x42\x42\x42\x42')
+
+        images_repo = ImagesRepository(db_session)
+        await images_repo.add_image("used.qcow2", "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
+
+        guarded_project = await self._add_closed_project_with_node(
+            controller, "Guarded",
+            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
+             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+        )
+
+        response = await client.delete(app.url_path_for("delete_image", image_path="used.qcow2"))
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "Guarded" in response.json()["message"]
+        assert os.path.exists(image_path)
+
+        # once no project uses it anymore the deletion goes through
+        controller.remove_project(guarded_project)
+        response = await client.delete(app.url_path_for("delete_image", image_path="used.qcow2"))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not os.path.exists(image_path)
+
+    async def test_prune_images_keeps_project_referenced(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller,
+            db_session: AsyncSession,
+            tmpdir: str,
+    ) -> None:
+        """
+        Pruning must keep images referenced by a project node while
+        removing the unreferenced ones.
+        """
+
+        images_repo = ImagesRepository(db_session)
+        for filename in ("used.qcow2", "unused.qcow2"):
+            image_path = os.path.join(tmpdir, filename)
+            with open(image_path, "wb+") as f:
+                f.write(b'\x42\x42\x42\x42')
+            await images_repo.add_image(filename, "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
+
+        await self._add_closed_project_with_node(
+            controller, "Guarded",
+            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
+             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+        )
+
+        response = await client.delete(app.url_path_for("prune_images"))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        assert await images_repo.get_image(os.path.join(tmpdir, "used.qcow2")) is not None
+        assert os.path.exists(os.path.join(tmpdir, "used.qcow2"))
+        assert await images_repo.get_image(os.path.join(tmpdir, "unused.qcow2")) is None
+        assert not os.path.exists(os.path.join(tmpdir, "unused.qcow2"))
 
     async def test_image_upload_create_appliance(
             self, app: FastAPI,

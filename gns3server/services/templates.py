@@ -341,6 +341,15 @@ class TemplatesService:
 
         if self.get_builtin_template(template_id):
             raise ControllerForbiddenError(f"Template '{template_id}' cannot be deleted because it is built-in")
+
+        template = await self.get_template(template_id)
+        project_names = self._controller.find_projects_using_template(template_id)
+        if project_names:
+            raise ControllerError(
+                f"Template '{template['name']}' cannot be deleted because it is used by "
+                f"one or more projects: {', '.join(project_names)}"
+            )
+
         if await self._templates_repo.delete_template(template_id):
             self._controller.notification.controller_emit("template.deleted", {"template_id": str(template_id)})
         else:

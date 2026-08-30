@@ -197,11 +197,16 @@ async def prune_images(
     """
     Prune images not attached to any template.
 
+    Images referenced by a node in any project (opened or closed) are kept.
+
     Required privilege: Image.Allocate
     """
 
     skip_images = get_builtin_disks()
-    await images_repo.prune_images(skip_images)
+    # a single pass over all projects' node properties protects every
+    # referenced file name at once
+    referenced_filenames = Controller.instance().collect_referenced_image_filenames()
+    await images_repo.prune_images(list(skip_images) + list(referenced_filenames))
 
 
 @router.post(
@@ -308,6 +313,10 @@ async def delete_image(
     if templates:
         template_names = ", ".join([template.name for template in templates])
         raise ControllerError(f"Image '{image_path}' is used by one or more templates: {template_names}")
+
+    project_names = Controller.instance().find_projects_using_image(image.filename)
+    if project_names:
+        raise ControllerError(f"Image '{image_path}' is used by one or more projects: {', '.join(project_names)}")
 
     try:
         os.remove(image.path)

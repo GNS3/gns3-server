@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
 import shutil
 
 import pytest
@@ -269,6 +270,128 @@ class TestTemplateRoutes:
 
         images = await images_repo.get_images()
         assert len(images) == 0
+
+    @staticmethod
+    async def _add_closed_project_with_node(controller: Controller, name: str, node: dict):
+        """
+        Register a closed project whose .gns3 contains a single node,
+        mirroring how the controller picks up existing projects from disk.
+        """
+
+        project_dir = os.path.join(controller.projects_directory(), name)
+        os.makedirs(project_dir)
+        project_id = str(uuid.uuid4())
+        topology = {
+            "name": name,
+            "project_id": project_id,
+            "topology": {"computes": [], "links": [], "drawings": [], "nodes": [node]},
+        }
+        with open(os.path.join(project_dir, f"{name}.gns3"), "w+") as f:
+            json.dump(topology, f)
+        # an explicit project_id marks this as an existing on-disk project
+        # (same path load_project takes at startup)
+        return await controller.add_project(
+            project_id=project_id, name=name, path=project_dir,
+            filename=f"{name}.gns3", status="closed",
+        )
+
+    async def test_template_delete_used_by_project(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller,
+    ) -> None:
+        """
+        A template referenced by a node in a project must not be deleted,
+        even when the project is closed.
+        """
+
+        template_id = str(uuid.uuid4())
+        params = {"template_id": template_id,
+                  "name": "VPCS_GUARDED",
+                  "compute_id": "local",
+                  "template_type": "vpcs"}
+
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        guarded_project = await self._add_closed_project_with_node(
+            controller, "Guarded",
+            {"node_id": str(uuid.uuid4()), "node_type": "vpcs", "compute_id": "local",
+             "name": "n1", "template_id": template_id, "properties": {}},
+        )
+
+        response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "Guarded" in response.json()["message"]
+
+        # the template survived the refused deletion
+        response = await client.get(app.url_path_for("get_template", template_id=template_id))
+        assert response.status_code == status.HTTP_200_OK
+
+        # once no project uses it anymore the deletion goes through
+        controller.remove_project(guarded_project)
+        response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_template_delete_with_prune_images_used_by_project(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller,
+            db_session: AsyncSession,
+            tmpdir: str,
+    ) -> None:
+        """
+        Pruning an image still referenced by a project node must be refused
+        before any mutation: the template and the image file both survive.
+        """
+
+        image_path = os.path.join(tmpdir, "used.qcow2")
+        with open(image_path, "wb+") as f:
+            f.write(b'\x42\x42\x42\x42')
+
+        images_repo = ImagesRepository(db_session)
+        await images_repo.add_image("used.qcow2", "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
+
+        template_id = str(uuid.uuid4())
+        params = {"template_id": template_id,
+                  "name": "QEMU_GUARDED",
+                  "compute_id": "local",
+                  "hda_disk_image": "used.qcow2",
+                  "template_type": "qemu"}
+
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # the node references the image but not the template: the template
+        # check passes, the image check must still refuse the prune
+        guarded_project = await self._add_closed_project_with_node(
+            controller, "Guarded",
+            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
+             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+        )
+
+        response = await client.delete(
+            app.url_path_for("delete_template", template_id=template_id),
+            params={"prune_images": True}
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "Guarded" in response.json()["message"]
+
+        # neither the template nor the image file was touched
+        response = await client.get(app.url_path_for("get_template", template_id=template_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert os.path.exists(image_path)
+
+        controller.remove_project(guarded_project)
+        response = await client.delete(
+            app.url_path_for("delete_template", template_id=template_id),
+            params={"prune_images": True}
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not os.path.exists(image_path)
+        assert await images_repo.get_image(image_path) is None
 
     # async def test_create_node_from_template(self, controller_api, controller, project):
     #

@@ -534,3 +534,74 @@ async def test_autoidlepc(controller):
         await controller.autoidlepc("local", "c7200", "test.bin", 512)
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0
+
+
+@pytest.mark.asyncio
+async def test_find_projects_using_template_and_images(controller):
+    """
+    The template/image usage checks must see nodes of opened projects
+    (in-memory Node objects) as well as nodes of closed projects (raw
+    node dicts read back from the .gns3 file).
+    """
+
+    compute = MagicMock()
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    project1 = await controller.add_project(name="Test1")
+    project2 = await controller.add_project(name="Test2")
+
+    template_id = str(uuid.uuid4())
+    await project1.add_node(
+        compute,
+        "n1",
+        None,
+        node_type="vpcs",
+        template_id=template_id,
+        properties={"hda_disk_image": "/tmp/images/disk.qcow2", "hda_disk_image_backing_file": "base.qcow2"},
+    )
+    await project2.add_node(compute, "n2", None, node_type="vpcs", properties={})
+
+    # opened projects
+    assert controller.find_projects_using_template(template_id) == ["Test1"]
+    assert controller.find_projects_using_template(str(uuid.uuid4())) == []
+    # image references are matched on file name whether stored as a bare
+    # name or as an absolute path
+    assert controller.find_projects_using_image("base.qcow2") == ["Test1"]
+    assert controller.find_projects_using_image("disk.qcow2") == ["Test1"]
+    assert controller.find_projects_using_image("unknown.qcow2") == []
+    referenced = controller.collect_referenced_image_filenames()
+    assert "base.qcow2" in referenced
+    assert "disk.qcow2" in referenced
+
+    # closed projects: same answers from the .gns3 file on disk
+    await project1.close()
+    await project2.close()
+    assert controller.find_projects_using_template(template_id) == ["Test1"]
+    assert controller.find_projects_using_image("base.qcow2") == ["Test1"]
+    assert controller.find_projects_using_image("disk.qcow2") == ["Test1"]
+
+
+@pytest.mark.asyncio
+async def test_find_projects_skips_unreadable_topology(controller):
+    """
+    A project whose topology cannot be read must not break the usage checks.
+    """
+
+    compute = MagicMock()
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    project = await controller.add_project(name="Broken")
+    await project.add_node(
+        compute, "n1", None, node_type="vpcs",
+        template_id=str(uuid.uuid4()), properties={"hda_disk_image": "lost.qcow2"},
+    )
+    await project.close()
+    os.remove(project.topology_file)
+
+    assert controller.find_projects_using_template(str(uuid.uuid4())) == []
+    assert controller.find_projects_using_image("lost.qcow2") == []
+    assert controller.collect_referenced_image_filenames() == set()

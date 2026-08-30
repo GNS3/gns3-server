@@ -163,6 +163,10 @@ class Node:
         return self._status
 
     @property
+    def template_id(self):
+        return self._template_id
+
+    @property
     def name(self):
         return self._name
 
