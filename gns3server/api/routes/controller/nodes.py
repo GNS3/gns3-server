@@ -20,6 +20,7 @@ API routes for nodes.
 
 import aiohttp
 import asyncio
+import contextlib
 import ipaddress
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status, Query, HTTPException
@@ -707,14 +708,31 @@ async def ws_console(
                 elif "bytes" in msg and msg["bytes"]:
                     await ws_console_compute.send_bytes(msg["bytes"])
         except WebSocketDisconnect:
-            await ws_console_compute.close()
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" console WebSocket"
-            )
+            pass
+        log.info(
+            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+            f" console WebSocket"
+        )
+
+    async def ws_send(ws_console_compute):
+        """
+        Receive WebSocket data from compute console WebSocket and forward to client.
+        """
+
+        try:
+            async for msg in ws_console_compute:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    await websocket.send_text(msg.data)
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+        except WebSocketDisconnect:
+            # the client has disconnected, this is not an error
+            pass
 
     try:
-        # receive WebSocket data from compute console WebSocket and forward to client.
+        # forward WebSocket data in both directions between the client and the compute console WebSocket
         log.info(f"Forwarding console WebSocket to '{ws_console_compute_url}'")
         server_config = Config.instance().settings.Server
         user = server_config.compute_username
@@ -728,14 +746,20 @@ async def ws_console(
             auth = aiohttp.BasicAuth(user, "")
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
-            asyncio.ensure_future(ws_receive(ws))
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.TEXT:
-                    await websocket.send_text(msg.data)
-                elif msg.type == aiohttp.WSMsgType.BINARY:
-                    await websocket.send_bytes(msg.data)
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    break
+            tasks = [
+                asyncio.ensure_future(ws_receive(ws)),
+                asyncio.ensure_future(ws_send(ws)),
+            ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if task.exception():
+                    log.warning(f"Exception while forwarding console WebSocket data: {task.exception()}")
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            # notify the client that the console session has ended (ignore if the client is already gone)
+            with contextlib.suppress(WebSocketDisconnect):
+                await websocket.close()
     except aiohttp.ClientError as e:
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
@@ -780,18 +804,36 @@ async def vnc_console(
 
         try:
             while True:
-                data = await websocket.receive_bytes()
+                msg = await websocket.receive()
+                if msg["type"] == "websocket.disconnect":
+                    break
+                data = msg.get("bytes")
                 if data:
                     await vnc_console_compute.send_bytes(data)
         except WebSocketDisconnect:
-            await vnc_console_compute.close()
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" VNC console WebSocket"
-            )
+            pass
+        log.info(
+            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+            f" VNC console WebSocket"
+        )
+
+    async def vnc_send(vnc_console_compute):
+        """
+        Receive binary WebSocket data from compute VNC console WebSocket and forward to client.
+        """
+
+        try:
+            async for msg in vnc_console_compute:
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+        except WebSocketDisconnect:
+            # the client has disconnected, this is not an error
+            pass
 
     try:
-        # receive binary data from compute VNC console WebSocket and forward to client
+        # forward WebSocket data in both directions between the client and the compute VNC console WebSocket
         log.info(f"Forwarding VNC console WebSocket to '{vnc_console_compute_url}'")
         server_config = Config.instance().settings.Server
         user = server_config.compute_username
@@ -805,12 +847,20 @@ async def vnc_console(
             auth = aiohttp.BasicAuth(user, "")
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(vnc_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
-            asyncio.ensure_future(vnc_receive(ws))
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.BINARY:
-                    await websocket.send_bytes(msg.data)
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    break
+            tasks = [
+                asyncio.ensure_future(vnc_receive(ws)),
+                asyncio.ensure_future(vnc_send(ws)),
+            ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if task.exception():
+                    log.warning(f"Exception while forwarding VNC console WebSocket data: {task.exception()}")
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            # notify the client that the VNC session has ended (ignore if the client is already gone)
+            with contextlib.suppress(WebSocketDisconnect):
+                await websocket.close()
     except aiohttp.ClientError as e:
         log.error(f"Client error received when forwarding to compute VNC console WebSocket: {e}")
 

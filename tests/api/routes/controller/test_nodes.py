@@ -16,17 +16,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import asyncio
+import contextlib
+import logging
+
+import aiohttp
 import pytest
 
 from fastapi import FastAPI, HTTPException, status
 from httpx import AsyncClient
+from httpx_ws import aconnect_ws, WebSocketDisconnect
+from httpx_ws.transport import ASGIWebSocketTransport, ASGIWebSocketAsyncNetworkStream
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
 
@@ -669,3 +678,217 @@ class TestNodeRoutes:
     #     assert response.status_code == 201
     #
     #     compute.http_query.assert_called_with("POST", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello/nested".format(project_id=project.id, node_id=node.id), data=b'hello', timeout=None, raw=True)
+
+
+class _FakeComputeWebSocket:
+    """
+    Mimics the aiohttp client WebSocket the controller forwards console traffic to.
+
+    Pass a list of WSMessage to emulate a compute that sends data then closes the
+    session, or None to emulate a busy console streaming binary frames forever
+    (until the controller cancels the forwarding task).
+    """
+
+    def __init__(self, messages=None) -> None:
+        self._messages = messages
+        self.sent = []  # frames received from the client
+        self.closed = False
+        self.stream_cancelled = False
+
+    async def send_str(self, data: str) -> None:
+        self.sent.append(("text", data))
+
+    async def send_bytes(self, data: bytes) -> None:
+        self.sent.append(("bytes", data))
+
+    async def close(self) -> None:
+        self.closed = True
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self._messages is not None:
+            if not self._messages:
+                raise StopAsyncIteration
+            return self._messages.pop(0)
+        try:
+            await asyncio.sleep(0.05)
+        except asyncio.CancelledError:
+            self.stream_cancelled = True
+            raise
+        return aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"console output", "")
+
+
+class _FakeComputeWebSocketContext:
+    """Async context manager mimicking the object returned by aiohttp ws_connect()."""
+
+    def __init__(self, websocket: _FakeComputeWebSocket) -> None:
+        self._websocket = websocket
+
+    async def __aenter__(self) -> _FakeComputeWebSocket:
+        return self._websocket
+
+    async def __aexit__(self, *exc_info) -> bool:
+        await self._websocket.close()
+        return False
+
+
+# The in-memory ASGI WebSocket transport notifies the app of a client close with a
+# non-conformant "websocket.close" message, which starlette's receive() rejects.
+# Patch it to deliver "websocket.disconnect" like a real ASGI server (uvicorn) does.
+_original_stream_send = ASGIWebSocketAsyncNetworkStream.send
+
+
+async def _conforming_stream_send(self, message):
+    if message.get("type") == "websocket.close":
+        message = {"type": "websocket.disconnect", "code": message.get("code") or 1000}
+    await _original_stream_send(self, message)
+
+
+class TestConsoleWebSocketRoutes:
+    """
+    The controller console WebSocket endpoints forward data in both directions and
+    must tear down cleanly when either side goes away, instead of letting a
+    WebSocketDisconnect escape as an ASGI error.
+    """
+
+    @pytest.fixture
+    def node(self, project: Project, compute: Compute) -> Node:
+
+        node = Node(project, compute, "test", node_type="qemu")
+        project._nodes[node.id] = node
+        return node
+
+    @staticmethod
+    def _patches(fake_ws: _FakeComputeWebSocket):
+        """
+        Make HTTPClient.get_client().ws_connect() yield the fake compute WebSocket,
+        and make the in-memory transport deliver a conformant disconnect message.
+        """
+
+        stack = contextlib.ExitStack()
+        http_client = MagicMock()
+        http_client.ws_connect = MagicMock(return_value=_FakeComputeWebSocketContext(fake_ws))
+        stack.enter_context(patch(
+            "gns3server.api.routes.controller.nodes.HTTPClient.get_client",
+            return_value=http_client
+        ))
+        stack.enter_context(patch.object(ASGIWebSocketAsyncNetworkStream, "send", _conforming_stream_send))
+        return stack
+
+    @staticmethod
+    def _admin_token() -> str:
+
+        return auth_service.create_access_token("admin", secret_key=DEFAULT_JWT_SECRET_KEY)
+
+    @staticmethod
+    async def _wait_for_teardown(fake_ws: _FakeComputeWebSocket) -> None:
+        # the handler keeps running on the event loop after the client is gone
+        for _ in range(100):
+            if fake_ws.closed:
+                await asyncio.sleep(0.1)  # give cancelled tasks a chance to finish
+                return
+            await asyncio.sleep(0.05)
+
+    async def test_console_ws_client_disconnect(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            project: Project,
+            compute: Compute,
+            node: Node,
+            caplog
+    ) -> None:
+        """
+        A client disconnecting while the compute keeps streaming console output
+        must not raise: the forwarding tasks are cancelled and the compute
+        console WebSocket is closed.
+        """
+
+        fake_ws = _FakeComputeWebSocket(messages=None)
+        with self._patches(fake_ws), caplog.at_level(logging.INFO):
+            async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as ws_client:
+                async with aconnect_ws(
+                    app.url_path_for("ws_console", project_id=project.id, node_id=node.id),
+                    ws_client,
+                    params={"token": self._admin_token()},
+                ) as ws:
+                    # compute -> client
+                    assert await ws.receive_bytes() == b"console output"
+                    # client -> compute
+                    await ws.send_text("dir")
+                    await ws.send_bytes(b"\x01\x02")
+            await self._wait_for_teardown(fake_ws)
+
+        assert fake_ws.sent == [("text", "dir"), ("bytes", b"\x01\x02")]
+        assert fake_ws.stream_cancelled, "the compute -> client forwarding task should have been cancelled"
+        assert fake_ws.closed, "the compute console WebSocket should have been closed"
+        assert any(
+            "has disconnected from controller console WebSocket" in record.getMessage()
+            for record in caplog.records
+        )
+
+    async def test_console_ws_compute_closes_session(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            project: Project,
+            compute: Compute,
+            node: Node
+    ) -> None:
+        """
+        When the compute closes the console WebSocket the client should receive
+        the frames sent before the close, then the close itself.
+        """
+
+        fake_ws = _FakeComputeWebSocket(messages=[
+            aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"output", ""),
+            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "done", ""),
+        ])
+        with self._patches(fake_ws):
+            async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as ws_client:
+                async with aconnect_ws(
+                    app.url_path_for("ws_console", project_id=project.id, node_id=node.id),
+                    ws_client,
+                    params={"token": self._admin_token()},
+                ) as ws:
+                    assert await ws.receive_bytes() == b"output"
+                    assert await ws.receive_text() == "done"
+                    with pytest.raises(WebSocketDisconnect):
+                        await ws.receive_bytes()
+
+        assert fake_ws.closed
+
+    async def test_vnc_console_ws_client_disconnect(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            project: Project,
+            compute: Compute,
+            node: Node,
+            caplog
+    ) -> None:
+        """
+        Same as the console test, for the VNC endpoint (binary frames only).
+        """
+
+        fake_ws = _FakeComputeWebSocket(messages=None)
+        with self._patches(fake_ws), caplog.at_level(logging.INFO):
+            async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as ws_client:
+                async with aconnect_ws(
+                    app.url_path_for("vnc_console", project_id=project.id, node_id=node.id),
+                    ws_client,
+                    params={"token": self._admin_token()},
+                ) as ws:
+                    assert await ws.receive_bytes() == b"console output"
+                    await ws.send_bytes(b"\x01\x02")
+            await self._wait_for_teardown(fake_ws)
+
+        assert fake_ws.sent == [("bytes", b"\x01\x02")]
+        assert fake_ws.stream_cancelled, "the compute -> client forwarding task should have been cancelled"
+        assert fake_ws.closed, "the compute VNC console WebSocket should have been closed"
+        assert any(
+            "has disconnected from controller VNC console WebSocket" in record.getMessage()
+            for record in caplog.records
+        )
