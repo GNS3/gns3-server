@@ -20,7 +20,7 @@ API routes for Docker nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -29,7 +29,6 @@ from typing import Union
 from gns3server import schemas
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
-
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}}
@@ -79,9 +78,20 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) 
         aux_type=node_data.pop("aux_type", "none"),
         extra_hosts=node_data.get("extra_hosts"),
         extra_volumes=node_data.get("extra_volumes"),
+        extra_configs=node_data.get("extra_configs"),
         memory=node_data.get("memory", 0),
         cpus=node_data.get("cpus", 0),
     )
+    # Pop keys already consumed by create_node above so the setattr
+    # fallback loop below only applies truly extra keys and does not
+    # re-trigger console/aux port setter logging.
+    for key in (
+        "console", "console_type", "console_resolution", "console_http_port",
+        "console_http_path", "aux", "aux_type", "start_command", "environment",
+        "adapters", "mac_address", "extra_hosts", "extra_volumes", "extra_configs",
+        "memory", "cpus",
+    ):
+        node_data.pop(key, None)
     for name, value in node_data.items():
         if name != "node_id":
             if hasattr(container, name) and getattr(container, name) != value:
@@ -129,6 +139,7 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
         "custom_adapters",
         "extra_hosts",
         "extra_volumes",
+        "extra_configs",
         "memory",
         "cpus",
     ]
@@ -166,10 +177,12 @@ async def start_docker_node(node: DockerVM = Depends(dep_node)) -> None:
 )
 async def stop_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
-    Stop a Docker node.
+    Stop a Docker node. This is the explicit user stop — the only path that
+    asks for a graceful SIGTERM shutdown (vendor NOS override); internal
+    paths (delete/update/close) keep the immediate kill.
     """
 
-    await node.stop()
+    await node.stop(graceful=True)
 
 
 @router.post(
@@ -235,6 +248,7 @@ async def delete_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
 
     await node.delete()
+    await node.project.remove_node(node)
 
 
 @router.post(
@@ -292,6 +306,7 @@ async def update_docker_node_nio(
     nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
+    nio.markers = nio_data.markers or {}
     await node.adapter_update_nio_binding(adapter_number, nio)
     return nio.asdict()
 
@@ -407,3 +422,89 @@ async def vnc_console_ws(
 async def reset_console(node: DockerVM = Depends(dep_node)) -> None:
 
     await node.reset_console()
+
+
+@router.put(
+    "/{node_id}/markers/{marker_name}",
+    dependencies=[Depends(compute_authentication)]
+)
+async def toggle_docker_marker(
+    marker_name: str,
+    toggle_data: schemas.MarkerToggle,
+    node: DockerVM = Depends(dep_node)
+) -> dict:
+    """
+    Toggle a marker filter on/off without an NIO rebuild (ubridge contract §3.2).
+    """
+
+    if not any(n == marker_name for (n, lid) in node._marker_filter_bridges):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Marker '{marker_name}' is not installed on this node",
+        )
+    await node._ubridge_set_marker_filter_state(marker_name, toggle_data.enabled)
+    return {"marker_name": marker_name, "enabled": toggle_data.enabled}
+
+
+@router.post(
+    "/{node_id}/markers/pause",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
+async def pause_docker_markers(node: DockerVM = Depends(dep_node)) -> None:
+
+    await node._ubridge_marker_pause()
+
+
+@router.post(
+    "/{node_id}/markers/resume",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
+async def resume_docker_markers(node: DockerVM = Depends(dep_node)) -> None:
+
+    await node._ubridge_marker_resume()
+
+
+@router.delete(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/markers/{marker_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
+async def delete_docker_marker_capture(
+    marker_name: str,
+    adapter_number: int,
+    port_number: int,
+    link_id: str = "",
+    node: DockerVM = Depends(dep_node)
+) -> None:
+    """
+    Delete a marker's capture pcap (called by the controller when the marker is
+    removed) so the file is cleaned up even with the node stopped. Also drops
+    the marker from the port NIO's cached spec so a node restart won't reinstall
+    it (and recreate an empty pcap).
+    """
+
+    nio = node.get_nio(adapter_number)
+    await node.delete_marker_capture(marker_name, link_id, nio)
+
+
+@router.put(
+    "/{node_id}/markers/{marker_name}/rebuild",
+    dependencies=[Depends(compute_authentication)]
+)
+async def rebuild_docker_marker(
+    marker_name: str,
+    rebuild_data: schemas.MarkerRebuild,
+    node: DockerVM = Depends(dep_node)
+) -> dict:
+    """
+    Re-install a single marker filter with new BPF/tag/direction (delete + add,
+    no bridge reset) so sibling markers' pcaps stay open.
+    """
+
+    await node.rebuild_marker_filter(
+        marker_name, rebuild_data.link_id, rebuild_data.bpf,
+        rebuild_data.tag, rebuild_data.direction, rebuild_data.enabled,
+    )
+    return {"marker_name": marker_name}

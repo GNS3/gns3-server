@@ -373,6 +373,7 @@ def get_skill(
     category: str | None = None,
     detail: str = "full",
     issue: str | None = None,
+    topic: str | None = None,
 ) -> dict[str, Any]:
     """
     Get skill by device_type, with configurable detail level.
@@ -382,6 +383,9 @@ def get_skill(
         category: Optional category filter
         detail: Detail level - "index" (names only), "summary" (+desc/sev/diff), "full" (all)
         issue: Optional specific issue key to retrieve
+        topic: Optional protocol topic to retrieve (split devices only).
+               Topic bodies are NEVER included without an explicit topic
+               request - all other detail levels return a topic index.
 
     Returns:
         Skill dictionary (detail varies by level), or error dict
@@ -412,6 +416,28 @@ def get_skill(
                 ],
             }
 
+    topics = skill.get("topics", {})
+
+    # Single topic lookup (topic bodies stay out of every other response)
+    if topic:
+        topic_data = topics.get(topic)
+        if not topic_data:
+            for key, data in topics.items():
+                if key.lower() == topic.lower():
+                    topic_data = data
+                    topic = key
+                    break
+        if not topic_data:
+            return {
+                "error": f"Unknown topic '{topic}' in {device_type}",
+                "available_topics": list(topics.keys()),
+            }
+        return {
+            "device_type": device_type,
+            "skill_name": skill.get("name"),
+            "topic": {topic: topic_data},
+        }
+
     issues = skill.get("issues", {})
 
     # Single issue lookup (most token-efficient)
@@ -429,17 +455,20 @@ def get_skill(
         }
 
     if detail == "index":
-        # Minimal: only issue keys and names (90%+ token savings)
-        return {
+        # Minimal: only issue/topic keys and names (90%+ token savings)
+        result = {
             "device_type": device_type,
             "name": skill.get("name"),
             "description": skill.get("description"),
             "issues": {k: v["name"] for k, v in issues.items()},
         }
+        if topics:
+            result["topics"] = {k: v.get("name", k) for k, v in topics.items()}
+        return result
 
     if detail == "summary":
         # Moderate: names + description + severity + difficulty
-        return {
+        result = {
             "device_type": device_type,
             "name": skill.get("name"),
             "description": skill.get("description"),
@@ -453,14 +482,22 @@ def get_skill(
                 for k, v in issues.items()
             },
         }
+        if topics:
+            result["topics"] = {
+                k: {"name": v.get("name", k), "description": v.get("description", "")}
+                for k, v in topics.items()
+            }
+        return result
 
-    # Full detail (original behavior)
-    result = dict(skill)
+    # Full detail: topic bodies are replaced by the topic index
+    result = {k: v for k, v in skill.items() if k != "topics"}
     result["device_type"] = device_type
+    if topics:
+        result["topics"] = {k: v.get("name", k) for k, v in topics.items()}
     return result
 
 
-def list_available_skills(category: str | None = None) -> list[dict[str, str]]:
+def list_available_skills(category: str | None = None) -> list[dict[str, Any]]:
     """List all available device/feature skills, optionally filtered by category."""
     skills = []
     for did, skill in SKILLS_REGISTRY.items():
@@ -470,12 +507,14 @@ def list_available_skills(category: str | None = None) -> list[dict[str, str]]:
                     "device_type": did,
                     "name": skill.get("name", did),
                     "category": skill.get("category"),
+                    "topic_count": len(skill.get("topics", {})),
                 })
         else:
             skills.append({
                 "device_type": did,
                 "name": skill.get("name", did),
                 "category": skill.get("category"),
+                "topic_count": len(skill.get("topics", {})),
             })
     return skills
 
@@ -642,15 +681,21 @@ class DeviceSkillsTool(BaseTool):
     Provides access to device command knowledge (VPCS), topology planning, etc.
     For fault injection skills, use the injection_skills tool.
 
-    INPUT FORMAT (JSON string):
-    {
-        "action": "get",  # "get" (default) or "list"
-        "device_type": "gns3_vpcs_telnet",  # Required for action="get"
-        "detail": "full"  # "full" (default) for complete skill information
-    }
+    TOKEN-EFFICIENT USAGE:
+    1. List devices: {"action": "list"}
+    2. List topics of a device: {"device_type": "frr_vtysh", "detail": "index"}
+    3. Get ONE protocol topic (devices with topics): {"device_type": "frr_vtysh", "topic": "bgp"}
+    4. Devices without topics: {"device_type": "gns3_vpcs_telnet"}
 
-    For action="list":
-    {"action": "list"}  # Lists all available device/feature skills
+    Topic bodies are NEVER returned without an explicit "topic" - fetching a
+    device without one only returns its base skill plus the topic index, so
+    always request the specific protocol topic before configuring it.
+
+    PARAMETERS:
+    - action: "list" or "get" (default "get")
+    - device_type: Required for action="get" (e.g., "frr_vtysh")
+    - topic: Protocol topic key from the topic index (e.g., "ospf", "bgp")
+    - detail: "index" | "summary" | "full" (default "full")
     """
 
     def _run(
@@ -693,8 +738,9 @@ class DeviceSkillsTool(BaseTool):
         category = params.get("category")
         detail = params.get("detail", "full")
         issue = params.get("issue")
+        topic = params.get("topic")
 
-        skill = get_skill(device_type, category, detail=detail, issue=issue)
+        skill = get_skill(device_type, category, detail=detail, issue=issue, topic=topic)
 
         return json.dumps(skill, ensure_ascii=False, indent=2)
 

@@ -15,5 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .authentication import AuthService
+from .access_tickets import AccessTicketService
 
 auth_service = AuthService()
+access_ticket_service = AccessTicketService()

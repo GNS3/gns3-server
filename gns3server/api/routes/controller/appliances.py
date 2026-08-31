@@ -122,7 +122,8 @@ def add_appliance_version(appliance_id: UUID, appliance_version: Union[schemas.A
 
 @router.post(
     "/{appliance_id}/install",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=schemas.Template,
+    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Appliance.Allocate"))]
 )
 async def install_appliance(
@@ -132,15 +133,15 @@ async def install_appliance(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> schemas.Template:
     """
-    Install an appliance.
+    Install an appliance and return the created template.
 
     Required privilege: Appliance.Allocate
     """
 
     controller = Controller.instance()
-    await controller.appliance_manager.install_appliance(
+    return await controller.appliance_manager.install_appliance(
         appliance_id,
         version,
         images_repo,

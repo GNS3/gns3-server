@@ -516,29 +516,39 @@ gns3server/agent/gns3_copilot/tools_v2/
 
 ### API Integration
 
-The tools use the `Node` and `Link` classes from `custom_gns3fy`:
+The tools call the shared REST handler layer (`gns3_copilot.gns3_client.api_handlers`), the same functions the MCP service exposes as MCP tools:
 
 ```python
-from gns3server.agent.gns3_copilot.gns3_client import Node, Link, get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx, create_node_handler, create_link_handler,
+    get_nodes_handler, start_node_handler, stop_node_handler,
+    suspend_node_handler, update_node_handler,
+)
 
-# Get templates
-templates = get_gns3_connector().get_templates()
+gns3_ctx = build_gns3_ctx()  # JWT + server URL from the request context
 
-# Create node
-node = Node(project_id=project_id, template_id=template_id, x=x, y=y, connector=gns3_server)
-node.create()
+# Create node (single POST, batch mode is parallel)
+created = create_node_handler(
+    {"project_id": project_id, "template_id": template_id, "x": x, "y": y, "name": name},
+    gns3_ctx,
+)
 
 # Create link
-link = Link(project_id=project_id, connector=gns3_server, nodes=[...])
-link.create()
+link = create_link_handler(
+    {"project_id": project_id, "nodes": [{"node_id": nid, "adapter_number": 0, "port_number": 0}, ...]},
+    gns3_ctx,
+)
 
-# Update node name
-node = Node(project_id=project_id, node_id=node_id, connector=gns3_server)
-node.update(name=new_name)
+# Update node name — the PUT response is the updated node
+updated = update_node_handler({"project_id": project_id, "node_id": node_id, "name": new_name}, gns3_ctx)
 
-# Start/stop/suspend node
-node = Node(project_id=project_id, node_id=node_id, connector=gns3_server)
-node.start()   # or node.stop() / node.suspend()
+# Start/stop/suspend nodes (node_ids batch runs in parallel)
+start_node_handler({"project_id": project_id, "node_ids": [nid1, nid2]}, gns3_ctx)
+stop_node_handler({"project_id": project_id, "node_ids": [nid1, nid2]}, gns3_ctx)
+suspend_node_handler({"project_id": project_id, "node_ids": [nid1, nid2]}, gns3_ctx)
+
+# Node listing/status (single call for the whole project)
+listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
 ```
 
 ### Progress Tracking

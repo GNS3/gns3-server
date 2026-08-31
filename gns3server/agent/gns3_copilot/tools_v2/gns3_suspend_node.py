@@ -39,8 +39,11 @@ from typing import Any
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from gns3server.agent.gns3_copilot.gns3_client import Node
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+    get_nodes_handler,
+    suspend_node_handler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -109,75 +112,85 @@ class GNS3SuspendNodeTool(BaseTool):
                 logger.error("node_ids must be a list.")
                 return {"error": "node_ids must be a list."}
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": "Failed to connect to GNS3 server. "
                     "Please check your configuration."
                 }
 
-            # Suspend all nodes and collect results
+            # Verify nodes exist and capture names (one call)
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
+
+            # Suspend all nodes (parallel batch) and collect results
             logger.info(
                 "Suspending %d nodes in project %s...",
                 len(node_ids),
                 project_id,
             )
             results = []
+            known_ids = [nid for nid in node_ids if nid in nodes_by_id]
+            suspend_results = suspend_node_handler(
+                {"project_id": project_id, "node_ids": known_ids}, gns3_ctx
+            )
+            suspend_errors = {
+                r["node_id"]: r.get("error")
+                for r in suspend_results
+                if r.get("status") == "error"
+            }
+
+            # Get updated status — one call
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            after_by_id = {n["node_id"]: n for n in listing["nodes"]}
 
             for node_id in node_ids:
-                try:
-                    node = Node(
-                        project_id=project_id,
-                        node_id=node_id,
-                        connector=gns3_server,
+                if node_id not in nodes_by_id:
+                    logger.error(
+                        "Node %s not found in project %s", node_id, project_id
                     )
-                    # Verify node exists and get current info
-                    node.get()
-                    if not node.node_id:
-                        logger.error(
-                            "Node %s not found in project %s",
-                            node_id,
-                            project_id,
-                        )
-                        results.append(
-                            {
-                                "node_id": node_id,
-                                "name": "N/A",
-                                "status": "error",
-                                "error": "Node not found",
-                            }
-                        )
-                        continue
-
-                    # Send suspend command
-                    node.suspend()
-                    logger.info(
-                        "Suspend command sent for node %s (%s)",
-                        node_id,
-                        node.name,
-                    )
-
-                    # Get updated status
-                    node.get()
-                    node_info = {
-                        "node_id": node.node_id,
-                        "name": node.name or "N/A",
-                        "status": node.status or "unknown",
-                    }
-                    results.append(node_info)
-
-                except Exception as e:
-                    logger.error("Failed to suspend node %s: %s", node_id, e)
                     results.append(
                         {
                             "node_id": node_id,
                             "name": "N/A",
                             "status": "error",
-                            "error": str(e),
+                            "error": "Node not found",
+                        }
+                    )
+                elif node_id in suspend_errors:
+                    logger.error(
+                        "Failed to suspend node %s: %s",
+                        node_id,
+                        suspend_errors[node_id],
+                    )
+                    results.append(
+                        {
+                            "node_id": node_id,
+                            "name": nodes_by_id[node_id].get("name") or "N/A",
+                            "status": "error",
+                            "error": suspend_errors[node_id],
+                        }
+                    )
+                else:
+                    logger.info(
+                        "Suspend command sent for node %s (%s)",
+                        node_id,
+                        nodes_by_id[node_id].get("name"),
+                    )
+                    current = after_by_id.get(node_id, nodes_by_id[node_id])
+                    results.append(
+                        {
+                            "node_id": node_id,
+                            "name": current.get("name") or "N/A",
+                            "status": current.get("status") or "unknown",
                         }
                     )
 

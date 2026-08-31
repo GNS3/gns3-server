@@ -8,6 +8,8 @@ import uuid
 import configparser
 import base64
 import stat
+import resource
+import platform
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -33,6 +35,19 @@ from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
+
+
+def pytest_configure(config):
+    """
+    Increases the maximum number of open file descriptors before running tests (Unix only).
+    """
+
+    if platform.system() != "Windows":
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        # Set soft limit to hard limit, or a safe high number like 4096
+        new_soft = min(4096, hard)
+        if soft < new_soft:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
@@ -140,7 +155,10 @@ def unauthorized_client(base_client: AsyncClient, test_user: User) -> AsyncClien
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
 def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
 
-    access_token = auth_service.create_access_token(test_user.username)
+    # Sign with the default secret key: the class-scoped token must stay valid
+    # across every test, but "run_around_tests" resets the config and forces
+    # jwt_secret_key back to the default for each test function.
+    access_token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
     base_client.headers = {
         **base_client.headers,
         "Authorization": f"Bearer {access_token}",
@@ -153,7 +171,9 @@ async def client(base_client: AsyncClient) -> AsyncClient:
 
     # The super admin is automatically created when the users table is created
     # this account that can access all endpoints without restrictions.
-    access_token = auth_service.create_access_token("admin")
+    # Sign with the default secret key so the token matches the one enforced
+    # by "run_around_tests" when the config is reset for each test function.
+    access_token = auth_service.create_access_token("admin", secret_key=DEFAULT_JWT_SECRET_KEY)
     base_client.headers = {
         **base_client.headers,
         "Authorization": f"Bearer {access_token}",
@@ -325,9 +345,9 @@ def on_gns3vm(linux_platform):
     """
 
     with patch("gns3server.utils.interfaces.interfaces", return_value=[
-            {"name": "eth0", "special": False, "type": "ethernet"},
-            {"name": "eth1", "special": False, "type": "ethernet"},
-            {"name": "virbr0", "special": True, "type": "ethernet"}]):
+            {"name": "eth0", "special": False, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 1000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]},
+            {"name": "eth1", "special": False, "type": "ethernet", "ip_addresses": [], "status": "down", "speed": 0, "mtu": 1500, "flags": ["broadcast"]},
+            {"name": "virbr0", "special": True, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 10000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]}]):
         with patch("socket.gethostname", return_value="gns3vm"):
             yield
 

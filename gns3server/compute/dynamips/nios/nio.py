@@ -40,6 +40,7 @@ class NIO:
         self._hypervisor = hypervisor
         self._name = name
         self._filters = {}
+        self._markers = {}
         self._suspended = False
         self._capturing = False
         self._pcap_output_file = ""
@@ -302,6 +303,26 @@ class NIO:
 
         assert isinstance(new_filters, dict)
         self._filters = new_filters
+
+    @property
+    def markers(self):
+        """
+        Returns the list of traffic-insight markers for this NIO.
+
+        :returns: markers (dictionary)
+        """
+
+        return self._markers
+
+    @markers.setter
+    def markers(self, new_markers):
+        """
+        Set markers for this NIO.
+
+        :param new_markers: markers (dictionary)
+        """
+
+        self._markers = new_markers
 
     @property
     def capturing(self):

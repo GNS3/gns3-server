@@ -72,6 +72,15 @@ Unified error response format across all GNS3 API endpoints. Documents HTTP stat
 ### Web Wireshark (`features/web-wireshark-business-process.md`)
 Web-based packet capture analysis using Docker + xpra HTML5 client. Zero-install Wireshark experience directly in the browser, integrated with GNS3 topologies.
 
+### Marker (Traffic Insight) (`features/marker-traffic-insight.md`)
+Real-time traffic insight via per-link BPF markers and project-level inherited definitions. A marker taps a link in uBridge, emitting match notifications and pcap capture on BPF hit; definitions fan out to every capable link automatically.
+
+### Docker exec Console (Vendor NOS) (`features/docker-exec-console.md`)
+Console for vendor NOS containers (SR Linux, XRd, …) whose CLI is a TUI off PID 1: runs the vendor CLI via the Docker exec API, plus `GNS3_SKIP_INIT`/`GNS3_INTERFACE_NAMES` boot knobs and SKIP_INIT volume persistence.
+
+### Cisco XRd Control Plane (`features/vendor-nos-xrd.md`)
+Cisco XRd as a GNS3 Docker router: vendor path + shm/device injection (`GNS3_SHM_SIZE`/`GNS3_DEVICES`), config-file injection (`extra_configs`), udev masking (`GNS3_MASK_UDEV`) so privileged systemd containers don't disturb the host, and the host-readiness check.
+
 ---
 
 ## GNS3 AI Copilot (`gns3-copilot/`)
@@ -100,6 +109,7 @@ Web-based packet capture analysis using Docker + xpra HTML5 client. Zero-install
 ## Known Issues (`bugs/`)
 
 - [Telnet Server Connection Race Condition](bugs/telnet-server-connection-race-condition.md) — `getpeername()` error when client disconnects during connection setup (High severity, Open)
+- [Docker Link UDP Self-Loop](bugs/link-udp-self-loop.md) — intermittent one-way link (both ends handed the same UDP port by an allocation race); **fixed** (Medium severity)
 
 ---
 
@@ -117,4 +127,4 @@ Quick-start guide for Ubuntu 24.04: install via PPA, set up dependencies, and ru
 
 ---
 
-_Last updated: 2026-04-20_
+_Last updated: 2026-08-14_

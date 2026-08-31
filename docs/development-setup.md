@@ -104,7 +104,7 @@ source venv/bin/activate
 # pip install -e . -i https://mirrors.aliyun.com/pypi/simple/
 
 pip install -e . && gns3server-web-wireshark-setup
-pip install -e .[ai-copilot]
+pip install -e .[ai-features]
 pip install -e .[dev]
 ```
 
@@ -114,10 +114,10 @@ Run the server:
 python3 -m gns3server
 ```
 
-## Optional: Install AI Copilot Development Dependencies
+## Optional: Install AI Features Development Dependencies
 
 ```bash
-python3 -m pip install .[ai-copilot,dev]
+python3 -m pip install .[ai-features,dev]
 ```
 
 ## Optional: Expand LVM Root Partition

@@ -206,19 +206,24 @@ async def prune_images(
 
 @router.post(
     "/install",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     dependencies=[Depends(has_privilege("Image.Allocate"))]
 )
 async def install_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
-) -> None:
+) -> dict:
     """
     Attempt to automatically create templates based on image checksums.
+
+    Returns the list of created templates and the list of skipped
+    candidates (with the reason why they were skipped).
 
     Required privilege: Image.Allocate
     """
 
+    created = []
+    skipped = []
     skip_images = get_builtin_disks()
     images = await images_repo.get_images()
     for image in images:
@@ -229,8 +234,12 @@ async def install_images(
         if templates:
             # the image is already used by a template
             log.warning(f"Image '{image.path}' is used by one or more templates")
+            skipped.append({
+                "name": image.filename,
+                "reason": "image is already used by one or more templates",
+            })
             continue
-        await Controller.instance().appliance_manager.install_appliances_from_image(
+        results = await Controller.instance().appliance_manager.install_appliances_from_image(
             image.path,
             image.checksum,
             images_repo,
@@ -239,6 +248,12 @@ async def install_images(
             None,
             os.path.dirname(image.path)
         )
+        for result in results:
+            if result.get("status") == "created":
+                created.append({k: v for k, v in result.items() if k != "status"})
+            else:
+                skipped.append({k: v for k, v in result.items() if k != "status"})
+    return {"created": created, "skipped": skipped}
 
 
 @router.get(

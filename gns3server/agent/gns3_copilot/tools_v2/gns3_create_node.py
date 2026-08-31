@@ -38,8 +38,10 @@ from typing import Any
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from gns3server.agent.gns3_copilot.gns3_client import Node
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+    create_node_handler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -194,11 +196,11 @@ class GNS3CreateNodeTool(BaseTool):
                         f"template_id, x, or y."
                     }
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": "Failed to connect to GNS3 server. "
@@ -228,22 +230,22 @@ class GNS3CreateNodeTool(BaseTool):
                         name,
                     )
 
-                    # Create node
-                    node = Node(
-                        project_id=project_id,
-                        template_id=template_id,
-                        x=x,
-                        y=y,
-                        name=name,
-                        connector=gns3_server,
+                    # Create node via the shared REST handler
+                    created = create_node_handler(
+                        {
+                            "project_id": project_id,
+                            "template_id": template_id,
+                            "x": x,
+                            "y": y,
+                            "name": name,
+                        },
+                        gns3_ctx,
                     )
-                    node.create()
-
-                    # Retrieve node details
-                    node.get()
+                    if "error" in created:
+                        raise RuntimeError(created["error"])
                     node_info = {
-                        "node_id": node.node_id,
-                        "name": node.name,
+                        "node_id": created.get("node_id"),
+                        "name": created.get("name"),
                         "status": "success",
                     }
 

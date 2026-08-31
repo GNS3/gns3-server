@@ -1,0 +1,24 @@
+{
+    "appliance_id": "813e6041-2693-422b-9d2d-9ab2b4f61247",
+    "name": "FRRDocker",
+    "category": "router",
+    "symbol": "router.svg",
+    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nThis Docker version runs the complete FRR protocol suite — BGP, OSPFv2/v3, RIP/RIPng, IS-IS, LDP, PIM/PIM6, NHRP, EIGRP, Babel, BFD, VRRP, PBR and static routing — and is ready to route within seconds. For a minimal OSPF-only image, use the FRRDockerLite appliance.",
+    "vendor_name": "FRRouting Project",
+    "vendor_url": "https://frrouting.org",
+    "documentation_url": "https://docs.frrouting.org/",
+    "product_name": "FRR",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The console opens directly in the FRR CLI (vtysh). Type 'exit' to reach a Linux shell; run 'vtysh' to return to the routing CLI. Save your config with 'write memory'.",
+    "docker": {
+        "adapters": 8,
+        "image": "gns3/frr:latest",
+        "console_type": "telnet",
+        "start_command": "/usr/lib/frr/docker-start",
+        "environment": "FRR_PROFILE=full,\nTERM=xterm"
+    }
+}

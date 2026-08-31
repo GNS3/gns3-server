@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import threading
 import uuid
 
 from fastapi import HTTPException
@@ -114,6 +115,82 @@ def test_release_udp_port():
     pm.reserve_udp_port(20000, project)
     pm.release_udp_port(20000, project)
     pm.reserve_udp_port(20000, project)
+
+
+def test_concurrent_udp_port_allocation_no_duplicates():
+    """
+    Regression test for the link UDP self-loop bug (docs/bugs/link-udp-self-loop.md):
+    both ends of a link are allocated concurrently on the controller
+    (asyncio.gather -> two POST /ports/udp), and FastAPI runs the sync route
+    handler in a threadpool. The find-then-add allocation must be atomic,
+    otherwise both threads can probe and return the same "free" port —
+    handing lport == rport to both ends, which makes every packet loop back
+    to its sender (one-way link).
+    """
+
+    pm = PortManager()
+    pm.udp_port_range = (50000, 50100)
+    project = Project(project_id=str(uuid.uuid4()))
+
+    workers = 8
+    rounds = 10
+    barrier = threading.Barrier(workers)
+    results = []
+    results_lock = threading.Lock()
+
+    def worker():
+        allocated = []
+        for _ in range(rounds):
+            # start each round together to maximize the collision window
+            barrier.wait()
+            allocated.append(pm.get_free_udp_port(project))
+        with results_lock:
+            results.extend(allocated)
+
+    threads = [threading.Thread(target=worker) for _ in range(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(results) == workers * rounds
+    assert len(set(results)) == len(results), "the same UDP port was handed to two callers"
+    assert pm.udp_ports == set(results)
+
+
+def test_concurrent_tcp_port_allocation_no_duplicates():
+    """
+    Same race class as the UDP self-loop bug, on the console/TCP side:
+    concurrent get_free_tcp_port calls must never return the same port.
+    """
+
+    pm = PortManager()
+    pm.console_port_range = (51000, 51100)
+    project = Project(project_id=str(uuid.uuid4()))
+
+    workers = 8
+    rounds = 10
+    barrier = threading.Barrier(workers)
+    results = []
+    results_lock = threading.Lock()
+
+    def worker():
+        allocated = []
+        for _ in range(rounds):
+            barrier.wait()
+            allocated.append(pm.get_free_tcp_port(project))
+        with results_lock:
+            results.extend(allocated)
+
+    threads = [threading.Thread(target=worker) for _ in range(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(results) == workers * rounds
+    assert len(set(results)) == len(results), "the same TCP port was handed to two callers"
+    assert pm.tcp_ports == set(results)
 
 
 def test_find_unused_port():

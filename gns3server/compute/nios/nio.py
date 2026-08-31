@@ -30,6 +30,7 @@ class NIO:
         self._capturing = False
         self._suspended = False
         self._filters = {}
+        self._markers = {}
         self._pcap_output_file = ""
         self._pcap_data_link_type = ""
 
@@ -118,3 +119,24 @@ class NIO:
 
         assert isinstance(new_filters, dict)
         self._filters = new_filters
+
+    @property
+    def markers(self):
+        """
+        Returns the traffic-insight markers for this NIO.
+
+        :returns: markers (dictionary: name -> {bpf, tag, link_id})
+        """
+
+        return self._markers
+
+    @markers.setter
+    def markers(self, new_markers):
+        """
+        Set the traffic-insight markers for this NIO.
+
+        :param new_markers: markers (dictionary: name -> {bpf, tag, link_id})
+        """
+
+        assert isinstance(new_markers, dict)
+        self._markers = new_markers

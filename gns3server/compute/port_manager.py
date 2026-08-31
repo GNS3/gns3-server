@@ -16,6 +16,7 @@
 
 import socket
 import ipaddress
+import threading
 from fastapi import HTTPException, status
 from gns3server.config import Config
 
@@ -105,6 +106,13 @@ class PortManager:
         self._udp_host = "0.0.0.0"
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
+        # Guards the find-then-add port allocation against concurrent threads:
+        # FastAPI runs sync route handlers (e.g. POST /ports/udp) in a thread
+        # pool, and a link allocates both of its ends concurrently — without
+        # the lock both threads can probe the same "free" port and hand the
+        # same number to both ends of a link (lport == rport self-loop).
+        # RLock because reserve_*_port falls back to get_free_*_port.
+        self._lock = threading.RLock()
 
         console_start_port_range = Config.instance().settings.Server.console_start_port_range
         console_end_port_range = Config.instance().settings.Server.console_end_port_range
@@ -275,16 +283,17 @@ class PortManager:
             port_range_start = self._console_port_range[0]
             port_range_end = self._console_port_range[1]
 
-        port = self.find_unused_port(
-            port_range_start,
-            port_range_end,
-            host=self._console_host,
-            socket_type="TCP",
-            ignore_ports=self._used_tcp_ports,
-        )
+        with self._lock:
+            port = self.find_unused_port(
+                port_range_start,
+                port_range_end,
+                host=self._console_host,
+                socket_type="TCP",
+                ignore_ports=self._used_tcp_ports,
+            )
 
-        self._used_tcp_ports.add(port)
-        project.record_tcp_port(port)
+            self._used_tcp_ports.add(port)
+            project.record_tcp_port(port)
         log.debug(f"TCP port {port} has been allocated")
         return port
 
@@ -305,32 +314,33 @@ class PortManager:
             port_range_start = self._console_port_range[0]
             port_range_end = self._console_port_range[1]
 
-        if port in self._used_tcp_ports:
-            old_port = port
-            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
-            log.debug(msg)
-            return port
-        if port < port_range_start or port > port_range_end:
-            old_port = port
-            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = (
-                f"TCP port {old_port} is outside the range {port_range_start}-{port_range_end} on host "
-                f"{self._console_host}. Port has been replaced by {port}"
-            )
-            log.debug(msg)
-            return port
-        try:
-            PortManager._check_port(self._console_host, port, "TCP")
-        except OSError:
-            old_port = port
-            port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
-            log.debug(msg)
-            return port
+        with self._lock:
+            if port in self._used_tcp_ports:
+                old_port = port
+                port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+                msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                log.debug(msg)
+                return port
+            if port < port_range_start or port > port_range_end:
+                old_port = port
+                port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+                msg = (
+                    f"TCP port {old_port} is outside the range {port_range_start}-{port_range_end} on host "
+                    f"{self._console_host}. Port has been replaced by {port}"
+                )
+                log.debug(msg)
+                return port
+            try:
+                PortManager._check_port(self._console_host, port, "TCP")
+            except OSError:
+                old_port = port
+                port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
+                msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                log.debug(msg)
+                return port
 
-        self._used_tcp_ports.add(port)
-        project.record_tcp_port(port)
+            self._used_tcp_ports.add(port)
+            project.record_tcp_port(port)
         log.debug(f"TCP port {port} has been reserved")
         return port
 
@@ -342,10 +352,11 @@ class PortManager:
         :param project: Project instance
         """
 
-        if port in self._used_tcp_ports:
-            self._used_tcp_ports.remove(port)
-            project.remove_tcp_port(port)
-            log.debug(f"TCP port {port} has been released")
+        with self._lock:
+            if port in self._used_tcp_ports:
+                self._used_tcp_ports.remove(port)
+                project.remove_tcp_port(port)
+                log.debug(f"TCP port {port} has been released")
 
     def get_free_udp_port(self, project):
         """
@@ -353,16 +364,17 @@ class PortManager:
 
         :param project: Project instance
         """
-        port = self.find_unused_port(
-            self._udp_port_range[0],
-            self._udp_port_range[1],
-            host=self._udp_host,
-            socket_type="UDP",
-            ignore_ports=self._used_udp_ports,
-        )
+        with self._lock:
+            port = self.find_unused_port(
+                self._udp_port_range[0],
+                self._udp_port_range[1],
+                host=self._udp_host,
+                socket_type="UDP",
+                ignore_ports=self._used_udp_ports,
+            )
 
-        self._used_udp_ports.add(port)
-        project.record_udp_port(port)
+            self._used_udp_ports.add(port)
+            project.record_udp_port(port)
         log.debug(f"UDP port {port} has been allocated")
         return port
 
@@ -374,18 +386,20 @@ class PortManager:
         :param project: Project instance
         """
 
-        if port in self._used_udp_ports:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"UDP port {port} already in use on host {self._console_host}",
-            )
-        if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"UDP port {port} is outside the range " f"{self._udp_port_range[0]}-{self._udp_port_range[1]}",
-            )
-        self._used_udp_ports.add(port)
-        project.record_udp_port(port)
+        with self._lock:
+            if port in self._used_udp_ports:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"UDP port {port} already in use on host {self._console_host}",
+                )
+            if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"UDP port {port} is outside the range "
+                    f"{self._udp_port_range[0]}-{self._udp_port_range[1]}",
+                )
+            self._used_udp_ports.add(port)
+            project.record_udp_port(port)
         log.debug(f"UDP port {port} has been reserved")
 
     def release_udp_port(self, port, project):
@@ -396,7 +410,8 @@ class PortManager:
         :param project: Project instance
         """
 
-        if port in self._used_udp_ports:
-            self._used_udp_ports.remove(port)
-            project.remove_udp_port(port)
-            log.debug(f"UDP port {port} has been released")
+        with self._lock:
+            if port in self._used_udp_ports:
+                self._used_udp_ports.remove(port)
+                project.remove_udp_port(port)
+                log.debug(f"UDP port {port} has been released")

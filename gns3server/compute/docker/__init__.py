@@ -32,6 +32,7 @@ from gns3server.config import Config
 from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
 
 log = logging.getLogger(__name__)
@@ -58,6 +59,17 @@ class Docker(BaseManager):
         self._connector = None
         self._session = None
         self._api_version = DOCKER_MINIMUM_API_VERSION
+        self._host_checked = False
+
+    def _select_node_class(self, **kwargs):
+        """Select the node class based on console_type."""
+        if kwargs.get("console_type") == "docker_exec":
+            return VendorDockerVM
+        return DockerVM
+
+    async def create_node(self, name, project_id, node_id, *args, **kwargs):
+        self._NODE_CLASS = self._select_node_class(**kwargs)
+        return await super().create_node(name, project_id, node_id, *args, **kwargs)
 
     @staticmethod
     async def install_busybox(dst_dir):
@@ -149,6 +161,62 @@ class Docker(BaseManager):
                 log.warning("Using Docker client with the minimum API version {}".format(self._api_version))
 
             log.info("Connected to Docker daemon version {} using API version {}".format(version, self._api_version))
+            self._check_host_readiness()
+
+    def _check_host_readiness(self):
+        """
+        Best-effort, read-only check of kernel settings that heavy NOS containers
+        (e.g. Cisco XRd) need. The server runs unprivileged (only the setuid
+        ubridge helper gets root), so we cannot raise these limits ourselves --
+        we only warn, with the exact commands to fix, when they are too low or
+        when FUSE support is missing. Runs at most once per process.
+        """
+
+        if self._host_checked:
+            return
+        self._host_checked = True
+
+        # Thresholds recommended for running several heavy containers (sized for
+        # ~15 XRd-style nodes). Raising them is harmless; the stock Linux defaults
+        # (e.g. max_user_instances=128) are far too low and break such images.
+        thresholds = {
+            "fs.inotify.max_user_instances": 64000,
+            "fs.inotify.max_user_watches": 524288,
+            "fs.file-max": 1000000,
+        }
+        low = []
+        for key, minimum in thresholds.items():
+            try:
+                with open(f"/proc/sys/{key.replace('.', '/')}") as f:
+                    current = int(f.read().strip())
+            except (OSError, ValueError):
+                # One unreadable key must not discard the warnings already
+                # collected nor skip the FUSE check — skip just this key.
+                continue
+            if current < minimum:
+                low.append((key, current, minimum))
+
+        fuse_supported = False
+        try:
+            with open("/proc/filesystems") as f:
+                filesystems = {parts[-1] for parts in (line.split() for line in f) if parts}
+            fuse_supported = "fuse" in filesystems or "fuseblk" in filesystems
+        except OSError:
+            pass
+
+        if low:
+            details = ", ".join(f"{k}={c} (need >={m})" for k, c, m in low)
+            raise_cmd = " ".join(f"{k}={m}" for k, _, m in low)
+            log.warning(
+                f"Low kernel limits for heavy Docker containers ({details}). "
+                f"Some NOS images (e.g. Cisco XRd) may fail to start. Raise once: "
+                f"'sudo sysctl -w {raise_cmd}' and persist it under /etc/sysctl.d/."
+            )
+        if not fuse_supported:
+            log.warning(
+                "FUSE filesystem support is not available in the kernel. "
+                "Containers that need it (e.g. Cisco XRd) will fail. Load it: 'sudo modprobe fuse'."
+            )
 
     def connector(self):
 
@@ -260,19 +328,21 @@ class Docker(BaseManager):
         return connection
 
     @locking
-    async def pull_image(self, image, progress_callback=None):
+    async def pull_image(self, image, progress_callback=None, force=False):
         """
         Pulls an image from the Docker repository
 
         :params image: Image name
         :params progress_callback: A function that receive a log message about image download progress
+        :params force: Pull the image even if it is already available locally
         """
 
-        try:
-            await self.query("GET", f"images/{image}/json")
-            return  # We already have the image skip the download
-        except DockerHttp404Error:
-            pass
+        if not force:
+            try:
+                await self.query("GET", f"images/{image}/json")
+                return  # We already have the image skip the download
+            except DockerHttp404Error:
+                pass
 
         if progress_callback:
             progress_callback(f"Pulling '{image}' from Docker repository")
@@ -285,29 +355,45 @@ class Docker(BaseManager):
             )
         # The pull api will stream status via an HTTP JSON stream
         content = ""
-        while True:
-            try:
-                chunk = await response.content.read(CHUNK_SIZE)
-            except aiohttp.ServerDisconnectedError:
-                log.error(f"Disconnected from server while pulling Docker image '{image}' from Docker repository")
-                break
-            except asyncio.TimeoutError:
-                log.error("Timeout while pulling Docker image '{}' from Docker repository".format(image))
-                break
-            if not chunk:
-                break
-            content += chunk.decode("utf-8")
+        try:
+            while True:
+                try:
+                    chunk = await response.content.read(CHUNK_SIZE)
+                except aiohttp.ServerDisconnectedError as e:
+                    raise DockerError(
+                        f"Disconnected while pulling Docker image '{image}' from Docker repository"
+                    ) from e
+                except asyncio.TimeoutError as e:
+                    raise DockerError(
+                        f"Timeout while pulling Docker image '{image}' from Docker repository"
+                    ) from e
+                if not chunk:
+                    break
+                content += chunk.decode("utf-8")
 
-            try:
-                while True:
-                    content = content.lstrip(" \r\n\t")
-                    answer, index = json.JSONDecoder().raw_decode(content)
-                    if "progress" in answer and progress_callback:
-                        progress_callback("Pulling image {}:{}: {}".format(image, answer["id"], answer["progress"]))
-                    content = content[index:]
-            except ValueError:  # Partial JSON
-                pass
-        response.close()
+                try:
+                    while True:
+                        content = content.lstrip(" \r\n\t")
+                        answer, index = json.JSONDecoder().raw_decode(content)
+                        if not isinstance(answer, dict):
+                            raise DockerError(f"Invalid response while pulling Docker image '{image}'")
+                        error_detail = answer.get("errorDetail")
+                        error = answer.get("error")
+                        if not error and isinstance(error_detail, dict):
+                            error = error_detail.get("message")
+                        if error:
+                            raise DockerError(error)
+                        if "progress" in answer and progress_callback:
+                            progress_callback("Pulling image {}:{}: {}".format(image, answer["id"], answer["progress"]))
+                        content = content[index:]
+                except ValueError:  # Partial JSON
+                    pass
+
+            if content.strip():
+                raise DockerError(f"Invalid response while pulling Docker image '{image}'")
+        finally:
+            response.close()
+
         if progress_callback:
             progress_callback(f"Success pulling image {image}")
 

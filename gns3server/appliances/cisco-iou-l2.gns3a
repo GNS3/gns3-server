@@ -22,6 +22,12 @@
     },
     "images": [
         {
+            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.17.18.2.iol",
+            "version": "17.18.2",
+            "md5sum": "0e460cbcfa9e0b76ca400162928fd989",
+            "filesize": 246471208
+        },
+        {
             "filename": "x86_64_crb_linux_l2-adventerprisek9-ms.17.16.1a.iol",
             "version": "17.16.1a",
             "md5sum": "d55879318e51c5401fb9314d45c67728",
@@ -41,6 +47,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.18.2",
+            "images": {
+                "image": "x86_64_crb_linux_l2-adventerprisek9-ms.17.18.2.iol"
+            }
+        },
         {
             "name": "17.16.1a",
             "images": {

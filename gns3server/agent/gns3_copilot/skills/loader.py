@@ -98,7 +98,131 @@ class SkillsLoader:
 
     def load_device_skills(self) -> Dict[str, Dict[str, Any]]:
         """
-        Load all device/feature skills from YAML files.
+        Load all device skills from YAML files.
+
+        Supports two layouts:
+        - Single file: device/<device>.yaml
+        - Split directory: device/<device>/_base.yaml + device/<device>/<topic>.yaml
+          (topic files are merged into the base skill under "topics",
+          keyed by their "topic" field)
+
+        Returns:
+            Dictionary mapping skill keys to skill definitions
+        """
+        if yaml is None:
+            logger.error("PyYAML is not installed. Cannot load skills from YAML.")
+            return {}
+
+        skills: Dict[str, Dict[str, Any]] = {}
+        device_dir = self.skills_dir / "device"
+
+        if not device_dir.exists():
+            logger.warning(f"Device skills directory not found: {device_dir}")
+            return {}
+
+        for entry in sorted(device_dir.iterdir()):
+            if entry.is_file() and entry.suffix == ".yaml":
+                self._load_single_device_skill(skills, entry)
+            elif entry.is_dir():
+                self._load_split_device_skill(skills, entry)
+
+        logger.debug(f"Loaded {len(skills)} device skills from device directory")
+        return skills
+
+    def _load_single_device_skill(self, skills: Dict[str, Dict[str, Any]], yaml_file: Path) -> None:
+        """
+        Load a single-file device skill into the skills dictionary.
+        """
+        try:
+            skill_data = self._load_yaml(yaml_file)
+            if not skill_data:
+                logger.warning(f"Skipping empty YAML file: {yaml_file}")
+                return
+            # Use device_type from YAML content as the key
+            # Fallback to filename stem if device_type not present
+            skill_key = skill_data.get("device_type")
+            if not skill_key:
+                skill_key = yaml_file.stem
+                logger.warning(f"No device_type in {yaml_file}, using filename '{skill_key}' as key")
+            skills[skill_key] = skill_data
+            logger.debug(f"Loaded device skill: {skill_key} from {yaml_file}")
+        except Exception as e:
+            logger.error(f"Failed to load skill from {yaml_file}: {e}")
+
+    def _load_split_device_skill(self, skills: Dict[str, Dict[str, Any]], device_path: Path) -> None:
+        """
+        Load a split device skill (directory with _base.yaml + topic files).
+
+        The base file provides the device-level skill; every other YAML file
+        in the directory is a protocol topic merged under "topics".
+        """
+        base_file = device_path / "_base.yaml"
+        if not base_file.exists():
+            logger.error(f"No _base.yaml in device directory: {device_path}, skipping")
+            return
+
+        try:
+            base_data = self._load_yaml(base_file)
+        except Exception as e:
+            logger.error(f"Failed to load skill from {base_file}: {e}")
+            return
+        if not base_data:
+            logger.warning(f"Skipping empty YAML file: {base_file}")
+            return
+
+        skill_key = base_data.get("device_type")
+        if not skill_key:
+            skill_key = device_path.name
+            logger.warning(f"No device_type in {base_file}, using directory name '{skill_key}' as key")
+
+        # Seed topics from the base file (if any), then merge topic files
+        base_topics = base_data.get("topics")
+        topics: Dict[str, Any] = dict(base_topics) if isinstance(base_topics, dict) else {}
+
+        for yaml_file in sorted(device_path.glob("*.yaml")):
+            if yaml_file.name == "_base.yaml":
+                continue
+            try:
+                topic_data = self._load_yaml(yaml_file)
+                if not topic_data:
+                    logger.warning(f"Skipping empty YAML file: {yaml_file}")
+                    continue
+
+                topic_device_type = topic_data.pop("device_type", None)
+                if topic_device_type is not None and topic_device_type != skill_key:
+                    logger.error(
+                        f"device_type mismatch in {yaml_file}: '{topic_device_type}' "
+                        f"!= base '{skill_key}', skipping topic"
+                    )
+                    continue
+
+                topic_key = topic_data.pop("topic", None)
+                if not topic_key:
+                    topic_key = yaml_file.stem
+                    logger.warning(f"No 'topic' field in {yaml_file}, using filename '{topic_key}'")
+                if topic_key in topics:
+                    logger.warning(f"Duplicate topic '{topic_key}' in {device_path.name} (from {yaml_file}), overwriting")
+
+                # category/topics belong to the base skill only
+                topic_data.pop("category", None)
+                topic_data.pop("topics", None)
+
+                topics[topic_key] = topic_data
+                logger.debug(f"Loaded device topic: {skill_key}/{topic_key} from {yaml_file}")
+            except Exception as e:
+                logger.error(f"Failed to load topic from {yaml_file}: {e}")
+
+        if topics:
+            base_data["topics"] = topics
+        skills[skill_key] = base_data
+        logger.debug(f"Loaded device skill: {skill_key} from {device_path} ({len(topics)} topics)")
+
+    def load_feature_skills(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Load all feature skills from YAML files.
+
+        Feature skills are network planning and design functionalities
+        (e.g., topology planner), not device-specific features.
 
         Returns:
             Dictionary mapping skill keys to skill definitions
@@ -108,13 +232,13 @@ class SkillsLoader:
             return {}
 
         skills = {}
-        device_dir = self.skills_dir / "device"
+        feature_dir = self.skills_dir / "feature"
 
-        if not device_dir.exists():
-            logger.warning(f"Device skills directory not found: {device_dir}")
+        if not feature_dir.exists():
+            logger.warning(f"Feature skills directory not found: {feature_dir}")
             return {}
 
-        for yaml_file in device_dir.glob("*.yaml"):
+        for yaml_file in feature_dir.glob("*.yaml"):
             try:
                 skill_data = self._load_yaml(yaml_file)
                 if not skill_data:
@@ -127,11 +251,11 @@ class SkillsLoader:
                     skill_key = yaml_file.stem
                     logger.warning(f"No device_type in {yaml_file}, using filename '{skill_key}' as key")
                 skills[skill_key] = skill_data
-                logger.debug(f"Loaded device skill: {skill_key} from {yaml_file}")
+                logger.debug(f"Loaded feature skill: {skill_key} from {yaml_file}")
             except Exception as e:
-                logger.error(f"Failed to load skill from {yaml_file}: {e}")
+                logger.error(f"Failed to load feature skill from {yaml_file}: {e}")
 
-        logger.debug(f"Loaded {len(skills)} device skills from {device_dir}")
+        logger.debug(f"Loaded {len(skills)} feature skills from feature directory")
         return skills
 
     def load_prompt(self, prompt_name: str) -> str:

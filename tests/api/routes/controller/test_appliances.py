@@ -53,7 +53,8 @@ class TestApplianceRoutes:
 
         appliance_id = "fc520ae2-a4e5-48c3-9a13-516bb2e94668"  # Alpine Linux appliance
         response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id))
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["name"] == "Alpine Linux"
 
     async def test_docker_appliance_install_with_version(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -68,7 +69,9 @@ class TestApplianceRoutes:
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
         params = {"version": "8G"}
         response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id), params=params)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["name"] == "Empty VM"
+        assert response.json()["version"] == "8G"
 
     async def test_qemu_appliance_install_without_version(self, app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 

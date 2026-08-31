@@ -51,10 +51,24 @@
     ],
     "images": [
         {
+            "filename": "vyos-1.5.1-kvm-amd64.qcow2",
+            "version": "1.5.1",
+            "md5sum": "816ec7c3699a9e4f19e2b8765fd3d7eb",
+            "filesize": 667549696,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
             "filename": "vyos-1.5.0-kvm-amd64.qcow2",
             "version": "1.5.0",
             "md5sum": "f84587bd6c45b139563a1d1d2fe0b2e8",
             "filesize": 618528768,
+            "download_url": "https://support.vyos.io/"
+        },
+        {
+            "filename": "vyos-1.4.5-kvm-amd64.qcow2",
+            "version": "1.4.5",
+            "md5sum": "06ccf7e3ed3f948a23c995133b5fbfce",
+            "filesize": 557645824,
             "download_url": "https://support.vyos.io/"
         },
         {
@@ -165,10 +179,23 @@
     ],
     "versions": [
         {
+            "name": "1.5.1",
+            "settings": "1.5 x86_64",
+            "images": {
+                "hda_disk_image": "vyos-1.5.1-kvm-amd64.qcow2"
+            }
+        },
+        {
             "name": "1.5.0",
             "settings": "1.5 x86_64",
             "images": {
                 "hda_disk_image": "vyos-1.5.0-kvm-amd64.qcow2"
+            }
+        },
+        {
+            "name": "1.4.5",
+            "images": {
+                "hda_disk_image": "vyos-1.4.5-kvm-amd64.qcow2"
             }
         },
         {

@@ -39,8 +39,11 @@ from typing import Any
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from gns3server.agent.gns3_copilot.gns3_client import Node
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+    get_nodes_handler,
+    start_node_handler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -64,7 +67,7 @@ def calculate_startup_time(nodes: list) -> int:
     - If any node is a slow device: use conservative startup time
 
     Args:
-        nodes: List of node objects with node_type attribute
+        nodes: List of node dicts with a "node_type" key
 
     Returns:
         Calculated wait time in seconds
@@ -73,7 +76,7 @@ def calculate_startup_time(nodes: list) -> int:
         return 60  # Default: 60 seconds for empty list
 
     # Get all node types
-    node_types = [getattr(node, "node_type", "default") for node in nodes]
+    node_types = [node.get("node_type") or "default" for node in nodes]
 
     # Check if all nodes are fast startup devices (VPCS or IOU)
     fast_types = {"vpcs", "iou"}
@@ -198,106 +201,88 @@ class GNS3StartNodeTool(BaseTool):
                 logger.error("node_ids must be a list.")
                 return {"error": "node_ids must be a list."}
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": "Failed to connect to GNS3 server. "
                     "Please check your configuration."
                 }
 
-            # First loop: Get node info and send start commands for all nodes
+            # Phase 1: fetch node info (including node_type) in one call
             logger.info(
                 "Retrieving node info for %d nodes in project %s...",
                 len(node_ids),
                 project_id,
             )
-            nodes = []
-            for node_id in node_ids:
-                try:
-                    node = Node(
-                        project_id=project_id,
-                        node_id=node_id,
-                        connector=gns3_server,
-                    )
-                    # Get node info (including node_type)
-                    node.get()
-                    if node.node_id:
-                        nodes.append(node)
-                        logger.info(
-                            "Node %s (%s) type: %s",
-                            node_id,
-                            node.name,
-                            node.node_type,
-                        )
-                    else:
-                        logger.error(
-                            "Node %s not found in project %s",
-                            node_id,
-                            project_id,
-                        )
-                except Exception as e:
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
+            nodes = [nodes_by_id[nid] for nid in node_ids if nid in nodes_by_id]
+            for node in nodes:
+                logger.info(
+                    "Node %s (%s) type: %s",
+                    node["node_id"],
+                    node.get("name"),
+                    node.get("node_type"),
+                )
+            for nid in node_ids:
+                if nid not in nodes_by_id:
                     logger.error(
-                        "Failed to get node info for %s: %s",
-                        node_id,
-                        e,
+                        "Node %s not found in project %s", nid, project_id
                     )
 
             # Calculate startup time based on node types
             wait_time = calculate_startup_time(nodes)
 
-            # Send start commands for all nodes
+            # Phase 2: send start commands for all nodes (parallel batch)
             logger.info(
                 "Sending start commands for %d nodes in project %s...",
                 len(nodes),
                 project_id,
             )
-            for node in nodes:
-                try:
-                    node.start()
-                    logger.info("Start command sent for node %s", node.node_id)
-                except Exception as e:
+            start_results = start_node_handler(
+                {"project_id": project_id, "node_ids": [n["node_id"] for n in nodes]},
+                gns3_ctx,
+            )
+            for r in start_results:
+                if r.get("status") == "error":
                     logger.error(
                         "Failed to send start command for node %s: %s",
-                        node.node_id,
-                        e,
+                        r.get("node_id"),
+                        r.get("error"),
                     )
+                else:
+                    logger.info("Start command sent for node %s", r.get("node_id"))
 
             # Show progress bar with calculated wait time
             show_progress_bar(
                 duration=wait_time, interval=1, node_count=len(nodes)
             )
 
-            # Second loop: Get status for all nodes
+            # Phase 3: get final status for all nodes (one call)
             results = []
             logger.info("Retrieving status for %d nodes...", len(nodes))
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            final_by_id = {n["node_id"]: n for n in listing["nodes"]}
             for node in nodes:
-                try:
-                    node.get()  # Get latest status
-                    node_info = {
-                        "node_id": node.node_id,
-                        "name": node.name or "N/A",
-                        "status": node.status or "unknown",
+                node_info = final_by_id.get(node["node_id"], node)
+                results.append(
+                    {
+                        "node_id": node["node_id"],
+                        "name": node_info.get("name") or "N/A",
+                        "status": node_info.get("status") or "unknown",
                     }
-                    results.append(node_info)
-                except Exception as e:
-                    logger.error(
-                        "Failed to get status for node %s: %s", node.node_id, e
-                    )
-                    results.append(
-                        {
-                            "node_id": node.node_id,
-                            "name": getattr(node, "name", "N/A"),
-                            "status": "error",
-                            "error": str(e),
-                        }
-                    )
+                )
 
             # Handle nodes that failed to be retrieved initially
-            retrieved_node_ids = {node.node_id for node in nodes}
+            retrieved_node_ids = {node["node_id"] for node in nodes}
             for node_id in node_ids:
                 if node_id not in retrieved_node_ids:
                     results.append(
@@ -405,77 +390,90 @@ class GNS3StartNodeQuickTool(BaseTool):
                 logger.error("node_ids must be a list.")
                 return {"error": "node_ids must be a list."}
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": "Failed to connect to GNS3 server. "
                     "Please check your configuration."
                 }
 
-            # Send start commands for all nodes and collect initial status
+            # Verify nodes exist and capture pre-start info (one call)
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
+
+            # Send start commands for all nodes (parallel batch)
             logger.info(
                 "Sending start commands for %d nodes in project %s...",
                 len(node_ids),
                 project_id,
             )
             results = []
+            known_ids = [nid for nid in node_ids if nid in nodes_by_id]
+            start_results = start_node_handler(
+                {"project_id": project_id, "node_ids": known_ids}, gns3_ctx
+            )
+            start_errors = {
+                r["node_id"]: r.get("error")
+                for r in start_results
+                if r.get("status") == "error"
+            }
+
+            # Get immediate status (likely 'starting' or 'stopped') — one call
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            after_by_id = {n["node_id"]: n for n in listing["nodes"]}
 
             for node_id in node_ids:
-                try:
-                    node = Node(
-                        project_id=project_id,
-                        node_id=node_id,
-                        connector=gns3_server,
+                if node_id not in nodes_by_id:
+                    logger.error(
+                        "Node %s not found in project %s", node_id, project_id
                     )
-                    # Verify node exists and get current info
-                    node.get()
-                    if not node.node_id:
-                        logger.error(
-                            "Node %s not found in project %s",
-                            node_id,
-                            project_id,
-                        )
-                        results.append(
-                            {
-                                "node_id": node_id,
-                                "name": "N/A",
-                                "status": "error",
-                                "error": "Node not found",
-                            }
-                        )
-                        continue
-
-                    # Send start command
-                    node.start()
-                    logger.info(
-                        "Start command sent for node %s (%s)",
-                        node_id,
-                        node.name,
-                    )
-
-                    # Get immediate status (likely 'starting' or 'stopped')
-                    node.get()
-                    node_info = {
-                        "node_id": node.node_id,
-                        "name": node.name or "N/A",
-                        "status": node.status or "unknown",
-                    }
-                    results.append(node_info)
-
-                except Exception as e:
-                    logger.error("Failed to start node %s: %s", node_id, e)
                     results.append(
                         {
                             "node_id": node_id,
                             "name": "N/A",
                             "status": "error",
-                            "error": str(e),
+                            "error": "Node not found",
                         }
                     )
+                    continue
+
+                if node_id in start_errors:
+                    logger.error(
+                        "Failed to start node %s: %s",
+                        node_id,
+                        start_errors[node_id],
+                    )
+                    results.append(
+                        {
+                            "node_id": node_id,
+                            "name": nodes_by_id[node_id].get("name") or "N/A",
+                            "status": "error",
+                            "error": start_errors[node_id],
+                        }
+                    )
+                    continue
+
+                logger.info(
+                    "Start command sent for node %s (%s)",
+                    node_id,
+                    nodes_by_id[node_id].get("name"),
+                )
+                current = after_by_id.get(node_id, nodes_by_id[node_id])
+                results.append(
+                    {
+                        "node_id": node_id,
+                        "name": current.get("name") or "N/A",
+                        "status": current.get("status") or "unknown",
+                    }
+                )
 
             # Analyze results (count based on successful command sending)
             successful_nodes = [

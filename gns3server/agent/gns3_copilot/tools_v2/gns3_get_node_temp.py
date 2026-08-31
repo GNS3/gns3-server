@@ -139,7 +139,9 @@ class GNS3TemplateTool(BaseTool):
                 }
 
             # Retrieve all available templates
-            templates = gns3_server.get_templates()
+            templates = gns3_server.http_call(
+                "get", f"{gns3_server.base_url}/templates"
+            ).json()
 
             # Filter out utility templates and extract relevant info
             template_info = []

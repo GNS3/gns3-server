@@ -29,7 +29,7 @@ try:
 except ImportError:
     from importlib import resources as importlib_resources
 
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, DirDeletedEvent, FileDeletedEvent
 from watchdog.observers import Observer
 
 from ..config import Config
@@ -71,6 +71,9 @@ class _ProjectsDirectoryEventHandler(FileSystemEventHandler):
         self._handle_event(event)
 
     def on_moved(self, event):
+        self._handle_event(event)
+
+    def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
         self._handle_event(event)
 
     def _handle_event(self, event):
@@ -446,6 +449,12 @@ class Controller:
             return  # Monitor was stopped, skip the scan
         try:
             await self.load_projects()
+            # Remove stale projects that no longer exist on disk
+            for project_id in list(self._projects):
+                project = self._projects[project_id]
+                if not os.path.exists(project.path):
+                    log.info(f"Removing stale project '{project.name}' ('{project.path}' no longer exists)")
+                    del self._projects[project.id]
         except Exception as e:
             log.warning(f"Projects directory rescan failed: {e}")
 
@@ -736,11 +745,25 @@ class Controller:
         if not os.path.exists(path):
             raise ControllerError(f"'{path}' does not exist on the controller")
 
+        # A .gns3 file must live in its own directory: the project path is
+        # the file's parent directory. A file placed directly in the
+        # projects directory would register the shared projects root as the
+        # project directory, and deleting that project would wipe every
+        # project on the controller.
+        projects_path = os.path.realpath(self.projects_directory())
+        if os.path.realpath(os.path.dirname(path)) == projects_path:
+            raise ControllerError(
+                f"'{path}' cannot be loaded: the .gns3 file must be in its own subdirectory of '{projects_path}'"
+            )
+
         topo_data = load_topology(path)
         topo_data.pop("topology")
         topo_data.pop("version")
         topo_data.pop("revision")
         topo_data.pop("type")
+        # marker_definitions is restored by Project.open() from the topology
+        # file; it must not be passed to Project.__init__.
+        topo_data.pop("marker_definitions", None)
 
         if topo_data["project_id"] in self._projects:
             project = self._projects[topo_data["project_id"]]

@@ -40,6 +40,7 @@ from uuid import UUID
 from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
+from gns3server.controller.link import _UNSET
 from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
@@ -76,7 +77,6 @@ def dep_project(project_id: UUID) -> Project:
 async def get_projects(
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
 ) -> List[schemas.Project]:
     """
     Return all projects.
@@ -86,19 +86,32 @@ async def get_projects(
 
     controller = Controller.instance()
     projects = []
+    seen_project_ids = set()  # track seen projects to avoid duplicates
 
     if current_user.is_superadmin:
         # super admin sees all projects
         return [p.asdict() for p in controller.projects.values()]
-    elif await rbac_repo.check_user_has_privilege(current_user.user_id, "/projects", "Project.Audit"):
-        # user with Project.Audit privilege on '/projects' sees all projects except those in resource pools
-        project_ids_in_pools = [str(r.resource_id) for r in await pools_repo.get_resources() if r.resource_type == "project"]
-        projects.extend([p.asdict() for p in controller.projects.values() if p.id not in project_ids_in_pools])
 
-    # user with Project.Audit privilege on resource pools sees the projects in these pools
-    user_pool_resources = await rbac_repo.get_user_pool_resources(current_user.user_id, "Project.Audit")
-    project_ids_in_pools = [str(r.resource_id) for r in user_pool_resources if r.resource_type == "project"]
-    projects.extend([p.asdict() for p in controller.projects.values() if p.id in project_ids_in_pools])
+    # Batch ACE + resource pool check (3 DB queries regardless of project count)
+    all_project_ids = list(controller.projects.keys())
+    direct_ace_ids, pool_accessible_ids = await rbac_repo.get_accessible_project_ids(
+        current_user.user_id, "Project.Audit", all_project_ids
+    )
+
+    # Step 2: Filter direct ACE projects by created_by
+    # Direct project sharing is only available through resource pools
+    for p in controller.projects.values():
+        if p.id in direct_ace_ids and p.created_by == current_user.username:
+            if p.id not in seen_project_ids:
+                projects.append(p.asdict())
+                seen_project_ids.add(p.id)
+
+    # Step 3: Resource pool projects (no created_by filter)
+    for p in controller.projects.values():
+        if p.id in pool_accessible_ids:
+            if p.id not in seen_project_ids:
+                projects.append(p.asdict())
+                seen_project_ids.add(p.id)
 
     return projects
 
@@ -189,6 +202,161 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
 
     return project.stats()
+
+
+@router.get("/{project_id}/markers", dependencies=[Depends(has_privilege("Project.Audit"))])
+def get_project_markers(project: Project = Depends(dep_project)) -> dict:
+    """
+    Return all traffic-insight markers across every link in the project.
+
+    Each entry is keyed ``"{link_id}/{marker_name}"`` and carries the
+    marker's BPF, tag, color, enabled flag, plus its parent ``link_id``
+    and capture-side ``node_id`` for frontend filtering / grouping.
+
+    Required privilege: Project.Audit
+    """
+
+    return project.markers
+
+
+# ---------------------------------------------------------------------------
+# Project-level marker definitions (global rules inherited by every link)
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{project_id}/marker-definitions",
+    dependencies=[Depends(has_privilege("Project.Audit"))]
+)
+def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
+    """
+    Return all project-level marker definitions with their bound link IDs.
+
+    Required privilege: Project.Audit
+    """
+
+    result = {}
+    for name, d in project.marker_definitions.items():
+        # Collect which links currently carry an inherited copy.
+        bound = [
+            lid for lid, link in project.links.items()
+            if f"global-{name}" in link.markers
+            and link.markers[f"global-{name}"].get("inherited_from") == name
+        ]
+        result[name] = {**d, "link_ids": bound}
+    return result
+
+
+@router.post(
+    "/{project_id}/marker-definitions",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Project.Modify"))]
+)
+async def create_marker_definition(
+    def_data: schemas.MarkerDefinitionCreate,
+    project: Project = Depends(dep_project)
+) -> dict:
+    """
+    Create a project-level marker definition and fan out to every link.
+
+    Required privilege: Project.Modify
+    """
+
+    if def_data.name and def_data.name.lower().startswith("global"):
+        raise ControllerError('Names starting with "global" are reserved for inherited markers')
+    name = def_data.name or f"def-{project.id[:8]}"
+    await project.create_marker_definition(
+        name=name,
+        bpf=def_data.bpf,
+        tag=def_data.tag,
+        direction=def_data.direction,
+        color=def_data.color,
+        highlight_duration=def_data.highlight_duration,
+        data_link_type=def_data.data_link_type,
+    )
+    return project.marker_definitions.get(name, {})
+
+
+@router.put(
+    "/{project_id}/marker-definitions/{def_name}",
+    dependencies=[Depends(has_privilege("Project.Modify"))]
+)
+async def update_marker_definition(
+    def_name: str,
+    def_data: schemas.MarkerDefinitionCreate,
+    project: Project = Depends(dep_project)
+) -> dict:
+    """
+    Update a marker definition and sync all inherited copies on every link.
+
+    Required privilege: Project.Modify
+    """
+
+    await project.update_marker_definition(
+        name=def_name,
+        bpf=def_data.bpf if def_data.bpf else None,
+        tag=def_data.tag,
+        direction=def_data.direction if "direction" in def_data.model_fields_set else _UNSET,
+        color=def_data.color,
+        highlight_duration=def_data.highlight_duration,
+        data_link_type=def_data.data_link_type if "data_link_type" in def_data.model_fields_set else _UNSET,
+    )
+    return project.marker_definitions.get(def_name, {})
+
+
+@router.post(
+    "/{project_id}/marker-definitions/{def_name}/pause",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Project.Modify"))]
+)
+async def pause_marker_definition(
+    def_name: str,
+    project: Project = Depends(dep_project)
+) -> None:
+    """
+    Pause a definition: toggle off every inherited ``global-{def_name}`` copy
+    on every link (uBridge ``enable_packet_filter off``, instant — no NIO
+    rebuild). The definition's ``paused`` flag is persisted, so links created
+    later inherit it already paused.
+
+    Required privilege: Project.Modify
+    """
+
+    await project.pause_marker_definition(def_name)
+
+
+@router.post(
+    "/{project_id}/marker-definitions/{def_name}/resume",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Project.Modify"))]
+)
+async def resume_marker_definition(
+    def_name: str,
+    project: Project = Depends(dep_project)
+) -> None:
+    """Resume a paused definition (toggle on every inherited copy).
+
+    Required privilege: Project.Modify
+    """
+
+    await project.resume_marker_definition(def_name)
+
+
+@router.delete(
+    "/{project_id}/marker-definitions/{def_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Project.Modify"))]
+)
+async def delete_marker_definition(
+    def_name: str,
+    project: Project = Depends(dep_project)
+) -> None:
+    """
+    Delete a marker definition and remove all inherited copies from every link.
+
+    Required privilege: Project.Modify
+    """
+
+    await project.delete_marker_definition(def_name)
 
 
 @router.post(
@@ -315,6 +483,38 @@ async def project_ws_notifications(
             if not controller.notification.project_has_listeners(project.id):
                 log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                 await project.close()
+
+
+@router.websocket("/{project_id}/notifications/markers/ws")
+async def project_marker_ws_notifications(
+        project_id: UUID,
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit"))
+) -> None:
+    """
+    Receive marker notifications (e.g. marker.match) for a project on a
+    dedicated WebSocket, separate from the main project stream so high-frequency
+    marker.matches do not block topology events (node.*/link.*).
+
+    Required privilege: Project.Audit
+    """
+
+    if current_user is None:
+        return
+
+    controller = Controller.instance()
+    project = controller.get_project(str(project_id))
+
+    log.info(f"New client has connected to the marker notification stream for project ID '{project.id}' (WebSocket method)")
+    try:
+        with controller.notification.project_marker_queue(project.id) as queue:
+            while True:
+                notification = await queue.get_json(5)
+                await websocket.send_text(notification)
+    except (ConnectionClosed, WebSocketDisconnect):
+        log.info(f"Client has disconnected from the marker notification stream for project ID '{project.id}' (WebSocket method)")
+    except WebSocketException as e:
+        log.warning(f"Error while sending marker event to WebSocket client: {e}")
 
 
 @router.get("/{project_id}/export", dependencies=[Depends(has_privilege("Project.Audit"))])
@@ -546,6 +746,21 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
     return FileResponse(path, media_type="application/octet-stream")
 
 
+@router.get("/{project_id}/gns3file", dependencies=[Depends(has_privilege("Project.Audit"))])
+async def get_project_gns3_file(project: Project = Depends(dep_project)) -> FileResponse:
+    """
+    Return the .gns3 topology file of a project.
+
+    Required privilege: Project.Audit
+    """
+
+    path = project.topology_file
+    if not os.path.exists(path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(path, media_type="application/json")
+
+
 @router.post(
     "/{project_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -599,9 +814,11 @@ async def create_node_from_template(
     """
 
     template = await TemplatesService(templates_repo).get_template(template_id)
+
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
+
     node = await project.add_node_from_template(
-        template, x=template_usage.x, y=template_usage.y, compute_id=template_usage.compute_id
+        template, x=template_usage.x, y=template_usage.y, name=template_usage.name, compute_id=template_usage.compute_id
     )
     return node.asdict()

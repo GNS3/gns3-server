@@ -31,7 +31,7 @@ RUN add-apt-repository ppa:gns3/ppa && apt update && DEBIAN_FRONTEND=noninteract
 
 COPY . /gns3server
 
-RUN mkdir -p ~/.config/GNS3/3.0/
-RUN cp scripts/gns3_server.conf ~/.config/GNS3/3.0/
+RUN mkdir -p ~/.config/GNS3/3.1/
+RUN cp scripts/gns3_server.conf ~/.config/GNS3/3.1/
 
 RUN python3 -m pip install --break-system-packages --ignore-installed .

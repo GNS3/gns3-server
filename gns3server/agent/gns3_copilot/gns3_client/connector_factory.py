@@ -29,6 +29,10 @@ GNS3 Connector Factory Module
 This module provides factory functions for creating Gns3Connector instances
 with JWT token authentication and context-aware configuration management.
 
+⚠️ WARNING: This module is shared with the MCP (Model Context Protocol) service.
+The get_gns3_connector() function is used by both gns3-copilot and MCP.
+Modifications must be tested with BOTH.
+
 Features:
 - Context variable based request-scoped data management (JWT tokens, LLM
   config)
@@ -50,7 +54,7 @@ from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
 )
 
 # Local imports
-from gns3server.agent.gns3_copilot.gns3_client.custom_gns3fy import (
+from gns3server.agent.gns3_copilot.gns3_client.connector import (
     Gns3Connector,
 )
 

@@ -24,6 +24,7 @@ from .computes import Compute
 from .images import Image
 from .pools import Resource, ResourcePool
 from .llm_model_configs import LLMModelConfig
+from .api_keys import ApiKey
 from .templates import (
     Template,
     CloudTemplate,

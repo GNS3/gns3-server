@@ -18,11 +18,11 @@
 Represents a uBridge hypervisor and starts/stops the associated uBridge process.
 """
 
-import sys
 import os
+import socket
 import subprocess
 import asyncio
-import socket
+import tempfile
 import re
 
 from gns3server.utils import parse_version
@@ -44,17 +44,42 @@ class Hypervisor(UBridgeHypervisor):
     :param project: Project instance
     :param path: path to uBridge executable
     :param working_dir: working directory
-    :param host: host/address for this hypervisor
-    :param port: port for this hypervisor
+    :param transport: control channel transport — "unix" (-U) or "tcp" (-H)
+    :param host: host/address for the TCP transport (unused for "unix")
+    :param node_id: node id used to name the AF_UNIX socket (unix transport)
     """
 
-    _instance_count = 1
+    _instance_count = 0
 
-    def __init__(self, project, path, working_dir, host, port=None):
+    def __init__(self, project, path, working_dir, transport, host=None, node_id=None):
 
-        if port is None:
+        self._project = project
+        self._path = path
+        self._working_dir = working_dir
+
+        if transport == "unix":
+            # AF_UNIX control socket (-U). Name it after the node so the socket
+            # is self-describing (one ubridge per node => node_id is unique).
+            # sun_path is capped at 107 bytes; a single UUID fits comfortably
+            # (~69 bytes with this prefix), so no project_id is needed.
+            if node_id:
+                socket_name = f"ubridge-{node_id}.sock"
+            else:
+                Hypervisor._instance_count += 1
+                socket_name = f"ubridge-{Hypervisor._instance_count}.sock"
+            runtime_dir = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+            socket_dir = os.path.join(runtime_dir, "gns3")
             try:
-                port = None
+                os.makedirs(socket_dir, mode=0o700, exist_ok=True)
+                os.chmod(socket_dir, 0o700)
+            except OSError as e:
+                raise UbridgeError(f"Could not create uBridge socket directory {socket_dir}: {e}")
+            socket_path = os.path.join(socket_dir, socket_name)
+            super().__init__(socket_path=socket_path)
+        else:
+            # TCP control channel (-H): let the OS find an unused local port.
+            port = None
+            try:
                 info = socket.getaddrinfo(host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
                 if not info:
                     raise UbridgeError(f"getaddrinfo returns an empty list on {host}")
@@ -68,11 +93,8 @@ class Hypervisor(UBridgeHypervisor):
                         break
             except OSError as e:
                 raise UbridgeError(f"Could not find free port for the uBridge hypervisor: {e}")
+            super().__init__(host=host, port=port)
 
-        super().__init__(host, port)
-        self._project = project
-        self._path = path
-        self._working_dir = working_dir
         self._command = []
         self._process = None
         self._stdout_file = ""
@@ -131,19 +153,17 @@ class Hypervisor(UBridgeHypervisor):
 
     async def _check_ubridge_version(self, env=None):
         """
-        Checks if the ubridge executable version
+        Checks if the ubridge executable version meets the minimum required.
         """
         try:
             output = await subprocess_check_output(self._path, "-v", cwd=self._working_dir, env=env)
             match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                if sys.platform.startswith("darwin"):
-                    minimum_required_version = "0.9.12"
-                else:
-                    # uBridge version 0.9.14 is required for packet filters
-                    # to work for IOU nodes.
-                    minimum_required_version = "0.9.14"
+                # uBridge >= 1.2.0 is required for features this server now
+                # relies on: the AF_UNIX control channel (-U), the marker
+                # (mark) filter, and the brctl-backed builtin Ethernet Switch.
+                minimum_required_version = "1.2.0"
                 if parse_version(self._version) < parse_version(minimum_required_version):
                     raise UbridgeError(f"uBridge executable version must be >= {minimum_required_version}")
             else:
@@ -160,15 +180,26 @@ class Hypervisor(UBridgeHypervisor):
         await self._check_ubridge_version(env)
         try:
             command = self._build_command()
-            log.info(f"starting ubridge: {command}")
+            log.debug(f"starting ubridge: {command}")
             self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
-            log.info(f"logging to {self._stdout_file}")
+            log.debug(f"logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
                 self._process = await asyncio.create_subprocess_exec(
                     *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self._working_dir, env=env
                 )
 
-            log.info(f"ubridge started PID={self._process.pid}")
+            log.debug(f"ubridge started PID={self._process.pid}")
+            # An unsupported flag (e.g. -U on an old ubridge build) makes ubridge exit
+            # immediately with a non-zero code. Detect that here and surface the real
+            # reason from ubridge.log instead of waiting for connect() to time out with
+            # a confusing "couldn't connect" error.
+            await asyncio.sleep(0.3)
+            if self._process.returncode is not None:
+                raise UbridgeError(
+                    f"uBridge exited immediately (code {self._process.returncode}); if "
+                    f"ubridge_control_transport is 'unix', the installed ubridge may not "
+                    f"support -U.\n{self.read_stdout()}"
+                )
             # recv: Bad address is received by uBridge when a docker image stops by itself
             # see https://github.com/GNS3/gns3-gui/issues/2957
             # monitor_process(self._process, self._termination_callback)
@@ -189,7 +220,7 @@ class Hypervisor(UBridgeHypervisor):
             log.error(error_msg)
             self._project.emit("log.error", {"message": error_msg})
         else:
-            log.info("uBridge process has stopped, return code: %d", returncode)
+            log.debug("uBridge process has stopped, return code: %d", returncode)
 
     async def stop(self):
         """
@@ -197,7 +228,7 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         if self.is_running():
-            log.info(f"Stopping uBridge process PID={self._process.pid}")
+            log.debug(f"Stopping uBridge process PID={self._process.pid}")
             await UBridgeHypervisor.stop(self)
             try:
                 await wait_for_process_termination(self._process, timeout=3)
@@ -214,6 +245,16 @@ class Hypervisor(UBridgeHypervisor):
                 os.remove(self._stdout_file)
             except OSError as e:
                 log.warning(f"could not delete temporary uBridge log file: {e}")
+
+        # ubridge unlinks its AF_UNIX control socket on a clean exit; for the
+        # unix transport remove it here too so a killed process leaves no stale
+        # socket behind. The TCP transport has no socket_path.
+        if self._socket_path:
+            try:
+                os.unlink(self._socket_path)
+            except OSError:
+                pass
+
         self._process = None
         self._started = False
 
@@ -250,7 +291,10 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         command = [self._path]
-        command.extend(["-H", f"{self._host}:{self._port}"])
+        if self._socket_path:
+            command.extend(["-U", self._socket_path])
+        else:
+            command.extend(["-H", f"{self._host}:{self._port}"])
         if log.getEffectiveLevel() == logging.DEBUG:
             command.extend(["-d", "1"])
         return command

@@ -1,0 +1,58 @@
+{
+    "appliance_id": "b3b90fde-143a-4129-8031-ccbba73c5e02",
+    "name": "armbian",
+    "category": "guest",
+    "description": "A highly optimized base operating system specialized for single board computers (SBCs) and its extensive build framework.",
+    "vendor_name": "The Armbian team",
+    "vendor_url": "https://armbian.com/",
+    "documentation_url": "https://docs.armbian.com/",
+    "product_name": "Armbian UEFI x86",
+    "product_url": "https://armbian.com/boards/uefi-x86",
+    "registry_version": 6,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "By first login you create root password and new sudo user.\n\nBoot disk from UEFI shell, type: FS0:EFI\\BOOT\\BOOTX64 and press <Enter>",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 256,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "spice+agent",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
+            "compression": "zip"
+        },
+        {
+            "filename": "Armbian_26.5.1_Uefi-x86_trixie_cloud_6.18.32_minimal.img.qcow2",
+            "version": "Armbian 26.5.1 Minimal (CLI)",
+            "md5sum": "7f4c915668718d6135406de5a6c4fc30",
+            "filesize": 877920512,
+            "download_url": "https://armbian.com/boards/uefi-x86",
+            "direct_download_url": "https://armbian.atomonetworks.com/dl/uefi-x86/archive/Armbian_26.5.1_Uefi-x86_trixie_cloud_6.18.32_minimal.img.qcow2.xz",
+	    "compression": "xz"
+        }
+
+    ],
+    "versions": [
+         {
+            "name": "Armbian 26.5.1 Minimal (CLI)",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "Armbian_26.5.1_Uefi-x86_trixie_cloud_6.18.32_minimal.img.qcow2"
+            }
+        }
+    ]
+}

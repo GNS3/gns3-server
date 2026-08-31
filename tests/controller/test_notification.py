@@ -120,6 +120,33 @@ async def test_dispatch_node_updated(controller, node, project):
         assert event["properties"]["startup_config"] == "ip 192"
 
 
+@pytest.mark.asyncio
+async def test_dispatch_marker_routed_to_marker_channel(controller, project):
+    """
+    marker.* events are dispatched to the dedicated marker channel, not the
+    main project queue, so high-frequency matches cannot block topology events.
+    """
+
+    notif = controller.notification
+    with notif.project_queue(project.id) as project_q, \
+            notif.project_marker_queue(project.id) as marker_q:
+        assert len(notif._project_marker_listeners[project.id]) == 1
+        await project_q.get(0.1)  # consume initial ping
+        await marker_q.get(0.1)  # consume initial ping
+
+        await notif.dispatch("marker.match", {"link_id": "abc"},
+                             project_id=project.id, compute_id=1)
+
+        # marker.match lands on the marker channel...
+        msg = await marker_q.get(5)
+        assert msg == ('marker.match', {"link_id": "abc"}, {})
+        # ...and does NOT land on the main project queue (times out -> ping)
+        msg = await project_q.get(0.1)
+        assert msg[0] == "ping"
+
+    assert len(notif._project_marker_listeners[project.id]) == 0
+
+
 def test_various_notification(controller, node):
 
     notif = controller.notification

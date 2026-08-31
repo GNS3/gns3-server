@@ -73,7 +73,7 @@ class NIOUDP(NIO):
             )
         )
 
-        log.info(
+        log.debug(
             "NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(
                 name=self._name, lport=self._lport, rhost=self._rhost, rport=self._rport
             )
@@ -82,10 +82,12 @@ class NIOUDP(NIO):
         self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport, "127.0.0.1", self._local_tunnel_lport)
         self._destination_nio = nio_udp.NIOUDP(self._lport, self._rhost, self._rport)
         self._destination_nio.filters = self._filters
+        self._destination_nio.markers = self._markers
         await self._node.add_ubridge_udp_connection(self._bridge_name, self._source_nio, self._destination_nio)
 
     async def update(self):
         self._destination_nio.filters = self._filters
+        self._destination_nio.markers = self._markers
         await self._node.update_ubridge_udp_connection(self._bridge_name, self._source_nio, self._destination_nio)
 
     async def close(self):

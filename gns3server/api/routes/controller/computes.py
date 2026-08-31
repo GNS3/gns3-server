@@ -18,7 +18,7 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from typing import Any, List, Union, Optional
 from uuid import UUID
 
@@ -163,6 +163,25 @@ async def docker_get_images(compute_id: Union[str, UUID]) -> List[schemas.Comput
     compute = Controller.instance().get_compute(str(compute_id))
     result = await compute.forward("GET", "docker", "images")
     return result
+
+
+@router.post(
+    "/{compute_id}/docker/images/pull",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Compute.Modify"))]
+)
+async def docker_pull_image(
+        compute_id: Union[str, UUID],
+        image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")
+) -> None:
+    """
+    Pull or update a Docker image on a compute.
+
+    Required privilege: Compute.Modify
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    await compute.forward("POST", "docker", "images/pull", data={"image": image})
 
 
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])

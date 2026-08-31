@@ -34,6 +34,34 @@ class Category(str, Enum):
     firewall = "firewall"
 
 
+class ApplianceMetadata(BaseModel):
+    """
+    Metadata kept on a template installed from an appliance: vendor
+    information, default credentials and other fields that describe
+    the appliance but are not node properties.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    appliance_id: Optional[str] = Field(
+        None, description="ID of the appliance the template was installed from"
+    )
+    description: Optional[str] = None
+    vendor_name: Optional[str] = None
+    vendor_url: Optional[str] = None
+    vendor_logo_url: Optional[str] = None
+    documentation_url: Optional[str] = None
+    product_name: Optional[str] = None
+    product_url: Optional[str] = None
+    status: Optional[str] = None
+    availability: Optional[str] = None
+    maintainer: Optional[str] = None
+    maintainer_email: Optional[str] = None
+    installation_instructions: Optional[str] = None
+    default_username: Optional[str] = None
+    default_password: Optional[str] = None
+
+
 class TemplateBase(BaseModel):
     """
     Common template properties.
@@ -48,9 +76,18 @@ class TemplateBase(BaseModel):
     template_type: Optional[NodeType] = None
     compute_id: Optional[str] = None
     usage: Optional[str] = ""
+    netmiko_device_type: Optional[str] = Field(
+        None,
+        description="Device type for Netmiko-based automation tools (e.g. 'cisco_xr' or 'nokia_srl')",
+        pattern=r"^[a-z0-9_]+$|^$",
+    )
     tags: Optional[List[str]] = Field(
         default_factory=list,
         description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+    )
+    appliance_metadata: Optional[ApplianceMetadata] = Field(
+        None,
+        description="Metadata inherited from the appliance the template was installed from"
     )
 
 

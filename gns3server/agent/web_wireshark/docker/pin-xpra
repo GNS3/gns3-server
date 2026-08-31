@@ -1,0 +1,14 @@
+Explanation: Lock Xpra packages to v6.4
+Package: xpra*
+Pin: version 6.4*
+Pin-Priority: 1000
+
+Explanation: xpra-html5 uses different version scheme, lock it to v19
+Package: xpra-html5
+Pin: version 19*
+Pin-Priority: 1000
+
+Explanation: Block the installation of other xpra versions
+Package: xpra*
+Pin: version *
+Pin-Priority: -1

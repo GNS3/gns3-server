@@ -71,6 +71,17 @@ class Appliance:
     @property
     def type(self):
 
+        if self._data.get("registry_version", 0) >= 8:
+            # registry version 8: the node type comes from the settings template_type,
+            # the default settings take precedence over the other sets
+            settings_list = self._data.get("settings") or []
+            for settings in settings_list:
+                if settings.get("default"):
+                    return settings.get("template_type", "qemu")
+            if settings_list:
+                return settings_list[0].get("template_type", "qemu")
+            return "qemu"
+
         if "iou" in self._data:
             return "iou"
         elif "dynamips" in self._data:

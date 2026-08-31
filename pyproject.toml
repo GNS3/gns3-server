@@ -38,8 +38,8 @@ dependencies = {file = "requirements.txt"}
 # Development dependencies
 dev = {file = ['dev-requirements.txt']}
 
-# Optional components (can be installed individually or combined)
-ai-copilot = {file = ['ai-requirements.txt']}
+# AI features bundle — installs both AI Copilot and MCP dependencies
+ai-features = {file = ['ai-requirements.txt', 'mcp-requirements.txt']}
 # terraform = {file = ['terraform-requirements.txt']}  # Future component
 
 [project.urls]
@@ -50,8 +50,8 @@ ai-copilot = {file = ['ai-requirements.txt']}
 [project.scripts]
 gns3server = "gns3server.main:main"
 gns3vmnet = "gns3server.utils.vmnet:main"
-gns3server-uninstall-ai-copilot = "gns3server.utils.uninstall_ai_copilot:main"
 gns3server-web-wireshark-setup = "gns3server.agent.web_wireshark.setup_wireshark_image:main"
+gns3server-uninstall-ai-features = "gns3server.utils.uninstall_ai_features:main"
 
 [tool.setuptools]
 packages = ["gns3server"]

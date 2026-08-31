@@ -38,8 +38,12 @@ from typing import Any
 
 from langchain.tools import BaseTool
 
-from gns3server.agent.gns3_copilot.gns3_client import Project
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+)
+from gns3server.agent.gns3_copilot.gns3_client.project_inventory import (
+    fetch_project_inventory,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -101,11 +105,11 @@ class GNS3ProjectInfoTool(BaseTool):
                     )
                 }
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.debug("Connecting to GNS3 server...")
-            server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": (
@@ -118,37 +122,33 @@ class GNS3ProjectInfoTool(BaseTool):
             logger.info(
                 f"Retrieving project info for project_id: {project_id}"
             )
-            project = Project(project_id=project_id, connector=server)
-            project.get()  # Load project details
+            inventory = fetch_project_inventory(gns3_ctx, project_id)
 
             # Get node and link counts
-            nodes_inventory = project.nodes_inventory()
-            links_summary = project.links_summary(is_print=False)
-
-            node_count = len(nodes_inventory) if nodes_inventory else 0
-            link_count = len(links_summary) if links_summary else 0
+            node_count = len(inventory["nodes_inventory"])
+            link_count = len(inventory["links_summary"])
 
             # Build result in tuple format consistent with GNS3ProjectList
             result = {
-                "project_id": project.project_id,
-                "name": project.name,
-                "status": project.status,
+                "project_id": inventory["project_id"],
+                "name": inventory["name"],
+                "status": inventory["status"],
                 "node_count": node_count,
                 "link_count": link_count,
                 "tuple": (
-                    project.name,
-                    project.project_id,
+                    inventory["name"],
+                    inventory["project_id"],
                     node_count,
                     link_count,
-                    project.status,
+                    inventory["status"],
                 ),
             }
 
             # Log result
             logger.info(
                 "Project info retrieved: name=%s, status=%s, nodes=%d, links=%d",
-                project.name,
-                project.status,
+                inventory["name"],
+                inventory["status"],
                 node_count,
                 link_count,
             )

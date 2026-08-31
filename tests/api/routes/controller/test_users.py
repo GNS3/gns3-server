@@ -255,6 +255,10 @@ class TestUserLogin:
         assert "token_type" in response.json()
         assert response.json().get("token_type") == "bearer"
 
+        # check that refresh token is returned
+        assert "refresh_token" in response.json()
+        assert response.json().get("refresh_token") is not None
+
     @pytest.mark.parametrize(
         "username, password, status_code",
         (
@@ -311,6 +315,7 @@ class TestUnauthorizedUser:
         response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
         assert response.status_code == status.HTTP_200_OK
         assert response.json().get("access_token")
+        assert response.json().get("refresh_token") is not None
 
         token = response.json().get("access_token")
         response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
@@ -482,6 +487,176 @@ class TestLogout:
     ) -> None:
 
         response = await unauthorized_client.post(app.url_path_for("logout"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestRefreshToken:
+
+    async def test_login_returns_refresh_token(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        response = await unauthorized_client.post(app.url_path_for("login"),
+                                                  data=credentials,
+                                                  headers={"content-type": "application/x-www-form-urlencoded"})
+        assert response.status_code == status.HTTP_200_OK
+        assert "refresh_token" in response.json()
+        assert response.json().get("refresh_token") is not None
+
+    async def test_authenticate_returns_refresh_token(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        assert "refresh_token" in response.json()
+        assert response.json().get("refresh_token") is not None
+
+    async def test_refresh_endpoint_returns_new_tokens(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # authenticate to get a refresh token
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        auth_response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        refresh_token = auth_response.json()["refresh_token"]
+
+        # use the refresh token at /refresh
+        response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": refresh_token},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "access_token" in response.json()
+        assert response.json().get("token_type") == "bearer"
+        assert "refresh_token" in response.json()
+        assert response.json().get("refresh_token") is not None
+
+    async def test_new_access_token_from_refresh_works_on_protected_route(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        auth_response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        refresh_token = auth_response.json()["refresh_token"]
+
+        # refresh to get a new access token
+        refresh_response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": refresh_token},
+        )
+        new_access_token = refresh_response.json()["access_token"]
+
+        # the new access token must work on a protected route
+        response = await unauthorized_client.get(
+            app.url_path_for("get_logged_in_user"),
+            headers={"Authorization": f"Bearer {new_access_token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["username"] == test_user.username
+
+    async def test_refresh_with_stale_token_after_logout(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # authenticate and get a refresh token
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        auth_response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        refresh_token = auth_response.json()["refresh_token"]
+
+        # logout — bumps token_version, invalidating the refresh token
+        access_token = auth_response.json()["access_token"]
+        await unauthorized_client.post(
+            app.url_path_for("logout"),
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+        # /refresh must now reject the stale refresh token
+        response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": refresh_token},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_refresh_rejects_access_token(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # an access token presented at /refresh must be rejected
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        auth_response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        access_token = auth_response.json()["access_token"]
+
+        response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": access_token},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_refresh_rejects_expired_token(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # a refresh token with an already-expired timestamp
+        expired_refresh = auth_service.create_refresh_token(test_user.username, expires_in=-1)
+
+        response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": expired_refresh},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_refresh_rejects_invalid_token(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+    ) -> None:
+
+        response = await unauthorized_client.post(
+            app.url_path_for("refresh_access_token"),
+            json={"refresh_token": "not-a-valid-token"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_refresh_token_rejected_as_bearer(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        # a refresh token used as a bearer access token must be rejected
+        credentials = {"username": test_user.username, "password": "user1_password"}
+        auth_response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        refresh_token = auth_response.json()["refresh_token"]
+
+        response = await unauthorized_client.get(
+            app.url_path_for("get_logged_in_user"),
+            headers={"Authorization": f"Bearer {refresh_token}"},
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 

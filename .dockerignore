@@ -1,0 +1,57 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# CI / GitHub / Docker
+.github
+.whitesource
+.dockerignore
+
+# Editor / IDE
+.idea
+.vscode
+.settings
+.project
+.pydevproject
+.mr.developer.cfg
+
+# Claude
+.claude
+
+# Python build artifacts
+__pycache__
+*.py[cod]
+*.so
+*.egg
+*.egg-info
+build/
+dist/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+.ropeproject
+
+# Test & coverage
+tests/
+pytest.ini
+.coveragerc
+.coverage
+.coverage*
+.tox
+.cache
+.pytest_cache
+nosetests.xml
+
+# Virtualenv
+env/
+venv/
+.venv/
+
+# Editor backup files
+*~

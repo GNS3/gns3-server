@@ -53,7 +53,7 @@ class EthernetHub(BaseNode):
         """
 
         super().create()
-        log.info(f'Ethernet hub "{self._name}" [{self._id}] has been created')
+        log.debug(f'Ethernet hub "{self._name}" [{self._id}] has been created')
 
     async def delete(self):
         """

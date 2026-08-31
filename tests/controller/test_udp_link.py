@@ -46,7 +46,7 @@ async def test_create(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"delay": [10, 0]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -77,7 +77,8 @@ async def test_create(project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"latency": [10]},
+        "filters": {"delay": [10, 0]},
+        "markers": {},
         "suspend": False,
     }, timeout=120)
 
@@ -87,6 +88,7 @@ async def test_create(project):
         "rport": 1024,
         "type": "nio_udp",
         "filters": {},
+        "markers": {},
         "suspend": False,
     }, timeout=120)
 
@@ -146,6 +148,7 @@ async def test_create_one_side_failure(project):
         "rport": 2048,
         "type": "nio_udp",
         "filters": {},
+        "markers": {},
         "suspend": False,
     }, timeout=120)
 
@@ -155,6 +158,7 @@ async def test_create_one_side_failure(project):
         "rport": 1024,
         "type": "nio_udp",
         "filters": {},
+        "markers": {},
         "suspend": False,
     }, timeout=120)
     # The link creation has failed we rollback the nio
@@ -181,6 +185,78 @@ async def test_delete(project):
 
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
     compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120)
+
+
+@pytest.mark.asyncio
+async def test_reset(project):
+    """
+    reset() re-creates the link on the same object: the fresh port pair must
+    replace the stale one instead of accumulating (the committed NIOs always
+    come from indices 0/1) — see docs/bugs/link-udp-self-loop.md.
+    """
+
+    compute1 = MagicMock()
+    compute2 = MagicMock()
+
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    async def subnet_callback(compute2):
+        """
+        Fake subnet callback
+        """
+        return ("192.168.1.1", "192.168.1.2")
+
+    compute1.get_ip_on_same_subnet.side_effect = subnet_callback
+
+    # per-compute port sequences: first create -> 1024/2048, reset -> 4096/8192
+    node1_ports = iter([1024, 4096])
+    node2_ports = iter([2048, 8192])
+
+    async def compute1_callback(path, data={}, **kwargs):
+        if "/ports/udp" in path:
+            response = MagicMock()
+            response.json = {"udp_port": next(node1_ports)}
+            return response
+
+    async def compute2_callback(path, data={}, **kwargs):
+        if "/ports/udp" in path:
+            response = MagicMock()
+            response.json = {"udp_port": next(node2_ports)}
+            return response
+
+    compute1.post.side_effect = compute1_callback
+    compute1.host = "example.com"
+    compute2.post.side_effect = compute2_callback
+    compute2.host = "example.org"
+
+    link = UDPLink(project)
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 3, 1)
+
+    await link.reset()
+
+    # exactly one (fresh) NIO spec per side — no stale entries left behind
+    assert len(link.debug_link_data) == 2
+    assert link.debug_link_data[0]["lport"] == 4096
+    assert link.debug_link_data[0]["rport"] == 8192
+    assert link.debug_link_data[1]["lport"] == 8192
+    assert link.debug_link_data[1]["rport"] == 4096
+    # the self-loop invariant: an end's lport must never equal its rport
+    assert link.debug_link_data[0]["lport"] != link.debug_link_data[0]["rport"]
+    assert link.debug_link_data[1]["lport"] != link.debug_link_data[1]["rport"]
+    # the committed NIO carries the fresh pair, not the released one
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
+        "lport": 4096,
+        "rhost": "192.168.1.2",
+        "rport": 8192,
+        "type": "nio_udp",
+        "filters": {},
+        "markers": {},
+        "suspend": False,
+    }, timeout=120)
 
 
 @pytest.mark.asyncio
@@ -313,7 +389,7 @@ async def test_update(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"delay": [10, 0]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -345,7 +421,8 @@ async def test_update(project):
         "rport": 2048,
         "type": "nio_udp",
         "suspend": False,
-        "filters": {"latency": [10]}
+        "markers": {},
+        "filters": {"delay": [10, 0]}
     }, timeout=120)
 
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
@@ -354,22 +431,73 @@ async def test_update(project):
         "rport": 1024,
         "type": "nio_udp",
         "suspend": False,
+        "markers": {},
         "filters": {}
     }, timeout=120)
 
     assert link.created
-    await link.update_filters({"drop": [5], "bpf": ["icmp[icmptype] == 8"]})
+    await link.update_filters({"frequency_drop": [5], "bpf": ["icmp[icmptype] == 8"]})
     compute1.put.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
         "suspend": False,
+        "markers": {},
         "filters": {
-            "drop": [5],
+            "frequency_drop": [5],
             "bpf": ["icmp[icmptype] == 8"]
         }
     }, timeout=120)
+
+
+@pytest.mark.asyncio
+async def test_update_ethernet_switch_nio(project):
+    """
+    Link updates must reach an Ethernet switch endpoint: the brctl switch has
+    a PUT NIO route, so only the Dynamips-hosted hub side stays skipped.
+    """
+
+    compute1 = MagicMock()
+
+    node_vpcs = Node(project, compute1, "node1", node_type="vpcs")
+    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
+    node_switch = Node(project, compute1, "node2", node_type="ethernet_switch")
+    node_switch._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    async def subnet_callback(compute2):
+        return ("192.168.1.1", "192.168.1.2")
+
+    compute1.get_ip_on_same_subnet.side_effect = subnet_callback
+
+    async def compute1_callback(path, data={}, **kwargs):
+        if "/ports/udp" in path:
+            response = MagicMock()
+            response.json = {"udp_port": 1024}
+            return response
+
+    compute1.post.side_effect = compute1_callback
+    compute1.put = AsyncioMagicMock()
+    compute1.host = "example.com"
+
+    link = UDPLink(project)
+    await link.add_node(node_vpcs, 0, 4)
+    await link.add_node(node_switch, 3, 1)
+    assert link.created
+
+    await link.update_filters({"delay": [10, 0]})
+    compute1.put.assert_any_call(
+        "/projects/{}/ethernet_switch/nodes/{}/adapters/3/ports/1/nio".format(project.id, node_switch.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.1",
+            "rport": 1024,
+            "type": "nio_udp",
+            "suspend": False,
+            "markers": {},
+            "filters": {}
+        }, timeout=221
+    )
 
 
 @pytest.mark.asyncio
@@ -392,7 +520,7 @@ async def test_update_suspend(project):
 
     link = UDPLink(project)
     await link.add_node(node1, 0, 4)
-    await link.update_filters({"latency": [10]})
+    await link.update_filters({"frequency_drop": [-1]})
     await link.update_suspend(True)
 
     async def compute1_callback(path, data={}, **kwargs):
@@ -425,6 +553,7 @@ async def test_update_suspend(project):
         "rport": 2048,
         "type": "nio_udp",
         "filters": {"frequency_drop": [-1]},
+        "markers": {},
         "suspend": True
     }, timeout=120)
 
@@ -434,5 +563,6 @@ async def test_update_suspend(project):
         "rport": 1024,
         "type": "nio_udp",
         "filters": {},
+        "markers": {},
         "suspend": True
     }, timeout=120)

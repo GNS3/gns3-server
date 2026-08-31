@@ -31,6 +31,7 @@ class Notification:
 
         self._controller = controller
         self._project_listeners = {}
+        self._project_marker_listeners = {}
         self._controller_listeners = set()
 
     @contextmanager
@@ -48,6 +49,26 @@ class Notification:
             yield queue
         finally:
             self._project_listeners[project_id].remove(queue)
+
+    @contextmanager
+    def project_marker_queue(self, project_id):
+        """
+        Get a queue of marker notifications (marker.match etc.) for a project.
+
+        Marker events are delivered on this dedicated channel instead of the
+        main project queue, so high-frequency marker.matches do not cause
+        head-of-line blocking for topology events (node.*/link.*).
+
+        Use it with Python with
+        """
+
+        queue = NotificationQueue()
+        self._project_marker_listeners.setdefault(project_id, set())
+        self._project_marker_listeners[project_id].add(queue)
+        try:
+            yield queue
+        finally:
+            self._project_marker_listeners[project_id].remove(queue)
 
     @contextmanager
     def controller_queue(self):
@@ -104,6 +125,8 @@ class Notification:
         elif action == "ping":
             event["compute_id"] = compute_id
             self.project_emit(action, event)
+        elif action.startswith("marker."):
+            self.marker_emit(action, event, project_id)
         else:
             self.project_emit(action, event, project_id)
 
@@ -119,6 +142,25 @@ class Notification:
             self._send_event_to_project(event.get("project_id", project_id), action, event)
         else:
             self._send_event_to_all_projects(action, event)
+
+    def marker_emit(self, action, event, project_id):
+        """
+        Send a marker notification (e.g. marker.match) to clients listening on
+        the dedicated marker channel for this project. Marker events are kept
+        off the main project queue on purpose, to avoid head-of-line blocking
+        from high-frequency matches.
+
+        :param action: Action name
+        :param event: Event to send
+        :param project_id: Project id the marker belongs to
+        """
+
+        try:
+            marker_listeners = self._project_marker_listeners[project_id]
+        except KeyError:
+            return
+        for listener in marker_listeners:
+            asyncio.get_running_loop().call_soon_threadsafe(listener.put_nowait, (action, event, {}))
 
     def _send_event_to_project(self, project_id, action, event):
         """

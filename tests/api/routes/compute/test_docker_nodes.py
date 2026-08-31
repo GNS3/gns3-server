@@ -211,6 +211,34 @@ class TestDockerNodesRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
 
+    async def test_docker_nio_batch_create(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
+        """
+        Exercise the project-wide batch NIO endpoint: bind two NIOs on the same
+        docker node in a single request (the path used during project open).
+        """
+
+        params = {
+            "nios": [
+                {
+                    "node_id": vm["node_id"],
+                    "adapter_number": 0,
+                    "port_number": 0,
+                    "nio": {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"},
+                },
+                {
+                    "node_id": vm["node_id"],
+                    "adapter_number": 1,
+                    "port_number": 0,
+                    "nio": {"type": "nio_udp", "lport": 4243, "rport": 4344, "rhost": "127.0.0.1"},
+                },
+            ]
+        }
+
+        url = app.url_path_for("compute:create_batch_nios", project_id=vm["project_id"])
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["added"] == 2
+
 
     async def test_docker_update_nio(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
@@ -277,6 +305,45 @@ class TestDockerNodesRoutes:
         assert response.json()["start_command"] == "yes"
         assert response.json()["environment"] == "GNS3=1\nGNS4=0"
         assert response.json()["extra_hosts"] == "test:127.0.0.1"
+
+    async def test_docker_update_empty_strings_do_not_recreate_container(
+            self,
+            app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project
+    ) -> None:
+        """
+        Web clients serialize empty form fields as "" while unset values are
+        stored as None on the node: a full PUT must not see a phantom change
+        and recreate the container for nothing.
+        """
+
+        params = {"name": "DOCKER-EMPTY", "image": "nginx", "environment": ""}
+        with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
+            with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
+                response = await compute_client.post(
+                    app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=params
+                )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["environment"] is None  # "" normalized at creation
+        assert response.json()["console_http_path"] == "/"
+        node_id = response.json()["node_id"]
+
+        with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
+            response = await compute_client.put(
+                app.url_path_for("compute:update_docker_node", project_id=compute_project.id, node_id=node_id),
+                json={
+                    "name": "DOCKER-EMPTY",
+                    "start_command": "",
+                    "environment": "",
+                    "extra_hosts": "",
+                    "console_http_path": "",
+                },
+            )
+        assert response.status_code == 200
+        assert not mock.called  # no real change: the container must not be recreated
+        assert response.json()["start_command"] is None
+        assert response.json()["console_http_path"] == "/"
 
 
     async def test_docker_start_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:

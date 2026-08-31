@@ -19,6 +19,10 @@ import zlib
 import asyncio
 import os
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class FileWatcher:
     """
@@ -98,7 +102,12 @@ class FileWatcher:
                 except OSError:
                     self._hashed[path] = None
             if changed:
-                self._callback(path)
+                try:
+                    self._callback(path)
+                except Exception:
+                    # never let a callback exception kill the polling loop
+                    # (the re-schedule below must always run)
+                    log.exception(f"Error in file watcher callback for '{path}'")
         asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
 
     @property

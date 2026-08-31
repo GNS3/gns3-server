@@ -10,11 +10,11 @@ See LICENSE file for licensing information.
 
 ## Overview
 
-GNS3 Copilot loads all skills, prompts, and security configurations from an external Git repository at [github.com/yueguobin/GNS3-Skills](https://github.com/yueguobin/GNS3-Skills). This enables dynamic updates without server redeployment.
+GNS3 Copilot loads all skills, prompts, and security configurations from an external Git repository at [github.com/gns3/gns3-skills](https://github.com/gns3/gns3-skills). This enables dynamic updates without server redeployment.
 
 The repository provides:
 - **Injection skills** (39 categories): Network fault scenarios for troubleshooting practice
-- **Device skills**: Device-specific command knowledge (VPCS, etc.)
+- **Device skills**: Device-specific command knowledge (VPCS, etc.) — large devices split into per-protocol **topics**
 - **Feature skills**: Topology planning, network design
 - **System prompts**: Agent personality and behavior definitions
 - **Forbidden commands**: Security rules for command filtering
@@ -24,7 +24,7 @@ The repository provides:
 ```mermaid
 graph TD
     subgraph "GNS3-Skills Repository"
-        YAML[injection/*.yaml<br/>device/*.yaml<br/>feature/*.yaml]
+        YAML[injection/*.yaml<br/>device/*.yaml + device/*/*.yaml<br/>feature/*.yaml]
         MD[prompts/*.md]
         CFG[config/forbidden_commands.txt]
     end
@@ -56,7 +56,11 @@ GNS3-Skills/
 │   ├── vlan_issues.yaml
 │   └── ...
 ├── device/             # Device-specific skills
-│   └── vpcs.yaml
+│   ├── vpcs.yaml           # small devices: one single file
+│   └── frr/                # large devices: split per protocol topic
+│       ├── _base.yaml      # device-level skill (console model, notes, aliases)
+│       ├── ospf.yaml       # topic file (merged under "topics" at load time)
+│       └── bgp.yaml
 ├── feature/            # Feature skills
 │   └── topology_planner.yaml
 ├── prompts/            # System prompts (Markdown)
@@ -68,20 +72,40 @@ GNS3-Skills/
     └── forbidden_commands.txt
 ```
 
+## Device Topics
+
+A device with knowledge for many protocols would grow one YAML file indefinitely. Such devices use a split layout instead: `device/<device>/_base.yaml` holds the device-level skill, and one file per protocol topic (`ospf.yaml`, `bgp.yaml`, ...) holds its commands and troubleshooting entries. The loader merges them into a single `SKILLS_REGISTRY` entry:
+
+```
+SKILLS_REGISTRY["frr_vtysh"] = { ..._base.yaml..., "topics": { "ospf": {...}, "bgp": {...} } }
+```
+
+Topic files must declare `device_type` (matching their `_base.yaml`), `topic` and `name`; the CI validator in the skills repository enforces this.
+
+The `device_skills` tool exposes a three-step drill-down (mirroring `injection_skills`'s list → index → issue pattern):
+
+```json
+{"action": "list"}
+{"device_type": "frr_vtysh", "detail": "index"}
+{"device_type": "frr_vtysh", "topic": "bgp"}
+```
+
+Topic bodies are only served on an explicit `topic` request — every other detail level returns a topic index — so adding topics to a device does not grow the token cost of device-level lookups.
+
 ## Configuration
 
 Skills repository settings are configured in `gns3_server.conf` under the `[Server]` section:
 
 ```ini
 [Server]
-skills_repo_url = https://github.com/yueguobin/GNS3-Skills.git
+skills_repo_url = https://github.com/gns3/gns3-skills.git
 skills_repo_branch = main
 skills_auto_update = true
 ```
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `skills_repo_url` | `https://github.com/yueguobin/GNS3-Skills.git` | Git repository URL |
+| `skills_repo_url` | `https://github.com/gns3/gns3-skills.git` | Git repository URL |
 | `skills_repo_branch` | `main` | Git branch to track |
 | `skills_auto_update` | `true` | Automatically pull on reload |
 

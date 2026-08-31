@@ -87,6 +87,11 @@ sed -n 's/^ *\(eth[0-9]*\):.*/\1/p' < /proc/net/dev | while read dev; do
 done
 
 # configure network interfaces
+# NOTE: unless the image ships its own ifupdown in /sbin this is BusyBox ifup,
+# which only brings up 'auto' stanzas and does NOT understand CIDR notation:
+# 'address <ip>' and 'netmask <mask>' must be separate lines, otherwise the
+# stanza fails with "don't have all variables for <iface>/inet" and the
+# interface comes up unconfigured.
 ifup -a -f
 
 # continue normal docker startup

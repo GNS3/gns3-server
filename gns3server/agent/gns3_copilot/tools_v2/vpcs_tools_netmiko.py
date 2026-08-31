@@ -26,6 +26,11 @@
 """
 This module provides a tool to execute commands on VPCS devices
 in a GNS3 topology using Nornir with Netmiko.
+
+⚠️ WARNING: This module is shared with the MCP (Model Context Protocol) service.
+VPCSCommands._run() is called by the MCP vpcs_config_set handler.
+The jwt_token/url parameters were added for MCP compatibility.
+Modifications must be tested with BOTH gns3-copilot AND MCP.
 """
 
 import json
@@ -154,6 +159,8 @@ class VPCSCommands(BaseTool):
         self,
         tool_input: str | bytes | list[Any] | dict[str, Any],
         run_manager: CallbackManagerForToolRun | None = None,
+        jwt_token: str | None = None,
+        url: str | None = None,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """
@@ -161,6 +168,8 @@ class VPCSCommands(BaseTool):
 
         Args:
             tool_input: JSON string with project_id and VPCS commands.
+            jwt_token: JWT token for GNS3 API auth (MCP handlers).
+            url: GNS3 server URL (MCP handlers).
 
         Returns:
             List of dicts with device names and command outputs.
@@ -183,11 +192,11 @@ class VPCSCommands(BaseTool):
         # Prepare device hosts data
         try:
             hosts_data = self._prepare_device_hosts_data(
-                device_configs_list, project_id
+                device_configs_list, project_id, jwt_token=jwt_token, url=url
             )
         except ValueError as e:
             logger.error("Failed to prepare device hosts data: %s", e)
-            return [{"error": str(e)}]
+            return [{"status": "failed", "error": str(e)}]
 
         # Check if any devices have errors (e.g., missing device)
         error_devices = {
@@ -214,7 +223,7 @@ class VPCSCommands(BaseTool):
             dynamic_nr = self._initialize_nornir(hosts_data)
         except ValueError as e:
             logger.error("Failed to initialize Nornir: %s", e)
-            return [{"error": str(e)}]
+            return [{"status": "failed", "error": str(e)}]
 
         results = []
 
@@ -235,7 +244,7 @@ class VPCSCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing commands on all VPCS devices: %s", e)
-            return [{"error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
 
         logger.debug(
             "VPCS command execution completed. Results: %s",
@@ -329,7 +338,7 @@ class VPCSCommands(BaseTool):
                     "Invalid JSON string received as tool input: %s", e
                 )
                 return (
-                    [{"error": f"Invalid JSON string input from model: {e}"}],
+                    [{"status": "failed", "error": f"Invalid JSON string input from model: {e}"}],
                     None,
                 )
         else:
@@ -348,18 +357,18 @@ class VPCSCommands(BaseTool):
             if not project_id:
                 error_msg = "Missing required 'project_id' field in input"
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             if not self._validate_project_id(project_id):
                 error_msg = f"Invalid project_id: {project_id}. Expected UUID."
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             # Validate device_configs
             if not isinstance(device_configs, list):
                 error_msg = "'device_configs' must be an array"
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             if not device_configs:
                 logger.warning("Device configs list is empty.")
@@ -373,7 +382,7 @@ class VPCSCommands(BaseTool):
                 f"got {type(parsed_input).__name__}"
             )
             logger.error(error_msg)
-            return ([{"error": error_msg}], None)
+            return ([{"status": "failed", "error": error_msg}], None)
 
     def _validate_project_id(self, project_id: str) -> bool:
         """
@@ -408,7 +417,11 @@ class VPCSCommands(BaseTool):
         }
 
     def _prepare_device_hosts_data(
-        self, device_configs_list: list[dict[str, Any]], project_id: str
+        self,
+        device_configs_list: list[dict[str, Any]],
+        project_id: str,
+        jwt_token: str | None = None,
+        url: str | None = None,
     ) -> dict[str, dict[str, Any]]:
         """
         Prepare Nornir inventory hosts data for VPCS devices.
@@ -416,6 +429,8 @@ class VPCSCommands(BaseTool):
         Args:
             device_configs_list: List of device configurations
             project_id: GNS3 project ID
+            jwt_token: JWT token for GNS3 API auth (MCP handlers).
+            url: GNS3 server URL (MCP handlers).
 
         Returns:
             Dictionary mapping device names to their host data
@@ -431,7 +446,7 @@ class VPCSCommands(BaseTool):
 
         # Get device port mappings from topology
         device_ports = get_device_ports_from_topology(
-            device_names, project_id=project_id
+            device_names, project_id=project_id, jwt_token=jwt_token, url=url
         )
 
         # Build Nornir inventory hosts data
@@ -445,6 +460,25 @@ class VPCSCommands(BaseTool):
                 continue
 
             port = device_ports[device_name]["port"]
+
+            node_type = device_ports[device_name].get("node_type")
+            if node_type != "vpcs":
+                # VPCS syntax typed into another node's CLI is silently
+                # discarded (e.g. IOS answers "% Invalid input"), so reject
+                # mismatched devices before a console session is opened
+                logger.error(
+                    "Device '%s' is a %s node, not a VPCS node",
+                    device_name,
+                    node_type or "unknown-type",
+                )
+                hosts_data[device_name] = {
+                    "error": (
+                        f"Device '{device_name}' is a {node_type or 'unknown-type'} node, "
+                        "not a VPCS node; use device_config_send / device_show_run "
+                        "for network devices"
+                    )
+                }
+                continue
 
             # VPCS devices use gns3_vpcs_telnet device type
             hosts_data[device_name] = {
@@ -544,8 +578,8 @@ class VPCSCommands(BaseTool):
             if device_name in hosts_data and "error" in hosts_data[device_name]:
                 results.append({
                     "device_name": device_name,
-                    "status": "error",
-                    "output": hosts_data[device_name]["error"],
+                    "status": "failed",
+                    "error": hosts_data[device_name]["error"],
                     "commands": device_config["commands"],
                 })
                 continue
@@ -559,8 +593,8 @@ class VPCSCommands(BaseTool):
                     error_msg = str(host_result.result) if host_result.result else "Unknown error"
                     results.append({
                         "device_name": device_name,
-                        "status": "error",
-                        "output": error_msg,
+                        "status": "failed",
+                        "error": error_msg,
                         "commands": device_config["commands"],
                     })
                 else:
@@ -575,8 +609,8 @@ class VPCSCommands(BaseTool):
                 # Device not in task result (shouldn't happen)
                 results.append({
                     "device_name": device_name,
-                    "status": "error",
-                    "output": f"Device '{device_name}' not in task results",
+                    "status": "failed",
+                    "error": f"Device '{device_name}' not in task results",
                     "commands": device_config["commands"],
                 })
 

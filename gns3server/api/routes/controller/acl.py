@@ -22,9 +22,10 @@ API routes for ACL.
 import re
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, _IncludedRouter
+from starlette.routing import BaseRoute, Mount
 from uuid import UUID
-from typing import List
+from typing import Iterator, List, Sequence
 
 
 from gns3server import schemas
@@ -38,7 +39,6 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
@@ -47,6 +47,39 @@ import logging
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _join_paths(prefix: str, path: str) -> str:
+
+    if not prefix:
+        return path
+
+    normalized_prefix = prefix
+    while normalized_prefix.endswith("/"):
+        normalized_prefix = normalized_prefix[:-1]
+
+    normalized_path = path
+    while normalized_path.startswith("/"):
+        normalized_path = normalized_path[1:]
+
+    return f"{normalized_prefix}/{normalized_path}".rstrip("/")
+
+
+def _iter_route_paths(routes: Sequence[BaseRoute], prefix: str = "", include_mounted_routes=False) -> Iterator[str]:
+    for route in routes:
+        if isinstance(route, _IncludedRouter):
+            include_prefix = route.include_context.prefix or ""
+            yield from _iter_route_paths(route.original_router.routes, _join_paths(prefix, include_prefix), include_mounted_routes)
+            continue
+
+        if isinstance(route, APIRoute):
+            yield _join_paths(prefix, route.path)
+            continue
+
+        if isinstance(route, Mount) and include_mounted_routes:
+            mounted_routes = getattr(route, "routes", None)
+            if isinstance(mounted_routes, Sequence):
+                yield from _iter_route_paths(mounted_routes, _join_paths(prefix, route.path), include_mounted_routes)
 
 
 @router.get(
@@ -58,8 +91,7 @@ async def endpoints(
         users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> List[dict]:
     """
     List all endpoints to be used in ACL entries.
@@ -141,11 +173,9 @@ async def endpoints(
     for template in templates:
         add_to_endpoints(f"/templates/{template.template_id}", f'Template "{template.name}"', "template")
 
-    # resource pools
-    add_to_endpoints("/pools", "All resource pools", "pool")
-    pools = await pools_repo.get_resource_pools()
-    for pool in pools:
-        add_to_endpoints(f"/pools/{pool.resource_pool_id}", f'Resource pool "{pool.name}"', "pool")
+    # Resource pools are not included in "all endpoints" to prevent accidental access
+    # They must be explicitly configured for team sharing
+
     return endpoints
 
 
@@ -183,19 +213,21 @@ async def create_ace(
     Required privilege: ACE.Allocate
     """
 
-    for route in request.app.routes:
-        if isinstance(route, APIRoute):
+    for route_path in _iter_route_paths(request.app.routes, include_mounted_routes=True):
+        print(route_path)
 
-            # remove the prefix (e.g. "/v3") from the route path
-            route_path = re.sub(r"^/v[0-9]", "", route.path)
-            # replace route path ID parameters by a UUID regex
-            route_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", route_path)
-            # replace remaining route path parameters by a word matching regex
-            route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
+    for route_path in _iter_route_paths(request.app.routes, include_mounted_routes=True):
 
-            if re.fullmatch(route_path, ace_create.path):
-                log.info(f"Creating ACE for route path {route_path}")
-                return await rbac_repo.create_ace(ace_create)
+        # remove the prefix (e.g. "/v3") from the route path
+        normalized_path = re.sub(r"^/v[0-9]", "", route_path)
+        # replace route path ID parameters by a UUID regex
+        normalized_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", normalized_path)
+        # replace remaining route path parameters by a word matching regex
+        normalized_path = re.sub(r"/{[\w:]+}", r"/\\w+", normalized_path)
+
+        if re.fullmatch(normalized_path, ace_create.path):
+            log.info(f"Creating ACE for route path {route_path}")
+            return await rbac_repo.create_ace(ace_create)
 
     raise ControllerBadRequestError(f"Path '{ace_create.path}' doesn't match any existing endpoint")
 

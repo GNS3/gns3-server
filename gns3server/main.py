@@ -31,6 +31,8 @@ import os
 import sys
 import asyncio
 import argparse
+import logging
+import resource
 
 
 def daemonize():
@@ -97,6 +99,34 @@ def parse_arguments(argv):
     return parser, args
 
 
+log = logging.getLogger(__name__)
+
+
+def _raise_open_files_limit(target=65535):
+    """
+    Raise RLIMIT_NOFILE at startup so large topologies don't hit EMFILE.
+    Every started node holds ~3 file descriptors in the server's table
+    (pidfd + stdout/stderr pipes per child process), so a few hundred nodes
+    exhaust the default 1024 limit. Best-effort: the hard limit caps what we
+    can request; failures are logged but never fatal. Runs before daemonize()
+    so the daemon inherits the raised limit.
+    """
+    try:
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        if soft >= target:
+            return
+        new_soft = min(target, hard)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+        if new_soft < target:
+            log.warning(
+                f"Open-files limit raised to {new_soft} (hard limit), below the requested {target}"
+            )
+        else:
+            log.info(f"Open-files limit raised from {soft} to {new_soft}")
+    except (OSError, ValueError) as e:
+        log.warning(f"Could not raise the open-files limit: {e}")
+
+
 def main():
     """
     Entry point for GNS3 server
@@ -104,6 +134,7 @@ def main():
 
     if sys.platform.startswith("win"):
         raise SystemExit("Windows is not a supported platform to run the GNS3 server")
+    _raise_open_files_limit()
     if "--daemon" in sys.argv:
         daemonize()
 

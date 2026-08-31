@@ -17,6 +17,7 @@
 
 import asyncio
 import json
+import time
 import psutil
 
 from gns3server.utils.cpu_percent import CpuPercent
@@ -35,22 +36,39 @@ class NotificationQueue(asyncio.Queue):
     def __init__(self):
         super().__init__()
         self._first = True
+        self._last_ping = None
 
     async def get(self, timeout):
         """
-        When timeout is expire we send a ping notification with server information
+        Return a notification, or a ping notification with server information
+        at least every `timeout` seconds. The ping used to be generated only
+        when the queue was idle for the full timeout, which starved it under
+        sustained event load (e.g. high marker.match rates): clients stopped
+        receiving compute statistics until the event flow paused.
         """
 
         # At first get we return a ping so the client immediately receives data
         if self._first:
             self._first = False
-            return ("ping", self._getPing(), {})
+            return self._ping()
 
-        try:
-            (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout)
-        except asyncio.TimeoutError:
-            return ("ping", self._getPing(), {})
-        return (action, msg, kwargs)
+        while True:
+            now = time.monotonic()
+            if self._last_ping is None or now - self._last_ping >= timeout:
+                return self._ping()
+            try:
+                (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout - (now - self._last_ping))
+                return (action, msg, kwargs)
+            except asyncio.TimeoutError:
+                continue  # the ping deadline has been reached
+
+    def _ping(self):
+        """
+        Build a ping notification and stamp the ping deadline.
+        """
+
+        self._last_ping = time.monotonic()
+        return ("ping", self._getPing(), {})
 
     def _getPing(self):
         """

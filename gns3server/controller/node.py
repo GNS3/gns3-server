@@ -57,6 +57,9 @@ class Node:
         "ports",
         "category",
         "console_auto_start",
+        "netmiko_device_type",
+        "default_username",
+        "default_password",
     ]
 
     def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
@@ -112,6 +115,9 @@ class Node:
             self._port_segment_size = 0
         self._first_port_name = None
         self._console_auto_start = False
+        self._netmiko_device_type = None
+        self._default_username = None
+        self._default_password = None
 
         # This properties will be recomputed
         ignore_properties = ("width", "height", "hover_symbol")
@@ -211,6 +217,30 @@ class Node:
     @console_auto_start.setter
     def console_auto_start(self, val):
         self._console_auto_start = val
+
+    @property
+    def netmiko_device_type(self):
+        return self._netmiko_device_type
+
+    @netmiko_device_type.setter
+    def netmiko_device_type(self, val):
+        self._netmiko_device_type = val
+
+    @property
+    def default_username(self):
+        return self._default_username
+
+    @default_username.setter
+    def default_username(self, val):
+        self._default_username = val
+
+    @property
+    def default_password(self):
+        return self._default_password
+
+    @default_password.setter
+    def default_password(self, val):
+        self._default_password = val
 
     @property
     def properties(self):
@@ -639,6 +669,14 @@ class Node:
             except asyncio.TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when reset console {self._name}")
 
+    async def get(self, path="", **kwargs):
+        """
+        HTTP get on the node
+        """
+        return await self._compute.get(
+            f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
+        )
+
     async def post(self, path, data=None, **kwargs):
         """
         HTTP post on the node
@@ -825,6 +863,9 @@ class Node:
                 "console": self._console,
                 "console_type": self._console_type,
                 "console_auto_start": self._console_auto_start,
+                "netmiko_device_type": self._netmiko_device_type,
+                "default_username": self._default_username,
+                "default_password": self._default_password,
                 "aux": self._aux,
                 "aux_type": self._aux_type,
                 "properties": self._properties,

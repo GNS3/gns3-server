@@ -120,14 +120,14 @@ class Hypervisor(DynamipsHypervisor):
         self._command = self._build_command()
         env = os.environ.copy()
         try:
-            log.info(f"Starting Dynamips: {self._command}")
+            log.debug(f"Starting Dynamips: {self._command}")
             self._stdout_file = os.path.join(self.working_dir, f"dynamips_i{self._id}_stdout.txt")
-            log.info(f"Dynamips process logging to {self._stdout_file}")
+            log.debug(f"Dynamips process logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
                 self._process = await asyncio.create_subprocess_exec(
                     *self._command, stdout=fd, stderr=subprocess.STDOUT, cwd=self._working_dir, env=env
                 )
-            log.info(f"Dynamips process started PID={self._process.pid}")
+            log.debug(f"Dynamips process started PID={self._process.pid}")
             self._started = True
         except (OSError, subprocess.SubprocessError) as e:
             log.error(f"Could not start Dynamips: {e}")
@@ -139,7 +139,7 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         if self.is_running():
-            log.info(f"Stopping Dynamips process PID={self._process.pid}")
+            log.debug(f"Stopping Dynamips process PID={self._process.pid}")
             await DynamipsHypervisor.stop(self)
             # give some time for the hypervisor to properly stop.
             # time to delete UNIX NIOs for instance.

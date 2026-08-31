@@ -29,7 +29,7 @@ Prompts Module for GNS3-Copilot
 This package provides system prompts loading utilities for the GNS3-Copilot AI agent.
 
 All system prompts are now loaded from the external GNS3-Skills repository:
-https://github.com/yueguobin/GNS3-Skills
+https://github.com/gns3/gns3-skills
 
 Available prompts (loaded from external repository):
 - lab_automation_assistant.md: Lab automation mode (diagnostics + config)

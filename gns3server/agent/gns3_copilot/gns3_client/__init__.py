@@ -26,27 +26,27 @@
 """
 GNS3 Client Package
 
-This package provides a Python interface for interacting with GNS3 servers.
-Adapted from the upstream gns3fy project with modifications for compatibility
-with langchain and reduced dependency conflicts.
+This package provides the shared GNS3 REST client layer:
 
-Main classes:
-- Gns3Connector: Connector for GNS3 server API interaction
-- Project: GNS3 Project management
-- Node: GNS3 Node management
-- Link: GNS3 Link management
-- GNS3TopologyTool: GNS3 topology reading tool
-- GNS3ProjectInfoTool: GNS3 project info tool
+- Gns3Connector (connector.py): authenticated HTTP session for the
+  controller API — v2 basic / v3 JWT auth, token refresh, error extraction
+- api_handlers.py: endpoint handlers taking ``(params, gns3_ctx)`` dicts,
+  shared by the copilot tools and the MCP service
+- project_inventory.py: nodes/links aggregation for the topology context
+- GNS3TopologyTool / GNS3ProjectInfoTool: LangChain reader tools
 
 Main functions:
 - get_gns3_connector: Factory function to create Gns3Connector
 - get_gns3_connector_with_llm_config: Create connector AND retrieve LLM config
 - get_gns3_server_host: Get GNS3 server hostname from Controller or Config
-- get_llm_config: Get LLM model configuration for a user
+- get_llm_config: Get user's default LLM config with API key
 
-Upstream gns3fy: https://github.com/davidban77/gns3fy
+The connector is adapted from the upstream gns3fy project
+(https://github.com/davidban77/gns3fy).
 """
 
+from .api_handlers import build_gns3_ctx
+from .connector import Gns3Connector
 from .connector_factory import get_gns3_connector
 from .connector_factory import get_gns3_connector_with_llm_config
 from .connector_factory import get_gns3_server_host
@@ -55,13 +55,6 @@ from .context_helpers import get_current_jwt_token
 from .context_helpers import get_current_llm_config
 from .context_helpers import set_current_jwt_token
 from .context_helpers import set_current_llm_config
-from .custom_gns3fy import CONSOLE_TYPES
-from .custom_gns3fy import LINK_TYPES
-from .custom_gns3fy import NODE_TYPES
-from .custom_gns3fy import Gns3Connector
-from .custom_gns3fy import Link
-from .custom_gns3fy import Node
-from .custom_gns3fy import Project
 from .gns3_project_info import GNS3ProjectInfoTool
 from .gns3_topology_reader import GNS3TopologyTool
 
@@ -79,12 +72,7 @@ __url__ = "https://github.com/yueguobin/gns3-copilot"
 
 __all__ = [
     "Gns3Connector",
-    "Project",
-    "Node",
-    "Link",
-    "NODE_TYPES",
-    "CONSOLE_TYPES",
-    "LINK_TYPES",
+    "build_gns3_ctx",
     "GNS3TopologyTool",
     "GNS3ProjectInfoTool",
     "get_gns3_connector",

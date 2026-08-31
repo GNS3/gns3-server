@@ -26,6 +26,11 @@
 
 This module provides a tool to execute display commands on multiple devices
  in a GNS3 topology using Nornir.
+
+⚠️ WARNING: This module is shared with the MCP (Model Context Protocol) service.
+ExecuteMultipleDeviceCommands._run() is called by the MCP device_command_run handler.
+The jwt_token/url parameters were added for MCP compatibility.
+Modifications must be tested with BOTH gns3-copilot AND MCP.
 """
 
 import json
@@ -171,6 +176,8 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         self,
         tool_input: str | bytes | list[Any] | dict[str, Any],
         run_manager: CallbackManagerForToolRun | None = None,
+        jwt_token: str | None = None,
+        url: str | None = None,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """
@@ -181,6 +188,8 @@ class ExecuteMultipleDeviceCommands(BaseTool):
 
         Args:
             tool_input: JSON string with project_id and diagnostic commands.
+            jwt_token: JWT token for GNS3 API auth (MCP handlers).
+            url: GNS3 server URL (MCP handlers).
 
         Returns:
             List[Dict]: A list of dicts with device names and outputs.
@@ -210,11 +219,11 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         # Prepare device hosts data
         try:
             hosts_data = self._prepare_device_hosts_data(
-                device_configs_list, project_id
+                device_configs_list, project_id, jwt_token=jwt_token, url=url
             )
         except ValueError as e:
             logger.error("Failed to prepare device hosts data: %s", e)
-            return [{"error": str(e)}]
+            return [{"status": "failed", "error": str(e)}]
 
         # Check if any devices have errors (e.g., missing device_type tag)
         error_devices = {
@@ -241,7 +250,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
             dynamic_nr = self._initialize_nornir(hosts_data)
         except ValueError as e:
             logger.error("Failed to initialize Nornir: %s", e)
-            return [{"error": str(e)}]
+            return [{"status": "failed", "error": str(e)}]
 
         results = []
 
@@ -263,7 +272,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing display on all devices: %s", e)
-            return [{"error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
 
         logger.debug(
             "Multiple device display execution completed. Results: %s",
@@ -361,7 +370,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
                     "Invalid JSON string received as tool input: %s", e
                 )
                 return (
-                    [{"error": f"Invalid JSON string input from model: {e}"}],
+                    [{"status": "failed", "error": f"Invalid JSON string input from model: {e}"}],
                     None,
                 )
         else:
@@ -382,18 +391,18 @@ class ExecuteMultipleDeviceCommands(BaseTool):
             if not project_id:
                 error_msg = "Missing required 'project_id' field in input"
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             if not self._validate_project_id(project_id):
                 error_msg = f"Invalid project_id: {project_id}. Expected UUID."
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             # Validate device_configs
             if not isinstance(device_configs, list):
                 error_msg = "'device_configs' must be an array"
                 logger.error(error_msg)
-                return ([{"error": error_msg}], None)
+                return ([{"status": "failed", "error": error_msg}], None)
 
             if not device_configs:
                 logger.warning("Device configs list is empty.")
@@ -414,7 +423,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
                 f"or legacy JSON array, got {type(parsed_input).__name__}"
             )
             logger.error(error_msg)
-            return ([{"error": error_msg}], None)
+            return ([{"status": "failed", "error": error_msg}], None)
 
     def _validate_project_id(self, project_id: str) -> bool:
         """
@@ -490,6 +499,8 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         self,
         device_config_list: list[dict[str, Any]],
         project_id: str | None = None,
+        jwt_token: str | None = None,
+        url: str | None = None,
     ) -> dict[str, dict[str, Any]]:
         """Prepare device hosts data from topology information."""
         # Extract device names list
@@ -499,7 +510,9 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         ]
 
         # Get device port information with project_id
-        hosts_data = get_device_ports_from_topology(device_names, project_id)
+        hosts_data = get_device_ports_from_topology(
+            device_names, project_id, jwt_token=jwt_token, url=url
+        )
 
         if not hosts_data:
             error_msg = (

@@ -34,6 +34,7 @@ import json
 import shlex
 import psutil
 
+from pathlib import Path
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
@@ -186,7 +187,7 @@ class QemuVM(BaseNode):
                     log.warning(f"Config disk: image '{self.config_disk_name}' missing")
                     self.config_disk_name = ""
 
-        log.info(f'QEMU VM "{self._name}" [{self._id}] has been created')
+        log.debug(f'QEMU VM "{self._name}" [{self._id}] has been created')
 
     @BaseNode.name.setter
     def name(self, new_name):
@@ -269,7 +270,7 @@ class QemuVM(BaseNode):
                 self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, flags=re.IGNORECASE)
         if self._platform.split(".")[0] not in list(QemuPlatform):
             raise QemuError(f"Platform {self._platform} is unknown")
-        log.info(f'QEMU VM "{self._name}" [{self._name}] has set the QEMU path to {qemu_path}')
+        log.debug(f'QEMU VM "{self._name}" [{self._name}] has set the QEMU path to {qemu_path}')
 
     def _check_qemu_path(self, qemu_path):
 
@@ -291,7 +292,7 @@ class QemuVM(BaseNode):
     def platform(self, platform):
 
         self._platform = platform
-        log.info(f"QEMU VM '{self._name}' [{self._id}] has set the platform {platform}")
+        log.debug(f"QEMU VM '{self._name}' [{self._id}] has set the platform {platform}")
         self.qemu_path = f"qemu-system-{platform}"
 
     def _disk_setter(self, variable, value):
@@ -310,7 +311,7 @@ class QemuVM(BaseNode):
                         f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name} in project {node.project.name}"
                     )
         setattr(self, "_" + variable, value)
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU {variable} path to {disk_image}'.format(
                 name=self._name, variable=variable, id=self._id, disk_image=value
             )
@@ -415,7 +416,7 @@ class QemuVM(BaseNode):
         """
 
         self._hda_disk_interface = hda_disk_interface
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU hda disk interface to {interface}'.format(
                 name=self._name, id=self._id, interface=self._hda_disk_interface
             )
@@ -440,7 +441,7 @@ class QemuVM(BaseNode):
         """
 
         self._hdb_disk_interface = hdb_disk_interface
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU hdb disk interface to {interface}'.format(
                 name=self._name, id=self._id, interface=self._hdb_disk_interface
             )
@@ -465,7 +466,7 @@ class QemuVM(BaseNode):
         """
 
         self._hdc_disk_interface = hdc_disk_interface
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU hdc disk interface to {interface}'.format(
                 name=self._name, id=self._id, interface=self._hdc_disk_interface
             )
@@ -490,7 +491,7 @@ class QemuVM(BaseNode):
         """
 
         self._hdd_disk_interface = hdd_disk_interface
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU hdd disk interface to {interface}'.format(
                 name=self._name, id=self._id, interface=self._hdd_disk_interface
             )
@@ -517,7 +518,7 @@ class QemuVM(BaseNode):
         if cdrom_image:
             self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.working_dir)
 
-            log.info(
+            log.debug(
                 'QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(
                     name=self._name, id=self._id, cdrom_image=self._cdrom_image
                 )
@@ -546,14 +547,14 @@ class QemuVM(BaseNode):
                 self._cdrom_option()  # this will check the cdrom image is accessible
                 await self._control_vm("eject -f ide1-cd0")
                 await self._control_vm(f"change ide1-cd0 {self._cdrom_image}")
-                log.info(
+                log.debug(
                     'QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(
                         name=self._name, id=self._id, cdrom_image=self._cdrom_image
                     )
                 )
             else:
                 await self._control_vm("eject -f ide1-cd0")
-                log.info(f'QEMU VM "{self._name}" [{self._id}] has ejected the cdrom image')
+                log.debug(f'QEMU VM "{self._name}" [{self._id}] has ejected the cdrom image')
 
     @property
     def bios_image(self):
@@ -574,7 +575,7 @@ class QemuVM(BaseNode):
         """
 
         self._bios_image = self.manager.get_abs_image_path(bios_image, self.working_dir)
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(
                 name=self._name, id=self._id, bios_image=self._bios_image
             )
@@ -599,7 +600,7 @@ class QemuVM(BaseNode):
         """
 
         self._boot_priority = boot_priority
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the boot priority to {boot_priority}'.format(
                 name=self._name, id=self._id, boot_priority=self._boot_priority
             )
@@ -634,7 +635,7 @@ class QemuVM(BaseNode):
         for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(
                 name=self._name, id=self._id, adapters=adapters
             )
@@ -660,7 +661,7 @@ class QemuVM(BaseNode):
 
         self._adapter_type = adapter_type
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}]: adapter type changed to {adapter_type}'.format(
                 name=self._name, id=self._id, adapter_type=adapter_type
             )
@@ -690,7 +691,7 @@ class QemuVM(BaseNode):
         else:
             self._mac_address = mac_address
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(
                 name=self._name, id=self._id, mac_addr=self._mac_address
             )
@@ -715,9 +716,9 @@ class QemuVM(BaseNode):
         """
 
         if replicate_network_connection_state:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled network connection state replication')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has enabled network connection state replication')
         else:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled network connection state replication')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has disabled network connection state replication')
         self._replicate_network_connection_state = replicate_network_connection_state
 
     @property
@@ -739,9 +740,9 @@ class QemuVM(BaseNode):
         """
 
         if create_config_disk:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the config disk creation feature')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has enabled the config disk creation feature')
         else:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the config disk creation feature')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has disabled the config disk creation feature')
         self._create_config_disk = create_config_disk
 
     @property
@@ -762,7 +763,7 @@ class QemuVM(BaseNode):
         :param on_close: string
         """
 
-        log.info(f'QEMU VM "{self._name}" [{self._id}] set the close action to "{on_close}"')
+        log.debug(f'QEMU VM "{self._name}" [{self._id}] set the close action to "{on_close}"')
         self._on_close = on_close
 
     @property
@@ -783,7 +784,7 @@ class QemuVM(BaseNode):
         :param cpu_throttling: integer
         """
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the percentage of CPU allowed to {cpu}'.format(
                 name=self._name, id=self._id, cpu=cpu_throttling
             )
@@ -811,7 +812,7 @@ class QemuVM(BaseNode):
         :param process_priority: string
         """
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the process priority to {priority}'.format(
                 name=self._name, id=self._id, priority=process_priority
             )
@@ -836,7 +837,7 @@ class QemuVM(BaseNode):
         :param ram: RAM amount in MB
         """
 
-        log.info(f'QEMU VM "{self._name}" [{self._id}] has set the RAM to {ram}')
+        log.debug(f'QEMU VM "{self._name}" [{self._id}] has set the RAM to {ram}')
         self._ram = ram
 
     @property
@@ -857,7 +858,7 @@ class QemuVM(BaseNode):
         :param cpus: number of vCPUs.
         """
 
-        log.info(f'QEMU VM "{self._name}" [{self._id}] has set the number of vCPUs to {cpus}')
+        log.debug(f'QEMU VM "{self._name}" [{self._id}] has set the number of vCPUs to {cpus}')
         self._cpus = cpus
 
     @property
@@ -878,7 +879,7 @@ class QemuVM(BaseNode):
         :param maxcpus: maximum number of hotpluggable vCPUs
         """
 
-        log.info(f'QEMU VM "{self._name}" [{self._id}] has set maximum number of hotpluggable vCPUs to {maxcpus}')
+        log.debug(f'QEMU VM "{self._name}" [{self._id}] has set maximum number of hotpluggable vCPUs to {maxcpus}')
         self._maxcpus = maxcpus
 
     @property
@@ -900,9 +901,9 @@ class QemuVM(BaseNode):
         """
 
         if tpm:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the Trusted Platform Module (TPM)')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has enabled the Trusted Platform Module (TPM)')
         else:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the Trusted Platform Module (TPM)')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has disabled the Trusted Platform Module (TPM)')
         self._tpm = tpm
 
     @property
@@ -924,9 +925,9 @@ class QemuVM(BaseNode):
         """
 
         if uefi:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the UEFI boot mode')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has enabled the UEFI boot mode')
         else:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the UEFI boot mode')
+            log.debug(f'QEMU VM "{self._name}" [{self._id}] has disabled the UEFI boot mode')
         self._uefi = uefi
 
     @property
@@ -947,7 +948,7 @@ class QemuVM(BaseNode):
         :param options: QEMU options
         """
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU options to {options}'.format(
                 name=self._name, id=self._id, options=options
             )
@@ -995,7 +996,7 @@ class QemuVM(BaseNode):
 
         initrd = self.manager.get_abs_image_path(initrd, self.working_dir)
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(
                 name=self._name, id=self._id, initrd=initrd
             )
@@ -1028,7 +1029,7 @@ class QemuVM(BaseNode):
         """
 
         kernel_image = self.manager.get_abs_image_path(kernel_image, self.working_dir)
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(
                 name=self._name, id=self._id, kernel_image=kernel_image
             )
@@ -1053,7 +1054,7 @@ class QemuVM(BaseNode):
         :param kernel_command_line: QEMU kernel command line
         """
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}] has set the QEMU kernel command line to {kernel_command_line}'.format(
                 name=self._name, id=self._id, kernel_command_line=kernel_command_line
             )
@@ -1113,7 +1114,7 @@ class QemuVM(BaseNode):
 
             command = [cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)]
             self._cpulimit_process = subprocess.Popen(command, cwd=self.working_dir)
-            log.info(f"CPU throttled to {self._cpu_throttling}%")
+            log.debug(f"CPU throttled to {self._cpu_throttling}%")
         except FileNotFoundError:
             raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
         except (OSError, subprocess.SubprocessError) as e:
@@ -1171,16 +1172,16 @@ class QemuVM(BaseNode):
             command = await self._build_command()
             command_string = " ".join(shlex.quote(s) for s in command)
             try:
-                log.info(f"Starting QEMU with: {command_string}")
+                log.debug(f"Starting QEMU with: {command_string}")
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
-                log.info(f"logging to {self._stdout_file}")
+                log.debug(f"logging to {self._stdout_file}")
                 with open(self._stdout_file, "w", encoding="utf-8") as fd:
                     fd.write(f"Start QEMU with {command_string}\n\nExecution log:\n")
                     self.command_line = " ".join(command)
                     self._process = await asyncio.create_subprocess_exec(
                         *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
                     )
-                log.info(f'QEMU VM "{self._name}" started PID={self._process.pid}')
+                log.debug(f'QEMU VM "{self._name}" started PID={self._process.pid}')
                 self._command_line_changed = False
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
@@ -1241,7 +1242,7 @@ class QemuVM(BaseNode):
         """
 
         if self.started:
-            log.info("QEMU process has stopped, return code: %d", returncode)
+            log.debug("QEMU process has stopped, return code: %d", returncode)
             await self.stop()
             if returncode != 0:
                 qemu_stdout = self.read_stdout()
@@ -1269,7 +1270,7 @@ class QemuVM(BaseNode):
             # stop the QEMU process
             self._hw_virtualization = False
             if self.is_running():
-                log.info(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
+                log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
                 try:
 
                     if self.on_close == "save_vm_state":
@@ -1337,7 +1338,7 @@ class QemuVM(BaseNode):
                 )
             )
         else:
-            log.info(
+            log.debug(
                 f"Connected to QEMU monitor on {self._monitor_host}:{self._monitor} after {time.time() - begin:.4f} seconds"
             )
         return reader, writer
@@ -1354,7 +1355,7 @@ class QemuVM(BaseNode):
 
         result = None
         if self.is_running() and self._monitor:
-            log.info(f"Execute QEMU monitor command: {command}")
+            log.debug(f"Execute QEMU monitor command: {command}")
             reader, writer = await self._open_qemu_monitor_connection_vm()
             if reader is None and writer is None:
                 return result
@@ -1404,7 +1405,7 @@ class QemuVM(BaseNode):
                 return
 
             for command in commands:
-                log.info(f"Execute QEMU monitor command: {command}")
+                log.debug(f"Execute QEMU monitor command: {command}")
                 try:
                     cmd_byte = command.encode("ascii")
                     writer.write(cmd_byte + b"\n")
@@ -1497,7 +1498,7 @@ class QemuVM(BaseNode):
                 self.status = "suspended"
                 log.debug("QEMU VM has been suspended")
             else:
-                log.info(f"QEMU VM is not running to be suspended, current status is {vm_status}")
+                log.debug(f"QEMU VM is not running to be suspended, current status is {vm_status}")
 
     async def reload(self):
         """
@@ -1524,7 +1525,7 @@ class QemuVM(BaseNode):
             self.status = "started"
             log.debug("QEMU VM has been resumed")
         else:
-            log.info(f"QEMU VM is not paused to be resumed, current status is {vm_status}")
+            log.debug(f"QEMU VM is not paused to be resumed, current status is {vm_status}")
 
     async def adapter_add_nio_binding(self, adapter_number, nio):
         """
@@ -1558,7 +1559,7 @@ class QemuVM(BaseNode):
                 )
 
         adapter.add_nio(0, nio)
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(
                 name=self._name, id=self._id, nio=nio, adapter_number=adapter_number
             )
@@ -1618,7 +1619,7 @@ class QemuVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
 
-        log.info(
+        log.debug(
             'QEMU VM "{name}" [{id}]: {nio} removed from adapter {adapter_number}'.format(
                 name=self._name, id=self._id, nio=nio, adapter_number=adapter_number
             )
@@ -1670,7 +1671,7 @@ class QemuVM(BaseNode):
                 )
             )
 
-        log.info(
+        log.debug(
             "QEMU VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(
                 name=self.name, id=self.id, adapter_number=adapter_number
             )
@@ -1691,7 +1692,7 @@ class QemuVM(BaseNode):
         if self.ubridge:
             await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 
-        log.info(
+        log.debug(
             "QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(
                 name=self.name, id=self.id, adapter_number=adapter_number
             )
@@ -1730,7 +1731,7 @@ class QemuVM(BaseNode):
                 stdout = self.read_qemu_img_stdout()
                 raise QemuError(f"Could not create '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
             else:
-                log.info(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image'{disk_name}' created")
+                log.debug(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image'{disk_name}' created")
         except (OSError, subprocess.SubprocessError) as e:
             stdout = self.read_qemu_img_stdout()
             raise QemuError(f"Could not create '{disk_name}' disk image: {e}\n{stdout}")
@@ -1758,7 +1759,7 @@ class QemuVM(BaseNode):
                 stdout = self.read_qemu_img_stdout()
                 raise QemuError(f"Could not update '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
             else:
-                log.info(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image '{disk_name}' extended by {extend} MB")
+                log.debug(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image '{disk_name}' extended by {extend} MB")
         except (OSError, subprocess.SubprocessError) as e:
             stdout = self.read_qemu_img_stdout()
             raise QemuError(f"Could not update '{disk_name}' disk image: {e}\n{stdout}")
@@ -1974,16 +1975,16 @@ class QemuVM(BaseNode):
     async def _qemu_img_exec(self, command):
 
         self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
-        log.info(f"logging to {self._qemu_img_stdout_file}")
+        log.debug(f"logging to {self._qemu_img_stdout_file}")
         command_string = " ".join(shlex.quote(s) for s in command)
-        log.info(f"Executing qemu-img with: {command_string}")
+        log.debug(f"Executing qemu-img with: {command_string}")
         with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
             process = await asyncio.create_subprocess_exec(
                 *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
             )
         retcode = await process.wait()
         if retcode != 0:
-            log.info(f"{self._get_qemu_img()} returned with {retcode}")
+            log.debug(f"{self._get_qemu_img()} returned with {retcode}")
         return retcode
 
     async def _find_disk_file_format(self, disk):
@@ -2292,26 +2293,37 @@ class QemuVM(BaseNode):
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
 
         elif self._uefi:
-
+            system_ovmf_firmware_dir = Path(self.manager.config.settings.Qemu.ovmf_firmware_dir)
+            log.debug("Using OVMF firmware directory: {}".format(system_ovmf_firmware_dir))
             old_ovmf_vars_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
             if os.path.exists(old_ovmf_vars_path):
                 # the node has its own UEFI variables store already, we must also use the old UEFI firmware
                 ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
             else:
-                system_ovmf_firmware_path = "/usr/share/OVMF/OVMF_CODE_4M.fd"
-                if os.path.exists(system_ovmf_firmware_path):
-                    ovmf_firmware_path = system_ovmf_firmware_path
+                # Use a manual case-insensitive search instead
+                try:
+                    system_ovmf_firmware_path = next((f for f in system_ovmf_firmware_dir.glob("*.fd")
+                                                      if f.name.lower() == "ovmf_code_4m.fd"), None)
+                except (FileNotFoundError, StopIteration):
+                    system_ovmf_firmware_path = None
+
+                if system_ovmf_firmware_path:
+                    ovmf_firmware_path = str(system_ovmf_firmware_path)
                 else:
                     # otherwise, get the UEFI firmware from the images directory
                     ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE_4M.fd")
 
-            log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
+            log.debug("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
             options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
 
             # try to use the UEFI variables store from the system first
-            system_ovmf_vars_path = "/usr/share/OVMF/OVMF_VARS_4M.fd"
-            if os.path.exists(system_ovmf_vars_path):
-                ovmf_vars_path = system_ovmf_vars_path
+            try:
+                system_ovmf_vars_path = next((f for f in system_ovmf_firmware_dir.glob("*.fd")
+                                              if f.name.lower() == "ovmf_vars_4m.fd"), None)
+            except (FileNotFoundError, StopIteration):
+                system_ovmf_vars_path = None
+            if system_ovmf_vars_path:
+                ovmf_vars_path = str(system_ovmf_vars_path)
             else:
                 # otherwise, get the UEFI variables store from the images directory
                 ovmf_vars_path = self.manager.get_abs_image_path("OVMF_VARS_4M.fd")
@@ -2327,6 +2339,10 @@ class QemuVM(BaseNode):
                     except OSError as e:
                         raise QemuError("Cannot copy OVMF_VARS_4M.fd file to the node working directory: {}".format(e))
             options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
+
+            # edk2 firmware requires a Random Number Generator (RNG) device in order to turn network adapters on
+            options.extend(["-object", "rng-random,filename=/dev/urandom,id=rng0"])
+            options.extend(["-device", "virtio-rng-pci,rng=rng0"])
         return options
 
     def _linux_boot_options(self):
@@ -2381,9 +2397,9 @@ class QemuVM(BaseNode):
                 "type=unixio,path={},terminate".format(tpm_sock)
             ]
             command_string = " ".join(shlex.quote(s) for s in command)
-            log.info("Starting swtpm (TPM emulator) with: {}".format(command_string))
+            log.debug("Starting swtpm (TPM emulator) with: {}".format(command_string))
             self._swtpm_process = subprocess.Popen(command, cwd=self.working_dir)
-            log.info("swtpm (TPM emulator) has started")
+            log.debug("swtpm (TPM emulator) has started")
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Could not start swtpm (TPM emulator): {}".format(e))
 
@@ -2571,7 +2587,7 @@ class QemuVM(BaseNode):
                                     stdout = self.read_qemu_img_stdout()
                                     log.warning(f"Could not delete saved VM state from disk {disk}: {stdout}")
                                 else:
-                                    log.info(f"Deleted saved VM state from disk {disk}")
+                                    log.debug(f"Deleted saved VM state from disk {disk}")
             except subprocess.SubprocessError as e:
                 raise QemuError(f"Error while looking for the Qemu VM saved state snapshot: {e}")
 
@@ -2601,7 +2617,7 @@ class QemuVM(BaseNode):
                     if "snapshots" in json_data:
                         for snapshot in json_data["snapshots"]:
                             if snapshot["name"] == snapshot_name:
-                                log.info(
+                                log.debug(
                                     'QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(
                                         name=self._name, id=self.id, snapshot=snapshot_name
                                     )
@@ -2649,7 +2665,6 @@ class QemuVM(BaseNode):
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
         command.extend(["-boot", f"order={self._boot_priority}"])
-        command.extend(self._bios_option())
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
         command.extend(self._linux_boot_options())
@@ -2659,6 +2674,8 @@ class QemuVM(BaseNode):
         command.extend(self._aux_options())
         command.extend(self._monitor_options())
         command.extend(await self._network_options())
+        # bios options must be last to have predictable NIC numbering, see https://github.com/GNS3/gns3-server/issues/2838
+        command.extend(self._bios_option())
         if self.on_close != "save_vm_state":
             await self._clear_save_vm_stated()
         else:

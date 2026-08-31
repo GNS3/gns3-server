@@ -125,7 +125,7 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 25  # 24 default privileges + 1 custom privilege
+        assert len(privileges) == 27  # 25 default privileges + 2 LLMConfig privileges
 
     async def test_get_role_privileges(
             self,
@@ -143,7 +143,7 @@ class TestRolesPrivilegesRoutes:
                 role_id=role_in_db.role_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 25  # 24 default privileges + 1 custom privilege
+        assert len(response.json()) == 27  # 25 default privileges + 2 LLMConfig privileges
 
     async def test_remove_privilege_from_role(
             self,
@@ -165,4 +165,4 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 24  # 24 default privileges
+        assert len(privileges) == 26  # 26 default privileges (24 + 2 LLMConfig)

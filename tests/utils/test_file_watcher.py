@@ -66,3 +66,20 @@ async def test_file_watcher_list(tmpdir, strategy):
     file2.write("b")
     await asyncio.sleep(0.5)
     callback.assert_called_with(str(file2))
+
+
+@pytest.mark.asyncio
+async def test_file_watcher_callback_exception_does_not_stop_polling(tmpdir):
+
+    file = tmpdir / "test"
+    file.write("a")
+    callback = MagicMock(side_effect=ValueError("callback error"))
+    FileWatcher(file, callback, delay=0.1)
+    await asyncio.sleep(0.5)
+    assert callback.call_count == 0
+    file.write("b")
+    await asyncio.sleep(0.5)
+    assert callback.call_count == 1  # raised, but must not kill the polling loop
+    file.write("c")
+    await asyncio.sleep(0.5)
+    assert callback.call_count == 2  # polling survived the exception

@@ -21,7 +21,7 @@ API routes for images.
 import os
 import urllib.parse
 
-from fastapi import APIRouter, Request, status, Response, HTTPException
+from fastapi import APIRouter, Body, Request, status, Response, HTTPException
 from fastapi.responses import FileResponse
 from typing import List
 
@@ -41,6 +41,16 @@ async def get_docker_images() -> List[dict]:
 
     docker_manager = Docker.instance()
     return await docker_manager.list_images()
+
+
+@router.post("/docker/images/pull", status_code=status.HTTP_204_NO_CONTENT)
+async def pull_docker_image(image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")) -> None:
+    """
+    Pull or update a Docker image.
+    """
+
+    docker_manager = Docker.instance()
+    await docker_manager.pull_image(image, force=True)
 
 
 @router.get("/dynamips/images")

@@ -14,17 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter, ConsoleType, AuxType
+from ..common import NodeStatus, CustomAdapter, ConsoleType, AuxType, ExtraConfig
 
 
 class DockerBase(BaseModel):
     """
     Common Docker node properties.
     """
+
+    @field_validator("start_command", "environment", "extra_hosts", mode="before")
+    @classmethod
+    def _empty_string_to_none(cls, value):
+        # Web clients serialize empty form fields as "" while unset values are
+        # stored as None on the node: normalize before the update diff runs,
+        # otherwise every full PUT would see a phantom change and recreate
+        # the container for nothing.
+        return value or None
+
+    @field_validator("console_http_path", mode="before")
+    @classmethod
+    def _empty_string_to_root_path(cls, value):
+        # the canonical "no path" value is "/" (the creation default)
+        return value or "/"
 
     name: str
     image: str = Field(..., description="Docker image name")
@@ -43,6 +58,7 @@ class DockerBase(BaseModel):
     environment: Optional[str] = Field(None, description="Docker environment variables")
     extra_hosts: Optional[str] = Field(None, description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List[str]] = Field(None, description="Additional directories to make persistent")
+    extra_configs: Optional[List[ExtraConfig]] = Field(None, description="Configuration files injected into the container (bind-mounted read-only)")
     memory: Optional[int] = Field(None, ge=0, description="Maximum amount of memory the container can use in MB")
     cpus: Optional[float] = Field(None, ge=0, description="Maximum amount of CPU resources the container can use")
     custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adapters")

@@ -28,20 +28,29 @@ log = logging.getLogger(__name__)
 class UBridgeHypervisor:
 
     """
-    Creates a new connection to uBridge hypervisor.
+    Creates a new connection to a uBridge hypervisor control channel.
 
-    :param host: the hostname or ip address string of the uBridge hypervisor
-    :param port: the tcp port integer
+    Two transports, selected by which argument is set:
+      * ``socket_path`` -> AF_UNIX (``-U``), authenticated in-kernel via
+        SO_PEERCRED (ubridge accepts only its own UID; the compute process that
+        spawned it shares that UID). Recommended on Linux.
+      * ``host``/``port`` -> TCP (``-H``), retained for backward compatibility.
+
+    :param socket_path: path to the uBridge AF_UNIX control socket (None for TCP)
+    :param host: TCP hostname/IP (None for AF_UNIX)
+    :param port: TCP port
     :param timeout: timeout integer for how long to wait for a response to commands sent to the
-    hypervisor (defaults to 30 seconds)
+        hypervisor (defaults to 30 seconds)
     """
 
     # Used to parse Ubridge response codes
     error_re = re.compile(r"""^2[0-9]{2}-""")
     success_re = re.compile(r"""^1[0-9]{2}\s{1}""")
 
-    def __init__(self, host, port, timeout=30.0):
+    def __init__(self, socket_path=None, host=None, port=None, timeout=30.0):
 
+        # Exactly one transport is active: socket_path (AF_UNIX) or host/port (TCP).
+        self._socket_path = socket_path
         self._host = host
         self._port = port
         self._version = "N/A"
@@ -54,22 +63,23 @@ class UBridgeHypervisor:
         Connects to the hypervisor.
         """
 
-        # connect to a local address by default
-        # if listening to all addresses (IPv4 or IPv6)
-        if self._host == "0.0.0.0":
-            host = "127.0.0.1"
-        elif self._host == "::":
-            host = "::1"
-        else:
-            host = self._host
-
         begin = time.time()
         connection_success = False
         last_exception = None
         while time.time() - begin < timeout:
             await asyncio.sleep(0.1)
             try:
-                self._reader, self._writer = await asyncio.open_connection(host, self._port)
+                if self._socket_path:
+                    self._reader, self._writer = await asyncio.open_unix_connection(self._socket_path)
+                else:
+                    # connect to a local address by default if listening on all addresses
+                    if self._host == "0.0.0.0":
+                        host = "127.0.0.1"
+                    elif self._host == "::":
+                        host = "::1"
+                    else:
+                        host = self._host
+                    self._reader, self._writer = await asyncio.open_connection(host, self._port)
             except OSError as e:
                 last_exception = e
                 continue
@@ -77,9 +87,9 @@ class UBridgeHypervisor:
             break
 
         if not connection_success:
-            raise UbridgeError(f"Couldn't connect to hypervisor on {host}:{self._port} :{last_exception}")
+            raise UbridgeError(f"Couldn't connect to hypervisor on {self.endpoint} :{last_exception}")
         else:
-            log.info(f"Connected to uBridge hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
+            log.debug(f"Connected to uBridge hypervisor on {self.endpoint} after {time.time() - begin:.4f} seconds")
 
         try:
             await asyncio.sleep(0.1)
@@ -122,7 +132,7 @@ class UBridgeHypervisor:
                 await self._writer.drain()
                 self._writer.close()
         except OSError as e:
-            log.debug(f"Stopping hypervisor {self._host}:{self._port} {e}")
+            log.debug(f"Stopping hypervisor {self.endpoint} {e}")
         self._reader = self._writer = None
 
     async def reset(self):
@@ -133,44 +143,17 @@ class UBridgeHypervisor:
         await self.send("hypervisor reset")
 
     @property
-    def port(self):
+    def endpoint(self):
         """
-        Returns the port used to start the hypervisor.
+        Returns a human-readable control endpoint: the AF_UNIX socket path when
+        using -U, or host:port when using -H. Used for logging and errors.
 
-        :returns: port number (integer)
-        """
-
-        return self._port
-
-    @port.setter
-    def port(self, port):
-        """
-        Sets the port used to start the hypervisor.
-
-        :param port: port number (integer)
+        :returns: endpoint (string)
         """
 
-        self._port = port
-
-    @property
-    def host(self):
-        """
-        Returns the host (binding) used to start the hypervisor.
-
-        :returns: host/address (string)
-        """
-
-        return self._host
-
-    @host.setter
-    def host(self, host):
-        """
-        Sets the host (binding) used to start the hypervisor.
-
-        :param host: host/address (string)
-        """
-
-        self._host = host
+        if self._socket_path:
+            return self._socket_path
+        return f"{self._host}:{self._port}"
 
     @locking
     async def send(self, command):
@@ -205,8 +188,8 @@ class UBridgeHypervisor:
             await self._writer.drain()
         except OSError as e:
             raise UbridgeError(
-                "Lost communication with {host}:{port} when sending command '{command}': {error}, uBridge process running: {run}".format(
-                    host=self._host, port=self._port, command=command, error=e, run=self.is_running()
+                "Lost communication with {endpoint} when sending command '{command}': {error}, uBridge process running: {run}".format(
+                    endpoint=self.endpoint, command=command, error=e, run=self.is_running()
                 )
             )
 
@@ -232,8 +215,8 @@ class UBridgeHypervisor:
                 if not chunk:
                     if retries > max_retries:
                         raise UbridgeError(
-                            "No data returned from {host}:{port} after sending command '{command}', uBridge process running: {run}".format(
-                                host=self._host, port=self._port, command=command, run=self.is_running()
+                            "No data returned from {endpoint} after sending command '{command}', uBridge process running: {run}".format(
+                                endpoint=self.endpoint, command=command, run=self.is_running()
                             )
                         )
                     else:
@@ -244,8 +227,8 @@ class UBridgeHypervisor:
                 buf += chunk.decode("utf-8")
             except OSError as e:
                 raise UbridgeError(
-                    "Lost communication with {host}:{port} after sending command '{command}': {error}, uBridge process running: {run}".format(
-                        host=self._host, port=self._port, command=command, error=e, run=self.is_running()
+                    "Lost communication with {endpoint} after sending command '{command}': {error}, uBridge process running: {run}".format(
+                        endpoint=self.endpoint, command=command, error=e, run=self.is_running()
                     )
                 )
 
@@ -255,8 +238,8 @@ class UBridgeHypervisor:
                     continue
             except IndexError:
                 raise UbridgeError(
-                    "Could not communicate with {host}:{port} after sending command '{command}', uBridge process running: {run}".format(
-                        host=self._host, port=self._port, command=command, run=self.is_running()
+                    "Could not communicate with {endpoint} after sending command '{command}', uBridge process running: {run}".format(
+                        endpoint=self.endpoint, command=command, run=self.is_running()
                     )
                 )
 

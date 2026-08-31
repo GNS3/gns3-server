@@ -55,6 +55,11 @@ class TestControllerProjectRoutes:
     
         params = {"name": "test", "path": str(config.settings.Server.projects_path), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
         response = await client.post(app.url_path_for("create_project"), json=params)
+        # The projects directory itself must never become a project directory
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        params = {"name": "test", "path": os.path.join(str(config.settings.Server.projects_path), "custom"), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"}
+        response = await client.post(app.url_path_for("create_project"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "test"
         assert response.json()["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -435,8 +440,43 @@ class TestControllerProjectRoutes:
     
         response = await client.get(app.url_path_for("get_file", project_id=project.id, file_path="../hello"))
         assert response.status_code == status.HTTP_404_NOT_FOUND
-    
-    
+
+
+    async def test_get_project_gns3_file(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        response = await client.get(app.url_path_for("get_project_gns3_file", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["content-type"].startswith("application/json")
+        topology = response.json()
+        assert topology["name"] == "test"
+        assert "topology" in topology
+
+
+    async def test_get_project_gns3_file_raw_content(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        # the endpoint must serve the raw file content, without the project being opened
+        topology = {
+            "name": "test",
+            "topology": {
+                "nodes": [{"node_id": "abc", "name": "n1", "x": 10, "y": 20}],
+                "links": [],
+                "drawings": [{"drawing_id": "def", "svg": "<svg/>"}],
+            },
+        }
+        with open(project.topology_file, "w+") as f:
+            json.dump(topology, f)
+
+        response = await client.get(app.url_path_for("get_project_gns3_file", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == topology
+
+
+    async def test_get_project_gns3_file_project_not_found(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("get_project_gns3_file", project_id=str(uuid.uuid4())))
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
     async def test_get_file_forbidden_location(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
     
         file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
@@ -573,3 +613,29 @@ class TestControllerProjectRoutes:
             assert drawing.locked is False
         for node in project.nodes.values():
             assert node.locked is False
+
+        response = await client.get(app.url_path_for("locked_project", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() is False
+
+    async def test_lock_unlock_empty_project(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        # a project without drawings or nodes has nothing to lock and must
+        # never report as locked, otherwise it could not be unlocked
+        response = await client.get(app.url_path_for("locked_project", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() is False
+
+        response = await client.post(app.url_path_for("lock_project", project_id=project.id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await client.get(app.url_path_for("locked_project", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() is False
+
+        response = await client.post(app.url_path_for("unlock_project", project_id=project.id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        response = await client.get(app.url_path_for("locked_project", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() is False

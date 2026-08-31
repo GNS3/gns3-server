@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import magic
 import asyncio
 import hashlib
 import datetime
@@ -245,6 +246,22 @@ class Project:
                 raise ComputeError(f"Could not create the capture working directory: {e}")
         return workdir
 
+    def markers_working_directory(self):
+        """
+        Returns the working directory where uBridge writes per-link marker pcaps
+        (matched packets, kept for later replay).
+
+        :returns: path to the directory
+        """
+
+        workdir = os.path.join(self._path, "project-files", "markers")
+        if not self._deleted:
+            try:
+                os.makedirs(workdir, exist_ok=True)
+            except OSError as e:
+                raise ComputeError(f"Could not create the markers working directory: {e}")
+        return workdir
+
     def add_node(self, node):
         """
         Adds a node to the project.
@@ -293,9 +310,14 @@ class Project:
 
         # we need to update docker nodes when variables changes
         if original_variables != variables:
+            # Parallelize node updates for better performance
+            tasks = []
             for node in self.nodes:
                 if hasattr(node, "update"):
-                    await node.update()
+                    tasks.append(node.update())
+
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def close(self):
         """
@@ -419,65 +441,148 @@ class Project:
 
         return files
 
-    async def list_node_files(self, node_path: str):
+    async def list_node_files(self, node_path: str, subpath: str = "", recursive: bool = False):
         """
         List files in a specific node directory with detailed metadata.
 
         :param node_path: Relative path to node directory (e.g., "project-files/qemu/node-id")
+        :param subpath: Optional subdirectory path. Defaults to root of node directory.
+        :param recursive: If True, recursively list all files (use with caution on large directories).
         :returns: Array of files in the node directory with metadata
         """
 
         node_full_path = os.path.normpath(os.path.join(self.path, node_path))
+        subpath = subpath.lstrip("/")
 
-        # Security check: ensure the path is within the project directory
-        if not os.path.commonpath([node_full_path, self.path]) == self.path:
+        if subpath:
+            target_path = os.path.normpath(os.path.join(node_full_path, subpath))
+        else:
+            target_path = node_full_path
+
+        # Security check: ensure the path is within the node directory
+        if not os.path.commonpath([target_path, node_full_path]) == node_full_path:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                              detail="Path is outside the project directory")
-
-        if not os.path.exists(node_full_path):
+                              detail="Path is outside the node directory")
+        if not os.path.exists(target_path):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Node directory not found")
+                              detail="Path not found")
 
+        if recursive:
+            return await self._list_node_files_recursive(node_full_path, target_path,
+                                                         node_full_path if subpath else None)
+
+        # Non-recursive: list only the current directory level
         files = []
         try:
-            filenames = os.listdir(node_full_path)
-        except OSError as e:
-            log.error(f"Error listing node directory: {e}")
+            scandir_iter = os.scandir(target_path)
+        except PermissionError:
             return files
-
-        for filename in filenames:
-            file_path = os.path.join(node_full_path, filename)
-            if not os.path.isfile(file_path) or filename.endswith(".ghost"):
-                continue
-
+        except OSError as e:
+            log.error(f"Error listing node directory '{target_path}': {e}")
+            return files
+        for entry in scandir_iter:
+            name = entry.name
+            rel_path = name if not subpath else os.path.join(subpath, name)
             try:
-                # Get file stat information
-                stat_info = await wait_run_in_executor(os.stat, file_path)
-
-                # Get file extension
-                _, extension = os.path.splitext(filename)
-                extension = extension.lstrip('.')
-
-                # Format timestamps as ISO 8601
-                try:
-                    created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
-                    modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
-                except (OSError, OverflowError, ValueError) as e:
-                    log.warning(f"Invalid timestamp for '{filename}': {e}")
-                    created_at = modified_at = ""
-
-                file_info = {
-                    "path": filename,
-                    "size": stat_info.st_size,
-                    "created_at": created_at,
-                    "modified_at": modified_at,
-                    "extension": extension
-                }
-                files.append(file_info)
-            except OSError as e:
-                log.warning(f"Error getting metadata for file '{filename}': {e}")
+                stat_info = await wait_run_in_executor(lambda e=entry: e.stat())
+                is_dir = await wait_run_in_executor(lambda e=entry: e.is_dir())
+                if is_dir:
+                    try:
+                        created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                        modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                    except (OSError, OverflowError, ValueError):
+                        created_at = modified_at = ""
+                    files.append({
+                        "path": rel_path,
+                        "size": stat_info.st_size,
+                        "created_at": created_at,
+                        "modified_at": modified_at,
+                        "file_type": "directory"
+                    })
+                else:
+                    if name.endswith(".ghost"):
+                        continue
+                    try:
+                        file_type = await wait_run_in_executor(
+                            lambda e=entry: magic.from_file(e.path, mime=False)
+                        )
+                    except Exception as e:
+                        log.warning(f"Error getting file type for '{rel_path}': {e}")
+                        file_type = ""
+                    try:
+                        created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                        modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                    except (OSError, OverflowError, ValueError):
+                        created_at = modified_at = ""
+                    files.append({
+                        "path": rel_path,
+                        "size": stat_info.st_size,
+                        "created_at": created_at,
+                        "modified_at": modified_at,
+                        "file_type": file_type
+                    })
+            except OSError:
                 continue
+        return files
 
+    async def _list_node_files_recursive(self, node_full_path, start_path, base_path=None):
+        """
+        Recursively list all files and directories under start_path.
+        """
+        if base_path is None:
+            base_path = node_full_path
+
+        files = []
+        for dirpath, dirnames, filenames in os.walk(start_path, followlinks=False):
+            for dirname in dirnames:
+                dir_full_path = os.path.join(dirpath, dirname)
+                try:
+                    stat_info = await wait_run_in_executor(os.stat, dir_full_path)
+                    try:
+                        created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                        modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                    except (OSError, OverflowError, ValueError):
+                        created_at = modified_at = ""
+                    files.append({
+                        "path": os.path.relpath(dir_full_path, base_path),
+                        "size": stat_info.st_size,
+                        "created_at": created_at,
+                        "modified_at": modified_at,
+                        "file_type": "directory"
+                    })
+                except OSError:
+                    continue
+
+            for filename in filenames:
+                if filename.endswith(".ghost"):
+                    continue
+                file_path = os.path.join(dirpath, filename)
+                rel_path = os.path.relpath(file_path, base_path)
+                try:
+                    stat_info = await wait_run_in_executor(os.stat, file_path)
+                    try:
+                        file_type = await wait_run_in_executor(
+                            lambda fp=file_path: magic.from_file(fp, mime=False)
+                        )
+                    except Exception as e:
+                        log.warning(f"Error getting file type for '{rel_path}': {e}")
+                        file_type = ""
+                    try:
+                        created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+                        modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
+                    except (OSError, OverflowError, ValueError) as e:
+                        log.warning(f"Invalid timestamp for '{rel_path}': {e}")
+                        created_at = modified_at = ""
+                    files.append({
+                        "path": rel_path,
+                        "size": stat_info.st_size,
+                        "created_at": created_at,
+                        "modified_at": modified_at,
+                        "file_type": file_type
+                    })
+                except OSError as e:
+                    log.warning(f"Error getting metadata for file '{rel_path}': {e}")
+                    continue
         return files
 
     def _hash_file(self, path):

@@ -23,10 +23,18 @@ import html
 from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.config import Config
+from gns3server.utils.packet_filter_validation import validate_all_filters, filter_inactive_filters, FilterValidationError
 
 import logging
 
 log = logging.getLogger(__name__)
+
+
+# Sentinel for "argument not passed". Distinct from None so marker/definition
+# updaters can tell "caller omitted direction" (keep current value) from
+# "caller passed direction=None" (clear it back to both directions). See
+# UDPLink.update_marker and Project.update_marker_definition.
+_UNSET = object()
 
 
 FILTERS = [
@@ -47,7 +55,7 @@ FILTERS = [
         "name": "Delay",
         "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
         "parameters": [
-            {"name": "Latency", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
+            {"name": "Latency", "minimum": 1, "maximum": 32767, "unit": "ms", "type": "int"},
             {"name": "Jitter (-/+)", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
         ],
     },
@@ -87,8 +95,10 @@ class Link:
         self._link_type = "ethernet"
         self._suspended = False
         self._filters = {}
+        self._markers = {}
         self._link_style = {}
         self._wireshark = False
+        self._show_filters_icon = True
 
     @property
     def filters(self):
@@ -96,6 +106,65 @@ class Link:
         Get an array of filters
         """
         return self._filters
+
+    @property
+    def markers(self):
+        """
+        Get the traffic insight markers dict: name → {bpf, tag, enabled}
+        """
+        return self._markers
+
+    async def inherit_marker(self, def_name, marker_def, dump=True, memory_only=False):
+        """
+        Apply a project-level marker definition to this link.
+
+        The marker is stored under ``global-{def_name}`` so it cannot collide
+        with a per-link private marker of the same name.  It carries an
+        ``inherited_from`` back-reference that (a) guards against per-link
+        edits and (b) lets the project sync changes to every copy at once.
+
+        The pcap link-layer follows the link type: Ethernet is always EN10MB.
+        A serial link needs the definition's WAN encapsulation (HDLC / PPP /
+        Frame Relay); if none was chosen the serial link is skipped — an EN10MB
+        pcap on a serial link is undecodable.
+        """
+
+        def_data_link_type = marker_def.get("data_link_type", "DLT_EN10MB")
+        if self._link_type == "serial":
+            if def_data_link_type.upper() == "DLT_EN10MB":
+                return  # definition is Ethernet-only; skip this serial link
+            data_link_type = def_data_link_type
+        else:
+            data_link_type = "DLT_EN10MB"
+
+        await self.start_marker(
+            name=f"global-{def_name}",
+            bpf=marker_def["bpf"],
+            tag=marker_def.get("tag"),
+            direction=marker_def.get("direction"),
+            data_link_type=data_link_type,
+            color=marker_def.get("color"),
+            highlight_duration=marker_def.get("highlight_duration"),
+            enabled=not marker_def.get("paused", False),
+            inherited_from=def_name,
+            dump=dump,
+            memory_only=memory_only,
+        )
+
+    def _persist_markers(self):
+        """
+        Return only the per-link (non-inherited) markers suitable for
+        persistence in a topology dump.  Inherited markers are re-created from
+        ``project._marker_definitions`` on load so they do not need to be saved.
+        """
+        return {k: v for k, v in self._markers.items() if not v.get("inherited_from")}
+
+    @property
+    def show_filters_icon(self):
+        """
+        Get whether to show filters icon in Web UI
+        """
+        return getattr(self, '_show_filters_icon', True)
 
     @property
     def project(self):
@@ -139,19 +208,17 @@ class Link:
         """
         Modify the filters list.
 
-        Filter with value 0 will be dropped because not active
+        Filters with value 0 will be filtered out as inactive, with special
+        handling for delay filter to distinguish between "disabled" and "invalid config".
         """
-        new_filters = {}
-        for (filter, values) in filters.items():
-            new_values = []
-            for value in values:
-                if isinstance(value, str):
-                    new_values.append(value.strip("\n "))
-                else:
-                    new_values.append(int(value))
-            values = new_values
-            if len(values) != 0 and values[0] != 0 and values[0] != "":
-                new_filters[filter] = values
+        # Filter out inactive filters using the utility function
+        new_filters = filter_inactive_filters(filters)
+
+        # Validate filter parameters before applying
+        try:
+            validate_all_filters(new_filters)
+        except FilterValidationError as e:
+            raise ControllerError(f"Invalid packet filter parameters: {str(e)}")
 
         if new_filters != self.filters:
             self._filters = new_filters
@@ -164,6 +231,17 @@ class Link:
         if value != self._suspended:
             self._suspended = value
             await self.update()
+            self._project.emit_notification("link.updated", self.asdict())
+            self._project.dump()
+
+    async def update_show_filters_icon(self, value):
+        """
+        Update the show_filters_icon property.
+
+        :param value: Boolean indicating whether to show filters icon in Web UI
+        """
+        if value != self._show_filters_icon:
+            self._show_filters_icon = value
             self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
 
@@ -180,11 +258,14 @@ class Link:
         """
         return self._created
 
-    async def add_node(self, node, adapter_number, port_number, label=None, dump=True):
+    async def add_node(self, node, adapter_number, port_number, label=None, dump=True, batch=False):
         """
         Add a node to the link
 
         :param dump: Dump project on disk
+        :param batch: When True, do not create the link on the computes once
+            both nodes are attached — the caller drives creation via the
+            project-open bulk path. Used to avoid one HTTP round-trip per link.
         """
 
         port = node.get_port(adapter_number, port_number)
@@ -228,7 +309,7 @@ class Link:
             {"node": node, "adapter_number": adapter_number, "port_number": port_number, "port": port, "label": label}
         )
 
-        if len(self._nodes) == 2:
+        if len(self._nodes) == 2 and not batch:
             await self.create()
             for n in self._nodes:
                 n["node"].add_link(self)
@@ -278,6 +359,27 @@ class Link:
         Reset a link
         """
 
+        raise NotImplementedError
+
+    async def start_marker(self, name, bpf, tag=None, direction=None, capture_node_id=None, enabled=True):
+        """
+        Attach a traffic-insight marker to this link (base — UDPLink overrides).
+        """
+        raise NotImplementedError
+
+    async def stop_marker(self, name):
+        """
+        Remove a traffic-insight marker from this link (base — UDPLink overrides).
+        """
+        raise NotImplementedError
+
+    async def update_marker(self, name, bpf=None, tag=None, enabled=None, direction=_UNSET):
+        """
+        Update an existing marker's BPF, tag, or enabled flag.
+
+        A BPF change is a delete+re-add on the ubridge side so the pcap is
+        flushed and the new filter takes effect.
+        """
         raise NotImplementedError
 
     async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None, wireshark=False, jwt_token=None):
@@ -522,6 +624,8 @@ class Link:
                 "nat",
                 "virtualbox",
                 "docker",
+                # the brctl Ethernet switch applies filters on its per-port uBridge relays
+                "ethernet_switch",
             ):
                 return node["node"]
         return None
@@ -553,10 +657,12 @@ class Link:
                 "nodes": res,
                 "link_id": self._id,
                 "filters": self._filters,
+                "markers": self._persist_markers(),
                 "link_style": self._link_style,
                 "suspend": self._suspended,
+                "show_filters_icon": getattr(self, '_show_filters_icon', True),
             }
-        return {
+        result = {
             "nodes": res,
             "link_id": self._id,
             "project_id": self._project.id,
@@ -566,7 +672,10 @@ class Link:
             "capture_compute_id": self.capture_compute_id,
             "link_type": self._link_type,
             "filters": self._filters,
+            "markers": self._markers,
             "suspend": self._suspended,
             "link_style": self._link_style,
             "wireshark": self._wireshark,
+            "show_filters_icon": getattr(self, '_show_filters_icon', True),
         }
+        return result

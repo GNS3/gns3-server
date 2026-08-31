@@ -67,7 +67,8 @@ async def login(
 
     token = schemas.Token(
         access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
-        token_type="bearer"
+        token_type="bearer",
+        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
     )
     return token
 
@@ -92,9 +93,53 @@ async def authenticate(
 
     token = schemas.Token(
         access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
-        token_type="bearer"
+        token_type="bearer",
+        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
     )
     return token
+
+
+@router.post("/refresh", response_model=schemas.Token)
+async def refresh_access_token(
+    request: schemas.RefreshTokenRequest,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> schemas.Token:
+    """
+    Exchange a refresh token for a new access token.
+
+    Public endpoint — the refresh token itself proves identity. Respects the
+    user's token_version, so logout (which increments it) invalidates all
+    outstanding refresh tokens. Refresh tokens are stateless JWTs with a
+    longer expiry (default 30 days). Stolen tokens remain valid until their
+    `exp` or until logout — no replay protection without a server-side table.
+    """
+
+    token_data = auth_service.get_token_data(request.refresh_token)
+    if token_data.token_use != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = await users_repo.get_user_by_username(token_data.username)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if token_data.token_version != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token has been revoked for '{token_data.username}'",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return schemas.Token(
+        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
+        token_type="bearer",
+        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

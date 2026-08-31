@@ -15,14 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Agent module with optional AI Copilot support.
+Agent module with optional AI Copilot and MCP support.
 
-This module provides the AI Copilot functionality as an optional feature.
-If the AI dependencies are not installed, the module will be disabled but
-will not prevent the server from starting.
+This module provides the AI Copilot and MCP (Model Context Protocol)
+functionality as optional features. If the respective dependencies are
+not installed, the affected features will be disabled but will not
+prevent the server from starting.
 
 Installation:
-    pip install gns3-server[ai-copilot]
+    pip install gns3-server[ai-features]         # Install all AI features
 """
 
 import logging
@@ -49,7 +50,8 @@ except ImportError as e:
     # AI dependencies not installed, disable AI Copilot feature
     logging.warning(
         f"AI Copilot dependencies not installed: {e}. "
-        "AI features will be disabled. Install with: pip install gns3-server[ai-copilot]"
+        "AI features will be disabled. "
+        "Install with: pip install gns3-server[ai-features]"
     )
     AI_COPILOT_AVAILABLE = False
 
@@ -63,7 +65,7 @@ except ImportError as e:
         """
         raise RuntimeError(
             "AI Copilot is not available. "
-            "Install AI dependencies with: pip install gns3-server[ai-copilot]"
+            "Install AI dependencies with: pip install gns3-server[ai-features]"
         )
 
     class ProjectAgentManager:
@@ -74,12 +76,33 @@ except ImportError as e:
         def __init__(self):
             raise RuntimeError(
                 "AI Copilot is not available. "
-                "Install AI dependencies with: pip install gns3-server[ai-copilot]"
+                "Install AI dependencies with: pip install gns3-server[ai-features]"
             )
+
+
+# Feature flag: MCP (Model Context Protocol) is available
+MCP_AVAILABLE = False
+
+# Try to import MCP dependencies
+try:
+    # Use importlib so the top-level SDK name "mcp" is not bound in this
+    # namespace — it would shadow the gns3server.agent.mcp subpackage.
+    import importlib
+    importlib.import_module("mcp.server.fastmcp")
+    MCP_AVAILABLE = True
+except ImportError:
+    # MCP dependencies not installed, disable MCP feature
+    logging.warning(
+        "MCP dependencies not installed. "
+        "MCP features will be disabled. "
+        "Install with: pip install gns3-server[ai-features]"
+    )
+    MCP_AVAILABLE = False
 
 
 __all__ = [
     "AI_COPILOT_AVAILABLE",
+    "MCP_AVAILABLE",
     "get_project_agent_manager",
     "ProjectAgentManager",
 ]

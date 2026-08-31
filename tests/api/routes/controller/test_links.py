@@ -63,10 +63,10 @@ class TestLinkRoutes:
         node1, node2 = nodes
     
         filters = {
-            "latency": [10],
+            "delay": [10, 0],
             "frequency_drop": [50]
         }
-    
+
         with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
             response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
                 "nodes": [
@@ -88,7 +88,7 @@ class TestLinkRoutes:
                 ],
                 "filters": filters
             })
-    
+
         assert mock.called
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["link_id"] is not None
@@ -250,10 +250,10 @@ class TestLinkRoutes:
     ) -> None:
     
         filters = {
-            "latency": [10],
+            "delay": [10, 0],
             "frequency_drop": [50]
         }
-    
+
         node1, node2 = nodes
         with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
             response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
@@ -315,7 +315,7 @@ class TestLinkRoutes:
     ) -> None:
     
         filters = {
-            "latency": [10],
+            "delay": [10, 0],
             "frequency_drop": [50]
         }
     

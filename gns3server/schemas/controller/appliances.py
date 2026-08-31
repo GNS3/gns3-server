@@ -19,7 +19,8 @@
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
-from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag
+from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag, model_validator
+from ..common import ExtraConfig
 
 
 # ============================================================================
@@ -285,6 +286,7 @@ class DockerConsoleType(str, Enum):
     http = 'http'
     https = 'https'
     none = 'none'
+    docker_exec = 'docker_exec'
 
 
 class ChecksumType(str, Enum):
@@ -328,6 +330,7 @@ class Docker(BaseModel):
     console_http_path: Optional[str] = Field(None, description='Path of the web interface')
     extra_hosts: Optional[str] = Field(None, description='Hosts which will be written to /etc/hosts into container')
     extra_volumes: Optional[List[str]] = Field(None, description='Additional directories to make persistent that are not included in the images VOLUME directive')
+    extra_configs: Optional[List[ExtraConfig]] = Field(None, description='Configuration files injected into the container (bind-mounted read-only)')
 
 
 class Iou(BaseModel):
@@ -478,6 +481,10 @@ class DockerPropertiesV8(BaseModel):
     extra_volumes: Optional[List[str]] = Field(
         None, title='Additional directories to make persistent'
     )
+    custom_adapters: Optional[List[CustomAdapterItem]] = Field(None, title='Custom adapters')
+    extra_configs: Optional[List[ExtraConfig]] = Field(
+        None, title='Configuration files injected into the container (bind-mounted read-only)'
+    )
 
 
 class IouPropertiesV8(BaseModel):
@@ -560,12 +567,21 @@ class QemuPropertiesV8(BaseModel):
         title='Optional define the disk boot priory. Refer to -boot option in qemu manual for more details.',
     )
     kernel_command_line: Optional[str] = Field(None, title='Command line parameters send to the kernel')
+    kvm: Optional[Kvm] = Field(None, title='KVM requirements')
     options: Optional[str] = Field(None, title='Optional additional qemu command line options')
-    cpu_throttling: Optional[Annotated[float, Field(ge=0.0, le=100.0)]] = Field(None, title='Throttle the CPU')
+    cpu_throttling: Optional[Annotated[int, Field(ge=0, le=800)]] = Field(None, title='Throttle the CPU')
     tpm: Optional[bool] = Field(None, title='Enable the Trusted Platform Module (TPM)')
     uefi: Optional[bool] = Field(None, title='Enable the UEFI boot mode')
     on_close: Optional[QemuOnClose] = Field(None, title='Action to execute on the VM is closed')
     process_priority: Optional[QemuProcessPriority] = Field(None, title='Process priority for QEMU')
+
+
+_V8_PROPERTIES_MODELS = {
+    TemplateType.qemu: QemuPropertiesV8,
+    TemplateType.dynamips: DynamipsPropertiesV8,
+    TemplateType.iou: IouPropertiesV8,
+    TemplateType.docker: DockerPropertiesV8,
+}
 
 
 class TemplateSetting(BaseModel):
@@ -580,12 +596,34 @@ class TemplateSetting(BaseModel):
         title='Properties for the template'
     )
 
+    @model_validator(mode='before')
+    @classmethod
+    def _validate_template_properties(cls, data):
+        """
+        Validate template_properties against the model matching template_type.
+        The template_type discriminator lives at the settings level (not inside
+        template_properties), so the union cannot be discriminated by pydantic
+        alone and would misroute properties between the per-type models.
+        """
+
+        if isinstance(data, dict):
+            # work on a copy: replacing template_properties with the validated
+            # model must not mutate the caller's data
+            data = data.copy()
+            template_type = data.get("template_type")
+            template_properties = data.get("template_properties")
+            model = _V8_PROPERTIES_MODELS.get(template_type)
+            if model is not None and isinstance(template_properties, dict):
+                data["template_properties"] = model.model_validate(template_properties)
+        return data
+
 
 class ApplianceVersionV8(BaseModel):
     """Appliance version definition (v8)"""
 
     name: str = Field(..., title='Name of the version')
     settings: Optional[str] = Field(None, title='Template settings to use to run the version')
+    idlepc: Optional[str] = Field(None, pattern=r'^0x[0-9a-f]{8}')
     category: Optional[Category] = Field(None, title='Category of the version')
     installation_instructions: Optional[str] = Field(None, title='Optional installation instructions for the version')
     usage: Optional[str] = Field(None, title='Optional instructions about using the version')
@@ -625,11 +663,17 @@ class ApplianceV1_6(BaseModel):
     maintainer_email: Optional[Union[EmailStr, Annotated[str, Field(max_length=0)]]] = Field(None, title='Maintainer email')
     usage: Optional[str] = Field(None, title='How to use the appliance')
     symbol: Optional[str] = Field(None, title='An optional symbol for the appliance')
+    netmiko_device_type: Optional[str] = Field(
+        None, title='Device type for Netmiko-based automation tools', pattern=r'^[a-z0-9_]+$|^$'
+    )
     first_port_name: Optional[str] = Field(None, title='Optional name of the first networking port example: eth0')
     port_name_format: Optional[str] = Field(None, title='Optional formating of the networking port example: eth{0}')
     port_segment_size: Optional[int] = Field(
         None,
         title='Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2',
+    )
+    custom_adapters: Optional[List[CustomAdapterItem]] = Field(
+        None, title='Optional per-adapter overrides (port name, adapter type, MAC address)'
     )
     linked_clone: Optional[bool] = Field(None, title="False if you don't want to use a single image for all nodes")
     docker: Optional[Docker] = Field(None, title='Docker specific options')
@@ -675,6 +719,9 @@ class ApplianceV8(BaseModel):
     default_username: Optional[str] = Field(None, title='Default username for the appliance')
     default_password: Optional[str] = Field(None, title='Default password for the appliance')
     symbol: Optional[str] = Field(None, title='An optional symbol for the appliance')
+    netmiko_device_type: Optional[str] = Field(
+        None, title='Device type for Netmiko-based automation tools', pattern=r'^[a-z0-9_]+$|^$'
+    )
     tags: Optional[List[str]] = Field(None, title='User-defined metadata tags for the appliance')
     settings: List[TemplateSetting] = Field(..., title='Settings for running the appliance')
     images: Optional[List[ApplianceImage]] = Field(None, title='Images for this appliance')

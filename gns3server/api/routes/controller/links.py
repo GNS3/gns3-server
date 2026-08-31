@@ -27,12 +27,12 @@ from fastapi import APIRouter, Depends, Request, status, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List, Union
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
 from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.controller.link import Link
+from gns3server.controller.link import Link, _UNSET
 from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
 from gns3server.utils.websocket_to_websocket import websocket_proxy
@@ -107,6 +107,8 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schema
         await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
+    if "show_filters_icon" in link_data:
+        await link.update_show_filters_icon(link_data["show_filters_icon"])
     try:
         for node in link_data["nodes"]:
             await link.add_node(
@@ -171,6 +173,8 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
         await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
+    if "show_filters_icon" in link_data:
+        await link.update_show_filters_icon(link_data["show_filters_icon"])
     if "nodes" in link_data:
         await link.update_nodes(link_data["nodes"])
     return link.asdict()
@@ -387,27 +391,30 @@ async def web_wireshark_websocket(
 
         # Get container IP
         manager = WebWiresharkManager()
-        container_ip = await manager.get_container_ip(container_name)
+        try:
+            container_ip = await manager.get_container_ip(container_name)
 
-        if not container_ip:
-            log.error(f"Container {container_name} not found in wireshark network")
-            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-            return
+            if not container_ip:
+                log.error(f"Container {container_name} not found in wireshark network")
+                await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+                return
 
-        # Build container WebSocket URL
-        container_ws_url = f"ws://{container_ip}:{xpra_port}"
-        log.info(f"Proxying WebSocket to container: {container_ws_url}")
+            # Build container WebSocket URL
+            container_ws_url = f"ws://{container_ip}:{xpra_port}"
+            log.info(f"Proxying WebSocket to container: {container_ws_url}")
 
-        # Get client's requested subprotocols from request headers
-        scope = websocket.scope
-        headers = dict(scope.get("headers", []))
-        requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
-        requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
-        log.info(f"Client requested subprotocols: {requested_protocols}")
+            # Get client's requested subprotocols from request headers
+            scope = websocket.scope
+            headers = dict(scope.get("headers", []))
+            requested_protocols_header = headers.get(b"sec-websocket-protocol", b"")
+            requested_protocols = [p.decode().strip() for p in requested_protocols_header.split(b",") if p.strip()]
+            log.info(f"Client requested subprotocols: {requested_protocols}")
 
-        # The WebSocket connection has already been accepted by the authentication dependency
-        # with the proper subprotocol. Now we just proxy data to the backend.
-        await websocket_proxy(websocket, container_ws_url, requested_protocols)
+            # The WebSocket connection has already been accepted by the authentication dependency
+            # with the proper subprotocol. Now we just proxy data to the backend.
+            await websocket_proxy(websocket, container_ws_url, requested_protocols)
+        finally:
+            await manager.close()
 
     except Exception as e:
         log.error(f"Error in WebSocket proxy for link {link_id}: {e}")
@@ -415,6 +422,101 @@ async def web_wireshark_websocket(
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason=str(e))
         except:
             pass
+
+
+@router.get(
+    "/{link_id}/markers",
+    dependencies=[Depends(has_privilege("Link.Audit"))]
+)
+async def get_markers(link: Link = Depends(dep_link)) -> dict:
+    """
+    Return all traffic-insight markers configured on this link.
+
+    Required privilege: Link.Audit
+    """
+
+    return link.markers
+
+
+@router.post(
+    "/{link_id}/markers",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Link.Modify"))]
+)
+async def create_marker(
+    marker_data: schemas.MarkerCreate,
+    link: Link = Depends(dep_link)
+) -> dict:
+    """
+    Attach a traffic-insight marker to the link.
+    On BPF match uBridge emits MARK signals and appends packets to a pcap.
+
+    Required privilege: Link.Modify
+    """
+
+    # Auto-generate a link-unique name when the caller omits one. The short
+    # uuid suffix avoids the collision that `marker-{link.id[:8]}` alone would
+    # cause on the second anonymous marker on the same link (start_marker
+    # rejects duplicate names).
+    if marker_data.name and marker_data.name.lower().startswith("global"):
+        raise ControllerError('Names starting with "global" are reserved for inherited markers')
+    name = marker_data.name or f"marker-{link.id[:8]}-{uuid4().hex[:4]}"
+    await link.start_marker(
+        name=name,
+        bpf=marker_data.bpf,
+        tag=marker_data.tag,
+        direction=marker_data.direction,
+        capture_node_id=marker_data.capture_node_id,
+        color=marker_data.color,
+        highlight_duration=marker_data.highlight_duration,
+        data_link_type=marker_data.data_link_type,
+    )
+    return link.markers.get(name, {})
+
+
+@router.delete(
+    "/{link_id}/markers/{marker_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Link.Modify"))]
+)
+async def delete_marker(
+    marker_name: str,
+    link: Link = Depends(dep_link)
+) -> None:
+    """
+    Remove a traffic-insight marker from the link.
+
+    Required privilege: Link.Modify
+    """
+
+    await link.stop_marker(marker_name)
+
+
+@router.put(
+    "/{link_id}/markers/{marker_name}",
+    dependencies=[Depends(has_privilege("Link.Modify"))]
+)
+async def update_marker(
+    marker_name: str,
+    marker_data: schemas.MarkerUpdate,
+    link: Link = Depends(dep_link)
+) -> dict:
+    """
+    Update a traffic-insight marker (change BPF, tag, or enabled).
+
+    Required privilege: Link.Modify
+    """
+
+    await link.update_marker(
+        name=marker_name,
+        bpf=marker_data.bpf if marker_data.bpf else None,
+        tag=marker_data.tag,
+        direction=marker_data.direction if "direction" in marker_data.model_fields_set else _UNSET,
+        color=marker_data.color,
+        enabled=marker_data.enabled,
+        highlight_duration=marker_data.highlight_duration,
+    )
+    return link.markers.get(marker_name, {})
 
 
 @router.get(

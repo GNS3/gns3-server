@@ -14,7 +14,7 @@
     "symbol": "linux_guest.svg",
     "docker": {
         "adapters": 1,
-        "image": "gns3/ubuntu:noble",
+        "image": "gns3/ubuntu:resolute",
         "console_type": "telnet"
     }
 }

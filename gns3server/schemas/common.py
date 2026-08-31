@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from enum import Enum
 
@@ -48,6 +48,35 @@ class CustomAdapter(BaseModel):
     mac_address: Optional[str] = Field(None, pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
 
 
+class ExtraConfig(BaseModel):
+    """
+    A configuration file injected into a Docker container.
+
+    GNS3 writes ``content`` to a host file and bind-mounts it read-only at
+    ``target`` inside the container. Used to seed NOS startup configs (e.g.
+    XRd first-boot config, FRR frr.conf) without rebuilding the image.
+    """
+
+    target: str = Field(..., description="Absolute path inside the container where the file is mounted")
+    content: str = Field("", description="File content written by GNS3 and bind-mounted read-only into the container")
+
+    @field_validator("target")
+    @classmethod
+    def target_is_an_absolute_file_path(cls, v):
+        """
+        Reject at save time (template/appliance/node PUT) what would only
+        blow up at node-create time — after a potentially multi-GB image
+        pull: relative paths, '..' components and directory forms ('/',
+        '/etc/').
+        """
+        if not v.startswith("/") or v.endswith("/") or ".." in v.split("/"):
+            raise ValueError(
+                "target must be an absolute file path inside the container "
+                "(start with '/', name a file, no '..' components)"
+            )
+        return v
+
+
 class ConsoleType(str, Enum):
     """
     Supported console types.
@@ -61,6 +90,7 @@ class ConsoleType(str, Enum):
     spice = "spice"
     spice_agent = "spice+agent"
     none = "none"
+    docker_exec = "docker_exec"
 
 
 class AuxType(str, Enum):

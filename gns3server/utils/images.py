@@ -290,7 +290,7 @@ def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
             with open(md5sum_file, "w+") as f:
                 f.write(digest)
         except OSError as e:
-            log.error("Can't write digest of %s: %s", path, str(e))
+            log.warning("Can't write digest of %s: %s", path, str(e))
 
     return digest
 

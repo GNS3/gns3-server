@@ -38,8 +38,11 @@ from typing import Any
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from gns3server.agent.gns3_copilot.gns3_client import Link
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+    create_link_handler,
+    get_nodes_handler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -133,11 +136,11 @@ class GNS3LinkTool(BaseTool):
                     {"error": "Invalid links data: must be a non-empty array"}
                 ]
 
-            # Initialize Gns3Connector using factory function
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return [
                     {
@@ -147,6 +150,12 @@ class GNS3LinkTool(BaseTool):
                         )
                     }
                 ]
+
+            # Fetch all nodes once for port resolution
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return [{"error": listing["error"]}]
+            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
 
             created_links = []
 
@@ -170,13 +179,9 @@ class GNS3LinkTool(BaseTool):
                         created_links.append({"error": error_msg})
                         continue
 
-                    # Get node details
-                    node1 = gns3_server.get_node(
-                        project_id=project_id, node_id=node_id1
-                    )
-                    node2 = gns3_server.get_node(
-                        project_id=project_id, node_id=node_id2
-                    )
+                    # Get node details from the pre-fetched map
+                    node1 = nodes_by_id.get(node_id1)
+                    node2 = nodes_by_id.get(node_id2)
                     if not node1 or not node2:
                         error_msg = f"Node not found in link {i}"
                         logger.error(error_msg)
@@ -206,39 +211,48 @@ class GNS3LinkTool(BaseTool):
                         created_links.append({"error": error_msg})
                         continue
 
-                    # Create the link
-                    link = Link(
-                        project_id=project_id,
-                        connector=gns3_server,
-                        nodes=[
-                            {
-                                "node_id": node_id1,
-                                "adapter_number": port1_info.get(
-                                    "adapter_number", 0
-                                ),
-                                "port_number": port1_info.get(
-                                    "port_number", 0
-                                ),
-                                "label": {"text": port1_info.get("short_name") or port1},
-                            },
-                            {
-                                "node_id": node_id2,
-                                "adapter_number": port2_info.get(
-                                    "adapter_number", 0
-                                ),
-                                "port_number": port2_info.get(
-                                    "port_number", 0
-                                ),
-                                "label": {"text": port2_info.get("short_name") or port2},
-                            },
-                        ],
+                    # Create the link via the shared REST handler
+                    link_resp = create_link_handler(
+                        {
+                            "project_id": project_id,
+                            "nodes": [
+                                {
+                                    "node_id": node_id1,
+                                    "adapter_number": port1_info.get(
+                                        "adapter_number", 0
+                                    ),
+                                    "port_number": port1_info.get(
+                                        "port_number", 0
+                                    ),
+                                    "label": {
+                                        "text": port1_info.get("short_name")
+                                        or port1
+                                    },
+                                },
+                                {
+                                    "node_id": node_id2,
+                                    "adapter_number": port2_info.get(
+                                        "adapter_number", 0
+                                    ),
+                                    "port_number": port2_info.get(
+                                        "port_number", 0
+                                    ),
+                                    "label": {
+                                        "text": port2_info.get("short_name")
+                                        or port2
+                                    },
+                                },
+                            ],
+                            "fields": ["link_id"],
+                        },
+                        gns3_ctx,
                     )
-                    link.create()
-                    link.get()
+                    if "error" in link_resp:
+                        raise RuntimeError(link_resp["error"])
 
                     # Collect link details
                     link_info = {
-                        "link_id": link.link_id,
+                        "link_id": link_resp.get("link_id"),
                         "node_id1": node_id1,
                         "port1": port1,
                         "node_id2": node_id2,

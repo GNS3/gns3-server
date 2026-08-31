@@ -328,10 +328,54 @@ class TestImageRoutes:
         with asyncio_patch("gns3server.api.routes.controller.images.get_builtin_disks", return_value=[]) as mock:
             response = await client.post(app.url_path_for("install_images"))
             assert mock.called
-            assert response.status_code == status.HTTP_204_NO_CONTENT
+            assert response.status_code == status.HTTP_200_OK
+            created = response.json()["created"]
+            assert len(created) == 1
+            assert created[0]["name"] == "Empty VM"
+            assert created[0]["version"] == "100G"
 
         templates_repo = TemplatesRepository(db_session)
         templates = await templates_repo.get_templates()
         assert len(templates) == 1
         assert templates[0].name == "Empty VM"
         assert templates[0].version == "100G"
+        await templates_repo.delete_template(templates[0].template_id)
+
+    async def test_install_all_skips_existing_template_name(
+            self, app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            controller: Controller
+    ) -> None:
+        # two images matching two versions of the same appliance must not
+        # produce two templates with the same name
+        #
+        # earlier tests in this class uploaded the same filenames from different
+        # (function-scoped) images directories; drop those stale rows so the
+        # install route only sees this test's uploads
+        images_repo = ImagesRepository(db_session)
+        for image_name in ("empty30G.qcow2", "empty100G.qcow2"):
+            await images_repo.delete_image(image_name)
+        for image_path in ("tests/resources/empty30G.qcow2", "tests/resources/empty100G.qcow2"):
+            with open(image_path, "rb") as f:
+                image_data = f.read()
+            response = await client.post(
+                app.url_path_for("upload_image", image_path=os.path.basename(image_path)),
+                content=image_data)
+            assert response.status_code == status.HTTP_201_CREATED
+
+        controller.appliance_manager.load_appliances()  # make sure appliances are loaded
+        with asyncio_patch("gns3server.api.routes.controller.images.get_builtin_disks", return_value=[]):
+            response = await client.post(app.url_path_for("install_images"))
+            assert response.status_code == status.HTTP_200_OK
+
+        manifest = response.json()
+        assert len(manifest["created"]) == 1
+        assert manifest["created"][0]["name"] == "Empty VM"
+        assert any("already exists" in skipped["reason"] for skipped in manifest["skipped"])
+
+        templates_repo = TemplatesRepository(db_session)
+        templates = await templates_repo.get_templates()
+        assert len(templates) == 1
+        assert templates[0].name == "Empty VM"
+        await templates_repo.delete_template(templates[0].template_id)

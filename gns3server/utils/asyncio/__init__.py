@@ -136,3 +136,44 @@ def locking(f):
             return await f(oself, *args, **kwargs)
 
     return wrapper
+
+
+async def async_iterable_to_stream(async_iter, limit=65536):
+    """
+    Convert an async iterable into an aiohttp StreamReader.
+
+    This avoids passing async generators directly to aiohttp's payload
+    system, which can cause compatibility issues with certain HTTP servers.
+
+    :param async_iter: An async iterable that yields bytes
+    :param limit: Buffer limit for the StreamReader (default 64KB)
+    :returns: aiohttp.streams.StreamReader
+    """
+
+    from aiohttp.streams import StreamReader
+
+    class _NoopProtocol:
+        _reading_paused = False
+        connected = True
+
+        def pause_reading(self):
+            self._reading_paused = True
+
+        def resume_reading(self, resume_parser=False):
+            self._reading_paused = False
+
+    reader = StreamReader(_NoopProtocol(), limit=limit)
+
+    async def _feed():
+        try:
+            async for chunk in async_iter:
+                reader.feed_data(chunk)
+        except GeneratorExit:
+            raise
+        except Exception:
+            pass
+        finally:
+            reader.feed_eof()
+
+    asyncio.ensure_future(_feed())
+    return reader

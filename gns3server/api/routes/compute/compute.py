@@ -21,7 +21,9 @@ API routes for compute.
 
 import os
 import psutil
+import cpuinfo
 
+from functools import lru_cache
 from gns3server.config import Config
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.version import __version__
@@ -42,6 +44,11 @@ from typing import Optional, List
 router = APIRouter()
 
 
+@lru_cache(maxsize=1)
+def get_cpu_model() -> str:
+    return cpuinfo.get_cpu_info().get("brand_raw", "")
+
+
 @router.post("/projects/{project_id}/ports/udp", status_code=status.HTTP_201_CREATED)
 def allocate_udp_port(project_id: UUID) -> dict:
     """
@@ -53,6 +60,27 @@ def allocate_udp_port(project_id: UUID) -> dict:
     m = PortManager.instance()
     udp_port = m.get_free_udp_port(project)
     return {"udp_port": udp_port}
+
+
+@router.post("/projects/{project_id}/ports/udp/batch", status_code=status.HTTP_201_CREATED)
+def batch_allocate_udp_ports(project_id: UUID, body: dict) -> dict:
+    """
+    Allocate multiple UDP ports on the compute in a single call.
+
+    Used during project loading to pre-allocate all required UDP ports
+    before creating links, reducing HTTP round-trips.
+    """
+
+    count = body.get("count", 1)
+    try:
+        count = max(1, min(int(count), 10000))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="count must be a positive integer")
+    pm = ProjectManager.instance()
+    project = pm.get_project(str(project_id))
+    m = PortManager.instance()
+    udp_ports = [m.get_free_udp_port(project) for _ in range(count)]
+    return {"udp_ports": udp_ports}
 
 
 @router.get("/network/interfaces")
@@ -98,10 +126,15 @@ def compute_statistics() -> dict:
         swap_free = psutil.swap_memory().free
         swap_used = psutil.swap_memory().used
         cpu_percent = int(CpuPercent.get())
-        load_average_percent = [int(x / psutil.cpu_count() * 100) for x in psutil.getloadavg()]
+        cpu_count = psutil.cpu_count(logical=True) or 1
+        cpu_count_physical = psutil.cpu_count(logical=False)
+        raw_load_average = psutil.getloadavg()
+        load_average = [round(x, 2) for x in raw_load_average]
+        load_average_percent = [round(x / cpu_count * 100, 2) for x in raw_load_average]
         memory_percent = int(psutil.virtual_memory().percent)
         swap_percent = int(psutil.swap_memory().percent)
-        disk_usage_percent = int(psutil.disk_usage(get_default_project_directory()).percent)
+        disk_usage = psutil.disk_usage(get_default_project_directory())
+        disk_usage_percent = int(disk_usage.percent)
     except psutil.Error as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # raise HTTPConflict(text="Psutil error detected: {}".format(e))
@@ -114,9 +147,16 @@ def compute_statistics() -> dict:
         "swap_free": swap_free,
         "swap_used": swap_used,
         "cpu_usage_percent": cpu_percent,
+        "cpu_count": cpu_count,
+        "cpu_count_physical": cpu_count_physical,
+        "cpu_model": get_cpu_model(),
         "memory_usage_percent": memory_percent,
         "swap_usage_percent": swap_percent,
         "disk_usage_percent": disk_usage_percent,
+        "disk_total": disk_usage.total,
+        "disk_used": disk_usage.used,
+        "disk_free": disk_usage.free,
+        "load_average": load_average,
         "load_average_percent": load_average_percent,
     }
 

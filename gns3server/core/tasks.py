@@ -24,6 +24,7 @@ from gns3server.controller import Controller
 from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
+from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.utils.http_client import HTTPClient
 from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db, discover_images_on_filesystem
 
@@ -84,6 +85,22 @@ async def startup(app: FastAPI) -> None:
         m = module.instance()
         m.port_manager = PortManager.instance()
 
+    # Start the marker (traffic-insight) UDP sink. One listener per compute
+    # process receives ubridge MARK signals; ubridges are told its host/port at
+    # startup (see BaseNode._start_ubridge).
+    server_settings = Config.instance().settings.Server
+    await MarkerManager.instance().start(
+        host=server_settings.marker_listen_host, port=server_settings.marker_listen_port
+    )
+
+    # Mark MCP server as ready to accept connections (if MCP is available)
+    from gns3server.agent import MCP_AVAILABLE
+
+    if MCP_AVAILABLE:
+        from gns3server.agent.mcp import set_mcp_server_ready
+        set_mcp_server_ready(True)
+    log.info("GNS3 server startup completed")
+
 
 async def shutdown(app: FastAPI) -> None:
     """
@@ -93,6 +110,7 @@ async def shutdown(app: FastAPI) -> None:
     if auto_discover_images_task_handle is not None and not auto_discover_images_task_handle.cancelled():
         auto_discover_images_task_handle.cancel()
     await HTTPClient.close_session()
+    await MarkerManager.instance().stop()
     await Controller.instance().stop()
 
     for module in MODULES:

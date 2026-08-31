@@ -17,6 +17,8 @@
 import asyncio
 import signal
 import os
+import time
+import psutil
 
 from fastapi import APIRouter, Request, Depends, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
@@ -40,6 +42,13 @@ import logging
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def get_server_uptime_seconds() -> int:
+    try:
+        return max(0, int(time.time() - psutil.Process().create_time()))
+    except psutil.Error:
+        return 0
 
 
 @router.get(
@@ -246,6 +255,7 @@ async def statistics() -> dict:
     webwireshark_stats = await collect_webwireshark_stats(projects)
 
     return {
+        "uptime_seconds": get_server_uptime_seconds(),
         "computes": compute_statistics,
         "projects": project_stats,
         "nodes": node_stats,

@@ -82,8 +82,20 @@ class Cloud(BaseNode):
         host_interfaces = []
         network_interfaces = gns3server.utils.interfaces.interfaces()
         for interface in network_interfaces:
+            # Hide GNS3 internal bridges (e.g. EthernetSwitch kernel bridges)
+            if interface["name"].lower().startswith("gns3"):
+                continue
             host_interfaces.append(
-                {"name": interface["name"], "type": interface["type"], "special": interface["special"]}
+                {
+                    "name": interface["name"],
+                    "type": interface["type"],
+                    "special": interface["special"],
+                    "ip_addresses": interface.get("ip_addresses", []),
+                    "status": interface.get("status", "down"),
+                    "speed": interface.get("speed", 0),
+                    "mtu": interface.get("mtu", 0),
+                    "flags": interface.get("flags", []),
+                }
             )
 
         return {
@@ -216,7 +228,7 @@ class Cloud(BaseNode):
         """
 
         await self.start()
-        log.info(f'Cloud "{self._name}" [{self._id}] has been created')
+        log.debug(f'Cloud "{self._name}" [{self._id}] has been created')
 
     async def start(self):
         """
@@ -249,7 +261,7 @@ class Cloud(BaseNode):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         await self._stop_ubridge()
-        log.info(f'Cloud "{self._name}" [{self._id}] has been closed')
+        log.debug(f'Cloud "{self._name}" [{self._id}] has been closed')
 
     async def _is_wifi_adapter_osx(self, adapter_name):
         """
@@ -303,6 +315,7 @@ class Cloud(BaseNode):
         )
 
         await self._ubridge_apply_filters(bridge_name, nio.filters)
+        await self._ubridge_apply_markers(bridge_name, nio)
         if port_info["type"] in ("ethernet", "tap"):
 
             if not self.manager.has_privileged_access(self.ubridge_path):
@@ -317,7 +330,7 @@ class Cloud(BaseNode):
                         f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
                     )
 
-                if sys.platform.startswith("linux"):
+                if sys.platform.startswith("linux") or sys.platform.startswith("openbsd"):
                     await self._add_linux_ethernet(port_info, bridge_name)
                 elif sys.platform.startswith("darwin"):
                     await self._add_osx_ethernet(port_info, bridge_name)
@@ -416,7 +429,7 @@ class Cloud(BaseNode):
         if port_number in self._nios:
             raise NodeError(f"Port {port_number} isn't free")
 
-        log.info(
+        log.debug(
             'Cloud "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
                 name=self._name, id=self._id, nio=nio, port=port_number
             )
@@ -443,6 +456,7 @@ class Cloud(BaseNode):
         bridge_name = f"{self._id}-{port_number}"
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             await self._ubridge_apply_filters(bridge_name, nio.filters)
+            await self._ubridge_apply_markers(bridge_name, nio)
 
     async def _delete_ubridge_connection(self, port_number):
         """
@@ -471,7 +485,7 @@ class Cloud(BaseNode):
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        log.info(
+        log.debug(
             'Cloud "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
                 name=self._name, id=self._id, nio=nio, port=port_number
             )
@@ -521,7 +535,7 @@ class Cloud(BaseNode):
         await self._ubridge_send(
             'bridge start_capture {name} "{output_file}"'.format(name=bridge_name, output_file=output_file)
         )
-        log.info(
+        log.debug(
             "Cloud '{name}' [{id}]: starting packet capture on port {port_number}".format(
                 name=self.name, id=self.id, port_number=port_number
             )
@@ -541,7 +555,7 @@ class Cloud(BaseNode):
         bridge_name = f"{self._id}-{port_number}"
         await self._ubridge_send(f"bridge stop_capture {bridge_name}")
 
-        log.info(
+        log.debug(
             "Cloud'{name}' [{id}]: stopping packet capture on port {port_number}".format(
                 name=self.name, id=self.id, port_number=port_number
             )

@@ -47,6 +47,24 @@ from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.core import tasks
 
+# MCP is an optional feature — import only if dependencies are installed
+from gns3server.agent import MCP_AVAILABLE
+
+if MCP_AVAILABLE:
+    from gns3server.agent import mcp
+    _mcp_router = mcp.router
+else:
+    from fastapi import APIRouter
+
+    _mcp_router = APIRouter(prefix="/mcp", tags=["MCP"])
+
+    @_mcp_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
+    async def mcp_not_available(path: str = ""):
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="MCP is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
+        )
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -76,10 +94,17 @@ def get_application() -> FastAPI:
     application.mount("/static", StaticFiles(packages=[('gns3server', 'static')], html=True), name="static")
     application.mount("/v3/compute", compute_api, name="compute")
 
+    # Register MCP routes (stub returns 501 if MCP dependencies are not installed)
+    application.include_router(_mcp_router, prefix="/v3", tags=["MCP"])
+
     return application
 
 
 app = get_application()
+
+# Register MCP SSE transport routes (Starlette-level, for raw ASGI access)
+if MCP_AVAILABLE:
+    mcp.register_starlette_routes(app)
 
 # Monkey Patch uvicorn signal handler to detect the application is shutting down
 app.state.exiting = False
@@ -208,15 +233,3 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"message": str(exc)}
     )
-
-# FIXME: do not use this middleware since it creates issue when using StreamingResponse
-# see https://starlette-context.readthedocs.io/en/latest/middleware.html#why-are-there-two-middlewares-that-do-the-same-thing
-
-# @app.middleware("http")
-# async def add_extra_headers(request: Request, call_next):
-#     start_time = time.time()
-#     response = await call_next(request)
-#     process_time = time.time() - start_time
-#     response.headers["X-Process-Time"] = str(process_time)
-#     response.headers["X-GNS3-Server-Version"] = f"{__version__}"
-#     return response

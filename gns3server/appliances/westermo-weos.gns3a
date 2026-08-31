@@ -39,6 +39,13 @@
             "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=e6a7676d-85a7-4374-8961-c68aacb74921"
         },
         {
+            "filename": "WeOS-zero-5.29.0.disk",
+            "version": "5.29.0",
+            "filesize": 81788928,
+            "md5sum": "f464de7b2b424f4a8ad7c650108fee3d",
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=52655074-0fab-4119-ba01-b68200a733ab"
+        },
+        {
             "filename": "WeOS-zero-5.28.0.disk",
             "version": "5.28.0",
             "md5sum": "7b4e29761091c12ec2cd482f7c1a0bea",
@@ -54,6 +61,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.29.0",
+            "images": {
+                "hda_disk_image": "WeOS-zero-5.29.0.disk",
+                "hdb_disk_image": "Config-zero-1.0.0.disk"
+            }
+        },
         {
             "name": "5.28.0",
             "images": {

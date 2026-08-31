@@ -17,9 +17,11 @@
 
 
 import configparser
+import os
 import pytest
 
 from gns3server.config import Config
+from gns3server.config import ConfigConflictError
 from gns3server.config import ServerConfig
 from pydantic import ValidationError
 
@@ -158,3 +160,120 @@ def test_vmware_settings(settings: dict, exception_expected: bool):
             ServerConfig(**vmware_settings)
     else:
         ServerConfig(**vmware_settings)
+
+
+def test_update_config_writes_ini_types(tmpdir):
+
+    path = str(tmpdir / "server.conf")
+    with open(path, "w+") as f:
+        f.write("# a comment\n[Server]\nhost = 127.0.0.1\nfrobnicate = 42\n")
+
+    config = Config(files=[path])
+    changed = config.update_config({
+        "Server": {
+            "port": 3081,
+            "report_errors": False,
+            "allowed_interfaces": ["eth0", "eth1"],
+            "default_symbol_theme": "Classic",
+            "additional_images_paths": ["/path/to/dir1", "/path/to/dir2"],
+        }
+    })
+
+    parsed = configparser.ConfigParser()
+    parsed.read(path)
+    assert parsed["Server"]["port"] == "3081"
+    assert parsed["Server"]["report_errors"] == "False"
+    assert parsed["Server"]["allowed_interfaces"] == "eth0,eth1"
+    assert parsed["Server"]["default_symbol_theme"] == "Classic"
+    assert parsed["Server"]["additional_images_paths"] == "/path/to/dir1;/path/to/dir2"
+    # options not submitted are left untouched, including unknown ones
+    assert parsed["Server"]["host"] == "127.0.0.1"
+    assert parsed["Server"]["frobnicate"] == "42"
+
+    # in-memory settings have been reloaded
+    assert config.settings.Server.port == 3081
+    assert config.settings.Server.report_errors is False
+    assert config.settings.Server.allowed_interfaces == ["eth0", "eth1"]
+    assert changed == [
+        "Server.additional_images_paths",
+        "Server.allowed_interfaces",
+        "Server.default_symbol_theme",
+        "Server.port",
+        "Server.report_errors",
+    ]
+
+
+def test_update_config_null_removes_option(tmpdir):
+
+    path = write_config(tmpdir, {"Server": {"host": "127.0.0.1"}})
+    config = Config(files=[path])
+
+    config.update_config({"Server": {"host": None}})
+
+    parsed = configparser.ConfigParser()
+    parsed.read(path)
+    assert not parsed.has_option("Server", "host")
+    assert config.settings.Server.host == "0.0.0.0"  # default restored
+
+
+def test_update_config_validation_failure_leaves_file_unchanged(tmpdir):
+
+    path = write_config(tmpdir, {"Server": {"console_start_port_range": "5000"}})
+    config = Config(files=[path])
+    with open(path) as f:
+        file_content_before = f.read()
+
+    # cross-field violation (console_end_port_range must be > console_start_port_range)
+    with pytest.raises(ValidationError):
+        config.update_config({"Server": {"console_start_port_range": 10000, "console_end_port_range": 5000}})
+
+    with open(path) as f:
+        assert f.read() == file_content_before
+
+
+def test_update_config_conflict(tmpdir):
+
+    main_path = write_config(tmpdir, {"Server": {"host": "127.0.0.1"}})
+    override_path = str(tmpdir / "override.conf")
+    with open(override_path, "w+") as f:
+        f.write("[Server]\nhost = 10.0.0.1\n")
+
+    config = Config(files=[main_path, override_path])
+    assert config.settings.Server.host == "10.0.0.1"  # later file takes precedence
+
+    with pytest.raises(ConfigConflictError):
+        config.update_config({"Server": {"host": "192.168.1.1"}})
+    with pytest.raises(ConfigConflictError):
+        config.update_config({"Server": {"host": None}})
+
+    with open(main_path) as f:
+        assert "host = 127.0.0.1" in f.read()  # main file untouched
+
+
+def test_update_config_creates_missing_main_file(tmpdir):
+
+    path = write_config(tmpdir, {"Server": {"host": "127.0.0.1"}})
+    config = Config(files=[path])
+    os.remove(path)
+
+    config.update_config({"Server": {"port": 3081}})
+
+    parsed = configparser.ConfigParser()
+    parsed.read(path)
+    assert parsed["Server"]["port"] == "3081"
+    assert not parsed.has_option("Server", "host")  # removed file means defaults
+
+
+def test_reload_and_notify(tmpdir):
+
+    path = write_config(tmpdir, {"Server": {"host": "127.0.0.1"}})
+    config = Config(files=[path])
+
+    notified = []
+    config.listen_for_config_changes(lambda: notified.append(True))
+
+    write_config(tmpdir, {"Server": {"host": "192.168.1.2"}})
+    config.reload_and_notify()
+
+    assert config.settings.Server.host == "192.168.1.2"
+    assert notified == [True]

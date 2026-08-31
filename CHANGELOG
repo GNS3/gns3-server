@@ -1,5 +1,434 @@
 # Change Log
 
+## 3.1.0a5 19/08/2026
+
+* Bundle web-ui v3.1.0a5
+* Sync appliances
+* copilot: sync CONSOLE_TYPES with the server ConsoleType enum
+* feat: Enhance information displayed on the system status dashboard
+* docker: cap GNS3_STOP_TIMEOUT at 210 s (controller stop budget)
+* docker: harden the shm/devices/extra_configs/masking work (code review)
+* docker: make the vendor graceful-stop grace period configurable (GNS3_STOP_TIMEOUT)
+* docker: graceful stop for vendor NOS containers (SIGTERM + 60s grace)
+* fix: UDP port allocation race causing link self-loop (one-way links)
+* add support basic support for OpenBSD.
+* docker: use the container's chown (not busybox) in vendor volume/perms path
+* docker: mask systemd-udevd in privileged containers (GNS3_MASK_UDEV)
+* docker: persist extra_configs in the template DB table
+* docker: inject config files into containers via extra_configs
+* docker: warn about low inotify/file-max and missing FUSE at connect
+* docker: inject /dev/shm size and host devices via HostConfig from env
+* appliance: expose custom_adapters on the v1-6 appliance model
+* appliance: accept docker_exec console type in Docker appliances
+* fix: recreate docker_exec console on reconnect after CLI exit
+* vendor: drop the hardcoded /etc/network mount for SKIP_INIT containers
+* vendor: skip /etc/network in volume bridge and permission passes
+* fix: run _fix_permissions container-side on /gns3volumes mount targets
+* fix: host-side permission fix + SKIP_INIT volume persistence docs
+* refactor: move vendor NOS Docker support into VendorDockerVM subclass
+* docker_exec console: wrap exec command in while-true loop so sr_cli restarts on quit
+* Prototype: vendor NOS Docker node support (SR Linux etc.) — docker_exec console via Docker exec API (pty + hijacked HTTP + NAWS resize)
+* fix: update CI configuration to use a single OS and remove Windows-specific dependencies
+* fix: breaking change with dependency FastAPI v0.137.0 https://fastapi.tiangolo.com/release-notes/#specific-breaking-changes
+* fix: suppress redundant console port setter log during Docker node create
+* revert: restore force_close=True in compute._session()
+* perf: parallelize batch NIO creation across nodes
+* fix: scope marker reconcile to the current bridge/NIO
+* cleanup: remove stray debug print in Dynamips node creation
+* fix: reconcile marker filters in _ubridge_apply_markers (delete/update)
+* log: suppress marker sink stats when no matches received
+* log: add periodic marker.match throughput statistics
+* marker: route marker.match to a dedicated project WS channel
+* perf: raise marker UDP receive buffer from ~208KB to 8MB
+* perf: move project-open marker inheritance to prepare phase
+* perf: parallelise compute-side batch NIO update per node
+* perf: batch update/delete marker-def fan-out too (full project-level)
+* perf: batch marker-def fan-out to one PUT /nios/batch per compute
+* log: add marker fan-out timing for project-open and interactive def-change
+* tune: raise start_all concurrency from 3 to 10
+* revert: drop _connect_nio thread-pool executor, restore async _ubridge_send
+* fix: use socket.fromfd in send_batch_sync for Python 3.13 compat
+* log: demote all per-node lifecycle INFO logs to DEBUG
+* fix: await Dynamips.create_nio (it is async, unlike sync base)
+* fix: use bound-method param count for Dynamips create_nio detection
+* fix: Dynamips create_nio(node, nio_settings) takes extra arg + add tests
+* log: add start/stop/close progress lines; revert start concurrency to 3
+* log: lower per-node lifecycle logs in base_node to DEBUG
+* perf: raise start/stop/suspend/reset-console concurrency from 3
+* fix: race in concurrent node creation sending duplicate POST /projects
+* log: lower per-node docker lifecycle logs to DEBUG
+* log: emit progress lines for node and link loading on project open
+* cleanup: remove project-open stage timing logs, lower NIO-added log to debug
+* perf: skip per-link topology dump during project-open prepare
+* perf: batch NIO dispatch on project open (one HTTP per compute)
+* perf: cache compute.host_ip + add UDPLink.create timing log
+* perf: dedicated 500-worker thread pool for ubridge batch I/O
+* perf: offload per-NIO ubridge commands to thread-pool executor
+* perf: enable TCP keep-alive for local compute HTTP requests
+* debug: add per-command timing to _connect_nio ubridge calls
+* perf: parallelize UDP port allocation and NIO creation in UDPLink.create
+* fix: SIGKILL docker container on stop instead of 5s grace period
+* fix: add event handling for deleted projects
+* fix: tests after merging
+* server: raise the open-files (RLIMIT_NOFILE) limit at startup
+* marker: batch topology dumps in bulk fan-out (per-def on 500+ links was ~1 minute)
+* marker: concurrent (bounded) definition fan-out
+* marker: forward data_link_type on per-link marker create
+* iou: skip already-installed markers in _ubridge_apply_markers (NIO update idempotency)
+* marker: serial-link (WAN) support via data_link_type -> uBridge linktype
+* iou: forward data_link_type on capture start so serial pcaps use the correct linktype
+* ubridge: default the control transport to unix
+* ubridge: require version >= 1.2.0
+* fix: add missing HTTPException import
+* mcp: drop direction from marker_definition tool
+* marker: tighten marker name max length from 128 to 32
+* marker: drop deleted marker from port NIO cache to stop empty pcap on restart
+* marker: validate def BPF once, skip re-validation on inherited fan-out
+* marker: point directional defs at BPF, refresh implementation doc
+* marker: incremental apply, clear bridge map on uBridge stop
+* marker: fine-grained filter ops, clean pcap on remove
+* marker: restore direction on project load, reject tx/rx on definitions
+* schema: accept direction='both' in marker schemas, normalize to None
+* qemu: demote QEMU monitor connect and set_link logs to DEBUG
+* marker: key _marker_filter_bridges by (name, link_id) so multi-link nodes toggle every copy
+* marker: make per-filter toggle fall back to NIO rebuild when the marker isn't installed
+* marker: make per-filter toggle a no-op when the marker isn't installed
+* marker: rework pause/resume from project-wide to per-definition
+* marker: fix PUT marker with an enabled-only body (bpf no longer required)
+* marker: persist project-wide markers_paused to the .gns3 file
+* marker: document pause/resume and instant enabled toggle
+* marker: test enabled/pause/resume and instant toggle
+* marker: drive uBridge enabled/pause/resume in real time
+* marker: add direction-clear, routing, and ubridge transport tests
+* marker: support clearing direction via explicit null / "both"
+* marker: let callers pin the capture node via capture_node_id
+* Name AF_UNIX sockets by node id for self-describing debuggability
+* Detect unsupported -U flag and fail fast with a clear error
+* Add configurable uBridge control channel transport (tcp/unix)
+* fix(import): unvalidated symlink creation in import_project
+* fix(qemu): move the bios options after the network ones
+* fix(qemu): fix addition of QEMU RNG device causes interface names to change
+* bugfix: docker workflow needs lowercase name
+* fix(qemu): remove trailing space from RNG object argument
+* Add MCP tools for traffic-insight marker feature
+* Improve MCP tool descriptions for link_update, device_show_run, and link_reset
+* Do not start nodes when deleting a project
+* fix: correct always-true state check in DockerVM.stop()
+* add bug report issue template
+* Adds controller and compute API support for explicitly pulling or updating Docker images.
+* feat(tests): increase maximum open file descriptors for test runs on Unix
+* (feat): Implement functional Layer 1 keepalive support for IOU/IOL nodes
+* Fix typo with ovmf_firmware_dir
+* Fix issues after merging
+* fix(builtin): hide GNS3 internal bridge interfaces from Cloud node
+* feat(builtin): NAT node returns its interface IP info in asdict()
+* fix(controller): refresh cloud/nat node interfaces from compute on GET
+* refactor(builtin): use deterministic bridge name from switch UUID
+* fix(builtin): bring kernel bridge UP after creation
+* feat: migrate builtin EthernetSwitch from Dynamips ethsw to ubridge brctl
+* fix(mcp): remove unreliable node_reload / node_reload_all tools
+* fix(rbac): guard None current_user on websocket auth failure
+* fix(mcp): thread token_version into console/download token minting
+* fix(mcp): pass user.token_version when generating temp JWT from API key
+* fix(marker): avoid reentrant-lock deadlock when uBridge starts lazily
+* fix(marker): per-link attribution via link field in MARK signals
+* fix(marker): set nio.markers on iou/dynamips/cloud nio update
+* fix(marker): reject reserved global-prefix names only on create
+* fix(marker): clean inherited markers on def delete
+* feat(marker): add highlight_duration render hint
+* fix(marker): fix inheritance hook, topology load, update sync, and asdict
+* fix(marker): export MarkerDefinitionCreate from schemas package
+* fix(marker): replace pydantic lookahead pattern with field_validator
+* feat(marker): add project-level marker definition inheritance
+* fix(marker): reserve "global" name prefix for future marker inheritance
+* fix(marker): extend marker support to dynamips and cloud nodes
+* fix(marker): enable marker support for docker nodes
+* fix(marker): tolerate port conflict on marker listener startup
+* fix(marker): validate marker name and expose enabled via REST
+* fix(marker): uniquify auto-generated marker names per link
+* feat(marker): add project-level marker aggregation endpoint
+* feat(marker): add IOU node marker support via iol_bridge
+* refactor(marker): converge to filter single-path model, remove dual-apply endpoints
+* fix(marker): restore markers from topology on project load
+* feat(marker): add optional color field to marker data model
+* fix(marker): use allowlist in _choose_marker_side, align with _get_filter_node
+* fix(marker): stop auto-deleting markers on node stop in node_updated
+* fix(marker): ride markers on NIO so they survive node restart and project reload
+* config: set marker_listen_port default to 3070 and document in config templates
+* fix(marker): add _choose_marker_side to exclude non-uBridge node types
+* Only set IOU images to be executable when importing images
+* fix(import): project import does not move images symlinks into place
+* Search for system UEFI that is compatible with Python < 3.12
+* UEFI improvements for Qemu VMs * Add OVMF firmware directory configuration * Automatically add a Random Number Generator (RNG) device when using uefi option is enabled
+* fix(docker): handle container name conflict automatically
+* fix: gns3-server crashes on startup if "Open this project in the background" is active but there is a problem with that project
+* Handle HTTPNotFound exception when retrieving compute status
+* Replace ControllerForbiddenError with aiohttp.web.HTTPForbidden for project deletion error handling
+* Fix: Check compute connectivity before open() during project deletion
+* Use typed InterfaceStatus enum and simplify stats fallback in interfaces()
+* Expose full interface address list and link state in cloud node API
+
+## 2.2.61 30/07/2026
+
+* Sync appliances
+* fix(import): unvalidated symlink creation in import_project
+* fix(qemu): fix addition of QEMU RNG device causes interface names to change
+* fix(qemu): remove trailing space from RNG object argument
+* fix: do not start nodes when deleting a project
+* fix: correct always-true state check in DockerVM.stop()
+
+## 2.2.60 15/07/2026
+
+* Sync appliances
+* Only set IOU images to be executable when importing images
+* fix(import): project import does not move images symlinks into place
+* Search for system UEFI that is compatible with Python < 3.12
+* Add OVMF firmware directory configuration
+* Automatically add a Random Number Generator (RNG) device when using uefi option is enabled
+* fix(docker): handle container name conflict automatically
+* fix: gns3-server crashes on startup if "Open this project in the background" is active but there is a problem with that project
+* Handle HTTPNotFound exception when retrieving compute status
+* Fix: Check compute connectivity before open() during project deletion
+* API endpoints to manage base configuration files for templates
+
+## 3.1.0a4 09/07/2026
+
+* Bundle web-ui v3.1.0a4
+* Add jwt_refresh_token_expire_minutes to sample configuration
+* Remove deleted web-ui files from git
+* .dockerignore ignore .dockerignore
+* typo made me reconsider and move out to env
+* defaulted DOCKERHUB_ORG repository variable
+* Remove API docs from 2.2 after merging
+* Update GitHub Actions workflows
+* Fix web-wireshark docker build broken by xpra 6.5 release
+* Update CI to install [ai-features,dev] instead of [ai-copilot,dev]
+* Make AI features (AI Copilot + MCP) optional via [ai-features] extra
+* Add refresh token mechanism documentation under docs/features/
+* Add /refresh to allowed public endpoints list in route auth test
+* Add stateless JWT refresh token mechanism
+* Add project/node/link handler tests: 39 total, covering list/get/create/delete/start/stop/suspend/reload/console/update/fields
+* Add MCP tool parameter consistency tests
+* Fix appliance_install: add version parameter
+* Add coordinate system note to docs
+* Document canvas coordinate system in node_create x/y params
+* Update docstring: batch concurrency from 10 to 100
+* Remove unused import time
+* Add list type check before nodes[0] access in _normalize_link_nodes
+* Add fields type validation in create handlers
+* Use pop() instead of pop(0) for O(1) port removal
+* Fix review issues: key_prefix length, count validation, WAL log, timeout comment, pointless temp var
+* Fix: pass name from TemplateUsage to add_node_from_template
+* Remove unused imports (logging, log, select)
+* Add warning for unconsumed pre-allocated UDP ports after link creation
+* Remove FIXME comment about middleware in server.py
+* Rename device_command_run_handler → device_show_run_handler to match tool name
+* Rename device_command_run → device_show_run for clarity
+* Fix device_command_run KeyError('commands'): tool desc said show_commands but backend expects commands
+* Fix template_list return type annotation to match _run_handler_sync envelope
+* Add performance optimization documentation
+* Update MCP service docs: API key format, auth flow, tool parameters, concurrency
+* Increase HTTP connection pool to 500/1000
+* Increase BATCH_MAX_WORKERS and Pool concurrency from 20 to 100
+* Remove final timing artifact in projects.py
+* Remove remaining dead timing variables and imports
+* Remove database warmup (proven ineffective - real bottleneck was bcrypt blocking event loop)
+* Clean up all timing/debug logs
+* Add memory: import validation best practice
+* Fix: add missing UUID imports
+* Generate fresh JWT on API key auth instead of returning raw key
+* Optimize API key auth: O(1) lookup via UUID-embedded key format
+* Fix: offload bcrypt.checkpw to thread pool to prevent blocking event loop
+* Add timing to API key auth path and log api_keys count
+* Replace SELECT 1 warmup with full database file read to warm OS page cache
+* Add timing logs to auth dependency chain to identify 6s pre-handler delay
+* Add granular timing to get_template: separate execute vs fetch time
+* Warm up database connection pool on startup to avoid 8s cold-start penalty on first API request
+* Fix: register WAL PRAGMA on sync_engine instead of Engine class for async compat
+* Add timing logs to get_template to identify DB query bottleneck
+* Add timing middleware to log slow requests (>1s) with [CTRL-TIMING] prefix
+* Fix: _time → time in compute.py timing log
+* Add [CTRL-TIMING] logs to controller create_node flow
+* Fix: pass template_id to batch mode handler so top-level template_id works as default
+* Add detailed timing logs to MCP node creation and HTTP client
+* Add fields filter to template_list tool with description for AI
+* Fix: add missing _filter_link_response function
+* Pass name parameter through to controller API when creating node from template
+* Add validation to compact link format with clear error messages
+* Add compact array format for link node entries to reduce token usage
+* Add fields filter to link_create tool
+* Reduce md5sum cache write failure log level from error to warning
+* Add fields filter to node_create tool description for AI
+* Optimize MCP create_node: support inherited template_id and default fields filter
+* Increase MCP HTTP client timeout from 10s to 30s
+* Enable SQLite WAL mode to fix 'database is locked' errors under concurrent API requests
+* Cache IOU image default values per image path to avoid redundant subprocess calls
+* Increase node and link creation concurrency from 5 to 20
+* Fix: revert IOU lock optimization, serialize IOU node creation for correct application_id assignment
+* Performance: accelerate project opening with parallel link creation and batch UDP port allocation
+* feat: Add batch link_ids to link_delete/link_reset, fields filter to link_list
+* feat: Add fields filter to link_list
+* feat: Add batch node_ids to node_delete
+* fix: Convert http to ws scheme in node_console WebSocket URL
+* feat: Add batch link_ids to link_capture_download
+* feat: Add batch link_ids to link_capture_start/stop
+* fix: Store username in gns3_ctx during auth, use for short-lived download JWTs
+* fix: Generate independent short-lived JWT for pcap download
+* revert: Remove _configs_map changes in tools_v2 (handled by template renderer now)
+* fix: Merge commands for duplicate device_names in _configs_map
+* fix: Actually pass template param to device_config/command handlers
+* fix: Correct Jinja2 template commands_field per tool type
+* feat: Jinja2 template support in device_command_run
+* feat: Jinja2 template support in device_config_send
+* feat: Add batch node_ids support to node_start/stop/reload/suspend
+* feat: Add fields filter to appliance_list
+* feat: Add fields filter to node_list
+* feat: node_get fields filter — match controller Node schema fields
+* fix: Set auto_close=False on project_create so projects stay open when clients disconnect
+* feat: Add batch mode to node_create and link_create (parallel, max 10 workers)
+* fix: Pass API key directly instead of generating short-lived JWT
+* feat: API key lifecycle — revoke/restore/delete
+* fix: Rename revoke_api_key → delete_api_key
+* fix: Hard-delete API keys instead of soft delete (revoked flag)
+* feat: Support API keys in REST API authentication (reuse gns3_ prefix keys)
+* fix: Lazily access db engine for API key validation
+* fix: Add missing updated_at column to api_keys table
+* fix: Export ApiKeyCreate from schemas package
+* feat: Add API Key support for MCP authentication
+* fix: Validate JWT token exp claim — was silently ignored after migration to joserfc
+* fix: Add image field to template_create, document type-specific params in description
+* fix: Remove .json() calls on 204 responses for prune/install images
+* fix: Skip always-running nodes in start_all/stop_all
+* fix: Add missing rotation parameter to drawing_update MCP tool
+* fix: Map MCP device_command_run parameter to tool's expected field name
+* fix: Update link_reset description to match actual behavior (delete + recreate)
+* fix: Remove unsupported description param from project_create
+* fix: Fix symbol_get/upload/delete handlers for correct API paths
+* feat: Log registered MCP tools at startup
+* fix: Type compute_id as uuid.UUID to reject non-UUID values at MCP input layer
+* fix: Require UUID for compute_get/images, remove 'local' string default
+* feat: Add device configuration MCP tools (config_send, command_run, vpcs_config_set)
+* refactor: unify MCP tool naming to <module>_<action> convention
+* feat: Add symbol upload/delete, project load, and locked check MCP tools
+* feat: Add image management MCP tools
+* feat: Add symbol and appliance MCP tools
+* feat: Add node bulk ops, project lock, and server info MCP tools
+* feat: Add snapshot and drawing MCP tools
+* refactor: unify MCP handlers to use http_call directly, relocate node file ops to Node class
+* feat: Add node file operations as MCP tools (list, get, write, delete)
+* Add comment about rootful Docker permissions at container start
+* Fix _fix_permissions test: set process.returncode=0 and update assertion
+* Fix list_node_files PermissionError on os.scandir
+* Fix _fix_permissions error handling and list_node_files PermissionError
+* Add async_iterable_to_stream utility to avoid aiohttp compatibility issues
+* Add descriptive detail to 403 errors in compute file endpoints
+* Fix silent file write failure in write_compute_project_file
+* feat: Node file streaming, recursive listing, file type detection, and file delete
+* Update README tool descriptions: .txt → .md
+* Update README tool descriptions to mention Markdown format
+* Add MCP project tools: update, duplicate, and README operations
+
+## 3.1.0a3 06/06/2026
+
+* Bundle web-ui v3.1.0a3
+* fix: update MCP link tools descriptions with detailed filter info
+* fix: correct MCP nodes and links tool parameter handling for nested kwargs
+* fix: correct MCP template tool parameter handling for nested kwargs
+* feat: add client information logging to MCP connection rejection
+* refactor: replace MCP ready state polling with asyncio.Event
+* fix: revert duplicate image check to fix failing tests
+* fix (templates): Add ordering to handle the duplicate cases gracefully
+* fix(templates): Database error detected when saving a template with a disk image change
+* fix: return 503 error on MCP server ready timeout
+* fix: add MCP server ready check to prevent initialization errors
+* fix: resolve MCP server URL host via default route IP when bound to 0.0.0.0
+* fix: correct MCP transport security config to actually allow all hosts by default
+* feat: add configurable MCP transport security settings via gns3_server.conf
+* fix: add load_feature_skills() to properly load network planning features
+* refactor: convert all MCP tool parameter descriptions to Annotated+Field
+* fix: remove platformdirs upper bound to resolve fastmcp-slim dependency conflict
+* fix: add missing fastmcp dependency to resolve CI test failures
+* refactor: move all imports to top of __init__.py
+* test: add /v3/mcp/ to allowed public endpoints
+* fix: remove console_host/port from get_node_console_info
+* feat: add get_node_console_info tool
+* feat: add 3 Compute MCP tools - Add list_computes, get_compute, get_compute_images - Total MCP tools: 29
+* feat: add 5 Template MCP tools
+* feat: add Node and Link MCP tools, update copyright - Add 9 node tools and 5 link tools - Update copyright year to 2026, add author
+* feat: complete MCP SSE transport with JWT auth
+* feat: support Authorization header and query param for MCP token
+* feat: implement standard MCP protocol with SSE transport
+* feat: add MCP (Model Context Protocol) service with project tools
+* Add project memory: Docker container stop delay analysis
+* Remove extra blank line from merge
+* Revert container state detection in create()
+* Fix Docker VM tests for container status detection on node creation
+* Add running project check for fast duplication
+* Move running project check before fast duplication
+* Add running project check for fast duplication
+* Fix Docker container status detection on node creation
+* Fix web-ui update script to handle custom GitHub URL changes
+* Fix unnecessary Docker container recreation when renaming a project
+* Fix project rename and duplicate issues
+* Fix double deletion issue in remove_resource_from_pool
+* Complete fix: delete resource records when deleting resource pool
+* Apply fix from PR #2315: delete resource from resource table when removing from pool
+* Remove deprecated 'PermissionsStartOnly' setting for Systemd service. Ref #1830
+* Optimize project loading by implementing parallel node creation
+* Fix delay filter validation: ensure delay: [0, X] returns proper error message
+* Fix packet filter validation tests: use correct ubridge filter type names
+* Update tests to match show_interface_labels default change
+* Set default value of show_interface_labels to True
+* Optimize project variable updates to use parallel node processing
+* Fix ghost Docker nodes causing 60-second VNC timeout on variable updates
+* Fix Docker container variable compatibility with Pydantic models
+* Fix delay latency minimum: ubridge rejects latency <= 0
+* Improve packet filter validation: use tcpdump, handle multi-line BPF, safe project load
+* Add packet filter parameter validation to prevent ubridge errors
+* chore: update GNS3 skills repository to official organization
+* docs: update RBAC user isolation design doc to match actual implementation
+* docs: update skills repo URL in command-security.md
+* docs: remove Chinese overview docs, keep only English versions
+* docs: add overview docs for packet analysis, fault injection, and AI assistant
+* feat: add mermaid-to-SVG conversion script with environment setup
+* test: fix privilege count assertions after adding LLMConfig privileges
+* docs: add user node limit roadmap
+* test: fix RBAC test to match implementation logic
+* test: add --prefix and --cleanup-only parameters to benchmark script
+* perf: batch RBAC permission checking for GET /projects
+* test: add benchmark script for GET /projects performance testing
+* fix: prevent duplicate projects when user projects are in resource pools
+* fix: check both regular ACEs and resource pool ACEs for proper access control
+* test: update RBAC test to use test_user.username for user isolation
+* docs: add Phase 9 and 10 user self-registration and email service
+* docs: add Phase 8 per-user project namespace to roadmap
+* docs: add Phase 7 resource pool renaming to roadmap
+* feat: add alembic migration for LLMConfig privileges
+* feat: add independent LLMConfig permissions for AI profile management
+* docs: add Phase 6 frontend permission query API to roadmap
+* docs: add Phase 5 ACE architecture refactoring plan to roadmap
+* feat: remove resource pools from 'all endpoints' list
+* refactor: add efficient get_aces_for_path method for resource pool checks
+* feat: prevent deletion of resource pools used by ACE configurations
+* docs: update RBAC user isolation roadmap and add design memory
+* feat: fix permission check logic to properly handle ACE and user isolation
+* feat: implement layered permission checks for proper user isolation and sharing
+* feat: implement simple user isolation based on project ownership
+* fix: clean BPF syntax error message and specify loopback interface
+* feat: add BPF syntax validation using tshark
+* feat: add show_filters_icon parameter to packet filter tool
+* docs: add GNS3 appliance loading mechanism to memory
+* feat: add packet filter management tool for GNS3-Copilot fault injection
+* fix: update test_json expected output to include show_filters_icon field
+* fix: add getattr fallback to show_filters_icon property for backward compatibility
+* feat: add show_filters_icon property to Link for controlling Web UI filter icon display
+* fix: ensure show_filters_icon is always returned in API responses
+* feat: add show_filters_icon property to Link for controlling Web UI filter icon display
+* fix: remove explicit paramiko pin to resolve dependency conflict with netmiko
+* fix: update netmiko to 4.7.0 and pin paramiko>=5.0.0 to fix CVE-2026-44405
+* fix: close DockerHTTPClient session to prevent UnixConnector leak in Web Wireshark
+
+
 ## 3.1.0a2 12/05/2026
 
 * Bundle web-ui v3.1.0a2

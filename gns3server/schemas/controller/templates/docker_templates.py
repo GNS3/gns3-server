@@ -16,7 +16,7 @@
 
 
 from . import Category, TemplateBase
-from ...common import ConsoleType, AuxType, CustomAdapter
+from ...common import ConsoleType, AuxType, CustomAdapter, ExtraConfig
 
 from pydantic import Field
 from typing import Optional, List
@@ -49,6 +49,7 @@ class DockerTemplate(TemplateBase):
     )
     extra_hosts: Optional[str] = Field("", description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List] = Field([], description="Additional directories to make persistent")
+    extra_configs: Optional[List[ExtraConfig]] = Field(default_factory=list, description="Configuration files injected into the container (bind-mounted read-only)")
     memory: Optional[int] = Field(0, ge=0, description="Maximum amount of memory the container can use in MB")
     cpus: Optional[float] = Field(0, ge=0, description="Maximum amount of CPU resources the container can use")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")

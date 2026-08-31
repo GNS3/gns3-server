@@ -114,7 +114,7 @@ class NodeFile(BaseModel):
     size: int = Field(..., description="File size in bytes")
     created_at: str = Field(..., description="File creation time (ISO 8601)")
     modified_at: str = Field(..., description="File modification time (ISO 8601)")
-    extension: str = Field(..., description="File extension")
+    file_type: str = Field(..., description="File type determined by the file command")
 
 
 class ProjectCompression(str, Enum):

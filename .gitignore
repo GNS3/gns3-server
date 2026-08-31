@@ -85,3 +85,5 @@ venv
 # Tiktoken cache files
 gns3server/agent/gns3_copilot/cache/tiktoken/
 
+gns3.log
+/configs/

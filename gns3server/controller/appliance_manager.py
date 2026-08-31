@@ -174,7 +174,7 @@ class ApplianceManager:
         version_images = version.get("images")
         if version_images:
             for appliance_key, appliance_file in version_images.items():
-                for image in appliance.images:
+                for image in appliance.images or []:
                     if appliance_file == image.get("filename"):
                         image_checksum = image.get("md5sum")
                         image_in_db = await images_repo.get_image_by_checksum(image_checksum)
@@ -204,9 +204,9 @@ class ApplianceManager:
                                 else:
                                     raise ControllerError(f"Could not find '{appliance_file}'")
 
-    async def _create_template(self, template_data, templates_repo, rbac_repo, current_user):
+    async def _create_template(self, template_data, templates_repo, rbac_repo, current_user) -> dict:
         """
-        Create a new template
+        Create a new template and return it as a dict.
         """
 
         try:
@@ -217,6 +217,7 @@ class ApplianceManager:
         #template_id = template.get("template_id")
         #await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
         log.info(f"Template '{template.get('name')}' has been created")
+        return template
 
     async def _appliance_to_template(self, appliance: Appliance, version: str = None) -> dict:
         """
@@ -225,12 +226,15 @@ class ApplianceManager:
 
         from . import Controller
 
-        # downloading missing custom symbol for this appliance
-        if appliance.symbol and not appliance.symbol.startswith(":/symbols/"):
-            destination_path = os.path.join(Controller.instance().symbols.symbols_path(), appliance.symbol)
+        template_data = ApplianceToTemplate().new_template(appliance.asdict(), version, "local")  # FIXME: "local"
+        # download the custom symbol used by the template if it is missing;
+        # the symbol can be defined at the appliance, version or settings level
+        symbol = template_data.get("symbol")
+        if symbol and not symbol.startswith(":/symbols/"):
+            destination_path = os.path.join(Controller.instance().symbols.symbols_path(), symbol)
             if not os.path.exists(destination_path):
-                await self._download_symbol(appliance.symbol, destination_path)
-        return ApplianceToTemplate().new_template(appliance.asdict(), version, "local")  # FIXME: "local"
+                await self._download_symbol(symbol, destination_path)
+        return template_data
 
     async def install_appliances_from_image(
             self,
@@ -241,11 +245,16 @@ class ApplianceManager:
             rbac_repo: RbacRepository,
             current_user: schemas.User,
             image_dir: str
-    ) -> None:
+    ) -> List[dict]:
         """
-        Install appliances using an image checksum
+        Install appliances using an image checksum.
+
+        Returns a manifest of what happened: one entry per attempted template,
+        either {"status": "created", ...template fields} or
+        {"status": "skipped", "name", "reason"}.
         """
 
+        results: List[dict] = []
         appliances_info = self._find_appliances_from_image_checksum(image_checksum)
         for appliance, image_version in appliances_info:
             try:
@@ -253,15 +262,48 @@ class ApplianceManager:
                 ApplianceModel.model_validate(appliance.asdict())
             except ValidationError as e:
                 log.warning(f"Could not validate appliance '{appliance.id}': {e}")
+                results.append({
+                    "status": "skipped",
+                    "name": appliance.name,
+                    "reason": f"could not validate appliance '{appliance.id}': {e}",
+                })
+                continue
             if appliance.versions:
                 for version in appliance.versions:
                     if version.get("name") == image_version:
                         try:
                             await self._find_appliance_version_images(appliance, version, images_repo, image_dir)
                             template_data = await self._appliance_to_template(appliance, version)
-                            await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+                            name = template_data.get("name")
+                            existing = await templates_repo.get_template_by_name(name) if name else None
+                            if existing is not None:
+                                # never automatically create a second template with the same
+                                # name: the name+version check in TemplatesService would allow
+                                # duplicates when the appliance version differs, but two
+                                # templates sharing a name is never what the user asked for here
+                                log.warning(f"Template '{name}' already exists, skipping automatic template creation")
+                                results.append({
+                                    "status": "skipped",
+                                    "name": name,
+                                    "reason": f"a template named '{name}' already exists",
+                                })
+                                continue
+                            template = await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+                            results.append({
+                                "status": "created",
+                                "template_id": str(template.get("template_id")),
+                                "name": template.get("name"),
+                                "version": template.get("version"),
+                                "template_type": template.get("template_type"),
+                            })
                         except (ControllerError, InvalidImageError) as e:
                             log.warning(f"Could not automatically create template using image '{image_path}': {e}")
+                            results.append({
+                                "status": "skipped",
+                                "name": appliance.name,
+                                "reason": str(e),
+                            })
+        return results
 
     async def install_appliance(
             self,
@@ -290,11 +332,14 @@ class ApplianceManager:
             if not appliance.versions:
                 raise ControllerBadRequestError(message=f"Appliance '{appliance_id}' do not have versions")
 
-            image_dir = default_images_directory(appliance.type)
             for appliance_version_info in appliance.versions:
                 if appliance_version_info.get("name") == version:
                     try:
-                        await self._find_appliance_version_images(appliance, appliance_version_info, images_repo, image_dir)
+                        template_type = ApplianceToTemplate().get_template_type(appliance.asdict(), appliance_version_info)
+                        if template_type != "docker":
+                            # docker appliances have no image files to find or download
+                            image_dir = default_images_directory(template_type)
+                            await self._find_appliance_version_images(appliance, appliance_version_info, images_repo, image_dir)
                     except InvalidImageError as e:
                         raise ControllerError(message=f"Image error: {e}")
                     template_data = await self._appliance_to_template(appliance, appliance_version_info)
@@ -362,7 +407,16 @@ class ApplianceManager:
             symbol_theme = controller.symbols.theme
         category = appliance["category"]
         if category == "guest":
-            if "docker" in appliance:
+            if appliance.get("registry_version", 0) >= 8:
+                # registry version 8: the emulator type comes from the default
+                # settings set (or the only one present), not a top-level block
+                settings = appliance.get("settings") or []
+                selected = next((s for s in settings if s.get("default")), settings[0] if settings else None)
+                if selected and selected.get("template_type") == "docker":
+                    return controller.symbols.get_default_symbol("docker_guest", symbol_theme)
+                if selected:
+                    return controller.symbols.get_default_symbol("qemu_guest", symbol_theme)
+            elif "docker" in appliance:
                 return controller.symbols.get_default_symbol("docker_guest", symbol_theme)
             elif "qemu" in appliance:
                 return controller.symbols.get_default_symbol("qemu_guest", symbol_theme)

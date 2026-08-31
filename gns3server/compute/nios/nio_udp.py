@@ -80,5 +80,6 @@ class NIOUDP(NIO):
             "rport": self._rport,
             "rhost": self._rhost,
             "suspend": self._suspended,
-            "filters": self._filters
+            "filters": self._filters,
+            "markers": self._markers
         }

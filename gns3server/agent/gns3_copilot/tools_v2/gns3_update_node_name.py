@@ -38,8 +38,11 @@ from typing import Any
 from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from gns3server.agent.gns3_copilot.gns3_client import Node
-from gns3server.agent.gns3_copilot.gns3_client import get_gns3_connector
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    build_gns3_ctx,
+    get_nodes_handler,
+    update_node_handler,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -126,16 +129,22 @@ class GNS3UpdateNodeNameTool(BaseTool):
                         "error": f"Node {i + 1} missing node_id or new_name."
                     }
 
-            # Initialize Gns3Connector
+            # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
-            gns3_server = get_gns3_connector()
+            gns3_ctx = build_gns3_ctx()
 
-            if gns3_server is None:
+            if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
                 return {
                     "error": "Failed to connect to GNS3 server. "
                     "Please check your configuration."
                 }
+
+            # Fetch current node names in one call (old names + existence)
+            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
+            if "error" in listing:
+                return {"error": listing["error"]}
+            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
 
             # Update node names
             logger.info(
@@ -158,21 +167,25 @@ class GNS3UpdateNodeNameTool(BaseTool):
                         new_name,
                     )
 
-                    # Get node to retrieve current name
-                    node = Node(
-                        project_id=project_id,
-                        node_id=node_id,
-                        connector=gns3_server,
+                    node = nodes_by_id.get(node_id)
+                    if node is None:
+                        raise ValueError("Node not found")
+                    old_name = node.get("name")
+
+                    # Update node name — the PUT response is the updated node
+                    updated = update_node_handler(
+                        {
+                            "project_id": project_id,
+                            "node_id": node_id,
+                            "name": new_name,
+                        },
+                        gns3_ctx,
                     )
-                    node.get()
-                    old_name = node.name
+                    if "error" in updated:
+                        raise RuntimeError(updated["error"])
+                    current_name = updated.get("name")
 
-                    # Update node name
-                    node.update(name=new_name)
-
-                    # Verify update
-                    node.get()
-                    if node.name == new_name:
+                    if current_name == new_name:
                         node_info = {
                             "node_id": node_id,
                             "old_name": old_name,
@@ -190,7 +203,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
                             "node_id": node_id,
                             "old_name": old_name,
                             "new_name": new_name,
-                            "current_name": node.name,
+                            "current_name": current_name,
                             "status": "failed",
                             "error": "Name verification failed",
                         }

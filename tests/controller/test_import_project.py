@@ -20,6 +20,7 @@ import os
 import uuid
 import json
 import zipfile
+import pytest
 
 from pathlib import Path
 from tests.utils import asyncio_patch, AsyncioMagicMock
@@ -27,6 +28,7 @@ from unittest.mock import patch, MagicMock
 
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.controller.project import Project
+from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.export_project import export_project
 from gns3server.controller.import_project import import_project, _move_files_to_compute
 from gns3server.version import __version__
@@ -85,7 +87,8 @@ async def test_import_project_override(projects_dir, controller):
     override the previous keeping the same project id & location
     """
 
-    tmpdir = Path(projects_dir)
+    tmpdir = Path(projects_dir) / "override-location"
+    tmpdir.mkdir(parents=True, exist_ok=True)
     project_id = str(uuid.uuid4())
     topology = {
         "project_id": project_id,
@@ -122,24 +125,49 @@ async def write_file(path, z):
             f.write(chunk)
 
 
-@pytest.mark.asyncio
-async def test_import_project_containing_symlink(tmpdir, controller):
+@pytest.fixture
+def export_project_with_symlink(tmpdir, controller):
+    async def _export(symlink_target):
+        project = Project(controller=controller, name="test")
+        project.dump = MagicMock()
 
-    project = Project(controller=controller, name="test")
-    project.dump = MagicMock()
-    path = project.path
+        topology = {
+            "project_id": str(uuid.uuid4()),
+            "name": "test",
+            "auto_open": True,
+            "auto_start": True,
+            "topology": {
+            },
+            "version": "2.0.0"
+        }
+
+        with open(os.path.join(project.path, "project.gns3"), 'w+') as f:
+            json.dump(topology, f)
+
+        os.makedirs(os.path.join(project.path, "vm1", "dynamips"))
+        symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
+        os.symlink(symlink_target, symlink_path)
+
+        zip_path = str(tmpdir / "project.zip")
+        with aiozipstream.ZipFile() as z:
+            with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+                await export_project(z, project, str(tmpdir), include_images=False)
+                await write_file(zip_path, z)
+
+        return zip_path
+
+    return _export
+
+
+@pytest.mark.asyncio
+async def test_import_project_containing_symlink(controller, export_project_with_symlink):
+    """
+    Test importing a project containing a valid symlink (target inside the project directory).
+    """
 
     project_id = str(uuid.uuid4())
-    os.makedirs(os.path.join(path, "vm1", "dynamips"))
-    symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
-    symlink_target = "/tmp/anywhere"
-    os.symlink(symlink_target, symlink_path)
-
-    zip_path = str(tmpdir / "project.zip")
-    with aiozipstream.ZipFile() as z:
-        with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-            await export_project(z, project, str(tmpdir), include_images=False)
-            await write_file(zip_path, z)
+    symlink_target = "../symlink_target"
+    zip_path = await export_project_with_symlink(symlink_target)
 
     with open(zip_path, "rb") as f:
         project = await import_project(controller, project_id, f)
@@ -149,6 +177,38 @@ async def test_import_project_containing_symlink(tmpdir, controller):
     symlink_path = os.path.join(project.path, "vm1", "dynamips", "symlink")
     assert os.path.islink(symlink_path)
     assert os.readlink(symlink_path) == symlink_target
+
+
+@pytest.mark.asyncio
+async def test_import_project_containing_absolute_symlink(controller, export_project_with_symlink):
+    """
+    Test importing a project containing an absolute symlink.
+    This should fail because absolute symlinks are not allowed for security reasons.
+    """
+
+    project_id = str(uuid.uuid4())
+    symlink_target = "/tmp/anywhere"
+    zip_path = await export_project_with_symlink(symlink_target)
+
+    with pytest.raises(ControllerError):
+        with open(zip_path, "rb") as f:
+            await import_project(controller, project_id, f)
+
+
+@pytest.mark.asyncio
+async def test_import_project_containing_escaping_symlink(controller, export_project_with_symlink):
+    """
+    Test importing a project containing a symlink that escapes the project directory.
+    This should fail because symlinks that escape the project directory are not allowed for security reasons.
+    """
+
+    project_id = str(uuid.uuid4())
+    symlink_target = "../../../../symlink_target"
+    zip_path = await export_project_with_symlink(symlink_target)
+
+    with pytest.raises(ControllerError):
+        with open(zip_path, "rb") as f:
+            await import_project(controller, project_id, f)
 
 
 @pytest.mark.asyncio

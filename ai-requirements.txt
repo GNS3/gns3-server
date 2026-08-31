@@ -1,7 +1,7 @@
 # ==============================================================================
 # GNS3 Copilot AI Agent Dependencies
 # ==============================================================================
-# Install with: pip install gns3-server[ai-copilot]
+# Install with: pip install gns3-server[ai-features]
 # Or directly: pip install -r ai-requirements.txt
 # ==============================================================================
 
@@ -30,7 +30,7 @@ tiktoken>=0.8.0
 langsmith>=0.7.7
 
 # Network Automation
-netmiko>=4.6.0
+netmiko>=4.7.0
 nornir>=3.5.0
 nornir-netmiko>=1.0.1
 nornir-utils>=0.2.0

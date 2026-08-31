@@ -34,7 +34,7 @@ from gns3server.config import Config
 # Default skills repository configuration
 SKILLS_CONFIG = {
     # Git repository URL for skills
-    "repo_url": "https://github.com/yueguobin/GNS3-Skills.git",
+    "repo_url": "https://github.com/gns3/gns3-skills.git",
 
     # Git branch to use
     "branch": "main",

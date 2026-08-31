@@ -35,7 +35,10 @@ class IOUTemplate(TemplateBase):
     use_default_iou_values: Optional[bool] = Field(False, description="Use default IOU values")
     startup_config: Optional[str] = Field("iou_l3_base_startup-config.txt", description="Startup-config of IOU")
     private_config: Optional[str] = Field("", description="Private-config of IOU")
-    l1_keepalives: Optional[bool] = Field(False, description="Always keep up Ethernet interface (does not always work)")
+    l1_keepalives: Optional[bool] = Field(
+        False,
+        description="Enable Layer 1 keepalives so IOU interfaces report accurate link state",
+    )
     console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"

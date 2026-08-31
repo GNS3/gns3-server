@@ -356,6 +356,7 @@ class BaseManager:
                 raise ComputeError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(lport, rhost, rport)
             nio.filters = nio_settings.get("filters", {})
+            nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]

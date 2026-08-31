@@ -75,13 +75,14 @@ async def test_json():
         "scene_height": 1000,
         "zoom": 100,
         "show_grid": False,
-        "show_interface_labels": False,
+        "show_interface_labels": True,
         "show_layers": False,
         "snap_to_grid": False,
         "grid_size": 75,
         "drawing_grid_size": 25,
         "supplier": None,
         "variables": None,
+        "marker_definitions": {},
         "created_by": None
     }
 
@@ -201,6 +202,48 @@ async def test_add_node_local(controller):
                                  timeout=1200)
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.asdict())
+
+
+@pytest.mark.asyncio
+async def test_add_node_from_template_seeds_default_credentials(controller):
+    """
+    The appliance metadata stays template level: creating a node from a
+    template seeds the default credentials on the node and must not leak
+    the metadata into the node properties sent to the compute.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    controller._computes["local"] = compute
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    template = {
+        "name": "VPCS_TEST",
+        "template_type": "vpcs",
+        "compute_id": "local",
+        "default_name_format": "PC{0}",
+        "properties": {"startup_script": "test.cfg"},
+        "appliance_metadata": {
+            "vendor_name": "Test vendor",
+            "default_username": "admin",
+            "default_password": "secret",
+        },
+    }
+
+    node = await project.add_node_from_template(template)
+
+    # credentials seeded from the appliance metadata
+    assert node.default_username == "admin"
+    assert node.default_password == "secret"
+    # the metadata itself never reaches the node properties
+    assert "appliance_metadata" not in node.properties
+    assert "default_username" not in node.properties
+    assert "default_password" not in node.properties
 
 
 @pytest.mark.asyncio
@@ -696,6 +739,51 @@ async def test_delete(project):
     assert os.path.exists(project.path)
     await project.delete()
     assert not os.path.exists(project.path)
+
+
+@pytest.mark.asyncio
+async def test_delete_refuses_to_delete_projects_directory(project, projects_dir):
+    """
+    A poisoned entry whose path is the projects directory itself (a .gns3
+    loaded directly from the projects root before the guard existed) must
+    not be deletable: rmtree would wipe every project on the controller.
+    """
+
+    other_project = os.path.join(projects_dir, "another-project")
+    os.makedirs(other_project, exist_ok=True)
+
+    # Simulate the poisoned in-memory state directly: the path setter now
+    # rejects such an assignment, but a long-running server can still hold
+    # an entry created before the fix.
+    project._path = projects_dir
+
+    with pytest.raises(ControllerError):
+        await project.delete()
+    assert os.path.exists(other_project)
+
+
+def test_path_setter_rejects_projects_directory(project, projects_dir):
+    """
+    The projects directory itself must never become a project directory.
+    """
+
+    with pytest.raises(ControllerForbiddenError):
+        project.path = projects_dir
+    assert project.path == os.path.join(projects_dir, project.id)
+
+
+@pytest.mark.asyncio
+async def test_delete_does_not_start_nodes(project):
+    """
+    Deleting a project must not start its nodes, even when auto_start is enabled.
+    """
+
+    project.auto_start = True
+    project.dump()
+    await project.close()
+    project.start_all = AsyncioMagicMock()
+    await project.delete()
+    assert not project.start_all.called
 
 
 @pytest.mark.asyncio

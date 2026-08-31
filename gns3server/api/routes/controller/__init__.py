@@ -39,7 +39,7 @@ else:
     async def ai_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-copilot]"
+            detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
         )
 
 from . import controller
@@ -60,6 +60,9 @@ from . import roles
 from . import acl
 from . import pools
 from . import privileges
+from . import api_keys
+from . import netmiko
+from . import settings
 
 from .dependencies.authentication import get_current_active_user
 
@@ -68,6 +71,12 @@ router = APIRouter()
 router.include_router(
     controller.router,
     tags=["Controller"]
+)
+
+router.include_router(
+    settings.router,
+    prefix="/settings",
+    tags=["Server settings"]
 )
 
 router.include_router(
@@ -159,6 +168,12 @@ router.include_router(
 )
 
 router.include_router(
+    netmiko.router,
+    prefix="/netmiko",
+    tags=["Netmiko"]
+)
+
+router.include_router(
     pools.router,
     prefix="/pools",
     tags=["Resource pools"]
@@ -191,4 +206,10 @@ router.include_router(
     prefix="/copilot/projects/{project_id}/chat",
     dependencies=[Depends(get_current_active_user)],
     tags=["GNS3 Copilot"]
+)
+
+router.include_router(
+    api_keys.router,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["API Keys"]
 )

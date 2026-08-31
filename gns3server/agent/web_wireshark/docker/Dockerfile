@@ -15,6 +15,7 @@ RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /
     && sed -i 's|http://security.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources
 
 # Add xpra official repository
+COPY pin-xpra /etc/apt/preferences.d/
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \
@@ -24,11 +25,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get update
 
 # Install xpra and dependencies
-# Lock xpra version for reproducible builds
+# Locking of xpra version is done in /etc/apt/preferences.d/pin-xpra
 RUN apt-get install -y \
     wireshark-common \
     wireshark \
-    xpra=6.4.3* \
+    xpra \
     xpra-x11 \
     xvfb \
     curl \

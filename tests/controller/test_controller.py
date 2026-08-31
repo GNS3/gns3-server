@@ -125,6 +125,54 @@ async def test_load_projects_skip_unexpected_errors(controller, projects_dir):
     mock_load_project.assert_called_with(os.path.join(projects_dir, "broken_project", "broken.gns3"), load=False)
 
 
+def _write_topology_file(path, project_id, name):
+    with open(path, "w+") as f:
+        json.dump(
+            {
+                "name": name,
+                "project_id": project_id,
+                "version": __version__,
+                "revision": 10,
+                "type": "topology",
+                "topology": {"computes": [], "drawings": [], "links": [], "nodes": []},
+            },
+            f,
+        )
+
+
+@pytest.mark.asyncio
+async def test_load_project_refuses_gns3_in_projects_directory(controller, projects_dir):
+    """
+    A .gns3 placed directly in the projects directory must not be
+    loadable: its parent directory (the shared projects root) would become
+    the project directory, and deleting that project would wipe every
+    project on the controller.
+    """
+
+    topology_file = os.path.join(projects_dir, "root-level.gns3")
+    _write_topology_file(topology_file, str(uuid.uuid4()), "root-level")
+
+    with pytest.raises(ControllerError):
+        await controller.load_project(topology_file)
+    assert not controller._projects
+
+
+@pytest.mark.asyncio
+async def test_load_project_from_own_subdirectory(controller, projects_dir):
+    """
+    The normal layout — a .gns3 inside its own subdirectory — keeps
+    loading, with the subdirectory as the project directory.
+    """
+
+    project_dir = os.path.join(projects_dir, "sub-project")
+    os.makedirs(project_dir)
+    topology_file = os.path.join(project_dir, "sub-project.gns3")
+    _write_topology_file(topology_file, str(uuid.uuid4()), "sub-project")
+
+    project = await controller.load_project(topology_file, load=False)
+    assert project.path == project_dir
+
+
 def test_projects_directory_event_handler_filters_events(controller):
 
     controller._notify_projects_directory_event = MagicMock()

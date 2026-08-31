@@ -132,9 +132,37 @@
             "md5sum": "24cd1006734993dab338e5c75f80b875",
             "version": "26.03.0",
             "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v26.03.0/infix-x86_64-v26.03.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-v26.05.0.qcow2",
+            "filesize": 330039296,
+            "md5sum": "60f7c36c389c33ab108acc021f41ccd5",
+            "version": "26.05.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v26.05.0/infix-x86_64-v26.05.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-v26.06.0.qcow2",
+            "filesize": 363593728,
+            "md5sum": "79ca8bd8534bbaa1af0ab874a49d6f4c",
+            "version": "26.06.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v26.06.0/infix-x86_64-v26.06.0.qcow2"
         }
     ],
     "versions": [
+        {
+            "name": "26.06.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-v26.06.0.qcow2"
+            }
+        },
+        {
+            "name": "26.05.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-v26.05.0.qcow2"
+            }
+        },
         {
             "name": "26.03.0",
             "images": {

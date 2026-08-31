@@ -24,7 +24,6 @@ import sys
 import io
 
 from fastapi import HTTPException
-from aiohttp import web
 
 if sys.version_info >= (3, 11):
     from asyncio import timeout as asynctimeout
@@ -32,7 +31,7 @@ else:
     from async_timeout import timeout as asynctimeout
 
 from ..utils import parse_version
-from ..utils.asyncio import locking
+from ..utils.asyncio import locking, async_iterable_to_stream
 from ..controller.controller_error import (
     ControllerError,
     ControllerBadRequestError,
@@ -98,6 +97,10 @@ class Compute:
         self.name = name
         # Cache of interfaces on remote host
         self._interfaces_cache = None
+        # Cached resolution of self._host — socket.gethostbyname is a blocking
+        # call; resolving it on every host_ip access (several times per link
+        # via get_ip_on_same_subnet) freezes the event loop for all coroutines.
+        self._host_ip_cache = None
         self._connection_failure = 0
 
     def _session(self):
@@ -218,14 +221,17 @@ class Compute:
         """
         Return the IP associated to the host
         """
-        try:
-            return socket.gethostbyname(self._host)
-        except socket.gaierror:
-            return "0.0.0.0"
+        if self._host_ip_cache is None:
+            try:
+                self._host_ip_cache = socket.gethostbyname(self._host)
+            except socket.gaierror:
+                self._host_ip_cache = "0.0.0.0"
+        return self._host_ip_cache
 
     @host.setter
     def host(self, host):
         self._host = host
+        self._host_ip_cache = None  # invalidate; re-resolve on next access
         if self._console_host is None:
             self._console_host = host
 
@@ -341,9 +347,11 @@ class Compute:
             raise ControllerNotFoundError(f"{image} not found on compute")
         return response
 
-    async def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
+    async def http_query(self, method, path, data=None, dont_connect=False, stream=False, params=None, **kwargs):
         """
         :param dont_connect: If true do not reconnect if not connected
+        :param stream: If True, return raw aiohttp response for streaming
+        :param params: Optional dict of query parameters to append to the URL
         """
 
         if not self._connected and not dont_connect:
@@ -352,7 +360,7 @@ class Compute:
             await self.connect()
         if not self._connected and not dont_connect:
             raise ComputeError(f"Cannot connect to compute '{self._name}' with request {method} {path}")
-        response = await self._run_http_query(method, path, data=data, **kwargs)
+        response = await self._run_http_query(method, path, data=data, stream=stream, params=params, **kwargs)
         return response
 
     async def _try_reconnect(self):
@@ -363,6 +371,27 @@ class Compute:
             await self.connect()
         except ControllerError:
             pass
+
+    async def _report_connection_failure(self, error):
+        """
+        Update the connection state after a failure, notify clients and
+        schedule a reconnection attempt with exponential backoff.
+        """
+
+        self._connected = False
+        self._last_error = str(error)
+        self._controller.notification.controller_emit("compute.updated", self.asdict())
+        # Try to reconnect if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
+        if hasattr(sys, "_called_from_test") and sys._called_from_test:
+            return
+        self._connection_failure += 1
+        # After 10 failures we close the project using the compute to avoid sync issues
+        if self._connection_failure == 10:
+            log.error(f"Could not connect to compute '{self._id}' after multiple attempts: {error}")
+            await self._controller.close_compute_projects(self)
+        # Exponential backoff: 5s, 10s, 20s, 40s, 80s, then cap at 300s
+        delay = min(5 * (2 ** (self._connection_failure - 1)), 300)
+        asyncio.get_event_loop().call_later(delay, lambda: asyncio.ensure_future(self._try_reconnect()))
 
     @locking
     async def connect(self, report_failed_connection=False):
@@ -376,32 +405,20 @@ class Compute:
                 response = await self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
                 # Update connection status and notify UI
-                self._connected = False
-                self._last_error = str(e)
-                self._controller.notification.controller_emit("compute.updated", self.asdict())
-
+                await self._report_connection_failure(e)
                 if report_failed_connection:
                     raise
                 log.warning(f"Cannot connect to compute '{self._id}': {e}")
-                # Try to reconnect if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
-                if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
-                    self._connection_failure += 1
-                    # After 10 failures we close the project using the compute to avoid sync issues
-                    if self._connection_failure == 10:
-                        log.error(f"Could not connect to compute '{self._id}' after multiple attempts: {e}")
-                        await self._controller.close_compute_projects(self)
-                    # Exponential backoff: 5s, 10s, 20s, 40s, 80s, then cap at 300s
-                    delay = min(5 * (2 ** (self._connection_failure - 1)), 300)
-                    asyncio.get_event_loop().call_later(delay, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
-            except web.HTTPNotFound:
-                raise ControllerNotFoundError(f"The server {self._id} is not a GNS3 server or it's a 1.X server")
-            except web.HTTPUnauthorized:
-                raise ControllerUnauthorizedError(f"Invalid auth for server {self._id}")
-            except web.HTTPServiceUnavailable:
-                raise ControllerNotFoundError(f"The server {self._id} is unavailable")
-            except ValueError:
-                raise ComputeError(f"Invalid server url for server {self._id}")
+            except (ControllerError, HTTPException) as e:
+                # _run_http_query translates HTTP status errors into ControllerError
+                # subclasses (or a raw HTTPException for unexpected status codes).
+                # They used to escape this method and silently kill the fire-and-forget
+                # connect() task started at controller startup: no notification, no retry.
+                # Schedule the retry, then re-raise so explicit callers still get the error.
+                await self._report_connection_failure(e)
+                log.warning(f"Cannot connect to compute '{self._id}': {e}")
+                raise
 
             if "version" not in response.json:
                 msg = f"The server {self._id} is not a GNS3 server"
@@ -479,22 +496,27 @@ class Compute:
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
                         break
-        except aiohttp.ClientError as e:
-            log.error(f"Client response error received on compute '{self._id}' WebSocket '{ws_url}': {e}")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            # A malformed frame or an error raised while dispatching a compute event
+            # used to escape this task (only aiohttp.ClientError was caught) and
+            # permanently killed the notification stream: no more compute.updated
+            # events and no reconnection until the server was restarted. Log the
+            # error with its traceback and reconnect below.
+            log.error(f"Error on compute '{self._id}' notification stream '{ws_url}': {e!r}", exc_info=True)
         finally:
             self._connected = False
+            self._cpu_usage_percent = None
+            self._memory_usage_percent = None
+            self._disk_usage_percent = None
             log.info(f"Connection closed to compute '{self._id}' WebSocket '{ws_url}'")
-
-        # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a resources usage bomb)
-        from gns3server.api.server import app
-        if not app.state.exiting and not hasattr(sys, "_called_from_test"):
-            log.info(f"Reconnecting to compute '{self._id}' WebSocket '{ws_url}'")
-            asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
-
-        self._cpu_usage_percent = None
-        self._memory_usage_percent = None
-        self._disk_usage_percent = None
-        self._controller.notification.controller_emit("compute.updated", self.asdict())
+            self._controller.notification.controller_emit("compute.updated", self.asdict())
+            # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a resources usage bomb)
+            from gns3server.api.server import app
+            if not app.state.exiting and not hasattr(sys, "_called_from_test"):
+                log.info(f"Reconnecting to compute '{self._id}' WebSocket '{ws_url}'")
+                asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
 
     def _getUrl(self, path):
         host = self._host
@@ -515,7 +537,7 @@ class Compute:
         """ Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
-    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False):
+    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):
         async with asynctimeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}
@@ -531,6 +553,11 @@ class Compute:
                 elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, bytes):
                     chunked = True
                     headers["content-type"] = "application/octet-stream"
+                # Stream from an async iterable (e.g. Starlette request.stream())
+                elif hasattr(data, "__aiter__"):
+                    chunked = True
+                    headers["content-type"] = "application/octet-stream"
+                    data = await async_iterable_to_stream(data)
                 # If the data is an open file we will iterate on it
                 elif isinstance(data, io.BufferedIOBase):
                     chunked = True
@@ -540,7 +567,7 @@ class Compute:
         try:
             log.debug(f"Attempting request to compute: {method} {url} {headers}")
             response = await self._session().request(
-                method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout
+                method, url, headers=headers, data=data, auth=self._auth, params=params, chunked=chunked, timeout=timeout
             )
         except asyncio.TimeoutError:
             raise ComputeError(f"Timeout error for {method} call to {url} after {timeout}s")
@@ -554,6 +581,18 @@ class Compute:
         ) as e:
             #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
+
+        if stream:
+            if response.status >= 300:
+                body = await response.read()
+                msg = body.decode() if body else ""
+                if response.status == 404:
+                    raise ControllerNotFoundError(f"{method} {path} not found")
+                elif response.status == 403:
+                    raise ControllerForbiddenError(msg)
+                raise ControllerError(f"HTTP {response.status}: {msg}")
+            return response
+
         body = await response.read()
         if body and not raw:
             body = body.decode()

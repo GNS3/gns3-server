@@ -52,6 +52,10 @@ def has_privilege_on_websocket(
             current_user: schemas.User = Depends(get_current_active_user_from_websocket),
             rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
     ):
+        # Authentication may have failed and closed the socket inside the auth
+        # dependency, returning None — bail out before touching the user object.
+        if current_user is None:
+            return None
         if not current_user.is_superadmin:
             path = re.sub(r"^/v[0-9]", "", websocket.url.path)  # remove the prefix (e.g. "/v3") from URL path
             log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")

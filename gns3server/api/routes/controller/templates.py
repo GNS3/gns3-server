@@ -35,7 +35,7 @@ from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.utils.images import get_builtin_disks
 
 from .dependencies.authentication import get_current_active_user
@@ -230,3 +230,60 @@ async def duplicate_template(
 
     template = await TemplatesService(templates_repo).duplicate_template(template_id)
     return template
+
+@router.get(
+    "/{template_id}/base-config/{filename}",
+    dependencies=[Depends(has_privilege("Template.Audit"))]
+)
+async def get_base_config(
+    template_id: UUID,
+    filename: str,
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+):
+
+    service = TemplatesService(templates_repo)
+    await service.get_template(template_id)
+    content = service.get_file(str(template_id), filename)
+
+    return {
+        "template_id": str(template_id),
+        "filename": os.path.basename(filename),
+        "content": content
+    }
+
+
+@router.put(
+    "/{template_id}/base-config/{filename}",
+    dependencies=[Depends(has_privilege("Template.Modify"))]
+)
+async def update_base_config(
+    template_id: UUID,
+    filename: str,
+    body: dict,
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+):
+    if not body or "content" not in body:
+        raise ControllerBadRequestError("Missing 'content' field")
+
+    service = TemplatesService(templates_repo)
+    await service.get_template(template_id)
+    service.update_file(str(template_id), filename, body["content"])
+
+    return {
+        "template_id": str(template_id),
+        "filename": os.path.basename(filename),
+        "content": body["content"]
+    }
+
+
+@router.get(
+    "/{template_id}/base-configs",
+    dependencies=[Depends(has_privilege("Template.Audit"))]
+)
+async def list_base_configs(
+    template_id: UUID,
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+):
+    service = TemplatesService(templates_repo)
+    await service.get_template(template_id)
+    return service.list_files(str(template_id))

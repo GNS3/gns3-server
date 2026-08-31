@@ -19,6 +19,9 @@ import os
 import stat
 import shutil
 import asyncio
+import contextlib
+import json
+import struct
 import tempfile
 import psutil
 import platform
@@ -100,6 +103,13 @@ class BaseNode:
         self._internal_aux_port = None
         self._custom_adapters = []
         self._ubridge_require_privileged_access = False
+        # marker filter name -> uBridge bridge_name (recorded at apply time so
+        # _ubridge_set_marker_filter_state can toggle on/off without an NIO rebuild).
+        self._marker_filter_bridges = {}
+        # Parallel store of the installed marker spec (bpf/tag/direction/enabled/...)
+        # keyed by (name, link_id) so _ubridge_apply_markers can reconcile: detect
+        # deletions and field changes instead of being add-only.
+        self._marker_specs = {}
 
         if self._console is not None:
             # use a previously allocated console port
@@ -322,7 +332,7 @@ class BaseNode:
         Creates the node.
         """
 
-        log.info("{module}: {name} [{id}] created".format(module=self.manager.module_name, name=self.name, id=self.id))
+        log.debug("{module}: {name} [{id}] created".format(module=self.manager.module_name, name=self.name, id=self.id))
 
     async def delete(self):
         """
@@ -371,7 +381,7 @@ class BaseNode:
         if self._closed:
             return False
 
-        log.info(
+        log.debug(
             "{module}: '{name}' [{id}]: is closing".format(module=self.manager.module_name, name=self.name, id=self.id)
         )
 
@@ -513,7 +523,7 @@ class BaseNode:
             log.warning(f"Cannot open console WebSocket: node {self.name} is not started")
             return
 
-        if self._console_type not in ("telnet", "ssh"):
+        if self._console_type not in ("telnet", "ssh", "docker_exec"):
             await websocket.close(code=1000)
             log.warning(
                 f"Cannot open console WebSocket: node {self.name} console type '{self._console_type}' "
@@ -554,6 +564,51 @@ class BaseNode:
             log.warning(f"Cannot connect to node {self.name} console server: {e}")
             return
 
+        def _parse_terminal_size_message(data: bytes):
+            """
+            Binary control frames sent by WebSocket console clients to propagate
+            their terminal geometry: {"cols": int, "rows": int}. Terminal data
+            travels as text frames (xterm.js AttachAddon), so binary frames are
+            an unambiguous side channel. Returns (cols, rows) or None.
+            """
+
+            try:
+                message = json.loads(data.decode("utf-8"))
+            except (UnicodeDecodeError, ValueError):
+                return None
+            if not isinstance(message, dict):
+                return None
+            cols, rows = message.get("cols"), message.get("rows")
+            if (
+                isinstance(cols, int) and not isinstance(cols, bool)
+                and isinstance(rows, int) and not isinstance(rows, bool)
+                and 2 <= cols <= 5000
+                and 2 <= rows <= 100000
+            ):
+                return cols, rows
+            return None
+
+        async def resize_console(cols: int, rows: int) -> None:
+            """
+            Propagate a client terminal resize to the node console stream:
+            SSH channels use a pty request update, telnet-based consoles
+            (including docker_exec) speak a NAWS subnegotiation to the console
+            telnet server, which resizes the underlying stream (e.g. the
+            docker exec pty).
+            """
+
+            if self._console_type == "ssh":
+                with contextlib.suppress(AttributeError):
+                    ssh_process.change_terminal_size(cols, rows)
+            else:
+                telnet_writer.write(
+                    bytes([255, 251, 31])  # IAC WILL NAWS
+                    + bytes([255, 250, 31])  # IAC SB NAWS
+                    + struct.pack("!HH", cols, rows).replace(b"\xff", b"\xff\xff")
+                    + bytes([255, 240])  # IAC SE
+                )
+                await telnet_writer.drain()
+
         async def ws_forward(telnet_writer):
 
             try:
@@ -564,6 +619,14 @@ class BaseNode:
                     if "text" in msg and msg["text"]:
                         data = msg["text"].encode()
                     elif "bytes" in msg and msg["bytes"]:
+                        size = _parse_terminal_size_message(msg["bytes"])
+                        if size is not None:
+                            log.debug(
+                                f"Console WebSocket client {websocket.client.host}:{websocket.client.port}"
+                                f" resized terminal to {size[0]}x{size[1]}"
+                            )
+                            await resize_console(*size)
+                            continue
                         data = msg["bytes"]
                     else:
                         continue
@@ -577,10 +640,20 @@ class BaseNode:
 
         async def telnet_forward(telnet_reader):
 
-            while not telnet_reader.at_eof():
-                data = await telnet_reader.read(1024)
-                if data:
-                    await websocket.send_bytes(data)
+            try:
+                while not telnet_reader.at_eof():
+                    data = await telnet_reader.read(1024)
+                    if data:
+                        await websocket.send_bytes(data)
+            except WebSocketDisconnect:
+                # the client disconnected while node output was still streaming:
+                # normal end of the session, not an error. Starlette raises
+                # WebSocketDisconnect (whose str() is empty) from send once the
+                # peer is gone, which used to surface as a message-less warning.
+                log.info(
+                    f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute"
+                    f" console WebSocket while node output was being forwarded"
+                )
 
         # keep forwarding websocket data in both direction
         if sys.version_info >= (3, 11, 0):
@@ -594,7 +667,7 @@ class BaseNode:
             if task.exception():
                 log.warning(
                     f"Exception while forwarding WebSocket data to "
-                    f"{self._console_type.upper()} server: {task.exception()}"
+                    f"{self._console_type.upper()} server: {task.exception()!r}"
                 )
         for task in pending:
             task.cancel()
@@ -665,8 +738,16 @@ class BaseNode:
                     data = await vnc_reader.read(65536)  # Larger buffer for VNC frames
                     if data:
                         await websocket.send_bytes(data)
+            except WebSocketDisconnect:
+                # the browser disconnected while VNC frames were still streaming
+                # (starlette raises WebSocketDisconnect with an empty str() from
+                # send once the peer is gone — not an error)
+                log.info(
+                    f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute "
+                    f"VNC console WebSocket while frames were being forwarded"
+                )
             except Exception as e:
-                log.warning(f"Exception while forwarding VNC data to WebSocket: {e}")
+                log.warning(f"Exception while forwarding VNC data to WebSocket: {e!r}")
 
         # Keep forwarding WebSocket data in both directions
         if sys.version_info >= (3, 11, 0):
@@ -678,7 +759,7 @@ class BaseNode:
         done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:
             if task.exception():
-                log.warning(f"Exception while forwarding WebSocket data to VNC server: {task.exception()}")
+                log.warning(f"Exception while forwarding WebSocket data to VNC server: {task.exception()!r}")
         for task in pending:
             task.cancel()
 
@@ -926,17 +1007,57 @@ class BaseNode:
             raise NodeError("uBridge requires root access or the capability to interact with network adapters")
 
         server_host = self._manager.config.settings.Server.host
+        transport = self._manager.config.settings.Server.ubridge_control_transport
         if not self.ubridge:
-            self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
-        log.info(f"Starting new uBridge hypervisor {self._ubridge_hypervisor.host}:{self._ubridge_hypervisor.port}")
+            self._ubridge_hypervisor = Hypervisor(
+                self._project, self.ubridge_path, self.working_dir, transport, server_host, self.id
+            )
+        log.debug(f"Starting new uBridge hypervisor at {self._ubridge_hypervisor.endpoint}")
         await self._ubridge_hypervisor.start()
         if self._ubridge_hypervisor:
             log.info(
-                f"Hypervisor {self._ubridge_hypervisor.host}:{self._ubridge_hypervisor.port} has successfully started"
+                f"Hypervisor at {self._ubridge_hypervisor.endpoint} has successfully started"
             )
             await self._ubridge_hypervisor.connect()
+            # Tell this uBridge where to send MARK signals and which node id to
+            # tag them with. Marker is opt-in and inert until a `mark` filter is
+            # added, so this never disturbs the data plane.
+            await self._ubridge_configure_marker_sink()
         # save if privileged are required in case uBridge needs to be restarted in self._ubridge_send()
         self._ubridge_require_privileged_access = require_privileged_access
+
+    async def _ubridge_configure_marker_sink(self):
+        """
+        Point this node's uBridge at the compute's marker UDP sink and tag its
+        signals with this node's id. Safe to call before any marker filter
+        exists — uBridge stays inert until a ``mark`` filter is configured.
+
+        Old uBridge builds without the marker module are tolerated: the failure
+        is downgraded to a warning so node start is not blocked by an opt-in
+        observability feature.
+        """
+
+        from gns3server.compute.marker.marker_manager import MarkerManager
+
+        manager = MarkerManager.instance()
+        if not manager.running or not manager.host or not manager.port:
+            return
+        if self._ubridge_hypervisor is None:
+            return
+        try:
+            # Talk to the hypervisor directly, NOT via _ubridge_send: this runs
+            # inside _start_ubridge, which is reached THROUGH _ubridge_send when
+            # uBridge starts lazily (e.g. linking a stopped node). _ubridge_send's
+            # lock is non-reentrant, so calling it again here would deadlock on
+            # the held ___ubridge_send_lock. uBridge is already running and
+            # connected at this point, so the raw hypervisor send is safe.
+            await self._ubridge_hypervisor.send(f"marker sink {manager.host} {manager.port}")
+            await self._ubridge_hypervisor.send(f"marker node {self._id}")
+        except UbridgeError:
+            log.warning(
+                "uBridge does not support the marker module; traffic insight disabled for node %r",
+                self.name,
+            )
 
     async def _stop_ubridge(self):
         """
@@ -944,9 +1065,14 @@ class BaseNode:
         """
 
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            log.info(f"Stopping uBridge hypervisor {self._ubridge_hypervisor.host}:{self._ubridge_hypervisor.port}")
+            log.debug(f"Stopping uBridge hypervisor at {self._ubridge_hypervisor.endpoint}")
             await self._ubridge_hypervisor.stop()
         self._ubridge_hypervisor = None
+        # uBridge is gone, so every marker filter (and its in-bridge state) is
+        # gone too — clear the map so the next apply re-installs them all rather
+        # than skipping them as "already installed".
+        self._marker_filter_bridges.clear()
+        self._marker_specs.clear()
 
     async def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
@@ -983,10 +1109,12 @@ class BaseNode:
 
         await self._ubridge_send(f"bridge start {bridge_name}")
         await self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+        await self._ubridge_apply_markers(bridge_name, destination_nio)
 
     async def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         if destination_nio:
             await self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+            await self._ubridge_apply_markers(bridge_name, destination_nio)
 
     async def ubridge_delete_bridge(self, name):
         """
@@ -1041,6 +1169,283 @@ class BaseNode:
                     filter_value=" ".join([str(v) for v in values]),
                 )
                 i += 1
+
+    @staticmethod
+    def _marker_linktype(data_link_type):
+        """
+        Normalize a GNS3 pcap data-link type (e.g. ``DLT_C_HDLC``) to the bare
+        uBridge ``linktype`` token (``C_HDLC``) by stripping the ``DLT_`` prefix.
+        Returns ``None`` for Ethernet (``DLT_EN10MB`` / unset) so the ``linktype``
+        keyword is omitted and uBridge defaults to EN10MB. Values come straight
+        from ``SerialPort.data_link_types`` (the single source of truth); uBridge
+        resolves them with ``pcap_datalink_name_to_val``, which is case-sensitive
+        and expects the canonical uppercase form.
+        """
+        if not data_link_type:
+            return None
+        dlt = data_link_type.upper()
+        if dlt.startswith("DLT_"):
+            dlt = dlt[4:]
+        return None if dlt == "EN10MB" else dlt
+
+    async def _ubridge_add_marker_filter(self, bridge_name, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None):
+        """
+        Attach a `mark` packet filter to a uBridge bridge for traffic insight.
+
+        On BPF match uBridge (a) emits a UDP MARK signal to the configured sink
+        and (b) appends the packet to ``pcap_path``. Unlike the impairment
+        filters, this is an observability tap: it never drops or alters traffic,
+        and it is added/removed on its own (not via reset_packet_filters) so the
+        pcap is not closed/reopened on unrelated filter changes.
+
+        :param bridge_name: uBridge bridge carrying the link's traffic
+        :param name: stable, gns3server-chosen filter name (pcap identity + echoed in signals)
+        :param bpf: libpcap BPF expression
+        :param pcap_path: absolute path ubridge appends matched packets to
+        :param tag: optional correlation id echoed in MARK signals
+        """
+
+        # mark <bpf> [tag <id>] [pcap <path>] — tag/pcap keyword pairs, any order.
+        # name travels from the controller REST layer (MarkerCreate schema) but is
+        # validated here too as defense-in-depth against hand-edited topology files.
+        # Note: "global-*" names are legitimate here — they come from project-level
+        # marker definitions (inherit_marker). The prefix is only forbidden at the
+        # user-facing schema layer, not at the uBridge boundary.
+        _MARKER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+        # Defense-in-depth vs hand-edited topology: the user-facing name is capped
+        # at 32 by the schema; inherited copies carry a ``global-`` prefix (≤ 39),
+        # so allow up to 48 here.
+        if not _MARKER_NAME_RE.match(name) or len(name) > 48:
+            raise UbridgeError(f"Invalid marker name: {name!r}")
+        cmd = 'bridge add_packet_filter {bridge} {name} mark "{bpf}"'.format(
+            bridge=bridge_name, name=name, bpf=bpf
+        )
+        if tag is not None:
+            cmd += f" tag {tag}"
+        # Per-link attribution (contract §3.2): when one ubridge bridge serves
+        # several GNS3 links (e.g. IOU's per-node bridge), bridge+filter collide,
+        # so the link id is the only way to tell signals — and pcap files — apart.
+        if link_id:
+            cmd += f" link {link_id}"
+        if direction is not None:
+            cmd += f" dir {direction}"
+        linktype = self._marker_linktype(data_link_type)
+        if linktype is not None:
+            cmd += f" linktype {linktype}"
+        cmd += ' pcap "{path}"'.format(path=pcap_path)
+        # Let BPF compile errors propagate — the marker is the user's intent, so a
+        # bad expression must surface instead of being silently dropped.
+        await self._ubridge_send(cmd)
+
+    async def delete_marker_capture(self, name, link_id, nio=None):
+        """
+        Remove a marker from uBridge (fine-grained ``delete_packet_filter`` — NOT
+        reset_packet_filters, so sibling markers' pcaps aren't closed/reopened)
+        and delete its capture pcap. Called by the controller when a marker is
+        removed; safe with the node stopped (filter removal is skipped, the file
+        is still unlinked). IOU overrides ``_ubridge_delete_marker_filter`` for
+        its ``iol_bridge`` command shape.
+
+        ``nio`` is the port NIO whose cached ``nio.markers`` carries this marker
+        spec; it is dropped here so a later node start / NIO reapply
+        (``_ubridge_apply_markers``) does not reinstall the marker. Without this,
+        deleting a marker while the node is stopped left the spec in
+        ``nio.markers``, and starting the node recreated an empty pcap.
+        """
+        if nio is not None and getattr(nio, "markers", None):
+            nio.markers.pop(name, None)
+        bridge_name = self._marker_filter_bridges.pop((name, link_id), None)
+        self._marker_specs.pop((name, link_id), None)
+        if bridge_name is not None:
+            await self._ubridge_delete_marker_filter(bridge_name, name)
+        try:
+            markers_dir = self.project.markers_working_directory()
+            pcap_path = os.path.join(markers_dir, f"{self._id}_{link_id}_{name}.pcap")
+            os.remove(pcap_path)
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            log.warning("Could not remove marker pcap for '%s' on link %s: %s", name, link_id, e)
+
+    async def _ubridge_delete_marker_filter(self, bridge_name, name):
+        """
+        Remove a single marker filter from uBridge with ``delete_packet_filter``
+        (not a bridge-wide reset) so other markers keep their pcaps open. A no-op
+        when uBridge isn't running — the pcap cleanup in the caller still proceeds.
+        """
+        if not (self._ubridge_hypervisor and self._ubridge_hypervisor.is_running()):
+            return
+        try:
+            await self._ubridge_send(f"bridge delete_packet_filter {bridge_name} {name}")
+        except UbridgeError as e:
+            log.warning("Could not remove marker filter '%s' from %s: %s", name, bridge_name, e)
+
+    async def rebuild_marker_filter(self, name, link_id, bpf, tag=None, direction=None, enabled=True):
+        """
+        Re-install a single marker filter with new params (delete + add), without
+        a bridge-wide reset — so sibling markers keep their pcaps open. uBridge
+        reopens the marker's own pcap on re-add (a new capture session for the
+        new BPF), which is expected. No-op if the marker isn't installed (node
+        stopped) — the next NIO reapply picks up the updated ``_markers``.
+
+        IOU needs no override: this calls ``_ubridge_delete_marker_filter`` /
+        ``_ubridge_add_marker_filter`` / ``_ubridge_set_marker_filter_state``,
+        all of which IOU already overrides for ``iol_bridge``.
+        """
+        bridge_name = self._marker_filter_bridges.get((name, link_id))
+        if bridge_name is None:
+            return
+        await self._ubridge_delete_marker_filter(bridge_name, name)
+        pcap_path = os.path.join(self.project.markers_working_directory(), f"{self._id}_{link_id}_{name}.pcap")
+        await self._ubridge_add_marker_filter(bridge_name, name, bpf, pcap_path, tag, link_id, direction=direction)
+        if not enabled:
+            await self._ubridge_set_marker_filter_state(name, enabled=False)
+
+    async def _ubridge_apply_markers(self, bridge_name, nio):
+        """
+        Reconcile the traffic-insight markers carried by *nio* onto bridge
+        *bridge_name* with what is already installed there.
+
+        uBridge's ``reset_packet_filters`` preserves mark filters (contract), so
+        a plain re-add would duplicate them; instead this diffs the desired
+        ``nio.markers`` against the installed ``_marker_specs``:
+
+          * installed but no longer desired  → delete filter + unlink pcap
+          * desired with changed bpf/tag/direction/data_link_type → rebuild
+            (delete + add; the marker's own pcap reopens for the new BPF)
+          * desired with only ``enabled`` changed → instant on/off toggle
+            (sibling and own pcap stay open)
+          * desired and unchanged              → skip
+          * desired and new                    → add
+
+        Called from ``add_ubridge_udp_connection`` (fresh bridge, empty maps →
+        installs all) and ``update_ubridge_udp_connection`` / the batch NIO
+        update path (incremental reconcile).
+        """
+        from gns3server.compute.marker.marker_manager import MarkerManager
+
+        markers = nio.markers if hasattr(nio, 'markers') else {}
+        manager = MarkerManager.instance()
+        markers_dir = self.project.markers_working_directory()
+        desired = {(name, spec.get("link_id", "")): spec for name, spec in markers.items()}
+
+        # 1. Remove installed markers that are no longer desired (marker/def delete).
+        # Scope to THIS bridge: the map is node-wide and also holds markers
+        # installed on this node's other links/NIOs. Without this guard,
+        # reconciling one NIO would delete every other link's markers + pcaps
+        # (desired only carries the current NIO's markers) — a regression.
+        for key in list(self._marker_filter_bridges):
+            if self._marker_filter_bridges[key] != bridge_name:
+                continue
+            if key not in desired:
+                mname, link_id = key
+                installed_bridge = self._marker_filter_bridges.pop(key)
+                self._marker_specs.pop(key, None)
+                await self._ubridge_delete_marker_filter(installed_bridge, mname)
+                try:
+                    os.remove(os.path.join(markers_dir, f"{self._id}_{link_id}_{mname}.pcap"))
+                except FileNotFoundError:
+                    pass
+                except OSError as e:
+                    log.warning("Could not remove marker pcap for '%s' on link %s: %s", mname, link_id, e)
+                manager.unregister(self._id, mname)
+
+        # 2. Add newly-desired markers; rebuild ones whose filter fields changed.
+        rebuild_fields = ("bpf", "tag", "direction", "data_link_type")
+        for (name, link_id), spec in desired.items():
+            bpf = spec.get("bpf", "")
+            tag = spec.get("tag")
+            enabled = spec.get("enabled", True)
+            if (name, link_id) in self._marker_filter_bridges:
+                installed_spec = self._marker_specs.get((name, link_id))
+                if installed_spec is None:
+                    # Installed but no recorded spec (legacy / pre-reconcile state):
+                    # cannot diff, skip to avoid a duplicate add.
+                    continue
+                if any(installed_spec.get(f) != spec.get(f) for f in rebuild_fields):
+                    # A filter field changed → rebuild (delete + re-add).
+                    installed_bridge = self._marker_filter_bridges.get((name, link_id))
+                    await self._ubridge_delete_marker_filter(installed_bridge, name)
+                elif installed_spec.get("enabled", True) != enabled:
+                    # Only the on/off state changed → instant toggle, pcap preserved.
+                    await self._ubridge_set_marker_filter_state(name, enabled)
+                    self._marker_specs[(name, link_id)] = spec
+                    continue
+                else:
+                    continue  # unchanged
+            pcap_path = os.path.join(markers_dir, f"{self._id}_{link_id}_{name}.pcap")
+            try:
+                await self._ubridge_add_marker_filter(bridge_name, name, bpf, pcap_path, tag, link_id,
+                                                     direction=spec.get("direction"),
+                                                     data_link_type=spec.get("data_link_type"))
+            except UbridgeError as e:
+                # Swallow BPF compile errors (warn + skip) so a single bad
+                # expression can't break link creation / node restart — mirrors
+                # _ubridge_apply_filters, which does the same for packet filters.
+                if "syntax error" in str(e).lower() or "compile filter" in str(e).lower():
+                    message = f"Warning: ignoring marker '{name}' due to BPF syntax error: {e}"
+                    log.warning(message)
+                    self.project.emit("log.warning", {"message": message})
+                    continue
+                raise
+            # A disabled marker is installed but turned off (a paused tap), not
+            # dropped — so the UI can flip it back on instantly with
+            # enable_packet_filter, no NIO rebuild (ubridge contract §3.2).
+            if not enabled:
+                try:
+                    await self._ubridge_send(f"bridge enable_packet_filter {bridge_name} {name} off")
+                except UbridgeError as e:
+                    # Old ubridge without enable_packet_filter: leave it installed
+                    # (on) rather than fail the whole link/marker apply.
+                    log.warning(f"Could not turn marker '{name}' off on {bridge_name}: {e}")
+            manager.register(str(self.project.id), self._id, name, link_id, tag)
+            # Remember which bridge hosts this filter so an instant on/off toggle
+            # (no NIO rebuild) can resolve it by name alone, and keep the spec so
+            # the next reconcile can detect changes.
+            self._marker_filter_bridges[name, link_id] = bridge_name
+            self._marker_specs[name, link_id] = spec
+
+    async def _ubridge_set_marker_filter_state(self, name, enabled):
+        """
+        Toggle an installed marker filter on/off with a single uBridge command
+        (``bridge enable_packet_filter … on|off``) — no NIO reset/reapply, so the
+        pcap identity and emitted counter are preserved (ubridge contract §3.2).
+        The bridge is resolved from the (name, link_id)→bridge map populated at
+        apply time; entries are iterated so a node that hosts the same marker name
+        on several links (e.g. IOU with one IOL-BRIDGE per node) toggles every
+        copy. IOU overrides this for its ``iol_bridge`` command shape.
+
+        :param name: marker filter name
+        :param enabled: True = on (signal+pcap), False = off (paused tap)
+        """
+
+        state = "on" if enabled else "off"
+        for (n, lid), bridge_name in list(self._marker_filter_bridges.items()):
+            if n == name:
+                await self._ubridge_send(f"bridge enable_packet_filter {bridge_name} {name} {state}")
+
+    async def _ubridge_marker_pause(self):
+        """
+        Pause all marker signal+pcap emission on this node's uBridge
+        (``marker pause``). Keeps the sink open so ``resume`` is instant. Safe
+        on old ubridge builds (the error is downgraded to a warning). Called by
+        the project-level pause fan-out.
+        """
+
+        if self._ubridge_hypervisor:
+            try:
+                await self._ubridge_hypervisor.send("marker pause")
+            except UbridgeError as e:
+                log.warning(f"Could not pause markers on node {self._id}: {e}")
+
+    async def _ubridge_marker_resume(self):
+        """Resume marker signal+pcap emission (``marker resume``)."""
+
+        if self._ubridge_hypervisor:
+            try:
+                await self._ubridge_hypervisor.send("marker resume")
+            except UbridgeError as e:
+                log.warning(f"Could not resume markers on node {self._id}: {e}")
 
     async def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=False):
         """

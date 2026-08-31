@@ -66,13 +66,13 @@ def _filter_api_key_from_config(config: dict) -> dict:
 )
 async def get_user_llm_model_configs(
         user_id: UUID,
-        current_user: schemas.User = Depends(has_privilege("User.Audit")),
+        current_user: schemas.User = Depends(has_privilege("LLMConfig.Audit")),
         llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
 ) -> schemas.LLMModelConfigInheritedResponse:
     """
     Get user's effective LLM model configurations (own + inherited from groups).
 
-    Required privilege: User.Audit
+    Required privilege: LLMConfig.Audit
     """
 
     try:
@@ -97,7 +97,7 @@ async def get_user_llm_model_configs(
 @router.get(
     "/users/{user_id}/llm-model-configs/own",
     response_model=List[schemas.LLMModelConfigResponse],
-    dependencies=[Depends(has_privilege("User.Audit"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Audit"))]
 )
 async def get_user_own_llm_model_configs(
         user_id: UUID,
@@ -106,7 +106,7 @@ async def get_user_own_llm_model_configs(
     """
     Get user's own LLM model configurations (excluding inherited ones).
 
-    Required privilege: User.Audit
+    Required privilege: LLMConfig.Audit
     """
 
     try:
@@ -137,7 +137,7 @@ async def get_user_own_llm_model_configs(
 @router.get(
     "/users/{user_id}/llm-model-configs/default",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("User.Audit"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Audit"))]
 )
 async def get_user_default_llm_model_config(
         user_id: UUID,
@@ -146,7 +146,7 @@ async def get_user_default_llm_model_config(
     """
     Get user's default LLM model configuration.
 
-    Required privilege: User.Audit
+    Required privilege: LLMConfig.Audit
     """
 
     try:
@@ -183,7 +183,7 @@ async def get_user_default_llm_model_config(
     "/users/{user_id}/llm-model-configs",
     response_model=schemas.LLMModelConfigResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("User.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
 )
 async def create_user_llm_model_config(
         user_id: UUID,
@@ -194,7 +194,7 @@ async def create_user_llm_model_config(
     """
     Create a new LLM model configuration for a user.
 
-    Required privilege: User.Modify
+    Required privilege: LLMConfig.Modify
 
     IMPORTANT: context_limit is REQUIRED. Unit is K tokens (e.g., 128 = 128K = 128,000 tokens).
     Please check your model provider's documentation for the current context window size.
@@ -249,7 +249,7 @@ async def create_user_llm_model_config(
 @router.put(
     "/users/{user_id}/llm-model-configs/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("User.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
 )
 async def update_user_llm_model_config(
         user_id: UUID,
@@ -261,7 +261,7 @@ async def update_user_llm_model_config(
     Update a user's LLM model configuration.
     Supports optimistic locking via expected_version field.
 
-    Required privilege: User.Modify
+    Required privilege: LLMConfig.Modify
     """
 
     try:
@@ -317,7 +317,7 @@ async def update_user_llm_model_config(
 @router.delete(
     "/users/{user_id}/llm-model-configs/{config_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("User.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
 )
 async def delete_user_llm_model_config(
         user_id: UUID,
@@ -327,7 +327,7 @@ async def delete_user_llm_model_config(
     """
     Delete a user's LLM model configuration.
 
-    Required privilege: User.Modify
+    Required privilege: LLMConfig.Modify
     """
 
     try:
@@ -350,7 +350,7 @@ async def delete_user_llm_model_config(
 @router.put(
     "/users/{user_id}/llm-model-configs/default/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("User.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
 )
 async def set_user_default_llm_model_config(
         user_id: UUID,
@@ -360,7 +360,7 @@ async def set_user_default_llm_model_config(
     """
     Set a user's default LLM model configuration.
 
-    Required privilege: User.Modify
+    Required privilege: LLMConfig.Modify
     """
 
     try:

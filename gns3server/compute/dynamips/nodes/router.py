@@ -126,7 +126,7 @@ class Router(BaseNode):
                 self._dynamips_id = dynamips_id
                 manager.take_dynamips_id(project.id, dynamips_id)
         else:
-            log.info("Creating a new ghost IOS instance")
+            log.debug("Creating a new ghost IOS instance")
             if self._console:
                 # Ghost VMs do not need a console port.
                 self.console = None
@@ -243,7 +243,7 @@ class Router(BaseNode):
 
         if not self._ghost_flag:
 
-            log.info(
+            log.debug(
                 'Router {platform} "{name}" [{id}] has been created'.format(
                     name=self._name, platform=self._platform, id=self._id
                 )
@@ -328,7 +328,7 @@ class Router(BaseNode):
             )
             await self._hypervisor.send(f'vm start "{self._name}"')
             self.status = "started"
-            log.info(f'router "{self._name}" [{self._id}] has been started')
+            log.debug(f'router "{self._name}" [{self._id}] has been started')
 
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy="hash", delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
@@ -348,7 +348,7 @@ class Router(BaseNode):
 
         if self.status == "started":
             self.status = "stopped"
-            log.info("Dynamips hypervisor process has stopped, return code: %d", returncode)
+            log.debug("Dynamips hypervisor process has stopped, return code: %d", returncode)
             if returncode != 0:
                 self.project.emit(
                     "log.error",
@@ -369,7 +369,7 @@ class Router(BaseNode):
             except DynamipsError as e:
                 log.warning(f"Could not stop {self._name}: {e}")
             self.status = "stopped"
-            log.info(f'Router "{self._name}" [{self._id}] has been stopped')
+            log.debug(f'Router "{self._name}" [{self._id}] has been stopped')
         if self._memory_watcher:
             self._memory_watcher.close()
             self._memory_watcher = None
@@ -393,7 +393,7 @@ class Router(BaseNode):
         if status == "running":
             await self._hypervisor.send(f'vm suspend "{self._name}"')
             self.status = "suspended"
-            log.info(f'Router "{self._name}" [{self._id}] has been suspended')
+            log.debug(f'Router "{self._name}" [{self._id}] has been suspended')
 
     async def resume(self):
         """
@@ -404,7 +404,7 @@ class Router(BaseNode):
         if status == "suspended":
             await self._hypervisor.send(f'vm resume "{self._name}"')
             self.status = "started"
-        log.info(f'Router "{self._name}" [{self._id}] has been resumed')
+        log.debug(f'Router "{self._name}" [{self._id}] has been resumed')
 
     async def is_running(self):
         """
@@ -545,7 +545,7 @@ class Router(BaseNode):
 
         await self._hypervisor.send(f'vm set_ios "{self._name}" "{image}"')
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: has a new IOS image set: "{image}"'.format(
                 name=self._name, id=self._id, image=image
             )
@@ -574,7 +574,7 @@ class Router(BaseNode):
             return
 
         await self._hypervisor.send(f'vm set_ram "{self._name}" {ram}')
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(
                 name=self._name, id=self._id, old_ram=self._ram, new_ram=ram
             )
@@ -602,7 +602,7 @@ class Router(BaseNode):
             return
 
         await self._hypervisor.send(f'vm set_nvram "{self._name}" {nvram}')
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(
                 name=self._name, id=self._id, old_nvram=self._nvram, new_nvram=nvram
             )
@@ -635,9 +635,9 @@ class Router(BaseNode):
         await self._hypervisor.send(f'vm set_ram_mmap "{self._name}" {flag}')
 
         if mmap:
-            log.info(f'Router "{self._name}" [{self._id}]: mmap enabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: mmap enabled')
         else:
-            log.info(f'Router "{self._name}" [{self._id}]: mmap disabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: mmap disabled')
         self._mmap = mmap
 
     @property
@@ -664,9 +664,9 @@ class Router(BaseNode):
         await self._hypervisor.send(f'vm set_sparse_mem "{self._name}" {flag}')
 
         if sparsemem:
-            log.info(f'Router "{self._name}" [{self._id}]: sparse memory enabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: sparse memory enabled')
         else:
-            log.info(f'Router "{self._name}" [{self._id}]: sparse memory disabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: sparse memory disabled')
         self._sparsemem = sparsemem
 
     @property
@@ -688,7 +688,7 @@ class Router(BaseNode):
         """
 
         await self._hypervisor.send(f'vm set_clock_divisor "{self._name}" {clock_divisor}')
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: clock divisor updated from {old_clock} to {new_clock}'.format(
                 name=self._name, id=self._id, old_clock=self._clock_divisor, new_clock=clock_divisor
             )
@@ -722,7 +722,7 @@ class Router(BaseNode):
         else:
             await self._hypervisor.send(f'vm set_idle_pc_online "{self._name}" 0 {idlepc}')
 
-        log.info(f'Router "{self._name}" [{self._id}]: idle-PC set to {idlepc}')
+        log.debug(f'Router "{self._name}" [{self._id}]: idle-PC set to {idlepc}')
         self._idlepc = idlepc
 
     async def get_idle_pc_prop(self):
@@ -741,10 +741,10 @@ class Router(BaseNode):
             was_auto_started = True
             await asyncio.sleep(20)  # leave time to the router to boot
 
-        log.info(f'Router "{self._name}" [{self._id}] has started calculating Idle-PC values')
+        log.debug(f'Router "{self._name}" [{self._id}] has started calculating Idle-PC values')
         begin = time.time()
         idlepcs = await self._hypervisor.send(f'vm get_idle_pc_prop "{self._name}" 0')
-        log.info(
+        log.debug(
             'Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(
                 name=self._name, id=self._id, time=time.time() - begin
             )
@@ -789,7 +789,7 @@ class Router(BaseNode):
         if is_running:  # router is running
             await self._hypervisor.send(f'vm set_idle_max "{self._name}" 0 {idlemax}')
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: idlemax updated from {old_idlemax} to {new_idlemax}'.format(
                 name=self._name, id=self._id, old_idlemax=self._idlemax, new_idlemax=idlemax
             )
@@ -820,7 +820,7 @@ class Router(BaseNode):
                 'vm set_idle_sleep_time "{name}" 0 {idlesleep}'.format(name=self._name, idlesleep=idlesleep)
             )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: idlesleep updated from {old_idlesleep} to {new_idlesleep}'.format(
                 name=self._name, id=self._id, old_idlesleep=self._idlesleep, new_idlesleep=idlesleep
             )
@@ -849,7 +849,7 @@ class Router(BaseNode):
             'vm set_ghost_file "{name}" "{ghost_file}"'.format(name=self._name, ghost_file=ghost_file)
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: ghost file set to "{ghost_file}"'.format(
                 name=self._name, id=self._id, ghost_file=ghost_file
             )
@@ -892,7 +892,7 @@ class Router(BaseNode):
             'vm set_ghost_status "{name}" {ghost_status}'.format(name=self._name, ghost_status=ghost_status)
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: ghost status set to {ghost_status}'.format(
                 name=self._name, id=self._id, ghost_status=ghost_status
             )
@@ -923,7 +923,7 @@ class Router(BaseNode):
             'vm set_exec_area "{name}" {exec_area}'.format(name=self._name, exec_area=exec_area)
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: exec area updated from {old_exec}MB to {new_exec}MB'.format(
                 name=self._name, id=self._id, old_exec=self._exec_area, new_exec=exec_area
             )
@@ -949,7 +949,7 @@ class Router(BaseNode):
 
         await self._hypervisor.send(f'vm set_disk0 "{self._name}" {disk0}')
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: disk0 updated from {old_disk0}MB to {new_disk0}MB'.format(
                 name=self._name, id=self._id, old_disk0=self._disk0, new_disk0=disk0
             )
@@ -975,7 +975,7 @@ class Router(BaseNode):
 
         await self._hypervisor.send(f'vm set_disk1 "{self._name}" {disk1}')
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: disk1 updated from {old_disk1}MB to {new_disk1}MB'.format(
                 name=self._name, id=self._id, old_disk1=self._disk1, new_disk1=disk1
             )
@@ -1000,9 +1000,9 @@ class Router(BaseNode):
         """
 
         if auto_delete_disks:
-            log.info(f'Router "{self._name}" [{self._id}]: auto delete disks enabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: auto delete disks enabled')
         else:
-            log.info(f'Router "{self._name}" [{self._id}]: auto delete disks disabled')
+            log.debug(f'Router "{self._name}" [{self._id}]: auto delete disks disabled')
         self._auto_delete_disks = auto_delete_disks
 
     async def set_console(self, console):
@@ -1130,7 +1130,7 @@ class Router(BaseNode):
             )
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: MAC address updated from {old_mac} to {new_mac}'.format(
                 name=self._name, id=self._id, old_mac=self._mac_addr, new_mac=mac_addr
             )
@@ -1160,7 +1160,7 @@ class Router(BaseNode):
             )
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: system ID updated from {old_id} to {new_id}'.format(
                 name=self._name, id=self._id, old_id=self._system_id, new_id=system_id
             )
@@ -1218,7 +1218,7 @@ class Router(BaseNode):
             )
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: adapter {adapter} inserted into slot {slot_number}'.format(
                 name=self._name, id=self._id, adapter=adapter, slot_number=slot_number
             )
@@ -1233,7 +1233,7 @@ class Router(BaseNode):
                 'vm slot_oir_start "{name}" {slot_number} 0'.format(name=self._name, slot_number=slot_number)
             )
 
-            log.info(
+            log.debug(
                 'Router "{name}" [{id}]: OIR start event sent to slot {slot_number}'.format(
                     name=self._name, id=self._id, slot_number=slot_number
                 )
@@ -1279,7 +1279,7 @@ class Router(BaseNode):
                 'vm slot_oir_stop "{name}" {slot_number} 0'.format(name=self._name, slot_number=slot_number)
             )
 
-            log.info(
+            log.debug(
                 'Router "{name}" [{id}]: OIR stop event sent to slot {slot_number}'.format(
                     name=self._name, id=self._id, slot_number=slot_number
                 )
@@ -1289,7 +1289,7 @@ class Router(BaseNode):
             'vm slot_remove_binding "{name}" {slot_number} 0'.format(name=self._name, slot_number=slot_number)
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_number}'.format(
                 name=self._name, id=self._id, adapter=adapter, slot_number=slot_number
             )
@@ -1331,7 +1331,7 @@ class Router(BaseNode):
             )
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_number}'.format(
                 name=self._name, id=self._id, wic=wic, wic_slot_number=wic_slot_number
             )
@@ -1375,7 +1375,7 @@ class Router(BaseNode):
             )
         )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: {wic} removed from WIC slot {wic_slot_number}'.format(
                 name=self._name, id=self._id, wic=adapter.wics[wic_slot_number], wic_slot_number=wic_slot_number
             )
@@ -1441,7 +1441,7 @@ class Router(BaseNode):
                 )
             )
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: NIO {nio_name} bound to port {slot_number}/{port_number}'.format(
                 name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
             )
@@ -1502,7 +1502,7 @@ class Router(BaseNode):
         await nio.close()
         adapter.remove_nio(port_number)
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(
                 name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
             )
@@ -1526,7 +1526,7 @@ class Router(BaseNode):
                 )
             )
 
-            log.info(
+            log.debug(
                 'Router "{name}" [{id}]: NIO enabled on port {slot_number}/{port_number}'.format(
                     name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
                 )
@@ -1581,7 +1581,7 @@ class Router(BaseNode):
                 )
             )
 
-            log.info(
+            log.debug(
                 'Router "{name}" [{id}]: NIO disabled on port {slot_number}/{port_number}'.format(
                     name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
                 )
@@ -1635,7 +1635,7 @@ class Router(BaseNode):
                 )
             )
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(
                 name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
             )
@@ -1675,7 +1675,7 @@ class Router(BaseNode):
             return
         await nio.stop_packet_capture()
 
-        log.info(
+        log.debug(
             'Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(
                 name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
             )
@@ -1748,7 +1748,7 @@ class Router(BaseNode):
             except OSError as e:
                 raise DynamipsError(f"Could not amend the configuration {self.private_config_path}: {e}")
 
-        log.info(f'Router "{self._name}" [{self._id}]: renamed to "{new_name}"')
+        log.debug(f'Router "{self._name}" [{self._id}]: renamed to "{new_name}"')
         self._name = new_name
 
     async def extract_config(self):
@@ -1788,7 +1788,7 @@ class Router(BaseNode):
                 config = "!\n" + config.replace("\r", "")
                 config_path = os.path.join(self._working_directory, startup_config)
                 with open(config_path, "wb") as f:
-                    log.info(f"saving startup-config to {startup_config}")
+                    log.debug(f"saving startup-config to {startup_config}")
                     f.write(config.encode("utf-8"))
             except (binascii.Error, OSError) as e:
                 raise DynamipsError(f"Could not save the startup configuration {config_path}: {e}")
@@ -1799,7 +1799,7 @@ class Router(BaseNode):
                 config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
                 config_path = os.path.join(self._working_directory, private_config)
                 with open(config_path, "wb") as f:
-                    log.info(f"saving private-config to {private_config}")
+                    log.debug(f"saving private-config to {private_config}")
                     f.write(config.encode("utf-8"))
             except (binascii.Error, OSError) as e:
                 raise DynamipsError(f"Could not save the private configuration {config_path}: {e}")
@@ -1827,7 +1827,7 @@ class Router(BaseNode):
             await wait_run_in_executor(shutil.rmtree, self._working_directory)
         except OSError as e:
             log.warning(f"Could not delete file {e}")
-        log.info(f'Router "{self._name}" [{self._id}] has been deleted (including associated files)')
+        log.debug(f'Router "{self._name}" [{self._id}] has been deleted (including associated files)')
 
     def _memory_files(self):
 

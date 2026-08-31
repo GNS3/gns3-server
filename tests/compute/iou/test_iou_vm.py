@@ -21,13 +21,14 @@ import asyncio
 import os
 import stat
 import socket
+import struct
 import uuid
 import shutil
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from unittest.mock import MagicMock
-from gns3server.compute.iou.iou_vm import IOUVM
+from unittest.mock import MagicMock, call
+from gns3server.compute.iou.iou_vm import IOUL1KeepaliveProtocol, IOUVM
 from gns3server.compute.iou.iou_error import IOUError
 from gns3server.compute.iou import IOU
 
@@ -76,6 +77,7 @@ def test_vm(compute_project, manager):
     vm = IOUVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     assert vm.name == "test"
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+    assert vm.l1_keepalives is False
 
 
 def test_vm_startup_config_content(compute_project, manager):
@@ -109,6 +111,45 @@ async def test_start(vm):
     vm._ubridge_send.assert_any_call("iol_bridge delete IOL-BRIDGE-513")
     vm._ubridge_send.assert_any_call("iol_bridge create IOL-BRIDGE-513 513")
     vm._ubridge_send.assert_any_call("iol_bridge start IOL-BRIDGE-513")
+
+
+@pytest.mark.asyncio
+async def test_start_does_not_start_l1_responder_without_l_option(vm):
+
+    process = MagicMock(returncode=None)
+    process.communicate = AsyncioMagicMock(return_value=(None, None))
+    vm.l1_keepalives = True
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+    vm._build_command = AsyncioMagicMock(return_value=[vm.path, str(vm.application_id)])
+    vm._start_l1_keepalive_responder = AsyncioMagicMock()
+
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        await vm.start()
+
+    vm._start_l1_keepalive_responder.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_start_failure_stops_l1_responder(vm):
+
+    vm.l1_keepalives = True
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+    vm._build_command = AsyncioMagicMock(return_value=[vm.path, "-l", str(vm.application_id)])
+    vm._start_l1_keepalive_responder = AsyncioMagicMock()
+    vm._stop_l1_keepalive_responder = MagicMock()
+
+    with asyncio_patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError("missing image")):
+        with pytest.raises(IOUError):
+            await vm.start()
+
+    vm._start_l1_keepalive_responder.assert_called_once_with()
+    vm._stop_l1_keepalive_responder.assert_called_once_with()
 
 
 @pytest.mark.asyncio
@@ -261,10 +302,155 @@ def test_create_netmap_config(vm):
     assert "513:15/3    1:15/3" in content
 
 
+@pytest.mark.parametrize(
+    "adapter_number,port_number,interface",
+    [
+        (0, 0, 0x00),
+        (0, 1, 0x10),
+        (0, 2, 0x20),
+        (0, 3, 0x30),
+        (1, 0, 0x01),
+        (1, 3, 0x31),
+        (15, 3, 0x3F),
+    ],
+)
+def test_l1_keepalive_interface_encoding(adapter_number, port_number, interface):
+
+    assert IOUL1KeepaliveProtocol.encode_interface(adapter_number, port_number) == interface
+    assert IOUL1KeepaliveProtocol.decode_interface(interface) == (adapter_number, port_number)
+
+
+def test_l1_keepalive_response_for_connected_interface(vm):
+
+    vm._adapters[0].add_nio(1, MagicMock())
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    keepalive = struct.pack("!HHBBBB", 513, 1, 0x10, 0x10, 3, 0)
+    protocol.datagram_received(keepalive, None)
+
+    transport.sendto.assert_called_once_with(
+        struct.pack("!HHBBBB", 1, 513, 0x10, 0x10, 3, 0),
+        vm.l1_iou_socket_path,
+    )
+
+
+def test_l1_keepalive_sent_for_connected_interface(vm):
+
+    vm._adapters[0].add_nio(2, MagicMock())
+    vm._adapters[0].add_nio(3, MagicMock())
+    vm._adapters[1].add_nio(2, MagicMock())
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    protocol.send_keepalives()
+
+    assert transport.sendto.call_args_list == [
+        call(struct.pack("!HHBBBB", 1, 513, 0x20, 0x20, 3, 0), vm.l1_iou_socket_path),
+        call(struct.pack("!HHBBBB", 1, 513, 0x30, 0x30, 3, 0), vm.l1_iou_socket_path),
+        call(struct.pack("!HHBBBB", 1, 513, 0x21, 0x21, 3, 0), vm.l1_iou_socket_path),
+    ]
+
+
+def test_l1_keepalives_preserve_mixed_iou_interface_numbers(vm):
+
+    vm.ethernet_adapters = 4
+    vm.serial_adapters = 2
+    vm._adapters[0].add_nio(0, MagicMock())  # Ethernet0/0
+    vm._adapters[1].add_nio(1, MagicMock())  # Ethernet1/1
+    vm._adapters[2].add_nio(2, MagicMock())  # Ethernet2/2
+    vm._adapters[4].add_nio(0, MagicMock())  # Serial4/0
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    protocol.send_keepalives()
+
+    assert transport.sendto.call_args_list == [
+        call(struct.pack("!HHBBBB", 1, 513, 0x00, 0x00, 3, 0), vm.l1_iou_socket_path),
+        call(struct.pack("!HHBBBB", 1, 513, 0x11, 0x11, 3, 0), vm.l1_iou_socket_path),
+        call(struct.pack("!HHBBBB", 1, 513, 0x22, 0x22, 3, 0), vm.l1_iou_socket_path),
+        call(struct.pack("!HHBBBB", 1, 513, 0x04, 0x04, 3, 0), vm.l1_iou_socket_path),
+    ]
+
+
+def test_l1_keepalive_response_for_serial4_0(vm):
+
+    vm.ethernet_adapters = 4
+    vm.serial_adapters = 2
+    vm._adapters[4].add_nio(0, MagicMock())
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    protocol.datagram_received(struct.pack("!HHBBBB", 513, 1, 0x04, 0x04, 3, 0), None)
+
+    transport.sendto.assert_called_once_with(
+        struct.pack("!HHBBBB", 1, 513, 0x04, 0x04, 3, 0),
+        vm.l1_iou_socket_path,
+    )
+
+
+def test_stop_l1_keepalive_responder_cleans_up(vm):
+
+    task = MagicMock()
+    transport = MagicMock()
+    vm._l1_keepalive_task = task
+    vm._l1_keepalive_transport = transport
+
+    with asyncio_patch("os.path.lexists", return_value=False):
+        vm._stop_l1_keepalive_responder()
+        vm._stop_l1_keepalive_responder()
+
+    task.cancel.assert_called_once_with()
+    transport.close.assert_called_once_with()
+    assert vm._l1_keepalive_task is None
+    assert vm._l1_keepalive_transport is None
+
+
+def test_l1_keepalive_ignored_for_disconnected_interface(vm):
+
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    protocol.datagram_received(struct.pack("!HHBBBB", 513, 1, 0x00, 0x00, 3, 0), None)
+
+    transport.sendto.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "keepalive",
+    [
+        b"invalid",
+        struct.pack("!HHBBBB", 514, 1, 0x00, 0x00, 3, 0),
+        struct.pack("!HHBBBB", 513, 2, 0x00, 0x00, 3, 0),
+        struct.pack("!HHBBBB", 513, 1, 0x00, 0x00, 2, 0),
+        struct.pack("!HHBBBB", 513, 1, 0x04, 0x04, 3, 0),
+        struct.pack("!HHBBBB", 513, 1, 0x40, 0x40, 3, 0),
+    ],
+)
+def test_invalid_l1_keepalive_is_ignored(vm, keepalive):
+
+    vm._adapters[0].add_nio(0, MagicMock())
+    transport = MagicMock()
+    protocol = IOUL1KeepaliveProtocol(vm)
+    protocol.connection_made(transport)
+
+    protocol.datagram_received(keepalive, None)
+
+    transport.sendto.assert_not_called()
+
+
 @pytest.mark.asyncio
 async def test_build_command(vm):
 
-    assert await vm._build_command() == [vm.path, "-n", "256", "-m", "1024", str(vm.application_id)]
+    vm.l1_keepalives = True
+    help_output = "-l\t\tEnable Layer 1 keepalive messages\n"
+    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value=help_output):
+        assert await vm._build_command() == [vm.path, "-n", "256", "-m", "1024", "-l", str(vm.application_id)]
 
 
 def test_get_startup_config(vm):
@@ -350,7 +536,7 @@ async def test_enable_l1_keepalives(vm):
         command = ["test"]
         with pytest.raises(IOUError):
             await vm._enable_l1_keepalives(command)
-            assert command == ["test"]
+        assert command == ["test"]
 
 
 @pytest.mark.asyncio

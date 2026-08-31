@@ -69,7 +69,7 @@ class Nat(Cloud):
                 )
             interface = interfaces[0]  # take the first available interface containing the vmnet8 name
 
-        log.info(f"NAT node '{name}' configured to use NAT interface '{interface}'")
+        log.debug(f"NAT node '{name}' configured to use NAT interface '{interface}'")
         ports = [{"name": "nat0", "type": "ethernet", "interface": interface, "port_number": 0}]
         super().__init__(name, node_id, project, manager, ports=ports)
 
@@ -87,6 +87,23 @@ class Nat(Cloud):
         return True
 
     def asdict(self):
+
+        nat_interface = self._ports_mapping[0].get("interface", "") if self._ports_mapping else ""
+
+        host_interfaces = []
+        network_interfaces = gns3server.utils.interfaces.interfaces()
+        for interface in network_interfaces:
+            if interface["name"] == nat_interface:
+                host_interfaces.append(
+                    {
+                        "name": interface["name"],
+                        "type": interface["type"],
+                        "special": interface["special"],
+                        "ip_addresses": interface.get("ip_addresses", []),
+                    }
+                )
+                break
+
         return {
             "name": self.name,
             "usage": self.usage,
@@ -94,4 +111,5 @@ class Nat(Cloud):
             "project_id": self.project.id,
             "status": "started",
             "ports_mapping": self.ports_mapping,
+            "interfaces": host_interfaces,
         }

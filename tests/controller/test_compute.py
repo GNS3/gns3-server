@@ -15,13 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import json
+import asyncio
+import aiohttp
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ComputeConflictError
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    ControllerUnauthorizedError,
+    ComputeConflictError,
+)
 from pydantic import SecretStr
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -87,7 +96,7 @@ async def test_compute_httpQuery(compute):
         response.status = 200
         await compute.post("/projects", {"a": "b"})
         await compute.close()
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=b'{"a": "b"}', headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=120)
+        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=b'{"a": "b"}', auth=None, params=None, chunked=None, timeout=120)
         assert compute._auth is None
 
 
@@ -102,7 +111,7 @@ async def test_compute_httpQueryAuth(compute):
         compute.password = SecretStr("toor")
         await compute.post("/projects", {"a": "b"})
         await compute.close()
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=b'{"a": "b"}', headers={'content-type': 'application/json'}, auth=compute._auth, chunked=None, timeout=120)
+        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=b'{"a": "b"}', auth=compute._auth, params=None, chunked=None, timeout=120)
         assert compute._auth.login == "root"
         assert compute._auth.password == "toor"
 
@@ -162,7 +171,7 @@ async def test_compute_httpQueryNotConnectedInvalidVersion(compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=120)
+        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
         await compute.close()
 
 
@@ -176,7 +185,7 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server(compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=120)
+        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
         await compute.close()
 
 
@@ -190,7 +199,7 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server2(compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=120)
+        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
 
 
 @pytest.mark.asyncio
@@ -228,7 +237,7 @@ async def test_compute_httpQuery_project(compute):
             project = Project(name="Test")
             mock_notification.assert_called()
         await compute.post("/projects", project)
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=json.dumps(project.asdict()), headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=120)
+        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=json.dumps(project.asdict()), auth=None, params=None, chunked=None, timeout=120)
         await compute.close()
 
 # FIXME: https://github.com/aio-libs/aiohttp/issues/2525
@@ -372,7 +381,7 @@ async def test_forward_get(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.forward("GET", "qemu", "images")
-        mock.assert_called_with("GET", "https://example.com:84/v3/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=None, timeout=None)
+        mock.assert_called_with("GET", "https://example.com:84/v3/compute/qemu/images", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=None)
         await compute.close()
 
 
@@ -395,7 +404,7 @@ async def test_forward_post(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.forward("POST", "qemu", "img", data={"id": 42})
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/qemu/img", auth=None, data=b'{"id": 42}', headers={'content-type': 'application/json'}, chunked=None, timeout=None)
+        mock.assert_called_with("POST", "https://example.com:84/v3/compute/qemu/img", headers={'content-type': 'application/json'}, data=b'{"id": 42}', auth=None, params=None, chunked=None, timeout=None)
         await compute.close()
 
 
@@ -408,7 +417,7 @@ async def test_list_files(project, compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert await compute.list_files(project) == res
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/projects/{}/files".format(project.id), auth=None, chunked=None, data=None, headers={'content-type': 'application/json'}, timeout=None)
+        mock.assert_any_call("GET", "https://example.com:84/v3/compute/projects/{}/files".format(project.id), headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=None)
         await compute.close()
 
 
@@ -430,7 +439,7 @@ async def test_interfaces(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert await compute.interfaces() == res
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/network/interfaces", auth=None, chunked=None, data=None, headers={'content-type': 'application/json'}, timeout=120)
+        mock.assert_any_call("GET", "https://example.com:84/v3/compute/network/interfaces", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
         await compute.close()
 
 
@@ -524,3 +533,100 @@ async def test_get_ip_on_same_subnet(controller):
         },
     ]
     assert await compute1.get_ip_on_same_subnet(compute2) == ('192.168.2.1', '192.168.1.2')
+
+
+class FakeWebSocket:
+    """
+    Minimal aiohttp WebSocketResponse stand-in for notification stream tests.
+    """
+
+    def __init__(self, frames):
+        self._frames = list(frames)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc_info):
+        return False
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self._frames:
+            raise StopAsyncIteration
+        return self._frames.pop(0)
+
+
+def _text_frame(payload):
+    return SimpleNamespace(type=aiohttp.WSMsgType.TEXT, data=json.dumps(payload))
+
+
+@pytest.mark.asyncio
+async def test_connect_notification_poison_frame_autoreconnects(compute, monkeypatch):
+    """
+    A malformed frame must not permanently kill the notification stream: the
+    error is logged, clients are notified and a reconnection is scheduled.
+    """
+
+    emit_mock = MagicMock()
+    monkeypatch.setattr(compute._controller.notification, "controller_emit", emit_mock)
+    frames = [
+        _text_frame({"action": "ping", "event": {"cpu_usage_percent": 10.0, "memory_usage_percent": 20.0, "disk_usage_percent": 30.0}}),
+        _text_frame({"event": {"poison": True}}),  # missing "action": raises KeyError in the receive loop
+    ]
+    session = MagicMock()
+    session.closed = False
+    session.ws_connect = MagicMock(return_value=FakeWebSocket(frames))
+    compute._http_session = session
+
+    # allow the reconnection to be scheduled during the test
+    monkeypatch.delattr(sys, "_called_from_test", raising=False)
+    from gns3server.api.server import app as gns3_app
+    monkeypatch.setattr(gns3_app.state, "exiting", False)
+
+    async def fake_connect():
+        compute._reconnect_attempted = True
+    monkeypatch.setattr(compute, "connect", fake_connect)
+
+    # must not raise despite the poison frame
+    await compute._connect_notification()
+
+    actions = [c.args[0] for c in emit_mock.call_args_list]
+    assert actions.count("compute.updated") >= 2  # one for the ping, one for the disconnect
+    assert compute._connected is False
+
+    # the reconnection scheduled by the finally block fires after 1 second
+    await asyncio.sleep(1.2)
+    assert compute._reconnect_attempted is True
+
+
+@pytest.mark.asyncio
+async def test_connect_http_error_notifies_schedules_retry_and_raises(compute, monkeypatch):
+    """
+    HTTP-level failures (401/403/404...) reach connect() as ControllerError
+    subclasses. They must notify clients, schedule a retry and still raise for
+    explicit callers. They used to silently kill the fire-and-forget connect()
+    task started at controller startup: no notification, no retry.
+    """
+
+    compute._connected = False
+    emit_mock = MagicMock()
+    monkeypatch.setattr(compute._controller.notification, "controller_emit", emit_mock)
+
+    async def raise_unauthorized(*args, **kwargs):
+        raise ControllerUnauthorizedError("Invalid authentication for compute 'my_compute_id'")
+
+    monkeypatch.setattr(compute, "_run_http_query", raise_unauthorized)
+    monkeypatch.delattr(sys, "_called_from_test", raising=False)
+    scheduled_delays = []
+    monkeypatch.setattr(asyncio.get_event_loop(), "call_later", lambda delay, callback: scheduled_delays.append(delay))
+
+    with pytest.raises(ControllerUnauthorizedError):
+        await compute.connect()
+
+    assert compute._last_error == "Invalid authentication for compute 'my_compute_id'"
+    assert compute.connected is False
+    actions = [c.args[0] for c in emit_mock.call_args_list]
+    assert "compute.updated" in actions
+    assert scheduled_delays == [5]  # first exponential backoff delay

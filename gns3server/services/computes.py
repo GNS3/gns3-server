@@ -54,8 +54,12 @@ class ComputesService:
         self._controller.notification.controller_emit("compute.created", compute.asdict())
         return db_compute
 
-    async def get_compute(self, compute_id: Union[str, UUID]) -> models.Compute:
+    async def get_compute(self, compute_id: Union[str, UUID]) -> Union[models.Compute, dict]:
 
+        if str(compute_id) == "local":
+            # the built-in local compute only lives in the controller, not in the database;
+            # drop unset fields (e.g. user) as the response schema types them as str
+            return {k: v for k, v in self._controller.get_compute("local").asdict().items() if v is not None}
         db_compute = await self._computes_repo.get_compute(compute_id)
         if not db_compute:
             raise ControllerNotFoundError(f"Compute '{compute_id}' not found")

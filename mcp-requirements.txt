@@ -1,0 +1,8 @@
+# ==============================================================================
+# GNS3 MCP (Model Context Protocol) Service Dependencies
+# ==============================================================================
+# Install with: pip install gns3-server[ai-features]
+# Or directly: pip install -r mcp-requirements.txt
+# ==============================================================================
+
+fastmcp>=3.4.0

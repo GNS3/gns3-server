@@ -192,12 +192,14 @@ async def test_open(controller, projects_dir):
         "version": "2.0.0"
     }
 
-    with open(os.path.join(projects_dir, "demo.gns3"), "w+") as f:
+    project_dir = os.path.join(projects_dir, "demo")
+    os.makedirs(project_dir)
+    with open(os.path.join(project_dir, "demo.gns3"), "w+") as f:
         json.dump(simple_topology, f)
 
     project = Project(name="demo",
                       project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
-                      path=str(projects_dir),
+                      path=project_dir,
                       controller=controller,
                       filename="demo.gns3",
                       status="closed")

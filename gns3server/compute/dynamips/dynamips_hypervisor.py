@@ -90,12 +90,12 @@ class DynamipsHypervisor:
         if not connection_success:
             raise DynamipsError(f"Couldn't connect to hypervisor on {host}:{self._port} :{last_exception}")
         else:
-            log.info(f"Connected to Dynamips hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
+            log.debug(f"Connected to Dynamips hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
 
         try:
             version = await self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
-            log.info("Dynamips version {} detected".format(self._version))
+            log.debug("Dynamips version {} detected".format(self._version))
         except IndexError:
             log.warning("Dynamips version could not be detected")
             self._version = "Unknown"

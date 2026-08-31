@@ -38,7 +38,10 @@ class IOUBase(BaseModel):
     ethernet_adapters: Optional[int] = Field(None, description="How many Ethernet adapters are connected to IOU")
     ram: Optional[int] = Field(None, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, gt=0, description="Amount of NVRAM in KB")
-    l1_keepalives: Optional[bool] = Field(None, description="Use default IOU values")
+    l1_keepalives: Optional[bool] = Field(
+        None,
+        description="Enable Layer 1 keepalives so IOU interfaces report accurate link state",
+    )
     use_default_iou_values: Optional[bool] = Field(None, description="Use default IOU values")
     startup_config_content: Optional[str] = Field(None, description="Content of IOU startup configuration file")
     private_config_content: Optional[str] = Field(None, description="Content of IOU private configuration file")
