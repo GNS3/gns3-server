@@ -75,6 +75,9 @@ Web-based packet capture analysis using Docker + xpra HTML5 client. Zero-install
 ### Marker (Traffic Insight) (`features/marker-traffic-insight.md`)
 Real-time traffic insight via per-link BPF markers and project-level inherited definitions. A marker taps a link in uBridge, emitting match notifications and pcap capture on BPF hit; definitions fan out to every capable link automatically.
 
+### Marker Tag Replay (`features/marker-tag-replay.md`)
+Aggregate playback across links keyed by `tag`: once every marker under a tag is paused, their pcaps merge into one timestamp-ordered timeline; frames are decoded on demand via tshark into an isomorphic JSON protocol tree. The cross-link delta of the same packet measures the intermediate node's forwarding latency.
+
 ### Docker exec Console (Vendor NOS) (`features/docker-exec-console.md`)
 Console for vendor NOS containers (SR Linux, XRd, …) whose CLI is a TUI off PID 1: runs the vendor CLI via the Docker exec API, plus `GNS3_SKIP_INIT`/`GNS3_INTERFACE_NAMES` boot knobs and SKIP_INIT volume persistence.
 
@@ -127,4 +130,4 @@ Quick-start guide for Ubuntu 24.04: install via PPA, set up dependencies, and ru
 
 ---
 
-_Last updated: 2026-08-14_
+_Last updated: 2026-09-01_

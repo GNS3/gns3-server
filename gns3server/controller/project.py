@@ -505,6 +505,17 @@ class Project:
         return path
 
     @property
+    def markers_directory(self):
+        """
+        Location of the marker pcap files (same layout the compute side writes
+        via ``markers_working_directory`` — single-server deployments share the
+        project directory, which is what tag replay reads).
+        """
+        path = os.path.join(self._path, "project-files", "markers")
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    @property
     def pictures_directory(self):
         """
         Location of the images files

@@ -44,6 +44,8 @@ from gns3server.controller.link import _UNSET
 from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
+from gns3server.controller import marker_replay
+from gns3server.controller.marker_replay import TsharkError, TsharkMissingError
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -217,6 +219,87 @@ def get_project_markers(project: Project = Depends(dep_project)) -> dict:
     """
 
     return project.markers
+
+
+@router.get(
+    "/{project_id}/markers/tags/{tag}/replay/range",
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+def replay_tag_range(tag: int, project: Project = Depends(dep_project)) -> dict:
+    """
+    Aggregate replay timeline for a tag: merges the pcap of every marker
+    carrying ``tag`` into one timestamp-ordered view (design reference:
+    ``marker_replay`` module docstring).
+
+    The tag gate applies: every marker under the tag must be paused
+    (``enabled: false``) — 409 otherwise. The response carries the timeline
+    bounds, per-source stats, and the full merged frame list while under the
+    frame cap (5000); above it the list is replaced by per-second buckets.
+
+    Required privilege: Project.Audit
+    """
+
+    return marker_replay.build_timeline(project, tag)
+
+
+@router.get(
+    "/{project_id}/markers/tags/{tag}/replay/frames",
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+def replay_tag_frames(
+    tag: int,
+    ts: str,
+    window_ms: int = 100,
+    limit: int = 1000,
+    project: Project = Depends(dep_project),
+) -> dict:
+    """
+    Frames with ts in ``[ts, ts + window_ms]`` merged across every source of
+    the tag. A time with no frames is a normal successful answer:
+    ``{"frames": []}``. The tag gate applies (409 while any marker captures).
+
+    ``ts`` must be the exact string returned by the range response — never
+    re-serialize it through a float.
+
+    Required privilege: Project.Audit
+    """
+
+    return marker_replay.query_frames(project, tag, ts, window_ms=window_ms, limit=limit)
+
+
+@router.get(
+    "/{project_id}/markers/tags/{tag}/replay/frame/detail",
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+async def replay_tag_frame_detail(
+    tag: int,
+    ts: str,
+    node_id: str,
+    link_id: str,
+    marker: str,
+    project: Project = Depends(dep_project),
+) -> dict:
+    """
+    Decode exactly one frame (lazy — invoked when the user opens a frame,
+    never by the timeline itself): raw bytes for the hex view read straight
+    from the pcap, protocol tree from ``tshark -T pdml`` mapped isomorphically
+    to JSON (every PDML attribute survives, values stay strings).
+
+    ``ts`` must be the exact string from the frame list; ``node_id`` +
+    ``link_id`` + ``marker`` identify the source pcap. The tag gate applies.
+
+    Required privilege: Project.Audit
+    """
+
+    try:
+        return await marker_replay.decode_frame(project, tag, ts, node_id, link_id, marker)
+    except TsharkMissingError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="tshark is not installed on this server — frame detail is unavailable",
+        )
+    except TsharkError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
