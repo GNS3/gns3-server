@@ -114,13 +114,24 @@ class MarkerListener(asyncio.DatagramProtocol):
         # signals that carry no `link=`.
         signal_link = link if link and link != "-" else None
 
+        # Normalize the tag to int so the event matches the REST schema
+        # (MarkerCreate.tag is Optional[int]): the signal merely echoes the
+        # decimal we installed via `mark <bpf> tag <id>`, so parsing cannot
+        # fail for well-formed signals; a malformed value keeps the registered
+        # int, and the tag is None only when neither side carries one.
+        event_tag = registered_tag
+        if tag and tag != "-":
+            try:
+                event_tag = int(tag)
+            except ValueError:
+                pass  # malformed signal tag: keep the registered value
+
         event = {
             "project_id": project_id,
             "node_id": node_id,
             "link_id": signal_link or link_id,
             "filter": filter_name,
-            # Prefer the value carried in the signal; fall back to the one we registered.
-            "tag": tag if tag and tag != "-" else registered_tag,
+            "tag": event_tag,
             "ts": ts,
             "len": int(length) if length and length.isdigit() else 0,
             # Travel direction relative to the capture node (node_id above);

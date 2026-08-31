@@ -121,7 +121,11 @@ class TestMarkerListener:
         assert ev["node_id"] == "n1"
         assert ev["link_id"] == "l1"
         assert ev["filter"] == "f1"
-        assert ev["tag"] == "7"
+        # The event tag is normalized to int to match the REST schema — the
+        # signal echoes the decimal we installed, so str and int variants of
+        # the same tag must never reach consumers as different keys.
+        assert ev["tag"] == 7
+        assert isinstance(ev["tag"], int)
         assert ev["ts"] == pytest.approx(1700000000.123456)
         assert ev["len"] == 98
         # No dir= in the signal (legacy uBridge) → undirected.
@@ -162,6 +166,24 @@ class TestMarkerListener:
         lis.connection_made(None)
         lis.datagram_received(b"MARK 2.0 node=n filter=f tag=- len=20\n", None)
         assert fmgr.events[0][1]["tag"] == 42
+
+    def test_non_numeric_signal_tag_falls_back_to_registered(self):
+        # A corrupt/unknown signal value must not leak a str tag into the
+        # event stream — the registry's int wins.
+        fmgr = FakeMarkerManager()
+        fmgr.register("p", "n", "f", "l", tag=42)
+        lis = MarkerListener(fmgr)
+        lis.connection_made(None)
+        lis.datagram_received(b"MARK 2.0 node=n filter=f tag=oops len=20\n", None)
+        assert fmgr.events[0][1]["tag"] == 42
+
+    def test_no_tag_anywhere_is_none(self):
+        fmgr = FakeMarkerManager()
+        fmgr.register("p", "n", "f", "l", tag=None)
+        lis = MarkerListener(fmgr)
+        lis.connection_made(None)
+        lis.datagram_received(b"MARK 2.0 node=n filter=f tag=- len=20\n", None)
+        assert fmgr.events[0][1]["tag"] is None
 
     def test_link_in_signal_overrides_registry_link(self):
         # Per-link attribution (contract §3.2/§3.3): the signal's `link=` is
