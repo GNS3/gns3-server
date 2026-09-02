@@ -103,11 +103,19 @@ markers at all → 404.
 | all `enabled: false` (paused) | retained, frozen | **allowed** |
 | deleted | file unlinked | no data |
 | `bpf`/`tag`/`direction` changed (rebuild) | pcap reopened (truncated) — new session | prior history gone |
+| capture node (re)started | pcap reopened (truncated) — new session | prior history gone |
 
 - **Pause, not delete.** Deleting a marker (or its definition) deletes its pcap — replay
   before deleting or the data is gone.
 - **Pause → resume → pause is fine.** The pcap accumulates the full history; replay covers
   everything up to the current pause point.
+- **The replay window ends when nodes restart.** A pcap's lifetime equals its uBridge's
+  lifetime: a fresh uBridge reinstalls every desired marker — paused ones too (install
+  first, then turn the filter off) — and uBridge opens the pcap with truncate semantics
+  (`pcap_dump_open`, not `_append`). Server restart + project reopen **without starting
+  nodes** is safe: nothing touches the files until a uBridge comes up (verified live).
+  Docker nodes effectively restart on server restart as well (stale-container cleanup),
+  so their window is shorter still.
 - uBridge flushes every matched packet to the pcap immediately (`pcap_dump_flush` per
   packet under a mutex — verified in the uBridge source), so a pause boundary never loses
   tail frames.
@@ -244,4 +252,6 @@ the pcap.
   listener normalizes); replay keys on that int value.
 - **Follow-ups.** Remote-compute support via the existing capture-file proxy pattern;
   convenience APIs (`GET …/markers/tags` to list tags, `POST …/markers/tags/{tag}/pause`
-  to batch-pause — a one-call path to the replayable state).
+  to batch-pause — a one-call path to the replayable state); uBridge-side
+  `pcap_dump_open_append` (with a linktype-header check on the existing file) so capture
+  history survives node restarts instead of being truncated on every reinstall.
