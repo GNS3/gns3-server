@@ -29,13 +29,18 @@ pytestmark = pytest.mark.asyncio
 
 class TestControllerRoutes:
 
-    async def test_shutdown_local(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
-    
-        os.kill = MagicMock()
+    async def test_shutdown_local(self, app: FastAPI, client: AsyncClient, config: Config, monkeypatch) -> None:
+
+        # monkeypatch (not bare assignment): a global `os.kill = MagicMock()`
+        # is never restored and poisons every later test that kills a
+        # subprocess — resident sharkd sessions would wait() forever on an
+        # immortal process.
+        kill_mock = MagicMock()
+        monkeypatch.setattr(os, "kill", kill_mock)
         config.settings.Server.local = True
         response = await client.post(app.url_path_for("shutdown"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert os.kill.called
+        assert kill_mock.called
     
     
     async def test_shutdown_non_local(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
