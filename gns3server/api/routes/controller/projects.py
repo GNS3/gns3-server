@@ -45,7 +45,7 @@ from gns3server.controller.controller_error import ControllerError, ControllerBa
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.controller import marker_replay
-from gns3server.controller.marker_replay import TsharkError, TsharkMissingError
+from gns3server.controller.marker_replay import SharkdError, SharkdMissingError
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -221,36 +221,62 @@ def get_project_markers(project: Project = Depends(dep_project)) -> dict:
     return project.markers
 
 
+async def _replay_response(awaitable):
+    """Shared engine-error mapping for the replay endpoints: 501 when sharkd
+    (the hard engine requirement) is unavailable, 502 when it fails. Data
+    state errors (409 gate / 404 unknown tag) and filter errors (400) map
+    through the global handlers before this."""
+
+    try:
+        return await awaitable
+    except SharkdMissingError as e:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(e))
+    except SharkdError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+
+
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/range",
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
-def replay_tag_range(tag: int, project: Project = Depends(dep_project)) -> dict:
+async def replay_tag_range(
+    tag: int,
+    filter: Optional[str] = None,
+    project: Project = Depends(dep_project),
+) -> dict:
     """
     Aggregate replay timeline for a tag: merges the pcap of every marker
-    carrying ``tag`` into one timestamp-ordered view (design reference:
-    ``marker_replay`` module docstring).
+    carrying ``tag`` into one timestamp-ordered view. Every frame entry
+    carries Wireshark-style columns (``src`` / ``dst`` / ``proto`` / ``info``
+    plus coloring hints ``bg`` / ``fg``).
 
     The tag gate applies: every marker under the tag must be paused
     (``enabled: false``) — 409 otherwise. The response carries the timeline
     bounds, per-source stats, and the full merged frame list while under the
     frame cap (5000); above it the list is replaced by per-second buckets.
 
+    ``filter`` is an optional Wireshark display filter applied **before**
+    counting and slicing — start / end / frame_count / frames | buckets are
+    all computed on the matching frames only. An invalid expression is a 400
+    carrying sharkd's original error text (for inline display in the UI
+    filter bar). Requires sharkd — 501 without it.
+
     Required privilege: Project.Audit
     """
 
-    return marker_replay.build_timeline(project, tag)
+    return await _replay_response(marker_replay.build_timeline(project, tag, filter_expr=filter))
 
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/frames",
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
-def replay_tag_frames(
+async def replay_tag_frames(
     tag: int,
     ts: str,
     window_ms: int = 100,
     limit: int = 1000,
+    filter: Optional[str] = None,
     project: Project = Depends(dep_project),
 ) -> dict:
     """
@@ -259,12 +285,16 @@ def replay_tag_frames(
     ``{"frames": []}``. The tag gate applies (409 while any marker captures).
 
     ``ts`` must be the exact string returned by the range response — never
-    re-serialize it through a float.
+    re-serialize it through a float. ``filter`` (optional display filter) has
+    the same semantics as on the range endpoint. Requires sharkd — 501
+    without it.
 
     Required privilege: Project.Audit
     """
 
-    return marker_replay.query_frames(project, tag, ts, window_ms=window_ms, limit=limit)
+    return await _replay_response(
+        marker_replay.query_frames(project, tag, ts, window_ms=window_ms, limit=limit, filter_expr=filter)
+    )
 
 
 @router.get(
@@ -282,24 +312,21 @@ async def replay_tag_frame_detail(
     """
     Decode exactly one frame (lazy — invoked when the user opens a frame,
     never by the timeline itself): raw bytes for the hex view read straight
-    from the pcap, protocol tree from ``tshark -T pdml`` mapped isomorphically
-    to JSON (every PDML attribute survives, values stay strings).
+    from the pcap, protocol tree from the resident sharkd session with keys
+    renamed into the REST contract (``element`` / ``label`` / ``name`` /
+    ``filter_expr`` / ``pos`` + ``size`` / ``expert`` / ``generated`` /
+    ``children``) — values untouched.
 
     ``ts`` must be the exact string from the frame list; ``node_id`` +
     ``link_id`` + ``marker`` identify the source pcap. The tag gate applies.
+    Requires sharkd — 501 without it.
 
     Required privilege: Project.Audit
     """
 
-    try:
-        return await marker_replay.decode_frame(project, tag, ts, node_id, link_id, marker)
-    except TsharkMissingError:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="tshark is not installed on this server — frame detail is unavailable",
-        )
-    except TsharkError as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+    return await _replay_response(
+        marker_replay.decode_frame(project, tag, ts, node_id, link_id, marker)
+    )
 
 
 # ---------------------------------------------------------------------------

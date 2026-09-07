@@ -16,37 +16,46 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Tag-keyed aggregate replay over paused markers' pcap files.
+Tag-keyed aggregate replay over paused markers' pcaps, powered by sharkd.
 
 Markers on different links sharing a ``tag`` form one distributed capture
 session. This module merges their per-marker pcaps
 (``<project>/project-files/markers/{node_id}_{link_id}_{name}.pcap``) into a
-single timestamp-ordered timeline and decodes individual frames on demand.
+single timestamp-ordered timeline and decodes frames on demand.
 
-Two deliberately separated performance regimes:
+Engine: **sharkd is a hard requirement** (the Wireshark resident daemon,
+driven over one-line JSON-RPC on stdin/stdout). Without it every replay
+endpoint returns 501 — there is deliberately no degraded mode. Timeline
+assembly (gate, pcap record-header scan, merge ordering, hex reads) is plain
+Python, but it is an implementation detail, not an availability promise.
 
-* the timeline path reads only the 16-byte pcap record headers — tshark is
-  never invoked, so browsing works even where tshark is not installed;
-* the detail path runs one ``tshark -T pdml`` per frame the caller asks about
-  (call count = user clicks) and maps the XML to JSON isomorphically — every
-  PDML attribute survives as a JSON key, values stay strings, nothing is
-  selected out or interpreted.
+Session model — sharkd loads one file at a time, so there is one resident
+session **per source pcap**: spawned lazily on first use, fed a ``/tmp``
+scratch copy (hardened profiles deny sharkd the project directory; a real
+copy, not a symlink, since the profile resolves real paths) with a scratch
+``HOME``, validated per request against the original's ``(mtime, size)`` —
+a mismatch (e.g. the capture node restarted and uBridge truncated the pcap
+while paused) kills and respawns the session. A per-pcap asyncio lock
+serializes RPCs (sharkd serves one request at a time), each with a timeout.
+An LRU cap bounds concurrent sessions.
 
 Timestamps are uBridge's userspace ``gettimeofday`` at match time (µs, a
 value measured after the packet has crossed the kernel twice — the last
 digit or two are scheduling noise). A timestamp is NOT a unique key: the
 merge sorts by ``(ts, source file, frame number)`` and index structures must
 never use ts alone as a dict key, or same-microsecond frames silently
-overwrite each other.
+overwrite each other. The canonical ts strings travel to clients verbatim
+and must be round-tripped verbatim.
 """
 
 import asyncio
+import json
 import logging
 import os
 import shutil
 import struct
 import tempfile
-import xml.etree.ElementTree as ET
+import time
 
 from .controller_error import ControllerError, ControllerNotFoundError, ControllerBadRequestError
 
@@ -57,20 +66,45 @@ log = logging.getLogger(__name__)
 # client is never flooded by a high-traffic BPF.
 FRAME_LIST_CAP = 5000
 
-# One tshark decode per user click: a generous ceiling, not a rate limiter.
-TSHARK_TIMEOUT_SECONDS = 10.0
+# One JSON-RPC per sharkd session, serialized by a per-session lock.
+RPC_TIMEOUT_SECONDS = 10.0
+
+# Resident sharkd sessions are bounded; least-recently-used evicted first.
+SESSION_MAX = 8
+
+# Display filters travel as one argv element (never through a shell) and are
+# capped to keep absurd expressions off the command line.
+FILTER_MAX_LENGTH = 2000
+
+# Batch size when draining sharkd's `frames` RPC (columns / filter matches).
+_FRAMES_PAGE = 1000
 
 
-class TsharkMissingError(ControllerError):
-    """tshark is not installed (or not on PATH) — frame detail unavailable."""
+class SharkdMissingError(ControllerError):
+    """sharkd is not installed (or not on PATH) — replay is unavailable (501)."""
 
 
-class TsharkError(ControllerError):
-    """tshark exited non-zero / timed out / produced unusable output."""
+class SharkdError(ControllerError):
+    """sharkd failed, timed out, or produced an unusable response (502)."""
+
+
+class FilterError(ControllerBadRequestError):
+    """sharkd rejected the display filter — its message is carried verbatim
+    so the UI can show it inline in the filter bar (400, distinct from the
+    409 gate / 404 unknown-tag semantics)."""
+
+
+class _SharkdRpcError(Exception):
+    """Internal: a JSON-RPC error object from sharkd (code + message)."""
+
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 
 # ---------------------------------------------------------------------------
-# pcap record-header scanning (timeline path — no tshark)
+# pcap record-header scanning (timeline backbone — engine-free)
 # ---------------------------------------------------------------------------
 
 # magic → (byte order, timestamp unit). Both pcap families uBridge can write
@@ -140,8 +174,8 @@ def scan_pcap_frames(path):
 def read_frame_bytes(path, frame_number):
     """
     Read one frame's raw bytes (hex view) straight from the pcap — never via
-    tshark. ``frame_number`` is 1-based (the same number tshark's
-    ``frame.number`` filter uses).
+    the engine. ``frame_number`` is 1-based (the same number sharkd's frame
+    RPC uses).
     """
 
     frames = scan_pcap_frames(path)
@@ -154,6 +188,273 @@ def read_frame_bytes(path, frame_number):
     with open(path, "rb") as f:
         f.seek(offset)
         return f.read(incl_len).hex()
+
+
+# ---------------------------------------------------------------------------
+# sharkd: process environment and scratch copies
+# ---------------------------------------------------------------------------
+
+def _scratch_copy(pcap):
+    """
+    Copy the pcap to a scratch file under the system temp dir for sharkd to
+    load. Hardened profiles (AppArmor &c.) can deny it access to the project
+    directory / the user's home while still allowing /tmp — a real copy,
+    deliberately not a symlink, since the profile resolves real paths.
+    Caller must unlink the returned path.
+    """
+
+    fd, scratch = tempfile.mkstemp(suffix=".pcap", prefix="gns3-replay-")
+    os.close(fd)
+    shutil.copyfile(pcap, scratch)
+    return scratch
+
+
+def _engine_env():
+    """Scratch HOME so sharkd never even tries to read the user's home."""
+
+    env = dict(os.environ)
+    env["HOME"] = tempfile.gettempdir()
+    return env
+
+
+# ---------------------------------------------------------------------------
+# sharkd: tree key renaming (the only transformation between sharkd and the
+# REST contract — a closed, protocol-independent key set; values untouched)
+# ---------------------------------------------------------------------------
+
+# Census-verified across ICMP / TCP / VLAN+OSPF trees: sharkd emits exactly
+# these structural keys on every node regardless of protocol. Protocol
+# semantics live in VALUES (field names, labels, filter expressions), which
+# are never touched.
+_KEY_RENAME = {
+    "t": "element",       # node type ("proto", …)
+    "l": "label",         # display text
+    "fn": "name",         # field name (e.g. "ip.ttl")
+    "f": "filter_expr",   # ready-made display filter with the value baked in
+    "s": "expert",        # expert severity name ("Chat", "Warn", …)
+    "g": "generated",     # generated-by-wireshark flag
+    "n": "children",      # nested fields
+}
+# "h" → pos + size (byte range for hex highlighting) — handled specially.
+# "e" is sharkd's internal header-field registry id — unstable across
+# Wireshark versions and useless for rendering, so it is dropped.
+_DROPPED_KEYS = {"e"}
+
+
+def _rename_value(value):
+    """Recursive pass-through: rename known keys, drop none but 'e',
+    copy unknown keys verbatim (a future Wireshark adding a key never
+    silently loses data — the census test flags it for naming)."""
+
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            if key in _DROPPED_KEYS:
+                continue
+            if key == "h" and isinstance(item, list) and len(item) == 2:
+                out["pos"], out["size"] = item
+            else:
+                out[_KEY_RENAME.get(key, key)] = _rename_value(item)
+        return out
+    if isinstance(value, list):
+        return [_rename_value(item) for item in value]
+    return value
+
+
+def _count_tree_nodes(value):
+    if isinstance(value, dict):
+        return 1 + sum(_count_tree_nodes(item) for item in value.values())
+    if isinstance(value, list):
+        return sum(_count_tree_nodes(item) for item in value)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# sharkd sessions (one resident process per source pcap)
+# ---------------------------------------------------------------------------
+
+class _SharkdSession:
+    """A resident `sharkd -` process with one pcap loaded, addressed through
+    line-oriented JSON-RPC. Serialized by an asyncio lock (sharkd serves one
+    request at a time)."""
+
+    def __init__(self, pcap, scratch, proc, stat):
+        self.pcap = pcap
+        self.scratch = scratch
+        self.proc = proc
+        self.mtime_ns = stat.st_mtime_ns
+        self.size = stat.st_size
+        self.last_used = time.monotonic()
+        self.lock = asyncio.Lock()
+        self._next_id = 0
+
+    def matches(self, stat):
+        """True while the source pcap is byte-identical to what was loaded —
+        a fresh (mtime, size) would serve a rebuilt/truncated capture."""
+
+        return stat.st_mtime_ns == self.mtime_ns and stat.st_size == self.size
+
+    def alive(self):
+        return self.proc.returncode is None
+
+    def touch(self):
+        self.last_used = time.monotonic()
+
+    async def rpc(self, method, params):
+        async with self.lock:
+            self._next_id += 1
+            request = {"jsonrpc": "2.0", "id": self._next_id, "method": method, "params": params}
+            try:
+                self.proc.stdin.write((json.dumps(request) + "\n").encode())
+                await self.proc.stdin.drain()
+                raw = await asyncio.wait_for(self.proc.stdout.readline(), RPC_TIMEOUT_SECONDS)
+            except asyncio.TimeoutError:
+                raise SharkdError(f"sharkd timed out after {RPC_TIMEOUT_SECONDS:.0f}s on {method!r}")
+            except OSError as e:
+                raise SharkdError(f"sharkd session died on {method!r}: {e}")
+            if not raw:
+                raise SharkdError(f"sharkd closed the session during {method!r}")
+            try:
+                response = json.loads(raw)
+            except ValueError as e:
+                raise SharkdError(f"Malformed sharkd response: {e}")
+            if "error" in response:
+                error = response["error"]
+                raise _SharkdRpcError(error.get("code"), str(error.get("message", "")))
+            return response.get("result")
+
+    async def close(self):
+        try:
+            if self.proc.returncode is None:
+                self.proc.kill()
+                # Bounded wait: a kill that fails to reap (blocked signals,
+                # mocked os.kill in tests, a wedged process) must never hang
+                # the caller — leak the process with a log instead.
+                try:
+                    await asyncio.wait_for(self.proc.wait(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    log.warning("sharkd session for %s did not exit after kill", self.pcap)
+        except ProcessLookupError:
+            pass
+        try:
+            os.unlink(self.scratch)
+        except OSError:
+            pass
+
+
+class _SharkdManager:
+    """Resident sharkd sessions keyed by source pcap path, LRU-bounded."""
+
+    def __init__(self):
+        self._sessions = {}
+
+    async def session_for(self, pcap):
+        if shutil.which("sharkd") is None:
+            raise SharkdMissingError(
+                "sharkd is not available on this server — marker replay requires sharkd "
+                "(part of the Wireshark package)"
+            )
+        stat = os.stat(pcap)
+        session = self._sessions.get(pcap)
+        if session is not None and session.matches(stat) and session.alive():
+            session.touch()
+            return session
+        if session is not None:
+            await session.close()
+            del self._sessions[pcap]
+        # Bound resident sessions: evict the least recently used.
+        while len(self._sessions) >= SESSION_MAX:
+            victim = min(self._sessions.values(), key=lambda s: s.last_used)
+            await victim.close()
+            self._sessions.pop(victim.pcap, None)
+        session = await self._spawn(pcap, stat)
+        self._sessions[pcap] = session
+        return session
+
+    async def _spawn(self, pcap, stat):
+        scratch = _scratch_copy(pcap)
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "sharkd", "-",
+                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL, env=_engine_env(),
+            )
+        except OSError as e:
+            try:
+                os.unlink(scratch)
+            except OSError:
+                pass
+            raise SharkdError(f"Could not run sharkd: {e}")
+        session = _SharkdSession(pcap, scratch, proc, stat)
+        try:
+            await session.rpc("load", {"file": scratch})
+        except Exception as e:
+            await session.close()
+            raise SharkdError(f"sharkd failed to load {os.path.basename(pcap)}: {e}")
+        return session
+
+    async def close_all(self):
+        for session in list(self._sessions.values()):
+            await session.close()
+        self._sessions.clear()
+
+
+_manager = None
+
+
+def _get_manager():
+    global _manager
+    if _manager is None:
+        _manager = _SharkdManager()
+    return _manager
+
+
+# ---------------------------------------------------------------------------
+# Columns + display filter (sharkd `frames` RPC)
+# ---------------------------------------------------------------------------
+
+async def _columns_for(pcap, filter_expr):
+    """
+    One resident `frames` pass over the source pcap. Returns
+    ``{frame_number: {src, dst, proto, info, bg, fg}}``; with a
+    ``filter_expr`` the keys are exactly the matching frame numbers, so one
+    pass both filters and enriches the merge.
+    """
+
+    session = await _get_manager().session_for(pcap)
+    columns = {}
+    skip = 0
+    while True:
+        # sharkd rejects skip=0 ("must be a positive integer") — only send it
+        # once there is actually something to skip.
+        params = {"limit": _FRAMES_PAGE}
+        if skip:
+            params["skip"] = skip
+        if filter_expr is not None:
+            params["filter"] = filter_expr
+        try:
+            rows = await session.rpc("frames", params)
+        except _SharkdRpcError as e:
+            if filter_expr is not None:
+                raise FilterError(f"Invalid display filter: {e.message}")
+            raise SharkdError(f"sharkd frames failed on {os.path.basename(pcap)}: {e.message}")
+        for row in rows:
+            try:
+                frame_number = int(row.get("num"))
+            except (TypeError, ValueError):
+                continue
+            cols = row.get("c") or []
+            columns[frame_number] = {
+                "src": cols[2] or None if len(cols) > 2 else None,
+                "dst": cols[3] or None if len(cols) > 3 else None,
+                "proto": cols[4] or None if len(cols) > 4 else None,
+                "info": cols[6] or None if len(cols) > 6 else None,
+                "bg": row.get("bg"),
+                "fg": row.get("fg"),
+            }
+        if len(rows) < _FRAMES_PAGE:
+            return columns
+        skip += len(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -199,12 +500,14 @@ def gate_tag(project, tag):
     return entries
 
 
-def _merged_frames(project, entries):
+async def _merged_frames(project, entries, filter_expr=None):
     """
-    Scan every source pcap and merge into one list sorted by
+    Scan every source pcap's record headers, ask sharkd for columns (and,
+    with a filter, the matching set), and merge into one list sorted by
     ``(ts, source file, frame number)`` — ts alone is not unique (two links
     can hit the same microsecond); the tiebreaker yields a stable, determined
-    order instead of a fictional one.
+    order instead of a fictional one. With a filter, only frames sharkd
+    matched survive, keeping their original pcap frame numbers.
     """
 
     markers_dir = project.markers_directory
@@ -215,19 +518,35 @@ def _merged_frames(project, entries):
             markers_dir, f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}.pcap"
         )
         frames = scan_pcap_frames(pcap) if os.path.exists(pcap) else []
-        sources.append({**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
-                        "count": len(frames)})
+        if frames:
+            columns = await _columns_for(pcap, filter_expr)
+        else:
+            columns = {}
+        source_key = f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}"
+        count = 0
         for frame_number, (sec, usec, incl_len) in enumerate(frames, start=1):
+            if filter_expr is not None and frame_number not in columns:
+                continue
+            cols = columns.get(frame_number, {})
             merged.append({
                 "ts": _format_ts(sec, usec),
                 "ts_us": sec * 1_000_000 + usec,
+                "_source": source_key,
                 "len": incl_len,
                 "node_id": entry["node_id"],
                 "link_id": entry["link_id"],
                 "marker": entry["marker"],
                 "frame_number": frame_number,
-                "_source": f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}",
+                "src": cols.get("src"),
+                "dst": cols.get("dst"),
+                "proto": cols.get("proto"),
+                "info": cols.get("info"),
+                "bg": cols.get("bg"),
+                "fg": cols.get("fg"),
             })
+            count += 1
+        sources.append({**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
+                        "count": count})
     merged.sort(key=lambda f: (f["ts_us"], f["_source"], f["frame_number"]))
     for frame in merged:
         del frame["ts_us"]
@@ -235,15 +554,24 @@ def _merged_frames(project, entries):
     return merged, sources
 
 
-def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP):
+def _validate_filter(filter_expr):
+    if filter_expr is not None and len(filter_expr) > FILTER_MAX_LENGTH:
+        raise ControllerBadRequestError(
+            f"Display filter too long (max {FILTER_MAX_LENGTH} characters)"
+        )
+
+
+async def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP, filter_expr=None):
     """
     The ``range`` response: timeline bounds, per-source stats, and (under
     ``frame_cap``) the full merged frame list for one-request timeline
-    layout. Over the cap the list is replaced by per-second buckets.
+    layout. Over the cap the list is replaced by per-second buckets. With a
+    ``filter_expr`` every figure is computed on the matching frames only.
     """
 
+    _validate_filter(filter_expr)
     entries = gate_tag(project, tag)
-    frames, sources = _merged_frames(project, entries)
+    frames, sources = await _merged_frames(project, entries, filter_expr)
 
     response = {
         "tag": tag,
@@ -267,14 +595,15 @@ def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP):
     return response
 
 
-def query_frames(project, tag, ts, window_ms=100, limit=1000):
+async def query_frames(project, tag, ts, window_ms=100, limit=1000, filter_expr=None):
     """
     Frames with ts in ``[T, T+window_ms]`` merged across sources. A time with
     no frames is a normal, successful answer — ``{"frames": []}``.
     """
 
+    _validate_filter(filter_expr)
     entries = gate_tag(project, tag)
-    frames, _sources = _merged_frames(project, entries)
+    frames, _sources = await _merged_frames(project, entries, filter_expr)
 
     start_us = _parse_ts(ts)
     end_us = start_us + max(window_ms, 0) * 1000
@@ -283,70 +612,16 @@ def query_frames(project, tag, ts, window_ms=100, limit=1000):
 
 
 # ---------------------------------------------------------------------------
-# Frame detail (tshark path — lazy, one frame per call)
+# Frame detail (lazy — one frame per call, via the resident session)
 # ---------------------------------------------------------------------------
-
-async def _tshark_version():
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            "tshark", "--version",
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
-        )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=TSHARK_TIMEOUT_SECONDS)
-        return stdout.decode(errors="replace").splitlines()[0].strip()
-    except (OSError, asyncio.TimeoutError, IndexError):
-        raise TsharkMissingError("tshark is not available on this server")
-
-
-def _tshark_scratch_copy(pcap):
-    """
-    Copy the pcap to a scratch file under the system temp dir for tshark to
-    read. Hardened tshark profiles (AppArmor &c.) can deny it access to the
-    project directory / the user's home while still allowing /tmp — a real
-    copy, deliberately not a symlink, since the profile resolves real paths.
-    Caller must unlink the returned path.
-    """
-
-    fd, scratch = tempfile.mkstemp(suffix=".pcap", prefix="gns3-replay-")
-    os.close(fd)
-    shutil.copyfile(pcap, scratch)
-    return scratch
-
-
-def _tshark_env():
-    """Scratch HOME so tshark never even tries to read the user's home."""
-
-    env = dict(os.environ)
-    env["HOME"] = tempfile.gettempdir()
-    return env
-
-
-def _pdml_to_nodes(element):
-    """
-    Isomorphic PDML → JSON mapping: every XML attribute becomes a JSON key
-    verbatim (values stay strings), children nest under ``children``. The
-    element tag ("proto"/"field") is carried as ``element`` — the one
-    structural key beyond the attributes, so a renderer can tell a protocol
-    group from a leaf field (geninfo's tagless names make names unreliable).
-    """
-
-    return {
-        "element": element.tag,
-        **element.attrib,
-        "children": [_pdml_to_nodes(child) for child in element],
-    }
-
-
-def _count_nodes(nodes):
-    return 1 + sum(_count_nodes(child) for child in nodes.get("children", []))
-
 
 async def decode_frame(project, tag, ts, node_id, link_id, marker):
     """
     Decode exactly one frame: locate its pcap by source identity, verify the
     round-tripped ts still matches the file (guards a rebuild between the
-    timeline view and this click), read the raw bytes for the hex view, and
-    map tshark's PDML of that single frame to JSON.
+    timeline view and this click), read the raw bytes for the hex view
+    straight from the pcap, and rename the sharkd protocol tree into the
+    REST contract (closed key set, values untouched).
     """
 
     entries = gate_tag(project, tag)
@@ -378,51 +653,22 @@ async def decode_frame(project, tag, ts, node_id, link_id, marker):
         )
 
     raw_hex = read_frame_bytes(pcap, frame_number)
-
-    if shutil.which("tshark") is None:
-        raise TsharkMissingError("tshark is not installed — frame detail is unavailable")
-    version = await _tshark_version()
-
-    # Hand tshark a scratch copy under the temp dir: hardened profiles may
-    # deny it the project directory even though this process can read it
-    # (the hex view above reads the original directly).
-    scratch = _tshark_scratch_copy(pcap)
+    session = await _get_manager().session_for(pcap)
     try:
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                "tshark", "-r", scratch, "-T", "pdml", "-Y", f"frame.number == {frame_number}",
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-                env=_tshark_env(),
+        result = await session.rpc("frame", {"frame": frame_number, "proto": True})
+    except _SharkdRpcError as e:
+        if e.code == -8003:  # frame number out of range — file changed under us
+            raise ControllerNotFoundError(
+                f"No frame at ts {ts} in marker '{marker}' (the capture may have been rebuilt)"
             )
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=TSHARK_TIMEOUT_SECONDS
-            )
-        except OSError as e:
-            raise TsharkError(f"Could not run tshark: {e}")
-        except asyncio.TimeoutError:
-            raise TsharkError(f"tshark timed out after {TSHARK_TIMEOUT_SECONDS:.0f}s")
-        if proc.returncode != 0 or not stdout.strip():
-            # Never feed truncated/failed output to the mapper.
-            raise TsharkError(f"tshark failed: {stderr.decode(errors='replace').strip()[:500]}")
-    finally:
-        try:
-            os.unlink(scratch)
-        except OSError:
-            pass
+        raise SharkdError(f"sharkd frame failed: {e.message}")
 
-    try:
-        root = ET.fromstring(stdout)
-    except ET.ParseError as e:
-        raise TsharkError(f"Malformed PDML from tshark: {e}")
-
-    packet = root.find("./packet")
-    tree = [_pdml_to_nodes(child) for child in packet] if packet is not None else []
+    tree = _rename_value(result.get("tree", []))
     return {
         "ts": ts,
         "source": {"node_id": node_id, "link_id": link_id, "marker": marker,
                    "frame_number": frame_number},
-        "tshark_version": version,
-        "field_count": sum(_count_nodes(node) for node in tree),
+        "field_count": _count_tree_nodes(tree),
         "hex": raw_hex,
         "tree": tree,
     }
