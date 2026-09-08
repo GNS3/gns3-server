@@ -21,8 +21,9 @@ measures the **intermediate node's forwarding latency** (host view) — somethin
 single-link capture can never show.
 
 **sharkd is a hard requirement** (part of the Wireshark package). Without it every replay
-endpoint returns 501 — there is deliberately no degraded mode; one engine, one rendering
-shape for the Web UI.
+endpoint that needs the engine returns 501 — there is deliberately no degraded mode; one
+engine, one rendering shape for the Web UI. (A tag whose sources captured nothing returns
+an empty timeline without consulting the engine — an empty answer, not a degraded one.)
 
 ## Architecture
 
@@ -131,22 +132,22 @@ without it.
 
 ```json
 {
-  "tag": 666,
-  "start": "1788196663.226372",
-  "end": "1788196713.706634",
-  "frame_count": 20,
+  "tag": 102,
+  "start": "1788369209.406812",
+  "end": "1788369219.249085",
+  "frame_count": 29,
   "truncated": false,
   "sources": [
-    { "node_id": "b764c434…", "link_id": "316ef8fd…", "marker": "global-def-…",
-      "data_link_type": "DLT_EN10MB", "count": 10 }
+    { "node_id": "47703cad…", "link_id": "2697a7c6…", "marker": "global-ospf",
+      "data_link_type": "DLT_EN10MB", "count": 4 }
   ],
   "frames": [
-    { "ts": "1788196663.226372", "len": 98,
-      "node_id": "b764c434…", "link_id": "316ef8fd…",
-      "marker": "global-def-…", "frame_number": 1,
-      "src": "10.1.10.101", "dst": "203.0.113.1",
-      "proto": "ICMP", "info": "Echo (ping) request id=0x6ed5, seq=1/0, ttl=64",
-      "bg": "ffffff", "fg": "000000" }
+    { "ts": "1788369209.406812", "len": 114,
+      "node_id": "47703cad…", "link_id": "2697a7c6…",
+      "marker": "global-ospf", "frame_number": 1,
+      "src": "10.0.12.1", "dst": "224.0.0.5",
+      "proto": "OSPF", "info": "Hello Packet",
+      "bg": "fff3d6", "fg": "12272e" }
   ]
 }
 ```
@@ -166,11 +167,12 @@ without it.
 
 `?filter=<expression>` on both `range` and `frames` is a Wireshark display filter,
 applied **before** counting and slicing — `start` / `end` / `frame_count` /
-`frames` | `buckets` are all computed on the matching frames only. Filtered frames keep
-their original pcap frame numbers. The filter travels as one argv-style element (never
-through a shell) and is capped at 2000 characters. An invalid expression is a **400**
-whose message carries sharkd's original error text — suitable for inline display in the
-filter bar, and distinct from the 409 gate / 404 unknown-tag semantics.
+`frames` | `buckets` and the per-source `sources[].count` are all computed on the
+matching frames only. Filtered frames keep their original pcap frame numbers. The filter
+travels as one argv-style element (never through a shell) and is capped at 2000
+characters. An invalid expression is a **400** whose message carries sharkd's original
+error text — suitable for inline display in the filter bar, and distinct from the 409
+gate / 404 unknown-tag semantics.
 
 ### `frames` — point / window query (paging)
 
@@ -197,15 +199,15 @@ click.
 
 ```json
 {
-  "ts": "1788196663.226372",
-  "source": { "node_id": "b764c434…", "link_id": "316ef8fd…",
-              "marker": "global-def-…", "frame_number": 1 },
-  "field_count": 85,
-  "hex": "00005e00010a…",
+  "ts": "1788369209.406812",
+  "source": { "node_id": "47703cad…", "link_id": "2697a7c6…",
+              "marker": "global-ospf", "frame_number": 1 },
+  "field_count": 89,
+  "hex": "01005e000005…",
   "tree": [
     { "element": "proto", "label": "Internet Protocol Version 4, …", "children": [
-        { "element": "field", "name": "ip.ttl", "label": "Time to Live: 64",
-          "filter_expr": "ip.ttl == 64", "pos": 22, "size": 1, "children": [] }
+        { "element": "field", "name": "ip.ttl", "label": "Time to Live: 1",
+          "filter_expr": "ip.ttl == 1", "pos": 22, "size": 1, "children": [] }
       ] }
   ]
 }
@@ -248,6 +250,8 @@ the pcap; `field_count` is the mapped node count (client-side sanity check).
 
 ## Error Responses
 
+All error bodies are `{"message": "…"}` (the app's unified format).
+
 | Status | Description |
 |--------|-------------|
 | 400 | Invalid display filter (message carries sharkd's original text) or filter longer than 2000 chars |
@@ -263,6 +267,16 @@ the pcap; `field_count` is the mapped node count (client-side sanity check).
   (mergecap is deliberately not used) — each frame carries its source and is decoded
   individually, so Ethernet and serial (cHDLC/PPP) markers can share one timeline.
   Malformed packets are dissected like any other; sharkd marks them in the tree.
+- **Live validation (2026-09, 9-link OSPF project, 29 frames over 9 sources).** Cold
+  `range` (spawning all sharkd sessions) answered in 0.84 s with full columns and
+  Wireshark coloring; filters verified in all four regimes (match / zero-match with
+  `start: null`, invalid expression → 400 with sharkd's text, oversized → 400); window
+  hit and miss behaved per contract; a frame detail returned 89 nodes with
+  `filter_expr: "ip.ttl == 1"` (OSPF multicast TTL) and byte ranges for hex
+  highlighting.
+- **Columns are re-fetched per request** (~90 ms per source against a loaded session).
+  The data is frozen while the gate passes, so a cache keyed on `(mtime, size)` is a
+  natural follow-up if list latency ever matters at many-source scale.
 - **Session invalidation is cheap and total.** Every request stats the source pcap; a
   rewritten file (mtime/size change) respawns the session — a paused-but-restarted
   capture can never serve stale dissect state.
