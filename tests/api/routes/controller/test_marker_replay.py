@@ -209,6 +209,47 @@ class TestReplayRoutes:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "rebuilt" in response.json()["message"]
 
+    async def test_range_link_param_narrows_and_keeps_sources(
+        self, app: FastAPI, client: AsyncClient, project: Project, monkeypatch
+    ) -> None:
+
+        r1, r2 = UDPLink(project), UDPLink(project)
+        project._links.update({r1.id: r1, r2.id: r2})
+
+        def _wire(link, node_id, frames):
+            link._markers["icmp"] = {"bpf": "icmp", "tag": 7, "enabled": False, "color": None,
+                                     "highlight_duration": None, "capture_node_id": node_id,
+                                     "direction": None, "data_link_type": "DLT_EN10MB"}
+            _write_pcap(f"{project.markers_directory}/{node_id}_{link.id}_icmp.pcap", frames)
+
+        _wire(r1, "n1", [(1693472000, 0, b"a" * 60), (1693472002, 0, b"a" * 60)])
+        _wire(r2, "n2", [(1693472001, 0, b"b" * 60)])
+
+        async def fake_columns(pcap, filter_expr):
+            return {1: _cols(), 2: _cols()}
+
+        monkeypatch.setattr(marker_replay, "_columns_for", fake_columns)
+
+        response = await client.get(
+            app.url_path_for("replay_tag_range", project_id=project.id, tag=7),
+            params={"link": r1.id},
+        )
+        body = response.json()
+        assert body["frame_count"] == 2
+        assert {f["link_id"] for f in body["frames"]} == {r1.id}
+        # The source dropdown keeps the whole tag inventory.
+        assert sorted(s["count"] for s in body["sources"]) == [1, 2]
+
+        # Unknown link: 200 with an empty timeline, same shape as a zero-match
+        # filter — not a 404.
+        response = await client.get(
+            app.url_path_for("replay_tag_range", project_id=project.id, tag=7),
+            params={"link": "00000000-0000-0000-0000-000000000000"},
+        )
+        body = response.json()
+        assert body["frame_count"] == 0 and body["frames"] == [] and body["start"] is None
+        assert len(body["sources"]) == 2
+
     @sharkd_present
     async def test_range_columns_and_filter_end_to_end(
         self, app: FastAPI, client: AsyncClient, project: Project, no_residual_sessions

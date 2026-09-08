@@ -242,6 +242,7 @@ async def _replay_response(awaitable):
 async def replay_tag_range(
     tag: int,
     filter: Optional[str] = None,
+    link: Optional[str] = None,
     project: Project = Depends(dep_project),
 ) -> dict:
     """
@@ -259,12 +260,20 @@ async def replay_tag_range(
     counting and slicing — start / end / frame_count / frames | buckets are
     all computed on the matching frames only. An invalid expression is a 400
     carrying sharkd's original error text (for inline display in the UI
-    filter bar). Requires sharkd — 501 without it.
+    filter bar).
+
+    ``link`` narrows the frame stream to one capture source (link_id),
+    AND-composing with ``filter``; ``sources`` always lists the tag's full
+    inventory regardless. An unknown link_id yields an empty timeline (same
+    shape as a zero-match filter), not a 404. Requires sharkd — 501 without
+    it.
 
     Required privilege: Project.Audit
     """
 
-    return await _replay_response(marker_replay.build_timeline(project, tag, filter_expr=filter))
+    return await _replay_response(
+        marker_replay.build_timeline(project, tag, filter_expr=filter, link_id=link)
+    )
 
 
 @router.get(
@@ -277,6 +286,7 @@ async def replay_tag_frames(
     window_ms: int = 100,
     limit: int = 1000,
     filter: Optional[str] = None,
+    link: Optional[str] = None,
     project: Project = Depends(dep_project),
 ) -> dict:
     """
@@ -285,15 +295,19 @@ async def replay_tag_frames(
     ``{"frames": []}``. The tag gate applies (409 while any marker captures).
 
     ``ts`` must be the exact string returned by the range response — never
-    re-serialize it through a float. ``filter`` (optional display filter) has
-    the same semantics as on the range endpoint. Requires sharkd — 501
-    without it.
+    re-serialize it through a float. ``filter`` and ``link`` (optional
+    display filter / capture-source link_id) have the same semantics as on
+    the range endpoint — windows and the histogram always agree. Requires
+    sharkd — 501 without it.
 
     Required privilege: Project.Audit
     """
 
     return await _replay_response(
-        marker_replay.query_frames(project, tag, ts, window_ms=window_ms, limit=limit, filter_expr=filter)
+        marker_replay.query_frames(
+            project, tag, ts, window_ms=window_ms, limit=limit,
+            filter_expr=filter, link_id=link,
+        )
     )
 
 

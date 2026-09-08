@@ -500,7 +500,7 @@ def gate_tag(project, tag):
     return entries
 
 
-async def _merged_frames(project, entries, filter_expr=None):
+async def _merged_frames(project, entries, filter_expr=None, link_id=None):
     """
     Scan every source pcap's record headers, ask sharkd for columns (and,
     with a filter, the matching set), and merge into one list sorted by
@@ -508,6 +508,16 @@ async def _merged_frames(project, entries, filter_expr=None):
     can hit the same microsecond); the tiebreaker yields a stable, determined
     order instead of a fictional one. With a filter, only frames sharkd
     matched survive, keeping their original pcap frame numbers.
+
+    ``link_id`` narrows the frame stream to one capture source **before** any
+    engine work (a pure identity filter — only the selected link's pcap gets
+    a sharkd pass) and AND-composes with ``filter_expr``. An unknown link
+    matches nothing: an empty stream, same shape as a zero-match display
+    filter — deliberately not a 404.
+
+    ``sources`` is the stable inventory of the tag: EVERY capture source is
+    listed with engine-free total counts, unaffected by ``link_id`` /
+    ``filter_expr`` — the inventory must not shrink when the view narrows.
     """
 
     markers_dir = project.markers_directory
@@ -518,12 +528,16 @@ async def _merged_frames(project, entries, filter_expr=None):
             markers_dir, f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}.pcap"
         )
         frames = scan_pcap_frames(pcap) if os.path.exists(pcap) else []
+        # Inventory first: every source, engine-free totals.
+        sources.append({**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
+                        "count": len(frames)})
+        if link_id and entry["link_id"] != link_id:
+            continue  # link narrows the stream before any engine work
         if frames:
             columns = await _columns_for(pcap, filter_expr)
         else:
             columns = {}
         source_key = f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}"
-        count = 0
         for frame_number, (sec, usec, incl_len) in enumerate(frames, start=1):
             if filter_expr is not None and frame_number not in columns:
                 continue
@@ -544,9 +558,6 @@ async def _merged_frames(project, entries, filter_expr=None):
                 "bg": cols.get("bg"),
                 "fg": cols.get("fg"),
             })
-            count += 1
-        sources.append({**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
-                        "count": count})
     merged.sort(key=lambda f: (f["ts_us"], f["_source"], f["frame_number"]))
     for frame in merged:
         del frame["ts_us"]
@@ -561,17 +572,18 @@ def _validate_filter(filter_expr):
         )
 
 
-async def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP, filter_expr=None):
+async def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP, filter_expr=None, link_id=None):
     """
     The ``range`` response: timeline bounds, per-source stats, and (under
     ``frame_cap``) the full merged frame list for one-request timeline
     layout. Over the cap the list is replaced by per-second buckets. With a
-    ``filter_expr`` every figure is computed on the matching frames only.
+    ``filter_expr`` and/or a ``link_id`` every figure is computed on the
+    matching frames only (``sources`` stays the full tag inventory).
     """
 
     _validate_filter(filter_expr)
     entries = gate_tag(project, tag)
-    frames, sources = await _merged_frames(project, entries, filter_expr)
+    frames, sources = await _merged_frames(project, entries, filter_expr, link_id=link_id)
 
     response = {
         "tag": tag,
@@ -595,15 +607,17 @@ async def build_timeline(project, tag, frame_cap=FRAME_LIST_CAP, filter_expr=Non
     return response
 
 
-async def query_frames(project, tag, ts, window_ms=100, limit=1000, filter_expr=None):
+async def query_frames(project, tag, ts, window_ms=100, limit=1000, filter_expr=None, link_id=None):
     """
-    Frames with ts in ``[T, T+window_ms]`` merged across sources. A time with
-    no frames is a normal, successful answer — ``{"frames": []}``.
+    Frames with ts in ``[T, T+window_ms]`` merged across sources — narrowed
+    by ``filter_expr`` / ``link_id`` with the same semantics as the range
+    endpoint, so windowed seconds and the histogram always agree. A time
+    with no frames is a normal, successful answer — ``{"frames": []}``.
     """
 
     _validate_filter(filter_expr)
     entries = gate_tag(project, tag)
-    frames, _sources = await _merged_frames(project, entries, filter_expr)
+    frames, _sources = await _merged_frames(project, entries, filter_expr, link_id=link_id)
 
     start_us = _parse_ts(ts)
     end_us = start_us + max(window_ms, 0) * 1000

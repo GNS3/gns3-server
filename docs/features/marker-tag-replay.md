@@ -124,8 +124,8 @@ without it.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/v3/projects/{pid}/markers/tags/{tag}/replay/range[?filter=]` | Timeline metadata + full merged frame list with packet-list columns |
-| GET | `/v3/projects/{pid}/markers/tags/{tag}/replay/frames?ts=&window_ms=&limit=[&filter=]` | Frames with ts in `[T, T+window]`, merged across sources |
+| GET | `/v3/projects/{pid}/markers/tags/{tag}/replay/range[?filter=&link=]` | Timeline metadata + full merged frame list with packet-list columns |
+| GET | `/v3/projects/{pid}/markers/tags/{tag}/replay/frames?ts=&window_ms=&limit=[&filter=&link=]` | Frames with ts in `[T, T+window]`, merged across sources |
 | GET | `/v3/projects/{pid}/markers/tags/{tag}/replay/frame/detail?ts=&node_id=&link_id=&marker=` | Single frame: protocol tree + raw hex (lazy — one call per frame the user opens) |
 
 ### `range` — the timeline
@@ -167,12 +167,26 @@ without it.
 
 `?filter=<expression>` on both `range` and `frames` is a Wireshark display filter,
 applied **before** counting and slicing — `start` / `end` / `frame_count` /
-`frames` | `buckets` and the per-source `sources[].count` are all computed on the
-matching frames only. Filtered frames keep their original pcap frame numbers. The filter
-travels as one argv-style element (never through a shell) and is capped at 2000
-characters. An invalid expression is a **400** whose message carries sharkd's original
-error text — suitable for inline display in the filter bar, and distinct from the 409
-gate / 404 unknown-tag semantics.
+`frames` | `buckets` are all computed on the matching frames only. Filtered frames keep
+their original pcap frame numbers. The filter travels as one argv-style element (never
+through a shell) and is capped at 2000 characters. An invalid expression is a **400**
+whose message carries sharkd's original error text — suitable for inline display in the
+filter bar, and distinct from the 409 gate / 404 unknown-tag semantics.
+
+### Capture-source selection
+
+`?link=<link_id>` on both `range` and `frames` narrows the frame stream to one
+capture source — a pure identity filter applied **before** any engine work (only the
+selected link's pcap gets a sharkd pass), AND-composing with `filter`. Windows and the
+histogram therefore always agree with the link-filtered view. Two boundaries by
+design:
+
+- **`sources` is the stable inventory of the tag**: every capture source is always
+  listed, with engine-free **total** counts, unaffected by `link` / `filter` — a
+  source dropdown must not shrink when the view narrows.
+- **An unknown `link_id` matches nothing**: `frame_count: 0`, `start: null`, empty
+  `frames` / `buckets` — the same shape as a zero-match display filter, deliberately
+  not a 404.
 
 ### `frames` — point / window query (paging)
 

@@ -301,7 +301,77 @@ class TestTimeline:
         assert timeline["end"] == "1693472002.000000"
         # frame numbers keep their ORIGINAL pcap identity through the filter.
         assert [f["frame_number"] for f in timeline["frames"]] == [1, 3]
-        assert timeline["sources"][0]["count"] == 2
+        # sources[] is the stable inventory: engine-free TOTAL counts,
+        # unaffected by link/filter (the WebUI source dropdown must not
+        # shrink when the view narrows).
+        assert timeline["sources"][0]["count"] == 3
+
+
+class TestLinkFilter:
+    """``link_id`` narrows the frame stream to one capture source before
+    counting/slicing/bucketing; sources stay the full inventory."""
+
+    def _project(self, tmp_path, monkeypatch, columns_override=None):
+        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
+            (1693472000, 500000, b"a" * 60),
+            (1693472002, 000000, b"a" * 60),
+        ])
+        _write_pcap(tmp_path / "n2_linkB_icmp.pcap", [
+            (1693472001, 000000, b"b" * 60),
+            (1693472002, 000000, b"b" * 60),
+        ])
+
+        async def fake_columns(pcap, filter_expr):
+            if columns_override is not None:
+                return await columns_override(os.path.basename(pcap), filter_expr)
+            src = "10.0.0.1" if "n1" in pcap else "10.0.0.2"
+            return {1: _cols(src=src), 2: _cols(src=src)}
+
+        monkeypatch.setattr(marker_replay, "_columns_for", fake_columns)
+        return _fake_project(tmp_path, {
+            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+            "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="n2"),
+        })
+
+    async def test_link_narrows_before_count_and_slice(self, tmp_path, monkeypatch):
+        timeline = await build_timeline(self._project(tmp_path, monkeypatch), tag=7, link_id="linkA")
+        assert timeline["frame_count"] == 2
+        assert timeline["start"] == "1693472000.500000"
+        assert [f["link_id"] for f in timeline["frames"]] == ["linkA", "linkA"]
+        # sources stay the FULL inventory with engine-free totals.
+        assert sorted((s["link_id"], s["count"]) for s in timeline["sources"]) == [
+            ("linkA", 2), ("linkB", 2)
+        ]
+
+    async def test_unknown_link_is_empty_success(self, tmp_path, monkeypatch):
+        timeline = await build_timeline(self._project(tmp_path, monkeypatch), tag=7, link_id="nope")
+        assert timeline["frame_count"] == 0
+        assert timeline["start"] is None and timeline["end"] is None
+        assert timeline["frames"] == []
+        assert len(timeline["sources"]) == 2
+
+    async def test_link_and_filter_compose_as_and(self, tmp_path, monkeypatch):
+        # The injected "matching set" contains only frame 2 per source —
+        # combined with link=linkA the view is exactly that one frame.
+        async def override(basename, filter_expr):
+            assert filter_expr == "tcp"
+            return {2: _cols(proto="TCP")}
+
+        project = self._project(tmp_path, monkeypatch, columns_override=override)
+        timeline = await build_timeline(project, tag=7, filter_expr="tcp", link_id="linkA")
+        assert timeline["frame_count"] == 1
+        assert timeline["frames"][0]["frame_number"] == 2
+        assert timeline["frames"][0]["link_id"] == "linkA"
+
+    async def test_empty_link_string_means_absent(self, tmp_path, monkeypatch):
+        timeline = await build_timeline(self._project(tmp_path, monkeypatch), tag=7, link_id="")
+        assert timeline["frame_count"] == 4
+
+    async def test_query_frames_window_over_link_stream(self, tmp_path, monkeypatch):
+        project = self._project(tmp_path, monkeypatch)
+        result = await query_frames(project, tag=7, ts="1693472002.000000",
+                                    window_ms=0, link_id="linkB")
+        assert [f["link_id"] for f in result["frames"]] == ["linkB"]
 
 
 class TestQueryFrames:
