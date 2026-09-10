@@ -141,7 +141,6 @@ class TestReplayRoutes:
         assert body["frame_count"] == 4
         assert body["start"] == "1693472000.500000"
         assert body["end"] == "1693472002.000000"
-        assert body["truncated"] is False
         assert [f["node_id"] for f in body["frames"]] == ["n1", "n2", "n1", "n2"]
         assert [f["ts"] for f in body["frames"]] == [
             "1693472000.500000", "1693472001.000000",
@@ -338,6 +337,36 @@ class TestReplayRoutes:
         assert ttl["label"] == "Time to Live: 64"
         assert ttl["filter_expr"] == "ip.ttl == 64"
         assert ttl["pos"] == 22 and ttl["size"] == 1
+
+    @sharkd_present
+    async def test_detail_frame_number_disambiguates_same_ts(
+        self, app: FastAPI, client: AsyncClient, project: Project, no_residual_sessions
+    ) -> None:
+
+        # Two frames in the same microsecond: only the explicit frame number
+        # (from the frame list entry) tells them apart.
+        link = _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
+            (1693472000, 123456, _icmp_frame()),
+            (1693472000, 123456, _tcp_syn_frame()),
+        ])
+        common = {"ts": "1693472000.123456", "node_id": "n1",
+                  "link_id": link.id, "marker": "icmp"}
+
+        response = await client.get(
+            app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
+            params=common,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["source"]["frame_number"] == 1
+        assert response.json()["hex"] == _icmp_frame().hex()
+
+        response = await client.get(
+            app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
+            params={**common, "frame_number": 2},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["source"]["frame_number"] == 2
+        assert response.json()["hex"] == _tcp_syn_frame().hex()
 
     @sharkd_present
     async def test_detail_501_when_sharkd_disappears(

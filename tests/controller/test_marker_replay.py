@@ -22,18 +22,22 @@ Unit tests for the tag-keyed aggregate replay module (sharkd edition):
   nanosecond-magic normalization) and raw-bytes reads for the hex view
 * the tag gate (404 unknown tag, 409 while any marker captures) — engine-free
 * timeline assembly with injected columns: cross-source merge ordered by
-  (ts, source, frame number), same-microsecond tiebreak, frame-cap
-  degradation to buckets, display-filter application before count/slice
+  (ts, source, frame number), same-microsecond tiebreak, the uncapped full
+  frame list, display-filter application before count/slice
 * the tree key renaming (closed census key set, values untouched, unknown
   keys pass through verbatim, internal hf ids dropped)
 * the resident sharkd sessions — spawn/load/reuse, (mtime, size)
-  invalidation, LRU bound — against the real sharkd where installed, plus
-  the frame detail end-to-end (hex + renamed tree + filter expressions).
+  invalidation, LRU bound (idle-only eviction), single spawn under
+  concurrent acquires, timeout/stale-reply aborts — against the real sharkd
+  where installed, plus the frame detail end-to-end (hex + renamed tree +
+  filter expressions, same-microsecond disambiguation).
 """
 
+import asyncio
 import os
 import shutil
 import struct
+import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -47,6 +51,7 @@ from gns3server.controller.controller_error import (
 from gns3server.controller import marker_replay
 from gns3server.controller.marker_replay import (
     FilterError,
+    SharkdError,
     SharkdMissingError,
     build_timeline,
     decode_frame,
@@ -139,6 +144,30 @@ def _fake_columns(monkeypatch, mapping):
 def _cols(src="10.0.0.1", dst="10.0.0.3", proto="ICMP", info="Echo (ping) request"):
     return {"src": src, "dst": dst, "proto": proto, "info": info,
             "bg": "ffffff", "fg": "000000"}
+
+
+class _FakeSession:
+    """Duck-typed _SharkdSession for manager-level tests (no engine)."""
+
+    def __init__(self, pcap):
+        self.pcap = pcap
+        self.last_used = 0
+        self.closed = False
+        self._uses = 0
+        self._detached = False
+        self.mtime_ns, self.size = 0, 0
+
+    def matches(self, stat):
+        return True
+
+    def alive(self):
+        return not self.closed
+
+    def touch(self):
+        pass
+
+    async def close(self):
+        self.closed = True
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +297,9 @@ class TestTimeline:
         assert timeline["frames"] == []
         assert timeline["sources"][0]["count"] == 0
 
-    async def test_over_cap_degrades_to_buckets(self, tmp_path, monkeypatch):
+    async def test_frame_list_is_uncapped(self, tmp_path, monkeypatch):
+        # The list is the whole contract — no truncation flag, no buckets,
+        # however many frames the tag holds.
         _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
             (1693472000, 0, b"a" * 60), (1693472000, 500000, b"a" * 60),
             (1693472001, 0, b"a" * 60),
@@ -276,13 +307,10 @@ class TestTimeline:
         _fake_columns(monkeypatch, {"n1_linkA_icmp.pcap": {1: _cols(), 2: _cols(), 3: _cols()}})
         project = _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1")})
 
-        timeline = await build_timeline(project, tag=7, frame_cap=2)
-        assert timeline["truncated"] is True
-        assert "frames" not in timeline
-        assert timeline["buckets"] == [
-            {"ts": "1693472000.000000", "count": 2},
-            {"ts": "1693472001.000000", "count": 1},
-        ]
+        timeline = await build_timeline(project, tag=7)
+        assert timeline["frame_count"] == 3
+        assert len(timeline["frames"]) == 3
+        assert "truncated" not in timeline and "buckets" not in timeline
 
     async def test_filter_applies_before_count_and_slice(self, tmp_path, monkeypatch):
         # Three frames; the injected "matching set" (what a real engine would
@@ -445,43 +473,155 @@ class TestSessions:
             with pytest.raises(SharkdMissingError):
                 await build_timeline(project, tag=7)
 
-    async def test_lru_bound_evicts_least_recently_used(self, tmp_path):
+    async def test_cap_evicts_idle_lru_only(self, tmp_path):
         manager = marker_replay._SharkdManager()
-
-        class FakeSession:
-            def __init__(self, pcap, used):
-                self.pcap, self.last_used = pcap, used
-                self.closed = False
-                self.mtime_ns, self.size = 0, 0
-
-            def matches(self, stat):
-                return False  # always respawn → exercises the eviction path
-
-            def alive(self):
-                return False
-
-            def touch(self):
-                pass
-
-            async def close(self):
-                self.closed = True
-
-        fake_by_pcap = {}
+        fakes = {}
 
         async def fake_spawn(pcap, stat):
-            session = FakeSession(pcap, 0)
-            fake_by_pcap[pcap] = session
+            session = _FakeSession(pcap)
+            fakes[pcap] = session
             return session
 
         with patch.object(manager, "_spawn", side_effect=fake_spawn):
+            # cap + 2 distinct pcaps, each acquired and released (idle again).
             for i in range(marker_replay.SESSION_MAX + 2):
                 pcap = tmp_path / f"pcap{i}"
                 _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
-                await manager.session_for(str(pcap))
-        # Bounded to SESSION_MAX; the earliest (least recently used) got evicted.
+                async with manager.session(str(pcap)):
+                    pass
+        # Bounded to SESSION_MAX; the earliest (least recently used) closed.
         assert len(manager._sessions) == marker_replay.SESSION_MAX
-        assert fake_by_pcap[str(tmp_path / "pcap0")].closed is True
-        assert fake_by_pcap[str(tmp_path / "pcap1")].closed is True
+        assert fakes[str(tmp_path / "pcap0")].closed is True
+        assert fakes[str(tmp_path / "pcap1")].closed is True
+        assert fakes[str(tmp_path / "pcap2")].closed is False
+
+    async def test_in_use_session_survives_cap_pressure(self, tmp_path):
+        manager = marker_replay._SharkdManager()
+
+        async def fake_spawn(pcap, stat):
+            return _FakeSession(pcap)
+
+        with patch.object(manager, "_spawn", side_effect=fake_spawn):
+            pcap0 = tmp_path / "pcap0"
+            _write_pcap(pcap0, [(1693472000, 0, b"a" * 60)])
+            async with manager.session(str(pcap0)) as held:
+                # More sources than the cap while pcap0 is held open.
+                for i in range(1, marker_replay.SESSION_MAX + 4):
+                    pcap = tmp_path / f"pcap{i}"
+                    _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
+                    async with manager.session(str(pcap)):
+                        pass
+                # A held session is never the eviction victim (no mid-RPC kill).
+                assert held.closed is False
+                assert str(pcap0) in manager._sessions
+            # Released → the population is trimmed back under the cap.
+            assert len(manager._sessions) <= marker_replay.SESSION_MAX
+        await manager.close_all()
+
+    async def test_concurrent_acquire_spawns_once(self, tmp_path):
+        manager = marker_replay._SharkdManager()
+        spawns = []
+
+        async def slow_spawn(pcap, stat):
+            spawns.append(pcap)
+            await asyncio.sleep(0.05)  # widen the check-then-spawn window
+            return _FakeSession(pcap)
+
+        pcap = tmp_path / "n1_linkA_icmp.pcap"
+        _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
+        with patch.object(manager, "_spawn", side_effect=slow_spawn):
+            first, second = await asyncio.gather(
+                manager._acquire(str(pcap)), manager._acquire(str(pcap))
+            )
+        assert first is second  # concurrent requests share one spawn
+        assert len(spawns) == 1
+        await manager.close_all()
+
+    async def test_rpc_timeout_kills_session(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(marker_replay, "RPC_TIMEOUT_SECONDS", 0.2)
+        pcap = tmp_path / "n1_linkA_icmp.pcap"
+        _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
+        # A process that never answers: the session must die (never serve the
+        # late reply to a later request) instead of staying resident.
+        proc = await asyncio.create_subprocess_exec(
+            "sleep", "60",
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+        )
+        session = marker_replay._SharkdSession(
+            str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap))
+        )
+        with pytest.raises(SharkdError, match="timed out"):
+            await session.rpc("frames", {})
+        assert session.alive() is False
+        assert proc.returncode is not None
+
+    async def test_stale_reply_id_aborts_session(self, tmp_path):
+        # A "sharkd" that always answers with a foreign id — every reply is a
+        # stale one as far as the caller is concerned; serving it would be
+        # shifted data, so the session must abort instead.
+        fake = tmp_path / "fake_sharkd.py"
+        fake.write_text(
+            "import json, sys\n"
+            "for line in sys.stdin:\n"
+            "    json.loads(line)\n"
+            "    sys.stdout.write(json.dumps({'jsonrpc': '2.0', 'id': 424242, 'result': []}) + '\\n')\n"
+            "    sys.stdout.flush()\n"
+        )
+        pcap = tmp_path / "n1_linkA_icmp.pcap"
+        _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, str(fake),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+        )
+        session = marker_replay._SharkdSession(
+            str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap))
+        )
+        with pytest.raises(SharkdError, match="id mismatch"):
+            await session.rpc("frames", {})
+        assert session.alive() is False
+        assert proc.returncode is not None
+
+    async def test_filter_error_only_for_the_filter_code(self, tmp_path, monkeypatch):
+        manager = marker_replay._SharkdManager()
+        monkeypatch.setattr(marker_replay, "_manager", manager)
+        pcap = tmp_path / "n1_linkA_icmp.pcap"
+        _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
+
+        class _RpcFail(_FakeSession):
+            def __init__(self, pcap, code):
+                super().__init__(pcap)
+                self.code = code
+
+            async def rpc(self, method, params):
+                raise marker_replay._SharkdRpcError(self.code, "boom")
+
+        manager._sessions[str(pcap)] = _RpcFail(str(pcap), marker_replay._ERR_INVALID_FILTER)
+        with pytest.raises(FilterError):
+            await marker_replay._columns_for(str(pcap), "icmp")
+        # Same failure WITHOUT a filter is an engine fault, not a 400.
+        manager._sessions[str(pcap)] = _RpcFail(str(pcap), marker_replay._ERR_INVALID_FILTER)
+        with pytest.raises(SharkdError):
+            await marker_replay._columns_for(str(pcap), None)
+        # A non-filter engine error with a filter set is NOT the client's fault.
+        manager._sessions[str(pcap)] = _RpcFail(str(pcap), -9999)
+        with pytest.raises(SharkdError):
+            await marker_replay._columns_for(str(pcap), "icmp")
+
+    @sharkd_present
+    async def test_real_pagination_over_1000_frames(self, tmp_path):
+        # A full page measures well over the 64 KB default StreamReader limit
+        # (~190 KB with realistic columns) — pagination must not blow up the
+        # stream (nor desync the resident session).
+        pcap = tmp_path / "big.pcap"
+        _write_pcap(pcap, [(1693472000 + i, 0, _icmp_frame()) for i in range(1001)])
+        manager = marker_replay._get_manager()
+        try:
+            columns = await marker_replay._columns_for(str(pcap), None)
+            assert len(columns) == 1001
+            assert columns[1001]["src"] == "10.0.0.1"
+            assert columns[1001]["proto"] == "ICMP"
+        finally:
+            await manager.close_all()
 
     @sharkd_present
     async def test_real_session_columns_and_filter(self, tmp_path):
@@ -518,12 +658,14 @@ class TestSessions:
         _write_pcap(pcap, [(1693472000, 123456, _icmp_frame())])
         manager = marker_replay._get_manager()
         try:
-            first = await manager.session_for(str(pcap))
-            assert await manager.session_for(str(pcap)) is first  # warm reuse
+            async with manager.session(str(pcap)) as first:
+                pass
+            async with manager.session(str(pcap)) as warm:
+                assert warm is first  # warm reuse
             # Rewrite the file (simulating a truncated/rebuilt capture).
             _write_pcap(pcap, [(1693473000, 0, _icmp_frame())])
-            second = await manager.session_for(str(pcap))
-            assert second is not first
+            async with manager.session(str(pcap)) as second:
+                assert second is not first
             columns = await marker_replay._columns_for(str(pcap), None)
             assert set(columns) == {1}
         finally:
@@ -551,6 +693,54 @@ class TestDecodeFrame:
         with pytest.raises(ControllerNotFoundError):
             await decode_frame(project, tag=7, ts="1693472000.123456",
                                node_id="nobody", link_id="linkA", marker="icmp")
+
+    async def test_explicit_frame_number_out_of_range_404(self, tmp_path):
+        project = self._project(tmp_path)
+        with pytest.raises(ControllerNotFoundError, match="rebuilt"):
+            await decode_frame(project, tag=7, ts="1693472000.123456",
+                               node_id="n1", link_id="linkA", marker="icmp", frame_number=5)
+
+    async def test_explicit_frame_number_ts_mismatch_404(self, tmp_path):
+        # The frame number must still land on the exact round-tripped ts —
+        # a rebuilt capture cannot be decoded by stale coordinates.
+        project = self._project(tmp_path)
+        with pytest.raises(ControllerNotFoundError, match="rebuilt"):
+            await decode_frame(project, tag=7, ts="1693472001.000000",
+                               node_id="n1", link_id="linkA", marker="icmp", frame_number=1)
+
+    async def test_hex_read_failure_is_404_not_null_hex(self, tmp_path, monkeypatch):
+        project = self._project(tmp_path)
+        monkeypatch.setattr(marker_replay, "read_frame_bytes", lambda path, n: None)
+        with pytest.raises(ControllerNotFoundError, match="rebuilt"):
+            await decode_frame(project, tag=7, ts="1693472000.123456",
+                               node_id="n1", link_id="linkA", marker="icmp")
+
+    @sharkd_present
+    async def test_same_microsecond_frames_disambiguated_by_frame_number(self, tmp_path):
+        # ts is not unique within one pcap: two frames share a microsecond,
+        # and only the explicit frame number tells them apart.
+        pcap = tmp_path / "n1_linkA_icmp.pcap"
+        icmp, tcp = _icmp_frame(), _tcp_syn_frame()
+        _write_pcap(pcap, [(1693472000, 123456, icmp), (1693472000, 123456, tcp)])
+        project = _fake_project(tmp_path, {
+            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+        })
+        manager = marker_replay._get_manager()
+        try:
+            default = await decode_frame(project, tag=7, ts="1693472000.123456",
+                                         node_id="n1", link_id="linkA", marker="icmp")
+            second = await decode_frame(project, tag=7, ts="1693472000.123456",
+                                        node_id="n1", link_id="linkA", marker="icmp",
+                                        frame_number=2)
+        finally:
+            await manager.close_all()
+        # Without a frame number: first ts match.
+        assert default["source"]["frame_number"] == 1
+        assert default["hex"] == icmp.hex()
+        # With one: exactly that frame's bytes and tree.
+        assert second["source"]["frame_number"] == 2
+        assert second["hex"] == tcp.hex()
+        assert second["field_count"] > 10
 
     @sharkd_present
     async def test_decode_end_to_end(self, tmp_path):
@@ -595,7 +785,6 @@ class TestDecodeFrame:
         ])
         manager = marker_replay._get_manager()
         try:
-            session = await manager.session_for(str(pcap))
             known = set(marker_replay._KEY_RENAME) | {"h", "e"}
             seen = set()
 
@@ -608,9 +797,10 @@ class TestDecodeFrame:
                     for item in value:
                         walk(item)
 
-            for frame_number in (1, 2):
-                result = await session.rpc("frame", {"frame": frame_number, "proto": True})
-                walk(result.get("tree", []))
+            async with manager.session(str(pcap)) as session:
+                for frame_number in (1, 2):
+                    result = await session.rpc("frame", {"frame": frame_number, "proto": True})
+                    walk(result.get("tree", []))
             assert seen <= known, f"unknown sharkd keys appeared: {seen - known}"
         finally:
             await manager.close_all()

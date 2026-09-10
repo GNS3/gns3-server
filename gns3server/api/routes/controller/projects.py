@@ -253,11 +253,12 @@ async def replay_tag_range(
 
     The tag gate applies: every marker under the tag must be paused
     (``enabled: false``) — 409 otherwise. The response carries the timeline
-    bounds, per-source stats, and the full merged frame list while under the
-    frame cap (5000); above it the list is replaced by per-second buckets.
+    bounds, per-source stats, and the full merged frame list — deliberately
+    uncapped (rendering a huge list is the client's concern; the window
+    endpoint exists for incremental views).
 
     ``filter`` is an optional Wireshark display filter applied **before**
-    counting and slicing — start / end / frame_count / frames | buckets are
+    counting and slicing — start / end / frame_count / frames are
     all computed on the matching frames only. An invalid expression is a 400
     carrying sharkd's original error text (for inline display in the UI
     filter bar).
@@ -321,6 +322,7 @@ async def replay_tag_frame_detail(
     node_id: str,
     link_id: str,
     marker: str,
+    frame_number: Optional[int] = None,
     project: Project = Depends(dep_project),
 ) -> dict:
     """
@@ -332,14 +334,18 @@ async def replay_tag_frame_detail(
     ``children``) — values untouched.
 
     ``ts`` must be the exact string from the frame list; ``node_id`` +
-    ``link_id`` + ``marker`` identify the source pcap. The tag gate applies.
-    Requires sharkd — 501 without it.
+    ``link_id`` + ``marker`` identify the source pcap. ``frame_number``
+    (optional, from the frame list entry) disambiguates same-microsecond
+    frames on one link — without it the first ts match decodes. The tag gate
+    applies. Requires sharkd — 501 without it.
 
     Required privilege: Project.Audit
     """
 
     return await _replay_response(
-        marker_replay.decode_frame(project, tag, ts, node_id, link_id, marker)
+        marker_replay.decode_frame(
+            project, tag, ts, node_id, link_id, marker, frame_number=frame_number
+        )
     )
 
 
