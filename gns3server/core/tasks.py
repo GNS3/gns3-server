@@ -111,6 +111,11 @@ async def shutdown(app: FastAPI) -> None:
         auto_discover_images_task_handle.cancel()
     await HTTPClient.close_session()
     await MarkerManager.instance().stop()
+    # Kill resident sharkd sessions (marker replay) and drop their /tmp
+    # scratch copies before the process exits.
+    from gns3server.controller import marker_replay
+
+    await marker_replay.close_sessions()
     await Controller.instance().stop()
 
     for module in MODULES:
