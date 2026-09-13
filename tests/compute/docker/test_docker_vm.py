@@ -22,10 +22,12 @@ import pytest_asyncio
 import uuid
 import os
 
+from types import SimpleNamespace
 from unittest.mock import patch
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker import Docker
@@ -2035,6 +2037,120 @@ async def test_fix_permission_not_running(vm):
     mock_exec.assert_called_with('docker', 'exec', 'e90e34656842', '/gns3/bin/busybox', 'sh', '-c', '(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {}:{} -R "/etc"'.format(os.getuid(), os.getgid()), stderr=asyncio.subprocess.PIPE)
     assert mock_start.called
     assert process.wait.called
+
+
+# ---------------------------------------------------------------------------
+# Ownership reclaim for files the container left owned by root
+# ---------------------------------------------------------------------------
+
+def _reclaim_proc(returncode=0, stderr=b""):
+
+    process = MagicMock()
+    process.communicate = AsyncioMagicMock(return_value=(b"", stderr))
+    process.returncode = returncode
+    process.kill = MagicMock()
+    return process
+
+
+@pytest.mark.asyncio
+async def test_reclaim_skips_clean_directory(vm, tmp_path):
+
+    (tmp_path / "file").write_text("owned by the server user")
+    with patch("asyncio.subprocess.create_subprocess_exec") as mock_exec:
+        assert await vm._reclaim_directory_ownership(str(tmp_path)) is True
+    mock_exec.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_reclaim_skips_missing_directory(vm):
+
+    with patch("asyncio.subprocess.create_subprocess_exec") as mock_exec:
+        assert await vm._reclaim_directory_ownership("/does/not/exist") is True
+    mock_exec.assert_not_called()
+
+
+def test_directory_has_foreign_files_detects_foreign_owner(vm, tmp_path):
+
+    (tmp_path / "root-owned").write_text("written by the container as root")
+    assert vm._directory_has_foreign_files(str(tmp_path)) is False
+
+    # A directory the unprivileged server user cannot own: pretend every
+    # stat reports another uid (the walk only uses scandir for recursion).
+    with patch("os.stat", return_value=SimpleNamespace(st_uid=os.getuid() + 1)):
+        assert vm._directory_has_foreign_files(str(tmp_path)) is True
+
+
+@pytest.mark.asyncio
+async def test_reclaim_runs_helper_container(vm, tmp_path):
+
+    directory = tmp_path / "node"
+    directory.mkdir()
+    vm._image_id = "sha256:8731fa5e0f0f"
+
+    with patch.object(vm, "_directory_has_foreign_files", return_value=True):
+        with patch.object(vm.manager, "resources_path", return_value="/gns3-share"):
+            with patch("asyncio.subprocess.create_subprocess_exec", return_value=_reclaim_proc()) as mock_exec:
+                assert await vm._reclaim_directory_ownership(str(directory)) is True
+
+    args, _ = mock_exec.call_args
+    assert args[:9] == ("docker", "run", "--rm", "--network", "none", "--pull", "never", "--user", "0:0")
+    assert args[args.index("--entrypoint") + 1] == "/gns3/bin/busybox"
+    assert "/gns3-share:/gns3:ro" in args
+    assert f"{directory}:/target" in args
+    # The create-time image ID is used as the helper image (immune to retagging)
+    # and sits right before the CMD ("sh -c …").
+    assert args[args.index("sh") - 1] == "sha256:8731fa5e0f0f"
+    script = args[args.index("-c") + 1]
+    assert "chown" in script and f"{os.getuid()}:{os.getgid()}" in script
+    assert "chmod -R u+rwX" in script
+
+
+@pytest.mark.asyncio
+async def test_reclaim_fails_when_helper_errors(vm, tmp_path):
+
+    directory = tmp_path / "node"
+    directory.mkdir()
+
+    with patch.object(vm, "_directory_has_foreign_files", return_value=True):
+        with patch.object(vm.manager, "resources_path", return_value="/gns3-share"):
+            with patch("asyncio.subprocess.create_subprocess_exec",
+                       return_value=_reclaim_proc(returncode=1, stderr=b"chown: failed")):
+                assert await vm._reclaim_directory_ownership(str(directory)) is False
+
+
+@pytest.mark.asyncio
+async def test_close_reclaims_node_directory(vm, port_manager):
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+            with patch.object(vm, "_reclaim_directory_ownership", new_callable=AsyncioMagicMock) as mock_reclaim:
+                await vm.close()
+    mock_reclaim.assert_called_once_with(vm.working_dir)
+
+
+@pytest.mark.asyncio
+async def test_delete_retries_after_reclaim(vm):
+
+    with patch.object(vm, "close", new_callable=AsyncioMagicMock):
+        with patch.object(vm, "_reclaim_directory_ownership", new_callable=AsyncioMagicMock, return_value=True) as mock_reclaim:
+            # First rmtree hits the root-owned leftovers, the retry (after
+            # the reclaim) succeeds.
+            with patch("gns3server.compute.base_node.shutil.rmtree",
+                       side_effect=[OSError("permission denied"), None]) as mock_rmtree:
+                await vm.delete()
+    assert mock_rmtree.call_count == 2
+    mock_reclaim.assert_called_once_with(vm.working_dir)
+
+
+@pytest.mark.asyncio
+async def test_delete_reports_root_files_when_reclaim_fails(vm):
+
+    with patch.object(vm, "close", new_callable=AsyncioMagicMock):
+        with patch.object(vm, "_reclaim_directory_ownership", new_callable=AsyncioMagicMock, return_value=False):
+            with patch("gns3server.compute.base_node.shutil.rmtree",
+                       side_effect=OSError("permission denied")):
+                with pytest.raises(ComputeError, match="owned by another user"):
+                    await vm.delete()
 
 
 @pytest.mark.asyncio

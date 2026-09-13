@@ -35,11 +35,13 @@ from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio import monitor_process
+from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils.get_resource import get_resource
 from gns3server.utils.hostname import is_rfc1123_hostname_valid
 from gns3server.utils import macaddress_to_int, int_to_macaddress
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
+from gns3server.compute.compute_error import ComputeError
 from ..base_node import BaseNode
 
 from ..adapters.ethernet_adapter import EthernetAdapter
@@ -148,6 +150,9 @@ class DockerVM(BaseNode):
         self._console_websocket = None
         self.extra_hosts = extra_hosts
         self._extra_volumes = extra_volumes or []
+        # Image ID captured at create time (see _mount_binds): unlike the
+        # image tag it keeps resolving even if the tag is removed later.
+        self._image_id = None
         self._extra_configs = extra_configs or []
         self._memory = memory
         self._cpus = cpus
@@ -448,6 +453,7 @@ class DockerVM(BaseNode):
             "Target": "/gns3",
             "ReadOnly": True
         }]
+        self._image_id = image_info.get("Id") or self._image_id
 
         # We mount our own etc/network
         try:
@@ -1024,6 +1030,105 @@ class DockerVM(BaseNode):
             else:
                 self._permissions_fixed = True
 
+    def _directory_has_foreign_files(self, directory):
+        """
+        Synchronous walk (run in an executor): return True as soon as an
+        entry not owned by the server user is found under ``directory``.
+        What we are looking for are files the container wrote as root —
+        the unprivileged server can neither chown nor delete them.
+        """
+
+        uid = os.getuid()
+        for root, dirs, files in os.walk(directory):
+            for entry in dirs + files:
+                try:
+                    if os.stat(os.path.join(root, entry)).st_uid != uid:
+                        return True
+                except OSError:
+                    # An entry we cannot stat is not ours to delete either;
+                    # treat it as foreign and let the reclaim sort it out.
+                    return True
+        return False
+
+    async def _reclaim_directory_ownership(self, directory):
+        """
+        Best-effort reclaim of files the container left owned by root.
+
+        The stop-time permission pass necessarily runs before the
+        container's processes exit, so anything they write during the
+        shutdown window (and everything after a SIGKILL path) lands as
+        root-owned on the host. An unprivileged server cannot chown or
+        delete those files, but it can ask Docker to run a throwaway
+        container of the node's own image — entrypoint overridden to the
+        GNS3 busybox, so nothing of the guest boots — and chown the tree
+        back from the container's root side. Docker is the only privilege
+        door a non-root server has.
+
+        :returns: True when ``directory`` is (now) owned by the server
+            user, False when the reclaim could not run or failed.
+        """
+
+        if not os.path.exists(directory):
+            return True
+        try:
+            if not await wait_run_in_executor(self._directory_has_foreign_files, directory):
+                log.debug(f"Docker container '{self._name}': no foreign-owned files under '{directory}'")
+                return True
+        except OSError as e:
+            log.warning(f"Docker container '{self._name}': could not inspect '{directory}' for root-owned files: {e}")
+            return False
+
+        uid, gid = os.getuid(), os.getgid()
+        try:
+            resources_path = self.manager.resources_path()
+        except OSError as e:
+            log.warning(f"Docker container '{self._name}': cannot access resources to reclaim '{directory}': {e}")
+            return False
+
+        log.info(f"Docker container '{self._name}': reclaiming root-owned files under '{directory}' via a one-shot container")
+        # Prefer the image's own chown over the static busybox one: busybox's
+        # chown dlopens NSS modules from the image, which mismatch the static
+        # glibc and abort on NOS images whose glibc differs (same reasoning
+        # as the container-side pass in _fix_permissions). --pull=never keeps
+        # a stale tag reference from turning into a registry pull attempt,
+        # and the create-time image ID (when known) is immune to retagging.
+        # --user 0:0 overrides a USER baked into the image (e.g.
+        # ghcr.io/nokia/srlinux runs as "user"): without it the "privileged"
+        # helper is exactly as unprivileged as the server itself and
+        # chmod/chown fail with EPERM on files written by other uids.
+        image_ref = self._image_id or self._image
+        try:
+            process = await asyncio.subprocess.create_subprocess_exec(
+                "docker", "run", "--rm", "--network", "none", "--pull", "never", "--user", "0:0",
+                "--entrypoint", "/gns3/bin/busybox",
+                "-v", f"{resources_path}:/gns3:ro",
+                "-v", f"{directory}:/target",
+                image_ref,
+                "sh", "-c",
+                "/gns3/bin/busybox chmod -R u+rwX /target"
+                f" && ( command -v chown >/dev/null 2>&1 && chown {uid}:{gid} -R /target"
+                f" || /gns3/bin/busybox chown {uid}:{gid} -R /target )",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except OSError as e:
+            log.warning(f"Docker container '{self._name}': could not reclaim ownership of '{directory}': {e}")
+            return False
+        try:
+            _, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.communicate()
+            log.warning(f"Docker container '{self._name}': reclaiming '{directory}' timed out")
+            return False
+        if process.returncode != 0:
+            log.warning(
+                f"Docker container '{self._name}': reclaiming '{directory}' failed: "
+                f"{stderr.decode(errors='replace').strip() or f'exit code {process.returncode}'}"
+            )
+            return False
+        return True
+
     async def _start_vnc_process(self, restart=False):
         """
         Starts the VNC process.
@@ -1350,6 +1455,13 @@ class DockerVM(BaseNode):
         if not (await super().close()):
             return False
         await self.reset()
+        # Whatever the container's processes wrote after the stop-time
+        # permission pass (the shutdown window, or any SIGKILL path) is
+        # still owned by root on the host and would make the node
+        # directory undeletable for the unprivileged server. Reclaim it
+        # before close() returns: project deletion rmtrees the directory
+        # right after the nodes close.
+        await self._reclaim_directory_ownership(self.working_dir)
 
     async def reset(self, release_nio_udp_ports=True):
 
@@ -1928,4 +2040,20 @@ class DockerVM(BaseNode):
         """
 
         await self.close()
-        await super().delete()
+        try:
+            await super().delete()
+        except ComputeError as e:
+            # close() already reclaimed once; the retry covers states where
+            # it could not run (e.g. Docker was down) and Docker is back now.
+            if await self._reclaim_directory_ownership(self.working_dir):
+                try:
+                    await super().delete()
+                    return
+                except ComputeError:
+                    pass
+            raise ComputeError(
+                f"Could not delete the node directory '{self.working_dir}': files left owned by "
+                f"another user could not be reclaimed ({e}). Reclaim them manually with: "
+                f"docker run --rm --user 0:0 -v \"{self.working_dir}\":/target --entrypoint /bin/sh "
+                f"{self._image} -c 'chown -R {os.getuid()}:{os.getgid()} /target'"
+            )
