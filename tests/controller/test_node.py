@@ -726,6 +726,28 @@ async def test_sync_missing_docker_image_pull_fallback(compute, controller):
     compute.post.assert_called_with("/docker/images/pull", data={"image": "nginx:latest"}, timeout=None)
 
 
+@pytest.mark.asyncio
+async def test_create_docker_node_pins_image_digest(compute, controller):
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(project, compute, "demo",
+                node_id=str(uuid.uuid4()),
+                node_type="docker",
+                properties={"image": "gns3/frr:latest", "adapters": 1})
+
+    response = MagicMock()
+    response.status = 200
+    response.json = {}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    image_id = "sha256:" + "a" * 64
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": image_id}):
+        assert await node.create() is True
+    # the image id from the controller host daemon is pinned into the create payload
+    data = compute.post.call_args[1]["data"]
+    assert data["image_digest"] == image_id
+
+
 def test_update_label(node):
     """
     The text in label need to be always the

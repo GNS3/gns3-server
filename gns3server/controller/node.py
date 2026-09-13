@@ -465,6 +465,7 @@ class Node:
         data["node_id"] = self._id
         if self._node_type == "docker":
             timeout = None
+            await self._add_docker_image_digest(data)
         else:
             timeout = 1200
         trial = 0
@@ -787,6 +788,29 @@ class Node:
                 self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
                 return True
         return False
+
+    async def _add_docker_image_digest(self, data):
+        """
+        Pin the Docker image of a node to the image id found on the Docker daemon
+        of the controller host, so that a compute holding a different image under
+        the same tag (e.g. a moved :latest) gets it re-synced instead of silently
+        reusing the stale copy. Not set when the image is not on the controller host.
+        """
+
+        from gns3server.compute.docker import Docker
+        from gns3server.compute.docker.docker_error import DockerError
+
+        image = data.get("image")
+        if not image:
+            return
+        try:
+            image_info = await Docker.instance().query("GET", f"images/{image}/json")
+        except DockerError:
+            # not available on the controller host: nothing to pin against
+            return
+        image_id = image_info.get("Id")
+        if image_id:
+            data["image_digest"] = image_id
 
     async def _sync_missing_docker_image(self, image):
         """

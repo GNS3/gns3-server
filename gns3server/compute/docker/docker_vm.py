@@ -122,6 +122,7 @@ class DockerVM(BaseNode):
         extra_configs=None,
         memory=0,
         cpus=0,
+        image_digest=None,
     ):
 
         if not is_rfc1123_hostname_valid(name):
@@ -135,6 +136,10 @@ class DockerVM(BaseNode):
         if ":" not in image:
             image = f"{image}:latest"
         self._image = image
+        # image id expected by the controller (set when the image is available on
+        # the controller host): a different local image under the same tag is
+        # treated as missing so the controller re-syncs the expected version
+        self._image_digest = image_digest
         # assign through the property setters so creation and updates apply
         # the same value normalization (e.g. "" -> None)
         self.start_command = start_command
@@ -582,6 +587,16 @@ class DockerVM(BaseNode):
 
         if image_infos is None:
             raise DockerError(f"Cannot get information for image '{self._image}', please try again.")
+
+        if self._image_digest and image_infos.get("Id") != self._image_digest:
+            # the tag exists but points to a different image (e.g. a moved :latest):
+            # report it as missing so the controller re-syncs the expected version
+            local_id = image_infos.get("Id")
+            log.info(
+                f"Image '{self._image}' version mismatch on this compute: "
+                f"local id '{local_id}' != expected '{self._image_digest}'"
+            )
+            raise ImageMissingError(self._image)
 
         available_cpus = psutil.cpu_count(logical=True)
         if self._cpus > available_cpus:

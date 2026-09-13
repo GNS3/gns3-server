@@ -565,6 +565,38 @@ async def test_create_image_not_available(compute_project, manager):
 
 
 @pytest.mark.asyncio
+async def test_create_image_digest_match(compute_project, manager):
+
+    response = {
+        "Id": "sha256:" + "a" * 64,
+        "Warnings": []
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+        vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest",
+                      image_digest="sha256:" + "a" * 64)
+        await vm.create()
+        # the last query is the container creation: the digest check let it through
+        assert mock.call_args[0] == ("POST", "containers/create?name={}".format(vm.docker_name))
+        assert vm._cid == "sha256:" + "a" * 64
+
+
+@pytest.mark.asyncio
+async def test_create_image_digest_mismatch(compute_project, manager):
+
+    response = {
+        "Id": "sha256:" + "b" * 64,
+        "Warnings": []
+    }
+    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest",
+                  image_digest="sha256:" + "a" * 64)
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as query_mock:
+        with pytest.raises(ImageMissingError, match="ubuntu:latest"):
+            await vm.create()
+        # only the image inspect happened: no container was created from the stale image
+        query_mock.assert_called_once_with("GET", "images/ubuntu:latest/json")
+
+
+@pytest.mark.asyncio
 async def test_create_with_user(compute_project, manager):
 
     response = {

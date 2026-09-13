@@ -81,6 +81,7 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) 
         extra_configs=node_data.get("extra_configs"),
         memory=node_data.get("memory", 0),
         cpus=node_data.get("cpus", 0),
+        image_digest=node_data.get("image_digest"),
     )
     # Pop keys already consumed by create_node above so the setattr
     # fallback loop below only applies truly extra keys and does not
@@ -89,7 +90,7 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) 
         "console", "console_type", "console_resolution", "console_http_port",
         "console_http_path", "aux", "aux_type", "start_command", "environment",
         "adapters", "mac_address", "extra_hosts", "extra_volumes", "extra_configs",
-        "memory", "cpus",
+        "memory", "cpus", "image_digest",
     ):
         node_data.pop(key, None)
     for name, value in node_data.items():

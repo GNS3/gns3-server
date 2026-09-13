@@ -75,6 +75,12 @@ class DockerCreate(DockerBase):
     application_id: Optional[int] = Field(
         None, ge=1, le=1022, description="IOL application ID for iol-runner images (allocated by the controller)"
     )
+    image_digest: Optional[str] = Field(
+        None, pattern=r"^sha256:[a-f0-9]{64}$",
+        description="Image id the controller expects for 'image' (sha256:<hex>, resolved from the Docker "
+                    "daemon on the controller host). When set and the compute holds a different image "
+                    "under the same tag, the image is reported as missing so the controller re-syncs it"
+    )
 
 
 class DockerUpdate(DockerBase):
