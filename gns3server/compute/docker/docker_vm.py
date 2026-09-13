@@ -47,6 +47,7 @@ from ..base_node import BaseNode
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from .docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
+from ..error import ImageMissingError
 
 import logging
 
@@ -121,6 +122,7 @@ class DockerVM(BaseNode):
         extra_configs=None,
         memory=0,
         cpus=0,
+        image_digest=None,
     ):
 
         if not is_rfc1123_hostname_valid(name):
@@ -134,6 +136,10 @@ class DockerVM(BaseNode):
         if ":" not in image:
             image = f"{image}:latest"
         self._image = image
+        # image id expected by the controller (set when the image is available on
+        # the controller host): a different local image under the same tag is
+        # treated as missing so the controller re-syncs the expected version
+        self._image_digest = image_digest
         # assign through the property setters so creation and updates apply
         # the same value normalization (e.g. "" -> None)
         self.start_command = start_command
@@ -574,12 +580,23 @@ class DockerVM(BaseNode):
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
-            log.info("Image '{}' is missing, pulling it from Docker repository...".format(self._image))
-            await self.pull_image(self._image)
-            image_infos = await self._get_image_information()
+            # the image is not on the local Docker daemon: raise ImageMissingError so the
+            # controller can sync it (docker save -> load from the controller host, or pull)
+            # and retry the node creation
+            raise ImageMissingError(self._image)
 
         if image_infos is None:
             raise DockerError(f"Cannot get information for image '{self._image}', please try again.")
+
+        if self._image_digest and image_infos.get("Id") != self._image_digest:
+            # the tag exists but points to a different image (e.g. a moved :latest):
+            # report it as missing so the controller re-syncs the expected version
+            local_id = image_infos.get("Id")
+            log.info(
+                f"Image '{self._image}' version mismatch on this compute: "
+                f"local id '{local_id}' != expected '{self._image_digest}'"
+            )
+            raise ImageMissingError(self._image)
 
         available_cpus = psutil.cpu_count(logical=True)
         if self._cpus > available_cpus:
@@ -1942,16 +1959,6 @@ class DockerVM(BaseNode):
                 name=self._name, id=self._id, adapters=adapters
             )
         )
-
-    async def pull_image(self, image):
-        """
-        Pulls an image from Docker repository
-        """
-
-        def callback(msg):
-            self.project.emit("log.info", {"message": msg})
-
-        await self.manager.pull_image(image, progress_callback=callback)
 
     async def _start_ubridge_capture(self, adapter_number, output_file, port_number=0):
         """

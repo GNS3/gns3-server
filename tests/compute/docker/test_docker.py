@@ -256,6 +256,55 @@ async def test_pull_image_propagates_timeout():
 
 
 @pytest.mark.asyncio
+async def test_load_image():
+
+    class Content:
+
+        def __init__(self):
+            self._chunks = [b'{"stream": "Loaded image ID: sha256:e90e34656806"}', b""]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    async def tar_stream():
+        yield b"tar-bytes"
+
+    stream = tar_stream()
+    messages = []
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as mock:
+        await Docker.instance().load_image(stream, progress_callback=messages.append)
+        mock.assert_called_with("POST", "images/load", data=stream, timeout=None)
+    response.close.assert_called_once()
+    assert any("Loaded image" in message for message in messages)
+
+
+@pytest.mark.asyncio
+async def test_load_image_error():
+
+    class Content:
+
+        def __init__(self):
+            self._chunks = [b'{"error": "invalid tar file"}', b""]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    async def tar_stream():
+        yield b"not-a-tar"
+
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+        with pytest.raises(DockerError, match="invalid tar file"):
+            await Docker.instance().load_image(tar_stream())
+        response.close.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_docker_check_connection_docker_minimum_version(vm):
 
     response = {

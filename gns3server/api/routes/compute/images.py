@@ -53,6 +53,16 @@ async def pull_docker_image(image: str = Body(..., embed=True, min_length=1, pat
     await docker_manager.pull_image(image, force=True)
 
 
+@router.post("/docker/images/load", status_code=status.HTTP_204_NO_CONTENT)
+async def load_docker_image(request: Request) -> None:
+    """
+    Load a Docker image into the Docker daemon from a docker save tar stream.
+    """
+
+    docker_manager = Docker.instance()
+    await docker_manager.load_image(request.stream())
+
+
 @router.get("/dynamips/images")
 async def get_dynamips_images() -> List[dict]:
     """
