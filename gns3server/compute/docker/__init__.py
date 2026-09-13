@@ -283,7 +283,12 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
 
-        data = json.dumps(data)
+        if isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {"content-type": "application/json"}
+        else:
+            # not a dict (e.g. a Docker image tar stream): let aiohttp stream the raw body
+            headers = {"content-type": "application/x-tar"}
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
@@ -301,9 +306,7 @@ class Docker(BaseManager):
                 url,
                 params=params,
                 data=data,
-                headers={
-                    "content-type": "application/json",
-                },
+                headers=headers,
                 timeout=timeout,
             )
         except aiohttp.ClientError as e:
@@ -409,6 +412,58 @@ class Docker(BaseManager):
 
         if progress_callback:
             progress_callback(f"Success pulling image {image}")
+
+    @locking
+    async def load_image(self, stream, progress_callback=None):
+        """
+        Load a Docker image into the Docker daemon from a docker save tar stream
+
+        :param stream: An async iterable of bytes (the tar produced by docker save)
+        :param progress_callback: A function that receive a log message about image load progress
+        """
+
+        if progress_callback:
+            progress_callback("Loading Docker image from stream")
+        response = await self.http_query("POST", "images/load", data=stream, timeout=None)
+        # The load api will stream status via an HTTP JSON stream
+        content = ""
+        try:
+            while True:
+                try:
+                    chunk = await response.content.read(CHUNK_SIZE)
+                except aiohttp.ServerDisconnectedError as e:
+                    raise DockerError("Disconnected while loading Docker image") from e
+                except asyncio.TimeoutError as e:
+                    raise DockerError("Timeout while loading Docker image") from e
+                if not chunk:
+                    break
+                content += chunk.decode("utf-8", errors="ignore")
+
+                try:
+                    while True:
+                        content = content.lstrip(" \r\n\t")
+                        answer, index = json.JSONDecoder().raw_decode(content)
+                        if not isinstance(answer, dict):
+                            raise DockerError("Invalid response while loading Docker image")
+                        error_detail = answer.get("errorDetail")
+                        error = answer.get("error")
+                        if not error and isinstance(error_detail, dict):
+                            error = error_detail.get("message")
+                        if error:
+                            raise DockerError(error)
+                        if "stream" in answer and progress_callback:
+                            progress_callback(answer["stream"].rstrip())
+                        content = content[index:]
+                except ValueError:  # Partial JSON
+                    pass
+
+            if content.strip():
+                raise DockerError("Invalid response while loading Docker image")
+        finally:
+            response.close()
+
+        if progress_callback:
+            progress_callback("Docker image loaded")
 
     async def list_images(self):
         """

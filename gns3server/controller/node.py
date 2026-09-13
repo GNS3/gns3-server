@@ -770,6 +770,9 @@ class Node:
         if the image exists
         """
 
+        if self._node_type == "docker":
+            return await self._sync_missing_docker_image(img)
+
         for directory in images_directories(type):
             image = os.path.join(directory, img)
             if os.path.exists(image):
@@ -784,6 +787,43 @@ class Node:
                 self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
                 return True
         return False
+
+    async def _sync_missing_docker_image(self, image):
+        """
+        Export a Docker image from the Docker daemon on the controller host and
+        stream it to the remote compute, or ask the compute to pull it when the
+        image is not available locally
+        """
+
+        from gns3server.compute.docker import Docker
+        from gns3server.compute.docker.docker_error import DockerError
+
+        try:
+            response = await Docker.instance().http_query("GET", f"images/{image}/get", timeout=None)
+        except DockerError:
+            # the image is not on the Docker daemon of the controller host: ask the
+            # compute to pull it from the Docker repository as a fallback
+            self.project.emit_notification(
+                "log.info",
+                {"message": f"Docker image '{image}' is not on the controller host, "
+                            f"asking compute '{self._compute.name}' to pull it"}
+            )
+            await self._compute.post("/docker/images/pull", data={"image": image}, timeout=None)
+            return True
+
+        self.project.emit_notification(
+            "log.info",
+            {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
+        )
+        try:
+            await self._compute.post("/docker/images/load", data=response.content, timeout=None)
+        finally:
+            response.close()
+        self.project.emit_notification(
+            "log.info",
+            {"message": f"Docker image '{image}' has been synced to compute '{self._compute.name}'"}
+        )
+        return True
 
     async def dynamips_auto_idlepc(self):
         """

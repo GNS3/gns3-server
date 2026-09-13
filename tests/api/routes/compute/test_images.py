@@ -47,3 +47,16 @@ class TestImagesRoutes:
             )
             mock.assert_not_called()
             assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_load_docker_image(self, app: FastAPI, compute_client: AsyncClient) -> None:
+
+        with asyncio_patch("gns3server.compute.docker.Docker.load_image") as mock:
+            response = await compute_client.post(
+                app.url_path_for("compute:load_docker_image"),
+                content=b"docker-save-tar-bytes"
+            )
+            mock.assert_called_once()
+            # the tar is streamed to the Docker daemon as an async iterable
+            stream = mock.call_args[0][0]
+            assert hasattr(stream, "__aiter__")
+            assert response.status_code == status.HTTP_204_NO_CONTENT

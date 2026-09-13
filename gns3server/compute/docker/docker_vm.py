@@ -47,6 +47,7 @@ from ..base_node import BaseNode
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from .docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
+from ..error import ImageMissingError
 
 import logging
 
@@ -574,9 +575,10 @@ class DockerVM(BaseNode):
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
-            log.info("Image '{}' is missing, pulling it from Docker repository...".format(self._image))
-            await self.pull_image(self._image)
-            image_infos = await self._get_image_information()
+            # the image is not on the local Docker daemon: raise ImageMissingError so the
+            # controller can sync it (docker save -> load from the controller host, or pull)
+            # and retry the node creation
+            raise ImageMissingError(self._image)
 
         if image_infos is None:
             raise DockerError(f"Cannot get information for image '{self._image}', please try again.")
@@ -1942,16 +1944,6 @@ class DockerVM(BaseNode):
                 name=self._name, id=self._id, adapters=adapters
             )
         )
-
-    async def pull_image(self, image):
-        """
-        Pulls an image from Docker repository
-        """
-
-        def callback(msg):
-            self.project.emit("log.info", {"message": msg})
-
-        await self.manager.pull_image(image, progress_callback=callback)
 
     async def _start_ubridge_capture(self, adapter_number, output_file, port_number=0):
         """

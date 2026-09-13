@@ -30,6 +30,7 @@ from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.error import ImageMissingError
 from gns3server.compute.docker import Docker
 
 
@@ -555,65 +556,12 @@ async def test_create_environment_with_last_new_line_character(compute_project, 
 @pytest.mark.asyncio
 async def test_create_image_not_available(compute_project, manager):
 
-    call = 0
-    async def information():
-        nonlocal call
-        if call == 0:
-            call += 1
-            raise DockerHttp404Error("missing")
-        else:
-            return {}
-
-    response = {
-        "Id": "e90e34656806",
-        "Warnings": []
-    }
-
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu")
-    vm._get_image_information = MagicMock()
-    vm._get_image_information.side_effect = information
-    with asyncio_patch("gns3server.compute.docker.DockerVM.pull_image", return_value=True) as mock_pull:
-        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+    vm._get_image_information = MagicMock(side_effect=DockerHttp404Error("missing"))
+    with asyncio_patch("gns3server.compute.docker.Docker.query") as query_mock:
+        with pytest.raises(ImageMissingError, match="ubuntu:latest"):
             await vm.create()
-            mock.assert_called_with("POST", "containers/create?name={}".format(vm.docker_name), data={
-                "Tty": True,
-                "OpenStdin": True,
-                "StdinOnce": False,
-                "HostConfig":
-                    {
-                        "CapAdd": ["ALL"],
-                        "Mounts": [
-                            {
-                                "Type": "bind",
-                                "Source": Docker.resources_path(),
-                                "Target": "/gns3",
-                                "ReadOnly": True
-                            },
-                            {
-                                "Type": "bind",
-                                "Source": os.path.join(vm.working_dir, "etc", "network"),
-                                "Target": "/gns3volumes/etc/network"
-                            }
-                        ],
-                        "Privileged": True,
-                        "Memory": 0,
-                        "NanoCpus": 0,
-                        "UsernsMode": "host"
-                    },
-                "Volumes": {},
-                "NetworkDisabled": True,
-                "Hostname": "test",
-                "Image": "ubuntu:latest",
-                "Env": [
-                    "container=docker",
-                    "GNS3_MAX_ETHERNET=eth0",
-                    "GNS3_VOLUMES=/etc/network"
-                    ],
-                "Entrypoint": ["/gns3/init.sh"],
-                "Cmd": ["/bin/sh"]
-            })
-        assert vm._cid == "e90e34656806"
-        mock_pull.assert_called_with("ubuntu:latest")
+        query_mock.assert_not_called()
 
 
 @pytest.mark.asyncio
