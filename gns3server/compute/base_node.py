@@ -340,14 +340,43 @@ class BaseNode:
         """
 
         def set_rw(operation, name, exc):
-            os.chmod(name, stat.S_IWRITE)
+            # Add the missing user permissions instead of replacing the whole mode: chmod'ing
+            # a directory to S_IWRITE removes the search permission on POSIX systems, making
+            # the directory impossible to traverse or to delete. Also note that S_IWRITE
+            # clears the read-only attribute on Windows.
+            try:
+                if os.path.isdir(name) and not os.path.islink(name):
+                    os.chmod(name, os.stat(name).st_mode | stat.S_IRWXU)
+                elif not os.path.islink(name):
+                    os.chmod(name, os.stat(name).st_mode | stat.S_IRUSR | stat.S_IWUSR)
+                # retry the failed operation now that the permissions are fixed
+                # (retrying os.scandir is not possible, the directory is handled by the
+                # retry loop below)
+                if operation in (os.unlink, os.rmdir):
+                    operation(name)
+            except OSError:
+                pass
 
         directory = self.project.node_working_directory(self)
-        if os.path.exists(directory):
+        # Retry the deletion: a concurrent task (e.g. a MD5 checksum computation caching
+        # its result in the node directory) can recreate a file while the directory is
+        # being deleted, and shutil.rmtree silently gives up when its error handler returns
+        for attempt in range(3):
+            if not os.path.exists(directory):
+                return
             try:
                 await wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
             except OSError as e:
                 raise ComputeError(f"Could not delete the node working directory: {e}")
+            if not os.path.exists(directory):
+                return
+            if attempt == 2:
+                raise ComputeError(
+                    f"Could not delete the node working directory '{directory}': a file may have been "
+                    "recreated in it or could not be removed"
+                )
+            log.warning(f"Could not completely delete the node working directory '{directory}', retrying")
+            await asyncio.sleep(0.1)
 
     def start(self):
         """

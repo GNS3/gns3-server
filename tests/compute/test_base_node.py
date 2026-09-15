@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 from collections import OrderedDict
 
 import pytest
@@ -24,6 +25,7 @@ import pytest_asyncio
 from tests.utils import asyncio_patch, AsyncioMagicMock
 from unittest.mock import patch, MagicMock
 
+from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.error import NodeError
@@ -507,3 +509,93 @@ async def test_console_websocket_client_disconnect_while_node_output_streams(
         "has disconnected from compute console WebSocket while node output" in r.message
         for r in caplog.records
     )
+
+
+@pytest.mark.asyncio
+async def test_delete_node_working_directory(node):
+
+    working_dir = node.working_dir
+    with open(os.path.join(working_dir, "test.txt"), "w") as f:
+        f.write("TEST")
+    await node.delete()
+    assert not os.path.exists(working_dir)
+
+
+@pytest.mark.asyncio
+async def test_delete_directory_without_user_permissions(node):
+    # regression test: a failed deletion must not chmod the directory to S_IWRITE (0o200),
+    # which removes the search permission and makes the directory undeletable
+    working_dir = node.working_dir
+    with open(os.path.join(working_dir, "test.txt"), "w") as f:
+        f.write("TEST")
+    os.chmod(working_dir, 0o200)
+    try:
+        await node.delete()
+        assert not os.path.exists(working_dir)
+    finally:
+        # restore the permissions so a failed test does not leave an undeletable
+        # directory behind on the shared project path
+        if os.path.exists(working_dir):
+            os.chmod(working_dir, 0o700)
+
+
+@pytest.mark.asyncio
+async def test_delete_directory_with_readonly_entries(node):
+
+    working_dir = node.working_dir
+    with open(os.path.join(working_dir, "test.txt"), "w") as f:
+        f.write("TEST")
+    os.chmod(os.path.join(working_dir, "test.txt"), 0o000)
+    os.chmod(working_dir, 0o500)  # remove the write permission
+    try:
+        await node.delete()
+        assert not os.path.exists(working_dir)
+    finally:
+        if os.path.exists(working_dir):
+            os.chmod(working_dir, 0o700)
+
+
+@pytest.mark.asyncio
+async def test_delete_directory_with_file_recreated_during_deletion(node, monkeypatch):
+    # regression test: a concurrent MD5 checksum computation can cache its result in the
+    # node directory while it is being deleted, recreating a file after shutil.rmtree
+    # has listed the directory (rmtree then silently gives up on the final rmdir)
+    working_dir = node.working_dir
+    with open(os.path.join(working_dir, "hda_disk_image.md5sum"), "w") as f:
+        f.write("0" * 32)
+    real_rmtree = shutil.rmtree
+    calls = 0
+
+    def rmtree_recreating_a_file(directory, onerror=None, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            # delete the entries but leave one behind, as if the final rmdir
+            # had failed with ENOTEMPTY after the error handler returned
+            for entry in os.listdir(directory):
+                os.remove(os.path.join(directory, entry))
+            with open(os.path.join(directory, "hda_disk_image.md5sum"), "w") as f:
+                f.write("0" * 32)
+            return
+        real_rmtree(directory, onerror=onerror, **kwargs)
+
+    monkeypatch.setattr("gns3server.compute.base_node.shutil.rmtree", rmtree_recreating_a_file)
+    await node.delete()
+    assert calls == 2
+    assert not os.path.exists(working_dir)
+
+
+@pytest.mark.asyncio
+async def test_delete_directory_failure_raises(node, monkeypatch):
+
+    working_dir = node.working_dir
+    with open(os.path.join(working_dir, "test.txt"), "w") as f:
+        f.write("TEST")
+
+    def rmtree_not_deleting(directory, onerror=None, **kwargs):
+        pass  # simulate a persistent deletion failure
+
+    monkeypatch.setattr("gns3server.compute.base_node.shutil.rmtree", rmtree_not_deleting)
+    with pytest.raises(ComputeError):
+        await node.delete()
+    assert os.path.exists(working_dir)

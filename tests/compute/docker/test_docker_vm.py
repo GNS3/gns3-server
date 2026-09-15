@@ -21,6 +21,7 @@ import pytest
 import pytest_asyncio
 import uuid
 import os
+import shutil
 
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -2111,12 +2112,22 @@ async def test_close_reclaims_node_directory(vm, port_manager):
 @pytest.mark.asyncio
 async def test_delete_retries_after_reclaim(vm):
 
+    real_rmtree = shutil.rmtree
+    calls = 0
+
+    def rmtree_first_fails_then_deletes(directory, onerror=None, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("permission denied")
+        real_rmtree(directory, onerror=onerror)
+
     with patch.object(vm, "close", new_callable=AsyncioMagicMock):
         with patch.object(vm, "_reclaim_directory_ownership", new_callable=AsyncioMagicMock, return_value=True) as mock_reclaim:
             # First rmtree hits the root-owned leftovers, the retry (after
-            # the reclaim) succeeds.
+            # the reclaim) succeeds and really deletes the directory.
             with patch("gns3server.compute.base_node.shutil.rmtree",
-                       side_effect=[OSError("permission denied"), None]) as mock_rmtree:
+                       side_effect=rmtree_first_fails_then_deletes) as mock_rmtree:
                 await vm.delete()
     assert mock_rmtree.call_count == 2
     mock_reclaim.assert_called_once_with(vm.working_dir)
