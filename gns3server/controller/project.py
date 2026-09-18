@@ -632,7 +632,7 @@ class Project:
         node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
-    async def _create_node(self, compute, name, node_id, node_type=None, **kwargs):
+    async def _create_node(self, compute, name, node_id, node_type=None, allow_missing_image=False, **kwargs):
 
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
         # Hold the lock across the check + POST + register so that concurrent
@@ -651,17 +651,21 @@ class Project:
                 await compute.post("/projects", data=data)
                 self._project_created_on_compute.add(compute)
 
-        await node.create()
+        await node.create(allow_missing_image=allow_missing_image)
         self._nodes[node.id] = node
 
         return node
 
     @open_required
-    async def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
+    async def add_node(
+        self, compute, name, node_id, dump=True, node_type=None, allow_missing_image=False, **kwargs
+    ):
         """
         Create a node or return an existing node
 
         :param dump: Dump topology to disk
+        :param allow_missing_image: Keep the node on the controller in a
+            degraded state instead of failing when its image is missing
         :param kwargs: See the documentation of node
         """
 
@@ -683,7 +687,9 @@ class Project:
                     )
                 elif "application_id" not in kwargs.keys() and not kwargs.get("properties"):
                     kwargs["application_id"] = get_next_application_id(self._controller.projects, self._computes)
-                node = await self._create_node(compute, name, node_id, node_type, **kwargs)
+                node = await self._create_node(
+                    compute, name, node_id, node_type, allow_missing_image=allow_missing_image, **kwargs
+                )
         elif node_type == "docker" and _is_iol_docker_kwargs(kwargs):
             # IOL Docker nodes derive interface MACs from the application ID
             # exactly like IOU; they draw from the disjoint upper half of the
@@ -700,9 +706,13 @@ class Project:
                     kwargs["application_id"] = get_next_application_id(
                         self._controller.projects, self._computes, iol_docker=True
                     )
-                node = await self._create_node(compute, name, node_id, node_type, **kwargs)
+                node = await self._create_node(
+                    compute, name, node_id, node_type, allow_missing_image=allow_missing_image, **kwargs
+                )
         else:
-            node = await self._create_node(compute, name, node_id, node_type, **kwargs)
+            node = await self._create_node(
+                compute, name, node_id, node_type, allow_missing_image=allow_missing_image, **kwargs
+            )
         self.emit_notification("node.created", node.asdict())
         if dump:
             self.dump()
@@ -975,6 +985,20 @@ class Project:
             # a link should have 2 attached nodes, this can happen with corrupted projects
             await self.delete_link(link.id, force_delete=True)
             return None
+        if any(n["node"].missing_image for n in link._nodes):
+            # One of the endpoints could not be created on its compute because
+            # an image is missing. Keep the link on the controller (so the
+            # topology is preserved) but defer the NIO creation until the
+            # missing image is resolved.
+            for n in link._nodes:
+                n["node"].add_link(link)
+                n["port"].link = link
+            link._deferred = True
+            log.info(
+                "Project '%s' [%s]: deferring link %s until missing image(s) are resolved",
+                self._name, self._id, link.id,
+            )
+            return None
         # Apply project-level marker definitions onto the link's memory
         # (memory_only) before _prepare() so the inherited markers ride the
         # batch NIO dispatch — zero extra HTTP round-trips.  The final
@@ -986,6 +1010,33 @@ class Project:
                 log.warning("Marker definition '%s' could not be applied to link %s: %s", def_name, link.id, e)
         entries = await link._prepare()
         return (link, entries)
+
+    async def restore_deferred_links(self, node):
+        """
+        Create on the computes the NIOs of the links that were deferred while
+        one of their endpoints had a missing image. Called once the node has
+        been successfully created.
+
+        :param node: node that has just been created on its compute
+        """
+
+        restored = []
+        for link in list(node.links):
+            if not link.deferred:
+                continue
+            if any(n["node"].missing_image for n in link._nodes):
+                # the other endpoint is still missing an image
+                continue
+            try:
+                await link.create()
+                link._deferred = False
+                restored.append(link)
+            except Exception as e:
+                log.exception("Could not restore deferred link %s: %s", link.id, e)
+        for link in restored:
+            self.emit_notification("link.updated", link.asdict())
+        if restored:
+            self.dump()
 
     @open_required
     async def add_link(self, link_id=None, dump=True):
@@ -1867,7 +1918,15 @@ class Project:
             log.info("Project '%s' [%s]: loading %d nodes...", self._name, self._id, len(nodes_to_create))
             pool = Pool(concurrency=100)
             for compute, name, node_id, node_data in nodes_to_create:
-                pool.append(self.add_node, compute, name, node_id, dump=False, **node_data)
+                pool.append(
+                    self.add_node,
+                    compute,
+                    name,
+                    node_id,
+                    dump=False,
+                    allow_missing_image=True,
+                    **node_data,
+                )
             await pool.join()
             log.info("Project '%s' [%s]: loaded %d nodes", self._name, self._id, len(nodes_to_create))
             # Pre-allocate UDP ports for all links in batch to reduce HTTP round-trips
@@ -1875,9 +1934,12 @@ class Project:
             for link_data in topology.get("links", []):
                 if "link_id" not in link_data.keys():
                     continue
-                for node_link in link_data.get("nodes", []):
-                    node = self._nodes.get(node_link["node_id"])
-                    if node:
+                link_nodes = [self._nodes.get(nl["node_id"]) for nl in link_data.get("nodes", [])]
+                if any(node is not None and node.missing_image for node in link_nodes):
+                    # the link will be deferred, no NIO/port will be created now
+                    continue
+                for node in link_nodes:
+                    if node is not None:
                         ports_per_compute[node.compute.id] = ports_per_compute.get(node.compute.id, 0) + 1
             for compute in self.computes:
                 count = ports_per_compute.get(compute.id, 0)
@@ -2215,7 +2277,7 @@ class Project:
         """
         Start all nodes (except always-running types like Ethernet switch, Cloud, NAT, etc.)
         """
-        nodes_to_start = [n for n in self.nodes.values() if not n.is_always_running()]
+        nodes_to_start = [n for n in self.nodes.values() if not n.is_always_running() and not n.missing_image]
         if not nodes_to_start:
             return
         log.info("Project '%s' [%s]: starting %d nodes...", self._name, self._id, len(nodes_to_start))
@@ -2230,7 +2292,7 @@ class Project:
         """
         Stop all nodes (except always-running types like Ethernet switch, Cloud, NAT, etc.)
         """
-        nodes_to_stop = [n for n in self.nodes.values() if not n.is_always_running()]
+        nodes_to_stop = [n for n in self.nodes.values() if not n.is_always_running() and not n.missing_image]
         if not nodes_to_stop:
             return
         log.info("Project '%s' [%s]: stopping %d nodes...", self._name, self._id, len(nodes_to_stop))
@@ -2247,6 +2309,8 @@ class Project:
         """
         pool = Pool(concurrency=50)
         for node in self.nodes.values():
+            if node.missing_image:
+                continue
             pool.append(node.suspend)
         await pool.join()
 
@@ -2258,6 +2322,8 @@ class Project:
 
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
+            if node.missing_image:
+                continue
             pool.append(node.reset_console)
         await pool.join()
 
@@ -2347,4 +2413,3 @@ class Project:
 
     def __repr__(self):
         return f"<gns3server.controller.Project {self._name} {self._id}>"
-

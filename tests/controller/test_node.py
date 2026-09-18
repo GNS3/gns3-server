@@ -26,6 +26,7 @@ from gns3server.compute.docker.docker_error import DockerError
 
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
+from gns3server.controller.controller_error import ComputeConflictError, ControllerError
 
 
 @pytest.fixture
@@ -234,7 +235,9 @@ def test_json(node, compute):
                 "port_number": 0,
                 "short_name": "e0"
             }
-        ]
+        ],
+        "missing_image": False,
+        "missing_images": []
     }
 
     assert node.asdict(topology_dump=True) == {
@@ -317,6 +320,314 @@ async def test_create_image_missing(node, compute):
 
     assert await node.create() is True
     #assert node._upload_missing_image.called is True
+
+
+@pytest.mark.asyncio
+async def test_create_image_missing_kept_in_degraded_state(project, compute, tmpdir, config):
+    """
+    With allow_missing_image=True a node whose image cannot be provided is kept
+    on the controller and flagged instead of aborting the whole project open.
+    """
+
+    config.settings.Server.images_path = str(tmpdir)
+    node = Node(project, compute, "r1",
+                node_id=str(uuid.uuid4()),
+                node_type="qemu",
+                properties={"hda_disk_image": "missing.qcow2", "ram": 256})
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            "/projects/{}/qemu/nodes".format(project.id),
+            {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(return_value=False)
+
+    assert await node.create(allow_missing_image=True) is False
+    assert node.missing_image is True
+    assert node.missing_images == [
+        {"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_create_image_missing_raises_by_default(project, compute, tmpdir, config):
+    """
+    Without allow_missing_image the historical behaviour is preserved: the
+    ImageMissingError is re-raised.
+    """
+
+    config.settings.Server.images_path = str(tmpdir)
+    node = Node(project, compute, "r1",
+                node_id=str(uuid.uuid4()),
+                node_type="qemu",
+                properties={"hda_disk_image": "missing.qcow2", "ram": 256})
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            "/projects/{}/qemu/nodes".format(project.id),
+            {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(return_value=False)
+
+    with pytest.raises(ComputeConflictError):
+        await node.create()
+    assert node.missing_image is False
+
+
+@pytest.mark.asyncio
+async def test_create_image_missing_raises_after_upload_retries(project, compute):
+    node = Node(
+        project,
+        compute,
+        "r1",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={"hda_disk_image": "missing.qcow2", "ram": 256},
+    )
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            f"/projects/{project.id}/qemu/nodes",
+            {"message": "missing", "image": "missing.qcow2", "exception": "ImageMissingError"},
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(return_value=True)
+
+    with pytest.raises(ComputeConflictError):
+        await node.create()
+    assert compute.post.call_count == 6
+    assert node.missing_image is False
+
+
+@pytest.mark.asyncio
+async def test_create_image_missing_without_image_name_is_not_degraded(project, compute):
+    """A malformed conflict must not leave a controller-only node marked healthy."""
+
+    node = Node(
+        project,
+        compute,
+        "r1",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={"hda_disk_image": "present.qcow2", "ram": 256},
+    )
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            f"/projects/{project.id}/qemu/nodes",
+            {"message": "The image is missing", "exception": "ImageMissingError"},
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._image_available = MagicMock(return_value=True)
+
+    with pytest.raises(ComputeConflictError):
+        await node.create(allow_missing_image=True)
+    assert node.missing_image is False
+
+
+def test_compute_missing_images_matches_reported_basename_to_property(project, compute):
+    node = Node(
+        project,
+        compute,
+        "r1",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={
+            "hda_disk_image": "/images/qemu/disk.qcow2",
+            "cdrom_image": "/images/qemu/installer.iso",
+            "ram": 256,
+        },
+    )
+    node._image_available = MagicMock(return_value=True)
+
+    assert node._compute_missing_images("installer.iso") == [
+        {"property": "cdrom_image", "image": "installer.iso", "image_type": "qemu"}
+    ]
+
+
+def test_compute_missing_images_deduplicates_path_and_reported_basename(project, compute):
+    node = Node(
+        project,
+        compute,
+        "r1",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={"cdrom_image": "/images/qemu/installer.iso", "ram": 256},
+    )
+    node._image_available = MagicMock(return_value=False)
+
+    assert node._compute_missing_images("installer.iso") == [
+        {
+            "property": "cdrom_image",
+            "image": "/images/qemu/installer.iso",
+            "image_type": "qemu",
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_create_docker_image_missing_after_failed_pull(project, compute):
+    """
+    A Docker image that cannot be pulled from the registry keeps the node in a
+    degraded state instead of aborting the project open.
+    """
+
+    node = Node(project, compute, "web",
+                node_id=str(uuid.uuid4()),
+                node_type="docker",
+                properties={"image": "ghost:latest", "adapters": 1})
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            "/projects/{}/docker/nodes".format(project.id),
+            {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"}
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(
+        side_effect=ControllerError("Failed to pull Docker image 'ghost:latest'")
+    )
+
+    assert await node.create(allow_missing_image=True) is False
+    assert node.missing_image is True
+    assert node.missing_images == [
+        {"property": "image", "image": "ghost:latest", "image_type": "docker"}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_create_docker_image_missing_pull_error_raises_by_default(project, compute):
+    """
+    Without allow_missing_image a failed Docker pull is still surfaced.
+    """
+
+    node = Node(project, compute, "web",
+                node_id=str(uuid.uuid4()),
+                node_type="docker",
+                properties={"image": "ghost:latest", "adapters": 1})
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            "/projects/{}/docker/nodes".format(project.id),
+            {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"}
+        )
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+    node._upload_missing_image = AsyncioMagicMock(
+        side_effect=ControllerError("Failed to pull Docker image 'ghost:latest'")
+    )
+
+    with pytest.raises(ControllerError):
+        await node.create()
+
+
+def test_compute_missing_images_lists_all_unavailable_slots(project, compute, tmpdir, config):
+    """
+    All the image slots of a multi-image node are reported, not only the first
+    one the compute complained about.
+    """
+
+    config.settings.Server.images_path = str(tmpdir)
+    node = Node(project, compute, "r1",
+                node_id=str(uuid.uuid4()),
+                node_type="qemu",
+                properties={
+                    "hda_disk_image": "present.qcow2",
+                    "hdc_disk_image": "missing.qcow2",
+                    "initrd": "missing.initrd",
+                    "ram": 256,
+                })
+    # make one image available on the controller
+    os.makedirs(os.path.join(str(tmpdir), "QEMU"), exist_ok=True)
+    with open(os.path.join(str(tmpdir), "QEMU", "present.qcow2"), "w") as f:
+        f.write("x")
+
+    missing = node._compute_missing_images()
+    assert {m["property"] for m in missing} == {"hdc_disk_image", "initrd"}
+    assert all(m["image_type"] == "qemu" for m in missing)
+
+
+@pytest.mark.asyncio
+async def test_start_missing_image(node):
+
+    node._missing_images = [
+        {"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}
+    ]
+    with pytest.raises(ControllerError):
+        await node.start()
+
+
+@pytest.mark.asyncio
+async def test_update_recreates_missing_image_node(project, compute, node):
+    """
+    Updating the image of a degraded node creates it on the compute and clears
+    the missing image state.
+    """
+
+    node._missing_images = [
+        {"property": "image", "image": "missing.image", "image_type": "ios"}
+    ]
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+    project.restore_deferred_links = AsyncioMagicMock()
+
+    await node.update(properties={"image": "available.image"})
+    assert node.missing_image is False
+    assert node.missing_images == []
+    assert project.restore_deferred_links.called is True
+
+
+@pytest.mark.asyncio
+async def test_update_missing_image_node_rolls_back_after_create_error(project, compute, node):
+    original_properties = {"image": "missing.image"}
+    node._properties = original_properties.copy()
+    node._missing_images = [
+        {"property": "image", "image": "missing.image", "image_type": "ios"}
+    ]
+    compute.post = AsyncioMagicMock(side_effect=ControllerError("create failed"))
+
+    with pytest.raises(ControllerError):
+        await node.update(properties={"image": "invalid.image"})
+
+    assert node.properties == original_properties
+    assert node.missing_images == [
+        {"property": "image", "image": "missing.image", "image_type": "ios"}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_start_retries_ready_deferred_links(node, project):
+    peer = MagicMock()
+    peer.missing_image = False
+    link = MagicMock()
+    link.deferred = True
+    link._nodes = [{"node": node}, {"node": peer}]
+    node._links.add(link)
+    project.restore_deferred_links = AsyncioMagicMock()
+
+    with pytest.raises(ControllerError, match="deferred link"):
+        await node.start()
+
+    project.restore_deferred_links.assert_called_once_with(node)
+
+
+@pytest.mark.asyncio
+async def test_stop_missing_image_node_does_not_contact_compute(node, compute):
+    node._missing_images = [
+        {"property": "image", "image": "missing.image", "image_type": "ios"}
+    ]
+    compute.post = AsyncioMagicMock()
+
+    await node.stop()
+
+    compute.post.assert_not_called()
 
 
 @pytest.mark.asyncio

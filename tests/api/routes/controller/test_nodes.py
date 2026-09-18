@@ -103,7 +103,20 @@ class TestNodeRoutes:
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()[0]["name"] == "test"
+    async def test_list_node_with_missing_image(
+        self, app: FastAPI, client: AsyncClient, project: Project, node: Node
+    ) -> None:
+        node._missing_images = [
+            {"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}
+        ]
 
+        response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()[0]
+        assert data["missing_image"] is True
+        assert data["missing_images"] == [
+            {"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}
+        ]
 
     @pytest.mark.parametrize(
         "tags, expected_match",
