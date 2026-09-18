@@ -585,6 +585,45 @@ async def test_update_recreates_missing_image_node(project, compute, node):
 
 
 @pytest.mark.asyncio
+async def test_update_replaces_qemu_linked_clone_backing_image(project, compute):
+    """Stale linked-clone metadata must not override a replacement image."""
+
+    qemu_node = Node(
+        project,
+        compute,
+        "old-qemu",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={
+            "hda_disk_image": "hda_disk.qcow2",
+            "hda_disk_image_backing_file": "missing.qcow2",
+            "hda_disk_image_md5sum": "old-checksum",
+        },
+    )
+    qemu_node._missing_images = [
+        {"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}
+    ]
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+    project.restore_deferred_links = AsyncioMagicMock()
+
+    await qemu_node.update(
+        properties={
+            **qemu_node.properties,
+            "hda_disk_image": "replacement.qcow2",
+        }
+    )
+
+    request_data = compute.post.call_args.kwargs["data"]
+    assert request_data["hda_disk_image"] == "replacement.qcow2"
+    assert request_data["disk_images_to_reset"] == ["hda_disk_image"]
+    assert "hda_disk_image_backing_file" not in request_data
+    assert "hda_disk_image_md5sum" not in request_data
+    assert qemu_node.missing_image is False
+
+
+@pytest.mark.asyncio
 async def test_update_missing_image_node_rolls_back_after_create_error(project, compute, node):
     original_properties = {"image": "missing.image"}
     node._properties = original_properties.copy()
@@ -1003,6 +1042,22 @@ async def test_upload_missing_image(compute, controller, images_dir):
     open(os.path.join(images_dir, "linux.img"), 'w+').close()
     assert await node._upload_missing_image("qemu", "linux.img") is True
     compute.post.assert_called_with("/qemu/images/linux.img", data=ANY, timeout=None)
+
+
+@pytest.mark.asyncio
+async def test_upload_missing_image_from_nested_directory(compute, controller, images_dir):
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(project, compute, "demo",
+                node_id=str(uuid.uuid4()),
+                node_type="qemu",
+                properties={"hda_disk_image": "nested.img"})
+    nested_dir = os.path.join(images_dir, "vendor")
+    os.makedirs(nested_dir)
+    open(os.path.join(nested_dir, "nested.img"), "w+").close()
+
+    assert await node._upload_missing_image("qemu", "nested.img") is True
+    compute.post.assert_called_with("/qemu/images/nested.img", data=ANY, timeout=None)
 
 
 @pytest.mark.asyncio

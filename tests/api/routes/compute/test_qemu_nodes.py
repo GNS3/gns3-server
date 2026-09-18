@@ -20,6 +20,7 @@ import pytest_asyncio
 import os
 import stat
 import shutil
+import uuid
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -144,6 +145,128 @@ class TestQemuNodesRoutes:
         assert response.json()["project_id"] == compute_project.id
         assert response.json()["ram"] == 1024
         assert response.json()["hda_disk_image"] == "linux载.img"
+
+    async def test_qemu_create_discards_stale_overlay_for_replacement(
+            self,
+            app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            base_params: dict,
+            fake_qemu_vm: str
+    ):
+
+        node_id = str(uuid.uuid4())
+        working_dir = os.path.join(compute_project.path, "project-files", "qemu", node_id)
+        os.makedirs(working_dir)
+        stale_overlay = os.path.join(working_dir, "hda_disk.qcow2")
+        with open(stale_overlay, "w+") as f:
+            f.write("stale linked clone")
+        stale_checksum = stale_overlay + ".md5sum"
+        with open(stale_checksum, "w+") as f:
+            f.write("0" * 32)
+
+        params = {
+            **base_params,
+            "node_id": node_id,
+            "linked_clone": True,
+            "hda_disk_image": "linux载.img",
+            "disk_images_to_reset": ["hda_disk_image"],
+        }
+        response = await compute_client.post(
+            app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["hda_disk_image"] == "linux载.img"
+        assert not os.path.exists(stale_overlay)
+        assert not os.path.exists(stale_checksum)
+
+    async def test_qemu_create_preserves_existing_overlay_without_reset_marker(
+            self,
+            app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            base_params: dict,
+            fake_qemu_vm: str
+    ):
+
+        node_id = str(uuid.uuid4())
+        working_dir = os.path.join(compute_project.path, "project-files", "qemu", node_id)
+        os.makedirs(working_dir)
+        overlay = os.path.join(working_dir, "hda_disk.qcow2")
+        shutil.copy("tests/resources/empty8G.qcow2", overlay)
+
+        params = {
+            **base_params,
+            "node_id": node_id,
+            "linked_clone": True,
+            "hda_disk_image": "linux载.img",
+        }
+        response = await compute_client.post(
+            app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert os.path.exists(overlay)
+
+    async def test_qemu_create_preserves_overlay_when_replacement_is_missing(
+            self,
+            app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            base_params: dict,
+            fake_qemu_vm: str
+    ):
+
+        node_id = str(uuid.uuid4())
+        working_dir = os.path.join(compute_project.path, "project-files", "qemu", node_id)
+        os.makedirs(working_dir)
+        overlay = os.path.join(working_dir, "hda_disk.qcow2")
+        shutil.copy("tests/resources/empty8G.qcow2", overlay)
+
+        params = {
+            **base_params,
+            "node_id": node_id,
+            "linked_clone": True,
+            "hda_disk_image": "does-not-exist.qcow2",
+            "disk_images_to_reset": ["hda_disk_image"],
+        }
+        response = await compute_client.post(
+            app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert os.path.exists(overlay)
+
+    async def test_qemu_create_resets_valid_replacement_when_another_disk_is_missing(
+            self,
+            app: FastAPI,
+            compute_client: AsyncClient,
+            compute_project: Project,
+            base_params: dict,
+            fake_qemu_vm: str
+    ):
+
+        node_id = str(uuid.uuid4())
+        working_dir = os.path.join(compute_project.path, "project-files", "qemu", node_id)
+        os.makedirs(working_dir)
+        stale_overlay = os.path.join(working_dir, "hda_disk.qcow2")
+        shutil.copy("tests/resources/empty8G.qcow2", stale_overlay)
+
+        params = {
+            **base_params,
+            "node_id": node_id,
+            "linked_clone": True,
+            "hda_disk_image": "linux载.img",
+            "hdb_disk_image": "does-not-exist.qcow2",
+            "disk_images_to_reset": ["hda_disk_image"],
+        }
+        response = await compute_client.post(
+            app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params
+        )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert not os.path.exists(stale_overlay)
     
     
     @pytest.mark.parametrize(

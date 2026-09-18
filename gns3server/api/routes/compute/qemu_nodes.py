@@ -64,6 +64,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
 
     qemu = Qemu.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
+    disk_images_to_reset = set(node_data.pop("disk_images_to_reset", []))
     vm = await qemu.create_node(
         node_data.pop("name"),
         str(project_id),
@@ -80,11 +81,34 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
     # update the disk image with the backing file if provided
     # this is needed when duplicating a node that uses backed disk images
     drives = ["a", "b", "c", "d"]
-    for disk_index, drive in enumerate(drives):
+    for drive in drives:
         disk_image_backing_file = node_data.get(f"hd{drive}_disk_image_backing_file")
         if disk_image_backing_file:
             log.debug(f"Updating disk image for drive {drive} with backing file {disk_image_backing_file}")
             node_data[f"hd{drive}_disk_image"] = disk_image_backing_file
+
+    # Validate every explicitly replaced disk before removing its stale
+    # overlay. Other unresolved disks may still make this create request fail,
+    # but a valid replacement applied in stages must not retain its old layer.
+    for drive in drives:
+        disk_image_property = f"hd{drive}_disk_image"
+        if disk_image_property in disk_images_to_reset:
+            replacement_image = node_data.get(disk_image_property)
+            if replacement_image:
+                vm.manager.get_abs_image_path(replacement_image, vm.working_dir)
+            local_disk_name = f"hd{drive}_disk.qcow2"
+            local_disk = os.path.join(vm.working_dir, local_disk_name)
+            if vm.linked_clone and os.path.exists(local_disk):
+                # A degraded linked clone is being assigned a new base image.
+                # Its old overlay depends on the unavailable base and cannot
+                # safely be rebased onto an arbitrary replacement. Discard it
+                # so start creates a fresh overlay from the selected image.
+                log.info(
+                    "Removing stale linked-clone disk '%s' before using replacement image '%s'",
+                    local_disk,
+                    node_data.get(disk_image_property),
+                )
+                vm.delete_disk_image(local_disk_name)
 
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:

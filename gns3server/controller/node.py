@@ -494,7 +494,7 @@ class Node:
     def links(self):
         return self._links
 
-    async def create(self, allow_missing_image=False):
+    async def create(self, allow_missing_image=False, disk_images_to_reset=None):
         """
         Create the node on the compute
 
@@ -502,9 +502,13 @@ class Node:
             cannot be uploaded/synced, the node is not created on the compute
             but is kept on the controller and flagged with the missing image(s)
             instead of raising.
+        :param disk_images_to_reset: QEMU disk properties whose linked-clone
+            overlays must be recreated after replacing a missing base image.
         """
         data = self._node_data()
         data["node_id"] = self._id
+        if self._node_type == "qemu" and disk_images_to_reset:
+            data["disk_images_to_reset"] = sorted(disk_images_to_reset)
         if self._node_type == "docker":
             timeout = None
             await self._add_docker_image_digest(data)
@@ -576,6 +580,41 @@ class Node:
             raise last_missing_error
         return False
 
+    def _find_local_image(self, image_type, image):
+        """Return an image path contained in an allowed image directory."""
+
+        if not image or image_type == "docker":
+            return None
+        try:
+            directories = images_directories(image_type)
+        except NotImplementedError:
+            return None
+        requested = os.path.normpath(image)
+        for directory in directories:
+            root = os.path.realpath(directory)
+            candidate = os.path.realpath(os.path.join(root, requested))
+            try:
+                contained = os.path.commonpath((root, candidate)) == root
+            except ValueError:
+                contained = False
+            if contained and os.path.isfile(candidate):
+                return candidate
+
+            # Image API records expose a basename separately from their
+            # controller-local absolute path. Search subfolders when that
+            # portable basename is used by a node or remote compute.
+            if os.path.basename(requested) == requested:
+                for current_root, _, filenames in os.walk(root):
+                    if requested in filenames:
+                        nested_candidate = os.path.realpath(os.path.join(current_root, requested))
+                        try:
+                            nested_contained = os.path.commonpath((root, nested_candidate)) == root
+                        except ValueError:
+                            nested_contained = False
+                        if nested_contained and os.path.isfile(nested_candidate):
+                            return nested_candidate
+        return None
+
     def _image_available(self, image_type, image):
         """
         Check whether an image is available on the controller (and can
@@ -590,14 +629,7 @@ class Node:
         if image_type == "docker":
             # Docker images are not stored on the controller filesystem
             return True
-        try:
-            directories = images_directories(image_type)
-        except NotImplementedError:
-            return True
-        for directory in directories:
-            if os.path.exists(os.path.join(directory, image)):
-                return True
-        return False
+        return self._find_local_image(image_type, image) is not None
 
     def _compute_missing_images(self, fallback_image=None):
         """
@@ -641,6 +673,29 @@ class Node:
                 missing.append({"property": prop, "image": fallback_image, "image_type": image_type})
         return missing
 
+    def _remove_replaced_image_metadata(self, old_properties, new_properties):
+        """Remove metadata that still refers to an image being replaced."""
+
+        replaced_properties = {
+            missing.get("property")
+            for missing in self._missing_images
+            if missing.get("property")
+            and old_properties.get(missing["property"]) != new_properties.get(missing["property"])
+        }
+        if self._node_type == "qemu":
+            for prop in replaced_properties:
+                new_properties.pop(f"{prop}_md5sum", None)
+                if prop in {"hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image"}:
+                    # The QEMU create route treats a backing-file value as the
+                    # authoritative base image. Keeping the old value would
+                    # silently override the replacement selected by the user.
+                    new_properties.pop(f"{prop}_backing_file", None)
+        elif self._node_type == "dynamips" and "image" in replaced_properties:
+            new_properties.pop("image_md5sum", None)
+        elif self._node_type == "iou" and "path" in replaced_properties:
+            new_properties.pop("md5sum", None)
+        return replaced_properties
+
     async def update(self, **kwargs):
         """
         Update the node on the compute
@@ -665,7 +720,7 @@ class Node:
 
                 # We update properties on the compute and wait for the answer from the compute node
                 if prop == "properties":
-                    compute_properties = kwargs[prop]
+                    compute_properties = copy.deepcopy(kwargs[prop])
                 else:
                     if (
                         prop == "name"
@@ -681,7 +736,10 @@ class Node:
         if self.missing_image and compute_properties is not None:
             # The node was never created on the compute (missing image). Apply
             # the new properties locally so create() can use them.
+            replaced_image_properties = self._remove_replaced_image_metadata(old_properties, compute_properties)
             self._properties = compute_properties
+        else:
+            replaced_image_properties = set()
         self._list_ports()
         if update_compute:
             if self.missing_image:
@@ -689,7 +747,10 @@ class Node:
                 # have been provided. If it is still missing the node simply
                 # remains in its degraded state.
                 try:
-                    created = await self.create(allow_missing_image=True)
+                    created = await self.create(
+                        allow_missing_image=True,
+                        disk_images_to_reset=replaced_image_properties,
+                    )
                 except Exception:
                     # create() can reject the replacement for reasons other
                     # than a missing image. Keep the controller state aligned
@@ -979,20 +1040,19 @@ class Node:
         if self._node_type == "docker":
             return await self._sync_missing_docker_image(img)
 
-        for directory in images_directories(type):
-            image = os.path.join(directory, img)
-            if os.path.exists(image):
-                self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
-                try:
-                    with open(image, "rb") as f:
-                        await self._compute.post(
-                            f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None
-                        )
-                except OSError as e:
-                    raise ControllerError(f"Can't upload {image}: {str(e)}")
-                self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
-                return True
-        return False
+        image = self._find_local_image(type, img)
+        if image is None:
+            return False
+        self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
+        try:
+            with open(image, "rb") as f:
+                await self._compute.post(
+                    f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None
+                )
+        except OSError as e:
+            raise ControllerError(f"Can't upload {image}: {str(e)}")
+        self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
+        return True
 
     async def _add_docker_image_digest(self, data):
         """

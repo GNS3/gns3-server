@@ -221,7 +221,10 @@ class QemuCreate(QemuBase):
     Properties to create a Qemu node.
     """
 
-    pass
+    disk_images_to_reset: Optional[List[str]] = Field(
+        None,
+        description="Disk image properties whose stale linked-clone overlays must be recreated",
+    )
 
 
 class QemuUpdate(QemuBase):
