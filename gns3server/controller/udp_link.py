@@ -42,6 +42,10 @@ class UDPLink(Link):
         super().__init__(project, link_id=link_id)
         self._created = False
         self._link_data = []
+        # True when the link could not be created on the computes because one
+        # of its endpoints has a missing image. The NIO creation is retried
+        # once the image is resolved.
+        self._deferred = False
 
     @property
     def debug_link_data(self):
@@ -49,6 +53,11 @@ class UDPLink(Link):
         Use for the debug exports
         """
         return self._link_data
+
+    @property
+    def deferred(self):
+        """Whether NIO creation is waiting for missing node images."""
+        return self._deferred
     
     def _get_node_filters(self, node1, node2):
         """
@@ -258,6 +267,10 @@ class UDPLink(Link):
         Delete the link and free the resources
         """
         if not self._created:
+            if self._deferred:
+                # There is no NIO on the computes to delete, but the local
+                # back-references created while loading must be cleared.
+                await super().delete()
             return
         try:
             node1 = self._nodes[0]["node"]

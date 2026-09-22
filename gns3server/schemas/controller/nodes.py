@@ -99,6 +99,16 @@ class NodePort(BaseModel):
     mac_address: Union[str, None] = Field(None, pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
 
 
+class MissingImage(BaseModel):
+    """
+    A missing image referenced by a node.
+    """
+
+    property: Optional[str] = Field(None, description="Node property referencing the image")
+    image: str = Field(..., description="Requested image filename")
+    image_type: Optional[str] = Field(None, description="Type of image (qemu/ios/iou/docker)")
+
+
 class NodeBase(BaseModel):
     """
     Node data.
@@ -181,6 +191,13 @@ class Node(NodeBase):
     console_host: Optional[str] = Field(
         None,
         description="Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller",
+    )
+    missing_image: bool = Field(
+        False,
+        description="True when the node could not be created on its compute because a required image is missing. Read only",
+    )
+    missing_images: List[MissingImage] = Field(
+        default_factory=list, description="List of missing images referenced by the node. Read only"
     )
 
 

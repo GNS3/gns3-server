@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
 import uuid
 import pytest
 import pytest_asyncio
@@ -28,7 +29,12 @@ from uuid import uuid4
 from gns3server.controller.project import Project
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ControllerForbiddenError
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    ControllerForbiddenError,
+    ComputeConflictError,
+)
 from gns3server.config import Config
 
 
@@ -1007,6 +1013,19 @@ async def test_stop_all(project):
 
 
 @pytest.mark.asyncio
+async def test_stop_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.is_always_running.return_value = False
+    node.missing_image = True
+    node.stop = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.stop_all()
+
+    node.stop.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_suspend_all(project):
 
     compute = MagicMock()
@@ -1024,6 +1043,18 @@ async def test_suspend_all(project):
 
 
 @pytest.mark.asyncio
+async def test_suspend_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.missing_image = True
+    node.suspend = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.suspend_all()
+
+    node.suspend.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_console_reset_all(project):
 
     compute = MagicMock()
@@ -1038,6 +1069,18 @@ async def test_console_reset_all(project):
     compute.post = AsyncioMagicMock()
     await project.reset_console_all()
     assert len(compute.post.call_args_list) == 10
+
+
+@pytest.mark.asyncio
+async def test_console_reset_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.missing_image = True
+    node.reset_console = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.reset_console_all()
+
+    node.reset_console.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -1085,3 +1128,201 @@ async def test_duplicate_node(project):
         })
     new_node = await project.duplicate_node(original, 42, 10, 11)
     assert new_node.x == 42
+
+
+@pytest.mark.asyncio
+async def test_add_node_missing_image_kept_in_degraded_state(controller):
+    """
+    A node whose image is missing is kept on the controller with the missing
+    image list instead of failing, when allow_missing_image is set.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.connected = True
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+
+    async def post(url, data=None, **kwargs):
+        if url.endswith("/qemu/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+            )
+        response = MagicMock()
+        response.json = {}
+        return response
+
+    compute.post = AsyncioMagicMock(side_effect=post)
+
+    node = await project.add_node(
+        compute,
+        "r1",
+        None,
+        node_type="qemu",
+        allow_missing_image=True,
+        properties={"hda_disk_image": "missing.qcow2", "ram": 256},
+    )
+    assert node.missing_image is True
+    assert node.id in project._nodes
+    assert node.missing_images == [
+        {"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_open_with_missing_image_defers_links(controller, projects_dir):
+    """
+    Opening a project with a missing image succeeds, keeps the degraded node
+    and its links in the topology, but does not create the NIOs.
+    """
+
+    project_id = "3c1be6f9-b4ba-4737-b209-63c47c23359f"
+    qemu_id = "11111111-1111-1111-1111-111111111111"
+    iou_id = "33333333-3333-3333-3333-333333333333"
+    vpcs_id = "22222222-2222-2222-2222-222222222222"
+    link_id = "5a3e3a64-e853-4055-9503-4a14e01290f1"
+
+    topology = {
+        "auto_close": True,
+        "auto_open": False,
+        "auto_start": False,
+        "name": "demo",
+        "project_id": project_id,
+        "revision": 5,
+        "topology": {
+            "computes": [],
+            "drawings": [],
+            "links": [
+                {
+                    "link_id": link_id,
+                    "nodes": [
+                        {"adapter_number": 0, "node_id": qemu_id, "port_number": 0},
+                        {"adapter_number": 0, "node_id": vpcs_id, "port_number": 0},
+                    ],
+                }
+            ],
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "name": "R1",
+                    "node_id": qemu_id,
+                    "node_type": "qemu",
+                    "properties": {"hda_disk_image": "missing.qcow2", "adapters": 1, "ram": 256},
+                    "symbol": ":/symbols/router.svg",
+                    "x": 0,
+                    "y": 0,
+                },
+                {
+                    "compute_id": "local",
+                    "name": "IOU1",
+                    "node_id": iou_id,
+                    "node_type": "iou",
+                    "properties": {"path": "missing.bin"},
+                    "symbol": ":/symbols/router.svg",
+                    "x": 200,
+                    "y": 0,
+                },
+                {
+                    "compute_id": "local",
+                    "name": "PC1",
+                    "node_id": vpcs_id,
+                    "node_type": "vpcs",
+                    "properties": {},
+                    "symbol": ":/symbols/computer.svg",
+                    "x": 100,
+                    "y": 0,
+                },
+            ],
+        },
+        "type": "topology",
+        "version": "2.0.0",
+    }
+
+    project_dir = os.path.join(projects_dir, "demo")
+    os.makedirs(project_dir, exist_ok=True)
+    with open(os.path.join(project_dir, "demo.gns3"), "w+") as f:
+        json.dump(topology, f)
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.connected = True
+    compute.name = "local"
+    compute.console_host = "127.0.0.1"
+    controller._computes["local"] = compute
+
+    async def post(url, data=None, **kwargs):
+        if url.endswith("/qemu/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+            )
+        if url.endswith("/iou/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.bin", "exception": "ImageMissingError"}
+            )
+        response = MagicMock()
+        if "ports/udp/batch" in url:
+            response.json = {"udp_ports": [20000]}
+        else:
+            response.json = {}
+        return response
+
+    compute.post = AsyncioMagicMock(side_effect=post)
+
+    project = Project(
+        name="demo",
+        project_id=project_id,
+        path=project_dir,
+        controller=controller,
+        filename="demo.gns3",
+        status="closed",
+    )
+
+    await project.open()
+    assert project.status == "opened"
+
+    qemu_node = project.get_node(qemu_id)
+    assert qemu_node.missing_image is True
+    assert qemu_node.missing_images[0]["image"] == "missing.qcow2"
+
+    iou_node = project.get_node(iou_id)
+    assert iou_node.missing_image is True
+    assert iou_node.missing_images[0]["image"] == "missing.bin"
+    assert iou_node.missing_images[0]["image_type"] == "iou"
+
+    link = project._links[link_id]
+    assert link._deferred is True
+    assert link.created is False
+    assert link in qemu_node.links
+
+
+@pytest.mark.asyncio
+async def test_restore_deferred_links(project):
+    """
+    Once a degraded node is created, the deferred links are created on the
+    computes and no longer flagged as deferred.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = await project.add_node(compute, "n1", None, node_type="vpcs", properties={})
+    node2 = await project.add_node(compute, "n2", None, node_type="vpcs", properties={})
+
+    link = await project.add_link()
+    await link.add_node(node1, 0, 0, batch=True)
+    await link.add_node(node2, 0, 0, batch=True)
+    link._nodes[0]["port"].link = link
+    link._nodes[1]["port"].link = link
+    node1.add_link(link)
+    node2.add_link(link)
+    link._deferred = True
+    link.create = AsyncioMagicMock()
+
+    project.emit_notification = MagicMock()
+    await project.restore_deferred_links(node1)
+
+    assert link._deferred is False
+    assert link.create.called is True

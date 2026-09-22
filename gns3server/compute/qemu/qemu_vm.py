@@ -1777,6 +1777,9 @@ class QemuVM(BaseNode):
 
         try:
             os.remove(disk_path)
+            md5sum_path = disk_path + ".md5sum"
+            if os.path.exists(md5sum_path):
+                os.remove(md5sum_path)
         except OSError as e:
             raise QemuError(f"Could not delete '{disk_name}' disk image: {e}")
 

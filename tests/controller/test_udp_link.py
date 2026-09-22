@@ -188,6 +188,44 @@ async def test_delete(project):
 
 
 @pytest.mark.asyncio
+async def test_delete_deferred_link_clears_local_references(project):
+    node1 = Node(project, MagicMock(), "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 0)]
+    node2 = Node(project, MagicMock(), "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 0, 0)]
+    link = UDPLink(project)
+
+    await link.add_node(node1, 0, 0, batch=True)
+    await link.add_node(node2, 0, 0, batch=True)
+    for entry in link._nodes:
+        entry["node"].add_link(link)
+        entry["port"].link = link
+    link._deferred = True
+
+    await link.delete()
+
+    assert link not in node1.links
+    assert link not in node2.links
+    assert node1.get_port(0, 0).link is None
+    assert node2.get_port(0, 0).link is None
+
+
+@pytest.mark.asyncio
+async def test_delete_uncreated_non_deferred_link_preserves_existing_behavior(project):
+    node = Node(project, MagicMock(), "node1", node_type="vpcs")
+    node._ports = [EthernetPort("E0", 0, 0, 0)]
+    link = UDPLink(project)
+    await link.add_node(node, 0, 0, batch=True)
+    node.add_link(link)
+    node.get_port(0, 0).link = link
+
+    await link.delete()
+
+    assert link in node.links
+    assert node.get_port(0, 0).link is link
+
+
+@pytest.mark.asyncio
 async def test_reset(project):
     """
     reset() re-creates the link on the same object: the fresh port pair must

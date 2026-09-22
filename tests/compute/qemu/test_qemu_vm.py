@@ -806,6 +806,19 @@ def test_hda_disk_image(vm, images_dir):
     assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
+def test_delete_disk_image_removes_cached_checksum(vm):
+
+    disk_path = os.path.join(vm.working_dir, "hda_disk.qcow2")
+    checksum_path = disk_path + ".md5sum"
+    open(disk_path, "w+").close()
+    open(checksum_path, "w+").close()
+
+    vm.delete_disk_image("hda_disk.qcow2")
+
+    assert not os.path.exists(disk_path)
+    assert not os.path.exists(checksum_path)
+
+
 @pytest.mark.asyncio
 async def test_hda_disk_image_non_linked_clone(vm, images_dir, compute_project, manager, fake_qemu_binary):
     """
