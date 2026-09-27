@@ -556,20 +556,20 @@ Server:
 **API Endpoints:**
 ```python
 # Configuration (admin only)
-POST / v3 / access / config / email
-GET / v3 / access / config / email
-PUT / v3 / access / config / email
+POST /v3/access/config/email
+GET /v3/access/config/email
+PUT /v3/access/config/email
 
 # Test email (admin only)
-POST / v3 / access / config / email / test
+POST /v3/access/config/email/test
 
 # Password reset (public)
-POST / v3 / access / users / password / reset / request
-POST / v3 / access / users / password / reset / confirm
+POST /v3/access/users/password/reset/request
+POST /v3/access/users/password/reset/confirm
 
 # Email verification (public)
-POST / v3 / access / users / verify / email
-POST / v3 / access / users / verify / confirm
+POST /v3/access/users/verify/email
+POST /v3/access/users/verify/confirm
 ```
 
 ### Database Schema
