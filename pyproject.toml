@@ -55,3 +55,377 @@ gns3server-uninstall-ai-features = "gns3server.utils.uninstall_ai_features:main"
 
 [tool.setuptools]
 packages = ["gns3server"]
+
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+  "ASYNC", # flake8-async
+  "B",     # flake8-bugbear
+  "BLE",   # flake8-blind-except
+  "C90",   # mccabe
+  "DTZ",   # flake8-datetimez
+  "E",     # pycodestyle errors
+  "F",     # pyflakes
+  "I",     # isort
+  "LOG",   # flake8-logging
+  "PLE",   # pylint errors
+  "PLW",   # pylint warnings
+  "RUF",   # ruff-specific rules
+  "S",     # flake8-bandit
+  "T10",   # flake8-debugger
+  "UP",    # pyupgrade
+  "W",     # pycodestyle warnings
+]
+# Baseline: widespread rules that the existing code still violates
+# (violation count at baseline time). Remove an entry, and fix its
+# violations, in a dedicated small PR. Never add new entries here:
+# fix the code or use a targeted "# noqa: CODE" with a reason.
+ignore = [
+  "ASYNC230",  #  240  blocking-open-call-in-async-function
+  "ASYNC240",  #  235  blocking-path-method-in-async-function
+  "B007",      #   32  unused-loop-control-variable
+  "B008",      #  119  function-call-in-default-argument
+  "B904",      #  365  raise-without-from-inside-except
+  "BLE001",    #  214  blind-except
+  "E402",      #  129  module-import-not-at-top-of-file
+  "E501",      #  655  line-too-long
+  "F401",      #  300  unused-import
+  "F541",      #   16  f-string-missing-placeholders
+  "F841",      #   32  unused-variable
+  "I001",      #  441  unsorted-imports
+  "PLW0603",   #   21  global-statement
+  "PLW2901",   #   30  redefined-loop-name
+  "RUF010",    #   65  explicit-f-string-type-conversion
+  "RUF012",    #   23  mutable-class-default
+  "RUF013",    #   40  implicit-optional
+  "RUF036",    #   22  none-not-at-end-of-union
+  "RUF059",    #   29  unused-unpacked-variable
+  "S101",      #   19  assert
+  "S104",      #   22  hardcoded-bind-all-interfaces
+  "S110",      #   23  try-except-pass
+  "UP006",     #  270  non-pep585-annotation
+  "UP007",     #   81  non-pep604-annotation-union
+  "UP009",     #   51  utf8-encoding-declaration
+  "UP032",     #  560  f-string
+  "UP035",     #  106  deprecated-import
+  "UP045",     # 1100  non-pep604-annotation-optional
+  "W293",      #  661  blank-line-with-whitespace
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependency markers are meant to be used as defaults:
+extend-immutable-calls = [
+  "fastapi.Body",
+  "fastapi.Cookie",
+  "fastapi.Depends",
+  "fastapi.File",
+  "fastapi.Form",
+  "fastapi.Header",
+  "fastapi.Path",
+  "fastapi.Query",
+  "fastapi.Security",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use asserts and hardcoded credentials / temp paths:
+"tests/**" = ["S101", "S105", "S106", "S108"]
+# Baseline: existing violations of rules that are enforced everywhere else.
+# Remove entries one small PR at a time. Never add new ones.
+"gns3server/agent/__init__.py" = ["LOG015", "RUF022"]
+"gns3server/agent/gns3_copilot/agent/context_manager.py" = ["RUF005", "RUF100"]
+"gns3server/agent/gns3_copilot/agent/gns3_copilot.py" = ["DTZ003"]
+"gns3server/agent/gns3_copilot/agent_service.py" = ["C901", "DTZ003"]
+"gns3server/agent/gns3_copilot/chat_sessions_repository.py" = ["DTZ003", "S608"]
+"gns3server/agent/gns3_copilot/gns3_client/__init__.py" = ["RUF022"]
+"gns3server/agent/gns3_copilot/gns3_client/context_helpers.py" = ["RUF022"]
+"gns3server/agent/gns3_copilot/skills/__init__.py" = ["RUF022"]
+"gns3server/agent/gns3_copilot/skills/loader.py" = ["UP015"]
+"gns3server/agent/gns3_copilot/skills/manager.py" = ["UP037"]
+"gns3server/agent/gns3_copilot/skills/registry.py" = ["C901"]
+"gns3server/agent/gns3_copilot/tools_v2/__init__.py" = ["RUF022"]
+"gns3server/agent/gns3_copilot/tools_v2/config_tools_nornir.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/tools_v2/display_tools_nornir.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/tools_v2/gns3_packet_filter.py" = ["PLW1510", "S603", "S607"]
+"gns3server/agent/gns3_copilot/tools_v2/packet_analysis_tool.py" = ["PLW1510", "RUF005", "S603", "S607"]
+"gns3server/agent/gns3_copilot/tools_v2/vpcs_tools_netmiko.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/__init__.py" = ["RUF022"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/__init__.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/huawei_ce.py" = ["S107"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/ruijie_telnet.py" = ["LOG015"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/scripts/list_netmiko_telnet_devices.py" = ["DTZ005", "UP024"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_huawei_ce.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_ruijie_telnet.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_vpcs_telnet.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/custom_netmiko/vpcs_telnet.py" = ["S107"]
+"gns3server/agent/gns3_copilot/utils/gns3_drawing_utils.py" = ["RUF100"]
+"gns3server/agent/gns3_copilot/utils/message_converters.py" = ["RUF019"]
+"gns3server/agent/gns3_copilot/utils/parse_tool_content.py" = ["C901", "DTZ003"]
+"gns3server/agent/mcp/__init__.py" = ["RUF003"]
+"gns3server/agent/mcp/device_config.py" = ["E741"]
+"gns3server/agent/web_wireshark/manager.py" = ["C901"]
+"gns3server/agent/web_wireshark/setup_wireshark_image.py" = ["PLW1510", "S603", "S607"]
+"gns3server/agent/web_wireshark/stats.py" = ["ASYNC221", "PLW1510", "S603", "S607"]
+"gns3server/api/routes/compute/notifications.py" = ["W291"]
+"gns3server/api/routes/compute/qemu_nodes.py" = ["F811"]
+"gns3server/api/routes/controller/controller.py" = ["UP012"]
+"gns3server/api/routes/controller/dependencies/authentication.py" = ["S105", "S106"]
+"gns3server/api/routes/controller/links.py" = ["E722"]
+"gns3server/api/routes/controller/netmiko.py" = ["RUF100"]
+"gns3server/api/routes/controller/nodes.py" = ["C901", "RUF019", "UP024"]
+"gns3server/api/routes/controller/projects.py" = ["UP012"]
+"gns3server/api/routes/controller/templates.py" = ["S324"]
+"gns3server/api/routes/controller/users.py" = ["S105", "S106"]
+"gns3server/api/routes/index.py" = ["RUF021"]
+"gns3server/compute/base_node.py" = ["C901", "RUF019"]
+"gns3server/compute/builtin/nodes/cloud.py" = ["E713"]
+"gns3server/compute/docker/__init__.py" = ["B006", "C901"]
+"gns3server/compute/docker/docker_vm.py" = ["B006", "C901", "E731", "RUF003", "RUF006", "S108", "UP031"]
+"gns3server/compute/docker/iol_docker_vm.py" = ["RUF002", "S108"]
+"gns3server/compute/docker/vendor_docker_vm.py" = ["RUF002", "S108"]
+"gns3server/compute/dynamips/__init__.py" = ["C901"]
+"gns3server/compute/dynamips/dynamips_hypervisor.py" = ["C901"]
+"gns3server/compute/dynamips/nodes/router.py" = ["F522", "RUF006"]
+"gns3server/compute/iou/iou_vm.py" = ["C901", "S108", "S324"]
+"gns3server/compute/iou/utils/iou_export.py" = ["C901", "RUF003"]
+"gns3server/compute/project.py" = ["DTZ006", "S324"]
+"gns3server/compute/qemu/qemu_vm.py" = ["ASYNC220", "B009", "C901", "RUF003", "S603"]
+"gns3server/compute/qemu/utils/ziputils.py" = ["RUF005", "UP031"]
+"gns3server/compute/ubridge/ubridge_hypervisor.py" = ["C901"]
+"gns3server/compute/virtualbox/virtualbox_vm.py" = ["C901", "RUF005", "S314"]
+"gns3server/compute/vmware/__init__.py" = ["C901", "UP015"]
+"gns3server/compute/vmware/vmware_vm.py" = ["C901"]
+"gns3server/compute/vpcs/vpcs_vm.py" = ["B018"]
+"gns3server/config.py" = ["B905", "C901"]
+"gns3server/controller/__init__.py" = ["S311"]
+"gns3server/controller/appliance_to_template.py" = ["C901"]
+"gns3server/controller/compute.py" = ["B006", "C901"]
+"gns3server/controller/drawing.py" = ["S314", "S324"]
+"gns3server/controller/export_project.py" = ["C901", "DTZ006"]
+"gns3server/controller/gns3vm/hyperv_gns3_vm.py" = ["RUF015", "S608"]
+"gns3server/controller/gns3vm/virtualbox_gns3_vm.py" = ["C901"]
+"gns3server/controller/import_project.py" = ["C901"]
+"gns3server/controller/node.py" = ["C901", "PLW1641"]
+"gns3server/controller/node_types.py" = ["W292"]
+"gns3server/controller/ports/port_factory.py" = ["B020", "C901"]
+"gns3server/controller/project.py" = ["ASYNC110", "C901", "RUF006", "RUF019"]
+"gns3server/controller/topology.py" = ["C901"]
+"gns3server/controller/udp_link.py" = ["C901"]
+"gns3server/db/models/base.py" = ["UP031"]
+"gns3server/db/repositories/llm_model_configs.py" = ["DTZ003", "RUF005", "RUF019"]
+"gns3server/db/repositories/rbac.py" = ["C901"]
+"gns3server/db/tasks.py" = ["B009", "RUF006", "RUF019", "UP004"]
+"gns3server/db_migrations/versions/7ceeddd9c9a8_init.py" = ["W291"]
+"gns3server/db_migrations/versions/ec4b7b198555_convert_pickletype_fields_to_json.py" = ["S301", "S608"]
+"gns3server/logger.py" = ["PLW0127", "UP031"]
+"gns3server/main.py" = ["UP031"]
+"gns3server/schemas/controller/settings.py" = ["S105"]
+"gns3server/schemas/controller/templates/docker_templates.py" = ["W292"]
+"gns3server/schemas/controller/tokens.py" = ["S105"]
+"gns3server/server.py" = ["DTZ011", "RUF006", "UP036"]
+"gns3server/services/authentication.py" = ["S105"]
+"gns3server/services/templates.py" = ["W292"]
+"gns3server/utils/__init__.py" = ["S324", "UP031"]
+"gns3server/utils/asyncio/__init__.py" = ["RUF006"]
+"gns3server/utils/asyncio/aiozipstream.py" = ["C901", "UP031"]
+"gns3server/utils/asyncio/raw_command_server.py" = ["B006"]
+"gns3server/utils/asyncio/telnet_server.py" = ["RUF006"]
+"gns3server/utils/images.py" = ["RUF021", "S324"]
+"gns3server/utils/packet_filter_validation.py" = ["PLW1510", "S603", "S607", "W292"]
+"gns3server/utils/picture.py" = ["C901"]
+"gns3server/utils/port_allocator.py" = ["S324"]
+"gns3server/utils/uninstall_ai_features.py" = ["PLW1510", "S603", "UP015"]
+"gns3server/utils/vmnet.py" = ["S605", "S607"]
+"gns3server/utils/websocket_to_websocket.py" = ["C901"]
+"gns3server/utils/zipfile_zstd/__init__.py" = ["F403"]
+"gns3server/version.py" = ["S607"]
+"scripts/extract_mermaid.py" = ["C901", "PLW1510", "S603", "S607"]
+"scripts/tag.py" = ["S603", "S607"]
+"scripts/welcome.py" = ["C901", "E722", "PLW1510", "S108", "S112", "S603", "S605", "S606", "S607", "W291"]
+"tests/agent/mcp/test_handlers.py" = ["B905"]
+"tests/agent/mcp/test_tool_params.py" = ["C901"]
+"tests/api/routes/controller/test_images.py" = ["S324", "W292"]
+"tests/api/routes/controller/test_links.py" = ["RUF015", "W292"]
+"tests/api/routes/controller/test_users.py" = ["F811"]
+"tests/compute/docker/test_docker.py" = ["B018"]
+"tests/compute/docker/test_docker_vm.py" = ["F811", "UP004"]
+"tests/compute/docker/test_iol_docker_vm.py" = ["RUF003", "RUF015"]
+"tests/compute/docker/test_vendor_docker_vm.py" = ["RUF015"]
+"tests/compute/qemu/test_qemu_vm.py" = ["E741"]
+"tests/compute/test_project.py" = ["RUF003", "RUF064", "S103"]
+"tests/compute/virtualbox/test_virtualbox_manager.py" = ["B011"]
+"tests/compute/vpcs/test_vpcs_vm.py" = ["RUF003"]
+"tests/controller/gns3vm/test_vmware_gns3_vm.py" = ["UP015"]
+"tests/controller/test_export_project.py" = ["E713"]
+"tests/controller/test_import_project.py" = ["F811"]
+"tests/controller/test_marker.py" = ["B006"]
+"tests/controller/test_node.py" = ["E711", "F811"]
+"tests/controller/test_project.py" = ["RUF015"]
+"tests/controller/test_snapshot.py" = ["RUF015"]
+"tests/controller/test_udp_link.py" = ["B006"]
+"tests/test_server.py" = ["E722"]
+"tests/test_topologies.py" = ["B011"]
+"tests/test_utils.py" = ["F403", "F405"]
+"tests/utils/test_asyncio.py" = ["B017"]
+"tests/utils/test_packet_filter_validation.py" = ["W292"]
+
+
+[tool.mypy]
+files = ["gns3server"]
+plugins = ["pydantic.mypy"]
+# Third-party packages without type hints / stubs:
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[[tool.mypy.overrides]]
+# Baseline: modules with existing type errors (error count at baseline time).
+# Remove modules from this list one small PR at a time. Never add new ones.
+module = [
+  "gns3server.agent",  # 2
+  "gns3server.agent.gns3_copilot.agent.context_manager",  # 5
+  "gns3server.agent.gns3_copilot.agent.model_factory",  # 4
+  "gns3server.agent.gns3_copilot.agent_service",  # 8
+  "gns3server.agent.gns3_copilot.chat_sessions_repository",  # 8
+  "gns3server.agent.gns3_copilot.gns3_client.api_handlers",  # 10
+  "gns3server.agent.gns3_copilot.gns3_client.connector_factory",  # 1
+  "gns3server.agent.gns3_copilot.gns3_client.project_inventory",  # 2
+  "gns3server.agent.gns3_copilot.skills.loader",  # 1
+  "gns3server.agent.gns3_copilot.skills.manager",  # 4
+  "gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir",  # 6
+  "gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir",  # 6
+  "gns3server.agent.gns3_copilot.tools_v2.gns3_packet_filter",  # 1
+  "gns3server.agent.gns3_copilot.tools_v2.gns3_start_node",  # 3
+  "gns3server.agent.gns3_copilot.tools_v2.gns3_stop_node",  # 3
+  "gns3server.agent.gns3_copilot.tools_v2.gns3_suspend_node",  # 3
+  "gns3server.agent.gns3_copilot.tools_v2.packet_analysis_tool",  # 1
+  "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko",  # 9
+  "gns3server.agent.gns3_copilot.utils.custom_netmiko.scripts.list_netmiko_telnet_devices",  # 1
+  "gns3server.agent.gns3_copilot.utils.message_converters",  # 2
+  "gns3server.agent.gns3_copilot.utils.parse_tool_content",  # 1
+  "gns3server.agent.mcp",  # 34
+  "gns3server.agent.mcp.appliances",  # 1
+  "gns3server.agent.web_wireshark.docker_client",  # 5
+  "gns3server.agent.web_wireshark.manage_wireshark",  # 1
+  "gns3server.agent.web_wireshark.manager",  # 9
+  "gns3server.agent.web_wireshark.stats",  # 4
+  "gns3server.api.routes.compute.atm_switch_nodes",  # 9
+  "gns3server.api.routes.compute.capabilities",  # 1
+  "gns3server.api.routes.compute.cloud_nodes",  # 14
+  "gns3server.api.routes.compute.compute",  # 1
+  "gns3server.api.routes.compute.dependencies.authentication",  # 3
+  "gns3server.api.routes.compute.docker_nodes",  # 26
+  "gns3server.api.routes.compute.dynamips_nodes",  # 9
+  "gns3server.api.routes.compute.ethernet_hub_nodes",  # 9
+  "gns3server.api.routes.compute.ethernet_switch_nodes",  # 16
+  "gns3server.api.routes.compute.frame_relay_switch_nodes",  # 9
+  "gns3server.api.routes.compute.iou_nodes",  # 15
+  "gns3server.api.routes.compute.nat_nodes",  # 10
+  "gns3server.api.routes.compute.notifications",  # 4
+  "gns3server.api.routes.compute.projects",  # 7
+  "gns3server.api.routes.compute.qemu_nodes",  # 18
+  "gns3server.api.routes.compute.virtualbox_nodes",  # 20
+  "gns3server.api.routes.compute.vmware_nodes",  # 10
+  "gns3server.api.routes.compute.vpcs_nodes",  # 9
+  "gns3server.api.routes.controller.acl",  # 5
+  "gns3server.api.routes.controller.api_keys",  # 1
+  "gns3server.api.routes.controller.chat",  # 1
+  "gns3server.api.routes.controller.computes",  # 6
+  "gns3server.api.routes.controller.controller",  # 10
+  "gns3server.api.routes.controller.dependencies.authentication",  # 11
+  "gns3server.api.routes.controller.dependencies.database",  # 2
+  "gns3server.api.routes.controller.drawings",  # 1
+  "gns3server.api.routes.controller.groups",  # 6
+  "gns3server.api.routes.controller.images",  # 9
+  "gns3server.api.routes.controller.links",  # 27
+  "gns3server.api.routes.controller.llm_model_configs",  # 32
+  "gns3server.api.routes.controller.nodes",  # 13
+  "gns3server.api.routes.controller.pools",  # 8
+  "gns3server.api.routes.controller.privileges",  # 1
+  "gns3server.api.routes.controller.projects",  # 16
+  "gns3server.api.routes.controller.roles",  # 5
+  "gns3server.api.routes.controller.snapshots",  # 1
+  "gns3server.api.routes.controller.templates",  # 10
+  "gns3server.api.routes.controller.users",  # 14
+  "gns3server.api.routes.index",  # 1
+  "gns3server.api.server",  # 2
+  "gns3server.compute.docker.docker_vm",  # 3
+  "gns3server.compute.docker.iol_docker_vm",  # 3
+  "gns3server.compute.dynamips.nodes.router",  # 2
+  "gns3server.compute.iou.iou_vm",  # 4
+  "gns3server.compute.iou.utils.iou_export",  # 2
+  "gns3server.compute.iou.utils.iou_import",  # 2
+  "gns3server.compute.project",  # 1
+  "gns3server.compute.qemu.qemu_vm",  # 2
+  "gns3server.compute.virtualbox.virtualbox_vm",  # 1
+  "gns3server.compute.vmware.vmware_vm",  # 1
+  "gns3server.compute.vpcs.vpcs_vm",  # 2
+  "gns3server.config",  # 1
+  "gns3server.controller.appliance",  # 2
+  "gns3server.controller.appliance_manager",  # 5
+  "gns3server.controller.compute",  # 2
+  "gns3server.controller.project",  # 2
+  "gns3server.controller.topology",  # 1
+  "gns3server.db.models.acl",  # 1
+  "gns3server.db.models.images",  # 1
+  "gns3server.db.models.pools",  # 1
+  "gns3server.db.models.privileges",  # 2
+  "gns3server.db.models.roles",  # 1
+  "gns3server.db.models.templates",  # 22
+  "gns3server.db.models.users",  # 3
+  "gns3server.db.repositories.api_keys",  # 8
+  "gns3server.db.repositories.computes",  # 10
+  "gns3server.db.repositories.images",  # 14
+  "gns3server.db.repositories.llm_model_configs",  # 32
+  "gns3server.db.repositories.pools",  # 11
+  "gns3server.db.repositories.rbac",  # 14
+  "gns3server.db.repositories.templates",  # 6
+  "gns3server.db.repositories.users",  # 12
+  "gns3server.db.tasks",  # 12
+  "gns3server.db_migrations.env",  # 1
+  "gns3server.schemas.compute.atm_switch_nodes",  # 5
+  "gns3server.schemas.compute.cloud_nodes",  # 1
+  "gns3server.schemas.compute.docker_nodes",  # 2
+  "gns3server.schemas.compute.dynamips_nodes",  # 1
+  "gns3server.schemas.compute.frame_relay_switch_nodes",  # 5
+  "gns3server.schemas.compute.iou_nodes",  # 3
+  "gns3server.schemas.compute.nat_nodes",  # 1
+  "gns3server.schemas.compute.qemu_nodes",  # 1
+  "gns3server.schemas.compute.virtualbox_nodes",  # 2
+  "gns3server.schemas.compute.vmware_nodes",  # 3
+  "gns3server.schemas.compute.vpcs_nodes",  # 1
+  "gns3server.schemas.controller.appliances",  # 1
+  "gns3server.schemas.controller.computes",  # 6
+  "gns3server.schemas.controller.nodes",  # 3
+  "gns3server.schemas.controller.projects",  # 2
+  "gns3server.schemas.controller.settings",  # 3
+  "gns3server.schemas.controller.templates.docker_templates",  # 1
+  "gns3server.schemas.controller.templates.dynamips_templates",  # 17
+  "gns3server.schemas.controller.templates.iou_templates",  # 1
+  "gns3server.schemas.controller.templates.virtualbox_templates",  # 1
+  "gns3server.schemas.controller.templates.vmware_templates",  # 1
+  "gns3server.schemas.qemu_disk_image",  # 2
+  "gns3server.services.authentication",  # 5
+  "gns3server.services.computes",  # 4
+  "gns3server.services.templates",  # 18
+  "gns3server.utils.asyncio.aiozipstream",  # 8
+  "gns3server.utils.asyncio.embed_shell",  # 1
+  "gns3server.utils.encryption",  # 2
+  "gns3server.utils.http_client",  # 4
+  "gns3server.utils.images",  # 4
+  "gns3server.utils.packet_filter_validation",  # 16
+  "gns3server.utils.websocket_to_websocket",  # 12
+  "gns3server.utils.zipfile_zstd",  # 2
+  "gns3server.utils.zipfile_zstd._patcher",  # 1
+  "gns3server.utils.zipfile_zstd._zipfile",  # 5
+]
+ignore_errors = true

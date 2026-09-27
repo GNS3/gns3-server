@@ -37,6 +37,10 @@ pip-log.txt
 .tox
 .cache
 nosetests.xml
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
 
 # Translations
 *.mo
