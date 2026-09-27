@@ -16,7 +16,6 @@
 
 
 class Adapter:
-
     """
     Base class for adapters.
 

@@ -53,18 +53,18 @@ async def node(controller, project):
 @pytest.mark.asyncio
 async def test_affect_uuid():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         p = Project(name="Test")
         mock_notification.assert_called()
         assert len(p.id) == 36
-        p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test 2")
-        assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
+        p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f", name="Test 2")
+        assert p.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 @pytest.mark.asyncio
 async def test_json():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         p = Project(name="Test")
         mock_notification.assert_called()
 
@@ -89,14 +89,14 @@ async def test_json():
         "supplier": None,
         "variables": None,
         "marker_definitions": {},
-        "created_by": None
+        "created_by": None,
     }
 
 
 @pytest.mark.asyncio
 async def test_created_by():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         p = Project(name="Test", created_by="admin")
 
     assert p.created_by == "admin"
@@ -124,7 +124,7 @@ async def test_update_on_compute(controller):
     project._project_created_on_compute = [compute]
     project.emit_notification = MagicMock()
     await project.update(variables=variables)
-    compute.put.assert_any_call('/projects/{}'.format(project.id), {"variables": variables})
+    compute.put.assert_any_call("/projects/{}".format(project.id), {"variables": variables})
 
 
 @pytest.mark.asyncio
@@ -132,7 +132,7 @@ async def test_path(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
             p = Project(project_id=str(uuid4()), name="Test")
             mock_notification.assert_called()
         assert p.path == os.path.join(directory, p.id)
@@ -153,7 +153,7 @@ def test_path_exist(tmpdir):
 @pytest.mark.asyncio
 async def test_init_path(projects_dir):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         project_id = str(uuid4())
         p = Project(project_id=project_id, name="Test")
         mock_notification.assert_called()
@@ -164,15 +164,15 @@ async def test_init_path(projects_dir):
 async def test_changing_path_with_quote_not_allowed(projects_dir):
 
     with pytest.raises(ControllerForbiddenError):
-        with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        with patch("gns3server.controller.project.Project.emit_controller_notification"):
             p = Project(project_id=str(uuid4()), name="Test")
-            p.path = os.path.join(projects_dir, "project\"53")
+            p.path = os.path.join(projects_dir, 'project"53')
 
 
 @pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         p = Project(name="Test")
         assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
         assert os.path.exists(p.captures_directory)
@@ -196,16 +196,19 @@ async def test_add_node_local(controller):
     node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"})
     assert node.id in project._nodes
 
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id,
-        "path": project._path,
-    })
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
-                                 data={'node_id': node.id,
-                                       'startup_script': 'test.cfg',
-                                       'name': 'test'},
-                                 timeout=1200)
+    compute.post.assert_any_call(
+        "/projects",
+        data={
+            "name": project._name,
+            "project_id": project._id,
+            "path": project._path,
+        },
+    )
+    compute.post.assert_any_call(
+        "/projects/{}/vpcs/nodes".format(project.id),
+        data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
+        timeout=1200,
+    )
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.asdict())
 
@@ -269,13 +272,12 @@ async def test_add_node_non_local(controller):
 
     node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"})
 
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id
-    })
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id), data={'node_id': node.id,
-                                                                                     'startup_script': 'test.cfg',
-                                                                                     'name': 'test'}, timeout=1200)
+    compute.post.assert_any_call("/projects", data={"name": project._name, "project_id": project._id})
+    compute.post.assert_any_call(
+        "/projects/{}/vpcs/nodes".format(project.id),
+        data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
+        timeout=1200,
+    )
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.asdict())
 
@@ -538,7 +540,7 @@ async def test_delete_node(controller):
     await project.delete_node(node.id)
     assert node.id not in project._nodes
 
-    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
+    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
 
 
@@ -585,7 +587,7 @@ async def test_delete_node_delete_link(controller):
     assert node.id not in project._nodes
     assert link.id not in project._links
 
-    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
+    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
     project.emit_notification.assert_any_call("link.deleted", link.asdict())
 
@@ -763,10 +765,7 @@ async def test_clean_pictures_and_keep_supplier_logo(project):
     When a project is close old pictures should be removed
     """
 
-    project.supplier = {
-        'logo': 'logo.png',
-        'url': 'http://acme.com'
-    }
+    project.supplier = {"logo": "logo.png", "url": "http://acme.com"}
 
     drawing = await project.add_drawing()
     drawing._svg = "test.png"
@@ -838,8 +837,8 @@ async def test_dump(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        with patch('gns3server.controller.project.Project.emit_controller_notification'):
-            p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test")
+        with patch("gns3server.controller.project.Project.emit_controller_notification"):
+            p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f", name="Test")
             p.dump()
             with open(os.path.join(directory, p.id, "Test.gns3")) as f:
                 content = f.read()
@@ -849,7 +848,7 @@ async def test_dump(projects_dir):
 @pytest.mark.asyncio
 async def test_open_close(controller):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         project = Project(controller=controller, name="Test")
         assert project.status == "opened"
         await project.close()
@@ -866,13 +865,13 @@ async def test_open_close(controller):
 @pytest.mark.asyncio
 async def test_open_auto_start(controller):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         project = Project(controller=controller, name="Test", auto_start=True)
         assert project.status == "opened"
         await project.close()
-        #project.start_all = AsyncioMagicMock()
-        #await project.open()
-        #assert project.start_all.called
+        # project.start_all = AsyncioMagicMock()
+        # await project.open()
+        # assert project.start_all.called
 
 
 def test_is_running(project, node):
@@ -901,10 +900,14 @@ async def test_duplicate(project, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    remote_vpcs = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    remote_vpcs = await project.add_node(
+        compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
 
     # We allow node not allowed for standard import / export
-    remote_virtualbox = await project.add_node(compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"})
+    remote_virtualbox = await project.add_node(
+        compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"}
+    )
 
     new_project = await project.duplicate(name="Hello")
     assert new_project.id != project.id
@@ -1092,13 +1095,21 @@ async def test_node_name(project):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = await project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "test-1"
-    node = await project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "test-2"
-    node = await project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "helloworld-1"
-    node = await project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "helloworld-2"
     node = await project.add_node(compute, "VPCS-1", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     assert node.name == "VPCS-1"
@@ -1119,13 +1130,8 @@ async def test_duplicate_node(project):
     compute.post = AsyncioMagicMock(return_value=response)
 
     original = await project.add_node(
-        compute,
-        "test",
-        None,
-        node_type="vpcs",
-        properties={
-            "startup_config": "test.cfg"
-        })
+        compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     new_node = await project.duplicate_node(original, 42, 10, 11)
     assert new_node.x == 42
 
@@ -1164,9 +1170,7 @@ async def test_add_node_missing_image_kept_in_degraded_state(controller):
     )
     assert node.missing_image is True
     assert node.id in project._nodes
-    assert node.missing_images == [
-        {"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}
-    ]
+    assert node.missing_images == [{"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}]
 
 
 @pytest.mark.asyncio

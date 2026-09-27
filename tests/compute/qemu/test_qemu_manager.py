@@ -44,7 +44,10 @@ def fake_qemu_img_binary(tmpdir):
 @pytest.mark.asyncio
 async def test_get_qemu_version():
 
-    with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard"):
+    with asyncio_patch(
+        "gns3server.compute.qemu.subprocess_check_output",
+        return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard",
+    ):
         version = await Qemu.get_qemu_version("/tmp/qemu-test")
         assert version == "2.2.0"
 
@@ -61,7 +64,10 @@ async def test_binary_list(monkeypatch, tmpdir):
             f.write("1")
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
-    with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
+    with asyncio_patch(
+        "gns3server.compute.qemu.subprocess_check_output",
+        return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard",
+    ) as mock:
         version = "2.2.0"
 
         qemus = await Qemu.binary_list()
@@ -121,8 +127,8 @@ async def test_get_kvm_archs_kvm_ok():
 
     with patch("os.path.exists", return_value=True):
         archs = await Qemu.get_kvm_archs()
-        if platform.machine() == 'x86_64':
-            assert archs == ['x86_64', 'i386']
+        if platform.machine() == "x86_64":
+            assert archs == ["x86_64", "i386"]
         else:
             assert archs == [platform.machine()]
 

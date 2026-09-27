@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class Cloud(BaseNode):
-
     """
     Cloud.
 
@@ -317,7 +316,6 @@ class Cloud(BaseNode):
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         await self._ubridge_apply_markers(bridge_name, nio)
         if port_info["type"] in ("ethernet", "tap"):
-
             if not self.manager.has_privileged_access(self.ubridge_path):
                 raise NodeError(
                     "uBridge requires root access or the capability to interact with Ethernet and TAP adapters"
@@ -339,9 +337,7 @@ class Cloud(BaseNode):
 
             elif port_info["type"] == "tap":
                 await self._ubridge_send(
-                    'bridge add_nio_tap {name} "{interface}"'.format(
-                        name=bridge_name, interface=port_info["interface"]
-                    )
+                    'bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
                 )
 
         elif port_info["type"] == "udp":
@@ -367,7 +363,6 @@ class Cloud(BaseNode):
 
         interface = port_info["interface"]
         if gns3server.utils.interfaces.is_interface_bridge(interface):
-
             network_interfaces = [interface["name"] for interface in self._interfaces()]
             i = 0
             while True:

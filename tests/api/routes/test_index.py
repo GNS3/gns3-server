@@ -30,12 +30,10 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestIndexRoutes:
-
     def get_static(self, filename):
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(os.path.abspath(os.path.join(current_dir, '../..', '..', 'gns3server', 'static')), filename)
-
+        return os.path.join(os.path.abspath(os.path.join(current_dir, "../..", "..", "gns3server", "static")), filename)
 
     async def test_debug(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -44,7 +42,6 @@ class TestIndexRoutes:
         html = response.read().decode()
         assert "Website" in html
         assert __version__ in html
-
 
     # @pytest.mark.asyncio
     # async def test_controller(http_client, controller):
@@ -61,7 +58,6 @@ class TestIndexRoutes:
     #     response = await http_client.get('/compute')
     #     assert response.status_code == 200
 
-
     # @pytest.mark.asyncio
     # async def test_project(http_client, controller):
     #
@@ -69,16 +65,14 @@ class TestIndexRoutes:
     #     response = await http_client.get('/projects/{}'.format(project.id))
     #     assert response.status_code == 200
 
-
     async def test_web_ui(self, app: FastAPI, client: AsyncClient) -> None:
 
         response = await client.get(app.url_path_for("web_ui", file_path="index.html"))
         assert response.status_code == status.HTTP_200_OK
 
-
     async def test_web_ui_not_found(self, app: FastAPI, client: AsyncClient, tmpdir: str) -> None:
 
-        with patch('gns3server.utils.get_resource.get_resource') as mock:
+        with patch("gns3server.utils.get_resource.get_resource") as mock:
             mock.return_value = str(tmpdir)
             response = await client.get(app.url_path_for("web_ui", file_path="not-found.txt"))
             # should serve web-ui/index.html

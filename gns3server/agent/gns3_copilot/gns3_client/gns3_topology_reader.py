@@ -100,18 +100,13 @@ class GNS3TopologyTool(BaseTool):
         """
 
         # Log received input
-        logger.info(
-            "Received tool_input: %s, project_id: %s", tool_input, project_id
-        )
+        logger.info("Received tool_input: %s, project_id: %s", tool_input, project_id)
 
         try:
             # Validate project_id parameter
             if not project_id:
                 logger.error("project_id parameter is required.")
-                return {
-                    "error": "project_id parameter is required. "
-                    "Please provide a valid project UUID."
-                }
+                return {"error": "project_id parameter is required. Please provide a valid project UUID."}
 
             # Build handler context (JWT + server URL)
             # jwt_token/url can be passed explicitly (e.g. from MCP handlers)
@@ -121,10 +116,7 @@ class GNS3TopologyTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. Please check "
-                    "your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Use the provided project_id directly
             logger.info(f"Retrieving topology for project_id: {project_id}")
@@ -135,16 +127,13 @@ class GNS3TopologyTool(BaseTool):
                 "project_id": inventory["project_id"],
                 "name": inventory["name"],
                 "status": inventory["status"],
-                "nodes": self._clean_nodes_ports(
-                    copy.deepcopy(inventory["nodes_inventory"])
-                ),
+                "nodes": self._clean_nodes_ports(copy.deepcopy(inventory["nodes_inventory"])),
                 "links": inventory["links_summary"],
             }
 
             # Log topology result
             logger.info(
-                "Topology retrieved: project_id=%s, name=%s, nodes=%d, "
-                "links=%d",
+                "Topology retrieved: project_id=%s, name=%s, nodes=%d, links=%d",
                 topology.get("project_id"),
                 topology.get("name"),
                 len(topology.get("nodes", {})),
@@ -167,10 +156,7 @@ class GNS3TopologyTool(BaseTool):
         """
         for node in data.values():  # Iterate through R-1, R-2, R-3, R-4
             if "ports" in node and isinstance(node["ports"], list):
-                node["ports"] = [
-                    {"name": port["name"], "short_name": port["short_name"]}
-                    for port in node["ports"]
-                ]
+                node["ports"] = [{"name": port["name"], "short_name": port["short_name"]} for port in node["ports"]]
         return data
 
 

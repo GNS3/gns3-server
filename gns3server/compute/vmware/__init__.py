@@ -42,7 +42,6 @@ from gns3server.compute.vmware.vmware_error import VMwareError
 
 
 class VMware(BaseManager):
-
     _NODE_CLASS = VMwareVM
 
     def __init__(self):

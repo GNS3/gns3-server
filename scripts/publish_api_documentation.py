@@ -24,19 +24,19 @@ from gns3server.api.server import app
 
 
 if __name__ == "__main__":
-
     with open("../docs/openapi.json", "w") as fd:
         fd.write(json.dumps(app.openapi()))
 
-    swagger_html = get_swagger_ui_html(openapi_url="openapi.json",
-                                       title=app.title + " - Swagger UI",
-                                       oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url)
+    swagger_html = get_swagger_ui_html(
+        openapi_url="openapi.json",
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    )
 
     with open("../docs/index.html", "w") as fd:
         fd.write(swagger_html.body.decode())
 
-    redoc_html = get_redoc_html(openapi_url="openapi.json",
-                                title=app.title + " - ReDoc")
+    redoc_html = get_redoc_html(openapi_url="openapi.json", title=app.title + " - ReDoc")
 
     with open("../docs/redoc.html", "w") as fd:
         fd.write(redoc_html.body.decode())

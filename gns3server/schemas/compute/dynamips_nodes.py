@@ -189,7 +189,6 @@ class DynamipsUpdate(DynamipsBase):
 
 
 class Dynamips(DynamipsBase):
-
     name: str
     node_id: UUID
     project_id: UUID

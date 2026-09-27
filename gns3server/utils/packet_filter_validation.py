@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 class FilterValidationError(Exception):
     """Raised when packet filter parameters fail validation."""
+
     pass
 
 
@@ -46,7 +47,7 @@ def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Optional[str]]:
                     # Strip "tcpdump: " prefix
                     for prefix in ["tcpdump: "]:
                         if line.startswith(prefix):
-                            line = line[len(prefix):]
+                            line = line[len(prefix) :]
                     error_lines.append(line)
             error_msg = " ".join(error_lines) if error_lines else "Invalid BPF expression"
             log.warning("BPF syntax validation failed: %s", error_msg)
@@ -56,10 +57,7 @@ def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Optional[str]]:
         return {"valid": True, "error": None}
 
     except FileNotFoundError:
-        log.warning(
-            "tcpdump not found, skipping BPF syntax validation. "
-            "Install tcpdump to enable BPF validation."
-        )
+        log.warning("tcpdump not found, skipping BPF syntax validation. Install tcpdump to enable BPF validation.")
         return {"valid": True, "error": None}
 
     except Exception as e:
@@ -85,31 +83,17 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
             "params_count": 1,
             "ranges": [(-1, 32767)],  # min, max
             "names": ["Frequency"],
-            "units": ["th packet"]
+            "units": ["th packet"],
         },
-        "packet_loss": {
-            "params_count": 1,
-            "ranges": [(0, 100)],
-            "names": ["Chance"],
-            "units": ["%"]
-        },
+        "packet_loss": {"params_count": 1, "ranges": [(0, 100)], "names": ["Chance"], "units": ["%"]},
         "delay": {
             "params_count": 2,  # latency, jitter
             "ranges": [(1, 32767), (0, 32767)],  # ubridge rejects latency <= 0
             "names": ["Latency", "Jitter"],
-            "units": ["ms", "ms"]
+            "units": ["ms", "ms"],
         },
-        "corrupt": {
-            "params_count": 1,
-            "ranges": [(0, 100)],
-            "names": ["Chance"],
-            "units": ["%"]
-        },
-        "bpf": {
-            "params_count": 1,
-            "is_text": True,
-            "names": ["Filters"]
-        }
+        "corrupt": {"params_count": 1, "ranges": [(0, 100)], "names": ["Chance"], "units": ["%"]},
+        "bpf": {"params_count": 1, "is_text": True, "names": ["Filters"]},
     }
 
     if filter_type not in VALIDATION_RULES:
@@ -119,18 +103,14 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
 
     # Check parameter count
     if len(values) != rules["params_count"]:
-        raise FilterValidationError(
-            f"{filter_type} expects {rules['params_count']} parameter(s), got {len(values)}"
-        )
+        raise FilterValidationError(f"{filter_type} expects {rules['params_count']} parameter(s), got {len(values)}")
 
     # Validate each parameter
     for i, value in enumerate(values):
         if rules.get("is_text"):
             # Text validation (BPF)
             if not isinstance(value, str):
-                raise FilterValidationError(
-                    f"{filter_type} parameter {rules['names'][i]} must be a string"
-                )
+                raise FilterValidationError(f"{filter_type} parameter {rules['names'][i]} must be a string")
 
             # Validate BPF syntax using tshark (same method as gns3_copilot)
             # The value may be a multi-line string; each line becomes a

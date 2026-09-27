@@ -144,8 +144,8 @@ async def refresh_access_token(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-        current_user: schemas.User = Depends(get_current_active_user),
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> None:
     """
     Logout the current user by revoking all existing tokens.
@@ -165,9 +165,9 @@ async def get_logged_in_user(current_user: schemas.User = Depends(get_current_ac
 
 @router.put("/me", response_model=schemas.User)
 async def update_logged_in_user(
-        user_update: schemas.LoggedInUserUpdate,
-        current_user: schemas.User = Depends(get_current_active_user),
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_update: schemas.LoggedInUserUpdate,
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.User:
     """
     Update the current active user.
@@ -179,14 +179,8 @@ async def update_logged_in_user(
     return await users_repo.update_user(current_user.user_id, user_update)
 
 
-@router.get(
-    "",
-    response_model=List[schemas.User],
-    dependencies=[Depends(has_privilege("User.Audit"))]
-)
-async def get_users(
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> List[schemas.User]:
+@router.get("", response_model=List[schemas.User], dependencies=[Depends(has_privilege("User.Audit"))])
+async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
     """
     Get all users.
 
@@ -200,11 +194,10 @@ async def get_users(
     "",
     response_model=schemas.User,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("User.Allocate"))]
+    dependencies=[Depends(has_privilege("User.Allocate"))],
 )
 async def create_user(
-        user_create: schemas.UserCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_create: schemas.UserCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Create a new user.
@@ -221,14 +214,10 @@ async def create_user(
     return await users_repo.create_user(user_create)
 
 
-@router.get(
-    "/{user_id}",
-    response_model=schemas.User,
-    dependencies=[Depends(has_privilege("User.Audit"))]
-)
+@router.get("/{user_id}", response_model=schemas.User, dependencies=[Depends(has_privilege("User.Audit"))])
 async def get_user(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    user_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.User:
     """
     Get a user.
@@ -242,15 +231,11 @@ async def get_user(
     return user
 
 
-@router.put(
-    "/{user_id}",
-    response_model=schemas.User,
-    dependencies=[Depends(has_privilege("User.Modify"))]
-)
+@router.put("/{user_id}", response_model=schemas.User, dependencies=[Depends(has_privilege("User.Modify"))])
 async def update_user(
-        user_id: UUID,
-        user_update: schemas.UserUpdate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_id: UUID,
+    user_update: schemas.UserUpdate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.User:
     """
     Update a user.
@@ -271,14 +256,12 @@ async def update_user(
 
 
 @router.delete(
-    "/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("User.Allocate"))]
+    "/{user_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("User.Allocate"))]
 )
 async def delete_user(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    user_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a user.
@@ -300,13 +283,10 @@ async def delete_user(
 
 
 @router.get(
-    "/{user_id}/groups",
-    response_model=List[schemas.UserGroup],
-    dependencies=[Depends(has_privilege("Group.Audit"))]
+    "/{user_id}/groups", response_model=List[schemas.UserGroup], dependencies=[Depends(has_privilege("Group.Audit"))]
 )
 async def get_user_memberships(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> List[schemas.UserGroup]:
     """
     Get user memberships.

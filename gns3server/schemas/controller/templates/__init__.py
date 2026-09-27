@@ -43,9 +43,7 @@ class ApplianceMetadata(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    appliance_id: Optional[str] = Field(
-        None, description="ID of the appliance the template was installed from"
-    )
+    appliance_id: Optional[str] = Field(None, description="ID of the appliance the template was installed from")
     description: Optional[str] = None
     vendor_name: Optional[str] = None
     vendor_url: Optional[str] = None
@@ -82,12 +80,10 @@ class TemplateBase(BaseModel):
         pattern=r"^[a-z0-9_]+$|^$",
     )
     tags: Optional[List[str]] = Field(
-        default_factory=list,
-        description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+        default_factory=list, description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
     )
     appliance_metadata: Optional[ApplianceMetadata] = Field(
-        None,
-        description="Metadata inherited from the appliance the template was installed from"
+        None, description="Metadata inherited from the appliance the template was installed from"
     )
 
 
@@ -106,7 +102,6 @@ class TemplateUpdate(TemplateBase):
 
 
 class Template(DateTimeModelMixin, TemplateBase):
-
     template_id: UUID
     name: str
     category: Category
@@ -117,7 +112,6 @@ class Template(DateTimeModelMixin, TemplateBase):
 
 
 class TemplateUsage(BaseModel):
-
     x: int
     y: int
     name: Optional[str] = Field(None, description="Use this name to create a new node")

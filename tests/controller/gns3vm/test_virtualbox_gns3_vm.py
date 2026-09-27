@@ -55,9 +55,11 @@ vcpfps=25
 GuestMemoryBalloon=0
     """
 
-    with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute", return_value=showvminfo) as mock:
+    with asyncio_patch(
+        "gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute", return_value=showvminfo
+    ) as mock:
         res = await gns3vm._look_for_interface("nat")
-        mock.assert_called_with('showvminfo', ['GNS3 VM', '--machinereadable'])
+        mock.assert_called_with("showvminfo", ["GNS3 VM", "--machinereadable"])
         assert res == 2
 
     # with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute") as mock:
@@ -71,6 +73,7 @@ GuestMemoryBalloon=0
 async def test_cpu_vendor_id(gns3vm):
 
     from cpuinfo import get_cpu_info
+
     cpu_info = await wait_run_in_executor(get_cpu_info)
-    vendor_id = cpu_info.get('vendor_id_raw')
+    vendor_id = cpu_info.get("vendor_id_raw")
     assert vendor_id  # vendor id should not be empty

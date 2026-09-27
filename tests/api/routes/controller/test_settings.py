@@ -46,15 +46,12 @@ def stable_jwt_secret(config):
 
 
 class TestSettingsRoutes:
-
     async def test_get_settings(self, app: FastAPI, client: AsyncClient) -> None:
 
         response = await client.get(app.url_path_for("get_server_settings"))
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
-        assert sorted(body.keys()) == [
-            "Controller", "Dynamips", "IOU", "Qemu", "Server", "VPCS", "WebWireshark"
-        ]
+        assert sorted(body.keys()) == ["Controller", "Dynamips", "IOU", "Qemu", "Server", "VPCS", "WebWireshark"]
         # deprecated sections are not exposed
         assert "VirtualBox" not in body
         assert "VMware" not in body
@@ -71,7 +68,8 @@ class TestSettingsRoutes:
         # underlying httpx client and its default headers depend on the fixture
         # instantiation order
         response = await client.get(
-            app.url_path_for("get_server_settings"), headers={"Authorization": "Bearer invalid_token"})
+            app.url_path_for("get_server_settings"), headers={"Authorization": "Bearer invalid_token"}
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_get_settings_forbidden(self, app: FastAPI, client: AsyncClient, test_user) -> None:
@@ -79,23 +77,28 @@ class TestSettingsRoutes:
         # the "User" role has no Server.Audit privilege
         token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         response = await client.get(
-            app.url_path_for("get_server_settings"), headers={"Authorization": f"Bearer {token}"})
+            app.url_path_for("get_server_settings"), headers={"Authorization": f"Bearer {token}"}
+        )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    async def test_put_settings(self, app: FastAPI, client: AsyncClient, config: Config,
-                                stable_jwt_secret: str) -> None:
+    async def test_put_settings(
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
 
-        response = await client.put(app.url_path_for("update_server_settings"), json={
-            "Server": {
-                "port": 3081,
-                "allowed_interfaces": ["eth0"],
-                "default_symbol_theme": "Classic",
-                "report_errors": False,
+        response = await client.put(
+            app.url_path_for("update_server_settings"),
+            json={
+                "Server": {
+                    "port": 3081,
+                    "allowed_interfaces": ["eth0"],
+                    "default_symbol_theme": "Classic",
+                    "report_errors": False,
+                },
+                "Qemu": {
+                    "enable_monitor": False,
+                },
             },
-            "Qemu": {
-                "enable_monitor": False,
-            },
-        })
+        )
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert body["Server"]["port"] == 3081
@@ -116,7 +119,8 @@ class TestSettingsRoutes:
         assert parsed["Qemu"]["enable_monitor"] == "False"
 
     async def test_put_settings_preserves_unknown_options(
-            self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
 
         with open(config._main_config_file, "w") as f:
             f.write("[Server]\nhost = 127.0.0.1\nfrobnicate = 42\n")
@@ -130,11 +134,13 @@ class TestSettingsRoutes:
         assert parsed["Server"]["host"] == "127.0.0.1"
 
     async def test_put_settings_secrets(
-            self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
 
         # masked secret means "unchanged": nothing is written
         response = await client.put(
-            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": SECRET_MASK}})
+            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": SECRET_MASK}}
+        )
         assert response.status_code == status.HTTP_200_OK
         parsed = configparser.ConfigParser()
         parsed.read(config._main_config_file)
@@ -142,7 +148,8 @@ class TestSettingsRoutes:
 
         # empty string means "unchanged" too
         response = await client.put(
-            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": ""}})
+            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": ""}}
+        )
         assert response.status_code == status.HTTP_200_OK
         parsed = configparser.ConfigParser()
         parsed.read(config._main_config_file)
@@ -150,7 +157,8 @@ class TestSettingsRoutes:
 
         # an explicit new value is written in clear text (like a hand-edited file)
         response = await client.put(
-            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": "secret123"}})
+            app.url_path_for("update_server_settings"), json={"Server": {"compute_password": "secret123"}}
+        )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["Server"]["compute_password"] == SECRET_MASK  # masked in the response
         parsed = configparser.ConfigParser()
@@ -158,7 +166,8 @@ class TestSettingsRoutes:
         assert parsed["Server"]["compute_password"] == "secret123"
 
     async def test_put_settings_null_removes_option(
-            self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
 
         with open(config._main_config_file, "w") as f:
             f.write("[Server]\nhost = 127.0.0.1\n")
@@ -172,7 +181,8 @@ class TestSettingsRoutes:
         assert response.json()["Server"]["host"] == "0.0.0.0"  # default restored
 
     async def test_put_settings_validation_failure(
-            self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
 
         with open(config._main_config_file, "w") as f:
             f.write("[Server]\nhost = 127.0.0.1\n")
@@ -180,22 +190,25 @@ class TestSettingsRoutes:
             content_before = f.read()
 
         # cross-field violation: console_end_port_range must be > console_start_port_range
-        response = await client.put(app.url_path_for("update_server_settings"), json={
-            "Server": {"console_start_port_range": 10000, "console_end_port_range": 5000}})
+        response = await client.put(
+            app.url_path_for("update_server_settings"),
+            json={"Server": {"console_start_port_range": 10000, "console_end_port_range": 5000}},
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
         with open(config._main_config_file) as f:
             assert f.read() == content_before
 
     async def test_put_settings_unknown_option_rejected(
-            self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str
+    ) -> None:
 
-        response = await client.put(
-            app.url_path_for("update_server_settings"), json={"Server": {"prot": "http"}})
+        response = await client.put(app.url_path_for("update_server_settings"), json={"Server": {"prot": "http"}})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_put_settings_deprecated_sections_rejected(
-            self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str
+    ) -> None:
 
         response = await client.put(app.url_path_for("update_server_settings"), json={"VirtualBox": {}})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
@@ -203,14 +216,17 @@ class TestSettingsRoutes:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_put_settings_jwt_secret_key_rejected(
-            self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str) -> None:
+        self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str
+    ) -> None:
 
         response = await client.put(
-            app.url_path_for("update_server_settings"), json={"Controller": {"jwt_secret_key": "nope"}})
+            app.url_path_for("update_server_settings"), json={"Controller": {"jwt_secret_key": "nope"}}
+        )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_put_settings_conflict(
-            self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str, tmpdir) -> None:
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str, tmpdir
+    ) -> None:
 
         override_path = str(tmpdir / "override.conf")
         with open(override_path, "w") as f:
@@ -218,7 +234,9 @@ class TestSettingsRoutes:
         # a later configuration file takes precedence over the main one
         Config.instance()._files.append(override_path)
 
-        response = await client.put(app.url_path_for("update_server_settings"), json={"Server": {"host": "192.168.1.1"}})
+        response = await client.put(
+            app.url_path_for("update_server_settings"), json={"Server": {"host": "192.168.1.1"}}
+        )
         assert response.status_code == status.HTTP_409_CONFLICT
 
     async def test_put_settings_empty_body(self, app: FastAPI, client: AsyncClient, config: Config) -> None:

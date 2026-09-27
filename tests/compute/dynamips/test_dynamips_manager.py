@@ -104,30 +104,20 @@ async def test_duplicate_node(manager, compute_project):
     Duplicate dynamips do nothing it's manage outside the
     filesystem
     """
-    with asyncio_patch('gns3server.compute.dynamips.nodes.c7200.C7200.create'):
-        source_node = await manager.create_node(
-            'R1',
-            compute_project.id,
-            str(uuid.uuid4()),
-            platform="c7200"
-        )
-        destination_node = await manager.create_node(
-            'R2',
-            compute_project.id,
-            str(uuid.uuid4()),
-            platform="c7200"
-        )
+    with asyncio_patch("gns3server.compute.dynamips.nodes.c7200.C7200.create"):
+        source_node = await manager.create_node("R1", compute_project.id, str(uuid.uuid4()), platform="c7200")
+        destination_node = await manager.create_node("R2", compute_project.id, str(uuid.uuid4()), platform="c7200")
         destination_node._hypervisor = AsyncioMagicMock()
 
-        with open(os.path.join(source_node.working_dir, 'c3600_i1_nvram'), 'w+') as f:
+        with open(os.path.join(source_node.working_dir, "c3600_i1_nvram"), "w+") as f:
             f.write("1")
-        with open(source_node.startup_config_path, 'w+') as f:
-            f.write('hostname R1\necho TEST')
+        with open(source_node.startup_config_path, "w+") as f:
+            f.write("hostname R1\necho TEST")
         await manager.duplicate_node(source_node.id, destination_node.id)
-        assert not os.path.exists(os.path.join(destination_node.working_dir, 'c3600_i1_nvram'))
+        assert not os.path.exists(os.path.join(destination_node.working_dir, "c3600_i1_nvram"))
         with open(destination_node.startup_config_path) as f:
             content = f.read()
-            assert content == '!\nhostname R2\necho TEST'
+            assert content == "!\nhostname R2\necho TEST"
         with pytest.raises(DynamipsError):
             source_node.status = "started"
             await manager.duplicate_node(source_node.id, destination_node.id)

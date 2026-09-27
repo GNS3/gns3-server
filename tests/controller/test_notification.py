@@ -43,10 +43,10 @@ async def test_emit_to_all(controller, project):
     notif = controller.notification
     with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
-        await queue.get(0.1) # ping
-        notif.project_emit('test', {})
+        await queue.get(0.1)  # ping
+        notif.project_emit("test", {})
         msg = await queue.get(5)
-        assert msg == ('test', {}, {})
+        assert msg == ("test", {}, {})
 
     assert len(notif._project_listeners[project.id]) == 0
 
@@ -62,10 +62,10 @@ async def test_emit_to_project(controller, project):
         assert len(notif._project_listeners[project.id]) == 1
         await queue.get(0.1)  # ping
         # This event has not listener
-        notif.project_emit('ignore', {"project_id": 42})
-        notif.project_emit('test', {"project_id": project.id})
+        notif.project_emit("ignore", {"project_id": 42})
+        notif.project_emit("test", {"project_id": project.id})
         msg = await queue.get(5)
-        assert msg == ('test', {"project_id": project.id}, {})
+        assert msg == ("test", {"project_id": project.id}, {})
 
     assert len(notif._project_listeners[project.id]) == 0
 
@@ -79,7 +79,7 @@ async def test_dispatch(controller, project):
         await queue.get(0.1)  # ping
         await notif.dispatch("test", {}, project_id=project.id, compute_id=1)
         msg = await queue.get(5)
-        assert msg == ('test', {}, {})
+        assert msg == ("test", {}, {})
 
 
 @pytest.mark.asyncio
@@ -91,7 +91,7 @@ async def test_dispatch_ping(controller, project):
         await queue.get(0.1)  # ping
         await notif.dispatch("ping", {}, project_id=project.id, compute_id=12)
         msg = await queue.get(5)
-        assert msg == ('ping', {'compute_id': 12}, {})
+        assert msg == ("ping", {"compute_id": 12}, {})
 
 
 @pytest.mark.asyncio
@@ -105,14 +105,12 @@ async def test_dispatch_node_updated(controller, node, project):
     with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         await queue.get(0.1)  # ping
-        await notif.dispatch("node.updated", {
-            "node_id": node.id,
-            "project_id": project.id,
-            "name": "hello",
-            "startup_config": "ip 192"
-        },
+        await notif.dispatch(
+            "node.updated",
+            {"node_id": node.id, "project_id": project.id, "name": "hello", "startup_config": "ip 192"},
             project_id=project.id,
-            compute_id=1)
+            compute_id=1,
+        )
         assert node.name == "hello"
         action, event, _ = await queue.get(5)
         assert action == "node.updated"
@@ -128,18 +126,16 @@ async def test_dispatch_marker_routed_to_marker_channel(controller, project):
     """
 
     notif = controller.notification
-    with notif.project_queue(project.id) as project_q, \
-            notif.project_marker_queue(project.id) as marker_q:
+    with notif.project_queue(project.id) as project_q, notif.project_marker_queue(project.id) as marker_q:
         assert len(notif._project_marker_listeners[project.id]) == 1
         await project_q.get(0.1)  # consume initial ping
         await marker_q.get(0.1)  # consume initial ping
 
-        await notif.dispatch("marker.match", {"link_id": "abc"},
-                             project_id=project.id, compute_id=1)
+        await notif.dispatch("marker.match", {"link_id": "abc"}, project_id=project.id, compute_id=1)
 
         # marker.match lands on the marker channel...
         msg = await marker_q.get(5)
-        assert msg == ('marker.match', {"link_id": "abc"}, {})
+        assert msg == ("marker.match", {"link_id": "abc"}, {})
         # ...and does NOT land on the main project queue (times out -> ping)
         msg = await project_q.get(0.1)
         assert msg[0] == "ping"

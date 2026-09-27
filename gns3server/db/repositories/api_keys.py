@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 
 
 class ApiKeysRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
         super().__init__(db_session)
 
@@ -55,11 +54,7 @@ class ApiKeysRepository(BaseRepository):
         return result.scalars().first()
 
     async def get_api_keys_by_user(self, user_id: UUID) -> List[models.ApiKey]:
-        query = (
-            select(models.ApiKey)
-            .where(models.ApiKey.user_id == user_id)
-            .order_by(models.ApiKey.created_at.desc())
-        )
+        query = select(models.ApiKey).where(models.ApiKey.user_id == user_id).order_by(models.ApiKey.created_at.desc())
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
 
@@ -69,31 +64,19 @@ class ApiKeysRepository(BaseRepository):
         return result.scalars().first()
 
     async def revoke_api_key(self, api_key_id: UUID) -> bool:
-        query = (
-            update(models.ApiKey)
-            .where(models.ApiKey.api_key_id == api_key_id)
-            .values(revoked=True)
-        )
+        query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(revoked=True)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
 
     async def restore_api_key(self, api_key_id: UUID) -> bool:
-        query = (
-            update(models.ApiKey)
-            .where(models.ApiKey.api_key_id == api_key_id)
-            .values(revoked=False)
-        )
+        query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(revoked=False)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
 
     async def update_last_used(self, api_key_id: UUID) -> None:
-        query = (
-            update(models.ApiKey)
-            .where(models.ApiKey.api_key_id == api_key_id)
-            .values(last_used_at=func.now())
-        )
+        query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(last_used_at=func.now())
         await self._db_session.execute(query)
         await self._db_session.commit()
 

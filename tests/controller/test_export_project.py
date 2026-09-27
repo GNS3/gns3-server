@@ -59,7 +59,7 @@ async def node(controller, project):
 @pytest.mark.asyncio
 async def write_file(path, z):
 
-    with open(path, 'wb') as f:
+    with open(path, "wb") as f:
         async for chunk in z:
             f.write(chunk)
 
@@ -85,7 +85,7 @@ async def test_export(tmpdir, project):
         f.write("AAA")
 
     # The .gns3 should be renamed project.gns3 in order to simplify import
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         data = {
             "topology": {
                 "computes": [
@@ -94,52 +94,53 @@ async def test_export(tmpdir, project):
                         "host": "127.0.0.1",
                         "name": "Remote 1",
                         "port": 8001,
-                        "protocol": "http"
+                        "protocol": "http",
                     }
                 ],
                 "nodes": [
                     {
                         "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
                         "node_type": "dynamips",
-                        "properties": {
-                            "image": "test.image"
-                        }
+                        "properties": {"image": "test.image"},
                     }
-                ]
+                ],
             }
         }
         json.dump(data, f)
 
-    with open(os.path.join(path, "vm-1", "dynamips", "test"), 'w+') as f:
+    with open(os.path.join(path, "vm-1", "dynamips", "test"), "w+") as f:
         f.write("HELLO")
-    with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
+    with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), "w+") as f:
         f.write("LOG")
     os.makedirs(os.path.join(path, "vm-1", "dynamips", "empty-dir"))
     os.makedirs(os.path.join(path, "project-files", "snapshots"))
-    with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
+    with open(os.path.join(path, "project-files", "snapshots", "test"), "w+") as f:
         f.write("WORLD")
 
     os.symlink("/tmp/anywhere", os.path.join(path, "vm-1", "dynamips", "symlink"))
 
     with aiozipstream.ZipFile() as z:
-        with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        with patch(
+            "gns3server.compute.Dynamips.get_images_directory",
+            return_value=str(tmpdir / "IOS"),
+        ):
             await export_project(z, project, str(tmpdir), include_images=False)
-            await write_file(str(tmpdir / 'zipfile.zip'), z)
+            await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         with myzip.open("vm-1/dynamips/test") as myfile:
             content = myfile.read()
             assert content == b"HELLO"
 
-        assert 'test.gns3' not in myzip.namelist()
-        assert 'project.gns3' in myzip.namelist()
-        assert 'vm-1/dynamips/empty-dir/' in myzip.namelist()
-        assert 'project-files/snapshots/test' not in myzip.namelist()
-        assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
-        assert 'images/IOS/test.image' not in myzip.namelist()
+        assert "test.gns3" not in myzip.namelist()
+        assert "project.gns3" in myzip.namelist()
+        assert "vm-1/dynamips/empty-dir/" in myzip.namelist()
+        assert "project-files/snapshots/test" not in myzip.namelist()
+        assert "vm-1/dynamips/test_log.txt" not in myzip.namelist()
+        assert "images/IOS/test.image" not in myzip.namelist()
 
-        assert 'vm-1/dynamips/symlink' in myzip.namelist()
-        zip_info = myzip.getinfo('vm-1/dynamips/symlink')
+        assert "vm-1/dynamips/symlink" in myzip.namelist()
+        zip_info = myzip.getinfo("vm-1/dynamips/symlink")
         assert stat.S_ISLNK(zip_info.external_attr >> 16)
 
         with myzip.open("project.gns3") as myfile:
@@ -194,17 +195,9 @@ async def test_export_disallow_running(tmpdir, project, node):
 
     path = project.path
 
-    topology = {
-        "topology": {
-            "nodes": [
-                    {
-                        "node_type": "dynamips"
-                    }
-            ]
-        }
-    }
+    topology = {"topology": {"nodes": [{"node_type": "dynamips"}]}}
 
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         json.dump(topology, f)
 
     node._status = "started"
@@ -221,17 +214,9 @@ async def test_export_disallow_some_type(tmpdir, project):
 
     path = project.path
 
-    topology = {
-        "topology": {
-            "nodes": [
-                {
-                    "node_type": "vmware"
-                }
-            ]
-        }
-    }
+    topology = {"topology": {"nodes": [{"node_type": "vmware"}]}}
 
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         json.dump(topology, f)
 
     with pytest.raises(ControllerError):
@@ -241,19 +226,8 @@ async def test_export_disallow_some_type(tmpdir, project):
         await export_project(z, project, str(tmpdir), allow_all_nodes=True)
 
     # VirtualBox is always disallowed
-    topology = {
-        "topology": {
-            "nodes": [
-                {
-                    "node_type": "virtualbox",
-                    "properties": {
-                        "linked_clone": True
-                    }
-                }
-            ]
-        }
-    }
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    topology = {"topology": {"nodes": [{"node_type": "virtualbox", "properties": {"linked_clone": True}}]}}
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         json.dump(topology, f)
     with pytest.raises(ControllerError):
         with aiozipstream.ZipFile() as z:
@@ -271,30 +245,20 @@ async def test_export_fix_path(tmpdir, project):
     topology = {
         "topology": {
             "nodes": [
-                {
-                    "properties": {
-                        "image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"
-                    },
-                    "node_type": "dynamips"
-                },
-                {
-                    "properties": {
-                        "image": "gns3/webterm:lastest"
-                    },
-                    "node_type": "docker"
-                }
+                {"properties": {"image": "/tmp/c3725-adventerprisek9-mz.124-25d.image"}, "node_type": "dynamips"},
+                {"properties": {"image": "gns3/webterm:lastest"}, "node_type": "docker"},
             ]
         }
     }
 
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         json.dump(topology, f)
 
     with aiozipstream.ZipFile() as z:
         await export_project(z, project, str(tmpdir))
-        await write_file(str(tmpdir / 'zipfile.zip'), z)
+        await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         with myzip.open("project.gns3") as myfile:
             content = myfile.read().decode()
             topology = json.loads(content)
@@ -313,28 +277,20 @@ async def test_export_with_images(tmpdir, project):
     with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
         f.write("AAA")
 
-    topology = {
-        "topology": {
-            "nodes": [
-                    {
-                        "properties": {
-                            "image": "test.image"
-                        },
-                        "node_type": "dynamips"
-                    }
-            ]
-        }
-    }
+    topology = {"topology": {"nodes": [{"properties": {"image": "test.image"}, "node_type": "dynamips"}]}}
 
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         json.dump(topology, f)
 
     with aiozipstream.ZipFile() as z:
-        with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        with patch(
+            "gns3server.compute.Dynamips.get_images_directory",
+            return_value=str(tmpdir / "IOS"),
+        ):
             await export_project(z, project, str(tmpdir), include_images=True)
-            await write_file(str(tmpdir / 'zipfile.zip'), z)
+            await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         myzip.getinfo("images/IOS/test.image")
 
 
@@ -345,7 +301,7 @@ async def test_export_keep_compute_ids(tmpdir, project):
     in the file
     """
 
-    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(project.path, "test.gns3"), "w+") as f:
         data = {
             "topology": {
                 "computes": [
@@ -354,24 +310,19 @@ async def test_export_keep_compute_ids(tmpdir, project):
                         "host": "127.0.0.1",
                         "name": "Remote 1",
                         "port": 8001,
-                        "protocol": "http"
+                        "protocol": "http",
                     }
                 ],
-                "nodes": [
-                    {
-                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
-                        "node_type": "vpcs"
-                    }
-                ]
+                "nodes": [{"compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0", "node_type": "vpcs"}],
             }
         }
         json.dump(data, f)
 
     with aiozipstream.ZipFile() as z:
         await export_project(z, project, str(tmpdir), keep_compute_ids=True)
-        await write_file(str(tmpdir / 'zipfile.zip'), z)
+        await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         with myzip.open("project.gns3") as myfile:
             topo = json.loads(myfile.read().decode())["topology"]
             assert topo["nodes"][0]["compute_id"] == "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0"
@@ -404,36 +355,25 @@ async def test_export_images_from_vm(tmpdir, project):
     mock_response.status = 200
     compute.download_image = AsyncioMagicMock(return_value=mock_response)
 
-
     project._project_created_on_compute.add(compute)
 
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
     topology = {
-        "topology": {
-            "nodes": [
-                    {
-                        "compute_id": "vm",
-                        "properties": {
-                            "image": "test.image"
-                        },
-                        "node_type": "dynamips"
-                    }
-            ]
-        }
+        "topology": {"nodes": [{"compute_id": "vm", "properties": {"image": "test.image"}, "node_type": "dynamips"}]}
     }
 
     # The .gns3 should be renamed project.gns3 in order to simplify import
-    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(path, "test.gns3"), "w+") as f:
         f.write(json.dumps(topology))
 
     with aiozipstream.ZipFile() as z:
         await export_project(z, project, str(tmpdir), include_images=True)
         assert compute.list_files.called
-        await write_file(str(tmpdir / 'zipfile.zip'), z)
+        await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         with myzip.open("vm-1/dynamips/test") as myfile:
             content = myfile.read()
             assert content == b"HELLO"
@@ -446,7 +386,7 @@ async def test_export_images_from_vm(tmpdir, project):
 @pytest.mark.asyncio
 async def test_export_with_ignoring_snapshots(tmpdir, project):
 
-    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+    with open(os.path.join(project.path, "test.gns3"), "w+") as f:
         data = {
             "topology": {
                 "computes": [
@@ -455,27 +395,22 @@ async def test_export_with_ignoring_snapshots(tmpdir, project):
                         "host": "127.0.0.1",
                         "name": "Remote 1",
                         "port": 8001,
-                        "protocol": "http"
+                        "protocol": "http",
                     }
                 ],
-                "nodes": [
-                    {
-                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
-                        "node_type": "vpcs"
-                    }
-                ]
+                "nodes": [{"compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0", "node_type": "vpcs"}],
             }
         }
         json.dump(data, f)
 
     # create snapshot directory
-    snapshots_dir = os.path.join(project.path, 'snapshots')
+    snapshots_dir = os.path.join(project.path, "snapshots")
     os.makedirs(snapshots_dir)
-    Path(os.path.join(snapshots_dir, 'snap.gns3project')).touch()
+    Path(os.path.join(snapshots_dir, "snap.gns3project")).touch()
 
     with aiozipstream.ZipFile() as z:
         await export_project(z, project, str(tmpdir), keep_compute_ids=True)
-        await write_file(str(tmpdir / 'zipfile.zip'), z)
+        await write_file(str(tmpdir / "zipfile.zip"), z)
 
-    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
-        assert not os.path.join('snapshots', 'snap.gns3project') in [f.filename for f in myzip.filelist]
+    with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
+        assert not os.path.join("snapshots", "snap.gns3project") in [f.filename for f in myzip.filelist]

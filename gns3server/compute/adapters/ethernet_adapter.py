@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class EthernetAdapter(Adapter):
-
     """
     Ethernet adapter.
     """

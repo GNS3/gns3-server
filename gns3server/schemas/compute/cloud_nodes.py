@@ -23,19 +23,16 @@ from ..common import NodeStatus
 
 
 class HostInterfaceType(str, Enum):
-
     ethernet = "ethernet"
     tap = "tap"
 
 
 class IPAddressFamily(str, Enum):
-
     ipv4 = "ipv4"
     ipv6 = "ipv6"
 
 
 class InterfaceStatus(str, Enum):
-
     up = "up"
     down = "down"
 
@@ -115,7 +112,6 @@ class UDPPort(BaseModel):
 
 
 class CloudConsoleType(str, Enum):
-
     telnet = "telnet"
     ssh = "ssh"
     vnc = "vnc"
@@ -160,7 +156,6 @@ class CloudUpdate(CloudBase):
 
 
 class Cloud(CloudBase):
-
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

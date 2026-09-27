@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 def _get_connector(gns3_ctx: dict[str, Any]):
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],

@@ -23,7 +23,7 @@ from unittest.mock import MagicMock
 from gns3server.utils.file_watcher import FileWatcher
 
 
-@pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.parametrize("strategy", ["mtime", "hash"])
 @pytest.mark.asyncio
 async def test_file_watcher(tmpdir, strategy):
 
@@ -38,7 +38,7 @@ async def test_file_watcher(tmpdir, strategy):
     callback.assert_called_with(str(file))
 
 
-@pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.parametrize("strategy", ["mtime", "hash"])
 @pytest.mark.asyncio
 async def test_file_watcher_not_existing(tmpdir, strategy):
 
@@ -52,7 +52,7 @@ async def test_file_watcher_not_existing(tmpdir, strategy):
     callback.assert_called_with(str(file))
 
 
-@pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.parametrize("strategy", ["mtime", "hash"])
 @pytest.mark.asyncio
 async def test_file_watcher_list(tmpdir, strategy):
 

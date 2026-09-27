@@ -79,8 +79,10 @@ PC1> ping 10.10.0.254
 def check_config_mode(self) -> bool:
     return False  # VPCS has no config mode
 
+
 def config_mode(self) -> str:
     return ""  # No config mode to enter
+
 
 def exit_config_mode(self) -> str:
     return ""  # No config mode to exit
@@ -354,6 +356,7 @@ The custom driver must be registered with Netmiko's global mappings:
 ```python
 def register_custom_device_type() -> None:
     import importlib
+
     sd = importlib.import_module("netmiko.ssh_dispatcher")
 
     # Register in CLASS_MAPPER (for ConnectHandler)
@@ -430,12 +433,12 @@ gns3server/agent/gns3_copilot/utils/custom_netmiko/ruijie_telnet.py
 **1. Preprocessing - Known Interactive Commands**
 ```python
 INTERACTIVE_PATTERNS = [
-    re.compile(r'^router-id\s+', re.IGNORECASE),  # OSPF/EIGRP/BGP router-id
-    re.compile(r'^erase\s+', re.IGNORECASE),        # erase startup-config
-    re.compile(r'^delete\s+', re.IGNORECASE),       # delete files
-    re.compile(r'^format\s+', re.IGNORECASE),       # format filesystem
-    re.compile(r'^reload\b', re.IGNORECASE),        # reload/reboot
-    re.compile(r'^boot\s+system\s+', re.IGNORECASE), # change boot image
+    re.compile(r"^router-id\s+", re.IGNORECASE),  # OSPF/EIGRP/BGP router-id
+    re.compile(r"^erase\s+", re.IGNORECASE),  # erase startup-config
+    re.compile(r"^delete\s+", re.IGNORECASE),  # delete files
+    re.compile(r"^format\s+", re.IGNORECASE),  # format filesystem
+    re.compile(r"^reload\b", re.IGNORECASE),  # reload/reboot
+    re.compile(r"^boot\s+system\s+", re.IGNORECASE),  # change boot image
 ]
 ```
 

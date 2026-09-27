@@ -25,7 +25,6 @@ from httpx_ws.transport import ASGIWebSocketTransport
 from typing import Iterator, Sequence, Tuple
 
 
-
 pytestmark = pytest.mark.asyncio
 
 ALLOWED_CONTROLLER_ENDPOINTS = [
@@ -64,14 +63,14 @@ def _join_paths(prefix: str, path: str) -> str:
 
 
 def _iter_routes(
-        routes: Sequence[BaseRoute],
-        prefix: str = "",
-        include_mounted_routes: bool = False
+    routes: Sequence[BaseRoute], prefix: str = "", include_mounted_routes: bool = False
 ) -> Iterator[Tuple[str, BaseRoute]]:
     for route in routes:
         if isinstance(route, _IncludedRouter):
             include_prefix = route.include_context.prefix or ""
-            yield from _iter_routes(route.original_router.routes, _join_paths(prefix, include_prefix), include_mounted_routes)
+            yield from _iter_routes(
+                route.original_router.routes, _join_paths(prefix, include_prefix), include_mounted_routes
+            )
             continue
 
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
@@ -85,12 +84,9 @@ def _iter_routes(
 
 
 class TestRoutes:
-
     # Controller endpoints have a OAuth2 bearer token authentication
     async def test_controller_endpoints_require_authentication(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient
+        self, app: FastAPI, unauthorized_client: AsyncClient
     ) -> None:
 
         for path, route in _iter_routes(app.routes):
@@ -99,23 +95,22 @@ class TestRoutes:
                     if (path, method) not in ALLOWED_CONTROLLER_ENDPOINTS:
                         request_path = path.rstrip("/")
                         response = await getattr(unauthorized_client, method.lower())(request_path)
-                        assert response.status_code == status.HTTP_401_UNAUTHORIZED, f"{method} {request_path} -> {response.status_code}"
+                        assert response.status_code == status.HTTP_401_UNAUTHORIZED, (
+                            f"{method} {request_path} -> {response.status_code}"
+                        )
             elif isinstance(route, APIWebSocketRoute) and not path.startswith("/v3/compute"):
                 params = {"token": "wrong_token"}
                 async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as client:
                     async with aconnect_ws(path, client, params=params) as ws:
                         json_notification = await ws.receive_json()
-                        assert json_notification['event'] == {
-                            'message': 'Could not authenticate while connecting to controller WebSocket: '
-                                       'Invalid token (DecodeError) (received token sha256 prefix: 4d4f92fb)'
+                        assert json_notification["event"] == {
+                            "message": "Could not authenticate while connecting to controller WebSocket: "
+                            "Invalid token (DecodeError) (received token sha256 prefix: 4d4f92fb)"
                         }
-
 
     # Compute endpoints have a basic HTTP authentication
     async def test_compute_endpoints_require_authentication(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient
+        self, app: FastAPI, unauthorized_client: AsyncClient
     ) -> None:
 
         for path, route in _iter_routes(app.routes, include_mounted_routes=True):
@@ -126,13 +121,15 @@ class TestRoutes:
                 for method in list(route.methods):
                     request_path = path.rstrip("/")
                     response = await getattr(unauthorized_client, method.lower())(request_path)
-                    #if response.status_code == status.HTTP_307_TEMPORARY_REDIRECT:
+                    # if response.status_code == status.HTTP_307_TEMPORARY_REDIRECT:
                     #    response = await getattr(unauthorized_client, method.lower())(response.headers["location"])
-                    assert response.status_code == status.HTTP_401_UNAUTHORIZED, f"{method} {request_path} -> {response.status_code}"
+                    assert response.status_code == status.HTTP_401_UNAUTHORIZED, (
+                        f"{method} {request_path} -> {response.status_code}"
+                    )
             elif isinstance(route, APIWebSocketRoute):
                 async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as client:
                     async with aconnect_ws(path, client, auth=("wrong_user", "password123")) as ws:
                         json_notification = await ws.receive_json()
-                        assert json_notification['event'] == {
-                            'message': 'Could not authenticate while connecting to compute WebSocket: Could not validate credentials'
+                        assert json_notification["event"] == {
+                            "message": "Could not authenticate while connecting to compute WebSocket: Could not validate credentials"
                         }

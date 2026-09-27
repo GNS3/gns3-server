@@ -23,7 +23,6 @@ from ..common import NodeStatus, CustomAdapter
 
 
 class QemuPlatform(str, Enum):
-
     aarch64 = "aarch64"
     alpha = "alpha"
     arm = "arm"
@@ -94,7 +93,6 @@ class QemuOnCloseAction(str, Enum):
 
 
 class QemuProcessPriority(str, Enum):
-
     realtime = "realtime"
     very_high = "very high"
     high = "high"
@@ -236,7 +234,6 @@ class QemuUpdate(QemuBase):
 
 
 class Qemu(QemuBase):
-
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")
@@ -244,6 +241,5 @@ class Qemu(QemuBase):
 
 
 class QemuBinaryPath(BaseModel):
-
     path: str
     version: str

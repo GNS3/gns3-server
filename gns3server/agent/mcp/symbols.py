@@ -30,8 +30,10 @@ log = logging.getLogger(__name__)
 
 # ── Helper ─────────────────────────────────────────────────────────────────
 
+
 def _get_connector(gns3_ctx: dict[str, Any]):
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],
@@ -41,6 +43,7 @@ def _get_connector(gns3_ctx: dict[str, Any]):
 
 
 # ── Tool handlers ──────────────────────────────────────────────────────────
+
 
 def get_symbols_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     conn = _get_connector(gns3_ctx)
@@ -57,9 +60,11 @@ def get_symbol_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
     username = gns3_ctx.get("jwt_username")
     # short-lived ticket bound to this exact path — LLM clients retyping curl
     # commands corrupted the long Bearer JWT this used to embed
-    ticket = access_ticket_service.mint(
-        username, token_version=gns3_ctx.get("jwt_token_version", 0), path=path
-    ) if username else None
+    ticket = (
+        access_ticket_service.mint(username, token_version=gns3_ctx.get("jwt_token_version", 0), path=path)
+        if username
+        else None
+    )
     if ticket:
         download_url += f"?token={ticket}"
     result = {
@@ -68,7 +73,7 @@ def get_symbol_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
         "note": "Symbol files are SVG images.",
     }
     if ticket:
-        safe_name = symbol_id.replace(':', '').replace('/', '_')
+        safe_name = symbol_id.replace(":", "").replace("/", "_")
         result["curl_command"] = f"curl -L -o '{safe_name}.svg' '{download_url}'"
         result["note"] += " The download URL includes a 10-minute ticket."
     return result

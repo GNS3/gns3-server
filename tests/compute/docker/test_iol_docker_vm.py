@@ -72,13 +72,20 @@ async def manager(port_manager):
     return m
 
 
-def _make_vm(compute_project, manager, environment="GNS3_IOL_RUNNER=1",
-             extra_volumes=None, adapters=4, console_type="telnet"):
+def _make_vm(
+    compute_project, manager, environment="GNS3_IOL_RUNNER=1", extra_volumes=None, adapters=4, console_type="telnet"
+):
     """Build an IOLDockerVM with a fake cid (no create() called)."""
     vm = IOLDockerVM(
-        "iol-xe-1", str(uuid.uuid4()), compute_project, manager, "iol-xe/iol-xe:17-18-02",
-        console_type=console_type, environment=environment,
-        extra_volumes=extra_volumes or [], adapters=adapters,
+        "iol-xe-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "iol-xe/iol-xe:17-18-02",
+        console_type=console_type,
+        environment=environment,
+        extra_volumes=extra_volumes or [],
+        adapters=adapters,
     )
     vm._cid = "e90e34656842"
     # mirrors the controller flow, which always delivers an allocated id
@@ -127,39 +134,36 @@ def _wiring_dir(vm):
 # Factory selection
 # ---------------------------------------------------------------------------
 
+
 def test_factory_selects_iol_for_env_marker(manager):
 
-    assert manager._select_node_class(console_type="telnet",
-                                      environment="GNS3_IOL_RUNNER=1") is IOLDockerVM
+    assert manager._select_node_class(console_type="telnet", environment="GNS3_IOL_RUNNER=1") is IOLDockerVM
 
 
 def test_factory_tolerates_whitespace_and_comma(manager):
 
-    assert manager._select_node_class(console_type="telnet",
-                                      environment=" GNS3_IOL_RUNNER=1,\nFOO=bar") is IOLDockerVM
+    assert manager._select_node_class(console_type="telnet", environment=" GNS3_IOL_RUNNER=1,\nFOO=bar") is IOLDockerVM
 
 
 def test_factory_docker_exec_wins_over_iol_marker(manager):
 
-    assert manager._select_node_class(console_type="docker_exec",
-                                      environment="GNS3_IOL_RUNNER=1") is VendorDockerVM
+    assert manager._select_node_class(console_type="docker_exec", environment="GNS3_IOL_RUNNER=1") is VendorDockerVM
 
 
 def test_factory_plain_environment_is_base(manager):
 
-    assert manager._select_node_class(console_type="telnet",
-                                      environment="FOO=bar\nGNS3_BAZ=nope") is DockerVM
+    assert manager._select_node_class(console_type="telnet", environment="FOO=bar\nGNS3_BAZ=nope") is DockerVM
 
 
 def test_factory_generic_unix_knob_selects_vendor(manager):
 
-    assert manager._select_node_class(console_type="telnet",
-                                      environment="GNS3_UNIX_SOCKET_NIO=1") is VendorDockerVM
+    assert manager._select_node_class(console_type="telnet", environment="GNS3_UNIX_SOCKET_NIO=1") is VendorDockerVM
 
 
 # ---------------------------------------------------------------------------
 # Knob parsing
 # ---------------------------------------------------------------------------
+
 
 def test_marker_forces_skip_init_and_unix_nio(compute_project, manager):
 
@@ -172,12 +176,10 @@ def test_marker_forces_skip_init_and_unix_nio(compute_project, manager):
 
 def test_iol_memory_knob(compute_project, manager):
 
-    vm = _make_vm(compute_project, manager,
-                  environment="GNS3_IOL_RUNNER=1\nGNS3_IOL_MEMORY=4096")
+    vm = _make_vm(compute_project, manager, environment="GNS3_IOL_RUNNER=1\nGNS3_IOL_MEMORY=4096")
     assert vm._iol_memory == 4096
 
-    vm = _make_vm(compute_project, manager,
-                  environment="GNS3_IOL_RUNNER=1\nGNS3_IOL_MEMORY=notanumber")
+    vm = _make_vm(compute_project, manager, environment="GNS3_IOL_RUNNER=1\nGNS3_IOL_MEMORY=notanumber")
     assert vm._iol_memory == 2048
 
 
@@ -185,15 +187,13 @@ def test_iol_memory_knob(compute_project, manager):
 # create()
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_create_keeps_image_entrypoint(compute_project, manager):
 
-    with asyncio_patch("gns3server.compute.docker.Docker.list_images",
-                       return_value=[{"image": "iol-xe"}]):
-        with asyncio_patch("gns3server.compute.docker.Docker.query",
-                           return_value=_create_response()) as mock:
-            with patch("asyncio.subprocess.create_subprocess_exec",
-                       return_value=_seed_proc()):
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "iol-xe"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=_create_response()) as mock:
+            with patch("asyncio.subprocess.create_subprocess_exec", return_value=_seed_proc()):
                 vm = _make_vm(compute_project, manager)
                 await vm.create()
                 sent = mock.call_args.kwargs["data"]
@@ -205,12 +205,9 @@ async def test_create_keeps_image_entrypoint(compute_project, manager):
 @pytest.mark.asyncio
 async def test_create_auto_adds_config_and_tmp_run_volumes(compute_project, manager):
 
-    with asyncio_patch("gns3server.compute.docker.Docker.list_images",
-                       return_value=[{"image": "iol-xe"}]):
-        with asyncio_patch("gns3server.compute.docker.Docker.query",
-                           return_value=_create_response()) as mock:
-            with patch("asyncio.subprocess.create_subprocess_exec",
-                       return_value=_seed_proc()):
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "iol-xe"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=_create_response()) as mock:
+            with patch("asyncio.subprocess.create_subprocess_exec", return_value=_seed_proc()):
                 vm = _make_vm(compute_project, manager, extra_volumes=[])
                 await vm.create()
                 sent = mock.call_args.kwargs["data"]
@@ -235,12 +232,9 @@ async def test_create_start_command_becomes_runner_flags(compute_project, manage
 
     vm = _make_vm(compute_project, manager)
     vm.start_command = "-keep"
-    with asyncio_patch("gns3server.compute.docker.Docker.list_images",
-                       return_value=[{"image": "iol-xe"}]):
-        with asyncio_patch("gns3server.compute.docker.Docker.query",
-                           return_value=_create_response()) as mock:
-            with patch("asyncio.subprocess.create_subprocess_exec",
-                       return_value=_seed_proc()):
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "iol-xe"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=_create_response()) as mock:
+            with patch("asyncio.subprocess.create_subprocess_exec", return_value=_seed_proc()):
                 await vm.create()
                 sent = mock.call_args.kwargs["data"]
                 # start_command is the container CMD = extra iol-runner flags
@@ -250,6 +244,7 @@ async def test_create_start_command_becomes_runner_flags(compute_project, manage
 # ---------------------------------------------------------------------------
 # start() — runtime preparation
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_start_writes_iol_config(compute_project, manager):
@@ -402,6 +397,7 @@ async def test_restart_is_graceful_stop_then_start(compute_project, manager):
 # Wiring — unix-socket NIO
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_add_ubridge_connection_unix_wiring(compute_project, manager):
 
@@ -463,8 +459,7 @@ async def test_add_ubridge_connection_timeout_is_actionable(compute_project, man
     async def raise_timeout(path, timeout=60):
         raise asyncio.TimeoutError()
 
-    with patch("gns3server.compute.docker.vendor_docker_vm.wait_for_file_creation",
-               side_effect=raise_timeout):
+    with patch("gns3server.compute.docker.vendor_docker_vm.wait_for_file_creation", side_effect=raise_timeout):
         with pytest.raises(DockerError) as excinfo:
             await vm._add_ubridge_connection(None, 0)
     # the message names the adapter and the exact wiring path
@@ -497,6 +492,7 @@ async def test_add_ubridge_connection_without_nio_still_wires(compute_project, m
 # IOU-style port model — 1 adapter = 4 ethernet ports
 # ---------------------------------------------------------------------------
 
+
 def test_adapters_are_four_port_units(compute_project, manager):
 
     vm = _make_vm(compute_project, manager, adapters=2)
@@ -523,7 +519,7 @@ async def test_wiring_addresses_ports_within_adapters(compute_project, manager):
     await vm._add_ubridge_connection(nio, 1, port_number=2)
 
     flat = "\n".join(str(c) for c in vm._ubridge_hypervisor.method_calls)
-    assert 'bridge add_nio_unix bridge1_2 ' in flat
+    assert "bridge add_nio_unix bridge1_2 " in flat
     assert f'"{os.path.join(wiring_dir, "c06.sock")}"' in flat
     assert f'"{os.path.join(wiring_dir, "s06.sock")}"' in flat
     assert "add_nio_udp bridge1_2 4242 127.0.0.1 4343" in flat
@@ -547,33 +543,59 @@ async def test_nio_binding_rejects_port_out_of_range(compute_project, manager):
 # Generic GNS3_UNIX_SOCKET_NIO knob on plain VendorDockerVM
 # ---------------------------------------------------------------------------
 
+
 def test_env_unix_socket_nio_parsing(compute_project, manager):
 
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec",
-                        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1\nGNS3_UNIX_SOCKET_DIR=/var/run/socks")
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1\nGNS3_UNIX_SOCKET_DIR=/var/run/socks",
+    )
     assert vm._unix_socket_nio is True
     assert vm._unix_socket_dir == "/var/run/socks"
 
     # invalid dirs are rejected, keeping the default
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec",
-                        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=yes\nGNS3_UNIX_SOCKET_DIR=../../etc")
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=yes\nGNS3_UNIX_SOCKET_DIR=../../etc",
+    )
     assert vm._unix_socket_nio is True
     assert vm._unix_socket_dir == "/tmp"
 
     # off by default / explicit off
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec", environment="GNS3_SKIP_INIT=1")
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1",
+    )
     assert vm._unix_socket_nio is False
 
 
 def test_unix_socket_dir_bound_from_runtime_dir(compute_project, manager):
 
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec",
-                        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1",
-                        extra_volumes=[])
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1",
+        extra_volumes=[],
+    )
     # the socket directory is an ephemeral per-node directory from the
     # runtime dir, not a volume: writable by the (unprivileged) agent and
     # short enough for AF_UNIX
@@ -584,10 +606,16 @@ def test_unix_socket_dir_bound_from_runtime_dir(compute_project, manager):
     assert socket_binds[0]["Source"] == _wiring_dir(vm)
 
     # a socket dir already covered by a persisted volume gets no extra bind
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec",
-                        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1",
-                        extra_volumes=["/tmp"])
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1",
+        extra_volumes=["/tmp"],
+    )
     binds = vm._mount_binds({"Config": {"Volumes": {}}})
     assert not any(b.get("Source") == _wiring_dir(vm) for b in binds)
     assert any(b.get("Target") == "/tmp" for b in binds)
@@ -596,9 +624,15 @@ def test_unix_socket_dir_bound_from_runtime_dir(compute_project, manager):
 @pytest.mark.asyncio
 async def test_generic_unix_socket_dir_honored_in_wiring(compute_project, manager):
 
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec",
-                        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1\nGNS3_UNIX_SOCKET_DIR=/var/run/socks")
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1\nGNS3_UNIX_SOCKET_NIO=1\nGNS3_UNIX_SOCKET_DIR=/var/run/socks",
+    )
     _mock_wiring(vm)
     wiring_dir = _wiring_dir(vm)
     os.makedirs(wiring_dir, exist_ok=True)
@@ -659,10 +693,19 @@ async def test_tap_wired_vendor_keeps_carrier_and_monitor(compute_project, manag
     behavior: the guards only apply to unix-socket NIO.
     """
 
-    vm = VendorDockerVM("vendor-1", str(uuid.uuid4()), compute_project, manager, "vendor:latest",
-                        console_type="docker_exec", environment="GNS3_SKIP_INIT=1")
-    with patch.object(DockerVM, "_set_adapter_carrier", new=AsyncioMagicMock()) as carrier, \
-         patch.object(DockerVM, "_start_interface_monitor", new=AsyncioMagicMock()) as monitor:
+    vm = VendorDockerVM(
+        "vendor-1",
+        str(uuid.uuid4()),
+        compute_project,
+        manager,
+        "vendor:latest",
+        console_type="docker_exec",
+        environment="GNS3_SKIP_INIT=1",
+    )
+    with (
+        patch.object(DockerVM, "_set_adapter_carrier", new=AsyncioMagicMock()) as carrier,
+        patch.object(DockerVM, "_start_interface_monitor", new=AsyncioMagicMock()) as monitor,
+    ):
         await vm._set_adapter_carrier(0, True)
         await vm._start_interface_monitor()
     # the base-class attribute is replaced by a plain mock (no descriptor

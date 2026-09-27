@@ -51,7 +51,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestPrivileges:
-
     @pytest.mark.parametrize(
         "privilege, path, result",
         (
@@ -69,25 +68,14 @@ class TestPrivileges:
         ),
     )
     async def test_default_privileges_user_group(
-            self,
-            test_user: User,
-            db_session: AsyncSession,
-            privilege: str,
-            path: str,
-            result: bool
+        self, test_user: User, db_session: AsyncSession, privilege: str, path: str, result: bool
     ) -> None:
 
         # add an ACE for path
         if result:
             group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
             role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
-            ace = ACECreate(
-                path=path,
-                ace_type="group",
-                propagate=False,
-                group_id=str(group_id),
-                role_id=str(role_id)
-            )
+            ace = ACECreate(path=path, ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role_id))
             await RbacRepository(db_session).create_ace(ace)
 
         authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
@@ -122,13 +110,7 @@ class TestPrivileges:
         # privileges on deeper levels replace those inherited from an upper level.
         group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
         role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
-        ace = ACECreate(
-            path=path,
-            ace_type="group",
-            propagate=False,
-            group_id=str(group_id),
-            role_id=str(role_id)
-        )
+        ace = ACECreate(path=path, ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role_id))
         await RbacRepository(db_session).create_ace(ace)
 
         authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
@@ -136,7 +118,6 @@ class TestPrivileges:
 
 
 class TestResourcePools:
-
     async def test_resource_pool(self, test_user: User, db_session: AsyncSession):
 
         project_id = uuid.uuid4()
@@ -157,7 +138,7 @@ class TestResourcePools:
             ace_type="group",
             propagate=False,
             group_id=str(group_id),
-            role_id=str(role_id)
+            role_id=str(role_id),
         )
         await RbacRepository(db_session).create_ace(ace)
 
@@ -167,12 +148,7 @@ class TestResourcePools:
         assert authorized is True
 
     async def test_list_projects_in_resource_pool(
-            self,
-            app: FastAPI,
-            controller: Controller,
-            base_client: AsyncClient,
-            db_session: AsyncSession,
-            test_user: User
+        self, app: FastAPI, controller: Controller, base_client: AsyncClient, db_session: AsyncSession, test_user: User
     ) -> None:
 
         # Clean up any existing ACEs from previous tests
@@ -204,16 +180,16 @@ class TestResourcePools:
             ace_type="group",
             propagate=False,
             group_id=str(group_id),
-            role_id=str(role_id)
+            role_id=str(role_id),
         )
         await RbacRepository(db_session).create_ace(ace)
 
         # Create a new client with test user authentication
         access_token = auth_service.create_access_token(test_user.username)
         async with AsyncClient(
-                base_url="http://test-api",
-                headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
-                transport=ASGIWebSocketTransport(app=app)
+            base_url="http://test-api",
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
+            transport=ASGIWebSocketTransport(app=app),
         ) as user_client:
             # user should see only uuid2 (from resource pool)
             response = await user_client.get(app.url_path_for("get_projects"))
@@ -228,11 +204,7 @@ class TestResourcePools:
 
             # Now give user access to /projects (in addition to resource pool)
             ace = ACECreate(
-                path="/projects",
-                ace_type="group",
-                propagate=True,
-                group_id=str(group_id),
-                role_id=str(role_id)
+                path="/projects", ace_type="group", propagate=True, group_id=str(group_id), role_id=str(role_id)
             )
             await RbacRepository(db_session).create_ace(ace)
 
@@ -277,66 +249,66 @@ class TestResourcePools:
 #         permissions_in_db = await rbac_repo.get_user_permissions(test_user.user_id)
 #         assert len(permissions_in_db) == 1
 #         assert permissions_in_db[0].path == f"/projects/{project_id}/*"
-        #
-        # response = await authorized_client.get(app.url_path_for("get_projects"))
-        # assert response.status_code == status.HTTP_200_OK
-        # projects = response.json()
-        # assert len(projects) == 1
+#
+# response = await authorized_client.get(app.url_path_for("get_projects"))
+# assert response.status_code == status.HTTP_200_OK
+# projects = response.json()
+# assert len(projects) == 1
 
-    # async def test_admin_access_all_projects(self, app: FastAPI, client: AsyncClient):
-    #
-    #     response = await client.get(app.url_path_for("get_projects"))
-    #     assert response.status_code == status.HTTP_200_OK
-    #     projects = response.json()
-    #     assert len(projects) == 2
-    #
-    # async def test_admin_user_give_permission_on_project(
-    #         self,
-    #         app: FastAPI,
-    #         client: AsyncClient,
-    #         test_user: User
-    # ):
-    #
-    #     response = await client.get(app.url_path_for("get_projects"))
-    #     assert response.status_code == status.HTTP_200_OK
-    #     projects = response.json()
-    #     project_id = None
-    #     for project in projects:
-    #         if project["name"] == "Admin project":
-    #             project_id = project["project_id"]
-    #             break
-    #
-    #     new_permission = {
-    #         "methods": ["GET"],
-    #         "path": f"/projects/{project_id}",
-    #         "action": "ALLOW"
-    #     }
-    #     response = await client.post(app.url_path_for("create_permission"), json=new_permission)
-    #     assert response.status_code == status.HTTP_201_CREATED
-    #     permission_id = response.json()["permission_id"]
-    #
-    #     response = await client.put(
-    #         app.url_path_for(
-    #             "add_permission_to_user",
-    #             user_id=test_user.user_id,
-    #             permission_id=permission_id
-    #         )
-    #     )
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #
-    # async def test_user_access_admin_project(
-    #         self,
-    #         app: FastAPI,
-    #         authorized_client: AsyncClient,
-    #         test_user: User,
-    #         db_session: AsyncSession
-    # ) -> None:
-    #
-    #     response = await authorized_client.get(app.url_path_for("get_projects"))
-    #     assert response.status_code == status.HTTP_200_OK
-    #     projects = response.json()
-    #     assert len(projects) == 2
-    #
+# async def test_admin_access_all_projects(self, app: FastAPI, client: AsyncClient):
+#
+#     response = await client.get(app.url_path_for("get_projects"))
+#     assert response.status_code == status.HTTP_200_OK
+#     projects = response.json()
+#     assert len(projects) == 2
+#
+# async def test_admin_user_give_permission_on_project(
+#         self,
+#         app: FastAPI,
+#         client: AsyncClient,
+#         test_user: User
+# ):
+#
+#     response = await client.get(app.url_path_for("get_projects"))
+#     assert response.status_code == status.HTTP_200_OK
+#     projects = response.json()
+#     project_id = None
+#     for project in projects:
+#         if project["name"] == "Admin project":
+#             project_id = project["project_id"]
+#             break
+#
+#     new_permission = {
+#         "methods": ["GET"],
+#         "path": f"/projects/{project_id}",
+#         "action": "ALLOW"
+#     }
+#     response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+#     assert response.status_code == status.HTTP_201_CREATED
+#     permission_id = response.json()["permission_id"]
+#
+#     response = await client.put(
+#         app.url_path_for(
+#             "add_permission_to_user",
+#             user_id=test_user.user_id,
+#             permission_id=permission_id
+#         )
+#     )
+#     assert response.status_code == status.HTTP_204_NO_CONTENT
+#
+# async def test_user_access_admin_project(
+#         self,
+#         app: FastAPI,
+#         authorized_client: AsyncClient,
+#         test_user: User,
+#         db_session: AsyncSession
+# ) -> None:
+#
+#     response = await authorized_client.get(app.url_path_for("get_projects"))
+#     assert response.status_code == status.HTTP_200_OK
+#     projects = response.json()
+#     assert len(projects) == 2
+#
 
 # class TestTemplatesWithRbac:
 #

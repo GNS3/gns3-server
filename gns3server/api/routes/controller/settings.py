@@ -44,35 +44,37 @@ router = APIRouter()
 # - port ranges are read once by the PortManager singleton
 # - default admin credentials are only used to seed the users database
 # - builtin templates/appliances and the skills repository are installed at startup
-RESTART_REQUIRED = frozenset({
-    "Server.host",
-    "Server.port",
-    "Server.protocol",
-    "Server.enable_ssl",
-    "Server.certfile",
-    "Server.certkey",
-    "Server.secrets_dir",
-    "Server.images_path",
-    "Server.projects_path",
-    "Server.appliances_path",
-    "Server.symbols_path",
-    "Server.configs_path",
-    "Server.resources_path",
-    "Server.console_start_port_range",
-    "Server.console_end_port_range",
-    "Server.vnc_console_start_port_range",
-    "Server.vnc_console_end_port_range",
-    "Server.udp_start_port_range",
-    "Server.udp_end_port_range",
-    "Server.enable_builtin_templates",
-    "Server.install_builtin_appliances",
-    "Server.skills_repo_url",
-    "Server.skills_repo_branch",
-    "Server.skills_auto_update",
-    "Server.ubridge_path",
-    "Controller.default_admin_username",
-    "Controller.default_admin_password",
-})
+RESTART_REQUIRED = frozenset(
+    {
+        "Server.host",
+        "Server.port",
+        "Server.protocol",
+        "Server.enable_ssl",
+        "Server.certfile",
+        "Server.certkey",
+        "Server.secrets_dir",
+        "Server.images_path",
+        "Server.projects_path",
+        "Server.appliances_path",
+        "Server.symbols_path",
+        "Server.configs_path",
+        "Server.resources_path",
+        "Server.console_start_port_range",
+        "Server.console_end_port_range",
+        "Server.vnc_console_start_port_range",
+        "Server.vnc_console_end_port_range",
+        "Server.udp_start_port_range",
+        "Server.udp_end_port_range",
+        "Server.enable_builtin_templates",
+        "Server.install_builtin_appliances",
+        "Server.skills_repo_url",
+        "Server.skills_repo_branch",
+        "Server.skills_auto_update",
+        "Server.ubridge_path",
+        "Controller.default_admin_username",
+        "Controller.default_admin_password",
+    }
+)
 
 # never expose these sections (deprecated) nor the secret managed outside
 # the configuration file; must match the response model in schemas.controller.settings
@@ -89,9 +91,12 @@ def _current_settings_response() -> dict:
     return settings.model_dump(mode="json", exclude=_DUMP_EXCLUDE)
 
 
-@router.get("", response_model=schemas.SettingsResponse,
-            dependencies=[Depends(has_privilege("Server.Audit"))],
-            responses={401: {"model": schemas.ErrorMessage}, 403: {"model": schemas.ErrorMessage}})
+@router.get(
+    "",
+    response_model=schemas.SettingsResponse,
+    dependencies=[Depends(has_privilege("Server.Audit"))],
+    responses={401: {"model": schemas.ErrorMessage}, 403: {"model": schemas.ErrorMessage}},
+)
 async def get_server_settings() -> schemas.SettingsResponse:
     """
     Return the server settings.
@@ -103,15 +108,18 @@ async def get_server_settings() -> schemas.SettingsResponse:
     return schemas.SettingsResponse.model_validate(_current_settings_response())
 
 
-@router.put("", response_model=schemas.SettingsUpdateResponse,
-            dependencies=[Depends(has_privilege("Server.Modify"))],
-            responses={
-                400: {"model": schemas.ErrorMessage},
-                401: {"model": schemas.ErrorMessage},
-                403: {"model": schemas.ErrorMessage},
-                409: {"model": schemas.ErrorMessage},
-                422: {"model": schemas.ErrorMessage},
-            })
+@router.put(
+    "",
+    response_model=schemas.SettingsUpdateResponse,
+    dependencies=[Depends(has_privilege("Server.Modify"))],
+    responses={
+        400: {"model": schemas.ErrorMessage},
+        401: {"model": schemas.ErrorMessage},
+        403: {"model": schemas.ErrorMessage},
+        409: {"model": schemas.ErrorMessage},
+        422: {"model": schemas.ErrorMessage},
+    },
+)
 async def update_server_settings(settings_update: schemas.SettingsUpdate) -> schemas.SettingsUpdateResponse:
     """
     Update the server settings and persist them to the configuration file.
@@ -122,9 +130,7 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     """
 
     changes = {
-        section: options
-        for section, options in settings_update.model_dump(exclude_unset=True).items()
-        if options
+        section: options for section, options in settings_update.model_dump(exclude_unset=True).items() if options
     }
 
     # masked or empty secrets mean "unchanged": never write them back
@@ -153,8 +159,7 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     controller = Controller.instance()
     if controller is not None:
         controller.notification.controller_emit(
-            "settings.updated",
-            {"changed": changed, "restart_required": restart_required}
+            "settings.updated", {"changed": changed, "restart_required": restart_required}
         )
 
     data = _current_settings_response()

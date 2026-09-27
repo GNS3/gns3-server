@@ -73,14 +73,14 @@ def _load_forbidden_commands() -> list[str]:
     # Try to load from skills repository
     manager = get_skills_manager()
     if manager is not None:
-            commands = manager.load_forbidden_commands()
-            if commands:
-                logger.info(
-                    "Loaded %d forbidden command patterns from skills repository",
-                    len(commands),
-                )
-                _forbidden_commands_cache = commands
-                return _forbidden_commands_cache
+        commands = manager.load_forbidden_commands()
+        if commands:
+            logger.info(
+                "Loaded %d forbidden command patterns from skills repository",
+                len(commands),
+            )
+            _forbidden_commands_cache = commands
+            return _forbidden_commands_cache
 
     # Fallback to defaults
     logger.warning("Using default forbidden commands list")

@@ -27,30 +27,29 @@ import logging
 log = logging.getLogger()
 
 
-def has_privilege(
-        privilege_name: str
-):
+def has_privilege(privilege_name: str):
     async def get_user_and_check_privilege(
-            request: Request,
-            current_user: schemas.User = Depends(get_current_active_user),
-            rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        request: Request,
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     ):
         if not current_user.is_superadmin:
             path = re.sub(r"^/v[0-9]", "", request.url.path)  # remove the prefix (e.g. "/v3") from URL path
             log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
             if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, privilege_name):
-                raise HTTPException(status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)")
+                raise HTTPException(
+                    status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)"
+                )
         return current_user
+
     return get_user_and_check_privilege
 
 
-def has_privilege_on_websocket(
-        privilege_name: str
-):
+def has_privilege_on_websocket(privilege_name: str):
     async def get_user_and_check_privilege(
-            websocket: WebSocket,
-            current_user: schemas.User = Depends(get_current_active_user_from_websocket),
-            rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(get_current_active_user_from_websocket),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     ):
         # Authentication may have failed and closed the socket inside the auth
         # dependency, returning None — bail out before touching the user object.
@@ -60,9 +59,13 @@ def has_privilege_on_websocket(
             path = re.sub(r"^/v[0-9]", "", websocket.url.path)  # remove the prefix (e.g. "/v3") from URL path
             log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
             if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, privilege_name):
-                raise HTTPException(status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)")
+                raise HTTPException(
+                    status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)"
+                )
         return current_user
+
     return get_user_and_check_privilege
+
 
 # class PrivilegeChecker:
 #

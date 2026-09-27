@@ -2,7 +2,6 @@ import functools
 
 
 class patch:
-
     originals = {}
 
     def __init__(self, host, name):
@@ -17,4 +16,3 @@ class patch:
         setattr(self.host, self.name, func)
 
         return func
-

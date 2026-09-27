@@ -27,6 +27,7 @@ from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
+
 @pytest.fixture
 def nio():
 
@@ -63,19 +64,39 @@ async def test_json_with_ports(on_gns3vm, compute_project, manager):
         "remote_console_type": "none",
         "status": "stopped",
         "node_directory": cloud.working_dir,
-        "ports_mapping": [
-            {
-                "interface": "virbr0",
-                "name": "virbr0",
-                "port_number": 0,
-                "type": "ethernet"
-            }
-        ],
+        "ports_mapping": [{"interface": "virbr0", "name": "virbr0", "port_number": 0, "type": "ethernet"}],
         "interfaces": [
-            {'name': 'eth0', 'special': False, 'type': 'ethernet', 'ip_addresses': [], 'status': 'up', 'speed': 1000, 'mtu': 1500, 'flags': ['up', 'broadcast', 'running', 'multicast']},
-            {'name': 'eth1', 'special': False, 'type': 'ethernet', 'ip_addresses': [], 'status': 'down', 'speed': 0, 'mtu': 1500, 'flags': ['broadcast']},
-            {'name': 'virbr0', 'special': True, 'type': 'ethernet', 'ip_addresses': [], 'status': 'up', 'speed': 10000, 'mtu': 1500, 'flags': ['up', 'broadcast', 'running', 'multicast']}
-        ]
+            {
+                "name": "eth0",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 1000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+            {
+                "name": "eth1",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "down",
+                "speed": 0,
+                "mtu": 1500,
+                "flags": ["broadcast"],
+            },
+            {
+                "name": "virbr0",
+                "special": True,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 10000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+        ],
     }
 
 
@@ -97,24 +118,41 @@ async def test_json_without_ports(on_gns3vm, compute_project, manager):
         "status": "stopped",
         "node_directory": cloud.working_dir,
         "ports_mapping": [
-            {
-                "interface": "eth0",
-                "name": "eth0",
-                "port_number": 0,
-                "type": "ethernet"
-            },
-            {
-                "interface": "eth1",
-                "name": "eth1",
-                "port_number": 1,
-                "type": "ethernet"
-            }
+            {"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"},
+            {"interface": "eth1", "name": "eth1", "port_number": 1, "type": "ethernet"},
         ],
         "interfaces": [
-            {'name': 'eth0', 'special': False, 'type': 'ethernet', 'ip_addresses': [], 'status': 'up', 'speed': 1000, 'mtu': 1500, 'flags': ['up', 'broadcast', 'running', 'multicast']},
-            {'name': 'eth1', 'special': False, 'type': 'ethernet', 'ip_addresses': [], 'status': 'down', 'speed': 0, 'mtu': 1500, 'flags': ['broadcast']},
-            {'name': 'virbr0', 'special': True, 'type': 'ethernet', 'ip_addresses': [], 'status': 'up', 'speed': 10000, 'mtu': 1500, 'flags': ['up', 'broadcast', 'running', 'multicast']}
-        ]
+            {
+                "name": "eth0",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 1000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+            {
+                "name": "eth1",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "down",
+                "speed": 0,
+                "mtu": 1500,
+                "flags": ["broadcast"],
+            },
+            {
+                "name": "virbr0",
+                "special": True,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 10000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+        ],
     }
 
 
@@ -124,49 +162,22 @@ async def test_update_port_mappings(on_gns3vm, compute_project):
     """
 
     ports1 = [
-        {
-            "interface": "eth0",
-            "name": "eth0",
-            "port_number": 0,
-            "type": "ethernet"
-        },
-        {
-            "interface": "eth1",
-            "name": "eth1",
-            "port_number": 1,
-            "type": "ethernet"
-        }
+        {"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"},
+        {"interface": "eth1", "name": "eth1", "port_number": 1, "type": "ethernet"},
     ]
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, MagicMock(), ports=ports1)
     assert cloud.ports_mapping == ports1
 
     ports2 = [
-        {
-            "interface": "eth0",
-            "name": "eth0",
-            "port_number": 0,
-            "type": "ethernet"
-        },
-        {
-            "interface": "eth1",
-            "name": "eth1",
-            "port_number": 2,
-            "type": "ethernet"
-        }
+        {"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"},
+        {"interface": "eth1", "name": "eth1", "port_number": 2, "type": "ethernet"},
     ]
     cloud = Cloud("cloud2", str(uuid.uuid4()), compute_project, MagicMock(), ports=ports2)
     assert cloud.ports_mapping == ports1
 
 
 async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
-    ports = [
-        {
-            "interface": "eth0",
-            "name": "eth0",
-            "port_number": 0,
-            "type": "ethernet"
-        }
-    ]
+    ports = [{"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"}]
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, MagicMock(), ports=ports)
     cloud.status = "started"
 
@@ -176,43 +187,42 @@ async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
                 with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "eth0"}]):
                     await cloud.add_nio(nio, 0)
 
-    ubridge_mock.assert_has_calls([
-        call("bridge create {}-0".format(cloud._id)),
-        call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
-        call('bridge reset_packet_filters {}-0'.format(cloud._id)),
-        call("bridge add_nio_linux_raw {}-0 \"eth0\"".format(cloud._id)),
-        call("bridge start {}-0".format(cloud._id)),
-    ])
+    ubridge_mock.assert_has_calls(
+        [
+            call("bridge create {}-0".format(cloud._id)),
+            call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+            call("bridge reset_packet_filters {}-0".format(cloud._id)),
+            call('bridge add_nio_linux_raw {}-0 "eth0"'.format(cloud._id)),
+            call("bridge start {}-0".format(cloud._id)),
+        ]
+    )
 
 
 async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project, nio):
     """
     Bridge can't be connected directly to a cloud we use a tap in the middle
     """
-    ports = [
-        {
-            "interface": "bridge0",
-            "name": "bridge0",
-            "port_number": 0,
-            "type": "ethernet"
-        }
-    ]
+    ports = [{"interface": "bridge0", "name": "bridge0", "port_number": 0, "type": "ethernet"}]
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, MagicMock(), ports=ports)
     cloud.status = "started"
 
     with patch("shutil.which", return_value="/bin/ubridge"):
         with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
             with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
-                with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]):
+                with patch(
+                    "gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]
+                ):
                     with patch("gns3server.utils.interfaces.is_interface_bridge", return_value=True):
                         await cloud.add_nio(nio, 0)
 
     tap = "gns3tap0-0"
-    ubridge_mock.assert_has_calls([
-        call("bridge create {}-0".format(cloud._id)),
-        call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
-        call('bridge reset_packet_filters {}-0'.format(cloud._id)),
-        call("bridge add_nio_tap \"{}-0\" \"{}\"".format(cloud._id, tap)),
-        call("brctl addif \"bridge0\" \"{}\"".format(tap)),
-        call("bridge start {}-0".format(cloud._id)),
-    ])
+    ubridge_mock.assert_has_calls(
+        [
+            call("bridge create {}-0".format(cloud._id)),
+            call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+            call("bridge reset_packet_filters {}-0".format(cloud._id)),
+            call('bridge add_nio_tap "{}-0" "{}"'.format(cloud._id, tap)),
+            call('brctl addif "bridge0" "{}"'.format(tap)),
+            call("bridge start {}-0".format(cloud._id)),
+        ]
+    )

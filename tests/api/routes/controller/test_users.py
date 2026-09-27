@@ -35,7 +35,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestUserRoutes:
-
     async def test_route_exist(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_user = {"username": "user1", "email": "user1@email.com", "password": "test_password"}
@@ -43,10 +42,7 @@ class TestUserRoutes:
         assert response.status_code == status.HTTP_201_CREATED
 
     async def test_users_can_register_successfully(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         user_repo = UsersRepository(db_session)
@@ -73,21 +69,21 @@ class TestUserRoutes:
     @pytest.mark.parametrize(
         "attr, value, status_code",
         (
-                ("email", "user2@email.com", status.HTTP_400_BAD_REQUEST),
-                ("username", "user2", status.HTTP_400_BAD_REQUEST),
-                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
-        )
+            ("email", "user2@email.com", status.HTTP_400_BAD_REQUEST),
+            ("username", "user2", status.HTTP_400_BAD_REQUEST),
+            ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
+        ),
     )
     async def test_user_registration_fails_when_credentials_are_taken(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            attr: str,
-            value: str,
-            status_code: int,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        attr: str,
+        value: str,
+        status_code: int,
     ) -> None:
 
         new_user = {"email": "not_taken@email.com", "username": "not_taken_username", "password": "test_password"}
@@ -98,26 +94,26 @@ class TestUserRoutes:
     @pytest.mark.parametrize(
         "attr, value, status_code",
         (
-                ("email", "user@email.com", status.HTTP_200_OK),
-                ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
-                ("username", "user2", status.HTTP_400_BAD_REQUEST),
-                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
-                ("full_name", "John Doe", status.HTTP_200_OK),
-                ("password", "password123", status.HTTP_200_OK),
-                ("is_active", True, status.HTTP_200_OK),
-        )
+            ("email", "user@email.com", status.HTTP_200_OK),
+            ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
+            ("username", "user2", status.HTTP_400_BAD_REQUEST),
+            ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("username", "ab", status.HTTP_422_UNPROCESSABLE_CONTENT),
+            ("full_name", "John Doe", status.HTTP_200_OK),
+            ("password", "password123", status.HTTP_200_OK),
+            ("is_active", True, status.HTTP_200_OK),
+        ),
     )
     async def test_update_user(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            attr: str,
-            value: str,
-            status_code: int,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        attr: str,
+        value: str,
+        status_code: int,
     ) -> None:
 
         user_repo = UsersRepository(db_session)
@@ -128,10 +124,7 @@ class TestUserRoutes:
         assert response.status_code == status_code
 
     async def test_users_saved_password_is_hashed(
-        self,
-        app: FastAPI,
-        client: AsyncClient,
-        db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         user_repo = UsersRepository(db_session)
@@ -156,13 +149,8 @@ class TestUserRoutes:
 
 
 class TestAuthTokens:
-
     async def test_can_create_token_successfully(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            config: Config
+        self, app: FastAPI, client: AsyncClient, test_user: User, config: Config
     ) -> None:
 
         jwt_secret = config.settings.Controller.jwt_secret_key
@@ -173,11 +161,7 @@ class TestAuthTokens:
         assert username == test_user.username
 
     async def test_decode_token_with_wrong_algorithm(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            config: Config
+        self, app: FastAPI, client: AsyncClient, test_user: User, config: Config
     ) -> None:
 
         jwt_secret = config.settings.Controller.jwt_secret_key
@@ -185,12 +169,7 @@ class TestAuthTokens:
         with pytest.raises(ValueError):
             jwt.decode(token, jwt_secret, algorithms=["HS256"])
 
-    async def test_can_retrieve_username_from_token(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User
-    ) -> None:
+    async def test_can_retrieve_username_from_token(self, app: FastAPI, client: AsyncClient, test_user: User) -> None:
 
         token = auth_service.create_access_token(test_user.username)
         username = auth_service.get_username_from_token(token)
@@ -199,19 +178,19 @@ class TestAuthTokens:
     @pytest.mark.parametrize(
         "wrong_secret, wrong_token",
         (
-                ("use correct secret", "asdf"),  # use wrong token
-                ("use correct secret", ""),  # use wrong token
-                (OctKey.generate_key().as_dict()['k'], "use correct token"),  # use wrong secret
+            ("use correct secret", "asdf"),  # use wrong token
+            ("use correct secret", ""),  # use wrong token
+            (OctKey.generate_key().as_dict()["k"], "use correct token"),  # use wrong secret
         ),
     )
     async def test_error_when_token_or_secret_is_wrong(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            wrong_secret: str,
-            wrong_token: Optional[str],
-            config,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        test_user: User,
+        wrong_secret: str,
+        wrong_token: Optional[str],
+        config,
     ) -> None:
 
         token = auth_service.create_access_token(test_user.username)
@@ -224,13 +203,8 @@ class TestAuthTokens:
 
 
 class TestUserLogin:
-
     async def test_user_can_login_successfully_and_receives_valid_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-            config: Config
+        self, app: FastAPI, unauthorized_client: AsyncClient, test_user: User, config: Config
     ) -> None:
 
         jwt_secret = config.settings.Controller.jwt_secret_key
@@ -290,22 +264,18 @@ class TestUserLogin:
 
 
 class TestUnauthorizedUser:
-
     async def test_user_cannot_access_own_data_if_not_authenticated(
-            self, app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_user_can_authenticate_using_json(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-            config: Config
+        self, app: FastAPI, unauthorized_client: AsyncClient, test_user: User, config: Config
     ) -> None:
 
         credentials = {
@@ -321,13 +291,13 @@ class TestUnauthorizedUser:
         response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
         assert response.status_code == status.HTTP_200_OK
 
-class TestUserMe:
 
+class TestUserMe:
     async def test_authenticated_user_can_retrieve_own_data(
-            self,
-            app: FastAPI,
-            authorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        authorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         response = await authorized_client.get(app.url_path_for("get_logged_in_user"))
@@ -338,10 +308,10 @@ class TestUserMe:
         assert user.user_id == test_user.user_id
 
     async def test_authenticated_user_can_update_own_data(
-            self,
-            app: FastAPI,
-            authorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        authorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         response = await authorized_client.get(app.url_path_for("get_logged_in_user"))
@@ -355,37 +325,33 @@ class TestUserMe:
     @pytest.mark.parametrize(
         "attr, value, status_code",
         (
-                ("email", "user42@email.com", status.HTTP_200_OK),
-                ("email", "user42@email.com", status.HTTP_400_BAD_REQUEST),
-                ("full_name", "John Doe", status.HTTP_200_OK),
-                ("password", "password123", status.HTTP_200_OK),
-        )
+            ("email", "user42@email.com", status.HTTP_200_OK),
+            ("email", "user42@email.com", status.HTTP_400_BAD_REQUEST),
+            ("full_name", "John Doe", status.HTTP_200_OK),
+            ("password", "password123", status.HTTP_200_OK),
+        ),
     )
     async def test_authenticated_user_can_update_own_data(
-            self,
-            app: FastAPI,
-            authorized_client: AsyncClient,
-            attr: str,
-            value: str,
-            status_code: int,
+        self,
+        app: FastAPI,
+        authorized_client: AsyncClient,
+        attr: str,
+        value: str,
+        status_code: int,
     ) -> None:
 
         update_user = {}
         update_user[attr] = value
-        response = await authorized_client.put(
-            app.url_path_for("update_logged_in_user"),
-            json=update_user
-        )
+        response = await authorized_client.put(app.url_path_for("update_logged_in_user"), json=update_user)
         assert response.status_code == status_code
 
 
 class TestLogout:
-
     async def test_logout_returns_no_content(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # login to get a fresh token that includes token_version
@@ -395,17 +361,16 @@ class TestLogout:
         token = response.json()["access_token"]
 
         response = await unauthorized_client.post(
-            app.url_path_for("logout"),
-            headers={"Authorization": f"Bearer {token}"}
+            app.url_path_for("logout"), headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_token_is_rejected_after_logout(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-            db_session: AsyncSession,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
+        db_session: AsyncSession,
     ) -> None:
 
         # login and get a token
@@ -415,24 +380,20 @@ class TestLogout:
         token = response.json()["access_token"]
 
         # logout — increments token_version
-        await unauthorized_client.post(
-            app.url_path_for("logout"),
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        await unauthorized_client.post(app.url_path_for("logout"), headers={"Authorization": f"Bearer {token}"})
 
         # old token must now be rejected
         response = await unauthorized_client.get(
-            app.url_path_for("get_logged_in_user"),
-            headers={"Authorization": f"Bearer {token}"}
+            app.url_path_for("get_logged_in_user"), headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.json()["message"] == f"Token has been revoked for '{test_user.username}'"
 
     async def test_new_token_works_after_logout_and_relogin(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         credentials = {"username": test_user.username, "password": "user1_password"}
@@ -440,10 +401,7 @@ class TestLogout:
         # login, then logout
         response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
         old_token = response.json()["access_token"]
-        await unauthorized_client.post(
-            app.url_path_for("logout"),
-            headers={"Authorization": f"Bearer {old_token}"}
-        )
+        await unauthorized_client.post(app.url_path_for("logout"), headers={"Authorization": f"Bearer {old_token}"})
 
         # login again to get a fresh token
         response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
@@ -452,18 +410,17 @@ class TestLogout:
 
         # new token must work
         response = await unauthorized_client.get(
-            app.url_path_for("get_logged_in_user"),
-            headers={"Authorization": f"Bearer {new_token}"}
+            app.url_path_for("get_logged_in_user"), headers={"Authorization": f"Bearer {new_token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["username"] == test_user.username
 
     async def test_stale_version_token_is_rejected(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
-            db_session: AsyncSession,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
+        db_session: AsyncSession,
     ) -> None:
 
         # craft a token with ver=0 while the user's token_version is already higher
@@ -475,15 +432,14 @@ class TestLogout:
 
         stale_token = auth_service.create_access_token(test_user.username, token_version=0)
         response = await unauthorized_client.get(
-            app.url_path_for("get_logged_in_user"),
-            headers={"Authorization": f"Bearer {stale_token}"}
+            app.url_path_for("get_logged_in_user"), headers={"Authorization": f"Bearer {stale_token}"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_logout_without_token_returns_unauthorized(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
     ) -> None:
 
         response = await unauthorized_client.post(app.url_path_for("logout"))
@@ -491,27 +447,26 @@ class TestLogout:
 
 
 class TestRefreshToken:
-
     async def test_login_returns_refresh_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         credentials = {"username": test_user.username, "password": "user1_password"}
-        response = await unauthorized_client.post(app.url_path_for("login"),
-                                                  data=credentials,
-                                                  headers={"content-type": "application/x-www-form-urlencoded"})
+        response = await unauthorized_client.post(
+            app.url_path_for("login"), data=credentials, headers={"content-type": "application/x-www-form-urlencoded"}
+        )
         assert response.status_code == status.HTTP_200_OK
         assert "refresh_token" in response.json()
         assert response.json().get("refresh_token") is not None
 
     async def test_authenticate_returns_refresh_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         credentials = {"username": test_user.username, "password": "user1_password"}
@@ -521,10 +476,10 @@ class TestRefreshToken:
         assert response.json().get("refresh_token") is not None
 
     async def test_refresh_endpoint_returns_new_tokens(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # authenticate to get a refresh token
@@ -544,10 +499,10 @@ class TestRefreshToken:
         assert response.json().get("refresh_token") is not None
 
     async def test_new_access_token_from_refresh_works_on_protected_route(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         credentials = {"username": test_user.username, "password": "user1_password"}
@@ -570,10 +525,10 @@ class TestRefreshToken:
         assert response.json()["username"] == test_user.username
 
     async def test_refresh_with_stale_token_after_logout(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # authenticate and get a refresh token
@@ -583,10 +538,7 @@ class TestRefreshToken:
 
         # logout — bumps token_version, invalidating the refresh token
         access_token = auth_response.json()["access_token"]
-        await unauthorized_client.post(
-            app.url_path_for("logout"),
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
+        await unauthorized_client.post(app.url_path_for("logout"), headers={"Authorization": f"Bearer {access_token}"})
 
         # /refresh must now reject the stale refresh token
         response = await unauthorized_client.post(
@@ -596,10 +548,10 @@ class TestRefreshToken:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_refresh_rejects_access_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # an access token presented at /refresh must be rejected
@@ -614,10 +566,10 @@ class TestRefreshToken:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_refresh_rejects_expired_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # a refresh token with an already-expired timestamp
@@ -630,9 +582,9 @@ class TestRefreshToken:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_refresh_rejects_invalid_token(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
     ) -> None:
 
         response = await unauthorized_client.post(
@@ -642,10 +594,10 @@ class TestRefreshToken:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_refresh_token_rejected_as_bearer(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            test_user: User,
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
     ) -> None:
 
         # a refresh token used as a bearer access token must be rejected
@@ -661,25 +613,14 @@ class TestRefreshToken:
 
 
 class TestSuperAdmin:
-
-    async def test_super_admin_exists(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_super_admin_exists(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         admin_in_db = await user_repo.get_user_by_username("admin")
         assert admin_in_db is not None
         assert auth_service.verify_password("admin", admin_in_db.hashed_password)
 
-    async def test_cannot_delete_super_admin(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_cannot_delete_super_admin(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         admin_in_db = await user_repo.get_user_by_username("admin")
@@ -687,10 +628,7 @@ class TestSuperAdmin:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_admin_can_login_after_password_recovery(
-            self,
-            app: FastAPI,
-            unauthorized_client: AsyncClient,
-            db_session: AsyncSession
+        self, app: FastAPI, unauthorized_client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         # set the admin password to null in the database
@@ -705,4 +643,3 @@ class TestSuperAdmin:
         }
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status.HTTP_200_OK
-

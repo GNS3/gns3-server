@@ -31,12 +31,11 @@ user_group_map = Table(
     "user_group_map",
     Base.metadata,
     Column("user_id", GUID, ForeignKey("users.user_id", ondelete="CASCADE")),
-    Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"))
+    Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE")),
 )
 
 
 class User(BaseTable):
-
     __tablename__ = "users"
 
     user_id = Column(GUID, primary_key=True, default=generate_uuid)
@@ -52,7 +51,7 @@ class User(BaseTable):
     acl_entries = relationship("ACE")
 
 
-@event.listens_for(User.__table__, 'after_create')
+@event.listens_for(User.__table__, "after_create")
 def create_default_super_admin(target, connection, **kw):
 
     config = Config.instance().settings
@@ -63,7 +62,7 @@ def create_default_super_admin(target, connection, **kw):
         username=default_admin_username,
         full_name="Super Administrator",
         hashed_password=hashed_password,
-        is_superadmin=True
+        is_superadmin=True,
     )
     connection.execute(stmt)
     connection.commit()
@@ -71,7 +70,6 @@ def create_default_super_admin(target, connection, **kw):
 
 
 class UserGroup(BaseTable):
-
     __tablename__ = "user_groups"
 
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
@@ -81,13 +79,10 @@ class UserGroup(BaseTable):
     acl_entries = relationship("ACE")
 
 
-@event.listens_for(UserGroup.__table__, 'after_create')
+@event.listens_for(UserGroup.__table__, "after_create")
 def create_default_user_groups(target, connection, **kw):
 
-    default_groups = [
-        {"name": "Administrators", "is_builtin": True},
-        {"name": "Users", "is_builtin": True}
-    ]
+    default_groups = [{"name": "Administrators", "is_builtin": True}, {"name": "Users", "is_builtin": True}]
 
     stmt = target.insert().values(default_groups)
     connection.execute(stmt)

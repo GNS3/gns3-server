@@ -34,7 +34,6 @@ DEFAULT_PORTS = [
 
 
 class EthernetHubTemplate(TemplateBase):
-
     category: Optional[Category] = Category.switch
     default_name_format: Optional[str] = "Hub{0}"
     symbol: Optional[str] = "hub"
@@ -42,5 +41,4 @@ class EthernetHubTemplate(TemplateBase):
 
 
 class EthernetHubTemplateUpdate(EthernetHubTemplate):
-
     pass

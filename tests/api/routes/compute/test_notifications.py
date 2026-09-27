@@ -27,16 +27,16 @@ from gns3server.compute.notification_manager import NotificationManager
 #     # FIXME: how to test websockets
 #     pass
 
-    #with compute_api.ws("/notifications/ws") as ws:
+# with compute_api.ws("/notifications/ws") as ws:
 
-        # answer = await ws.receive_text()
-        # print(answer)
-        # answer = json.loads(answer)
-        #
-        # assert answer["action"] == "ping"
-        #
-        # NotificationManager.instance().emit("test", {})
-        #
-        # answer = await ws.receive_text()
-        # answer = json.loads(answer)
-        # assert answer["action"] == "test"
+# answer = await ws.receive_text()
+# print(answer)
+# answer = json.loads(answer)
+#
+# assert answer["action"] == "ping"
+#
+# NotificationManager.instance().emit("test", {})
+#
+# answer = await ws.receive_text()
+# answer = json.loads(answer)
+# assert answer["action"] == "test"

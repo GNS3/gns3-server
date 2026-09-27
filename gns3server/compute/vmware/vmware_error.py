@@ -22,5 +22,4 @@ from ..error import NodeError
 
 
 class VMwareError(NodeError):
-
     pass

@@ -315,8 +315,7 @@ class ApplianceToTemplate:
             return settings_list[0]
 
         raise ControllerError(
-            f"Appliance '{appliance_config['name']}' has multiple settings "
-            f"but none is marked as default"
+            f"Appliance '{appliance_config['name']}' has multiple settings but none is marked as default"
         )
 
     def _merge_v8_properties(self, settings, appliance_config):

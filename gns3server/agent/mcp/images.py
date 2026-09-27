@@ -28,8 +28,10 @@ log = logging.getLogger(__name__)
 
 # ── Helper ─────────────────────────────────────────────────────────────────
 
+
 def _get_connector(gns3_ctx: dict[str, Any]):
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],
@@ -39,6 +41,7 @@ def _get_connector(gns3_ctx: dict[str, Any]):
 
 
 # ── Tool handlers ──────────────────────────────────────────────────────────
+
 
 def get_images_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     conn = _get_connector(gns3_ctx)

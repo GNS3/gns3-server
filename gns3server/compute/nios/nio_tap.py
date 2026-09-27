@@ -22,7 +22,6 @@ from .nio import NIO
 
 
 class NIOTAP(NIO):
-
     """
     TAP NIO.
 
@@ -50,7 +49,4 @@ class NIOTAP(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_tap",
-            "tap_device": self._tap_device
-        }
+        return {"type": "nio_tap", "tap_device": self._tap_device}

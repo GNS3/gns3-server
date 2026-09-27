@@ -67,7 +67,7 @@ def fake_iou_bin(images_dir):
 
     path = os.path.join(images_dir, "iou.bin")
     with open(path, "w+") as f:
-        f.write('\x7fELF\x01\x01\x01')
+        f.write("\x7fELF\x01\x01\x01")
     os.chmod(path, stat.S_IREAD | stat.S_IEXEC)
     return path
 
@@ -103,7 +103,7 @@ async def test_start(vm):
         mock_process.communicate = AsyncioMagicMock(return_value=(None, None))
         await vm.start()
         assert vm.is_running()
-        assert vm.command_line == ' '.join(mock_exec.call_args[0])
+        assert vm.command_line == " ".join(mock_exec.call_args[0])
 
     assert vm._check_requirements.called
     assert vm._check_iou_license.called
@@ -183,10 +183,10 @@ async def test_rename_nvram_file(vm):
     It should rename the nvram file to the correct name before launching the VM
     """
 
-    with open(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id + 1)), 'w+') as f:
+    with open(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id + 1)), "w+") as f:
         f.write("1")
 
-    with open(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id + 1)), 'w+') as f:
+    with open(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id + 1)), "w+") as f:
         f.write("1")
 
     vm._rename_nvram_file()
@@ -455,14 +455,18 @@ async def test_build_command(vm):
 
 def test_get_startup_config(vm):
 
-    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    content = (
+        "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    )
     vm.startup_config = content
     assert vm.startup_config == content
 
 
 def test_update_startup_config(vm):
 
-    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    content = (
+        "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    )
     vm.startup_config_content = content
     filepath = os.path.join(vm.working_dir, "startup-config.cfg")
     assert os.path.exists(filepath)
@@ -472,7 +476,9 @@ def test_update_startup_config(vm):
 
 def test_update_startup_config_empty(vm):
 
-    content = "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    content = (
+        "service timestamps debug datetime msec\nservice timestamps log datetime msec\nno service password-encryption"
+    )
     vm.startup_config_content = content
     filepath = os.path.join(vm.working_dir, "startup-config.cfg")
     assert os.path.exists(filepath)
@@ -496,7 +502,7 @@ def test_change_name(vm):
 
     path = os.path.join(vm.working_dir, "startup-config.cfg")
     vm.name = "world"
-    with open(path, 'w+') as f:
+    with open(path, "w+") as f:
         f.write("hostname world")
     vm.name = "hello"
     assert vm.name == "hello"
@@ -504,7 +510,7 @@ def test_change_name(vm):
         assert f.read() == "hostname hello"
     # support hostname not sync
     vm.name = "alpha"
-    with open(path, 'w+') as f:
+    with open(path, "w+") as f:
         f.write("no service password-encryption\nhostname beta\nno ip icmp rate-limit unreachable")
     vm.name = "charlie"
     assert vm.name == "charlie"
@@ -526,13 +532,18 @@ async def test_library_check(vm):
 @pytest.mark.asyncio
 async def test_enable_l1_keepalives(vm):
 
-    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-l		Enable Layer 1 keepalive messages\n-u <n>		UDP port base for distributed networks\n"):
+    with asyncio_patch(
+        "gns3server.utils.asyncio.subprocess_check_output",
+        return_value="***************************************************************\n\n-l		Enable Layer 1 keepalive messages\n-u <n>		UDP port base for distributed networks\n",
+    ):
         command = ["test"]
         await vm._enable_l1_keepalives(command)
         assert command == ["test", "-l"]
 
-    with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-u <n>		UDP port base for distributed networks\n"):
-
+    with asyncio_patch(
+        "gns3server.utils.asyncio.subprocess_check_output",
+        return_value="***************************************************************\n\n-u <n>		UDP port base for distributed networks\n",
+    ):
         command = ["test"]
         with pytest.raises(IOUError):
             await vm._enable_l1_keepalives(command)
@@ -543,7 +554,9 @@ async def test_enable_l1_keepalives(vm):
 async def test_start_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio(
+        {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"}
+    )
     await vm.adapter_add_nio_binding(0, 0, nio)
     await vm.start_capture(0, 0, output_file)
     assert vm._adapters[0].get_nio(0).capturing
@@ -553,7 +566,9 @@ async def test_start_capture(vm, tmpdir, manager, free_console_port):
 async def test_stop_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio(
+        {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"}
+    )
     await vm.adapter_add_nio_binding(0, 0, nio)
     await vm.start_capture(0, 0, output_file)
     assert vm._adapters[0].get_nio(0).capturing

@@ -20,7 +20,6 @@ Base interface for NIOs.
 
 
 class NIO:
-
     """
     IOU NIO.
     """

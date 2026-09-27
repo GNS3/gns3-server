@@ -40,10 +40,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get(
-    "",
-    dependencies=[Depends(has_privilege("Symbol.Audit"))]
-)
+@router.get("", dependencies=[Depends(has_privilege("Symbol.Audit"))])
 def get_symbols() -> List[dict]:
     """
     Return all symbols.
@@ -58,7 +55,7 @@ def get_symbols() -> List[dict]:
 @router.get(
     "/{symbol_id:path}/raw",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
-    dependencies=[Depends(has_privilege("Symbol.Audit"))]
+    dependencies=[Depends(has_privilege("Symbol.Audit"))],
 )
 async def get_symbol(symbol_id: str, request: Request) -> Response:
     """
@@ -74,7 +71,7 @@ async def get_symbol(symbol_id: str, request: Request) -> Response:
             symbol,
             headers={
                 "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
-            }
+            },
         )
     except (KeyError, OSError) as e:
         raise ControllerNotFoundError(f"Could not get symbol file: {e}")
@@ -83,7 +80,7 @@ async def get_symbol(symbol_id: str, request: Request) -> Response:
 @router.get(
     "/{symbol_id:path}/dimensions",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
-    dependencies=[Depends(has_privilege("Symbol.Audit"))]
+    dependencies=[Depends(has_privilege("Symbol.Audit"))],
 )
 async def get_symbol_dimensions(symbol_id: str) -> dict:
     """
@@ -116,7 +113,7 @@ def get_default_symbols() -> dict:
 @router.post(
     "/{symbol_id:path}/raw",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Symbol.Allocate"))]
+    dependencies=[Depends(has_privilege("Symbol.Allocate"))],
 )
 async def upload_symbol(symbol_id: str, request: Request) -> None:
     """
@@ -141,7 +138,7 @@ async def upload_symbol(symbol_id: str, request: Request) -> None:
 @router.delete(
     "/{symbol_id:path}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Symbol.Allocate"))]
+    dependencies=[Depends(has_privilege("Symbol.Allocate"))],
 )
 async def delete_symbol(symbol_id: str) -> None:
     """

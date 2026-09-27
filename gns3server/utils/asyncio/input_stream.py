@@ -4,7 +4,6 @@ Parser for VT100 input stream.
 
 # Copied from prompt_toolkit/terminal/vt100_input.py due to dependency on termios (which is not available on Windows)
 
-
 import re
 import six
 
@@ -40,7 +39,7 @@ _mouse_event_prefix_re = re.compile("^" + re.escape("\x1b[") + r"(<?[\d;]*|M.{0,
 
 
 class _Flush:
-    """ Helper object to indicate flush operation to the parser. """
+    """Helper object to indicate flush operation to the parser."""
 
     pass
 

@@ -21,12 +21,7 @@ import copy
 import uuid
 import os
 
-from .controller_error import (
-    ControllerError,
-    ControllerTimeoutError,
-    ComputeError,
-    ComputeConflictError
-)
+from .controller_error import ControllerError, ControllerTimeoutError, ComputeError, ComputeConflictError
 from .node_types import BUILTIN_NODE_TYPES
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
@@ -540,7 +535,10 @@ class Node:
                                 raise
                             log.warning(
                                 "Could not provide missing image '%s' for node '%s' [%s]: %s",
-                                last_missing_image, self._name, self._id, upload_error
+                                last_missing_image,
+                                self._name,
+                                self._id,
+                                upload_error,
                             )
                     if not res:
                         if allow_missing_image:
@@ -554,7 +552,9 @@ class Node:
                             self._missing_images = missing_images
                             log.warning(
                                 "Node '%s' [%s] is kept in degraded state, missing image(s): %s",
-                                self._name, self._id, ", ".join(m["image"] for m in self._missing_images)
+                                self._name,
+                                self._id,
+                                ", ".join(m["image"] for m in self._missing_images),
                             )
                             return False
                         raise e
@@ -571,7 +571,9 @@ class Node:
             self._missing_images = self._compute_missing_images(last_missing_image)
             log.warning(
                 "Node '%s' [%s] could not be created, missing image(s): %s",
-                self._name, self._id, ", ".join(m["image"] for m in self._missing_images)
+                self._name,
+                self._id,
+                ", ".join(m["image"] for m in self._missing_images),
             )
         elif last_missing_error is not None:
             # Uploading appeared to succeed, but the compute rejected every
@@ -655,18 +657,13 @@ class Node:
             if prop is None:
                 fallback_basename = os.path.basename(fallback_image)
                 prop = next(
-                    (
-                        p
-                        for p in mapping
-                        if properties.get(p) and os.path.basename(properties[p]) == fallback_basename
-                    ),
+                    (p for p in mapping if properties.get(p) and os.path.basename(properties[p]) == fallback_basename),
                     None,
                 )
             if prop is None and mapping:
                 prop = next(iter(mapping))
             already_reported = any(
-                m["image"] == fallback_image or (prop is not None and m["property"] == prop)
-                for m in missing
+                m["image"] == fallback_image or (prop is not None and m["property"] == prop) for m in missing
             )
             if not already_reported:
                 image_type = mapping.get(prop, self._node_type)
@@ -722,11 +719,7 @@ class Node:
                 if prop == "properties":
                     compute_properties = copy.deepcopy(kwargs[prop])
                 else:
-                    if (
-                        prop == "name"
-                        and self.status == "started"
-                        and self._node_type not in BUILTIN_NODE_TYPES
-                    ):
+                    if prop == "name" and self.status == "started" and self._node_type not in BUILTIN_NODE_TYPES:
                         raise ControllerError("Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
@@ -808,7 +801,7 @@ class Node:
                 "startup_config_content",
                 "private_config_content",
                 "startup_script",
-                "custom_adapters"
+                "custom_adapters",
             ]:
                 if key in self._properties:
                     del self._properties[key]
@@ -866,10 +859,17 @@ class Node:
             # Image path fields for various node types
             image_path_fields = {
                 # Common fields (IOU, Docker, etc.)
-                "path", "image",
+                "path",
+                "image",
                 # QEMU-specific fields
-                "hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image",
-                "cdrom_image", "bios_image", "initrd", "kernel_image",
+                "hda_disk_image",
+                "hdb_disk_image",
+                "hdc_disk_image",
+                "hdd_disk_image",
+                "cdrom_image",
+                "bios_image",
+                "initrd",
+                "kernel_image",
                 # VMware-specific fields
                 "vmx_path",
             }
@@ -931,7 +931,9 @@ class Node:
             if self.node_type == "iou":
                 license_check = self._project.controller.iou_license.get("license_check", True)
                 iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                await self.post("/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content})
+                await self.post(
+                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+                )
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
@@ -1046,9 +1048,7 @@ class Node:
         self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
         try:
             with open(image, "rb") as f:
-                await self._compute.post(
-                    f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None
-                )
+                await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
         except OSError as e:
             raise ControllerError(f"Can't upload {image}: {str(e)}")
         self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
@@ -1094,23 +1094,23 @@ class Node:
             # compute to pull it from the Docker repository as a fallback
             self.project.emit_notification(
                 "log.info",
-                {"message": f"Docker image '{image}' is not on the controller host, "
-                            f"asking compute '{self._compute.name}' to pull it"}
+                {
+                    "message": f"Docker image '{image}' is not on the controller host, "
+                    f"asking compute '{self._compute.name}' to pull it"
+                },
             )
             await self._compute.post("/docker/images/pull", data={"image": image}, timeout=None)
             return True
 
         self.project.emit_notification(
-            "log.info",
-            {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
+            "log.info", {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
         )
         try:
             await self._compute.post("/docker/images/load", data=response.content, timeout=None)
         finally:
             response.close()
         self.project.emit_notification(
-            "log.info",
-            {"message": f"Docker image '{image}' has been synced to compute '{self._compute.name}'"}
+            "log.info", {"message": f"Docker image '{image}' has been synced to compute '{self._compute.name}'"}
         )
         return True
 
@@ -1201,7 +1201,9 @@ class Node:
                     port_name = custom_adapter_settings.get("port_name", port_name)
                     mac_address = custom_adapter_settings.get("mac_address")
                     if not mac_address and "mac_address" in self._properties:
-                        mac_address = int_to_macaddress(macaddress_to_int(self._properties["mac_address"]) + adapter_number)
+                        mac_address = int_to_macaddress(
+                            macaddress_to_int(self._properties["mac_address"]) + adapter_number
+                        )
 
                     port = PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name)
                     port.mac_address = mac_address
@@ -1245,33 +1247,33 @@ class Node:
         """
 
         topology = {
-                "compute_id": str(self._compute.id),
-                "node_id": self._id,
-                "node_type": self._node_type,
-                "template_id": self._template_id,
-                "name": self._name,
-                "console": self._console,
-                "console_type": self._console_type,
-                "console_auto_start": self._console_auto_start,
-                "netmiko_device_type": self._netmiko_device_type,
-                "default_username": self._default_username,
-                "default_password": self._default_password,
-                "aux": self._aux,
-                "aux_type": self._aux_type,
-                "properties": self._properties,
-                "label": self._label,
-                "x": self._x,
-                "y": self._y,
-                "z": self._z,
-                "locked": self._locked,
-                "width": self._width,
-                "height": self._height,
-                "symbol": self._symbol,
-                "port_name_format": self._port_name_format,
-                "port_segment_size": self._port_segment_size,
-                "first_port_name": self._first_port_name,
-                "custom_adapters": self._custom_adapters,
-                "tags": self._tags,
+            "compute_id": str(self._compute.id),
+            "node_id": self._id,
+            "node_type": self._node_type,
+            "template_id": self._template_id,
+            "name": self._name,
+            "console": self._console,
+            "console_type": self._console_type,
+            "console_auto_start": self._console_auto_start,
+            "netmiko_device_type": self._netmiko_device_type,
+            "default_username": self._default_username,
+            "default_password": self._default_password,
+            "aux": self._aux,
+            "aux_type": self._aux_type,
+            "properties": self._properties,
+            "label": self._label,
+            "x": self._x,
+            "y": self._y,
+            "z": self._z,
+            "locked": self._locked,
+            "width": self._width,
+            "height": self._height,
+            "symbol": self._symbol,
+            "port_name_format": self._port_name_format,
+            "port_segment_size": self._port_segment_size,
+            "first_port_name": self._first_port_name,
+            "custom_adapters": self._custom_adapters,
+            "tags": self._tags,
         }
 
         if topology_dump:

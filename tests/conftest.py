@@ -54,6 +54,7 @@ def pytest_configure(config):
 async def app() -> AsyncGenerator[Any, Any]:
 
     from gns3server.api.server import app as gns3app
+
     yield gns3app
 
 
@@ -101,9 +102,9 @@ async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncGenerator[
     app.dependency_overrides[get_db_session] = _get_test_db
 
     async with AsyncClient(
-            base_url="http://test-api",
-            headers={"Content-Type": "application/json"},
-            transport=ASGIWebSocketTransport(app=app)
+        base_url="http://test-api",
+        headers={"Content-Type": "application/json"},
+        transport=ASGIWebSocketTransport(app=app),
     ) as async_client:
         yield async_client
 
@@ -132,12 +133,7 @@ async def test_user(db_session: AsyncSession) -> User:
 async def test_compute(db_session: AsyncSession) -> Compute:
 
     new_compute = schemas.ComputeCreate(
-        compute_id=uuid.uuid4(),
-        protocol=Protocol.http,
-        host="localhost",
-        port=4242,
-        user="julien",
-        password="secure"
+        compute_id=uuid.uuid4(), protocol=Protocol.http, host="localhost", port=4242, user="julien", password="secure"
     )
 
     compute_repo = ComputesRepository(db_session)
@@ -344,10 +340,41 @@ def on_gns3vm(linux_platform):
     Mock the hostname to  emulate the GNS3 VM
     """
 
-    with patch("gns3server.utils.interfaces.interfaces", return_value=[
-            {"name": "eth0", "special": False, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 1000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]},
-            {"name": "eth1", "special": False, "type": "ethernet", "ip_addresses": [], "status": "down", "speed": 0, "mtu": 1500, "flags": ["broadcast"]},
-            {"name": "virbr0", "special": True, "type": "ethernet", "ip_addresses": [], "status": "up", "speed": 10000, "mtu": 1500, "flags": ["up", "broadcast", "running", "multicast"]}]):
+    with patch(
+        "gns3server.utils.interfaces.interfaces",
+        return_value=[
+            {
+                "name": "eth0",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 1000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+            {
+                "name": "eth1",
+                "special": False,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "down",
+                "speed": 0,
+                "mtu": 1500,
+                "flags": ["broadcast"],
+            },
+            {
+                "name": "virbr0",
+                "special": True,
+                "type": "ethernet",
+                "ip_addresses": [],
+                "status": "up",
+                "speed": 10000,
+                "mtu": 1500,
+                "flags": ["up", "broadcast", "running", "multicast"],
+            },
+        ],
+    ):
         with patch("socket.gethostname", return_value="gns3vm"):
             yield
 
@@ -356,6 +383,7 @@ def on_gns3vm(linux_platform):
 def ethernet_device():
 
     import psutil
+
     return sorted(psutil.net_if_addrs().keys())[0]
 
 
@@ -367,7 +395,7 @@ def ubridge_path(config):
 
     path = config.settings.Server.ubridge_path
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    open(path, 'w+').close()
+    open(path, "w+").close()
     return path
 
 
@@ -384,27 +412,27 @@ def run_around_tests(monkeypatch, config, port_manager):
 
     config.settings.Controller.jwt_secret_key = DEFAULT_JWT_SECRET_KEY
 
-    secrets_dir = os.path.join(tmppath, 'secrets')
+    secrets_dir = os.path.join(tmppath, "secrets")
     os.makedirs(secrets_dir)
     config.settings.Server.secrets_dir = secrets_dir
 
-    projects_dir = os.path.join(tmppath, 'projects')
+    projects_dir = os.path.join(tmppath, "projects")
     os.makedirs(projects_dir)
     config.settings.Server.projects_path = projects_dir
 
-    symbols_dir = os.path.join(tmppath, 'symbols')
+    symbols_dir = os.path.join(tmppath, "symbols")
     os.makedirs(symbols_dir)
     config.settings.Server.symbols_path = symbols_dir
 
-    images_dir = os.path.join(tmppath, 'images')
+    images_dir = os.path.join(tmppath, "images")
     os.makedirs(images_dir)
     config.settings.Server.images_path = images_dir
 
-    appliances_dir = os.path.join(tmppath, 'appliances')
+    appliances_dir = os.path.join(tmppath, "appliances")
     os.makedirs(appliances_dir)
     config.settings.Server.appliances_path = appliances_dir
 
-    config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
+    config.settings.Server.ubridge_path = os.path.join(tmppath, "bin", "ubridge")
 
     # Prevent executions of the VM if we forgot to mock something
     config.settings.VirtualBox.vboxmanage_path = tmppath
@@ -424,7 +452,10 @@ def run_around_tests(monkeypatch, config, port_manager):
     # test body) freezes the patched object into the importing module's namespace
     # forever, and a closed-over path would then point at a deleted directory in
     # every later test (order-dependent FileNotFoundError in psutil.disk_usage).
-    monkeypatch.setattr("gns3server.utils.path.get_default_project_directory", lambda *args: Config.instance().settings.Server.projects_path)
+    monkeypatch.setattr(
+        "gns3server.utils.path.get_default_project_directory",
+        lambda *args: Config.instance().settings.Server.projects_path,
+    )
 
     # Force sys.platform to the original value. Because it seems not be restored correctly after each test
     sys.platform = sys.original_platform

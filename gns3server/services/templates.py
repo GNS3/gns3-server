@@ -158,11 +158,11 @@ BUILTIN_TEMPLATES = [
 
 
 class TemplatesService:
-
     def __init__(self, templates_repo: TemplatesRepository):
 
         self._templates_repo = templates_repo
         from gns3server.controller import Controller
+
         self._controller = Controller.instance()
 
         # resolve built-in template symbols
@@ -233,8 +233,10 @@ class TemplatesService:
 
         if await self._templates_repo.get_template_by_name_and_version(template_create.name, template_create.version):
             if template_create.version:
-                raise ControllerError(f"A template with name '{template_create.name}' and "
-                                      f"version {template_create.version} already exists")
+                raise ControllerError(
+                    f"A template with name '{template_create.name}' and "
+                    f"version {template_create.version} already exists"
+                )
             else:
                 raise ControllerError(f"A template with name '{template_create.name}' already exists")
 
@@ -364,11 +366,7 @@ class TemplatesService:
         if not os.path.exists(path):
             return []
 
-        return [
-            {"filename": f}
-            for f in sorted(os.listdir(path))
-            if os.path.isfile(os.path.join(path, f))
-        ]
+        return [{"filename": f} for f in sorted(os.listdir(path)) if os.path.isfile(os.path.join(path, f))]
 
     def get_file(self, template_id: str, filename: str):
         safe_filename = os.path.basename(filename)

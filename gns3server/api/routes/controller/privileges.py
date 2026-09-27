@@ -32,7 +32,7 @@ router = APIRouter()
     response_model=List[schemas.Privilege],
 )
 async def get_privileges(
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> List[schemas.Privilege]:
     """
     Get all privileges.

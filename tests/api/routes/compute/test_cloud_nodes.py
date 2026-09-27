@@ -29,230 +29,180 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestCloudNodesRoutes:
-
     @pytest_asyncio.fixture
     async def vm(self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, on_gns3vm) -> dict:
 
         with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
-            response = await compute_client.post(app.url_path_for("compute:create_cloud", project_id=compute_project.id),
-                                         json={"name": "Cloud 1"})
+            response = await compute_client.post(
+                app.url_path_for("compute:create_cloud", project_id=compute_project.id), json={"name": "Cloud 1"}
+            )
         assert response.status_code == status.HTTP_201_CREATED
         return response.json()
 
-
-    async def test_cloud_create(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project
-    ) -> None:
+    async def test_cloud_create(self, app: FastAPI, compute_client: AsyncClient, compute_project: Project) -> None:
 
         with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
-            response = await compute_client.post(app.url_path_for("compute:create_cloud", project_id=compute_project.id),
-                                         json={"name": "Cloud 1"})
+            response = await compute_client.post(
+                app.url_path_for("compute:create_cloud", project_id=compute_project.id), json={"name": "Cloud 1"}
+            )
         assert response.status_code == 201
         assert response.json()["name"] == "Cloud 1"
         assert response.json()["project_id"] == compute_project.id
 
-
     async def test_get_cloud(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
-        response = await compute_client.get(app.url_path_for("compute:get_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await compute_client.get(
+            app.url_path_for("compute:get_cloud", project_id=vm["project_id"], node_id=vm["node_id"])
+        )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "Cloud 1"
         assert response.json()["project_id"] == compute_project.id
         assert response.json()["status"] == "started"
 
-
     async def test_cloud_nio_create_udp(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
-        params = {"type": "nio_udp",
-                  "lport": 4242,
-                  "rport": 4343,
-                  "rhost": "127.0.0.1"}
-
-        url = app.url_path_for("compute:create_cloud_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
-        response = await compute_client.post(url, json=params)
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.json()["type"] == "nio_udp"
-
-
-    async def test_cloud_nio_update_udp(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
-    ) -> None:
-
-        params = {
-            "type": "nio_udp",
-            "lport": 4242,
-            "rport": 4343,
-            "rhost": "127.0.0.1",
-            "filters": {"packet_loss": 10}
-        }
+        params = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
 
         url = app.url_path_for(
             "compute:create_cloud_nio",
             project_id=vm["project_id"],
             node_id=vm["node_id"],
             adapter_number="0",
-            port_number="0")
+            port_number="0",
+        )
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["type"] == "nio_udp"
+
+    async def test_cloud_nio_update_udp(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
+    ) -> None:
+
+        params = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1", "filters": {"packet_loss": 10}}
+
+        url = app.url_path_for(
+            "compute:create_cloud_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         response = await compute_client.post(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["filters"] == {"packet_loss": 10}
         params["filters"].clear()
 
-        url = app.url_path_for("compute:create_cloud_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:create_cloud_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
         assert response.json()["filters"] == {}
 
-
     async def test_cloud_delete_nio(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
-        params = {"type": "nio_udp",
-                  "lport": 4242,
-                  "rport": 4343,
-                  "rhost": "127.0.0.1"}
+        params = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
 
-        url = app.url_path_for("compute:create_cloud_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:create_cloud_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         await compute_client.post(url, json=params)
 
-        url = app.url_path_for("compute:delete_cloud_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:delete_cloud_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
             response = await compute_client.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-
     async def test_cloud_delete(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
         response = await compute_client.delete(
-            app.url_path_for(
-                "compute:delete_cloud",
-                project_id=vm["project_id"],
-                node_id=vm["node_id"]
-            )
+            app.url_path_for("compute:delete_cloud", project_id=vm["project_id"], node_id=vm["node_id"])
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-
     async def test_cloud_stop(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
         response = await compute_client.post(
-            app.url_path_for(
-                "compute:stop_cloud",
-                project_id=vm["project_id"],
-                node_id=vm["node_id"]
-            )
+            app.url_path_for("compute:stop_cloud", project_id=vm["project_id"], node_id=vm["node_id"])
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
 
     async def test_cloud_suspend(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            vm: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, vm: dict
     ) -> None:
 
         response = await compute_client.post(
-            app.url_path_for(
-                "compute:suspend_cloud",
-                project_id=vm["project_id"],
-                node_id=vm["node_id"]
-            )
+            app.url_path_for("compute:suspend_cloud", project_id=vm["project_id"], node_id=vm["node_id"])
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
+    async def test_cloud_update(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-    async def test_cloud_update(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            vm: dict
-    ) -> None:
-
-        response = await compute_client.put(app.url_path_for("compute:update_cloud", project_id=vm["project_id"], node_id=vm["node_id"]),
-                                    json={"name": "test"})
+        response = await compute_client.put(
+            app.url_path_for("compute:update_cloud", project_id=vm["project_id"], node_id=vm["node_id"]),
+            json={"name": "test"},
+        )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "test"
 
+    async def test_cloud_start_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-    async def test_cloud_start_capture(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            vm: dict
-    ) -> None:
-
-        params = {
-            "capture_file_name": "test.pcap",
-            "data_link_type": "DLT_EN10MB"
-        }
+        params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
 
         with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.start_capture") as mock:
-            response = await compute_client.post(app.url_path_for("compute:start_cloud_capture",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"],
-                                                          adapter_number="0",
-                                                          port_number="0"),
-                                         json=params)
+            response = await compute_client.post(
+                app.url_path_for(
+                    "compute:start_cloud_capture",
+                    project_id=vm["project_id"],
+                    node_id=vm["node_id"],
+                    adapter_number="0",
+                    port_number="0",
+                ),
+                json=params,
+            )
             assert response.status_code == status.HTTP_200_OK
             assert mock.called
             assert "test.pcap" in response.json()["pcap_file_path"]
 
-
     async def test_cloud_stop_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.stop_capture") as mock:
-            response = await compute_client.post(app.url_path_for("compute:stop_cloud_capture",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"],
-                                                          adapter_number="0",
-                                                          port_number="0"))
+            response = await compute_client.post(
+                app.url_path_for(
+                    "compute:stop_cloud_capture",
+                    project_id=vm["project_id"],
+                    node_id=vm["node_id"],
+                    adapter_number="0",
+                    port_number="0",
+                )
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
             assert mock.called
-
 
     # @pytest.mark.asyncio
     # async def test_cloud_pcap(self, compute_api, vm, compute_project):
