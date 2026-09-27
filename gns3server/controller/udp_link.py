@@ -135,8 +135,9 @@ class UDPLink(Link):
         """
         Whether this link can be wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge) instead of the uBridge UDP
-        relay. The kernel path has no userspace relay, so filters, markers
-        and packet capture — which all live in the relay — disqualify it.
+        relay. The kernel path has no userspace relay, so filters and
+        markers — which live in the relay — disqualify it (capture is
+        served separately by uBridge's AF_PACKET module).
         It is host-local (same compute) and requires the adapter interfaces
         to be created as veths at container start, hence stopped nodes only.
         """

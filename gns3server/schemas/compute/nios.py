@@ -75,7 +75,8 @@ class BridgeNIO(BaseModel):
     Kernel-datapath bridge Network Input/Output properties. The NIO tells the
     node to enslave its veth host end into the named kernel bridge instead of
     wiring a uBridge UDP relay. ``filters`` and ``markers`` must stay empty on
-    this datapath; they are accepted (and rejected server-side) only because
+    this datapath (rejected server-side); packet capture is supported via
+    uBridge's AF_PACKET module. Both are accepted as fields only because
     link update payloads always carry the full NIO dictionary.
     """
 

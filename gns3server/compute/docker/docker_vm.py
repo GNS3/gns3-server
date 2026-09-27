@@ -1823,8 +1823,9 @@ class DockerVM(BaseNode):
         whose host end will be enslaved to the per-link kernel bridge, and
         whose guest end becomes the container interface (the role the TAP
         plays on the relay path). No uBridge relay bridge is created — frames
-        flow entirely in the kernel, which is also why filters, markers and
-        capture are unavailable on this datapath.
+        flow entirely in the kernel. Filters and markers are unavailable on
+        this datapath (they live in the uBridge relay); packet capture is
+        provided by uBridge's AF_PACKET module on the veth host end.
         """
 
         try:
@@ -1942,6 +1943,10 @@ class DockerVM(BaseNode):
                 await self._ubridge_send(f'brctl show "{nio.bridge}"')
             await self._ubridge_send(f'link set "{nio.bridge}" up')
             await self._ubridge_send(f'brctl addif "{nio.bridge}" "{host_ifc}"')
+            if nio.capturing:
+                # Restore a capture that was active before a node restart
+                # (mirrors the relay path's start_capture in _connect_nio).
+                await self._ubridge_send(f'capture start_kernel {host_ifc} "{nio.pcap_output_file}"')
             return
 
         bridge_name = self._bridge_name(adapter_number, port_number)
@@ -2132,9 +2137,16 @@ class DockerVM(BaseNode):
         :param port_number: port number on the adapter (0 for single-port adapters)
         """
 
-        bridge_name = self._bridge_name(adapter_number, port_number)
         if not self.ubridge:
             raise DockerError("Cannot start the packet capture: uBridge is not running")
+        host_ifc = self._kernel_veths.get((adapter_number, port_number))
+        if host_ifc is not None:
+            # Kernel datapath: no relay bridge exists — capture via uBridge's
+            # AF_PACKET module bound to the veth host end. Single capture per
+            # uBridge process: a concurrent second one returns EALREADY.
+            await self._ubridge_send(f'capture start_kernel {host_ifc} "{output_file}"')
+            return
+        bridge_name = self._bridge_name(adapter_number, port_number)
         await self._ubridge_send(f'bridge start_capture {bridge_name} "{output_file}"')
 
     async def _stop_ubridge_capture(self, adapter_number, port_number=0):
@@ -2145,9 +2157,13 @@ class DockerVM(BaseNode):
         :param port_number: port number on the adapter (0 for single-port adapters)
         """
 
-        bridge_name = self._bridge_name(adapter_number, port_number)
         if not self.ubridge:
             raise DockerError("Cannot stop the packet capture: uBridge is not running")
+        if (adapter_number, port_number) in self._kernel_veths:
+            # Idempotent on the uBridge side (no active capture is OK).
+            await self._ubridge_send("capture stop_kernel")
+            return
+        bridge_name = self._bridge_name(adapter_number, port_number)
         await self._ubridge_send(f"bridge stop_capture {bridge_name}")
 
     async def start_capture(self, adapter_number, output_file, port_number=0):
@@ -2162,11 +2178,6 @@ class DockerVM(BaseNode):
         nio = self.get_nio(adapter_number, port_number)
         if nio.capturing:
             raise DockerError(f"Packet capture is already activated on adapter {adapter_number}")
-        if isinstance(nio, NIOBridge):
-            raise DockerError(
-                "Packet capture is not supported on kernel-datapath links (there is no uBridge "
-                "relay in the forwarding path); delete and recreate the link to capture it"
-            )
 
         nio.start_packet_capture(output_file)
         if self.status == "started" and self.ubridge:

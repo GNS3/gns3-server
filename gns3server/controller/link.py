@@ -116,7 +116,8 @@ class Link:
         """
         Whether this link is wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge — no uBridge relay in the
-        forwarding path, so filters, markers and capture are unavailable).
+        forwarding path, so filters and markers are unavailable; capture is
+        served by uBridge's AF_PACKET module).
         """
         return any(d.get("type") == "nio_bridge" for d in (getattr(self, "_link_data", None) or []))
 

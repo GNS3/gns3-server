@@ -339,13 +339,74 @@ async def test_update_nio_kernel_suspend_toggles_carrier(vm):
 
 
 @pytest.mark.asyncio
-async def test_start_capture_rejected_on_kernel_link(vm):
+async def test_start_capture_kernel_uses_af_packet(vm):
 
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
     nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
     vm._ethernet_adapters[0].add_nio(0, nio)
 
-    with pytest.raises(DockerError, match="kernel-datapath"):
+    await vm.start_capture(0, "/tmp/capture.pcap")
+
+    assert nio.capturing is True
+    vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc} "/tmp/capture.pcap"')
+
+
+@pytest.mark.asyncio
+async def test_stop_capture_kernel(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    await vm.start_capture(0, "/tmp/capture.pcap")
+
+    await vm.stop_capture(0)
+
+    assert nio.capturing is False
+    vm._ubridge_send.assert_any_call("capture stop_kernel")
+
+
+@pytest.mark.asyncio
+async def test_start_capture_second_concurrent_fails(vm):
+    """
+    uBridge's kernel capture is a singleton per process: a second concurrent
+    capture returns EALREADY and must surface to the caller.
+    """
+
+    async def send(command):
+        if "capture start_kernel" in command:
+            raise UbridgeError("Could not start kernel capture: Operation already in progress")
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock(side_effect=send)
+    vm.status = "started"
+    vm._kernel_veths[(0, 0)] = vm._veth_names(0, 0)[0]
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+
+    with pytest.raises(UbridgeError, match="already in progress"):
         await vm.start_capture(0, "/tmp/capture.pcap")
+
+
+@pytest.mark.asyncio
+async def test_connect_nio_kernel_restarts_capture(vm):
+
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    nio.start_packet_capture("/tmp/capture.pcap")
+    await vm._connect_nio(0, nio)
+
+    vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc} "/tmp/capture.pcap"')
 
 
 @pytest.mark.asyncio
