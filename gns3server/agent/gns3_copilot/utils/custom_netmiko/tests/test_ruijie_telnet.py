@@ -25,9 +25,7 @@ import os
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.dirname(test_dir)))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(test_dir)))))
 sys.path.insert(0, project_root)
 
 
@@ -92,9 +90,7 @@ class TestRuijieTelnetEnhancedDriver(unittest.TestCase):
         import re
 
         # Should have INTERACTIVE_PATTERNS as a class attribute
-        self.assertTrue(
-            hasattr(self.RuijieTelnetEnhanced, "INTERACTIVE_PATTERNS")
-        )
+        self.assertTrue(hasattr(self.RuijieTelnetEnhanced, "INTERACTIVE_PATTERNS"))
 
         # Check it's a list
         patterns = self.RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
@@ -108,18 +104,11 @@ class TestRuijieTelnetEnhancedDriver(unittest.TestCase):
     def test_preprocess_interactive_commands(self):
         """Test that interactive commands are preprocessed correctly."""
         # Create a mock instance (without actual connection)
-        with patch.object(
-            self.RuijieTelnetEnhanced, "__init__",
-            lambda self, *args, **kwargs: None
-        ):
-            instance = self.RuijieTelnetEnhanced.__new__(
-                self.RuijieTelnetEnhanced
-            )
+        with patch.object(self.RuijieTelnetEnhanced, "__init__", lambda self, *args, **kwargs: None):
+            instance = self.RuijieTelnetEnhanced.__new__(self.RuijieTelnetEnhanced)
 
             # Set INTERACTIVE_PATTERNS from class
-            instance.INTERACTIVE_PATTERNS = (
-                self.RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
-            )
+            instance.INTERACTIVE_PATTERNS = self.RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
 
             # Test commands with router-id (should trigger 'yes')
             commands = [
@@ -128,34 +117,23 @@ class TestRuijieTelnetEnhancedDriver(unittest.TestCase):
                 "network 10.0.0.0 0.0.0.255 area 0",
             ]
 
-            processed = instance._preprocess_interactive_commands(
-                commands
-            )
+            processed = instance._preprocess_interactive_commands(commands)
 
             # Should have inserted 'yes' after router-id command
             self.assertEqual(len(processed), 4)
             self.assertEqual(processed[0], "router ospf 1")
             self.assertEqual(processed[1], "router-id 1.1.1.1")
             self.assertEqual(processed[2], "yes")
-            self.assertEqual(
-                processed[3], "network 10.0.0.0 0.0.0.255 area 0"
-            )
+            self.assertEqual(processed[3], "network 10.0.0.0 0.0.0.255 area 0")
 
     def test_preprocess_non_interactive_commands(self):
         """Test that non-interactive commands are not modified."""
         # Create a mock instance
-        with patch.object(
-            self.RuijieTelnetEnhanced, "__init__",
-            lambda self, *args, **kwargs: None
-        ):
-            instance = self.RuijieTelnetEnhanced.__new__(
-                self.RuijieTelnetEnhanced
-            )
+        with patch.object(self.RuijieTelnetEnhanced, "__init__", lambda self, *args, **kwargs: None):
+            instance = self.RuijieTelnetEnhanced.__new__(self.RuijieTelnetEnhanced)
 
             # Set INTERACTIVE_PATTERNS from class
-            instance.INTERACTIVE_PATTERNS = (
-                self.RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
-            )
+            instance.INTERACTIVE_PATTERNS = self.RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
 
             # Test commands without interactive prompts
             commands = [
@@ -190,9 +168,7 @@ class TestRuijieTelnetEnhancedDriver(unittest.TestCase):
 
         # Check that default_enter is handled in __init__
         # (The actual logic is in the __init__ method body)
-        init_source = inspect.getsource(
-            self.RuijieTelnetEnhanced.__init__
-        )
+        init_source = inspect.getsource(self.RuijieTelnetEnhanced.__init__)
         self.assertIn("default_enter", init_source)
         self.assertIn("\\r\\n", init_source)
 
@@ -207,9 +183,7 @@ class TestRuijieTelnetEnhancedIntegration(unittest.TestCase):
         )
 
         # Create a mock instance
-        instance = RuijieTelnetEnhanced.__new__(
-            RuijieTelnetEnhanced
-        )
+        instance = RuijieTelnetEnhanced.__new__(RuijieTelnetEnhanced)
 
         # Mock the necessary attributes and methods
         instance.RETURN = "\r\n"
@@ -224,9 +198,7 @@ class TestRuijieTelnetEnhancedIntegration(unittest.TestCase):
         commands = ["interface GigabitEthernet 0/1", "description Test"]
 
         # Call send_config_set
-        instance.send_config_set(
-            commands, enter_config_mode=False, exit_config_mode=False
-        )
+        instance.send_config_set(commands, enter_config_mode=False, exit_config_mode=False)
 
         # Verify _send_config_batch was called
         instance._send_config_batch.assert_called_once()
@@ -238,17 +210,13 @@ class TestRuijieTelnetEnhancedIntegration(unittest.TestCase):
         )
 
         # Create a mock instance
-        instance = RuijieTelnetEnhanced.__new__(
-            RuijieTelnetEnhanced
-        )
-        instance.INTERACTIVE_PATTERNS = (
-            RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
-        )
+        instance = RuijieTelnetEnhanced.__new__(RuijieTelnetEnhanced)
+        instance.INTERACTIVE_PATTERNS = RuijieTelnetEnhanced.INTERACTIVE_PATTERNS
 
         # Test commands with multiple interactive prompts
         commands = [
-            "router-id 1.1.1.1",      # Should trigger 'yes'
-            "erase startup-config",    # Should trigger 'yes'
+            "router-id 1.1.1.1",  # Should trigger 'yes'
+            "erase startup-config",  # Should trigger 'yes'
             "interface GigabitEthernet 0/1",  # Should NOT trigger
         ]
 
@@ -273,12 +241,8 @@ def run_tests():
     suite = unittest.TestSuite()
 
     # Add test cases
-    suite.addTests(
-        loader.loadTestsFromTestCase(TestRuijieTelnetEnhancedDriver)
-    )
-    suite.addTests(
-        loader.loadTestsFromTestCase(TestRuijieTelnetEnhancedIntegration)
-    )
+    suite.addTests(loader.loadTestsFromTestCase(TestRuijieTelnetEnhancedDriver))
+    suite.addTests(loader.loadTestsFromTestCase(TestRuijieTelnetEnhancedIntegration))
 
     # Run tests
     runner = unittest.TextTestRunner(verbosity=2)
@@ -288,9 +252,7 @@ def run_tests():
     print("\n" + "=" * 100)
     print("Test Summary:")
     print(f"  Run: {result.testsRun}")
-    success_count = (
-        result.testsRun - len(result.failures) - len(result.errors)
-    )
+    success_count = result.testsRun - len(result.failures) - len(result.errors)
     print(f"  Success: {success_count}")
     print(f"  Failed: {len(result.failures)}")
     print(f"  Errors: {len(result.errors)}")

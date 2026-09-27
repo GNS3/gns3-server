@@ -102,21 +102,28 @@ async def test_vm(compute_project, manager, fake_qemu_binary):
 async def test_vm_create(compute_project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
-    fake_img = os.path.join(vm.working_dir, 'hello')
-    with open(fake_img, 'w+') as f:
-        f.write('hello')
+    fake_img = os.path.join(vm.working_dir, "hello")
+    with open(fake_img, "w+") as f:
+        f.write("hello")
     vm._hda_disk_image = fake_img
 
     await vm.create()
 
     # tests if `create` created md5sums
-    assert os.path.exists(os.path.join(vm.working_dir, 'hello.md5sum'))
+    assert os.path.exists(os.path.join(vm.working_dir, "hello.md5sum"))
 
 
 @pytest.mark.asyncio
 async def test_vm_invalid_qemu_with_platform(compute_project, manager, fake_qemu_binary):
 
-    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path="/usr/fake/bin/qemu-system-64", platform="x86_64")
+    vm = QemuVM(
+        "test",
+        "00010203-0405-0607-0809-0a0b0c0d0e0f",
+        compute_project,
+        manager,
+        qemu_path="/usr/fake/bin/qemu-system-64",
+        platform="x86_64",
+    )
 
     assert vm.qemu_path == fake_qemu_binary
     assert vm.platform == "x86_64"
@@ -125,7 +132,13 @@ async def test_vm_invalid_qemu_with_platform(compute_project, manager, fake_qemu
 @pytest.mark.asyncio
 async def test_vm_invalid_qemu_without_platform(compute_project, manager, fake_qemu_binary):
 
-    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path="/usr/fake/bin/qemu-system-x86_64")
+    vm = QemuVM(
+        "test",
+        "00010203-0405-0607-0809-0a0b0c0d0e0f",
+        compute_project,
+        manager,
+        qemu_path="/usr/fake/bin/qemu-system-x86_64",
+    )
 
     assert vm.qemu_path == fake_qemu_binary
     assert vm.platform == "x86_64"
@@ -149,7 +162,7 @@ async def test_start(vm, running_subprocess_mock):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
             await vm.start()
             assert vm.is_running()
-            assert vm.command_line == ' '.join(mock.call_args[0])
+            assert vm.command_line == " ".join(mock.call_args[0])
 
 
 @pytest.mark.asyncio
@@ -232,7 +245,9 @@ async def test_suspend(vm, running_subprocess_mock):
 @pytest.mark.asyncio
 async def test_add_nio_binding_udp(vm):
 
-    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
+    nio = Qemu.instance().create_nio(
+        {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}}
+    )
     assert nio.lport == 4242
     await vm.adapter_add_nio_binding(0, nio)
     assert nio.lport == 4242
@@ -241,7 +256,9 @@ async def test_add_nio_binding_udp(vm):
 @pytest.mark.asyncio
 async def test_port_remove_nio_binding(vm):
 
-    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
+    nio = Qemu.instance().create_nio(
+        {"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}}
+    )
     await vm.adapter_add_nio_binding(0, nio)
     await vm.adapter_remove_nio_binding(0)
     assert vm._ethernet_adapters[0].ports[0] is None
@@ -271,9 +288,9 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         vm.qemu_path = None
 
     # Should not crash with unicode characters
-    path = str(tmpdir / "\u62FF" / "qemu-system-mips")
+    path = str(tmpdir / "\u62ff" / "qemu-system-mips")
 
-    os.makedirs(str(tmpdir / "\u62FF"))
+    os.makedirs(str(tmpdir / "\u62ff"))
 
     # Raise because file doesn't exists
     with pytest.raises(QemuError):
@@ -360,17 +377,38 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
     open(vm._hda_disk_image, "w+").close()
     open(vm._hdb_disk_image, "w+").close()
 
-    with (asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._find_disk_file_format", return_value="qcow2")):
+    with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._find_disk_file_format", return_value="qcow2"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
             options = await vm._disk_options()
             assert process.called
             args, kwargs = process.call_args
-            assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-F", "qcow2", "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2")) or \
-            args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hdb_disk_image), "-F", "qcow2", "-f", "qcow2", os.path.join(vm.working_dir, "hdb_disk.qcow2"))
+            assert args == (
+                fake_qemu_img_binary,
+                "create",
+                "-o",
+                "backing_file={}".format(vm._hda_disk_image),
+                "-F",
+                "qcow2",
+                "-f",
+                "qcow2",
+                os.path.join(vm.working_dir, "hda_disk.qcow2"),
+            ) or args == (
+                fake_qemu_img_binary,
+                "create",
+                "-o",
+                "backing_file={}".format(vm._hdb_disk_image),
+                "-F",
+                "qcow2",
+                "-f",
+                "qcow2",
+                os.path.join(vm.working_dir, "hdb_disk.qcow2"),
+            )
 
     assert options == [
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=none,index=1,media=disk,id=drive1',
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hda_disk.qcow2") + ",if=ide,index=0,media=disk,id=drive0",
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ",if=none,index=1,media=disk,id=drive1",
     ]
 
 
@@ -382,7 +420,7 @@ async def test_cdrom_option(vm, tmpdir, fake_qemu_img_binary):
 
     options = await vm._build_command()
 
-    assert ' '.join(['-cdrom', str(tmpdir / "test.iso")]) in ' '.join(options)
+    assert " ".join(["-cdrom", str(tmpdir / "test.iso")]) in " ".join(options)
 
 
 @pytest.mark.asyncio
@@ -391,7 +429,7 @@ async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
     vm._bios_image = str(tmpdir / "test.img")
     open(vm._bios_image, "w+").close()
     options = await vm._build_command()
-    assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
+    assert " ".join(["-bios", str(tmpdir / "test.img")]) in " ".join(options)
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Test not working on Windows")
@@ -407,14 +445,16 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
     else:
         ovmf_code_path = os.path.join(images_dir, "OVMF_CODE_4M.fd")
         with open(ovmf_code_path, "w+") as f:
-            f.write('1')
+            f.write("1")
     ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS_4M.fd")
     with open(ovmf_vars_path, "w+") as f:
-        f.write('1')
+        f.write("1")
 
     options = await vm._build_command()
-    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
-    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]) in ' '.join(options)
+    assert " ".join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in " ".join(options)
+    assert " ".join(
+        ["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]
+    ) in " ".join(options)
 
 
 @pytest.mark.asyncio
@@ -429,20 +469,20 @@ async def test_uefi_with_bios_image_already_configured(vm, tmpdir, fake_qemu_img
 @pytest.mark.asyncio
 async def test_vnc_option(vm, fake_qemu_img_binary):
 
-    vm._console_type = 'vnc'
+    vm._console_type = "vnc"
     vm._console = 5905
     options = await vm._build_command()
-    assert '-vnc 127.0.0.1:5' in ' '.join(options)
+    assert "-vnc 127.0.0.1:5" in " ".join(options)
 
 
 @pytest.mark.asyncio
 async def test_spice_option(vm, fake_qemu_img_binary):
 
-    vm._console_type = 'spice'
+    vm._console_type = "spice"
     vm._console = 5905
     options = await vm._build_command()
-    assert '-spice addr=127.0.0.1,port=5905,disable-ticketing' in ' '.join(options)
-    assert '-vga qxl' in ' '.join(options)
+    assert "-spice addr=127.0.0.1,port=5905,disable-ticketing" in " ".join(options)
+    assert "-vga qxl" in " ".join(options)
 
 
 @pytest.mark.asyncio
@@ -452,9 +492,10 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
     tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
     with patch("os.path.exists", return_value=True) as os_path:
         options = await vm._build_command()
-    assert '-chardev socket,id=chrtpm,path={}'.format(tpm_sock) in ' '.join(options)
-    assert '-tpmdev emulator,id=tpm0,chardev=chrtpm' in ' '.join(options)
-    assert '-device tpm-tis,tpmdev=tpm0' in ' '.join(options)
+    assert "-chardev socket,id=chrtpm,path={}".format(tpm_sock) in " ".join(options)
+    assert "-tpmdev emulator,id=tpm0,chardev=chrtpm" in " ".join(options)
+    assert "-device tpm-tis,tpmdev=tpm0" in " ".join(options)
+
 
 @pytest.mark.asyncio
 async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
@@ -477,10 +518,14 @@ async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
             options = await vm._disk_options()
 
     assert options == [
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=ide,index=1,media=disk,id=drive1',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdc_disk.qcow2") + ',if=ide,index=2,media=disk,id=drive2',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdd_disk.qcow2") + ',if=ide,index=3,media=disk,id=drive3'
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hda_disk.qcow2") + ",if=ide,index=0,media=disk,id=drive0",
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ",if=ide,index=1,media=disk,id=drive1",
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hdc_disk.qcow2") + ",if=ide,index=2,media=disk,id=drive2",
+        "-drive",
+        "file=" + os.path.join(vm.working_dir, "hdd_disk.qcow2") + ",if=ide,index=3,media=disk,id=drive3",
     ]
 
 
@@ -534,7 +579,6 @@ async def test_control_vm_expect_text(vm, running_subprocess_mock):
     reader = MagicMock()
     writer = MagicMock()
     with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)):
-
         future = asyncio.Future()
         future.set_result(b"epic product")
         reader.readline.return_value = future
@@ -578,7 +622,7 @@ async def test_build_command(vm, fake_qemu_binary):
             "-netdev",
             "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
             "-display",
-            "none"
+            "none",
         ]
 
 
@@ -648,7 +692,7 @@ async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
                 "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
                 "-netdev",
                 "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
-                "-nographic"
+                "-nographic",
             ]
 
 
@@ -697,10 +741,12 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-netdev",
             "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio1.rport, nio1.lport),
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)),
+            "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(
+                int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
+            ),
             "-netdev",
             "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport),
-            "-nographic"
+            "-nographic",
         ]
 
 
@@ -725,7 +771,6 @@ async def test_build_command_two_adapters_mac_address(vm):
     mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
     assert mac_0[:8] == "00:42:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-
         cmd = await vm._build_command()
         assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
         assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
@@ -747,7 +792,7 @@ async def test_build_command_large_number_of_adapters(vm):
         cmd = await vm._build_command()
 
     # Count if we have 100 e1000 adapters in the command
-    assert len([l for l in cmd if "e1000" in l ]) == 100
+    assert len([l for l in cmd if "e1000" in l]) == 100
     assert len(vm._ethernet_adapters) == 100
 
     assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
@@ -804,6 +849,19 @@ def test_hda_disk_image(vm, images_dir):
     open(os.path.join(images_dir, "QEMU", "test2"), "w+").close()
     vm.hda_disk_image = "test2"
     assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
+
+
+def test_delete_disk_image_removes_cached_checksum(vm):
+
+    disk_path = os.path.join(vm.working_dir, "hda_disk.qcow2")
+    checksum_path = disk_path + ".md5sum"
+    open(disk_path, "w+").close()
+    open(checksum_path, "w+").close()
+
+    vm.delete_disk_image("hda_disk.qcow2")
+
+    assert not os.path.exists(disk_path)
+    assert not os.path.exists(checksum_path)
 
 
 @pytest.mark.asyncio

@@ -25,12 +25,21 @@
     },
     "images": [
         {
+            "filename": "FreeBSD-15.0-RELEASE-amd64-zfs.qcow2",
+	        "version": "15.0-zfs",
+	        "md5sum": "d3109107e34336081eb88665674cbca4",
+	        "filesize": 2854944768,
+	        "download_url": "https://www.freebsd.org/where.html",
+	        "direct_download_url": "https://download.freebsd.org/releases/VM-IMAGES/15.0-RELEASE/amd64/Latest/FreeBSD-15.0-RELEASE-amd64-ufs.qcow2.xz",
+	        "compression": "xz"
+        },
+        {
             "filename": "FreeBSD-14.0-RELEASE-amd64.qcow2",
             "version": "14.0",
             "md5sum": "87b988eaa4a8aaabea1c10649c98b3f0",
             "filesize": 3506569216,
             "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/releases/VM-IMAGES/14.0-RELEASE/amd64/Latest/FreeBSD-14.0-RELEASE-amd64.qcow2.xz",
+            "direct_download_url": "https://archive.freebsd.org/old-releases/VM-IMAGES/14.0-RELEASE/amd64/Latest/FreeBSD-14.0-RELEASE-amd64.qcow2.xz",
             "compression": "xz"
         },
         {
@@ -53,6 +62,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.0-zfs",
+            "images": {
+                "hda_disk_image": "FreeBSD-15.0-RELEASE-amd64-zfs.qcow2"
+            }
+        },
         {
             "name": "14.0",
             "images": {

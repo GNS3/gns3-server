@@ -43,7 +43,6 @@ class LinkType(str, Enum):
 
 
 class LinkStyle(BaseModel):
-
     color: Optional[str] = None
     width: Optional[int] = None
     type: Optional[int] = None
@@ -63,50 +62,36 @@ class LinkBase(BaseModel):
     link_style: Optional[LinkStyle] = None
     filters: Optional[dict] = None
     markers: Optional[dict] = Field(
-        None,
-        description="Traffic-insight markers on this link: name → {bpf, tag, enabled}"
+        None, description="Traffic-insight markers on this link: name → {bpf, tag, enabled}"
     )
-    show_filters_icon: Optional[bool] = Field(
-        True,
-        description="Show filters icon in Web UI"
-    )
+    show_filters_icon: Optional[bool] = Field(True, description="Show filters icon in Web UI")
 
 
 class LinkCreate(LinkBase):
-
     link_id: UUID = Field(default_factory=uuid4)
     nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
 
 
 class LinkUpdate(LinkBase):
-
     pass
 
 
 class Link(LinkBase):
-
     link_id: UUID
     project_id: Optional[UUID] = None
     link_type: Optional[LinkType] = None
-    capturing: Optional[bool] = Field(
-        None,
-        description="Read only property. True if a capture running on the link"
-    )
+    capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
     capture_file_name: Optional[str] = Field(
-        None,
-        description="Read only property. The name of the capture file if a capture is running"
+        None, description="Read only property. The name of the capture file if a capture is running"
     )
     capture_file_path: Optional[str] = Field(
-        None,
-        description="Read only property. The full path of the capture file if a capture is running"
+        None, description="Read only property. The full path of the capture file if a capture is running"
     )
     capture_compute_id: Optional[str] = Field(
-        None,
-        description="Read only property. The compute identifier where a capture is running"
+        None, description="Read only property. The compute identifier where a capture is running"
     )
     wireshark: Optional[bool] = Field(
-        False,
-        description="Read only property. True if a Web Wireshark session is active on the link"
+        False, description="Read only property. True if a Web Wireshark session is active on the link"
     )
 
 
@@ -120,6 +105,7 @@ class UDPPortInfo(BaseModel):
     rhost: str
     rport: int
     type: str
+
 
 class EthernetPortInfo(BaseModel):
     """
@@ -153,7 +139,7 @@ class MarkerCreate(BaseModel):
         None,
         pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$",
         max_length=32,
-        description='Unique marker name on the link. Auto-generated when absent.',
+        description="Unique marker name on the link. Auto-generated when absent.",
     )
     bpf: str
     tag: Optional[int] = None
@@ -226,9 +212,7 @@ class MarkerUpdate(BaseModel):
         description="Direction filter; 'both' or an explicit null clears it to both. Omit to keep.",
     )
     color: Optional[str] = Field(None, description="Hex color render hint, e.g. '#ff5722'")
-    highlight_duration: Optional[int] = Field(
-        None, ge=1, description="UI highlight duration in ms; null = UI default"
-    )
+    highlight_duration: Optional[int] = Field(None, ge=1, description="UI highlight duration in ms; null = UI default")
     enabled: Optional[bool] = Field(None, description="Toggle the marker on/off (instant).")
 
     @field_validator("direction", mode="before")
@@ -288,5 +272,3 @@ class MarkerDefinitionCreate(BaseModel):
     @classmethod
     def _both_to_none(cls, v):
         return None if v == "both" else v
-
-

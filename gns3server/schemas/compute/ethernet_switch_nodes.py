@@ -23,14 +23,12 @@ from ..common import NodeStatus
 
 
 class EthernetSwitchPortType(str, Enum):
-
     access = "access"
     dot1q = "dot1q"
     qinq = "qinq"
 
 
 class EthernetSwitchEtherType(str, Enum):
-
     ethertype_8021q = "0x8100"
     ethertype_qinq = "0x88A8"
     ethertype_8021q9100 = "0x9100"
@@ -38,12 +36,13 @@ class EthernetSwitchEtherType(str, Enum):
 
 
 class EthernetSwitchPort(BaseModel):
-
     name: str
     port_number: int
     type: EthernetSwitchPortType = Field(..., description="Port type")
     vlan: int = Field(..., ge=1, le=4094, description="VLAN number")
-    ethertype: Optional[EthernetSwitchEtherType] = Field(EthernetSwitchEtherType.ethertype_8021q, description="QinQ Ethertype")
+    ethertype: Optional[EthernetSwitchEtherType] = Field(
+        EthernetSwitchEtherType.ethertype_8021q, description="QinQ Ethertype"
+    )
 
     @model_validator(mode="after")
     def check_ethertype(self) -> "EthernetSwitchPort":
@@ -92,7 +91,6 @@ class EthernetSwitchUpdate(EthernetSwitchBase):
 
 
 class EthernetSwitch(EthernetSwitchBase):
-
     name: str
     node_id: UUID
     project_id: UUID

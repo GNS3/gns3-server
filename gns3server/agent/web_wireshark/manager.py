@@ -63,15 +63,16 @@ class WebWiresharkManager:
         """
         try:
             proc = await asyncio.create_subprocess_exec(
-                "docker", "exec", container_id,
-                "bash", "-c", "echo 'ping'",
+                "docker",
+                "exec",
+                container_id,
+                "bash",
+                "-c",
+                "echo 'ping'",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
-            stdout, _ = await asyncio.wait_for(
-                proc.communicate(),
-                timeout=self.CONTAINER_EXEC_TIMEOUT
-            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=self.CONTAINER_EXEC_TIMEOUT)
             return proc.returncode == 0 and b"ping" in stdout
         except asyncio.TimeoutError:
             logger.warning(f"Container {container_id[:12]} health check timeout")
@@ -99,16 +100,17 @@ class WebWiresharkManager:
 
         try:
             proc = await asyncio.create_subprocess_exec(
-                "docker", "exec", container_id,
-                "bash", "-c", command,
+                "docker",
+                "exec",
+                container_id,
+                "bash",
+                "-c",
+                command,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    proc.communicate(),
-                    timeout=timeout
-                )
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
                 return (proc.returncode, stdout.decode().strip(), stderr.decode().strip())
             except asyncio.TimeoutError:
                 logger.error(f"Command timeout after {timeout}s: {command}")
@@ -142,7 +144,7 @@ class WebWiresharkManager:
                 logger.debug(f"No processes found matching pattern '{pattern}'")
                 return
 
-            pids = pids_str.replace('\n', ' ')
+            pids = pids_str.replace("\n", " ")
             logger.info(f"Found matching processes for '{pattern}': PIDs={pids}")
 
             # Kill the processes using their container-local PIDs
@@ -170,10 +172,13 @@ class WebWiresharkManager:
         try:
             # Get container init PID from host perspective
             proc = await asyncio.create_subprocess_exec(
-                "docker", "inspect", container_id,
-                "--format", "{{.State.Pid}}",
+                "docker",
+                "inspect",
+                container_id,
+                "--format",
+                "{{.State.Pid}}",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             stdout, _ = await proc.communicate()
             container_init_pid = stdout.decode().strip()
@@ -187,15 +192,13 @@ class WebWiresharkManager:
 
             # Check for residual processes from host perspective
             proc = await asyncio.create_subprocess_exec(
-                "ps", "-eo", "pid,ppid,args",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                "ps", "-eo", "pid,ppid,args", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
 
             # Build parent->children mapping
             children_map = {}
-            for line in stdout.decode().strip().split('\n'):
+            for line in stdout.decode().strip().split("\n"):
                 parts = line.split(None, 2)
                 if len(parts) < 3:
                     continue
@@ -218,14 +221,15 @@ class WebWiresharkManager:
 
             # Check if any descendant processes match display patterns
             import re
+
             patterns = [
-                f'xpra.*:{display}',
-                f'Xvfb.*:{display}',
-                f'wireshark.*:{display}',
-                f'pulseaudio.*display=:{display}'
+                f"xpra.*:{display}",
+                f"Xvfb.*:{display}",
+                f"wireshark.*:{display}",
+                f"pulseaudio.*display=:{display}",
             ]
 
-            for line in stdout.decode().strip().split('\n'):
+            for line in stdout.decode().strip().split("\n"):
                 parts = line.split(None, 2)
                 if len(parts) < 3:
                     continue
@@ -248,13 +252,11 @@ class WebWiresharkManager:
             # /proc/<pid>/root points to container filesystem
             lock_paths = [
                 f"/proc/{container_init_pid}/root/tmp/.X{display}-lock",
-                f"/proc/{container_init_pid}/root/tmp/.X11-unix/X{display}"
+                f"/proc/{container_init_pid}/root/tmp/.X11-unix/X{display}",
             ]
             for lock_path in lock_paths:
                 proc = await asyncio.create_subprocess_exec(
-                    "test", "-e", lock_path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    "test", "-e", lock_path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
                 await proc.communicate()
                 if proc.returncode == 0:
@@ -264,9 +266,7 @@ class WebWiresharkManager:
             # Check for xpra socket files
             socket_path = f"/proc/{container_init_pid}/root/run/user/1000/xpra/{display}/socket"
             proc = await asyncio.create_subprocess_exec(
-                "test", "-e", socket_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                "test", "-e", socket_path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             await proc.communicate()
             if proc.returncode == 0:
@@ -298,10 +298,13 @@ class WebWiresharkManager:
         try:
             # Get container init PID from host perspective
             proc = await asyncio.create_subprocess_exec(
-                "docker", "inspect", container_id,
-                "--format", "{{.State.Pid}}",
+                "docker",
+                "inspect",
+                container_id,
+                "--format",
+                "{{.State.Pid}}",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             stdout, _ = await proc.communicate()
             container_init_pid = stdout.decode().strip()
@@ -314,9 +317,7 @@ class WebWiresharkManager:
             # List all processes from host perspective with PID, PPID, and command
             # This is faster than docker exec and allows us to walk the process tree
             proc = await asyncio.create_subprocess_exec(
-                "ps", "-eo", "pid,ppid,args",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                "ps", "-eo", "pid,ppid,args", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
 
@@ -328,7 +329,7 @@ class WebWiresharkManager:
             children_map = {}  # ppid -> [pid]
             process_info = {}  # pid -> (ppid, command)
 
-            for line in stdout.decode().strip().split('\n'):
+            for line in stdout.decode().strip().split("\n"):
                 parts = line.split(None, 2)
                 if len(parts) < 3:
                     continue
@@ -371,9 +372,7 @@ class WebWiresharkManager:
                 logger.info(f"Killing {len(matching_pids)} processes: {matching_pids}")
                 # Kill all matching PIDs from host perspective
                 proc = await asyncio.create_subprocess_exec(
-                    "kill", "-9", *matching_pids,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    "kill", "-9", *matching_pids, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
                 await proc.communicate()
                 logger.debug("Kill completed from host perspective")
@@ -396,16 +395,12 @@ class WebWiresharkManager:
         """
         try:
             # Combine all patterns into a single regex using OR operator
-            combined_pattern = '|'.join(f'({pattern})' for pattern in patterns)
+            combined_pattern = "|".join(f"({pattern})" for pattern in patterns)
 
             # Single pgrep to find all matching processes
             pgrep_cmd = f'pids=$(pgrep -f "{combined_pattern}" 2>/dev/null || true); if [ -n "$pids" ]; then echo "Found processes: $pids"; kill -9 $pids 2>/dev/null || true; fi'
 
-            returncode, stdout, stderr = await self._exec_in_container(
-                container_id,
-                pgrep_cmd,
-                timeout=5
-            )
+            returncode, stdout, stderr = await self._exec_in_container(container_id, pgrep_cmd, timeout=5)
 
             if "Found processes:" in stdout:
                 logger.info(stdout.strip())
@@ -422,10 +417,12 @@ class WebWiresharkManager:
         """
         # Clean up X lock files and xpra socket files in a single docker exec
         # This reduces docker exec calls from 2 to 1, improving stop performance
-        cmd = (f"rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} "
-               f"/run/user/1000/xpra/{display}/socket "
-               f"/run/user/1000/xpra/*-{display} "
-               f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
+        cmd = (
+            f"rm -f /tmp/.X{display}-lock /tmp/.X11-unix/X{display} "
+            f"/run/user/1000/xpra/{display}/socket "
+            f"/run/user/1000/xpra/*-{display} "
+            f"/home/gns3/.xpra/*-{display} 2>/dev/null || true"
+        )
         returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
         logger.debug(f"Cleanup X locks and xpra sockets: returncode={returncode}")
 
@@ -436,9 +433,11 @@ class WebWiresharkManager:
             container_id: Container ID
             display: Display number (e.g., 10210)
         """
-        cmd = (f"rm -f /run/user/1000/xpra/{display}/socket "
-               f"/run/user/1000/xpra/*-{display} "
-               f"/home/gns3/.xpra/*-{display} 2>/dev/null || true")
+        cmd = (
+            f"rm -f /run/user/1000/xpra/{display}/socket "
+            f"/run/user/1000/xpra/*-{display} "
+            f"/home/gns3/.xpra/*-{display} 2>/dev/null || true"
+        )
         returncode, stdout, stderr = await self._exec_in_container(container_id, cmd)
         logger.debug(f"Cleanup socket files: returncode={returncode}")
 
@@ -457,20 +456,15 @@ class WebWiresharkManager:
             return 0
 
         # Extract number and unit
-        match = re.match(r'(\d+(?:\.\d+)?)\s*([kmg]b?)?', memory_str)
+        match = re.match(r"(\d+(?:\.\d+)?)\s*([kmg]b?)?", memory_str)
         if not match:
             raise ValueError(f"Invalid memory format: {memory_str}")
 
         value = float(match.group(1))
-        unit = match.group(2) or 'b'
+        unit = match.group(2) or "b"
 
         # Convert to bytes
-        multipliers = {
-            'b': 1,
-            'k': 1024,
-            'm': 1024 * 1024,
-            'g': 1024 * 1024 * 1024
-        }
+        multipliers = {"b": 1, "k": 1024, "m": 1024 * 1024, "g": 1024 * 1024 * 1024}
 
         unit = unit[0]  # Take first character
         return int(value * multipliers.get(unit, 1))
@@ -511,8 +505,7 @@ class WebWiresharkManager:
         if container_id:
             try:
                 returncode, stdout, stderr = await self._exec_in_container(
-                    container_id,
-                    "cat /proc/net/route | grep -E '^eth0\\s+00000000' | awk '{print $3}' | head -1"
+                    container_id, "cat /proc/net/route | grep -E '^eth0\\s+00000000' | awk '{print $3}' | head -1"
                 )
                 logger.info(f"Gateway detection - fallback method: returncode={returncode}, stdout='{stdout}'")
                 if returncode == 0 and stdout.strip():
@@ -557,8 +550,7 @@ class WebWiresharkManager:
                 # Use 'hostname -I' to get all IP addresses and take the first one
                 # This works on most Linux systems and is more portable than 'ip' command
                 returncode, stdout, stderr = await self._exec_in_container(
-                    container_id,
-                    "hostname -I 2>/dev/null | awk '{print $1}'"
+                    container_id, "hostname -I 2>/dev/null | awk '{print $1}'"
                 )
                 if returncode == 0 and stdout.strip():
                     container_ip = stdout.strip()
@@ -585,7 +577,7 @@ class WebWiresharkManager:
         """
         try:
             parsed = urlparse(url)
-            if parsed.hostname in ('localhost', '127.0.0.1', '0.0.0.0'):
+            if parsed.hostname in ("localhost", "127.0.0.1", "0.0.0.0"):
                 gateway = await self._get_container_gateway_ip(container_id)
                 if gateway:
                     fixed_url = f"{parsed.scheme}://{gateway}:{parsed.port or 3080}{parsed.path}"
@@ -627,11 +619,7 @@ class WebWiresharkManager:
             config = Config.instance()
             subnet = getattr(config.settings.WebWireshark, "network_subnet", "172.31.0.0/22")
             logger.info(f"Creating network {self.network_name} with subnet {subnet}")
-            await self.docker.create_network(
-                self.network_name,
-                driver="bridge",
-                subnet=subnet
-            )
+            await self.docker.create_network(self.network_name, driver="bridge", subnet=subnet)
 
     async def get_or_create_container(
         self,
@@ -640,7 +628,7 @@ class WebWiresharkManager:
         memory: str = "2g",
         memory_swap: str = None,
         cpus: float = 1.0,
-        pids_limit: int = 1000
+        pids_limit: int = 1000,
     ) -> str:
         """Get or create project's Web Wireshark container.
 
@@ -716,21 +704,15 @@ class WebWiresharkManager:
                 "PidsLimit": pids_limit,
                 "RestartPolicy": {"Name": "unless-stopped"},
                 "Init": True,  # Use init system (tini) as PID 1 to reap zombie processes
-                "LogConfig": {
-                    "Type": "json-file",
-                    "Config": {
-                        "max-size": "10m",
-                        "max-file": "3"
-                    }
-                }
+                "LogConfig": {"Type": "json-file", "Config": {"max-size": "10m", "max-file": "3"}},
             }
 
             # Health check configuration
             health_config = {
                 "Test": ["CMD-SHELL", "xpra list"],
                 "Interval": 30000000000,  # 30 seconds (nanoseconds)
-                "Timeout": 10000000000,   # 10 seconds
-                "Retries": 3
+                "Timeout": 10000000000,  # 10 seconds
+                "Retries": 3,
             }
 
             try:
@@ -740,11 +722,7 @@ class WebWiresharkManager:
                     network=self.network_name,
                     host_config=host_config,
                     health_config=health_config,
-                    environment={
-                        "XDG_RUNTIME_DIR": "/run/user/1000",
-                        "LANG": "C.UTF-8",
-                        "LC_ALL": "C.UTF-8"
-                    }
+                    environment={"XDG_RUNTIME_DIR": "/run/user/1000", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"},
                 )
             except RuntimeError as e:
                 error_msg = str(e)
@@ -773,7 +751,7 @@ class WebWiresharkManager:
         memory: str = "2g",
         memory_swap: Optional[str] = None,
         cpus: float = 1.0,
-        pids_limit: int = 1000
+        pids_limit: int = 1000,
     ) -> dict:
         """Start Web Wireshark session.
 
@@ -799,20 +777,10 @@ class WebWiresharkManager:
         # Auto-detect capture_stream_url if not provided
         if not capture_stream_url:
             gns3_url = self.detect_gns3_url()
-            capture_stream_url = (
-                f"{gns3_url}/v3/projects/{project_id}/links/"
-                f"{link_id}/capture/stream"
-            )
+            capture_stream_url = f"{gns3_url}/v3/projects/{project_id}/links/{link_id}/capture/stream"
             logger.info(f"Auto-detected capture stream URL: {capture_stream_url}")
 
-        container_id = await self.get_or_create_container(
-            project_id,
-            image,
-            memory,
-            memory_swap,
-            cpus,
-            pids_limit
-        )
+        container_id = await self.get_or_create_container(project_id, image, memory, memory_swap, cpus, pids_limit)
         container_name = f"gns3-wireshark-{project_id}"
 
         # Fix localhost URL after we have container_id
@@ -828,13 +796,15 @@ class WebWiresharkManager:
         has_process_residuals, has_socket_residuals = await self._check_residuals_exist(container_id, display)
 
         if has_process_residuals or has_socket_residuals:
-            logger.info(f"Found residual processes={has_process_residuals} sockets={has_socket_residuals} on display :{display}, cleaning up...")
+            logger.info(
+                f"Found residual processes={has_process_residuals} sockets={has_socket_residuals} on display :{display}, cleaning up..."
+            )
             if has_process_residuals:
                 patterns = [
-                    f'xpra.*:{display}',
-                    f'Xvfb.*:{display}',
-                    f'wireshark.*:{display}',
-                    f'pulseaudio.*display=:{display}'
+                    f"xpra.*:{display}",
+                    f"Xvfb.*:{display}",
+                    f"wireshark.*:{display}",
+                    f"pulseaudio.*display=:{display}",
                 ]
                 await self._kill_process_tree_batch(container_id, patterns)
             if has_socket_residuals:
@@ -848,29 +818,24 @@ class WebWiresharkManager:
 
         xpra_cmd = [
             "XPRA_CLIENT_CAN_SHUTDOWN=false",
-            "xpra", "start", f":{display}",
+            "xpra",
+            "start",
+            f":{display}",
             '--xvfb="Xvfb -screen 0 1920x1080x24 +extension RANDR"',
             "--html=off",
             f"--bind-ws=0.0.0.0:{port}",
             f"--session-name={session_name}",
             "--daemon=yes",
             "--dbus-launch=no",
-            "--resize-display=yes"
+            "--resize-display=yes",
         ]
 
         # Parallel execution: get container info + start xpra
-        container_info_task = asyncio.create_task(
-            self.docker.get_container(container_name)
-        )
-        xpra_start_task = asyncio.create_task(
-            self._exec_in_container(container_id, " ".join(xpra_cmd))
-        )
+        container_info_task = asyncio.create_task(self.docker.get_container(container_name))
+        xpra_start_task = asyncio.create_task(self._exec_in_container(container_id, " ".join(xpra_cmd)))
 
         # Wait for both tasks to complete
-        container, (returncode, stdout, stderr) = await asyncio.gather(
-            container_info_task,
-            xpra_start_task
-        )
+        container, (returncode, stdout, stderr) = await asyncio.gather(container_info_task, xpra_start_task)
 
         # Check xpra start result
         if returncode != 0:
@@ -901,10 +866,14 @@ class WebWiresharkManager:
 
         # Execute Wireshark command without waiting for completion
         await asyncio.create_subprocess_exec(
-            "docker", "exec", container_id,
-            "bash", "-c", wireshark_cmd,
+            "docker",
+            "exec",
+            container_id,
+            "bash",
+            "-c",
+            wireshark_cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
 
         # Don't wait - Wireshark runs in background
@@ -918,7 +887,7 @@ class WebWiresharkManager:
             "container_name": container_name,
             "container_id": container_id,
             "session_name": session_name,
-            "capture_stream_url": capture_stream_url
+            "capture_stream_url": capture_stream_url,
         }
 
         logger.info(f"Web Wireshark session started successfully: {result['ws_url']}")
@@ -947,11 +916,11 @@ class WebWiresharkManager:
             # This ensures child processes are properly terminated, not left as zombies
             logger.info(f"Stopping all processes on display :{display}")
             patterns = [
-                f'xpra.*:{display}',
-                f'Xvfb.*:{display}',
-                f'Xvfb-for-Xpra-{display}',
-                f'wireshark.*:{display}',
-                f'pulseaudio.*display=:{display}'
+                f"xpra.*:{display}",
+                f"Xvfb.*:{display}",
+                f"Xvfb-for-Xpra-{display}",
+                f"wireshark.*:{display}",
+                f"pulseaudio.*display=:{display}",
             ]
             await self._kill_process_tree_batch(container["Id"], patterns)
             await self._cleanup_x_lock(container["Id"], display)
@@ -971,7 +940,7 @@ class WebWiresharkManager:
         memory: str = "2g",
         memory_swap: str = None,
         cpus: float = 1.0,
-        pids_limit: int = 1000
+        pids_limit: int = 1000,
     ):
         """Restart Web Wireshark session.
 
@@ -1001,7 +970,7 @@ class WebWiresharkManager:
             memory=memory,
             memory_swap=memory_swap,
             cpus=cpus,
-            pids_limit=pids_limit
+            pids_limit=pids_limit,
         )
 
     async def stop_all_sessions(self, project_id: str):
@@ -1021,12 +990,7 @@ class WebWiresharkManager:
 
             # Kill all wireshark, xpra and Xvfb processes for link sessions
             # This ensures clean removal of all session processes
-            patterns = [
-                "xpra.*--session-name=link-",
-                "Xvfb-for-Xpra-",
-                "wireshark.*display :",
-                "pulseaudio.*display :"
-            ]
+            patterns = ["xpra.*--session-name=link-", "Xvfb-for-Xpra-", "wireshark.*display :", "pulseaudio.*display :"]
             await self._kill_process_tree_batch(container["Id"], patterns)
 
             logger.info(f"All Web Wireshark sessions stopped for project {project_id}")

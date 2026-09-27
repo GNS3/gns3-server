@@ -279,7 +279,7 @@ Fix the WebSocket error handler:
 ```python
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
-    method = getattr(request, 'method', 'WebSocket')
+    method = getattr(request, "method", "WebSocket")
     log.error(f"Controller not found error in {request.url.path} ({method}): {exc}")
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,

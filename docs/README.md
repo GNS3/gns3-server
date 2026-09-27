@@ -39,6 +39,8 @@ docs/
 │   ├── statistics-api.md                        # Aggregated statistics API for monitoring
 │   ├── vnc-websocket-console.md                 # Browser-based VNC console via WebSocket
 │   └── web-wireshark-business-process.md        # Web Wireshark (Docker + xpra packet capture)
+├── design/                                      # Design proposals & roadmaps (not yet implemented)
+│   └── docker-image-type.md                     # Docker image types: vendor profile discriminator + registry
 ├── gns3-copilot/                                # AI Copilot feature documentation
 │   ├── netmiko_devices.md                       # Netmiko supported devices (366 types)
 │   ├── template-based-configuration-roadmap.md  # Future: template-based config with HITL
@@ -75,11 +77,24 @@ Web-based packet capture analysis using Docker + xpra HTML5 client. Zero-install
 ### Marker (Traffic Insight) (`features/marker-traffic-insight.md`)
 Real-time traffic insight via per-link BPF markers and project-level inherited definitions. A marker taps a link in uBridge, emitting match notifications and pcap capture on BPF hit; definitions fan out to every capable link automatically.
 
+### Marker Tag Replay (`features/marker-tag-replay.md`)
+Aggregate playback across links keyed by `tag`: once every marker under a tag is paused, their pcaps merge into one timestamp-ordered timeline; frames are decoded on demand via tshark into an isomorphic JSON protocol tree. The cross-link delta of the same packet measures the intermediate node's forwarding latency.
+
 ### Docker exec Console (Vendor NOS) (`features/docker-exec-console.md`)
 Console for vendor NOS containers (SR Linux, XRd, …) whose CLI is a TUI off PID 1: runs the vendor CLI via the Docker exec API, plus `GNS3_SKIP_INIT`/`GNS3_INTERFACE_NAMES` boot knobs and SKIP_INIT volume persistence.
 
 ### Cisco XRd Control Plane (`features/vendor-nos-xrd.md`)
 Cisco XRd as a GNS3 Docker router: vendor path + shm/device injection (`GNS3_SHM_SIZE`/`GNS3_DEVICES`), config-file injection (`extra_configs`), udev masking (`GNS3_MASK_UDEV`) so privileged systemd containers don't disturb the host, and the host-readiness check.
+
+### IOL Images with iol-runner (`features/iol-runner-docker.md`)
+Cisco CML containerized IOL (e.g. `iol-xe/iol-xe:17-18-02`) as GNS3 Docker routers: generic unix-socket NIO (`GNS3_UNIX_SOCKET_NIO` — adapters wired via AF_UNIX datagram socket pairs instead of TAP/netns) plus `IOLDockerVM` (`GNS3_IOL_RUNNER=1` — per-start config generation, `/tmp/run` preparation, stale-socket cleanup, console on PID 1 stdio).
+
+---
+
+## Design & Roadmaps (`design/`)
+
+### Docker Image Types (`design/docker-image-type.md`)
+Proposed `image_type` discriminator on Docker templates plus a compute-side profile registry: vendor parameters graduate from environment markers into schema-gated fields, generic-feature applicability becomes declared capability data, and the existing markers remain as a compatibility fallback. Not a new node type — vendor images are content, not mechanism.
 
 ---
 
@@ -127,4 +142,4 @@ Quick-start guide for Ubuntu 24.04: install via PPA, set up dependencies, and ru
 
 ---
 
-_Last updated: 2026-08-14_
+_Last updated: 2026-09-01_

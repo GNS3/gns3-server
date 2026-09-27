@@ -389,18 +389,13 @@ router ospf {{ process_id }}
 @interrupt
 def template_review_checkpoint(state):
     """Pause and wait for user confirmation."""
-    return {
-        "type": "template_review",
-        "data": state["generated_template"]
-    }
+    return {"type": "template_review", "data": state["generated_template"]}
+
 
 @interrupt
 def params_review_checkpoint(state):
     """Pause and wait for user confirmation."""
-    return {
-        "type": "params_review",
-        "data": state["generated_params"]
-    }
+    return {"type": "params_review", "data": state["generated_params"]}
 ```
 
 **State Management:**
@@ -939,24 +934,9 @@ For 1000+ devices, some failures are inevitable. The system provides:
 ```python
 {
     "total_devices": 1000,
-    "summary": {
-        "success": 987,
-        "failed": 13,
-        "skipped": 0
-    },
-    "failed_devices": [
-        {
-            "device_name": "R456",
-            "error": "Connection timeout",
-            "retry_available": true
-        },
-        ...
-    ],
-    "retry_suggestions": {
-        "auto_retry": True,
-        "retry_batch_size": 10,
-        "exponential_backoff": True
-    }
+    "summary": {"success": 987, "failed": 13, "skipped": 0},
+    "failed_devices": [{"device_name": "R456", "error": "Connection timeout", "retry_available": true}, ...],
+    "retry_suggestions": {"auto_retry": True, "retry_batch_size": 10, "exponential_backoff": True},
 }
 ```
 
@@ -1277,54 +1257,38 @@ All servers connect to access switches in pairs.
             "node_type": "cisco_iosv",
             "count": 4,
             "name_pattern": "Spine-R{{ id }}",
-            "properties": {
-                "ram": 4096,
-                "cpus": 2,
-                "adapters": 8
-            },
-            "position": {
-                "strategy": "hierarchical",
-                "y": 100,
-                "x_spacing": 600
-            }
+            "properties": {"ram": 4096, "cpus": 2, "adapters": 8},
+            "position": {"strategy": "hierarchical", "y": 100, "x_spacing": 600},
         },
         {
             "name": "leaf",
             "node_type": "cisco_iosv_l2",
             "count": 20,
             "name_pattern": "Leaf-SW{{ id }}",
-            "properties": {
-                "ram": 2048,
-                "cpus": 1,
-                "adapters": 16
-            },
+            "properties": {"ram": 2048, "cpus": 1, "adapters": 16},
             "position": {
                 "strategy": "grid",
                 "grid_rows": 4,
                 "grid_cols": 5,
                 "y": 400,
                 "x_spacing": 300,
-                "y_spacing": 200
-            }
+                "y_spacing": 200,
+            },
         },
         {
             "name": "access",
             "node_type": "cisco_iosv_l2",
             "count": 200,
             "name_pattern": "Acc-SW{{ id }}",
-            "properties": {
-                "ram": 1024,
-                "cpus": 1,
-                "adapters": 4
-            },
+            "properties": {"ram": 1024, "cpus": 1, "adapters": 4},
             "position": {
                 "strategy": "grid",
                 "grid_rows": 10,
                 "grid_cols": 20,
                 "y": 800,
                 "x_spacing": 120,
-                "y_spacing": 100
-            }
+                "y_spacing": 100,
+            },
         },
         {
             "name": "server",
@@ -1338,36 +1302,19 @@ All servers connect to access switches in pairs.
                 "grid_cols": 25,
                 "y": 1200,
                 "x_spacing": 60,
-                "y_spacing": 60
-            }
-        }
+                "y_spacing": 60,
+            },
+        },
     ],
     "auto_link": {
         "links": [
-            {
-                "from_group": "spine",
-                "to_group": "leaf",
-                "strategy": "mesh"
-            },
-            {
-                "from_group": "leaf",
-                "to_group": "access",
-                "strategy": "paired",
-                "count": 10
-            },
-            {
-                "from_group": "access",
-                "to_group": "server",
-                "strategy": "paired",
-                "count": 2
-            }
+            {"from_group": "spine", "to_group": "leaf", "strategy": "mesh"},
+            {"from_group": "leaf", "to_group": "access", "strategy": "paired", "count": 10},
+            {"from_group": "access", "to_group": "server", "strategy": "paired", "count": 2},
         ]
     },
     "layout": "auto_spine_leaf",
-    "resource_limits": {
-        "max_ram_mb": 750000,
-        "max_vcpus": 724
-    }
+    "resource_limits": {"max_ram_mb": 750000, "max_vcpus": 724},
 }
 
 # Execution Result
@@ -1381,8 +1328,8 @@ All servers connect to access switches in pairs.
         {"name": "spine", "created": 4, "failed": 0},
         {"name": "leaf", "created": 20, "failed": 0},
         {"name": "access", "created": 200, "failed": 0},
-        {"name": "server", "created": 500, "failed": 0}
-    ]
+        {"name": "server", "created": 500, "failed": 0},
+    ],
 }
 ```
 
@@ -1522,14 +1469,14 @@ class LinkPattern(BaseModel):
     """Pattern for creating links between node groups."""
 
     from_nodes: NodeSelector  # Source nodes
-    to_nodes: NodeSelector    # Destination nodes
+    to_nodes: NodeSelector  # Destination nodes
 
     strategy: Literal[
-        "one_to_one",        # 1:1 pairing
-        "one_to_many",       # Star topology
-        "many_to_many",      # Full mesh
-        "sequential",        # Linear chain
-        "ring"              # Ring topology
+        "one_to_one",  # 1:1 pairing
+        "one_to_many",  # Star topology
+        "many_to_many",  # Full mesh
+        "sequential",  # Linear chain
+        "ring",  # Ring topology
     ]
 
     port_allocation: PortAllocationStrategy
@@ -1548,16 +1495,16 @@ class PortAllocationStrategy(BaseModel):
     """How to allocate ports for links."""
 
     strategy: Literal[
-        "round_robin",       # Distribute evenly
-        "sequential",        # Use in order
-        "optimized",         # Smart allocation
-        "auto"               # Automatic selection
+        "round_robin",  # Distribute evenly
+        "sequential",  # Use in order
+        "optimized",  # Smart allocation
+        "auto",  # Automatic selection
     ]
 
     on_conflict: Literal[
-        "skip",              # Skip if port unavailable
-        "use_next",          # Use next available port
-        "fail"               # Fail on conflict
+        "skip",  # Skip if port unavailable
+        "use_next",  # Use next available port
+        "fail",  # Fail on conflict
     ] = "use_next"
 ```
 

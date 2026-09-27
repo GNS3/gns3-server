@@ -1,0 +1,16 @@
+!
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname %h
+!
+no ip domain lookup
+!
+ip tcp synwait-time 5
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+!
+end

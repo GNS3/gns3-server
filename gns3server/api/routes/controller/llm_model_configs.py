@@ -60,14 +60,12 @@ def _filter_api_key_from_config(config: dict) -> dict:
 # User LLM Model Configuration Endpoints
 # ============================================================================
 
-@router.get(
-    "/users/{user_id}/llm-model-configs",
-    response_model=schemas.LLMModelConfigInheritedResponse
-)
+
+@router.get("/users/{user_id}/llm-model-configs", response_model=schemas.LLMModelConfigInheritedResponse)
 async def get_user_llm_model_configs(
-        user_id: UUID,
-        current_user: schemas.User = Depends(has_privilege("LLMConfig.Audit")),
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID,
+    current_user: schemas.User = Depends(has_privilege("LLMConfig.Audit")),
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigInheritedResponse:
     """
     Get user's effective LLM model configurations (own + inherited from groups).
@@ -77,31 +75,25 @@ async def get_user_llm_model_configs(
 
     try:
         result = await llm_repo.get_user_effective_configs(
-            user_id,
-            current_user_id=current_user.user_id,
-            current_user_is_superadmin=current_user.is_superadmin
+            user_id, current_user_id=current_user.user_id, current_user_is_superadmin=current_user.is_superadmin
         )
         return schemas.LLMModelConfigInheritedResponse(
-            configs=result["configs"],
-            default_config=result.get("default_config"),
-            total=len(result["configs"])
+            configs=result["configs"], default_config=result.get("default_config"), total=len(result["configs"])
         )
     except Exception as e:
         log.error(f"Failed to retrieve user LLM model configs: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model configurations"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve LLM model configurations"
         )
 
 
 @router.get(
     "/users/{user_id}/llm-model-configs/own",
     response_model=List[schemas.LLMModelConfigResponse],
-    dependencies=[Depends(has_privilege("LLMConfig.Audit"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Audit"))],
 )
 async def get_user_own_llm_model_configs(
-        user_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID, llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
 ) -> List[schemas.LLMModelConfigResponse]:
     """
     Get user's own LLM model configurations (excluding inherited ones).
@@ -122,26 +114,24 @@ async def get_user_own_llm_model_configs(
                 is_default=config.is_default,
                 version=config.version,
                 created_at=config.created_at,
-                updated_at=config.updated_at
+                updated_at=config.updated_at,
             )
             for config in configs
         ]
     except Exception as e:
         log.error(f"Failed to retrieve user's own LLM model configs: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model configurations"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve LLM model configurations"
         )
 
 
 @router.get(
     "/users/{user_id}/llm-model-configs/default",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("LLMConfig.Audit"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Audit"))],
 )
 async def get_user_default_llm_model_config(
-        user_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID, llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
 ) -> schemas.LLMModelConfigResponse:
     """
     Get user's default LLM model configuration.
@@ -154,7 +144,7 @@ async def get_user_default_llm_model_config(
         if not config:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No default LLM model configuration found for user '{user_id}'"
+                detail=f"No default LLM model configuration found for user '{user_id}'",
             )
 
         return schemas.LLMModelConfigResponse(
@@ -167,15 +157,14 @@ async def get_user_default_llm_model_config(
             is_default=config.is_default,
             version=config.version,
             created_at=config.created_at,
-            updated_at=config.updated_at
+            updated_at=config.updated_at,
         )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to retrieve user's default LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve LLM model configuration"
         )
 
 
@@ -183,13 +172,13 @@ async def get_user_default_llm_model_config(
     "/users/{user_id}/llm-model-configs",
     response_model=schemas.LLMModelConfigResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))],
 )
 async def create_user_llm_model_config(
-        user_id: UUID,
-        config_create: schemas.LLMModelConfigCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID,
+    config_create: schemas.LLMModelConfigCreate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Create a new LLM model configuration for a user.
@@ -206,7 +195,7 @@ async def create_user_llm_model_config(
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
     # Validate context_limit is provided
-    if not hasattr(config_create, 'context_limit') or config_create.context_limit is None:
+    if not hasattr(config_create, "context_limit") or config_create.context_limit is None:
         raise ControllerBadRequestError(
             "context_limit is required (unit: K tokens, e.g., 128 = 128K = 128,000 tokens). "
             "Please check your model provider's documentation for the current context window size "
@@ -217,11 +206,7 @@ async def create_user_llm_model_config(
         # Extract config fields (excluding table-level fields)
         config_fields = config_create.model_dump(exclude={"name", "model_type", "is_default"})
         new_config = await llm_repo.create_user_config(
-            user_id,
-            config_create.name,
-            config_create.model_type,
-            config_fields,
-            is_default=config_create.is_default
+            user_id, config_create.name, config_create.model_type, config_fields, is_default=config_create.is_default
         )
 
         return schemas.LLMModelConfigResponse(
@@ -234,28 +219,27 @@ async def create_user_llm_model_config(
             is_default=new_config.is_default,
             version=new_config.version,
             created_at=new_config.created_at,
-            updated_at=new_config.updated_at
+            updated_at=new_config.updated_at,
         )
     except ValueError as e:
         raise ControllerBadRequestError(str(e))
     except Exception as e:
         log.error(f"Failed to create LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create LLM model configuration: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create LLM model configuration: {e}"
         )
 
 
 @router.put(
     "/users/{user_id}/llm-model-configs/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))],
 )
 async def update_user_llm_model_config(
-        user_id: UUID,
-        config_id: UUID,
-        config_update: schemas.LLMModelConfigUpdate,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID,
+    config_id: UUID,
+    config_update: schemas.LLMModelConfigUpdate,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Update a user's LLM model configuration.
@@ -272,16 +256,12 @@ async def update_user_llm_model_config(
         expected_version = updates.pop("expected_version", None)
 
         updated_config = await llm_repo.update_user_config(
-            config_id,
-            user_id,
-            updates,
-            expected_version=expected_version
+            config_id, user_id, updates, expected_version=expected_version
         )
 
         if not updated_config:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
 
         return schemas.LLMModelConfigResponse(
@@ -294,35 +274,31 @@ async def update_user_llm_model_config(
             is_default=updated_config.is_default,
             version=updated_config.version,
             created_at=updated_config.created_at,
-            updated_at=updated_config.updated_at
+            updated_at=updated_config.updated_at,
         )
     except HTTPException:
         raise
     except ValueError as e:
         # Handle optimistic lock errors
         if "Concurrent modification" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(e)
-            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
         raise ControllerBadRequestError(str(e))
     except Exception as e:
         log.error(f"Failed to update LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update LLM model configuration"
         )
 
 
 @router.delete(
     "/users/{user_id}/llm-model-configs/{config_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))],
 )
 async def delete_user_llm_model_config(
-        user_id: UUID,
-        config_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID,
+    config_id: UUID,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> None:
     """
     Delete a user's LLM model configuration.
@@ -334,28 +310,26 @@ async def delete_user_llm_model_config(
         success = await llm_repo.delete_user_config(config_id, user_id)
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to delete LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete LLM model configuration"
         )
 
 
 @router.put(
     "/users/{user_id}/llm-model-configs/default/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("LLMConfig.Modify"))]
+    dependencies=[Depends(has_privilege("LLMConfig.Modify"))],
 )
 async def set_user_default_llm_model_config(
-        user_id: UUID,
-        config_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    user_id: UUID,
+    config_id: UUID,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Set a user's default LLM model configuration.
@@ -367,8 +341,7 @@ async def set_user_default_llm_model_config(
         success = await llm_repo.set_user_default_config(user_id, config_id)
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
 
         # Get the updated config
@@ -383,15 +356,14 @@ async def set_user_default_llm_model_config(
             is_default=config.is_default,
             version=config.version,
             created_at=config.created_at,
-            updated_at=config.updated_at
+            updated_at=config.updated_at,
         )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to set default LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to set default LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to set default LLM model configuration"
         )
 
 
@@ -399,14 +371,14 @@ async def set_user_default_llm_model_config(
 # Group LLM Model Configuration Endpoints
 # ============================================================================
 
+
 @router.get(
     "/groups/{group_id}/llm-model-configs",
     response_model=schemas.LLMModelConfigListResponse,
-    dependencies=[Depends(has_privilege("Group.Audit"))]
+    dependencies=[Depends(has_privilege("Group.Audit"))],
 )
 async def get_group_llm_model_configs(
-        group_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID, llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
 ) -> schemas.LLMModelConfigListResponse:
     """
     Get all LLM model configurations for a user group.
@@ -427,7 +399,7 @@ async def get_group_llm_model_configs(
                 is_default=config.is_default,
                 version=config.version,
                 created_at=config.created_at,
-                updated_at=config.updated_at
+                updated_at=config.updated_at,
             )
             for config in configs
         ]
@@ -444,26 +416,22 @@ async def get_group_llm_model_configs(
             default_config = config_responses[0]
 
         return schemas.LLMModelConfigListResponse(
-            configs=config_responses,
-            default_config=default_config,
-            total=len(config_responses)
+            configs=config_responses, default_config=default_config, total=len(config_responses)
         )
     except Exception as e:
         log.error(f"Failed to retrieve group LLM model configs: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model configurations"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve LLM model configurations"
         )
 
 
 @router.get(
     "/groups/{group_id}/llm-model-configs/default",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("Group.Audit"))]
+    dependencies=[Depends(has_privilege("Group.Audit"))],
 )
 async def get_group_default_llm_model_config(
-        group_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID, llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
 ) -> schemas.LLMModelConfigResponse:
     """
     Get group's default LLM model configuration.
@@ -476,7 +444,7 @@ async def get_group_default_llm_model_config(
         if not config:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No default LLM model configuration found for group '{group_id}'"
+                detail=f"No default LLM model configuration found for group '{group_id}'",
             )
 
         return schemas.LLMModelConfigResponse(
@@ -489,15 +457,14 @@ async def get_group_default_llm_model_config(
             is_default=config.is_default,
             version=config.version,
             created_at=config.created_at,
-            updated_at=config.updated_at
+            updated_at=config.updated_at,
         )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to retrieve group's default LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve LLM model configuration"
         )
 
 
@@ -505,13 +472,13 @@ async def get_group_default_llm_model_config(
     "/groups/{group_id}/llm-model-configs",
     response_model=schemas.LLMModelConfigResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def create_group_llm_model_config(
-        group_id: UUID,
-        config_create: schemas.LLMModelConfigCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID,
+    config_create: schemas.LLMModelConfigCreate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Create a new LLM model configuration for a user group.
@@ -528,7 +495,7 @@ async def create_group_llm_model_config(
         raise ControllerNotFoundError(f"User group '{group_id}' not found")
 
     # Validate context_limit is provided
-    if not hasattr(config_create, 'context_limit') or config_create.context_limit is None:
+    if not hasattr(config_create, "context_limit") or config_create.context_limit is None:
         raise ControllerBadRequestError(
             "context_limit is required (unit: K tokens, e.g., 128 = 128K = 128,000 tokens). "
             "Please check your model provider's documentation for the current context window size "
@@ -539,11 +506,7 @@ async def create_group_llm_model_config(
         # Extract config fields (excluding table-level fields)
         config_fields = config_create.model_dump(exclude={"name", "model_type", "is_default"})
         new_config = await llm_repo.create_group_config(
-            group_id,
-            config_create.name,
-            config_create.model_type,
-            config_fields,
-            is_default=config_create.is_default
+            group_id, config_create.name, config_create.model_type, config_fields, is_default=config_create.is_default
         )
 
         return schemas.LLMModelConfigResponse(
@@ -556,28 +519,27 @@ async def create_group_llm_model_config(
             is_default=new_config.is_default,
             version=new_config.version,
             created_at=new_config.created_at,
-            updated_at=new_config.updated_at
+            updated_at=new_config.updated_at,
         )
     except ValueError as e:
         raise ControllerBadRequestError(str(e))
     except Exception as e:
         log.error(f"Failed to create LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create LLM model configuration: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create LLM model configuration: {e}"
         )
 
 
 @router.put(
     "/groups/{group_id}/llm-model-configs/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def update_group_llm_model_config(
-        group_id: UUID,
-        config_id: UUID,
-        config_update: schemas.LLMModelConfigUpdate,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID,
+    config_id: UUID,
+    config_update: schemas.LLMModelConfigUpdate,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Update a group's LLM model configuration.
@@ -594,16 +556,12 @@ async def update_group_llm_model_config(
         expected_version = updates.pop("expected_version", None)
 
         updated_config = await llm_repo.update_group_config(
-            config_id,
-            group_id,
-            updates,
-            expected_version=expected_version
+            config_id, group_id, updates, expected_version=expected_version
         )
 
         if not updated_config:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
 
         return schemas.LLMModelConfigResponse(
@@ -616,35 +574,31 @@ async def update_group_llm_model_config(
             is_default=updated_config.is_default,
             version=updated_config.version,
             created_at=updated_config.created_at,
-            updated_at=updated_config.updated_at
+            updated_at=updated_config.updated_at,
         )
     except HTTPException:
         raise
     except ValueError as e:
         # Handle optimistic lock errors
         if "Concurrent modification" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(e)
-            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
         raise ControllerBadRequestError(str(e))
     except Exception as e:
         log.error(f"Failed to update LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update LLM model configuration"
         )
 
 
 @router.delete(
     "/groups/{group_id}/llm-model-configs/{config_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def delete_group_llm_model_config(
-        group_id: UUID,
-        config_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID,
+    config_id: UUID,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> None:
     """
     Delete a group's LLM model configuration.
@@ -656,28 +610,26 @@ async def delete_group_llm_model_config(
         success = await llm_repo.delete_group_config(config_id, group_id)
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to delete LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete LLM model configuration"
         )
 
 
 @router.put(
     "/groups/{group_id}/llm-model-configs/default/{config_id}",
     response_model=schemas.LLMModelConfigResponse,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def set_group_default_llm_model_config(
-        group_id: UUID,
-        config_id: UUID,
-        llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository))
+    group_id: UUID,
+    config_id: UUID,
+    llm_repo: LLMModelConfigsRepository = Depends(get_repository(LLMModelConfigsRepository)),
 ) -> schemas.LLMModelConfigResponse:
     """
     Set a group's default LLM model configuration.
@@ -689,8 +641,7 @@ async def set_group_default_llm_model_config(
         success = await llm_repo.set_group_default_config(group_id, config_id)
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"LLM model configuration '{config_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
             )
 
         # Get the updated config
@@ -705,13 +656,12 @@ async def set_group_default_llm_model_config(
             is_default=config.is_default,
             version=config.version,
             created_at=config.created_at,
-            updated_at=config.updated_at
+            updated_at=config.updated_at,
         )
     except HTTPException:
         raise
     except Exception as e:
         log.error(f"Failed to set default LLM model config: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to set default LLM model configuration"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to set default LLM model configuration"
         )

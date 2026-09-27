@@ -1,2 +1,9 @@
+[run]
+source = gns3server
+branch = True
+
+[report]
+fail_under = 55
+
 [paths]
 source = gns3server

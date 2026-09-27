@@ -47,11 +47,9 @@ SECRET_MASK = "**********"
 
 
 class ServerSettingsResponse(ServerSettings):
-
     # plain strings instead of FilePath/DirectoryPath: paths are validated when
     # the settings are loaded or updated, not when echoed back to the client
-    secrets_dir: Optional[str] = Field(
-        None, description="Directory where secrets are stored (e.g. the JWT secret key)")
+    secrets_dir: Optional[str] = Field(None, description="Directory where secrets are stored (e.g. the JWT secret key)")
     certfile: Optional[str] = Field(None, description="SSL certificate file, requires enable_ssl")
     certkey: Optional[str] = Field(None, description="SSL key file, requires enable_ssl")
     # Optional overrides: typed as plain "str = None" in the config schema,
@@ -59,28 +57,30 @@ class ServerSettingsResponse(ServerSettings):
     resources_path: Optional[str] = Field(
         None,
         description="Path where files like built-in appliances and Docker resources are stored "
-                    "(defaults to the local user data directory)")
+        "(defaults to the local user data directory)",
+    )
     default_nat_interface: Optional[str] = Field(
-        None, description="Interface used by the NAT node, default is virbr0 on Linux (requires libvirt)")
+        None, description="Interface used by the NAT node, default is virbr0 on Linux (requires libvirt)"
+    )
 
 
 class ControllerSettingsResponse(ControllerSettings):
-
     # never serialized: managed via the secrets directory, not the configuration file
     jwt_secret_key: Optional[str] = Field(
-        default=None, exclude=True,
+        default=None,
+        exclude=True,
         description="Secret key used to sign the JWT authentication tokens "
-                    "(normally managed via the secrets directory, not the configuration file)")
+        "(normally managed via the secrets directory, not the configuration file)",
+    )
 
 
 class IOUSettingsResponse(IOUSettings):
-
     iourc_path: Optional[str] = Field(
-        None, description="Path of your .iourc file, the file is searched in $HOME/.iourc if not provided")
+        None, description="Path of your .iourc file, the file is searched in $HOME/.iourc if not provided"
+    )
 
 
 class SettingsResponse(BaseModel):
-
     Server: ServerSettingsResponse
     Controller: ControllerSettingsResponse
     VPCS: VPCSSettings
@@ -160,14 +160,12 @@ class ControllerSettingsUpdate(BaseModel):
 
 
 class VPCSSettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     vpcs_path: Optional[str] = None
 
 
 class DynamipsSettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     allocate_aux_console_ports: Optional[bool] = None
@@ -178,7 +176,6 @@ class DynamipsSettingsUpdate(BaseModel):
 
 
 class IOUSettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     iourc_path: Optional[str] = None
@@ -186,7 +183,6 @@ class IOUSettingsUpdate(BaseModel):
 
 
 class QemuSettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     enable_monitor: Optional[bool] = None
@@ -198,7 +194,6 @@ class QemuSettingsUpdate(BaseModel):
 
 
 class WebWiresharkSettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     enabled: Optional[bool] = None
@@ -210,7 +205,6 @@ class WebWiresharkSettingsUpdate(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-
     model_config = ConfigDict(extra="forbid")
 
     Server: Optional[ServerSettingsUpdate] = None
@@ -223,8 +217,7 @@ class SettingsUpdate(BaseModel):
 
 
 class SettingsUpdateResponse(SettingsResponse):
-
     restart_required: List[str] = Field(
         default_factory=list,
-        description="Changed 'Section.option' settings that require a server restart to take effect"
+        description="Changed 'Section.option' settings that require a server restart to take effect",
     )

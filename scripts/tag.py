@@ -10,9 +10,7 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Read gns3server/version.py, extract __version__, and create an annotated git tag."
-        )
+        description=("Read gns3server/version.py, extract __version__, and create an annotated git tag.")
     )
     parser.add_argument(
         "--dry-run",
@@ -51,7 +49,7 @@ def main() -> int:
         return 1
 
     try:
-        tag = 'v' + get_version(repo_root)
+        tag = "v" + get_version(repo_root)
     except (OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -81,5 +79,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

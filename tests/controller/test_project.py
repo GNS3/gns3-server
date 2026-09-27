@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
 import uuid
 import pytest
 import pytest_asyncio
@@ -28,7 +29,12 @@ from uuid import uuid4
 from gns3server.controller.project import Project
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ControllerForbiddenError
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    ControllerForbiddenError,
+    ComputeConflictError,
+)
 from gns3server.config import Config
 
 
@@ -47,18 +53,18 @@ async def node(controller, project):
 @pytest.mark.asyncio
 async def test_affect_uuid():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         p = Project(name="Test")
         mock_notification.assert_called()
         assert len(p.id) == 36
-        p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test 2")
-        assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
+        p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f", name="Test 2")
+        assert p.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 @pytest.mark.asyncio
 async def test_json():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         p = Project(name="Test")
         mock_notification.assert_called()
 
@@ -83,14 +89,14 @@ async def test_json():
         "supplier": None,
         "variables": None,
         "marker_definitions": {},
-        "created_by": None
+        "created_by": None,
     }
 
 
 @pytest.mark.asyncio
 async def test_created_by():
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         p = Project(name="Test", created_by="admin")
 
     assert p.created_by == "admin"
@@ -118,7 +124,7 @@ async def test_update_on_compute(controller):
     project._project_created_on_compute = [compute]
     project.emit_notification = MagicMock()
     await project.update(variables=variables)
-    compute.put.assert_any_call('/projects/{}'.format(project.id), {"variables": variables})
+    compute.put.assert_any_call("/projects/{}".format(project.id), {"variables": variables})
 
 
 @pytest.mark.asyncio
@@ -126,7 +132,7 @@ async def test_path(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
             p = Project(project_id=str(uuid4()), name="Test")
             mock_notification.assert_called()
         assert p.path == os.path.join(directory, p.id)
@@ -147,7 +153,7 @@ def test_path_exist(tmpdir):
 @pytest.mark.asyncio
 async def test_init_path(projects_dir):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+    with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
         project_id = str(uuid4())
         p = Project(project_id=project_id, name="Test")
         mock_notification.assert_called()
@@ -158,15 +164,15 @@ async def test_init_path(projects_dir):
 async def test_changing_path_with_quote_not_allowed(projects_dir):
 
     with pytest.raises(ControllerForbiddenError):
-        with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        with patch("gns3server.controller.project.Project.emit_controller_notification"):
             p = Project(project_id=str(uuid4()), name="Test")
-            p.path = os.path.join(projects_dir, "project\"53")
+            p.path = os.path.join(projects_dir, 'project"53')
 
 
 @pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         p = Project(name="Test")
         assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
         assert os.path.exists(p.captures_directory)
@@ -190,16 +196,19 @@ async def test_add_node_local(controller):
     node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"})
     assert node.id in project._nodes
 
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id,
-        "path": project._path,
-    })
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
-                                 data={'node_id': node.id,
-                                       'startup_script': 'test.cfg',
-                                       'name': 'test'},
-                                 timeout=1200)
+    compute.post.assert_any_call(
+        "/projects",
+        data={
+            "name": project._name,
+            "project_id": project._id,
+            "path": project._path,
+        },
+    )
+    compute.post.assert_any_call(
+        "/projects/{}/vpcs/nodes".format(project.id),
+        data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
+        timeout=1200,
+    )
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.asdict())
 
@@ -263,13 +272,12 @@ async def test_add_node_non_local(controller):
 
     node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_script": "test.cfg"})
 
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id
-    })
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id), data={'node_id': node.id,
-                                                                                     'startup_script': 'test.cfg',
-                                                                                     'name': 'test'}, timeout=1200)
+    compute.post.assert_any_call("/projects", data={"name": project._name, "project_id": project._id})
+    compute.post.assert_any_call(
+        "/projects/{}/vpcs/nodes".format(project.id),
+        data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
+        timeout=1200,
+    )
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.asdict())
 
@@ -294,6 +302,47 @@ async def test_add_node_iou(controller):
     assert node1.properties["application_id"] == 1
     assert node2.properties["application_id"] == 2
     assert node3.properties["application_id"] == 3
+
+
+@pytest.mark.asyncio
+async def test_add_node_iol_docker(controller):
+    """
+    IOL Docker nodes (GNS3_IOL_RUNNER marker) get an application ID from the
+    upper half of the id space, disjoint from IOU's lower half
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    project = await controller.add_project(project_id=str(uuid.uuid4()), name="test1")
+    project.emit_notification = MagicMock()
+
+    response = MagicMock()
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    # template shape: environment as a top-level kwarg
+    node1 = await project.add_node(
+        compute, "iol1", None, node_type="docker", image="iol-xe/iol-xe:17-18-02", environment="GNS3_IOL_RUNNER=1"
+    )
+    # raw API shape: environment nested in properties
+    node2 = await project.add_node(
+        compute,
+        "iol2",
+        None,
+        node_type="docker",
+        properties={"image": "iol-xe/iol-xe:17-18-02", "environment": "GNS3_IOL_RUNNER=1"},
+    )
+    # plain docker nodes are left alone
+    node3 = await project.add_node(
+        compute, "web", None, node_type="docker", image="nginx", environment="FOO=1", adapters=1
+    )
+
+    assert node1.properties["application_id"] == 512
+    assert node2.properties["application_id"] == 513
+    assert "application_id" not in node3.properties
+
+    # IOU keeps its own pool: a subsequent IOU node still gets the lower half
+    node4 = await project.add_node(compute, "iou1", None, node_type="iou")
+    assert node4.properties["application_id"] == 1
 
 
 @pytest.mark.asyncio
@@ -491,7 +540,7 @@ async def test_delete_node(controller):
     await project.delete_node(node.id)
     assert node.id not in project._nodes
 
-    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
+    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
 
 
@@ -538,7 +587,7 @@ async def test_delete_node_delete_link(controller):
     assert node.id not in project._nodes
     assert link.id not in project._links
 
-    compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
+    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
     project.emit_notification.assert_any_call("link.deleted", link.asdict())
 
@@ -716,10 +765,7 @@ async def test_clean_pictures_and_keep_supplier_logo(project):
     When a project is close old pictures should be removed
     """
 
-    project.supplier = {
-        'logo': 'logo.png',
-        'url': 'http://acme.com'
-    }
+    project.supplier = {"logo": "logo.png", "url": "http://acme.com"}
 
     drawing = await project.add_drawing()
     drawing._svg = "test.png"
@@ -791,8 +837,8 @@ async def test_dump(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        with patch('gns3server.controller.project.Project.emit_controller_notification'):
-            p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test")
+        with patch("gns3server.controller.project.Project.emit_controller_notification"):
+            p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f", name="Test")
             p.dump()
             with open(os.path.join(directory, p.id, "Test.gns3")) as f:
                 content = f.read()
@@ -802,7 +848,7 @@ async def test_dump(projects_dir):
 @pytest.mark.asyncio
 async def test_open_close(controller):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         project = Project(controller=controller, name="Test")
         assert project.status == "opened"
         await project.close()
@@ -819,13 +865,13 @@ async def test_open_close(controller):
 @pytest.mark.asyncio
 async def test_open_auto_start(controller):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         project = Project(controller=controller, name="Test", auto_start=True)
         assert project.status == "opened"
         await project.close()
-        #project.start_all = AsyncioMagicMock()
-        #await project.open()
-        #assert project.start_all.called
+        # project.start_all = AsyncioMagicMock()
+        # await project.open()
+        # assert project.start_all.called
 
 
 def test_is_running(project, node):
@@ -854,10 +900,14 @@ async def test_duplicate(project, controller):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    remote_vpcs = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    remote_vpcs = await project.add_node(
+        compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
 
     # We allow node not allowed for standard import / export
-    remote_virtualbox = await project.add_node(compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"})
+    remote_virtualbox = await project.add_node(
+        compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"}
+    )
 
     new_project = await project.duplicate(name="Hello")
     assert new_project.id != project.id
@@ -966,6 +1016,19 @@ async def test_stop_all(project):
 
 
 @pytest.mark.asyncio
+async def test_stop_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.is_always_running.return_value = False
+    node.missing_image = True
+    node.stop = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.stop_all()
+
+    node.stop.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_suspend_all(project):
 
     compute = MagicMock()
@@ -980,6 +1043,18 @@ async def test_suspend_all(project):
     compute.post = AsyncioMagicMock()
     await project.suspend_all()
     assert len(compute.post.call_args_list) == 10
+
+
+@pytest.mark.asyncio
+async def test_suspend_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.missing_image = True
+    node.suspend = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.suspend_all()
+
+    node.suspend.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -1000,6 +1075,18 @@ async def test_console_reset_all(project):
 
 
 @pytest.mark.asyncio
+async def test_console_reset_all_skips_nodes_with_missing_images(project):
+    node = MagicMock()
+    node.missing_image = True
+    node.reset_console = AsyncioMagicMock()
+    project._nodes[node.id] = node
+
+    await project.reset_console_all()
+
+    node.reset_console.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_node_name(project):
 
     compute = MagicMock()
@@ -1008,13 +1095,21 @@ async def test_node_name(project):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = await project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "test-1"
-    node = await project.add_node(compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "test-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "test-2"
-    node = await project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "helloworld-1"
-    node = await project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    node = await project.add_node(
+        compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     assert node.name == "helloworld-2"
     node = await project.add_node(compute, "VPCS-1", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     assert node.name == "VPCS-1"
@@ -1035,12 +1130,203 @@ async def test_duplicate_node(project):
     compute.post = AsyncioMagicMock(return_value=response)
 
     original = await project.add_node(
-        compute,
-        "test",
-        None,
-        node_type="vpcs",
-        properties={
-            "startup_config": "test.cfg"
-        })
+        compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}
+    )
     new_node = await project.duplicate_node(original, 42, 10, 11)
     assert new_node.x == 42
+
+
+@pytest.mark.asyncio
+async def test_add_node_missing_image_kept_in_degraded_state(controller):
+    """
+    A node whose image is missing is kept on the controller with the missing
+    image list instead of failing, when allow_missing_image is set.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.connected = True
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+
+    async def post(url, data=None, **kwargs):
+        if url.endswith("/qemu/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+            )
+        response = MagicMock()
+        response.json = {}
+        return response
+
+    compute.post = AsyncioMagicMock(side_effect=post)
+
+    node = await project.add_node(
+        compute,
+        "r1",
+        None,
+        node_type="qemu",
+        allow_missing_image=True,
+        properties={"hda_disk_image": "missing.qcow2", "ram": 256},
+    )
+    assert node.missing_image is True
+    assert node.id in project._nodes
+    assert node.missing_images == [{"property": "hda_disk_image", "image": "missing.qcow2", "image_type": "qemu"}]
+
+
+@pytest.mark.asyncio
+async def test_open_with_missing_image_defers_links(controller, projects_dir):
+    """
+    Opening a project with a missing image succeeds, keeps the degraded node
+    and its links in the topology, but does not create the NIOs.
+    """
+
+    project_id = "3c1be6f9-b4ba-4737-b209-63c47c23359f"
+    qemu_id = "11111111-1111-1111-1111-111111111111"
+    iou_id = "33333333-3333-3333-3333-333333333333"
+    vpcs_id = "22222222-2222-2222-2222-222222222222"
+    link_id = "5a3e3a64-e853-4055-9503-4a14e01290f1"
+
+    topology = {
+        "auto_close": True,
+        "auto_open": False,
+        "auto_start": False,
+        "name": "demo",
+        "project_id": project_id,
+        "revision": 5,
+        "topology": {
+            "computes": [],
+            "drawings": [],
+            "links": [
+                {
+                    "link_id": link_id,
+                    "nodes": [
+                        {"adapter_number": 0, "node_id": qemu_id, "port_number": 0},
+                        {"adapter_number": 0, "node_id": vpcs_id, "port_number": 0},
+                    ],
+                }
+            ],
+            "nodes": [
+                {
+                    "compute_id": "local",
+                    "name": "R1",
+                    "node_id": qemu_id,
+                    "node_type": "qemu",
+                    "properties": {"hda_disk_image": "missing.qcow2", "adapters": 1, "ram": 256},
+                    "symbol": ":/symbols/router.svg",
+                    "x": 0,
+                    "y": 0,
+                },
+                {
+                    "compute_id": "local",
+                    "name": "IOU1",
+                    "node_id": iou_id,
+                    "node_type": "iou",
+                    "properties": {"path": "missing.bin"},
+                    "symbol": ":/symbols/router.svg",
+                    "x": 200,
+                    "y": 0,
+                },
+                {
+                    "compute_id": "local",
+                    "name": "PC1",
+                    "node_id": vpcs_id,
+                    "node_type": "vpcs",
+                    "properties": {},
+                    "symbol": ":/symbols/computer.svg",
+                    "x": 100,
+                    "y": 0,
+                },
+            ],
+        },
+        "type": "topology",
+        "version": "2.0.0",
+    }
+
+    project_dir = os.path.join(projects_dir, "demo")
+    os.makedirs(project_dir, exist_ok=True)
+    with open(os.path.join(project_dir, "demo.gns3"), "w+") as f:
+        json.dump(topology, f)
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.connected = True
+    compute.name = "local"
+    compute.console_host = "127.0.0.1"
+    controller._computes["local"] = compute
+
+    async def post(url, data=None, **kwargs):
+        if url.endswith("/qemu/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.qcow2", "exception": "ImageMissingError"}
+            )
+        if url.endswith("/iou/nodes"):
+            raise ComputeConflictError(
+                url, {"message": "missing", "image": "missing.bin", "exception": "ImageMissingError"}
+            )
+        response = MagicMock()
+        if "ports/udp/batch" in url:
+            response.json = {"udp_ports": [20000]}
+        else:
+            response.json = {}
+        return response
+
+    compute.post = AsyncioMagicMock(side_effect=post)
+
+    project = Project(
+        name="demo",
+        project_id=project_id,
+        path=project_dir,
+        controller=controller,
+        filename="demo.gns3",
+        status="closed",
+    )
+
+    await project.open()
+    assert project.status == "opened"
+
+    qemu_node = project.get_node(qemu_id)
+    assert qemu_node.missing_image is True
+    assert qemu_node.missing_images[0]["image"] == "missing.qcow2"
+
+    iou_node = project.get_node(iou_id)
+    assert iou_node.missing_image is True
+    assert iou_node.missing_images[0]["image"] == "missing.bin"
+    assert iou_node.missing_images[0]["image_type"] == "iou"
+
+    link = project._links[link_id]
+    assert link._deferred is True
+    assert link.created is False
+    assert link in qemu_node.links
+
+
+@pytest.mark.asyncio
+async def test_restore_deferred_links(project):
+    """
+    Once a degraded node is created, the deferred links are created on the
+    computes and no longer flagged as deferred.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = await project.add_node(compute, "n1", None, node_type="vpcs", properties={})
+    node2 = await project.add_node(compute, "n2", None, node_type="vpcs", properties={})
+
+    link = await project.add_link()
+    await link.add_node(node1, 0, 0, batch=True)
+    await link.add_node(node2, 0, 0, batch=True)
+    link._nodes[0]["port"].link = link
+    link._nodes[1]["port"].link = link
+    node1.add_link(link)
+    node2.add_link(link)
+    link._deferred = True
+    link.create = AsyncioMagicMock()
+
+    project.emit_notification = MagicMock()
+    await project.restore_deferred_links(node1)
+
+    assert link._deferred is False
+    assert link.create.called is True

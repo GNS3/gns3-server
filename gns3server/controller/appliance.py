@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 
 
 class Appliance:
-
     def __init__(self, path, data, builtin=True):
 
         self._data = data.copy()

@@ -99,7 +99,9 @@ async def test_vm_invalid_virtualbox_api_version(compute_project, manager):
 @pytest.mark.asyncio
 async def test_vm_adapter_add_nio_binding_adapter_not_exist(vm, manager, free_console_port):
 
-    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio(
+        {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"}
+    )
     with pytest.raises(VirtualBoxError):
         await vm.adapter_add_nio_binding(15, nio)
 

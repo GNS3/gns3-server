@@ -27,7 +27,6 @@ from .vpcs_vm import VPCSVM
 
 
 class VPCS(BaseManager):
-
     _NODE_CLASS = VPCSVM
 
     def __init__(self):

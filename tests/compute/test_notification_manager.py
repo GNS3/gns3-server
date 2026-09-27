@@ -34,7 +34,7 @@ async def test_queue():
 
         notifications.emit("test", {"a": 1})
         res = await queue.get(5)
-        assert res == ('test', {"a": 1}, {})
+        assert res == ("test", {"a": 1}, {})
 
     assert len(notifications._listeners) == 0
 

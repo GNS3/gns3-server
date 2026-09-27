@@ -25,6 +25,7 @@ from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
+from gns3server.api.server import app as gns3_app
 from gns3server.controller.controller_error import (
     ControllerError,
     ControllerNotFoundError,
@@ -67,9 +68,9 @@ def test_getUrl(controller):
 def test_get_url(controller):
 
     compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
-    with patch('gns3server.controller.compute.Compute._getUrl', return_value="returned") as getURL:
-        assert compute.get_url("/test") == 'returned'
-        getURL.assert_called_once_with('/test')
+    with patch("gns3server.controller.compute.Compute._getUrl", return_value="returned") as getURL:
+        assert compute.get_url("/test") == "returned"
+        getURL.assert_called_once_with("/test")
 
 
 def test_host_ip(controller):
@@ -84,7 +85,9 @@ def test_name():
     assert c.name == "https://example.com:84"
     c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), name="hello")
     assert c.name == "hello"
-    c = Compute("world", protocol="https", host="example.com", port=84, controller=MagicMock(), user="azertyuiopqsdfghjklkm")
+    c = Compute(
+        "world", protocol="https", host="example.com", port=84, controller=MagicMock(), user="azertyuiopqsdfghjklkm"
+    )
     assert c.name == "https://azertyuiopq...@example.com:84"
 
 
@@ -96,7 +99,16 @@ async def test_compute_httpQuery(compute):
         response.status = 200
         await compute.post("/projects", {"a": "b"})
         await compute.close()
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=b'{"a": "b"}', auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_called_with(
+            "POST",
+            "https://example.com:84/v3/compute/projects",
+            headers={"content-type": "application/json"},
+            data=b'{"a": "b"}',
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         assert compute._auth is None
 
 
@@ -111,13 +123,22 @@ async def test_compute_httpQueryAuth(compute):
         compute.password = SecretStr("toor")
         await compute.post("/projects", {"a": "b"})
         await compute.close()
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=b'{"a": "b"}', auth=compute._auth, params=None, chunked=None, timeout=120)
+        mock.assert_called_with(
+            "POST",
+            "https://example.com:84/v3/compute/projects",
+            headers={"content-type": "application/json"},
+            data=b'{"a": "b"}',
+            auth=compute._auth,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         assert compute._auth.login == "root"
         assert compute._auth.password == "toor"
 
 
 # @pytest.mark.asyncio
-#async def test_compute_httpQueryNotConnected(compute, controller):
+# async def test_compute_httpQueryNotConnected(compute, controller):
 #
 #     controller._notification = MagicMock()
 #     compute._connected = False
@@ -135,7 +156,7 @@ async def test_compute_httpQueryAuth(compute):
 
 
 # @pytest.mark.asyncio
-#async def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller):
+# async def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller):
 #     """
 #     We are not connected to the remote and it's a GNS3 VM. So we need to start it
 #     """
@@ -171,7 +192,16 @@ async def test_compute_httpQueryNotConnectedInvalidVersion(compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_any_call(
+            "GET",
+            "https://example.com:84/v3/compute/capabilities",
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         await compute.close()
 
 
@@ -180,12 +210,21 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server(compute):
 
     compute._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value=b'Blocked by super antivirus')
+    response.read = AsyncioMagicMock(return_value=b"Blocked by super antivirus")
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_any_call(
+            "GET",
+            "https://example.com:84/v3/compute/capabilities",
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         await compute.close()
 
 
@@ -194,12 +233,21 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server2(compute):
 
     compute._connected = False
     response = AsyncioMagicMock()
-    response.read = AsyncioMagicMock(return_value=b'{}')
+    response.read = AsyncioMagicMock(return_value=b"{}")
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_any_call(
+            "GET",
+            "https://example.com:84/v3/compute/capabilities",
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
 
 
 @pytest.mark.asyncio
@@ -233,22 +281,32 @@ async def test_compute_httpQuery_project(compute):
     response = MagicMock()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         response.status = 200
-        with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        with patch("gns3server.controller.project.Project.emit_controller_notification") as mock_notification:
             project = Project(name="Test")
             mock_notification.assert_called()
         await compute.post("/projects", project)
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", headers={'content-type': 'application/json'}, data=json.dumps(project.asdict()), auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_called_with(
+            "POST",
+            "https://example.com:84/v3/compute/projects",
+            headers={"content-type": "application/json"},
+            data=json.dumps(project.asdict()),
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         await compute.close()
+
 
 # FIXME: https://github.com/aio-libs/aiohttp/issues/2525
 # @pytest.mark.asyncio
-#async def test_connectNotification(compute):
+# async def test_connectNotification(compute):
 #
 #     ws_mock = AsyncioMagicMock()
 #     call = 0
 #
 #     @pytest.mark.asyncio
-#async def receive():
+# async def receive():
 #         nonlocal call
 #         call += 1
 #         if call == 1:
@@ -281,7 +339,7 @@ async def test_compute_httpQuery_project(compute):
 #     call = 0
 #
 #     @pytest.mark.asyncio
-#async def receive():
+# async def receive():
 #         nonlocal call
 #         call += 1
 #         if call == 1:
@@ -305,6 +363,7 @@ async def test_compute_httpQuery_project(compute):
 #     assert args[1]["memory_usage_percent"] == 80.7
 #     assert args[1]["cpu_usage_percent"] == 35.7
 
+
 @pytest.mark.asyncio
 async def test_json(compute):
 
@@ -321,14 +380,7 @@ async def test_json(compute):
         "disk_usage_percent": 0,
         "connected": True,
         "last_error": None,
-        "capabilities": {
-            "version": "",
-            "platform": "",
-            "cpus": 0,
-            "memory": 0,
-            "disk_size": 0,
-            "node_types": []
-        }
+        "capabilities": {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": []},
     }
     assert compute.asdict(topology_dump=True) == {
         "compute_id": "my_compute_id",
@@ -346,7 +398,9 @@ async def test_downloadFile(project, compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.download_file(project, "test/titi")
-    mock.assert_called_with("GET", "https://example.com:84/v3/compute/projects/{}/files/test/titi".format(project.id), auth=None)
+    mock.assert_called_with(
+        "GET", "https://example.com:84/v3/compute/projects/{}/files/test/titi".format(project.id), auth=None
+    )
     await compute.close()
 
 
@@ -381,7 +435,16 @@ async def test_forward_get(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.forward("GET", "qemu", "images")
-        mock.assert_called_with("GET", "https://example.com:84/v3/compute/qemu/images", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=None)
+        mock.assert_called_with(
+            "GET",
+            "https://example.com:84/v3/compute/qemu/images",
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=None,
+        )
         await compute.close()
 
 
@@ -404,7 +467,16 @@ async def test_forward_post(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.forward("POST", "qemu", "img", data={"id": 42})
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/qemu/img", headers={'content-type': 'application/json'}, data=b'{"id": 42}', auth=None, params=None, chunked=None, timeout=None)
+        mock.assert_called_with(
+            "POST",
+            "https://example.com:84/v3/compute/qemu/img",
+            headers={"content-type": "application/json"},
+            data=b'{"id": 42}',
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=None,
+        )
         await compute.close()
 
 
@@ -417,7 +489,16 @@ async def test_list_files(project, compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert await compute.list_files(project) == res
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/projects/{}/files".format(project.id), headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=None)
+        mock.assert_any_call(
+            "GET",
+            "https://example.com:84/v3/compute/projects/{}/files".format(project.id),
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=None,
+        )
         await compute.close()
 
 
@@ -431,7 +512,7 @@ async def test_interfaces(compute):
             "mac_address": "00:50:56:c0:00:63",
             "name": "vmnet99",
             "netmask": "255.255.255.0",
-            "type": "ethernet"
+            "type": "ethernet",
         }
     ]
     response = AsyncioMagicMock()
@@ -439,7 +520,16 @@ async def test_interfaces(compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert await compute.interfaces() == res
-        mock.assert_any_call("GET", "https://example.com:84/v3/compute/network/interfaces", headers={'content-type': 'application/json'}, data=None, auth=None, params=None, chunked=None, timeout=120)
+        mock.assert_any_call(
+            "GET",
+            "https://example.com:84/v3/compute/network/interfaces",
+            headers={"content-type": "application/json"},
+            data=None,
+            auth=None,
+            params=None,
+            chunked=None,
+            timeout=120,
+        )
         await compute.close()
 
 
@@ -448,64 +538,32 @@ async def test_get_ip_on_same_subnet(controller):
 
     compute1 = Compute("compute1", host="192.168.1.1", controller=controller)
     compute1._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        },
-        {
-            "ip_address": "192.168.2.1",
-            "netmask": "255.255.255.0"
-        },
-        {
-            "ip_address": "192.168.1.1",
-            "netmask": "255.255.255.0"
-        },
+        {"ip_address": "127.0.0.1", "netmask": "255.255.255.255"},
+        {"ip_address": "192.168.2.1", "netmask": "255.255.255.0"},
+        {"ip_address": "192.168.1.1", "netmask": "255.255.255.0"},
     ]
 
     # Case 1 both host are on the same network
     compute2 = Compute("compute2", host="192.168.1.2", controller=controller)
     compute2._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        },
-        {
-            "ip_address": "192.168.2.2",
-            "netmask": "255.255.255.0"
-        },
-        {
-            "ip_address": "192.168.1.2",
-            "netmask": "255.255.255.0"
-        }
+        {"ip_address": "127.0.0.1", "netmask": "255.255.255.255"},
+        {"ip_address": "192.168.2.2", "netmask": "255.255.255.0"},
+        {"ip_address": "192.168.1.2", "netmask": "255.255.255.0"},
     ]
     assert await compute1.get_ip_on_same_subnet(compute2) == ("192.168.1.1", "192.168.1.2")
 
     # Case 2 compute2 host is on a different network but a common interface is available
     compute2 = Compute("compute2", host="127.0.0.1", controller=controller)
     compute2._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        },
-        {
-            "ip_address": "192.168.4.2",
-            "netmask": "255.255.255.0"
-        },
-        {
-            "ip_address": "192.168.1.2",
-            "netmask": "255.255.255.0"
-        }
+        {"ip_address": "127.0.0.1", "netmask": "255.255.255.255"},
+        {"ip_address": "192.168.4.2", "netmask": "255.255.255.0"},
+        {"ip_address": "192.168.1.2", "netmask": "255.255.255.0"},
     ]
     assert await compute1.get_ip_on_same_subnet(compute2) == ("192.168.1.1", "192.168.1.2")
 
-    #No common interface
+    # No common interface
     compute2 = Compute("compute2", host="127.0.0.1", controller=controller)
-    compute2._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        }
-    ]
+    compute2._interfaces_cache = [{"ip_address": "127.0.0.1", "netmask": "255.255.255.255"}]
     with pytest.raises(ValueError):
         await compute1.get_ip_on_same_subnet(compute2)
 
@@ -513,26 +571,14 @@ async def test_get_ip_on_same_subnet(controller):
     compute2 = Compute("compute2", host="192.168.1.2", controller=controller)
     compute1 = Compute("compute1", host="192.168.2.1", controller=controller)
     compute1._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        },
-        {
-            "ip_address": "169.254.1.1",
-            "netmask": "255.255.0.0"
-        },
+        {"ip_address": "127.0.0.1", "netmask": "255.255.255.255"},
+        {"ip_address": "169.254.1.1", "netmask": "255.255.0.0"},
     ]
     compute2._interfaces_cache = [
-        {
-            "ip_address": "127.0.0.1",
-            "netmask": "255.255.255.255"
-        },
-        {
-            "ip_address": "169.254.2.1",
-            "netmask": "255.255.0.0"
-        },
+        {"ip_address": "127.0.0.1", "netmask": "255.255.255.255"},
+        {"ip_address": "169.254.2.1", "netmask": "255.255.0.0"},
     ]
-    assert await compute1.get_ip_on_same_subnet(compute2) == ('192.168.2.1', '192.168.1.2')
+    assert await compute1.get_ip_on_same_subnet(compute2) == ("192.168.2.1", "192.168.1.2")
 
 
 class FakeWebSocket:
@@ -572,7 +618,12 @@ async def test_connect_notification_poison_frame_autoreconnects(compute, monkeyp
     emit_mock = MagicMock()
     monkeypatch.setattr(compute._controller.notification, "controller_emit", emit_mock)
     frames = [
-        _text_frame({"action": "ping", "event": {"cpu_usage_percent": 10.0, "memory_usage_percent": 20.0, "disk_usage_percent": 30.0}}),
+        _text_frame(
+            {
+                "action": "ping",
+                "event": {"cpu_usage_percent": 10.0, "memory_usage_percent": 20.0, "disk_usage_percent": 30.0},
+            }
+        ),
         _text_frame({"event": {"poison": True}}),  # missing "action": raises KeyError in the receive loop
     ]
     session = MagicMock()
@@ -581,12 +632,15 @@ async def test_connect_notification_poison_frame_autoreconnects(compute, monkeyp
     compute._http_session = session
 
     # allow the reconnection to be scheduled during the test
+    # (import gns3_app at module top: a first import from inside a test body
+    #  would execute module-level from-imports while the autouse fixture's
+    #  monkeypatches are active, freezing patched objects into namespaces)
     monkeypatch.delattr(sys, "_called_from_test", raising=False)
-    from gns3server.api.server import app as gns3_app
     monkeypatch.setattr(gns3_app.state, "exiting", False)
 
     async def fake_connect():
         compute._reconnect_attempted = True
+
     monkeypatch.setattr(compute, "connect", fake_connect)
 
     # must not raise despite the poison frame

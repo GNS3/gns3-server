@@ -76,8 +76,7 @@ async def startup(app: FastAPI) -> None:
         # to give it a chance to process API requests
         global auto_discover_images_task_handle
         auto_discover_images_task_handle = asyncio.get_event_loop().call_later(
-            5,
-            lambda: asyncio.create_task(discover_images_on_filesystem(app))
+            5, lambda: asyncio.create_task(discover_images_on_filesystem(app))
         )
 
     for module in MODULES:
@@ -98,6 +97,7 @@ async def startup(app: FastAPI) -> None:
 
     if MCP_AVAILABLE:
         from gns3server.agent.mcp import set_mcp_server_ready
+
         set_mcp_server_ready(True)
     log.info("GNS3 server startup completed")
 
@@ -111,6 +111,11 @@ async def shutdown(app: FastAPI) -> None:
         auto_discover_images_task_handle.cancel()
     await HTTPClient.close_session()
     await MarkerManager.instance().stop()
+    # Kill resident sharkd sessions (marker replay) and drop their /tmp
+    # scratch copies before the process exits.
+    from gns3server.controller import marker_replay
+
+    await marker_replay.close_sessions()
     await Controller.instance().stop()
 
     for module in MODULES:

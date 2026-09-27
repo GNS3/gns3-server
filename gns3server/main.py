@@ -62,6 +62,7 @@ def daemonize():
         print("Second fork failed: %d (%s)\n" % (e.errno, e.strerror), file=sys.stderr)
         sys.exit(1)
 
+
 def parse_arguments(argv):
     """
     Parse command line arguments
@@ -69,6 +70,7 @@ def parse_arguments(argv):
     :param argv: Array of command line arguments
     """
     from gns3server.version import __version__
+
     parser = argparse.ArgumentParser(description=f"GNS3 server version {__version__}")
     parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
     parser.add_argument("--host", help="run on the given host/IP address")
@@ -78,16 +80,12 @@ def parse_arguments(argv):
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
-    parser.add_argument(
-        "-A", "--allow", action="store_true", help="allow remote connections to local console ports"
-    )
+    parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", default=False, action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", default=False, action="store_true", help="show debug logs")
     parser.add_argument("--logfile", "--log", help="send output to logfile instead of console")
     parser.add_argument("--logmaxsize", default=10000000, help="maximum logfile size in bytes (default is 10MB)")
-    parser.add_argument(
-        "--logbackupcount", default=10, help="number of historical log files to keep (default is 10)"
-    )
+    parser.add_argument("--logbackupcount", default=10, help="number of historical log files to keep (default is 10)")
     parser.add_argument(
         "--logcompression", default=False, action="store_true", help="compress inactive (historical) logs"
     )
@@ -118,9 +116,7 @@ def _raise_open_files_limit(target=65535):
         new_soft = min(target, hard)
         resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
         if new_soft < target:
-            log.warning(
-                f"Open-files limit raised to {new_soft} (hard limit), below the requested {target}"
-            )
+            log.warning(f"Open-files limit raised to {new_soft} (hard limit), below the requested {target}")
         else:
             log.info(f"Open-files limit raised from {soft} to {new_soft}")
     except (OSError, ValueError) as e:
@@ -141,6 +137,7 @@ def main():
     try:
         parser, args = parse_arguments(sys.argv[1:])
         from gns3server.server import Server
+
         asyncio.run(Server().run(parser, args))
     except KeyboardInterrupt:
         pass

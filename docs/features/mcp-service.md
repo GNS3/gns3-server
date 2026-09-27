@@ -238,25 +238,32 @@ Both `device_config_send` and `device_show_run` support an optional `template` p
 
 ```python
 # Direct commands (single/batch)
-device_config_send(project_id, device_configs=[
-    {"device_name": "R1", "config_commands": ["int lo0", "ip add 1.1.1.1 255.255.255.255"]},
-])
+device_config_send(
+    project_id,
+    device_configs=[
+        {"device_name": "R1", "config_commands": ["int lo0", "ip add 1.1.1.1 255.255.255.255"]},
+    ],
+)
 
 # Jinja2 template (reduces token usage for batch)
-device_config_send(project_id,
+device_config_send(
+    project_id,
     template="interface lo{{ n }}\nip address {{ ip }} 255.255.255.255",
     device_configs=[
         {"device_name": "R1", "vars": {"n": 0, "ip": "1.1.1.1"}},
         {"device_name": "R2", "vars": {"n": 0, "ip": "2.2.2.2"}},
-    ])
+    ],
+)
 
 # Show commands with template
-device_show_run(project_id,
+device_show_run(
+    project_id,
     template="show ip route {{ protocol }}",
     device_configs=[
         {"device_name": "R1", "vars": {"protocol": "ospf"}},
         {"device_name": "R2", "vars": {"protocol": "bgp"}},
-    ])
+    ],
+)
 ```
 
 ### Best Practices
@@ -273,9 +280,12 @@ device_show_run(project_id,
 
 ```python
 # Save config on device
-device_show_run(project_id, device_configs=[
-    {"device_name": "R1", "commands": ["write memory"]},
-])
+device_show_run(
+    project_id,
+    device_configs=[
+        {"device_name": "R1", "commands": ["write memory"]},
+    ],
+)
 # Backup
 config = node_file_get(project_id, node_id, "startup-config.cfg")
 # Restore if config breaks

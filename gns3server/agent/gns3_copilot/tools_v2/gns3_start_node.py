@@ -26,13 +26,15 @@
 
 GNS3 node startup tool for network device activation.
 
-Provides functionality to start one or multiple nodes in GNS3 projects
-with progress tracking and status monitoring.
+Sends start commands and returns immediately — it never blocks on a fixed
+boot timer. A failed start command (e.g. a 409 from the compute) is
+reported in the same round-trip instead of after a two-minute progress
+bar. Use the wait_seconds tool between this and any status check to give
+nodes time to boot.
 """
 
 import json
 import logging
-import time
 from pprint import pprint
 from typing import Any
 
@@ -48,290 +50,15 @@ from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Node startup time configuration by device type
-# Based on typical boot times for different emulators
-# Conservative timing to account for slower hardware environments
-NODE_STARTUP_TIME = {
-    "vpcs": {"base": 15, "extra_per_node": 2},   # VPCS: Very fast startup
-    "iou": {"base": 25, "extra_per_node": 3},    # IOU: Fast startup
-    "default": {"base": 120, "extra_per_node": 10},  # Other devices: Conservative time
-}
-
-
-def calculate_startup_time(nodes: list) -> int:
-    """
-    Calculate startup wait time based on node types.
-
-    Strategy:
-    - If all nodes are fast devices (VPCS/IOU): use fast startup time
-    - If any node is a slow device: use conservative startup time
-
-    Args:
-        nodes: List of node dicts with a "node_type" key
-
-    Returns:
-        Calculated wait time in seconds
-    """
-    if not nodes:
-        return 60  # Default: 60 seconds for empty list
-
-    # Get all node types
-    node_types = [node.get("node_type") or "default" for node in nodes]
-
-    # Check if all nodes are fast startup devices (VPCS or IOU)
-    fast_types = {"vpcs", "iou"}
-    all_fast = all(node_type in fast_types for node_type in node_types)
-
-    if all_fast:
-        # Use fast startup time: base + (count - 1) * extra_per_node
-        # Use the largest base time among the fast devices
-        max_fast_base = max(
-            NODE_STARTUP_TIME[nt]["base"]
-            for nt in node_types if nt in fast_types
-        )
-        # Use the smallest extra_per_node among the fast devices
-        min_fast_extra = min(
-            NODE_STARTUP_TIME[nt]["extra_per_node"]
-            for nt in node_types if nt in fast_types
-        )
-        total_time = max_fast_base + (len(nodes) - 1) * min_fast_extra
-        logger.info(
-            "All fast devices detected (%s), using fast startup time: %ds",
-            node_types,
-            total_time
-        )
-        return total_time
-    else:
-        # Use conservative startup time for mixed or slow devices
-        config = NODE_STARTUP_TIME["default"]
-        total_time = config["base"] + (len(nodes) - 1) * config["extra_per_node"]
-        logger.info(
-            "Mixed or slow devices detected (%s), using conservative startup time: %ds",
-            node_types,
-            total_time
-        )
-        return total_time
-
-
-def show_progress_bar(
-    duration: int = 120, interval: int = 1, node_count: int = 1
-) -> None:
-    """
-    Display a simple text progress bar for node startup.
-
-    Args:
-        duration: Total duration of the progress bar in seconds
-        interval: Update interval in seconds
-        node_count: Number of nodes being started
-    """
-    print(f"Starting {node_count} node(s), please wait...")
-    for elapsed in range(duration):
-        # Calculate progress percentage
-        progress = (elapsed + 1) / duration * 100
-
-        # Create progress bar display
-        bar_length = 30
-        filled_length = int(bar_length * elapsed // duration)
-        progress_string = (
-            "=" * filled_length + ">" + " " * (bar_length - filled_length - 1)
-        )
-
-        # Print progress bar with node count
-        print(f"\r[{progress_string}] {progress:.1f}%", end="", flush=True)
-        time.sleep(interval)
-
-    print(f"\n{node_count} node(s) startup completed!")
-
 
 class GNS3StartNodeTool(BaseTool):
     """
     A LangChain tool to start one or multiple nodes in a GNS3 project.
 
-    **Input**:
-    A JSON object with project_id and node_ids (list of node IDs).
-    Example:
-        {
-            "project_id": "uuid-of-project",
-            "node_ids": ["uuid-of-node-1", "uuid-of-node-2"]
-        }
-
-    **Output**:
-    A dictionary with all nodes' details:
-    {
-        "project_id": "...",
-        "total_nodes": 2,
-        "successful": 2,
-        "failed": 0,
-        "nodes": [
-            {"node_id": "...", "name": "...", "status": "..."},
-            {"node_id": "...", "name": "...", "status": "..."}
-        ]
-    }
-    """
-
-    name: str = "start_gns3_node"
-    description: str = """
-    Starts one or multiple nodes in a GNS3 project.
-    Input: JSON with project_id and node_ids (list of node IDs).
-    Returns: A dict with all nodes' details (success/failure status).
-    """
-
-    def _run(
-        self,
-        tool_input: str,
-        run_manager: CallbackManagerForToolRun | None = None,
-    ) -> dict[str, Any]:
-        try:
-            # Parse input JSON
-            input_data = json.loads(tool_input)
-            project_id = input_data.get("project_id")
-            node_ids = input_data.get("node_ids")
-
-            # Validate input
-            if not project_id or not node_ids:
-                logger.error(
-                    "Missing required fields: project_id or node_ids."
-                )
-                return {
-                    "error": "Missing required fields: "
-                    "project_id and node_ids."
-                }
-
-            if not isinstance(node_ids, list):
-                logger.error("node_ids must be a list.")
-                return {"error": "node_ids must be a list."}
-
-            # Build handler context (JWT + server URL from request context)
-            logger.info("Connecting to GNS3 server...")
-            gns3_ctx = build_gns3_ctx()
-
-            if gns3_ctx is None:
-                logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
-
-            # Phase 1: fetch node info (including node_type) in one call
-            logger.info(
-                "Retrieving node info for %d nodes in project %s...",
-                len(node_ids),
-                project_id,
-            )
-            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
-            if "error" in listing:
-                return {"error": listing["error"]}
-            nodes_by_id = {n["node_id"]: n for n in listing["nodes"]}
-            nodes = [nodes_by_id[nid] for nid in node_ids if nid in nodes_by_id]
-            for node in nodes:
-                logger.info(
-                    "Node %s (%s) type: %s",
-                    node["node_id"],
-                    node.get("name"),
-                    node.get("node_type"),
-                )
-            for nid in node_ids:
-                if nid not in nodes_by_id:
-                    logger.error(
-                        "Node %s not found in project %s", nid, project_id
-                    )
-
-            # Calculate startup time based on node types
-            wait_time = calculate_startup_time(nodes)
-
-            # Phase 2: send start commands for all nodes (parallel batch)
-            logger.info(
-                "Sending start commands for %d nodes in project %s...",
-                len(nodes),
-                project_id,
-            )
-            start_results = start_node_handler(
-                {"project_id": project_id, "node_ids": [n["node_id"] for n in nodes]},
-                gns3_ctx,
-            )
-            for r in start_results:
-                if r.get("status") == "error":
-                    logger.error(
-                        "Failed to send start command for node %s: %s",
-                        r.get("node_id"),
-                        r.get("error"),
-                    )
-                else:
-                    logger.info("Start command sent for node %s", r.get("node_id"))
-
-            # Show progress bar with calculated wait time
-            show_progress_bar(
-                duration=wait_time, interval=1, node_count=len(nodes)
-            )
-
-            # Phase 3: get final status for all nodes (one call)
-            results = []
-            logger.info("Retrieving status for %d nodes...", len(nodes))
-            listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
-            if "error" in listing:
-                return {"error": listing["error"]}
-            final_by_id = {n["node_id"]: n for n in listing["nodes"]}
-            for node in nodes:
-                node_info = final_by_id.get(node["node_id"], node)
-                results.append(
-                    {
-                        "node_id": node["node_id"],
-                        "name": node_info.get("name") or "N/A",
-                        "status": node_info.get("status") or "unknown",
-                    }
-                )
-
-            # Handle nodes that failed to be retrieved initially
-            retrieved_node_ids = {node["node_id"] for node in nodes}
-            for node_id in node_ids:
-                if node_id not in retrieved_node_ids:
-                    results.append(
-                        {
-                            "node_id": node_id,
-                            "name": "N/A",
-                            "status": "error",
-                            "error": "Node not found during info retrieval",
-                        }
-                    )
-
-            # Analyze results
-            successful_nodes = [
-                r for r in results if r.get("status") != "error"
-            ]
-            failed_nodes = [r for r in results if r.get("status") == "error"]
-
-            # Construct final response
-            response = {
-                "project_id": project_id,
-                "total_nodes": len(node_ids),
-                "successful": len(successful_nodes),
-                "failed": len(failed_nodes),
-                "nodes": results,
-            }
-
-            logger.info(
-                "Start operation completed: %d successful, %d failed",
-                len(successful_nodes),
-                len(failed_nodes),
-            )
-
-            return response
-
-        except json.JSONDecodeError as e:
-            logger.error("Invalid JSON input: %s", e)
-            return {"error": f"Invalid JSON input: {e}"}
-        except Exception as e:
-            logger.error("Failed to start nodes: %s", e)
-            return {"error": f"Failed to start nodes: {str(e)}"}
-
-
-class GNS3StartNodeQuickTool(BaseTool):
-    """
-    A LangChain tool to start nodes in a GNS3 project WITHOUT waiting.
-
-    This tool sends start commands to all nodes and immediately returns status,
-    without blocking for startup completion. Suitable for automated deployment
-    workflows where long waits would cause HTTP timeouts.
+    Sends the start commands in a parallel batch and returns each node's
+    status immediately — nodes keep booting in the background. It does NOT
+    wait for boot completion: follow up with the wait_seconds tool and a
+    status/topology check to confirm nodes actually came up.
 
     **Input**:
     A JSON object with project_id and node_ids (list of node IDs).
@@ -350,19 +77,20 @@ class GNS3StartNodeQuickTool(BaseTool):
         "failed": 0,
         "nodes": [
             {"node_id": "...", "name": "...", "status": "started"},
-            {"node_id": "...", "name": "...", "status": "started"}
+            {"node_id": "...", "name": "...", "status": "error", "error": "..."}
         ],
         "note": "Start commands sent. Nodes are booting in background."
     }
     """
 
-    name: str = "start_gns3_node_quick"
+    name: str = "start_gns3_node"
     description: str = """
-    Starts nodes in a GNS3 project WITHOUT waiting for startup completion.
-    Use this for automated deployments to avoid HTTP timeouts.
+    Starts one or multiple nodes in a GNS3 project and returns immediately
+    (nodes boot in the background; start failures are reported right away).
+    After calling this, use wait_seconds (VPCS/IOU ~15-30s, IOS routers
+    ~60-120s, heavy NOS images 2-5min) before checking node status.
     Input: JSON with project_id and node_ids (list of node IDs).
-    Returns: Dict with nodes' details after start commands are sent.
-    NOTE: Nodes will continue booting in background after this tool returns.
+    Returns: Dict with per-node start command results.
     """
 
     def _run(
@@ -378,13 +106,8 @@ class GNS3StartNodeQuickTool(BaseTool):
 
             # Validate input
             if not project_id or not node_ids:
-                logger.error(
-                    "Missing required fields: project_id or node_ids."
-                )
-                return {
-                    "error": "Missing required fields: "
-                    "project_id and node_ids."
-                }
+                logger.error("Missing required fields: project_id or node_ids.")
+                return {"error": "Missing required fields: project_id and node_ids."}
 
             if not isinstance(node_ids, list):
                 logger.error("node_ids must be a list.")
@@ -396,10 +119,7 @@ class GNS3StartNodeQuickTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Verify nodes exist and capture pre-start info (one call)
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -415,14 +135,8 @@ class GNS3StartNodeQuickTool(BaseTool):
             )
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
-            start_results = start_node_handler(
-                {"project_id": project_id, "node_ids": known_ids}, gns3_ctx
-            )
-            start_errors = {
-                r["node_id"]: r.get("error")
-                for r in start_results
-                if r.get("status") == "error"
-            }
+            start_results = start_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
+            start_errors = {r["node_id"]: r.get("error") for r in start_results if r.get("status") == "error"}
 
             # Get immediate status (likely 'starting' or 'stopped') — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -432,9 +146,7 @@ class GNS3StartNodeQuickTool(BaseTool):
 
             for node_id in node_ids:
                 if node_id not in nodes_by_id:
-                    logger.error(
-                        "Node %s not found in project %s", node_id, project_id
-                    )
+                    logger.error("Node %s not found in project %s", node_id, project_id)
                     results.append(
                         {
                             "node_id": node_id,
@@ -476,9 +188,7 @@ class GNS3StartNodeQuickTool(BaseTool):
                 )
 
             # Analyze results (count based on successful command sending)
-            successful_nodes = [
-                r for r in results if r.get("status") != "error"
-            ]
+            successful_nodes = [r for r in results if r.get("status") != "error"]
             failed_nodes = [r for r in results if r.get("status") == "error"]
 
             # Construct final response
@@ -489,8 +199,7 @@ class GNS3StartNodeQuickTool(BaseTool):
                 "failed": len(failed_nodes),
                 "nodes": results,
                 "note": (
-                    "Start commands sent. Nodes are booting in background. "
-                    "Check node status later."
+                    "Start commands sent. Nodes are booting in background. Use wait_seconds, then check node status."
                 ),
             }
 
@@ -510,33 +219,20 @@ class GNS3StartNodeQuickTool(BaseTool):
             return {"error": f"Failed to start nodes: {str(e)}"}
 
 
+# Backward-compat alias: the waiting variant was removed; both names now
+# point at the immediate-return tool.
+GNS3StartNodeQuickTool = GNS3StartNodeTool
+
+
 if __name__ == "__main__":
     # Test with single node
     print("=== Testing single node startup ===")
     test_input_single = json.dumps(
         {
             "project_id": "<PROJECT_UUID>",  # Replace with actual project UUID
-            "node_ids": [
-                "fbeda109-9a74-4d8c-a749-cc3847911a90"
-            ],  # Replace with actual node UUID
+            "node_ids": ["fbeda109-9a74-4d8c-a749-cc3847911a90"],  # Replace with actual node UUID
         }
     )
     tool = GNS3StartNodeTool()
     result_single = tool._run(test_input_single)
     pprint(result_single)
-
-    # Test with multiple nodes
-    print("\n=== Testing multiple nodes startup ===")
-    test_input_multiple = json.dumps(
-        {
-            "project_id": "<PROJECT_UUID>",  # Replace with actual project UUID
-            "node_ids": [
-                "fbeda109-9a74-4d8c-a749-cc3847911a90",
-                # Replace with actual node UUIDs
-                "another-node-uuid-here",
-                "third-node-uuid-here",
-            ],
-        }
-    )
-    result_multiple = tool._run(test_input_multiple)
-    pprint(result_multiple)

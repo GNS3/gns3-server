@@ -81,7 +81,7 @@ async def export_project(
                 keep_compute_ids,
                 allow_all_nodes,
                 temporary_dir,
-                reset_mac_addresses
+                reset_mac_addresses,
             )
 
     # Export the local files
@@ -198,14 +198,7 @@ def _is_exportable(path, include_snapshots=False):
 
 
 async def _patch_project_file(
-        project,
-        path,
-        zstream,
-        include_images,
-        keep_compute_ids,
-        allow_all_nodes,
-        temporary_dir,
-        reset_mac_addresses
+    project, path, zstream, include_images, keep_compute_ids, allow_all_nodes, temporary_dir, reset_mac_addresses
 ):
     """
     Patch a project file (.gns3) to export a project.
@@ -242,7 +235,6 @@ async def _patch_project_file(
 
                 if "properties" in node:
                     for prop, value in node["properties"].items():
-
                         # reset the MAC address
                         if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
                             node["properties"][prop] = None

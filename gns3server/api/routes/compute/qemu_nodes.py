@@ -33,6 +33,7 @@ from gns3server.compute.qemu.qemu_vm import QemuVM
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 import logging
+
 log = logging.getLogger(__name__)
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}}
@@ -55,7 +56,7 @@ def dep_node(project_id: UUID, node_id: UUID) -> QemuVM:
     response_model=schemas.Qemu,
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Qemu node"}},
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> schemas.Qemu:
     """
@@ -64,6 +65,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
 
     qemu = Qemu.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
+    disk_images_to_reset = set(node_data.pop("disk_images_to_reset", []))
     vm = await qemu.create_node(
         node_data.pop("name"),
         str(project_id),
@@ -80,11 +82,34 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
     # update the disk image with the backing file if provided
     # this is needed when duplicating a node that uses backed disk images
     drives = ["a", "b", "c", "d"]
-    for disk_index, drive in enumerate(drives):
+    for drive in drives:
         disk_image_backing_file = node_data.get(f"hd{drive}_disk_image_backing_file")
         if disk_image_backing_file:
             log.debug(f"Updating disk image for drive {drive} with backing file {disk_image_backing_file}")
             node_data[f"hd{drive}_disk_image"] = disk_image_backing_file
+
+    # Validate every explicitly replaced disk before removing its stale
+    # overlay. Other unresolved disks may still make this create request fail,
+    # but a valid replacement applied in stages must not retain its old layer.
+    for drive in drives:
+        disk_image_property = f"hd{drive}_disk_image"
+        if disk_image_property in disk_images_to_reset:
+            replacement_image = node_data.get(disk_image_property)
+            if replacement_image:
+                vm.manager.get_abs_image_path(replacement_image, vm.working_dir)
+            local_disk_name = f"hd{drive}_disk.qcow2"
+            local_disk = os.path.join(vm.working_dir, local_disk_name)
+            if vm.linked_clone and os.path.exists(local_disk):
+                # A degraded linked clone is being assigned a new base image.
+                # Its old overlay depends on the unavailable base and cannot
+                # safely be rebased onto an arbitrary replacement. Discard it
+                # so start creates a fresh overlay from the selected image.
+                log.info(
+                    "Removing stale linked-clone disk '%s' before using replacement image '%s'",
+                    local_disk,
+                    node_data.get(disk_image_property),
+                )
+                vm.delete_disk_image(local_disk_name)
 
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
@@ -93,11 +118,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
     return vm.asdict()
 
 
-@router.get(
-    "/{node_id}",
-    response_model=schemas.Qemu,
-    dependencies=[Depends(compute_authentication)]
-)
+@router.get("/{node_id}", response_model=schemas.Qemu, dependencies=[Depends(compute_authentication)])
 def get_qemu_node(node: QemuVM = Depends(dep_node)) -> schemas.Qemu:
     """
     Return a Qemu node.
@@ -106,11 +127,7 @@ def get_qemu_node(node: QemuVM = Depends(dep_node)) -> schemas.Qemu:
     return node.asdict()
 
 
-@router.put(
-    "/{node_id}",
-    response_model=schemas.Qemu,
-    dependencies=[Depends(compute_authentication)]
-)
+@router.put("/{node_id}", response_model=schemas.Qemu, dependencies=[Depends(compute_authentication)])
 async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends(dep_node)) -> schemas.Qemu:
     """
     Update a Qemu node.
@@ -126,11 +143,7 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
     return node.asdict()
 
 
-@router.delete(
-    "/{node_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
-)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)])
 async def delete_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
     Delete a Qemu node.
@@ -143,11 +156,10 @@ async def delete_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     "/{node_id}/duplicate",
     response_model=schemas.Qemu,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def duplicate_qemu_node(
-        destination_node_id: UUID = Body(..., embed=True),
-        node: QemuVM = Depends(dep_node)
+    destination_node_id: UUID = Body(..., embed=True), node: QemuVM = Depends(dep_node)
 ) -> schemas.Qemu:
     """
     Duplicate a Qemu node.
@@ -160,12 +172,10 @@ async def duplicate_qemu_node(
 @router.post(
     "/{node_id}/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def create_qemu_disk_image(
-        disk_name: str,
-        disk_data: schemas.QemuDiskImageCreate,
-        node: QemuVM = Depends(dep_node)
+    disk_name: str, disk_data: schemas.QemuDiskImageCreate, node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     Create a Qemu disk image.
@@ -178,12 +188,10 @@ async def create_qemu_disk_image(
 @router.put(
     "/{node_id}/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def update_qemu_disk_image(
-        disk_name: str,
-        disk_data: schemas.QemuDiskImageUpdate,
-        node: QemuVM = Depends(dep_node)
+    disk_name: str, disk_data: schemas.QemuDiskImageUpdate, node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     Update a Qemu disk image.
@@ -196,12 +204,9 @@ async def update_qemu_disk_image(
 @router.delete(
     "/{node_id}/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
-async def delete_qemu_disk_image(
-        disk_name: str,
-        node: QemuVM = Depends(dep_node)
-) -> None:
+async def delete_qemu_disk_image(disk_name: str, node: QemuVM = Depends(dep_node)) -> None:
     """
     Delete a Qemu disk image.
     """
@@ -209,11 +214,7 @@ async def delete_qemu_disk_image(
     node.delete_disk_image(disk_name)
 
 
-@router.post(
-    "/{node_id}/start",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
-)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)])
 async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
     Start a Qemu node.
@@ -222,11 +223,7 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     await node.start()
 
 
-@router.post(
-    "/{node_id}/stop",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
-)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)])
 async def stop_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
     Stop a Qemu node.
@@ -236,9 +233,7 @@ async def stop_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/reload",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def reload_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
@@ -249,9 +244,7 @@ async def reload_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/suspend",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def suspend_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
@@ -262,9 +255,7 @@ async def suspend_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/resume",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def resume_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     """
@@ -278,14 +269,14 @@ async def resume_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def create_qemu_node_nio(
-        *,
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        nio_data: schemas.UDPNIO,
-        node: QemuVM = Depends(dep_node)
+    *,
+    adapter_number: int,
+    port_number: int = Path(..., ge=0, le=0),
+    nio_data: schemas.UDPNIO,
+    node: QemuVM = Depends(dep_node),
 ) -> schemas.UDPNIO:
     """
     Add a NIO (Network Input/Output) to the node.
@@ -301,14 +292,14 @@ async def create_qemu_node_nio(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def update_qemu_node_nio(
-        *,
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        nio_data: schemas.UDPNIO,
-        node: QemuVM = Depends(dep_node)
+    *,
+    adapter_number: int,
+    port_number: int = Path(..., ge=0, le=0),
+    nio_data: schemas.UDPNIO,
+    node: QemuVM = Depends(dep_node),
 ) -> schemas.UDPNIO:
     """
     Update a NIO (Network Input/Output) on the node.
@@ -328,12 +319,10 @@ async def update_qemu_node_nio(
 @router.delete(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def delete_qemu_node_nio(
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        node: QemuVM = Depends(dep_node)
+    adapter_number: int, port_number: int = Path(..., ge=0, le=0), node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -345,14 +334,14 @@ async def delete_qemu_node_nio(
 
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def start_qemu_node_capture(
-        *,
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        node_capture_data: schemas.NodeCapture,
-        node: QemuVM = Depends(dep_node)
+    *,
+    adapter_number: int,
+    port_number: int = Path(..., ge=0, le=0),
+    node_capture_data: schemas.NodeCapture,
+    node: QemuVM = Depends(dep_node),
 ) -> dict:
     """
     Start a packet capture on the node.
@@ -367,12 +356,10 @@ async def start_qemu_node_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def stop_qemu_node_capture(
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        node: QemuVM = Depends(dep_node)
+    adapter_number: int, port_number: int = Path(..., ge=0, le=0), node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     Stop a packet capture on the node.
@@ -384,12 +371,11 @@ async def stop_qemu_node_capture(
 
 @router.get(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def stream_pcap_file(
-        adapter_number: int,
-        port_number: int = Path(..., ge=0, le=0),
-        node: QemuVM = Depends(dep_node)) -> StreamingResponse:
+    adapter_number: int, port_number: int = Path(..., ge=0, le=0), node: QemuVM = Depends(dep_node)
+) -> StreamingResponse:
     """
     Stream the pcap capture file.
     The port number on the Qemu node is always 0.
@@ -400,12 +386,9 @@ async def stream_pcap_file(
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-@router.websocket(
-    "/{node_id}/console/ws"
-)
+@router.websocket("/{node_id}/console/ws")
 async def console_ws(
-        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
-        node: QemuVM = Depends(dep_node)
+    websocket: Union[None, WebSocket] = Depends(ws_compute_authentication), node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     Console WebSocket.
@@ -415,12 +398,9 @@ async def console_ws(
         await node.start_websocket_console(websocket)
 
 
-@router.websocket(
-    "/{node_id}/console/vnc"
-)
+@router.websocket("/{node_id}/console/vnc")
 async def vnc_console_ws(
-        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
-        node: QemuVM = Depends(dep_node)
+    websocket: Union[None, WebSocket] = Depends(ws_compute_authentication), node: QemuVM = Depends(dep_node)
 ) -> None:
     """
     VNC Console WebSocket.
@@ -431,23 +411,16 @@ async def vnc_console_ws(
 
 
 @router.post(
-    "/{node_id}/console/reset",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def reset_console(node: QemuVM = Depends(dep_node)) -> None:
 
     await node.reset_console()
 
 
-@router.put(
-    "/{node_id}/markers/{marker_name}",
-    dependencies=[Depends(compute_authentication)]
-)
+@router.put("/{node_id}/markers/{marker_name}", dependencies=[Depends(compute_authentication)])
 async def toggle_qemu_marker(
-    marker_name: str,
-    toggle_data: schemas.MarkerToggle,
-    node: QemuVM = Depends(dep_node)
+    marker_name: str, toggle_data: schemas.MarkerToggle, node: QemuVM = Depends(dep_node)
 ) -> dict:
     """
     Toggle a marker filter on/off without an NIO rebuild (ubridge contract §3.2).
@@ -463,9 +436,7 @@ async def toggle_qemu_marker(
 
 
 @router.post(
-    "/{node_id}/markers/pause",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/markers/pause", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def pause_qemu_markers(node: QemuVM = Depends(dep_node)) -> None:
 
@@ -473,9 +444,7 @@ async def pause_qemu_markers(node: QemuVM = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/markers/resume",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    "/{node_id}/markers/resume", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(compute_authentication)]
 )
 async def resume_qemu_markers(node: QemuVM = Depends(dep_node)) -> None:
 
@@ -485,14 +454,14 @@ async def resume_qemu_markers(node: QemuVM = Depends(dep_node)) -> None:
 @router.delete(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/markers/{marker_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(compute_authentication)]
+    dependencies=[Depends(compute_authentication)],
 )
 async def delete_qemu_marker_capture(
     marker_name: str,
     adapter_number: int,
     port_number: int = Path(..., ge=0, le=0),
     link_id: str = "",
-    node: QemuVM = Depends(dep_node)
+    node: QemuVM = Depends(dep_node),
 ) -> None:
     """
     Delete a marker's capture pcap (called by the controller when the marker is
@@ -505,14 +474,9 @@ async def delete_qemu_marker_capture(
     await node.delete_marker_capture(marker_name, link_id, nio)
 
 
-@router.put(
-    "/{node_id}/markers/{marker_name}/rebuild",
-    dependencies=[Depends(compute_authentication)]
-)
+@router.put("/{node_id}/markers/{marker_name}/rebuild", dependencies=[Depends(compute_authentication)])
 async def rebuild_qemu_marker(
-    marker_name: str,
-    rebuild_data: schemas.MarkerRebuild,
-    node: QemuVM = Depends(dep_node)
+    marker_name: str, rebuild_data: schemas.MarkerRebuild, node: QemuVM = Depends(dep_node)
 ) -> dict:
     """
     Re-install a single marker filter with new BPF/tag/direction (delete + add,
@@ -520,7 +484,11 @@ async def rebuild_qemu_marker(
     """
 
     await node.rebuild_marker_filter(
-        marker_name, rebuild_data.link_id, rebuild_data.bpf,
-        rebuild_data.tag, rebuild_data.direction, rebuild_data.enabled,
+        marker_name,
+        rebuild_data.link_id,
+        rebuild_data.bpf,
+        rebuild_data.tag,
+        rebuild_data.direction,
+        rebuild_data.enabled,
     )
     return {"marker_name": marker_name}

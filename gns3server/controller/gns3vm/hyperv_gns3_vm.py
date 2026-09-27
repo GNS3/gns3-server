@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class HyperVGNS3VM(BaseGNS3VM):
-
     _HYPERV_VM_STATE_ENABLED = 2
     _HYPERV_VM_STATE_DISABLED = 3
     _HYPERV_VM_STATE_SHUTDOWN = 4

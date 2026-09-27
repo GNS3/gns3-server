@@ -11,6 +11,7 @@ from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class DummyUpstreamWriter:
     def __init__(self):
         self.buffer = bytearray()
@@ -49,14 +50,13 @@ async def _wait_for_session_count(server, expected_count, timeout=2):
         if last_count == expected_count:
             return
         await asyncio.sleep(0.05)
-    assert last_count == expected_count, (
-        f"Expected {expected_count} sessions, got {last_count} after {timeout}s"
-    )
+    assert last_count == expected_count, f"Expected {expected_count} sessions, got {last_count} after {timeout}s"
 
 
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_ssh_server_forwards_client_input_to_upstream_writer():

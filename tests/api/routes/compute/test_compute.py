@@ -30,18 +30,13 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestComputeRoutes:
+    async def test_udp_allocation(self, app: FastAPI, compute_client: AsyncClient, compute_project: Project) -> None:
 
-    async def test_udp_allocation(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project
-    ) -> None:
-
-        response = await compute_client.post(app.url_path_for("compute:allocate_udp_port", project_id=compute_project.id), json={})
+        response = await compute_client.post(
+            app.url_path_for("compute:allocate_udp_port", project_id=compute_project.id), json={}
+        )
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.json()['udp_port'] is not None
-
+        assert response.json()["udp_port"] is not None
 
     async def test_interfaces(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
@@ -49,19 +44,18 @@ class TestComputeRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.json(), list)
 
-
     async def test_version_output(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
         response = await compute_client.get(app.url_path_for("compute:compute_version"))
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {'version': __version__}
-
+        assert response.json() == {"version": __version__}
 
     async def test_compute_authentication(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
-        response = await compute_client.get(app.url_path_for("compute:compute_version"), auth=("admin", "invalid_password"))
+        response = await compute_client.get(
+            app.url_path_for("compute:compute_version"), auth=("admin", "invalid_password")
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
 
     # @pytest.mark.asyncio
     # async def test_debug_output(compute_api):
@@ -69,12 +63,10 @@ class TestComputeRoutes:
     #     response = await compute_api.get('/debug')
     #     assert response.status_code == 200
 
-
     async def test_statistics_output(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
         response = await compute_client.get(app.url_path_for("compute:compute_statistics"))
         assert response.status_code == status.HTTP_200_OK
-
 
     async def test_compute_auth_disabled(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
@@ -85,9 +77,10 @@ class TestComputeRoutes:
         mock_server_settings.compute_password.get_secret_value.return_value = "testpass"
         mock_settings.settings.Server = mock_server_settings
 
-        with patch("gns3server.api.routes.compute.dependencies.authentication.Config.instance", return_value=mock_settings):
+        with patch(
+            "gns3server.api.routes.compute.dependencies.authentication.Config.instance", return_value=mock_settings
+        ):
             response = await compute_client.get(
-                app.url_path_for("compute:compute_version"),
-                auth=("wrong_user", "wrong_password")
+                app.url_path_for("compute:compute_version"), auth=("wrong_user", "wrong_password")
             )
             assert response.status_code == status.HTTP_200_OK

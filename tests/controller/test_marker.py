@@ -99,6 +99,7 @@ async def _make_link(project, port_cls=EthernetPort, node_types=("vpcs", "vpcs")
 # UDPLink.start_marker
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_start_marker_stores_entry(project):
 
@@ -204,8 +205,9 @@ async def test_start_marker_rejects_duplicate(project):
 async def test_start_marker_rejects_invalid_bpf(project):
 
     link = await _make_link(project)
-    with patch("gns3server.controller.udp_link.validate_bpf_syntax",
-               return_value={"valid": False, "error": "bad expression"}):
+    with patch(
+        "gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": False, "error": "bad expression"}
+    ):
         with pytest.raises(ControllerError):
             await link.start_marker("bad", "not a real bpf")
 
@@ -213,6 +215,7 @@ async def test_start_marker_rejects_invalid_bpf(project):
 # ---------------------------------------------------------------------------
 # UDPLink.stop_marker
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_stop_marker_removes(project):
@@ -260,6 +263,7 @@ async def test_stop_marker_unknown_raises(project):
 # UDPLink.update_marker
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_update_marker_preserves_render_hints(project):
     """A partial update (bpf only) must not reset color/highlight_duration/tag."""
@@ -271,9 +275,9 @@ async def test_update_marker_preserves_render_hints(project):
 
     entry = link.markers["m"]
     assert entry["bpf"] == "tcp port 80"
-    assert entry["color"] == "#ff5722"          # preserved
-    assert entry["highlight_duration"] == 800   # preserved
-    assert entry["tag"] == 1                    # preserved
+    assert entry["color"] == "#ff5722"  # preserved
+    assert entry["highlight_duration"] == 800  # preserved
+    assert entry["tag"] == 1  # preserved
 
 
 @pytest.mark.asyncio
@@ -314,6 +318,7 @@ async def test_update_marker_inherited_bypass(project):
 # ---------------------------------------------------------------------------
 # Link.inherit_marker + persistence
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_inherit_marker_creates_global_copy(project):
@@ -408,8 +413,8 @@ async def test_load_marker_preserves_direction_and_highlight_duration(project):
     # The link survives (2 attached nodes); pull it back from the project.
     link = project._links[link_id]
     entry = link._markers["icmp"]
-    assert entry["direction"] == "rx"           # dropped before the fix
-    assert entry["highlight_duration"] == 800   # dropped before the fix
+    assert entry["direction"] == "rx"  # dropped before the fix
+    assert entry["highlight_duration"] == 800  # dropped before the fix
     assert entry["tag"] == 7
     assert entry["color"] == "#ff5722"
     assert entry["capture_node_id"] == capture_node_id
@@ -434,6 +439,7 @@ async def test_asdict_markers_runtime_vs_dump(project):
 # ---------------------------------------------------------------------------
 # Project-level marker definitions
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_marker_definition_fans_out(project):
@@ -553,23 +559,28 @@ async def test_apply_defs_to_new_link(project):
 async def test_create_marker_definition_validates_bpf_once(project):
     # A definition validates its BPF once (project layer); the inherited fan-out
     # to every link must NOT re-validate — no tcpdump subprocess per link.
-    with patch("gns3server.controller.project.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as proj_val, \
-         patch("gns3server.controller.udp_link.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as link_val:
+    with (
+        patch(
+            "gns3server.controller.project.validate_bpf_syntax", return_value={"valid": True, "error": None}
+        ) as proj_val,
+        patch(
+            "gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": True, "error": None}
+        ) as link_val,
+    ):
         await _make_link(project)
         await _make_link(project)
         await project.create_marker_definition("arp", "arp")
 
-    assert proj_val.call_count == 1          # validated once at the def layer
-    assert link_val.call_count == 0          # fan-out skipped per-link validation
+    assert proj_val.call_count == 1  # validated once at the def layer
+    assert link_val.call_count == 0  # fan-out skipped per-link validation
 
 
 @pytest.mark.asyncio
 async def test_create_marker_definition_rejects_invalid_bpf(project):
 
-    with patch("gns3server.controller.project.validate_bpf_syntax",
-               return_value={"valid": False, "error": "syntax error"}):
+    with patch(
+        "gns3server.controller.project.validate_bpf_syntax", return_value={"valid": False, "error": "syntax error"}
+    ):
         with pytest.raises(ControllerError):
             await project.create_marker_definition("arp", "not a real bpf")
     assert "arp" not in project.marker_definitions
@@ -579,25 +590,30 @@ async def test_create_marker_definition_rejects_invalid_bpf(project):
 async def test_update_marker_definition_skips_per_link_validation(project):
     # Updating a def's BPF validates once more (project); the per-link sync
     # (update_marker with inherited=True) must NOT re-validate.
-    with patch("gns3server.controller.project.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as proj_val, \
-         patch("gns3server.controller.udp_link.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as link_val:
+    with (
+        patch(
+            "gns3server.controller.project.validate_bpf_syntax", return_value={"valid": True, "error": None}
+        ) as proj_val,
+        patch(
+            "gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": True, "error": None}
+        ) as link_val,
+    ):
         await _make_link(project)
         await _make_link(project)
         await project.create_marker_definition("arp", "arp")
         await project.update_marker_definition("arp", bpf="arp or rarp")
 
-    assert proj_val.call_count == 2          # once on create, once on update
-    assert link_val.call_count == 0          # sync skipped per-link validation
+    assert proj_val.call_count == 2  # once on create, once on update
+    assert link_val.call_count == 0  # sync skipped per-link validation
 
 
 @pytest.mark.asyncio
 async def test_start_marker_skips_validation_for_inherited(project):
     # An inherited marker rides an already-validated definition BPF, so
     # start_marker must not call validate_bpf_syntax.
-    with patch("gns3server.controller.udp_link.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as link_val:
+    with patch(
+        "gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": True, "error": None}
+    ) as link_val:
         link = await _make_link(project)
         await link.inherit_marker("arp", {"bpf": "arp"})
 
@@ -608,8 +624,9 @@ async def test_start_marker_skips_validation_for_inherited(project):
 @pytest.mark.asyncio
 async def test_start_marker_validates_for_private(project):
     # A private (non-inherited) marker still validates inline.
-    with patch("gns3server.controller.udp_link.validate_bpf_syntax",
-               return_value={"valid": True, "error": None}) as link_val:
+    with patch(
+        "gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": True, "error": None}
+    ) as link_val:
         link = await _make_link(project)
         await link.start_marker("icmp", "icmp")
 
@@ -635,6 +652,7 @@ async def test_markers_aggregation(project):
 # ---------------------------------------------------------------------------
 # Direction clear/preserve semantics (sentinel _UNSET vs explicit None)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_update_marker_clears_direction(project):
@@ -685,6 +703,7 @@ async def test_update_marker_definition_clears_direction(project):
 # Capture-node routing + capability validation
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_pinned_marker_routes_only_to_chosen_node(project):
     # The marker rides only the pinned capture node's NIO; the far endpoint sees nothing.
@@ -724,6 +743,7 @@ async def test_start_marker_rejects_non_capable_capture_node(project):
 # ---------------------------------------------------------------------------
 # Part A/B: enabled reaches uBridge + instant per-filter toggle
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_markers_for_node_keeps_disabled_and_carries_enabled(project):
@@ -790,6 +810,7 @@ async def test_update_marker_ui_only_does_not_push(project):
 # Per-definition pause/resume (toggle every inherited global-{name} copy)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_pause_marker_definition_toggles_copies_off(project):
     with _valid_bpf():
@@ -843,7 +864,7 @@ async def test_create_marker_definition_rejects_directional(project):
 
 @pytest.mark.asyncio
 async def test_create_marker_definition_allows_both(project):
-    await project.create_marker_definition("arp", "arp")           # default both
+    await project.create_marker_definition("arp", "arp")  # default both
     await project.create_marker_definition("icmp", "icmp", direction=None)
     assert project.marker_definitions["arp"]["direction"] is None
     assert project.marker_definitions["icmp"]["direction"] is None
@@ -851,7 +872,7 @@ async def test_create_marker_definition_allows_both(project):
 
 @pytest.mark.asyncio
 async def test_update_marker_definition_rejects_directional(project):
-    await project.create_marker_definition("arp", "arp")           # both
+    await project.create_marker_definition("arp", "arp")  # both
     with pytest.raises(ControllerError):
         await project.update_marker_definition("arp", direction="tx")
     # omitted direction and explicit clear-to-both are both fine
@@ -872,6 +893,4 @@ async def test_stop_marker_deletes_capture_pcap(project):
         capture.delete = AsyncioMagicMock()
         await link.stop_marker("icmp")
 
-    capture.delete.assert_called_once_with(
-        "/adapters/0/ports/0/markers/icmp", params={"link_id": link.id}
-    )
+    capture.delete.assert_called_once_with("/adapters/0/ports/0/markers/icmp", params={"link_id": link.id})

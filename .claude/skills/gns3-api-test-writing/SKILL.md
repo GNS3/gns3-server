@@ -33,7 +33,7 @@ from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
-response = await client.get(url, headers={"Authorization": f"Bearer {token}"})      # specific user
+response = await client.get(url, headers={"Authorization": f"Bearer {token}"})  # specific user
 response = await client.get(url, headers={"Authorization": "Bearer invalid_token"})  # 401
 ```
 
@@ -56,3 +56,18 @@ Always pass `secret_key=DEFAULT_JWT_SECRET_KEY`: the autouse `run_around_tests` 
 ## Failure-Diagnosis Heuristic
 
 **Passes in isolation, fails in a class run → suspect shared fixture state first** (`base_client.headers`, the `Config` singleton, class-scoped DB rows) — never the product code. Reproduce with `-k "test_a or test_b"` pairs to find the polluting test. Do not add debug prints to product code to chase test-order issues; make the test order-independent with explicit per-request headers instead.
+
+## Order Independence
+
+The suite runs in collection order by default, and a full run is green — but that hides order dependencies. Two real incident classes so far:
+
+1. **The frozen from-import** (fixed 2026-09): `run_around_tests` monkeypatches `gns3server.utils.path.get_default_project_directory` with a lambda. A product module first-imported *while that patch is active* (e.g. `from gns3server.api.server import app` written inside a test body) freezes the patched lambda into its namespace forever — later tests then get a deleted tmpdir path (`FileNotFoundError` from `psutil.disk_usage`). The patched lambda now resolves `Config.instance()` at call time, so freezing is benign — keep it that way.
+2. **Sequential-scenario DB tests**: `tests/api/routes/controller/test_users.py`, `test_roles.py`, `test_pools.py`, `test_templates.py`, `test_images.py`, `test_groups.py`, `test_appliances.py`, `test_acl.py` and `tests/controller/test_rbac.py` build shared rows across tests within a file (a test asserts on users/roles created by earlier tests). They are known-red under any reordering — do not copy this pattern into new files.
+
+### Rules for new tests
+
+- **Import product modules at test-module top level**, never first-import inside a test body (an autouse fixture's monkeypatches are live there, and module import executes product `from`-imports).
+- **Autouse patch replacements must resolve state at call time** (`Config.instance().settings...`), never close over test-local values (tmppaths, fixture objects) — a closed-over value survives into other tests if the replacement object gets frozen anywhere.
+- **Verify a new test file is order-independent**: `venv/bin/python -m pytest tests/<new_file>.py --random-order --random-order-seed=1 -q` (and a second seed). It must pass shuffled. `pytest-random-order` is pinned in `dev-requirements.txt`; it is inert unless `--random-order` is passed.
+- A test that needs specific rows creates them itself (or via a fixture) — never relies on rows another test in the file created.
+- Diagnosing a suspected order bug: rerun the exact failing pair with the seed printed by `--random-order` (`--random-order-seed=<n>` reproduces it), then bisect to the polluting test.

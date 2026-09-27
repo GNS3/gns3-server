@@ -33,7 +33,13 @@ from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
+from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
+from gns3server.compute.docker.docker_error import (
+    DockerError,
+    DockerHttp304Error,
+    DockerHttp404Error,
+    DockerHttp409Error,
+)
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +52,6 @@ CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class Docker(BaseManager):
-
     _NODE_CLASS = DockerVM
 
     def __init__(self):
@@ -62,9 +67,21 @@ class Docker(BaseManager):
         self._host_checked = False
 
     def _select_node_class(self, **kwargs):
-        """Select the node class based on console_type."""
+        """
+        Select the node class based on console_type and GNS3_* environment
+        markers. Like console_type, the environment is fixed at node creation
+        time: toggling a marker via PUT takes effect after a project reload.
+        """
         if kwargs.get("console_type") == "docker_exec":
             return VendorDockerVM
+        environment = kwargs.get("environment") or ""
+        for line in environment.splitlines():
+            line = line.strip().rstrip(",")
+            if line.startswith("GNS3_IOL_RUNNER="):
+                return IOLDockerVM
+            if line.startswith("GNS3_UNIX_SOCKET_NIO="):
+                # Generic capability, usable without the IOL specifics.
+                return VendorDockerVM
         return DockerVM
 
     async def create_node(self, name, project_id, node_id, *args, **kwargs):
@@ -84,10 +101,7 @@ class Docker(BaseManager):
                     # check that busybox is statically linked
                     # (dynamically linked busybox will fail to run in a container)
                     proc = await asyncio.create_subprocess_exec(
-                        "ldd",
-                        busybox_path,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.DEVNULL
+                        "ldd", busybox_path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
                     )
                     stdout, _ = await proc.communicate()
                     if proc.returncode == 1 or "static" in busybox_exec:
@@ -98,11 +112,15 @@ class Docker(BaseManager):
                         shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
                         return
                     else:
-                        log.warning(f"Busybox '{busybox_path}' is dynamically linked\n"
-                                    f"{stdout.decode('utf-8', errors='ignore').strip()}")
+                        log.warning(
+                            f"Busybox '{busybox_path}' is dynamically linked\n"
+                            f"{stdout.decode('utf-8', errors='ignore').strip()}"
+                        )
                 except OSError as e:
                     raise DockerError(f"Could not install busybox: {e}")
-        raise DockerError("No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH")
+        raise DockerError(
+            "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+        )
 
     @staticmethod
     def resources_path():
@@ -129,6 +147,7 @@ class Docker(BaseManager):
             dst_path = self.resources_path()
             log.info(f"Installing Docker resources in '{dst_path}'")
             from gns3server.controller import Controller
+
             await Controller.instance().install_resource_files(dst_path, "compute/docker/resources")
             await self.install_busybox(dst_path)
         except OSError as e:
@@ -144,12 +163,12 @@ class Docker(BaseManager):
                 self._connected = False
                 raise DockerError("Can't connect to Docker daemon")
 
-            api_version = parse_version(docker_info['ApiVersion'])
+            api_version = parse_version(docker_info["ApiVersion"])
             version = docker_info["Version"]
 
             if api_version < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError(f"Docker version is {version}. "
-                                  f"GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}"
+                raise DockerError(
+                    f"Docker version is {version}. GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}"
                 )
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
@@ -157,7 +176,7 @@ class Docker(BaseManager):
                 self._api_version = DOCKER_PREFERRED_API_VERSION
             else:
                 # use the Min API version supported by the daemon
-                self._api_version = docker_info['MinAPIVersion']
+                self._api_version = docker_info["MinAPIVersion"]
                 log.warning("Using Docker client with the minimum API version {}".format(self._api_version))
 
             log.info("Connected to Docker daemon version {} using API version {}".format(version, self._api_version))
@@ -251,7 +270,7 @@ class Docker(BaseManager):
         response = await self.http_query(method, path, data=data, params=params)
         body = await response.read()
         response.close()
-        if response.headers.get('CONTENT-TYPE') == 'application/json':
+        if response.headers.get("CONTENT-TYPE") == "application/json":
             body = json.loads(body.decode("utf-8", errors="ignore"))
         else:
             body = body.decode("utf-8", errors="ignore")
@@ -270,11 +289,16 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
 
-        data = json.dumps(data)
+        if isinstance(data, dict):
+            data = json.dumps(data)
+            headers = {"content-type": "application/json"}
+        else:
+            # not a dict (e.g. a Docker image tar stream): let aiohttp stream the raw body
+            headers = {"content-type": "application/x-tar"}
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
-        if path == 'version':
+        if path == "version":
             url = "http://docker/" + path
         else:
             await self._check_connection()  # version is use by check connection
@@ -288,9 +312,7 @@ class Docker(BaseManager):
                 url,
                 params=params,
                 data=data,
-                headers={
-                    "content-type": "application/json",
-                },
+                headers=headers,
                 timeout=timeout,
             )
         except aiohttp.ClientError as e:
@@ -364,9 +386,7 @@ class Docker(BaseManager):
                         f"Disconnected while pulling Docker image '{image}' from Docker repository"
                     ) from e
                 except asyncio.TimeoutError as e:
-                    raise DockerError(
-                        f"Timeout while pulling Docker image '{image}' from Docker repository"
-                    ) from e
+                    raise DockerError(f"Timeout while pulling Docker image '{image}' from Docker repository") from e
                 if not chunk:
                     break
                 content += chunk.decode("utf-8")
@@ -396,6 +416,58 @@ class Docker(BaseManager):
 
         if progress_callback:
             progress_callback(f"Success pulling image {image}")
+
+    @locking
+    async def load_image(self, stream, progress_callback=None):
+        """
+        Load a Docker image into the Docker daemon from a docker save tar stream
+
+        :param stream: An async iterable of bytes (the tar produced by docker save)
+        :param progress_callback: A function that receive a log message about image load progress
+        """
+
+        if progress_callback:
+            progress_callback("Loading Docker image from stream")
+        response = await self.http_query("POST", "images/load", data=stream, timeout=None)
+        # The load api will stream status via an HTTP JSON stream
+        content = ""
+        try:
+            while True:
+                try:
+                    chunk = await response.content.read(CHUNK_SIZE)
+                except aiohttp.ServerDisconnectedError as e:
+                    raise DockerError("Disconnected while loading Docker image") from e
+                except asyncio.TimeoutError as e:
+                    raise DockerError("Timeout while loading Docker image") from e
+                if not chunk:
+                    break
+                content += chunk.decode("utf-8", errors="ignore")
+
+                try:
+                    while True:
+                        content = content.lstrip(" \r\n\t")
+                        answer, index = json.JSONDecoder().raw_decode(content)
+                        if not isinstance(answer, dict):
+                            raise DockerError("Invalid response while loading Docker image")
+                        error_detail = answer.get("errorDetail")
+                        error = answer.get("error")
+                        if not error and isinstance(error_detail, dict):
+                            error = error_detail.get("message")
+                        if error:
+                            raise DockerError(error)
+                        if "stream" in answer and progress_callback:
+                            progress_callback(answer["stream"].rstrip())
+                        content = content[index:]
+                except ValueError:  # Partial JSON
+                    pass
+
+            if content.strip():
+                raise DockerError("Invalid response while loading Docker image")
+        finally:
+            response.close()
+
+        if progress_callback:
+            progress_callback("Docker image loaded")
 
     async def list_images(self):
         """

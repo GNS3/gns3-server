@@ -26,11 +26,7 @@ from uuid import UUID
 
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerBadRequestError,
-    ControllerNotFoundError
-)
+from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
 
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -50,12 +46,9 @@ router = APIRouter()
     "",
     response_model=List[schemas.Appliance],
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Appliance.Audit"))]
+    dependencies=[Depends(has_privilege("Appliance.Audit"))],
 )
-async def get_appliances(
-        update: Optional[bool] = False,
-        symbol_theme: Optional[str] = None
-) -> List[schemas.Appliance]:
+async def get_appliances(update: Optional[bool] = False, symbol_theme: Optional[str] = None) -> List[schemas.Appliance]:
     """
     Return all appliances known by the controller.
 
@@ -73,7 +66,7 @@ async def get_appliances(
     "/{appliance_id}",
     response_model=schemas.Appliance,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Appliance.Audit"))]
+    dependencies=[Depends(has_privilege("Appliance.Audit"))],
 )
 def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     """
@@ -92,9 +85,11 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
 @router.post(
     "/{appliance_id}/version",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Appliance.Allocate"))]
+    dependencies=[Depends(has_privilege("Appliance.Allocate"))],
 )
-def add_appliance_version(appliance_id: UUID, appliance_version: Union[schemas.ApplianceVersion, schemas.ApplianceVersionV8]) -> dict:
+def add_appliance_version(
+    appliance_id: UUID, appliance_version: Union[schemas.ApplianceVersion, schemas.ApplianceVersionV8]
+) -> dict:
     """
     Add a version to an appliance.
 
@@ -124,15 +119,15 @@ def add_appliance_version(appliance_id: UUID, appliance_version: Union[schemas.A
     "/{appliance_id}/install",
     response_model=schemas.Template,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Appliance.Allocate"))]
+    dependencies=[Depends(has_privilege("Appliance.Allocate"))],
 )
 async def install_appliance(
-        appliance_id: UUID,
-        version: Optional[str] = None,
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    appliance_id: UUID,
+    version: Optional[str] = None,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> schemas.Template:
     """
     Install an appliance and return the created template.
@@ -142,10 +137,5 @@ async def install_appliance(
 
     controller = Controller.instance()
     return await controller.appliance_manager.install_appliance(
-        appliance_id,
-        version,
-        images_repo,
-        templates_repo,
-        rbac_repo,
-        current_user
+        appliance_id, version, images_repo, templates_repo, rbac_repo, current_user
     )

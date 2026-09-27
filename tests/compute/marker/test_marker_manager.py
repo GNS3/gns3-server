@@ -26,8 +26,8 @@ from gns3server.compute.marker.marker_listener import MarkerListener
 # Registry
 # ---------------------------------------------------------------------------
 
-class TestMarkerRegistry:
 
+class TestMarkerRegistry:
     def test_register_and_lookup(self):
         MarkerManager.reset()
         mgr = MarkerManager.instance()
@@ -85,6 +85,7 @@ class TestMarkerRegistry:
 # MarkerListener parsing
 # ---------------------------------------------------------------------------
 
+
 class FakeMarkerManager:
     def __init__(self):
         self.events = []
@@ -100,13 +101,10 @@ class FakeMarkerManager:
         self.events.append((project_id, event))
 
     def register(self, project_id, node_id, filter_name, link_id, tag):
-        self._entries[(node_id, filter_name)] = {
-            "project_id": project_id, "link_id": link_id, "tag": tag
-        }
+        self._entries[(node_id, filter_name)] = {"project_id": project_id, "link_id": link_id, "tag": tag}
 
 
 class TestMarkerListener:
-
     def test_parses_valid_mark_datagram(self):
         fmgr = FakeMarkerManager()
         fmgr.register("p1", "n1", "f1", "l1", tag=7)
@@ -121,7 +119,11 @@ class TestMarkerListener:
         assert ev["node_id"] == "n1"
         assert ev["link_id"] == "l1"
         assert ev["filter"] == "f1"
-        assert ev["tag"] == "7"
+        # The event tag is normalized to int to match the REST schema — the
+        # signal echoes the decimal we installed, so str and int variants of
+        # the same tag must never reach consumers as different keys.
+        assert ev["tag"] == 7
+        assert isinstance(ev["tag"], int)
         assert ev["ts"] == pytest.approx(1700000000.123456)
         assert ev["len"] == 98
         # No dir= in the signal (legacy uBridge) → undirected.
@@ -163,6 +165,24 @@ class TestMarkerListener:
         lis.datagram_received(b"MARK 2.0 node=n filter=f tag=- len=20\n", None)
         assert fmgr.events[0][1]["tag"] == 42
 
+    def test_non_numeric_signal_tag_falls_back_to_registered(self):
+        # A corrupt/unknown signal value must not leak a str tag into the
+        # event stream — the registry's int wins.
+        fmgr = FakeMarkerManager()
+        fmgr.register("p", "n", "f", "l", tag=42)
+        lis = MarkerListener(fmgr)
+        lis.connection_made(None)
+        lis.datagram_received(b"MARK 2.0 node=n filter=f tag=oops len=20\n", None)
+        assert fmgr.events[0][1]["tag"] == 42
+
+    def test_no_tag_anywhere_is_none(self):
+        fmgr = FakeMarkerManager()
+        fmgr.register("p", "n", "f", "l", tag=None)
+        lis = MarkerListener(fmgr)
+        lis.connection_made(None)
+        lis.datagram_received(b"MARK 2.0 node=n filter=f tag=- len=20\n", None)
+        assert fmgr.events[0][1]["tag"] is None
+
     def test_link_in_signal_overrides_registry_link(self):
         # Per-link attribution (contract §3.2/§3.3): the signal's `link=` is
         # authoritative and must disambiguate links sharing a node+filter —
@@ -171,9 +191,7 @@ class TestMarkerListener:
         fmgr.register("p", "n", "f", "registry-link", tag=1)
         lis = MarkerListener(fmgr)
         lis.connection_made(None)
-        lis.datagram_received(
-            b"MARK 3.0 node=n filter=f link=signal-link tag=1 len=42\n", None
-        )
+        lis.datagram_received(b"MARK 3.0 node=n filter=f link=signal-link tag=1 len=42\n", None)
         assert fmgr.events[0][1]["link_id"] == "signal-link"
 
     def test_link_dash_falls_back_to_registry_link(self):
@@ -227,9 +245,9 @@ class TestMarkerListener:
 # UDP round-trip
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 class TestMarkerManagerUDP:
-
     async def test_listener_receives_and_dispatches(self):
         MarkerManager.reset()
         mgr = MarkerManager.instance()
@@ -251,12 +269,8 @@ class TestMarkerManagerUDP:
                 self.transport = transport
 
         sp = SendProto()
-        transport, _ = await loop.create_datagram_endpoint(
-            lambda: sp, remote_addr=("127.0.0.1", mgr.port)
-        )
-        transport.sendto(
-            b"MARK 123.456 node=node-rt filter=filt-rt tag=10 len=88\n"
-        )
+        transport, _ = await loop.create_datagram_endpoint(lambda: sp, remote_addr=("127.0.0.1", mgr.port))
+        transport.sendto(b"MARK 123.456 node=node-rt filter=filt-rt tag=10 len=88\n")
         await asyncio.sleep(0.15)
         transport.close()
 

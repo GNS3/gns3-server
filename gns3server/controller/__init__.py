@@ -38,6 +38,7 @@ from ..utils.images import default_images_directory
 from ..utils.asyncio import wait_run_in_executor
 
 from .project import Project
+from .node import Node
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
@@ -89,6 +90,35 @@ class _ProjectsDirectoryEventHandler(FileSystemEventHandler):
                 if path and path.endswith(".gns3"):
                     self._controller._notify_projects_directory_event()
                     return
+
+
+def _iter_string_values(value):
+    """
+    Yield every string contained in value, recursing into dicts and lists.
+    """
+
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for child in value.values():
+            yield from _iter_string_values(child)
+    elif isinstance(value, (list, tuple, set)):
+        for child in value:
+            yield from _iter_string_values(child)
+
+
+def _image_referenced(node_properties, image_filename: str) -> bool:
+    """
+    Whether a node's properties reference an image by file name.
+
+    Image references live under type-specific property keys
+    (hda_disk_image, hda_disk_image_backing_file, image, initrd, path...)
+    and are stored either as bare file names or as absolute paths
+    depending on topology age, so every string value is matched on its
+    base name instead of walking a fixed key list.
+    """
+
+    return any(os.path.basename(string) == image_filename for string in _iter_string_values(node_properties))
 
 
 class Controller:
@@ -172,12 +202,12 @@ class Controller:
         if computes:
             for c in computes:
                 try:
-                    #FIXME: Task exception was never retrieved
+                    # FIXME: Task exception was never retrieved
                     await self.add_compute(
                         compute_id=str(c.compute_id),
                         connect=False,
                         **c.dict(exclude_unset=True, exclude={"compute_id", "created_at", "updated_at"}),
-                        ssl_context=self._ssl_context
+                        ssl_context=self._ssl_context,
                     )
                 except (ControllerError, KeyError):
                     pass  # Skip not available servers at loading
@@ -192,10 +222,8 @@ class Controller:
 
         # start to auto open projects (if configured) 5 seconds after the controller has started
         self._project_auto_open_task_handle = asyncio.get_event_loop().call_later(
-            5,
-            lambda: asyncio.create_task(self._project_auto_open())
+            5, lambda: asyncio.create_task(self._project_auto_open())
         )
-
 
     def _create_ssl_context(self, server_config):
 
@@ -273,11 +301,10 @@ class Controller:
             controller_vars = {
                 "appliances_etag": self._appliance_manager.appliances_etag,
                 "iou_license_check": self._iou_license_settings["license_check"],
-                "version": __version__
+                "version": __version__,
             }
 
             if self._iou_license_settings["iourc_content"]:
-
                 server_config = Config.instance().settings.Server
                 os.makedirs(server_config.secrets_dir, exist_ok=True)
                 iourc_path = os.path.join(server_config.secrets_dir, "iou_license")
@@ -291,7 +318,7 @@ class Controller:
 
         try:
             os.makedirs(os.path.dirname(self._vars_file), exist_ok=True)
-            with open(self._vars_file, 'w+') as f:
+            with open(self._vars_file, "w+") as f:
                 json.dump(controller_vars, f, indent=4, sort_keys=True)
         except OSError as e:
             log.error(f"Cannot write controller vars file '{self._vars_file}': {e}")
@@ -327,15 +354,20 @@ class Controller:
 
         # IOU license check is disabled by default
         self._iou_license_settings["license_check"] = controller_vars.get("iou_license_check", False)
-        log.info("IOU license check is {} on the controller".format("enabled" if self._iou_license_settings["license_check"] else "disabled"))
+        log.info(
+            "IOU license check is {} on the controller".format(
+                "enabled" if self._iou_license_settings["license_check"] else "disabled"
+            )
+        )
 
         # install the built-in appliances if needed
         if Config.instance().settings.Server.install_builtin_appliances:
             previous_version = controller_vars.get("version")
             log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
             builtin_appliances_path = self._appliance_manager.builtin_appliances_path()
-            if not previous_version or \
-                    parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
+            if not previous_version or parse_version(__version__.split("+")[0]) > parse_version(
+                previous_version.split("+")[0]
+            ):
                 await self._appliance_manager.install_builtin_appliances()
             elif not os.listdir(builtin_appliances_path):
                 await self._appliance_manager.install_builtin_appliances()
@@ -437,7 +469,9 @@ class Controller:
             self._projects_scan_handle.cancel()
 
         loop = self._projects_monitor_loop or asyncio.get_running_loop()
-        self._projects_scan_handle = loop.call_later(delay, lambda: asyncio.create_task(self._scan_projects_directory()))
+        self._projects_scan_handle = loop.call_later(
+            delay, lambda: asyncio.create_task(self._scan_projects_directory())
+        )
 
     async def _scan_projects_directory(self):
         """
@@ -458,7 +492,6 @@ class Controller:
         except Exception as e:
             log.warning(f"Projects directory rescan failed: {e}")
 
-
     @staticmethod
     async def install_resource_files(dst_path, resource_name, upgrade_resources=True):
         """
@@ -466,6 +499,7 @@ class Controller:
         """
 
         installed_resources = []
+
         async def should_copy(src, dst, upgrade_resources):
             if not os.path.exists(dst):
                 return True
@@ -482,7 +516,7 @@ class Controller:
                 if not os.path.exists(os.path.join(dst_path, filename)):
                     shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
         else:
-            for entry in importlib_resources.files('gns3server').joinpath(resource_name).iterdir():
+            for entry in importlib_resources.files("gns3server").joinpath(resource_name).iterdir():
                 full_path = os.path.join(dst_path, entry.name)
                 if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
                     log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
@@ -574,7 +608,6 @@ class Controller:
         """
 
         if compute_id not in self._computes:
-
             # We disallow to create from the outside the local and VM server
             if (compute_id == "local" or compute_id == "vm") and not force:
                 return None
@@ -769,10 +802,7 @@ class Controller:
             project = self._projects[topo_data["project_id"]]
         else:
             project = await self.add_project(
-                path=os.path.dirname(path),
-                status="closed",
-                filename=os.path.basename(path),
-                **topo_data
+                path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data
             )
         if load or project.auto_open:
             await project.open()
@@ -810,6 +840,82 @@ class Controller:
             if i > 1000000:
                 raise ControllerError("A project name could not be allocated (node limit reached?)")
         return new_name
+
+    def _iter_project_nodes(self):
+        """
+        Iterate over (project, node) for every known project, opened or closed.
+
+        Opened projects yield controller Node objects; closed projects yield
+        the raw node dicts read from their .gns3 file. A project whose
+        topology cannot be read is skipped — it must not block the usage
+        checks that rely on this iterator.
+        """
+
+        for project in self._projects.values():
+            try:
+                nodes = project.nodes.values()
+            except ControllerError:
+                continue
+            for node in nodes:
+                yield project, node
+
+    def find_projects_using_template(self, template_id) -> list:
+        """
+        Return the names of the projects with at least one node created
+        from this template.
+
+        Used to forbid template deletion while any project still
+        references it.
+        """
+
+        template_id = str(template_id)
+        project_names = []
+        for project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_template_id = node.template_id
+            else:
+                node_template_id = node.get("template_id")
+            if node_template_id and str(node_template_id) == template_id and project.name not in project_names:
+                project_names.append(project.name)
+        return project_names
+
+    def find_projects_using_image(self, image_filename: str) -> list:
+        """
+        Return the names of the projects with at least one node whose
+        properties reference this image file.
+
+        Used to forbid image deletion while any project still uses it.
+        """
+
+        project_names = []
+        for project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_properties = node.properties
+            else:
+                node_properties = node.get("properties") or {}
+            if _image_referenced(node_properties, image_filename) and project.name not in project_names:
+                project_names.append(project.name)
+        return project_names
+
+    def collect_referenced_image_filenames(self) -> set:
+        """
+        Return every file name referenced by a node property across all
+        projects (opened or closed).
+
+        The set deliberately over-approximates (any property string counts):
+        it protects images from pruning, so a false positive only keeps a
+        file alive. Used as a single-pass skip list for image pruning.
+        """
+
+        filenames = set()
+        for _project, node in self._iter_project_nodes():
+            if isinstance(node, Node):
+                node_properties = node.properties
+            else:
+                node_properties = node.get("properties") or {}
+            for string in _iter_string_values(node_properties):
+                filenames.add(os.path.basename(string))
+        return filenames
 
     @property
     def projects(self):

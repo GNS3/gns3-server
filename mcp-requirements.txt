@@ -5,4 +5,4 @@
 # Or directly: pip install -r mcp-requirements.txt
 # ==============================================================================
 
-fastmcp>=3.4.0
+fastmcp>=3.4.0,<4

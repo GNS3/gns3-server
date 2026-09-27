@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 # Applied per-command via the `env` parameter to avoid polluting
 # the global process environment.
 _GIT_TIMEOUT_ENV = {
-    'GIT_HTTP_TIMEOUT': '10',           # Connection timeout (default: 120s)
-    'GIT_HTTP_LOW_SPEED_TIME': '5',     # Slow speed threshold window
-    'GIT_HTTP_LOW_SPEED_LIMIT': '10240', # < 10 KB/s = slow → abort
+    "GIT_HTTP_TIMEOUT": "10",  # Connection timeout (default: 120s)
+    "GIT_HTTP_LOW_SPEED_TIME": "5",  # Slow speed threshold window
+    "GIT_HTTP_LOW_SPEED_LIMIT": "10240",  # < 10 KB/s = slow → abort
 }
 
 
@@ -66,12 +66,7 @@ class SkillsManager:
     - Version tracking
     """
 
-    def __init__(
-        self,
-        repo_url: str = None,
-        branch: str = "main",
-        auto_update: bool = False
-    ):
+    def __init__(self, repo_url: str = None, branch: str = "main", auto_update: bool = False):
         """
         Initialize the skills manager.
 
@@ -147,7 +142,7 @@ class SkillsManager:
             logger.warning(
                 "Skills repository has uncommitted changes, skipping pull. "
                 "Commit or stash changes in %s to enable automatic updates.",
-                self.local_path
+                self.local_path,
             )
             return
 
@@ -161,14 +156,9 @@ class SkillsManager:
 
         # Check if behind and pull
         try:
-            behind_commits = list(self._repo.iter_commits(
-                f'{self.branch}..origin/{self.branch}'
-            ))
+            behind_commits = list(self._repo.iter_commits(f"{self.branch}..origin/{self.branch}"))
             if behind_commits:
-                logger.info(
-                    "Skills repository is behind by %d commit(s), pulling...",
-                    len(behind_commits)
-                )
+                logger.info("Skills repository is behind by %d commit(s), pulling...", len(behind_commits))
                 origin.pull(self.branch, env=_GIT_TIMEOUT_ENV)
                 logger.info(f"Updated to commit {self.get_current_version()}")
             else:
@@ -188,12 +178,7 @@ class SkillsManager:
             return False
 
         try:
-            self._repo = git.Repo.clone_from(
-                self.repo_url,
-                self.local_path,
-                branch=self.branch,
-                env=_GIT_TIMEOUT_ENV
-            )
+            self._repo = git.Repo.clone_from(self.repo_url, self.local_path, branch=self.branch, env=_GIT_TIMEOUT_ENV)
             logger.info(f"Successfully cloned skills repository to {self.local_path}")
             return True
         except git.GitCommandError as e:
@@ -256,7 +241,9 @@ class SkillsManager:
                     del SKILLS_REGISTRY[k]
             SKILLS_REGISTRY.update(all_skills)
 
-            logger.info(f"Loaded {len(new_injection_skills)} injection skills, {len(new_device_skills)} device skills, and {len(new_feature_skills)} feature skills")
+            logger.info(
+                f"Loaded {len(new_injection_skills)} injection skills, {len(new_device_skills)} device skills, and {len(new_feature_skills)} feature skills"
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to reload skills: {e}")
@@ -302,12 +289,7 @@ class SkillsManager:
         """
         try:
             # Available prompt names
-            prompt_names = [
-                "lab_automation_assistant",
-                "teaching_assistant",
-                "troubleshooting_injection",
-                "title"
-            ]
+            prompt_names = ["lab_automation_assistant", "teaching_assistant", "troubleshooting_injection", "title"]
 
             # Load all prompts
             loaded_count = 0
@@ -385,6 +367,7 @@ class SkillsManager:
         """
         try:
             from .registry import INJECTION_SKILLS_REGISTRY
+
             return len(INJECTION_SKILLS_REGISTRY)
         except Exception:
             return 0
@@ -413,7 +396,7 @@ class SkillsManager:
             "skill_count": self.get_skill_count(),
             "prompt_count": self.get_prompt_count(),
             "auto_update": self.auto_update,
-            "is_initialized": (self.local_path / ".git").exists()
+            "is_initialized": (self.local_path / ".git").exists(),
         }
 
     def rollback(self, commit_hash: str) -> bool:
@@ -462,12 +445,14 @@ class SkillsManager:
 
             commits = []
             for commit in self._repo.iter_commits(max_count=limit):
-                commits.append({
-                    "hash": commit.hexsha,
-                    "message": commit.message.strip(),
-                    "author": str(commit.author),
-                    "date": commit.committed_datetime.isoformat()
-                })
+                commits.append(
+                    {
+                        "hash": commit.hexsha,
+                        "message": commit.message.strip(),
+                        "author": str(commit.author),
+                        "date": commit.committed_datetime.isoformat(),
+                    }
+                )
             return commits
         except Exception as e:
             logger.error(f"Failed to get commit history: {e}")

@@ -84,7 +84,7 @@ class ListType(TypeDecorator):
     impl = VARCHAR
     cache_ok = True
 
-    def __init__(self, separator=',', *args, **kwargs):
+    def __init__(self, separator=",", *args, **kwargs):
 
         self._separator = separator
         super().__init__(*args, **kwargs)
@@ -92,8 +92,7 @@ class ListType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is not None:
             if any(self._separator in str(item) for item in value):
-                raise ListException(f"List values cannot contain '{self._separator}'"
-                                    f"Please use a different separator.")
+                raise ListException(f"List values cannot contain '{self._separator}'Please use a different separator.")
             return self._separator.join(map(str, value))
 
     def process_result_value(self, value, dialect):
@@ -104,7 +103,6 @@ class ListType(TypeDecorator):
 
 
 class BaseTable(Base):
-
     __abstract__ = True
 
     created_at = Column(DateTime, server_default=func.current_timestamp())

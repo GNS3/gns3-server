@@ -37,7 +37,6 @@ log = logging.getLogger(__name__)
 
 
 class Hypervisor(UBridgeHypervisor):
-
     """
     Hypervisor.
 
@@ -160,10 +159,10 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                # uBridge >= 1.2.0 is required for features this server now
-                # relies on: the AF_UNIX control channel (-U), the marker
-                # (mark) filter, and the brctl-backed builtin Ethernet Switch.
-                minimum_required_version = "1.2.0"
+                # uBridge >= 1.2.3 is required for the AF_UNIX control
+                # channel, marker filters, builtin Ethernet Switch support,
+                # and Docker TAP carrier control.
+                minimum_required_version = "1.2.3"
                 if parse_version(self._version) < parse_version(minimum_required_version):
                     raise UbridgeError(f"uBridge executable version must be >= {minimum_required_version}")
             else:

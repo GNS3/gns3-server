@@ -75,8 +75,12 @@ async def test_install_docker_version_skips_image_resolution(monkeypatch):
     _FakeTemplatesService.created = []
     appliance_data = _v8_appliance(
         [
-            {"name": "default", "default": True, "template_type": "docker",
-             "template_properties": {"image": "xrd:latest"}},
+            {
+                "name": "default",
+                "default": True,
+                "template_type": "docker",
+                "template_properties": {"image": "xrd:latest"},
+            },
         ],
         versions=[{"name": "1.0", "images": {"image": "xrd:1.0"}}],
     )
@@ -113,8 +117,12 @@ async def test_install_iou_version_maps_image_to_path(monkeypatch, tmp_path):
     _FakeTemplatesService.created = []
     appliance_data = _v8_appliance(
         [
-            {"name": "default", "default": True, "template_type": "iou",
-             "template_properties": {"ethernet_adapters": 4, "ram": 256}},
+            {
+                "name": "default",
+                "default": True,
+                "template_type": "iou",
+                "template_properties": {"ethernet_adapters": 4, "ram": 256},
+            },
         ],
         versions=[{"name": "15.9", "images": {"image": "i86bi-linux-l3-15.9.bin"}}],
     )
@@ -141,8 +149,7 @@ async def test_install_iou_version_maps_image_to_path(monkeypatch, tmp_path):
 async def test_install_version_not_found(monkeypatch):
     manager = ApplianceManager()
     appliance_data = _v8_appliance(
-        [{"name": "only", "default": True, "template_type": "docker",
-          "template_properties": {"image": "xrd:latest"}}],
+        [{"name": "only", "default": True, "template_type": "docker", "template_properties": {"image": "xrd:latest"}}],
         versions=[{"name": "1.0", "images": {"image": "xrd:1.0"}}],
     )
     appliance = Appliance("test.gns3a", appliance_data)

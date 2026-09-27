@@ -26,7 +26,6 @@ log = logging.getLogger(__name__)
 
 
 class UBridgeHypervisor:
-
     """
     Creates a new connection to a uBridge hypervisor control channel.
 

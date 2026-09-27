@@ -29,12 +29,11 @@ resource_pool_map = Table(
     "resource_pool_map",
     Base.metadata,
     Column("resource_id", GUID, ForeignKey("resources.resource_id", ondelete="CASCADE")),
-    Column("resource_pool_id", GUID, ForeignKey("resource_pools.resource_pool_id", ondelete="CASCADE"))
+    Column("resource_pool_id", GUID, ForeignKey("resource_pools.resource_pool_id", ondelete="CASCADE")),
 )
 
 
 class Resource(BaseTable):
-
     __tablename__ = "resources"
 
     resource_id = Column(GUID, primary_key=True)
@@ -44,7 +43,6 @@ class Resource(BaseTable):
 
 
 class ResourcePool(BaseTable):
-
     __tablename__ = "resource_pools"
 
     resource_pool_id = Column(GUID, primary_key=True, default=generate_uuid)

@@ -15,7 +15,7 @@ import argparse
 
 def _find_base_dir():
     """Find the project root directory."""
-    if hasattr(sys, '_MEIPASS'):
+    if hasattr(sys, "_MEIPASS"):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -71,9 +71,7 @@ def uninstall(packages, yes=False):
     for package in packages:
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "uninstall", "-y", package],
-                capture_output=True,
-                text=True
+                [sys.executable, "-m", "pip", "uninstall", "-y", package], capture_output=True, text=True
             )
             if result.returncode == 0:
                 print(f"  Removed: {package}")
@@ -87,13 +85,8 @@ def uninstall(packages, yes=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Uninstall AI Features dependencies (AI Copilot + MCP)"
-    )
-    parser.add_argument(
-        "-y", "--yes", action="store_true",
-        help="Automatically confirm uninstallation"
-    )
+    parser = argparse.ArgumentParser(description="Uninstall AI Features dependencies (AI Copilot + MCP)")
+    parser.add_argument("-y", "--yes", action="store_true", help="Automatically confirm uninstallation")
     args = parser.parse_args()
 
     packages = get_ai_packages()

@@ -94,6 +94,7 @@ from gns3server.agent.gns3_copilot.tools_v2 import GNS3StopNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3TemplateTool
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
+from gns3server.agent.gns3_copilot.tools_v2 import GNS3WaitTool
 from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
 from gns3server.agent.gns3_copilot.tools_v2 import PacketAnalysisTool
 from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool
@@ -113,7 +114,8 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
     GNS3TemplateTool(),  # Get GNS3 node templates
     GNS3CreateNodeTool(),  # Create new nodes in GNS3
     GNS3LinkTool(),  # Create links between nodes
-    GNS3StartNodeTool(),  # Start GNS3 nodes
+    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
+    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
     GNS3UpdateNodeNameTool(),  # Update node name
     ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
     # (READ-ONLY)
@@ -127,7 +129,8 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     GNS3TemplateTool(),  # Get GNS3 node templates
     GNS3CreateNodeTool(),  # Create new nodes in GNS3
     GNS3LinkTool(),  # Create links between nodes
-    GNS3StartNodeTool(),  # Start GNS3 nodes
+    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
+    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
     GNS3StopNodeTool(),  # Stop GNS3 nodes
     GNS3SuspendNodeTool(),  # Suspend GNS3 nodes (preserve state)
     GNS3UpdateNodeNameTool(),  # Update node name
@@ -308,8 +311,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
             if topology and "error" not in topology:
                 topology_info = topology
                 logger.info(
-                    "Successfully retrieved topology for project_id: %s, "
-                    "name: %s",
+                    "Successfully retrieved topology for project_id: %s, name: %s",
                     project_id,
                     topology.get("name"),
                 )
@@ -317,9 +319,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
                 logger.warning(
                     "Failed to retrieve topology for project_id %s: %s",
                     project_id,
-                    topology.get("error", "Unknown error")
-                    if topology
-                    else "No result",
+                    topology.get("error", "Unknown error") if topology else "No result",
                 )
         except Exception as e:
             logger.warning(
@@ -335,20 +335,13 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     copilot_mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
     if copilot_mode == "lab_automation_assistant":
         mode_tools = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
-        logger.info(
-            "Using LAB_AUTOMATION_ASSISTANT mode tools (includes "
-            "configuration tools)"
-        )
+        logger.info("Using LAB_AUTOMATION_ASSISTANT mode tools (includes configuration tools)")
     elif copilot_mode == "troubleshooting_injection":
         mode_tools = TROUBLESHOOTING_INJECTION_MODE_TOOLS
-        logger.info(
-            "Using TROUBLESHOOTING_INJECTION mode tools (fault injection)"
-        )
+        logger.info("Using TROUBLESHOOTING_INJECTION mode tools (fault injection)")
     else:  # teaching_assistant mode (default)
         mode_tools = TEACHING_ASSISTANT_MODE_TOOLS
-        logger.info(
-            "Using TEACHING_ASSISTANT mode tools (diagnostic tools only)"
-        )
+        logger.info("Using TEACHING_ASSISTANT mode tools (diagnostic tools only)")
 
     # Create pre_model_hook for automatic topology injection and trimming
     # Load system prompt based on copilot_mode configuration
@@ -369,22 +362,16 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
         copilot_mode,
         len(mode_tools),
     )
-    model_with_tools = create_base_model_with_tools(
-        mode_tools, llm_config=llm_config
-    )
+    model_with_tools = create_base_model_with_tools(mode_tools, llm_config=llm_config)
 
     # Call pre_hook directly to prepare messages (topology injection +
     # trimming)
     # Note: LangGraph's pre_model_hook only works with prebuilt agents, not
     # custom StateGraph
     logger.debug("Calling pre_hook to prepare %d messages", len(messages))
-    prepared_state = pre_hook(
-        {"messages": messages, "topology_info": topology_info}
-    )
+    prepared_state = pre_hook({"messages": messages, "topology_info": topology_info})
     prepared_messages = prepared_state["messages"]
-    logger.info(
-        "Messages prepared: %d → %d", len(messages), len(prepared_messages)
-    )
+    logger.info("Messages prepared: %d → %d", len(messages), len(prepared_messages))
 
     # Invoke model with prepared messages
     response = model_with_tools.invoke(prepared_messages)
@@ -418,9 +405,7 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
 
 
 # Define generate title node
-def generate_title(
-    state: MessagesState, config: RunnableConfig | None = None
-) -> dict:
+def generate_title(state: MessagesState, config: RunnableConfig | None = None) -> dict:
     """
     Generate a conversation title using a lightweight assistant LLM
     (title_model). This node is only executed when no title has been set yet
@@ -466,27 +451,21 @@ def generate_title(
 
             # Validate the generated title
             if not new_title or len(new_title) < 3:
-                raise ValueError(
-                    f"Generated title too short or empty: '{new_title}'"
-                )
+                raise ValueError(f"Generated title too short or empty: '{new_title}'")
 
             if new_title in [
                 "New Conversation",
                 "Untitled Session",
                 "GNS3 Session",
             ]:
-                raise ValueError(
-                    f"Generated title is a default value: '{new_title}'"
-                )
+                raise ValueError(f"Generated title is a default value: '{new_title}'")
 
             # Safety: truncate long titles and avoid line breaks
             if len(new_title) > TITLE_MAX_LENGTH:
                 new_title = new_title[: TITLE_MAX_LENGTH - 2] + "..."
 
             # Remove unwanted characters
-            new_title = (
-                new_title.replace("\n", " ").replace('"', "").replace("'", "")
-            )
+            new_title = new_title.replace("\n", " ").replace('"', "").replace("'", "")
 
             logger.debug("Generated new title: %s", new_title)
             return {"conversation_title": new_title, "session_id": state.get("session_id")}
@@ -537,9 +516,7 @@ def tool_node(state: dict, config: RunnableConfig | None = None):
     result = []
     for tool_call in tool_calls:
         tool_name = tool_call["name"]
-        logger.debug(
-            "Executing tool: %s with args: %s", tool_name, tool_call["args"]
-        )
+        logger.debug("Executing tool: %s with args: %s", tool_name, tool_call["args"])
         tool = tools_by_name[tool_name]
         try:
             observation = tool.invoke(tool_call["args"])
@@ -587,11 +564,13 @@ def abort_handler_node(state: dict) -> dict:
     result = []
     for tool_call in last_message.tool_calls:
         tool_msg = ToolMessage(
-            content=json.dumps({
-                "status": "aborted",
-                "message": "Tool execution was aborted by user",
-                "tool_call_id": tool_call["id"],
-            }),
+            content=json.dumps(
+                {
+                    "status": "aborted",
+                    "message": "Tool execution was aborted by user",
+                    "tool_call_id": tool_call["id"],
+                }
+            ),
             tool_call_id=tool_call["id"],
             name=tool_call["name"],
             metadata={"created_at": datetime.utcnow().isoformat(), "aborted": True},

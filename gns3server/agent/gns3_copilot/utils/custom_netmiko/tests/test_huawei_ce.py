@@ -25,9 +25,7 @@ import os
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.dirname(test_dir)))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(test_dir)))))
 sys.path.insert(0, project_root)
 
 
@@ -103,13 +101,8 @@ class TestHuaweiTelnetCEDriver(unittest.TestCase):
     def test_initialization_parameters(self):
         """Test that initialization sets correct parameters."""
         # Create a mock instance (without actual connection)
-        with patch.object(
-            self.HuaweiTelnetCE, "__init__",
-            lambda self, *args, **kwargs: None
-        ):
-            instance = self.HuaweiTelnetCE.__new__(
-                self.HuaweiTelnetCE
-            )
+        with patch.object(self.HuaweiTelnetCE, "__init__", lambda self, *args, **kwargs: None):
+            instance = self.HuaweiTelnetCE.__new__(self.HuaweiTelnetCE)
 
             # Mock the necessary attributes
             instance.protocol = "telnet"
@@ -169,9 +162,7 @@ class TestHuaweiTelnetCEIntegration(unittest.TestCase):
         )
 
         # Create a mock instance
-        instance = GNS3HuaweiTelnetCE.__new__(
-            GNS3HuaweiTelnetCE
-        )
+        instance = GNS3HuaweiTelnetCE.__new__(GNS3HuaweiTelnetCE)
 
         # Mock the necessary attributes and methods
         instance.host = "127.0.0.1"
@@ -203,12 +194,8 @@ def run_tests():
     suite = unittest.TestSuite()
 
     # Add test cases
-    suite.addTests(
-        loader.loadTestsFromTestCase(TestHuaweiTelnetCEDriver)
-    )
-    suite.addTests(
-        loader.loadTestsFromTestCase(TestHuaweiTelnetCEIntegration)
-    )
+    suite.addTests(loader.loadTestsFromTestCase(TestHuaweiTelnetCEDriver))
+    suite.addTests(loader.loadTestsFromTestCase(TestHuaweiTelnetCEIntegration))
 
     # Run tests
     runner = unittest.TextTestRunner(verbosity=2)
@@ -218,9 +205,7 @@ def run_tests():
     print("\n" + "=" * 100)
     print("Test Summary:")
     print(f"  Run: {result.testsRun}")
-    success_count = (
-        result.testsRun - len(result.failures) - len(result.errors)
-    )
+    success_count = result.testsRun - len(result.failures) - len(result.errors)
     print(f"  Success: {success_count}")
     print(f"  Failed: {len(result.failures)}")
     print(f"  Errors: {len(result.errors)}")

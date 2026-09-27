@@ -28,22 +28,24 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestControllerRoutes:
+    async def test_shutdown_local(self, app: FastAPI, client: AsyncClient, config: Config, monkeypatch) -> None:
 
-    async def test_shutdown_local(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
-    
-        os.kill = MagicMock()
+        # monkeypatch (not bare assignment): a global `os.kill = MagicMock()`
+        # is never restored and poisons every later test that kills a
+        # subprocess — resident sharkd sessions would wait() forever on an
+        # immortal process.
+        kill_mock = MagicMock()
+        monkeypatch.setattr(os, "kill", kill_mock)
         config.settings.Server.local = True
         response = await client.post(app.url_path_for("shutdown"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert os.kill.called
-    
-    
+        assert kill_mock.called
+
     async def test_shutdown_non_local(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
-    
+
         response = await client.post(app.url_path_for("shutdown"))
         assert response.status_code == status.HTTP_403_FORBIDDEN
-    
-    
+
     # @pytest.mark.asyncio
     # async def test_debug(controller_api, config, tmpdir):
     #
@@ -63,9 +65,8 @@ class TestControllerRoutes:
     #     config.set("Server", "local", False)
     #     response = await controller_api.post('/debug')
     #     assert response.status_code == 403
-    
-    
+
     async def test_statistics_output(self, app: FastAPI, client: AsyncClient) -> None:
-    
+
         response = await client.get(app.url_path_for("statistics"))
         assert response.status_code == status.HTTP_200_OK

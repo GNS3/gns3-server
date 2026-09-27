@@ -1,0 +1,180 @@
+{
+    "appliance_id": "ffa79bec-d4fd-5842-89b4-e08f8fe21bf9",
+    "name": "SRLinux",
+    "category": "router",
+    "description": "Nokia SR Linux is the open, modular, and deeply programmable network operating system running on Nokia data center routers. It exposes a full TUI CLI, a gNMI/json-rpc management plane, and supports BGP, OSPF, IS-IS, MPLS, EVPN, segment routing and more.\n\nThis Docker image runs SR Linux unmodified inside a GNS3 Docker node. The Web console opens directly in the native sr_cli TUI (via the docker_exec console).",
+    "vendor_name": "Nokia",
+    "vendor_url": "https://www.nokia.com/ip-networks/service-router-linux-NOS/",
+    "documentation_url": "https://documentation.nokia.com/srlinux/",
+    "product_name": "SR Linux",
+    "product_url": "https://www.nokia.com/ip-networks/service-router-linux-NOS/",
+    "registry_version": 8,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The Web console opens directly in the SR Linux CLI (`sr_cli`).\n\nData interfaces default to `admin-state disable`; enable them before use:\n\n```\nenter candidate\ninterface ethernet-1/1\n  admin-state enable\ncommit now\n```\n\nTo make a data interface carry traffic, also bind it to a network-instance (default VRF `default`). The first port (mgmt0) is the management interface.\n\nSave the running config with `save config` (persisted across node stop/start via `/etc/opt/srlinux`).\n\nThe CLI auto-logs out after 300s idle; just reopen the console, or disable it:\n\n```\nenter candidate\n/system cli idle-timeout disable\ncommit now\n```",
+    "netmiko_device_type": "nokia_sros_telnet",
+    "symbol": ":/symbols/affinity/circle/blue/router_cloud.svg",
+    "settings": [
+        {
+            "name": "Default template settings",
+            "default": true,
+            "template_type": "docker",
+            "template_properties": {
+                "adapters": 35,
+                "image": "ghcr.io/nokia/srlinux:latest",
+                "console_type": "docker_exec",
+                "start_command": "sudo -E bash -c 'touch /.dockerenv && /opt/srlinux/bin/sr_linux'",
+                "environment": "GNS3_SKIP_INIT=1\nGNS3_INTERFACE_NAMES=mgmt0,e1-1,e1-2,e1-3,e1-4,e1-5,e1-6,e1-7,e1-8,e1-9,e1-10,e1-11,e1-12,e1-13,e1-14,e1-15,e1-16,e1-17,e1-18,e1-19,e1-20,e1-21,e1-22,e1-23,e1-24,e1-25,e1-26,e1-27,e1-28,e1-29,e1-30,e1-31,e1-32,e1-33,e1-34\nGNS3_CONSOLE_CMD=/opt/srlinux/bin/sr_cli",
+                "extra_volumes": [
+                    "/etc/opt/srlinux",
+                    "/var/log/srlinux",
+                    "/opt/srlinux/appmgr"
+                ],
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "port_name": "mgmt0"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "port_name": "e1-1"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "port_name": "e1-2"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "port_name": "e1-3"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "port_name": "e1-4"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "port_name": "e1-5"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "port_name": "e1-6"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "port_name": "e1-7"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "port_name": "e1-8"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "port_name": "e1-9"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "port_name": "e1-10"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "port_name": "e1-11"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "port_name": "e1-12"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "port_name": "e1-13"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "port_name": "e1-14"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "port_name": "e1-15"
+                    },
+                    {
+                        "adapter_number": 16,
+                        "port_name": "e1-16"
+                    },
+                    {
+                        "adapter_number": 17,
+                        "port_name": "e1-17"
+                    },
+                    {
+                        "adapter_number": 18,
+                        "port_name": "e1-18"
+                    },
+                    {
+                        "adapter_number": 19,
+                        "port_name": "e1-19"
+                    },
+                    {
+                        "adapter_number": 20,
+                        "port_name": "e1-20"
+                    },
+                    {
+                        "adapter_number": 21,
+                        "port_name": "e1-21"
+                    },
+                    {
+                        "adapter_number": 22,
+                        "port_name": "e1-22"
+                    },
+                    {
+                        "adapter_number": 23,
+                        "port_name": "e1-23"
+                    },
+                    {
+                        "adapter_number": 24,
+                        "port_name": "e1-24"
+                    },
+                    {
+                        "adapter_number": 25,
+                        "port_name": "e1-25"
+                    },
+                    {
+                        "adapter_number": 26,
+                        "port_name": "e1-26"
+                    },
+                    {
+                        "adapter_number": 27,
+                        "port_name": "e1-27"
+                    },
+                    {
+                        "adapter_number": 28,
+                        "port_name": "e1-28"
+                    },
+                    {
+                        "adapter_number": 29,
+                        "port_name": "e1-29"
+                    },
+                    {
+                        "adapter_number": 30,
+                        "port_name": "e1-30"
+                    },
+                    {
+                        "adapter_number": 31,
+                        "port_name": "e1-31"
+                    },
+                    {
+                        "adapter_number": 32,
+                        "port_name": "e1-32"
+                    },
+                    {
+                        "adapter_number": 33,
+                        "port_name": "e1-33"
+                    },
+                    {
+                        "adapter_number": 34,
+                        "port_name": "e1-34"
+                    }
+                ]
+            }
+        }
+    ]
+}

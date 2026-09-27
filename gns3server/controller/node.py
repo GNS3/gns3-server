@@ -21,15 +21,11 @@ import copy
 import uuid
 import os
 
-from .controller_error import (
-    ControllerError,
-    ControllerTimeoutError,
-    ComputeError,
-    ComputeConflictError
-)
+from .controller_error import ControllerError, ControllerTimeoutError, ComputeError, ComputeConflictError
 from .node_types import BUILTIN_NODE_TYPES
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
+from ..utils.application_id import is_iol_runner_environment
 from ..utils import macaddress_to_int, int_to_macaddress
 from ..config import Config
 
@@ -37,6 +33,50 @@ from ..config import Config
 import logging
 
 log = logging.getLogger(__name__)
+
+
+# Image properties of a node, mapped by node type. The value is the image
+# "type" used by the image manager (see utils.images). Docker images are not
+# registered in the image database, they are matched by tag instead.
+IMAGE_PROPERTIES_BY_NODE_TYPE = {
+    "qemu": {
+        "hda_disk_image": "qemu",
+        "hdb_disk_image": "qemu",
+        "hdc_disk_image": "qemu",
+        "hdd_disk_image": "qemu",
+        "cdrom_image": "qemu",
+        "initrd": "qemu",
+        "kernel_image": "qemu",
+        "bios_image": "qemu",
+    },
+    "dynamips": {"image": "ios"},
+    "iou": {"path": "iou"},
+    "docker": {"image": "docker"},
+}
+
+
+def _extract_iol_startup_config_knob(environment):
+    """
+    Split the GNS3_IOL_STARTUP_CONFIG knob out of a Docker environment
+    (iol-runner images): the value is a config file name, resolved by the
+    controller in its configs directory.
+
+    :returns: (filename, environment without the knob line); filename is None
+        when the knob is absent or empty.
+    """
+
+    if not environment or "GNS3_IOL_STARTUP_CONFIG=" not in environment:
+        return None, environment
+    filename = None
+    kept = []
+    for line in environment.splitlines():
+        stripped = line.strip().rstrip(",")
+        if stripped.startswith("GNS3_IOL_STARTUP_CONFIG="):
+            if filename is None:
+                filename = stripped.split("=", 1)[1].strip()
+        else:
+            kept.append(line)
+    return filename or None, "\n".join(kept)
 
 
 class Node:
@@ -118,6 +158,11 @@ class Node:
         self._netmiko_device_type = None
         self._default_username = None
         self._default_password = None
+        # Set when the node cannot be created on its compute because one or
+        # more of its images are missing. The node is kept on the controller
+        # (topology and links are preserved) until the user provides a
+        # compatible replacement image.
+        self._missing_images = []
 
         # This properties will be recomputed
         ignore_properties = ("width", "height", "hover_symbol")
@@ -161,6 +206,22 @@ class Node:
     @property
     def status(self):
         return self._status
+
+    @property
+    def missing_image(self):
+        """
+        :returns: True if at least one image required by this node is missing
+            and the node could therefore not be created on its compute.
+        """
+        return len(self._missing_images) > 0
+
+    @property
+    def missing_images(self):
+        return self._missing_images
+
+    @property
+    def template_id(self):
+        return self._template_id
 
     @property
     def name(self):
@@ -428,17 +489,29 @@ class Node:
     def links(self):
         return self._links
 
-    async def create(self):
+    async def create(self, allow_missing_image=False, disk_images_to_reset=None):
         """
         Create the node on the compute
+
+        :param allow_missing_image: when True, if an image is missing and
+            cannot be uploaded/synced, the node is not created on the compute
+            but is kept on the controller and flagged with the missing image(s)
+            instead of raising.
+        :param disk_images_to_reset: QEMU disk properties whose linked-clone
+            overlays must be recreated after replacing a missing base image.
         """
         data = self._node_data()
         data["node_id"] = self._id
+        if self._node_type == "qemu" and disk_images_to_reset:
+            data["disk_images_to_reset"] = sorted(disk_images_to_reset)
         if self._node_type == "docker":
             timeout = None
+            await self._add_docker_image_digest(data)
         else:
             timeout = 1200
         trial = 0
+        last_missing_image = None
+        last_missing_error = None
         while trial != 6:
             try:
                 response = await self._compute.post(
@@ -447,16 +520,178 @@ class Node:
             except ComputeConflictError as e:
                 response = e.response()
                 if response.get("exception") == "ImageMissingError":
-                    res = await self._upload_missing_image(self._node_type, response["image"])
+                    last_missing_error = e
+                    last_missing_image = response.get("image")
+                    res = False
+                    if last_missing_image:
+                        try:
+                            res = await self._upload_missing_image(self._node_type, last_missing_image)
+                        except ControllerError as upload_error:
+                            # For Docker the image is pulled from a registry: a
+                            # failed pull (unknown tag, no network, private image)
+                            # must not abort the whole project. Treat it as a
+                            # missing image so the user can pick another one.
+                            if not allow_missing_image:
+                                raise
+                            log.warning(
+                                "Could not provide missing image '%s' for node '%s' [%s]: %s",
+                                last_missing_image,
+                                self._name,
+                                self._id,
+                                upload_error,
+                            )
                     if not res:
+                        if allow_missing_image:
+                            missing_images = self._compute_missing_images(last_missing_image)
+                            # A degraded node must always identify at least one
+                            # missing image. Otherwise the controller would keep
+                            # a node that was never created on the compute while
+                            # exposing it as healthy.
+                            if not missing_images:
+                                raise e
+                            self._missing_images = missing_images
+                            log.warning(
+                                "Node '%s' [%s] is kept in degraded state, missing image(s): %s",
+                                self._name,
+                                self._id,
+                                ", ".join(m["image"] for m in self._missing_images),
+                            )
+                            return False
                         raise e
                 else:
                     raise e
             else:
                 await self.parse_node_response(response.json)
+                self._missing_images = []
                 return True
             trial += 1
+        if allow_missing_image:
+            # The image was repeatedly reported missing (e.g. the upload/sync
+            # seemed to succeed but did not). Keep the node in degraded state.
+            self._missing_images = self._compute_missing_images(last_missing_image)
+            log.warning(
+                "Node '%s' [%s] could not be created, missing image(s): %s",
+                self._name,
+                self._id,
+                ", ".join(m["image"] for m in self._missing_images),
+            )
+        elif last_missing_error is not None:
+            # Uploading appeared to succeed, but the compute rejected every
+            # retry. Do not let the caller register a controller-only node as
+            # healthy.
+            raise last_missing_error
         return False
+
+    def _find_local_image(self, image_type, image):
+        """Return an image path contained in an allowed image directory."""
+
+        if not image or image_type == "docker":
+            return None
+        try:
+            directories = images_directories(image_type)
+        except NotImplementedError:
+            return None
+        requested = os.path.normpath(image)
+        for directory in directories:
+            root = os.path.realpath(directory)
+            candidate = os.path.realpath(os.path.join(root, requested))
+            try:
+                contained = os.path.commonpath((root, candidate)) == root
+            except ValueError:
+                contained = False
+            if contained and os.path.isfile(candidate):
+                return candidate
+
+            # Image API records expose a basename separately from their
+            # controller-local absolute path. Search subfolders when that
+            # portable basename is used by a node or remote compute.
+            if os.path.basename(requested) == requested:
+                for current_root, _, filenames in os.walk(root):
+                    if requested in filenames:
+                        nested_candidate = os.path.realpath(os.path.join(current_root, requested))
+                        try:
+                            nested_contained = os.path.commonpath((root, nested_candidate)) == root
+                        except ValueError:
+                            nested_contained = False
+                        if nested_contained and os.path.isfile(nested_candidate):
+                            return nested_candidate
+        return None
+
+    def _image_available(self, image_type, image):
+        """
+        Check whether an image is available on the controller (and can
+        therefore be uploaded to the compute when needed).
+
+        :param image_type: image type (e.g. "qemu", "ios", "iou")
+        :param image: image filename or path
+        """
+
+        if not image:
+            return True
+        if image_type == "docker":
+            # Docker images are not stored on the controller filesystem
+            return True
+        return self._find_local_image(image_type, image) is not None
+
+    def _compute_missing_images(self, fallback_image=None):
+        """
+        Build the list of images referenced by this node that are not
+        available on the controller.
+
+        :param fallback_image: image reported as missing by the compute, always
+            included (used for Docker images and images not directly mapped to
+            a node property).
+        """
+
+        missing = []
+        mapping = IMAGE_PROPERTIES_BY_NODE_TYPE.get(self._node_type, {})
+        properties = self._properties or {}
+        for prop, image_type in mapping.items():
+            value = properties.get(prop)
+            if not value:
+                continue
+            if not self._image_available(image_type, value):
+                missing.append({"property": prop, "image": value, "image_type": image_type})
+        if fallback_image:
+            prop = next((p for p in mapping if properties.get(p) == fallback_image), None)
+            if prop is None:
+                fallback_basename = os.path.basename(fallback_image)
+                prop = next(
+                    (p for p in mapping if properties.get(p) and os.path.basename(properties[p]) == fallback_basename),
+                    None,
+                )
+            if prop is None and mapping:
+                prop = next(iter(mapping))
+            already_reported = any(
+                m["image"] == fallback_image or (prop is not None and m["property"] == prop) for m in missing
+            )
+            if not already_reported:
+                image_type = mapping.get(prop, self._node_type)
+                missing.append({"property": prop, "image": fallback_image, "image_type": image_type})
+        return missing
+
+    def _remove_replaced_image_metadata(self, old_properties, new_properties):
+        """Remove metadata that still refers to an image being replaced."""
+
+        replaced_properties = {
+            missing.get("property")
+            for missing in self._missing_images
+            if missing.get("property")
+            and old_properties.get(missing["property"]) != new_properties.get(missing["property"])
+        }
+        if self._node_type == "qemu":
+            for prop in replaced_properties:
+                new_properties.pop(f"{prop}_md5sum", None)
+                if prop in {"hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image"}:
+                    # The QEMU create route treats a backing-file value as the
+                    # authoritative base image. Keeping the old value would
+                    # silently override the replacement selected by the user.
+                    new_properties.pop(f"{prop}_backing_file", None)
+        elif self._node_type == "dynamips" and "image" in replaced_properties:
+            new_properties.pop("image_md5sum", None)
+        elif self._node_type == "iou" and "path" in replaced_properties:
+            new_properties.pop("md5sum", None)
+        return replaced_properties
 
     async def update(self, **kwargs):
         """
@@ -469,6 +704,9 @@ class Node:
         update_compute = False
         old_json = self.asdict()
         old_name = self._name
+        old_properties = copy.deepcopy(self._properties)
+        old_custom_adapters = copy.deepcopy(self._custom_adapters)
+        old_missing_images = copy.deepcopy(self._missing_images)
 
         compute_properties = None
         # Update node properties with additional elements
@@ -479,21 +717,47 @@ class Node:
 
                 # We update properties on the compute and wait for the answer from the compute node
                 if prop == "properties":
-                    compute_properties = kwargs[prop]
+                    compute_properties = copy.deepcopy(kwargs[prop])
                 else:
-                    if (
-                        prop == "name"
-                        and self.status == "started"
-                        and self._node_type not in BUILTIN_NODE_TYPES
-                    ):
+                    if prop == "name" and self.status == "started" and self._node_type not in BUILTIN_NODE_TYPES:
                         raise ControllerError("Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
         if compute_properties and "custom_adapters" in compute_properties:
             # we need to check custom adapters to update the custom port names
             self.custom_adapters = compute_properties["custom_adapters"]
+        if self.missing_image and compute_properties is not None:
+            # The node was never created on the compute (missing image). Apply
+            # the new properties locally so create() can use them.
+            replaced_image_properties = self._remove_replaced_image_metadata(old_properties, compute_properties)
+            self._properties = compute_properties
+        else:
+            replaced_image_properties = set()
         self._list_ports()
         if update_compute:
+            if self.missing_image:
+                # Try to create the node on the compute now that an image may
+                # have been provided. If it is still missing the node simply
+                # remains in its degraded state.
+                try:
+                    created = await self.create(
+                        allow_missing_image=True,
+                        disk_images_to_reset=replaced_image_properties,
+                    )
+                except Exception:
+                    # create() can reject the replacement for reasons other
+                    # than a missing image. Keep the controller state aligned
+                    # with the node that is still absent from the compute.
+                    self._properties = old_properties
+                    self._custom_adapters = old_custom_adapters
+                    self._missing_images = old_missing_images
+                    self._list_ports()
+                    raise
+                if created:
+                    await self.project.restore_deferred_links(self)
+                self.project.emit_notification("node.updated", self.asdict())
+                self.project.dump()
+                return
             data = self._node_data(properties=compute_properties)
             try:
                 response = await self.put(None, data=data)
@@ -537,7 +801,7 @@ class Node:
                 "startup_config_content",
                 "private_config_content",
                 "startup_script",
-                "custom_adapters"
+                "custom_adapters",
             ]:
                 if key in self._properties:
                     del self._properties[key]
@@ -568,6 +832,25 @@ class Node:
                     data[v] = self._base_config_file_content(self._properties[k])
                     del data[k]
                     del self._properties[k]  # We send the file only one time
+
+            # IOL runner (Docker) startup-config: translate the config file
+            # referenced by the GNS3_IOL_STARTUP_CONFIG environment knob into
+            # content, like the mappings above. Sent only once — afterwards
+            # the node's configuration lives in its NVRAM on the compute (a
+            # reloaded node is recreated without the knob and boots from the
+            # persistent NVRAM, preserving `write memory`).
+            if self._node_type == "docker":
+                filename, environment = _extract_iol_startup_config_knob(self._properties.get("environment"))
+                if filename:
+                    content = self._base_config_file_content(filename)
+                    if content:
+                        data["startup_config_content"] = content
+                        data["environment"] = environment
+                        self._properties["environment"] = environment
+                    else:
+                        log.warning(
+                            f"Cannot load IOL startup-config file '{filename}' for node '{self._name}': file not found"
+                        )
         data["name"] = self._name
 
         # For remote computes, convert absolute image paths to relative paths
@@ -576,10 +859,17 @@ class Node:
             # Image path fields for various node types
             image_path_fields = {
                 # Common fields (IOU, Docker, etc.)
-                "path", "image",
+                "path",
+                "image",
                 # QEMU-specific fields
-                "hda_disk_image", "hdb_disk_image", "hdc_disk_image", "hdd_disk_image",
-                "cdrom_image", "bios_image", "initrd", "kernel_image",
+                "hda_disk_image",
+                "hdb_disk_image",
+                "hdc_disk_image",
+                "hdd_disk_image",
+                "cdrom_image",
+                "bios_image",
+                "initrd",
+                "kernel_image",
                 # VMware-specific fields
                 "vmx_path",
             }
@@ -617,12 +907,33 @@ class Node:
         """
         Start a node
         """
+        if self.missing_image:
+            images = ", ".join(m["image"] for m in self._missing_images)
+            raise ControllerError(
+                f"Cannot start node '{self._name}': the required image(s) ({images}) "
+                f"are missing. Please provide a compatible image."
+            )
+        deferred_links = [link for link in self.links if link.deferred]
+        if deferred_links:
+            await self.project.restore_deferred_links(self)
+            failed_links = [
+                link
+                for link in deferred_links
+                if link.deferred and not any(endpoint["node"].missing_image for endpoint in link._nodes)
+            ]
+            if failed_links:
+                raise ControllerError(
+                    f"Cannot start node '{self._name}': {len(failed_links)} deferred link(s) "
+                    "could not be restored. Please try again."
+                )
         try:
             # For IOU: we need to send the licence everytime we start a node
             if self.node_type == "iou":
                 license_check = self._project.controller.iou_license.get("license_check", True)
                 iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                await self.post("/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content})
+                await self.post(
+                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+                )
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
@@ -632,6 +943,8 @@ class Node:
         """
         Stop a node
         """
+        if self.missing_image:
+            return
         try:
             await self.post("/stop", timeout=240, dont_connect=True)
         # We don't care if a node is down at this step
@@ -707,6 +1020,10 @@ class Node:
         """
         HTTP post on the node
         """
+        if self.missing_image and path is None:
+            # The node was never created on the compute (missing image). Any
+            # partial object there is cleaned up when the project is closed.
+            return None
         if path is None:
             return await self._compute.delete(
                 f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs
@@ -722,20 +1039,80 @@ class Node:
         if the image exists
         """
 
-        for directory in images_directories(type):
-            image = os.path.join(directory, img)
-            if os.path.exists(image):
-                self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
-                try:
-                    with open(image, "rb") as f:
-                        await self._compute.post(
-                            f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None
-                        )
-                except OSError as e:
-                    raise ControllerError(f"Can't upload {image}: {str(e)}")
-                self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
-                return True
-        return False
+        if self._node_type == "docker":
+            return await self._sync_missing_docker_image(img)
+
+        image = self._find_local_image(type, img)
+        if image is None:
+            return False
+        self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
+        try:
+            with open(image, "rb") as f:
+                await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
+        except OSError as e:
+            raise ControllerError(f"Can't upload {image}: {str(e)}")
+        self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
+        return True
+
+    async def _add_docker_image_digest(self, data):
+        """
+        Pin the Docker image of a node to the image id found on the Docker daemon
+        of the controller host, so that a compute holding a different image under
+        the same tag (e.g. a moved :latest) gets it re-synced instead of silently
+        reusing the stale copy. Not set when the image is not on the controller host.
+        """
+
+        from gns3server.compute.docker import Docker
+        from gns3server.compute.docker.docker_error import DockerError
+
+        image = data.get("image")
+        if not image:
+            return
+        try:
+            image_info = await Docker.instance().query("GET", f"images/{image}/json")
+        except DockerError:
+            # not available on the controller host: nothing to pin against
+            return
+        image_id = image_info.get("Id")
+        if image_id:
+            data["image_digest"] = image_id
+
+    async def _sync_missing_docker_image(self, image):
+        """
+        Export a Docker image from the Docker daemon on the controller host and
+        stream it to the remote compute, or ask the compute to pull it when the
+        image is not available locally
+        """
+
+        from gns3server.compute.docker import Docker
+        from gns3server.compute.docker.docker_error import DockerError
+
+        try:
+            response = await Docker.instance().http_query("GET", f"images/{image}/get", timeout=None)
+        except DockerError:
+            # the image is not on the Docker daemon of the controller host: ask the
+            # compute to pull it from the Docker repository as a fallback
+            self.project.emit_notification(
+                "log.info",
+                {
+                    "message": f"Docker image '{image}' is not on the controller host, "
+                    f"asking compute '{self._compute.name}' to pull it"
+                },
+            )
+            await self._compute.post("/docker/images/pull", data={"image": image}, timeout=None)
+            return True
+
+        self.project.emit_notification(
+            "log.info", {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
+        )
+        try:
+            await self._compute.post("/docker/images/load", data=response.content, timeout=None)
+        finally:
+            response.close()
+        self.project.emit_notification(
+            "log.info", {"message": f"Docker image '{image}' has been synced to compute '{self._compute.name}'"}
+        )
+        return True
 
     async def dynamips_auto_idlepc(self):
         """
@@ -800,22 +1177,37 @@ class Node:
             self._ports = DynamipsPortFactory(self._properties)
             return
         elif self._node_type == "docker":
-            for adapter_number in range(0, self._properties["adapters"]):
-                custom_adapter_settings = {}
-                if self.custom_adapters:
-                    for custom_adapter in self.custom_adapters:
-                        if custom_adapter["adapter_number"] == adapter_number:
-                            custom_adapter_settings = custom_adapter
-                            break
-                port_name = f"eth{adapter_number}"
-                port_name = custom_adapter_settings.get("port_name", port_name)
-                mac_address = custom_adapter_settings.get("mac_address")
-                if not mac_address and "mac_address" in self._properties:
-                    mac_address = int_to_macaddress(macaddress_to_int(self._properties["mac_address"]) + adapter_number)
+            if is_iol_runner_environment(self._properties.get("environment")):
+                # IOL adapters are 4-port units (the IOU model): ports are
+                # Ethernet0/0-3, Ethernet1/0-3, … addressed as
+                # (adapter_number, port_number 0-3).
+                self._ports = StandardPortFactory(
+                    self._properties,
+                    4,
+                    self._first_port_name,
+                    "Ethernet{segment0}/{port0}",
+                    4,
+                    self.custom_adapters,
+                )
+            else:
+                for adapter_number in range(0, self._properties["adapters"]):
+                    custom_adapter_settings = {}
+                    if self.custom_adapters:
+                        for custom_adapter in self.custom_adapters:
+                            if custom_adapter["adapter_number"] == adapter_number:
+                                custom_adapter_settings = custom_adapter
+                                break
+                    port_name = f"eth{adapter_number}"
+                    port_name = custom_adapter_settings.get("port_name", port_name)
+                    mac_address = custom_adapter_settings.get("mac_address")
+                    if not mac_address and "mac_address" in self._properties:
+                        mac_address = int_to_macaddress(
+                            macaddress_to_int(self._properties["mac_address"]) + adapter_number
+                        )
 
-                port = PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name)
-                port.mac_address = mac_address
-                self._ports.append(port)
+                    port = PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name)
+                    port.mac_address = mac_address
+                    self._ports.append(port)
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0
@@ -855,33 +1247,33 @@ class Node:
         """
 
         topology = {
-                "compute_id": str(self._compute.id),
-                "node_id": self._id,
-                "node_type": self._node_type,
-                "template_id": self._template_id,
-                "name": self._name,
-                "console": self._console,
-                "console_type": self._console_type,
-                "console_auto_start": self._console_auto_start,
-                "netmiko_device_type": self._netmiko_device_type,
-                "default_username": self._default_username,
-                "default_password": self._default_password,
-                "aux": self._aux,
-                "aux_type": self._aux_type,
-                "properties": self._properties,
-                "label": self._label,
-                "x": self._x,
-                "y": self._y,
-                "z": self._z,
-                "locked": self._locked,
-                "width": self._width,
-                "height": self._height,
-                "symbol": self._symbol,
-                "port_name_format": self._port_name_format,
-                "port_segment_size": self._port_segment_size,
-                "first_port_name": self._first_port_name,
-                "custom_adapters": self._custom_adapters,
-                "tags": self._tags,
+            "compute_id": str(self._compute.id),
+            "node_id": self._id,
+            "node_type": self._node_type,
+            "template_id": self._template_id,
+            "name": self._name,
+            "console": self._console,
+            "console_type": self._console_type,
+            "console_auto_start": self._console_auto_start,
+            "netmiko_device_type": self._netmiko_device_type,
+            "default_username": self._default_username,
+            "default_password": self._default_password,
+            "aux": self._aux,
+            "aux_type": self._aux_type,
+            "properties": self._properties,
+            "label": self._label,
+            "x": self._x,
+            "y": self._y,
+            "z": self._z,
+            "locked": self._locked,
+            "width": self._width,
+            "height": self._height,
+            "symbol": self._symbol,
+            "port_name_format": self._port_name_format,
+            "port_segment_size": self._port_segment_size,
+            "first_port_name": self._first_port_name,
+            "custom_adapters": self._custom_adapters,
+            "tags": self._tags,
         }
 
         if topology_dump:
@@ -893,7 +1285,9 @@ class Node:
             "status": self._status,
             "console_host": str(self._compute.console_host),
             "node_directory": self._node_directory,
-            "ports": [port.asdict() for port in self.ports]
+            "ports": [port.asdict() for port in self.ports],
+            "missing_image": self.missing_image,
+            "missing_images": self._missing_images,
         }
         topology.update(additional_data)
         return topology

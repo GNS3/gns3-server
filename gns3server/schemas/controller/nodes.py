@@ -99,6 +99,16 @@ class NodePort(BaseModel):
     mac_address: Union[str, None] = Field(None, pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
 
 
+class MissingImage(BaseModel):
+    """
+    A missing image referenced by a node.
+    """
+
+    property: Optional[str] = Field(None, description="Node property referencing the image")
+    image: str = Field(..., description="Requested image filename")
+    image_type: Optional[str] = Field(None, description="Type of image (qemu/ios/iou/docker)")
+
+
 class NodeBase(BaseModel):
     """
     Node data.
@@ -147,13 +157,11 @@ class NodeBase(BaseModel):
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None
     tags: Optional[List[str]] = Field(
-        default_factory=list,
-        description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+        default_factory=list, description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
     )
 
 
 class NodeCreate(NodeBase):
-
     node_id: UUID = Field(default_factory=uuid4)
 
 
@@ -168,9 +176,9 @@ class NodeUpdate(NodeBase):
 
 
 class Node(NodeBase):
-
-    template_id: Optional[UUID] = Field(None,
-                                        description="Template UUID from which the node has been created. Read only")
+    template_id: Optional[UUID] = Field(
+        None, description="Template UUID from which the node has been created. Read only"
+    )
     project_id: Optional[UUID] = None
     node_directory: Optional[str] = Field(None, description="Working directory of the node. Read only")
     status: Optional[NodeStatus] = Field(None, description="Node status. Read only")
@@ -181,6 +189,13 @@ class Node(NodeBase):
     console_host: Optional[str] = Field(
         None,
         description="Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller",
+    )
+    missing_image: bool = Field(
+        False,
+        description="True when the node could not be created on its compute because a required image is missing. Read only",
+    )
+    missing_images: List[MissingImage] = Field(
+        default_factory=list, description="List of missing images referenced by the node. Read only"
     )
 
 

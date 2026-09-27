@@ -27,7 +27,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestRolesRoutes:
-
     async def test_create_role(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_role = {"name": "role1"}
@@ -54,36 +53,22 @@ class TestRolesRoutes:
         role_in_db = await rbac_repo.get_role_by_name("role1")
 
         update_role = {"name": "role42"}
-        response = await client.put(
-            app.url_path_for("update_role", role_id=role_in_db.role_id),
-            json=update_role
-        )
+        response = await client.put(app.url_path_for("update_role", role_id=role_in_db.role_id), json=update_role)
         assert response.status_code == status.HTTP_200_OK
         updated_role_in_db = await rbac_repo.get_role(role_in_db.role_id)
         assert updated_role_in_db.name == "role42"
 
     async def test_cannot_update_builtin_user_role(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
         update_role = {"name": "Hackers"}
-        response = await client.put(
-            app.url_path_for("update_role", role_id=role_in_db.role_id),
-            json=update_role
-        )
+        response = await client.put(app.url_path_for("update_role", role_id=role_in_db.role_id), json=update_role)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    async def test_delete_role(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_delete_role(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("role42")
@@ -91,10 +76,7 @@ class TestRolesRoutes:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_cannot_delete_builtin_administrator_role(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
@@ -104,13 +86,7 @@ class TestRolesRoutes:
 
 
 class TestRolesPrivilegesRoutes:
-
-    async def test_add_privilege_to_role(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_add_privilege_to_role(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
@@ -118,38 +94,24 @@ class TestRolesPrivilegesRoutes:
 
         response = await client.put(
             app.url_path_for(
-                "add_privilege_to_role",
-                role_id=role_in_db.role_id,
-                privilege_id=str(privilege.privilege_id)
+                "add_privilege_to_role", role_id=role_in_db.role_id, privilege_id=str(privilege.privilege_id)
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
         assert len(privileges) == 27  # 25 default privileges + 2 LLMConfig privileges
 
-    async def test_get_role_privileges(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_get_role_privileges(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
 
-        response = await client.get(
-            app.url_path_for(
-                "get_role_privileges",
-                role_id=role_in_db.role_id)
-        )
+        response = await client.get(app.url_path_for("get_role_privileges", role_id=role_in_db.role_id))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 27  # 25 default privileges + 2 LLMConfig privileges
 
     async def test_remove_privilege_from_role(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
@@ -158,9 +120,7 @@ class TestRolesPrivilegesRoutes:
 
         response = await client.delete(
             app.url_path_for(
-                "remove_privilege_from_role",
-                role_id=role_in_db.role_id,
-                privilege_id=str(privilege.privilege_id)
+                "remove_privilege_from_role", role_id=role_in_db.role_id, privilege_id=str(privilege.privilege_id)
             ),
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT

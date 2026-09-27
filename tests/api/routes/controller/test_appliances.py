@@ -27,7 +27,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestApplianceRoutes:
-
     # @pytest.fixture(autouse=True)
     # def _install_builtin_appliances(self, controller: Controller):
     #
@@ -63,7 +62,9 @@ class TestApplianceRoutes:
         response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id), params=params)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_qemu_appliance_install_with_version(self, app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+    async def test_qemu_appliance_install_with_version(
+        self, app: FastAPI, client: AsyncClient, images_dir: str
+    ) -> None:
 
         shutil.copy("tests/resources/empty8G.qcow2", os.path.join(images_dir, "QEMU", "empty8G.qcow2"))
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
@@ -73,7 +74,9 @@ class TestApplianceRoutes:
         assert response.json()["name"] == "Empty VM"
         assert response.json()["version"] == "8G"
 
-    async def test_qemu_appliance_install_without_version(self, app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+    async def test_qemu_appliance_install_without_version(
+        self, app: FastAPI, client: AsyncClient, images_dir: str
+    ) -> None:
 
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
         response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id))
@@ -82,24 +85,18 @@ class TestApplianceRoutes:
     async def test_add_version_appliance(self, app: FastAPI, client: AsyncClient) -> None:
 
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
-        new_version = {
-            "name": "99G",
-            "images": {
-                "hda_disk_image": "empty99G.qcow2"
-            }
-        }
-        response = await client.post(app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version)
+        new_version = {"name": "99G", "images": {"hda_disk_image": "empty99G.qcow2"}}
+        response = await client.post(
+            app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version
+        )
         assert response.status_code == status.HTTP_201_CREATED
         assert new_version in response.json()["versions"]
 
     async def test_add_existing_version_appliance(self, app: FastAPI, client: AsyncClient) -> None:
 
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
-        new_version = {
-            "name": "8G",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2"
-            }
-        }
-        response = await client.post(app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version)
+        new_version = {"name": "8G", "images": {"hda_disk_image": "empty8G.qcow2"}}
+        response = await client.post(
+            app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version
+        )
         assert response.status_code == status.HTTP_409_CONFLICT

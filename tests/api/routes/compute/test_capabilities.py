@@ -30,28 +30,56 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestCapabilitiesRoutes:
-
     async def test_get(self, app: FastAPI, compute_client: AsyncClient, windows_platform) -> None:
 
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
-                                   'version': __version__,
-                                   'platform': sys.platform,
-                                   'cpus': psutil.cpu_count(logical=True),
-                                   'memory': psutil.virtual_memory().total,
-                                   'disk_size': psutil.disk_usage(get_default_project_directory()).total,
-                                  }
-
+        assert response.json() == {
+            "node_types": [
+                "cloud",
+                "ethernet_hub",
+                "ethernet_switch",
+                "nat",
+                "vpcs",
+                "virtualbox",
+                "dynamips",
+                "frame_relay_switch",
+                "atm_switch",
+                "qemu",
+                "vmware",
+                "docker",
+                "iou",
+            ],
+            "version": __version__,
+            "platform": sys.platform,
+            "cpus": psutil.cpu_count(logical=True),
+            "memory": psutil.virtual_memory().total,
+            "disk_size": psutil.disk_usage(get_default_project_directory()).total,
+        }
 
     async def test_get_on_gns3vm(self, app: FastAPI, compute_client: AsyncClient, on_gns3vm) -> None:
 
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
-                                   'version': __version__,
-                                   'platform': sys.platform,
-                                   'cpus': psutil.cpu_count(logical=True),
-                                   'memory': psutil.virtual_memory().total,
-                                   'disk_size': psutil.disk_usage(get_default_project_directory()).total,
-                                  }
+        assert response.json() == {
+            "node_types": [
+                "cloud",
+                "ethernet_hub",
+                "ethernet_switch",
+                "nat",
+                "vpcs",
+                "virtualbox",
+                "dynamips",
+                "frame_relay_switch",
+                "atm_switch",
+                "qemu",
+                "vmware",
+                "docker",
+                "iou",
+            ],
+            "version": __version__,
+            "platform": sys.platform,
+            "cpus": psutil.cpu_count(logical=True),
+            "memory": psutil.virtual_memory().total,
+            "disk_size": psutil.disk_usage(get_default_project_directory()).total,
+        }

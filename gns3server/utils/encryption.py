@@ -42,10 +42,7 @@ def init_encryption(secrets_dir: str) -> None:
     encryption_key_path = os.path.join(secrets_dir, "gns3_encryption_key")
 
     if not os.path.exists(encryption_key_path):
-        log.info(
-            f"No encryption key found, generating one in "
-            f"'{encryption_key_path}'..."
-        )
+        log.info(f"No encryption key found, generating one in '{encryption_key_path}'...")
         try:
             key = Fernet.generate_key()
             os.makedirs(secrets_dir, exist_ok=True)
@@ -55,26 +52,17 @@ def init_encryption(secrets_dir: str) -> None:
             # Set restrictive permissions (owner read/write only)
             os.chmod(encryption_key_path, 0o600)
         except OSError as e:
-            log.error(
-                "Could not create encryption key file "
-                f"'{encryption_key_path}': {e}"
-            )
+            log.error(f"Could not create encryption key file '{encryption_key_path}': {e}")
             raise
 
     try:
         with open(encryption_key_path, encoding="utf-8") as f:
             key_content = f.read().strip()
-        key_bytes = (
-            key_content.encode()
-            if isinstance(key_content, str)
-            else key_content
-        )
+        key_bytes = key_content.encode() if isinstance(key_content, str) else key_content
         _fernet = Fernet(key_bytes)
         log.debug("Encryption initialized successfully")
     except OSError as e:
-        log.error(
-            f"Could not read encryption key file '{encryption_key_path}': {e}"
-        )
+        log.error(f"Could not read encryption key file '{encryption_key_path}': {e}")
         raise
 
 
@@ -88,9 +76,7 @@ def encrypt(plaintext: str) -> str:
     """
 
     if _fernet is None:
-        raise RuntimeError(
-            "Encryption not initialized. Call init_encryption() first."
-        )
+        raise RuntimeError("Encryption not initialized. Call init_encryption() first.")
 
     if not plaintext:
         return ""
@@ -110,9 +96,7 @@ def decrypt(ciphertext: str) -> str:
     """
 
     if _fernet is None:
-        raise RuntimeError(
-            "Encryption not initialized. Call init_encryption() first."
-        )
+        raise RuntimeError("Encryption not initialized. Call init_encryption() first.")
 
     if not ciphertext:
         return ""
@@ -139,10 +123,11 @@ def is_encrypted(value: str) -> bool:
     # Check for Fernet prefix and valid format
     try:
         # Fernet tokens always start with 'gAAAAA' in base64
-        if not value.startswith('gAAAAA'):
+        if not value.startswith("gAAAAA"):
             return False
         # Attempt to decode as URL-safe base64
         import base64
+
         decoded = base64.urlsafe_b64decode(value)
         # Fernet tokens have a specific format (minimum 32 bytes)
         return len(decoded) >= 32

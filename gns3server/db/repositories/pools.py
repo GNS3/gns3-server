@@ -32,7 +32,6 @@ log = logging.getLogger(__name__)
 
 
 class ResourcePoolsRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -61,9 +60,7 @@ class ResourcePoolsRepository(BaseRepository):
         """
 
         db_resource = models.Resource(
-            resource_id=resource.resource_id,
-            resource_type=resource.resource_type,
-            name=resource.name
+            resource_id=resource.resource_id, resource_type=resource.resource_type, name=resource.name
         )
         self._db_session.add(db_resource)
         await self._db_session.commit()
@@ -85,9 +82,11 @@ class ResourcePoolsRepository(BaseRepository):
         Get all resource memberships in resource pools.
         """
 
-        query = select(models.ResourcePool).\
-            join(models.ResourcePool.resources).\
-            filter(models.Resource.resource_id == resource_id)
+        query = (
+            select(models.ResourcePool)
+            .join(models.ResourcePool.resources)
+            .filter(models.Resource.resource_id == resource_id)
+        )
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -131,18 +130,18 @@ class ResourcePoolsRepository(BaseRepository):
         return db_resource_pool
 
     async def update_resource_pool(
-            self,
-            resource_pool_id: UUID,
-            resource_pool_update: schemas.ResourcePoolUpdate
+        self, resource_pool_id: UUID, resource_pool_update: schemas.ResourcePoolUpdate
     ) -> Optional[models.ResourcePool]:
         """
         Update a resource pool.
         """
 
         update_values = resource_pool_update.model_dump(exclude_unset=True)
-        query = update(models.ResourcePool).\
-            where(models.ResourcePool.resource_pool_id == resource_pool_id).\
-            values(update_values)
+        query = (
+            update(models.ResourcePool)
+            .where(models.ResourcePool.resource_pool_id == resource_pool_id)
+            .values(update_values)
+        )
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -170,17 +169,17 @@ class ResourcePoolsRepository(BaseRepository):
         return result.rowcount > 0
 
     async def add_resource_to_pool(
-            self,
-            resource_pool_id: UUID,
-            resource: models.Resource
+        self, resource_pool_id: UUID, resource: models.Resource
     ) -> Union[None, models.ResourcePool]:
         """
         Add a resource to a resource pool.
         """
 
-        query = select(models.ResourcePool).\
-            options(selectinload(models.ResourcePool.resources)).\
-            where(models.ResourcePool.resource_pool_id == resource_pool_id)
+        query = (
+            select(models.ResourcePool)
+            .options(selectinload(models.ResourcePool.resources))
+            .where(models.ResourcePool.resource_pool_id == resource_pool_id)
+        )
         result = await self._db_session.execute(query)
         resource_pool_db = result.scalars().first()
         if not resource_pool_db:
@@ -192,17 +191,17 @@ class ResourcePoolsRepository(BaseRepository):
         return resource_pool_db
 
     async def remove_resource_from_pool(
-            self,
-            resource_pool_id: UUID,
-            resource: models.Resource
+        self, resource_pool_id: UUID, resource: models.Resource
     ) -> Union[None, models.ResourcePool]:
         """
         Remove a resource from a resource pool.
         """
 
-        query = select(models.ResourcePool).\
-            options(selectinload(models.ResourcePool.resources)).\
-            where(models.ResourcePool.resource_pool_id == resource_pool_id)
+        query = (
+            select(models.ResourcePool)
+            .options(selectinload(models.ResourcePool.resources))
+            .where(models.ResourcePool.resource_pool_id == resource_pool_id)
+        )
         result = await self._db_session.execute(query)
         resource_pool_db = result.scalars().first()
         if not resource_pool_db:
@@ -219,9 +218,11 @@ class ResourcePoolsRepository(BaseRepository):
         Get all resources from a resource pool.
         """
 
-        query = select(models.Resource).\
-            join(models.Resource.resource_pools).\
-            filter(models.ResourcePool.resource_pool_id == resource_pool_id)
+        query = (
+            select(models.Resource)
+            .join(models.Resource.resource_pools)
+            .filter(models.ResourcePool.resource_pool_id == resource_pool_id)
+        )
 
         result = await self._db_session.execute(query)
         return result.scalars().all()

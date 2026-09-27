@@ -70,10 +70,7 @@ def load_system_prompt(llm_config: dict | None = None) -> str:
         str: The system prompt string, or empty string if not found.
     """
     if not llm_config:
-        logger.debug(
-            "No LLM config provided, using default TEACHING_ASSISTANT "
-            "prompt mode"
-        )
+        logger.debug("No LLM config provided, using default TEACHING_ASSISTANT prompt mode")
         return _load_prompt("teaching_assistant")
 
     # llm_config is a flattened dict with copilot_mode at the top level
@@ -81,15 +78,10 @@ def load_system_prompt(llm_config: dict | None = None) -> str:
     mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
 
     if mode == "lab_automation_assistant":
-        logger.debug(
-            "Using LAB_AUTOMATION_ASSISTANT prompt mode (diagnostics + "
-            "configuration)"
-        )
+        logger.debug("Using LAB_AUTOMATION_ASSISTANT prompt mode (diagnostics + configuration)")
         return _load_prompt("lab_automation_assistant")
     elif mode == "troubleshooting_injection":
-        logger.debug(
-            "Using TROUBLESHOOTING_INJECTION prompt mode (fault injection)"
-        )
+        logger.debug("Using TROUBLESHOOTING_INJECTION prompt mode (fault injection)")
         return _load_prompt("troubleshooting_injection")
     else:
         logger.debug("Using TEACHING_ASSISTANT prompt mode (diagnostics only)")

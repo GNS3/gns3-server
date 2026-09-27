@@ -123,9 +123,7 @@ class AgentService:
                 return self._checkpointer
 
             checkpoint_dir = self._get_checkpoint_dir()
-            checkpointer_path = os.path.join(
-                checkpoint_dir, "copilot_checkpoints.db"
-            )
+            checkpointer_path = os.path.join(checkpoint_dir, "copilot_checkpoints.db")
 
             log.debug("Creating checkpointer at: %s", checkpointer_path)
 
@@ -135,17 +133,13 @@ class AgentService:
                     await self._checkpointer_conn.close()
                     log.debug("Closed previous checkpointer connection")
                 except Exception as e:
-                    log.warning(
-                        "Error closing old checkpointer connection: %s", e
-                    )
+                    log.warning("Error closing old checkpointer connection: %s", e)
 
             # Create new connection
             conn = await aiosqlite.connect(checkpointer_path)
             # Enable WAL mode for better concurrent performance
             await conn.execute("PRAGMA journal_mode=WAL;")
-            self._checkpointer_conn = (
-                conn  # Save connection reference to prevent GC
-            )
+            self._checkpointer_conn = conn  # Save connection reference to prevent GC
             self._checkpointer = AsyncSqliteSaver(conn)
 
             # CRITICAL: Initialize database schema
@@ -197,14 +191,8 @@ class AgentService:
         """)
 
         # Create indexes
-        await conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_thread_id ON "
-            "chat_sessions(thread_id)"
-        )
-        await conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_user_project ON "
-            "chat_sessions(user_id, project_id)"
-        )
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_thread_id ON chat_sessions(thread_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_user_project ON chat_sessions(user_id, project_id)")
 
         # Check if pinned column exists, add it if not (migration for existing
         # databases)
@@ -214,16 +202,12 @@ class AgentService:
 
         if "pinned" not in column_names:
             log.debug("Adding pinned column to existing chat_sessions table")
-            await conn.execute(
-                "ALTER TABLE chat_sessions ADD COLUMN pinned BOOLEAN DEFAULT "
-                "FALSE"
-            )
+            await conn.execute("ALTER TABLE chat_sessions ADD COLUMN pinned BOOLEAN DEFAULT FALSE")
             await conn.commit()
 
         # Create pinned index (after column is guaranteed to exist)
         await conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_pinned_updated ON "
-            "chat_sessions(pinned DESC, updated_at DESC)"
+            "CREATE INDEX IF NOT EXISTS idx_pinned_updated ON chat_sessions(pinned DESC, updated_at DESC)"
         )
 
         await conn.commit()
@@ -234,9 +218,7 @@ class AgentService:
         if self._graph is None:
             checkpointer = await self._get_checkpointer()
             self._graph = agent_builder.compile(checkpointer=checkpointer)
-            log.info(
-                "LangGraph agent compiled for project: %s", self.project_path
-            )
+            log.info("LangGraph agent compiled for project: %s", self.project_path)
         return self._graph
 
     async def stream_chat(
@@ -266,8 +248,7 @@ class AgentService:
             Dict containing SSE-compatible response chunks
         """
         log.info(
-            "Stream chat started: project_id=%s, user_id=%s, session_id=%s, "
-            "mode=%s",
+            "Stream chat started: project_id=%s, user_id=%s, session_id=%s, mode=%s",
             project_id,
             user_id,
             session_id,
@@ -293,11 +274,7 @@ class AgentService:
                 title="New Conversation",
                 copilot_mode=copilot_mode,
             )
-            log.debug(
-                "Created new chat session: thread_id=%s, copilot_mode=%s",
-                session_id,
-                copilot_mode
-            )
+            log.debug("Created new chat session: thread_id=%s, copilot_mode=%s", session_id, copilot_mode)
 
         # Set request-scoped context variables (memory-only, not persisted)
         if jwt_token:
@@ -387,39 +364,25 @@ class AgentService:
 
         # Stream events
         try:
-            async for event in graph.astream_events(
-                inputs, config=config, version="v2"
-            ):
+            async for event in graph.astream_events(inputs, config=config, version="v2"):
                 event_type = event.get("event", "")
                 data = event.get("data", {})
 
                 # Track LLM calls and tokens
                 if event_type == "on_chat_model_start":
                     # Filter out title_generator_node from statistics
-                    langgraph_node = event.get("metadata", {}).get(
-                        "langgraph_node", ""
-                    )
+                    langgraph_node = event.get("metadata", {}).get("langgraph_node", "")
                     if langgraph_node != "title_generator_node":
                         llm_calls_count += 1
-                        log.debug(
-                            "LLM call started, count=%d", llm_calls_count
-                        )
+                        log.debug("LLM call started, count=%d", llm_calls_count)
                     else:
-                        log.debug(
-                            "Skipping LLM call count for internal node: "
-                            "title_generator_node"
-                        )
+                        log.debug("Skipping LLM call count for internal node: title_generator_node")
 
                 elif event_type == "on_chat_model_end":
                     # Filter out title_generator_node from token counting
-                    langgraph_node = event.get("metadata", {}).get(
-                        "langgraph_node", ""
-                    )
+                    langgraph_node = event.get("metadata", {}).get("langgraph_node", "")
                     if langgraph_node == "title_generator_node":
-                        log.debug(
-                            "Skipping token counting for internal node: "
-                            "title_generator_node"
-                        )
+                        log.debug("Skipping token counting for internal node: title_generator_node")
                     else:
                         # Extract token usage from response metadata
                         # Try multiple possible locations where token usage
@@ -441,12 +404,8 @@ class AgentService:
                             if hasattr(output_msg, "usage_metadata"):
                                 usage = output_msg.usage_metadata
                                 if usage:
-                                    input_tokens += usage.get(
-                                        "input_tokens", 0
-                                    )
-                                    output_tokens += usage.get(
-                                        "output_tokens", 0
-                                    )
+                                    input_tokens += usage.get("input_tokens", 0)
+                                    output_tokens += usage.get("output_tokens", 0)
                                     token_info_found = True
 
                         # Method 3: Check data directly for token usage fields
@@ -455,10 +414,7 @@ class AgentService:
                                 input_tokens += data.get("input_tokens", 0)
                             if "output_tokens" in data:
                                 output_tokens += data.get("output_tokens", 0)
-                            if (
-                                "input_tokens" in data
-                                or "output_tokens" in data
-                            ):
+                            if "input_tokens" in data or "output_tokens" in data:
                                 token_info_found = True
 
                         # Count AI response as one message (only once per turn)
@@ -470,9 +426,7 @@ class AgentService:
                 elif event_type == "on_tool_end":
                     message_count += 1  # Tool result message
                     tool_messages_counted += 1
-                    log.debug(
-                        "Tool message counted, message_count=%d", message_count
-                    )
+                    log.debug("Tool message counted, message_count=%d", message_count)
 
                 # Convert event to chunk for SSE streaming
                 # Use accumulator for on_chat_model_stream events to handle
@@ -480,16 +434,11 @@ class AgentService:
 
                 # Filter out internal nodes (title_generator_node) from
                 # streaming to frontend
-                langgraph_node = event.get("metadata", {}).get(
-                    "langgraph_node", ""
-                )
+                langgraph_node = event.get("metadata", {}).get("langgraph_node", "")
                 if langgraph_node == "title_generator_node":
                     # Skip all events from the title_generator_node (internal
                     # use only)
-                    log.debug(
-                        "Skipping event from internal node: "
-                        "title_generator_node"
-                    )
+                    log.debug("Skipping event from internal node: title_generator_node")
                     continue
 
                 if event_type == "on_chat_model_stream":
@@ -540,8 +489,7 @@ class AgentService:
                 last_message_at=last_message_at,
             )
             log.info(
-                "Session statistics updated: thread_id=%s, messages=%d, "
-                "llm_calls=%d, tokens=%d+%d=%d",
+                "Session statistics updated: thread_id=%s, messages=%d, llm_calls=%d, tokens=%d+%d=%d",
                 session_id,
                 message_count,
                 llm_calls_count,
@@ -555,13 +503,8 @@ class AgentService:
             if final_state and "conversation_title" in final_state.values:
                 generated_title = final_state.values["conversation_title"]
                 current_session = await repo.get_session_by_thread(session_id)
-                if (
-                    current_session
-                    and current_session.title != generated_title
-                ):
-                    await repo.update_session(
-                        thread_id=session_id, title=generated_title
-                    )
+                if current_session and current_session.title != generated_title:
+                    await repo.update_session(thread_id=session_id, title=generated_title)
                     log.info(
                         "Auto-generated title synced: thread_id=%s, title=%s",
                         session_id,
@@ -576,9 +519,7 @@ class AgentService:
                 "session_id": session_id,
             }
 
-    def _convert_event_to_chunk(
-        self, event: Dict[str, Any], session_id: str
-    ) -> Optional[Dict[str, Any]]:
+    def _convert_event_to_chunk(self, event: Dict[str, Any], session_id: str) -> Optional[Dict[str, Any]]:
         """
         Convert LangGraph event to API response chunk.
 
@@ -627,9 +568,7 @@ class AgentService:
 
         return None
 
-    async def get_history(
-        self, session_id: str, limit: int = 100
-    ) -> Dict[str, Any]:
+    async def get_history(self, session_id: str, limit: int = 100) -> Dict[str, Any]:
         """
         Get conversation history for a session.
 
@@ -651,9 +590,7 @@ class AgentService:
                 for msg in state.values["messages"][-limit:]:
                     messages.append(self._convert_message_to_dict(msg))
 
-                title = state.values.get(
-                    "conversation_title", "New Conversation"
-                )
+                title = state.values.get("conversation_title", "New Conversation")
 
                 return {
                     "thread_id": session_id,
@@ -710,9 +647,7 @@ class AgentService:
         repo = ChatSessionsRepository(self._checkpointer_conn)
         return await repo.delete_session(session_id)
 
-    async def rename_session(
-        self, session_id: str, new_title: str
-    ) -> Optional[Dict[str, Any]]:
+    async def rename_session(self, session_id: str, new_title: str) -> Optional[Dict[str, Any]]:
         """
         Rename a chat session.
 
@@ -727,14 +662,10 @@ class AgentService:
             await self._get_checkpointer()
 
         repo = ChatSessionsRepository(self._checkpointer_conn)
-        session = await repo.update_session(
-            thread_id=session_id, title=new_title
-        )
+        session = await repo.update_session(thread_id=session_id, title=new_title)
         return session.to_dict() if session else None
 
-    async def pin_session(
-        self, session_id: str, pinned: bool = True
-    ) -> Optional[Dict[str, Any]]:
+    async def pin_session(self, session_id: str, pinned: bool = True) -> Optional[Dict[str, Any]]:
         """
         Pin or unpin a chat session.
 
@@ -760,10 +691,7 @@ class AgentService:
             if self._checkpointer_conn:
                 try:
                     # Add timeout to prevent blocking on database close
-                    await asyncio.wait_for(
-                        self._checkpointer_conn.close(),
-                        timeout=5.0
-                    )
+                    await asyncio.wait_for(self._checkpointer_conn.close(), timeout=5.0)
                     log.debug(
                         "Checkpointer connection closed for: %s",
                         self.project_path,

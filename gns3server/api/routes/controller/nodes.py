@@ -20,6 +20,7 @@ API routes for nodes.
 
 import aiohttp
 import asyncio
+import contextlib
 import ipaddress
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status, Query, HTTPException
@@ -124,7 +125,7 @@ def _check_node_type(node: Node, *required_types: str) -> None:
         404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
         409: {"model": schemas.ErrorMessage, "description": "Could not create node"},
     },
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
     """
@@ -144,11 +145,11 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
     "",
     response_model=List[schemas.Node],
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Node.Audit"))]
+    dependencies=[Depends(has_privilege("Node.Audit"))],
 )
 def get_nodes(
     project: Project = Depends(dep_project),
-    tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)")
+    tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
 ) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
@@ -212,7 +213,9 @@ async def stop_all_nodes(project: Project = Depends(dep_project)) -> None:
             raise
 
 
-@router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
+@router.post(
+    "/suspend", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+)
 async def suspend_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Suspend all nodes belonging to a given project.
@@ -269,7 +272,7 @@ async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
     "/{node_id}",
     response_model=schemas.Node,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Node.Modify"))]
+    dependencies=[Depends(has_privilege("Node.Modify"))],
 )
 async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
@@ -293,11 +296,12 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     "/{node_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}},
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def delete_node(
-        node_id: UUID, project: Project = Depends(dep_project),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    node_id: UUID,
+    project: Project = Depends(dep_project),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a node from a project.
@@ -313,7 +317,7 @@ async def delete_node(
     "/{node_id}/duplicate",
     response_model=schemas.Node,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
@@ -327,9 +331,7 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
 
 
 @router.post(
-    "/{node_id}/start",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
 )
 async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep_node)) -> None:
     """
@@ -344,10 +346,9 @@ async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep
         if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
             raise
 
+
 @router.post(
-    "/{node_id}/stop",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
 )
 async def stop_node(node: Node = Depends(dep_node)) -> None:
     """
@@ -366,7 +367,7 @@ async def stop_node(node: Node = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/suspend",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
 async def suspend_node(node: Node = Depends(dep_node)) -> None:
     """
@@ -382,9 +383,7 @@ async def suspend_node(node: Node = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/reload",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
 )
 async def reload_node(node: Node = Depends(dep_node)) -> None:
     """
@@ -399,10 +398,9 @@ async def reload_node(node: Node = Depends(dep_node)) -> None:
         if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
             raise
 
+
 @router.post(
-    "/{node_id}/isolate",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
+    "/{node_id}/isolate", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Link.Modify"))]
 )
 async def isolate_node(node: Node = Depends(dep_node)) -> None:
     """
@@ -416,9 +414,7 @@ async def isolate_node(node: Node = Depends(dep_node)) -> None:
 
 
 @router.post(
-    "/{node_id}/unisolate",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
+    "/{node_id}/unisolate", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Link.Modify"))]
 )
 async def unisolate_node(node: Node = Depends(dep_node)) -> None:
     """
@@ -435,7 +431,7 @@ async def unisolate_node(node: Node = Depends(dep_node)) -> None:
     "/{node_id}/links",
     response_model=List[schemas.Link],
     response_model_exclude_unset=True,
-    dependencies = [Depends(has_privilege("Link.Audit"))]
+    dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     """
@@ -477,12 +473,10 @@ async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
 @router.post(
     "/{node_id}/qemu/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def create_disk_image(
-        disk_name: str,
-        disk_data: schemas.QemuDiskImageCreate,
-        node: Node = Depends(dep_node)
+    disk_name: str, disk_data: schemas.QemuDiskImageCreate, node: Node = Depends(dep_node)
 ) -> None:
     """
     Create a Qemu disk image.
@@ -497,12 +491,10 @@ async def create_disk_image(
 @router.put(
     "/{node_id}/qemu/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def update_disk_image(
-        disk_name: str,
-        disk_data: schemas.QemuDiskImageUpdate,
-        node: Node = Depends(dep_node)
+    disk_name: str, disk_data: schemas.QemuDiskImageUpdate, node: Node = Depends(dep_node)
 ) -> None:
     """
     Update a Qemu disk image.
@@ -517,12 +509,9 @@ async def update_disk_image(
 @router.delete(
     "/{node_id}/qemu/disk_image/{disk_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
-async def delete_disk_image(
-        disk_name: str,
-        node: Node = Depends(dep_node)
-) -> None:
+async def delete_disk_image(disk_name: str, node: Node = Depends(dep_node)) -> None:
     """
     Delete a Qemu disk image.
 
@@ -533,11 +522,13 @@ async def delete_disk_image(
     await node.delete(f"/disk_image/{disk_name}")
 
 
-@router.get("/{node_id}/files", response_model=List[schemas.NodeFile], dependencies=[Depends(has_privilege("Node.Audit"))])
+@router.get(
+    "/{node_id}/files", response_model=List[schemas.NodeFile], dependencies=[Depends(has_privilege("Node.Audit"))]
+)
 async def list_node_files(
     node: Node = Depends(dep_node),
     path: str = Query("", description="Subdirectory path within node directory"),
-    recursive: bool = Query(False, description="Recursively list all files")
+    recursive: bool = Query(False, description="Recursively list all files"),
 ) -> List[schemas.NodeFile]:
     """
     List files in a node directory with detailed metadata.
@@ -555,11 +546,7 @@ async def list_node_files(
         params["path"] = path
     if recursive:
         params["recursive"] = "true"
-    res = await node.compute.http_query(
-        "GET", url,
-        params=params if params else None,
-        timeout=None
-    )
+    res = await node.compute.http_query("GET", url, params=params if params else None, timeout=None)
     return res.json
 
 
@@ -581,8 +568,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     path = f"/project-files/{node_type}/{node.id}/{path}"
 
     compute_resp = await node.compute.http_query(
-        "GET", f"/projects/{node.project.id}/files{path}",
-        timeout=None, stream=True
+        "GET", f"/projects/{node.project.id}/files{path}", timeout=None, stream=True
     )
 
     async def streamer():
@@ -605,7 +591,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
 @router.post(
     "/{node_id}/files/{file_path:path}",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Node.Modify"))]
+    dependencies=[Depends(has_privilege("Node.Modify"))],
 )
 async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
     """
@@ -625,15 +611,14 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
 
     # Stream request body directly to compute node
     await node.compute.http_query(
-        "POST", f"/projects/{node.project.id}/files{path}",
-        data=request.stream(), timeout=None
+        "POST", f"/projects/{node.project.id}/files{path}", data=request.stream(), timeout=None
     )
 
 
 @router.delete(
     "/{node_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Modify"))]
+    dependencies=[Depends(has_privilege("Node.Modify"))],
 )
 async def delete_node_file(file_path: str, node: Node = Depends(dep_node)) -> None:
     """
@@ -650,17 +635,14 @@ async def delete_node_file(file_path: str, node: Node = Depends(dep_node)) -> No
     node_type = node.node_type
     path = f"/project-files/{node_type}/{node.id}/{path}"
 
-    await node.compute.http_query(
-        "DELETE", f"/projects/{node.project.id}/files{path}",
-        timeout=None
-    )
+    await node.compute.http_query("DELETE", f"/projects/{node.project.id}/files{path}", timeout=None)
 
 
 @router.websocket("/{node_id}/console/ws")
 async def ws_console(
-        websocket: WebSocket,
-        current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
-        node: Node = Depends(dep_node)
+    websocket: WebSocket,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
+    node: Node = Depends(dep_node),
 ) -> None:
     """
     WebSocket console.
@@ -681,7 +663,7 @@ async def ws_console(
         # handle IPv6 address
         ip = ipaddress.ip_address(compute_host)
         if isinstance(ip, ipaddress.IPv6Address):
-            compute_host = '[' + compute_host + ']'
+            compute_host = "[" + compute_host + "]"
     except ValueError:
         pass
 
@@ -707,14 +689,33 @@ async def ws_console(
                 elif "bytes" in msg and msg["bytes"]:
                     await ws_console_compute.send_bytes(msg["bytes"])
         except WebSocketDisconnect:
-            await ws_console_compute.close()
+            pass
+        log.info(
+            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller console WebSocket"
+        )
+
+    async def ws_send(ws_console_compute):
+        """
+        Receive WebSocket data from compute console WebSocket and forward to client.
+        """
+
+        try:
+            async for msg in ws_console_compute:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    await websocket.send_text(msg.data)
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+        except WebSocketDisconnect:
+            # the client disconnected while the compute was still streaming console output
             log.info(
                 f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
                 f" console WebSocket"
             )
 
     try:
-        # receive WebSocket data from compute console WebSocket and forward to client.
+        # forward WebSocket data in both directions between the client and the compute console WebSocket
         log.info(f"Forwarding console WebSocket to '{ws_console_compute_url}'")
         server_config = Config.instance().settings.Server
         user = server_config.compute_username
@@ -728,28 +729,29 @@ async def ws_console(
             auth = aiohttp.BasicAuth(user, "")
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
-            asyncio.ensure_future(ws_receive(ws))
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.TEXT:
-                    await websocket.send_text(msg.data)
-                elif msg.type == aiohttp.WSMsgType.BINARY:
-                    await websocket.send_bytes(msg.data)
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    break
-    except WebSocketDisconnect:
-        # the client disconnected while the compute was still streaming console output
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-            f" console WebSocket"
-        )
+            tasks = [
+                asyncio.ensure_future(ws_receive(ws)),
+                asyncio.ensure_future(ws_send(ws)),
+            ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if task.exception():
+                    log.warning(f"Exception while forwarding console WebSocket data: {task.exception()}")
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            # notify the client that the console session has ended (ignore if the client is already gone)
+            with contextlib.suppress(WebSocketDisconnect):
+                await websocket.close()
     except aiohttp.ClientError as e:
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
+
 @router.websocket("/{node_id}/console/vnc")
 async def vnc_console(
-        websocket: WebSocket,
-        current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
-        node: Node = Depends(dep_node)
+    websocket: WebSocket,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
+    node: Node = Depends(dep_node),
 ) -> None:
     """
     VNC WebSocket console.
@@ -770,7 +772,7 @@ async def vnc_console(
         # handle IPv6 address
         ip = ipaddress.ip_address(compute_host)
         if isinstance(ip, ipaddress.IPv6Address):
-            compute_host = '[' + compute_host + ']'
+            compute_host = "[" + compute_host + "]"
     except ValueError:
         pass
 
@@ -786,18 +788,39 @@ async def vnc_console(
 
         try:
             while True:
-                data = await websocket.receive_bytes()
+                msg = await websocket.receive()
+                if msg["type"] == "websocket.disconnect":
+                    break
+                data = msg.get("bytes")
                 if data:
                     await vnc_console_compute.send_bytes(data)
         except WebSocketDisconnect:
-            await vnc_console_compute.close()
+            pass
+        log.info(
+            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+            f" VNC console WebSocket"
+        )
+
+    async def vnc_send(vnc_console_compute):
+        """
+        Receive binary WebSocket data from compute VNC console WebSocket and forward to client.
+        """
+
+        try:
+            async for msg in vnc_console_compute:
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+        except WebSocketDisconnect:
+            # the client disconnected while the compute was still streaming VNC console output
             log.info(
                 f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
                 f" VNC console WebSocket"
             )
 
     try:
-        # receive binary data from compute VNC console WebSocket and forward to client
+        # forward WebSocket data in both directions between the client and the compute VNC console WebSocket
         log.info(f"Forwarding VNC console WebSocket to '{vnc_console_compute_url}'")
         server_config = Config.instance().settings.Server
         user = server_config.compute_username
@@ -810,26 +833,29 @@ async def vnc_console(
         else:
             auth = aiohttp.BasicAuth(user, "")
         ssl_context = Controller.instance().ssl_context()
-        async with HTTPClient.get_client().ws_connect(vnc_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
-            asyncio.ensure_future(vnc_receive(ws))
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.BINARY:
-                    await websocket.send_bytes(msg.data)
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    break
-    except WebSocketDisconnect:
-        # the client disconnected while the compute was still streaming VNC console output
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-            f" VNC console WebSocket"
-        )
+        async with HTTPClient.get_client().ws_connect(
+            vnc_console_compute_url, auth=auth, ssl_context=ssl_context
+        ) as ws:
+            tasks = [
+                asyncio.ensure_future(vnc_receive(ws)),
+                asyncio.ensure_future(vnc_send(ws)),
+            ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                if task.exception():
+                    log.warning(f"Exception while forwarding VNC console WebSocket data: {task.exception()}")
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            # notify the client that the VNC session has ended (ignore if the client is already gone)
+            with contextlib.suppress(WebSocketDisconnect):
+                await websocket.close()
     except aiohttp.ClientError as e:
         log.error(f"Client error received when forwarding to compute VNC console WebSocket: {e}")
 
+
 @router.post(
-    "/console/reset",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Console"))]
+    "/console/reset", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.Console"))]
 )
 async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
@@ -844,7 +870,7 @@ async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> No
 @router.post(
     "/{node_id}/console/reset",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Node.Console"))]
+    dependencies=[Depends(has_privilege("Node.Console"))],
 )
 async def console_reset(node: Node = Depends(dep_node)) -> None:
     """

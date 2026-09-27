@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class C7200_IO_GE_E(Adapter):
-
     """
     C7200-IO-GE-E GigabitEthernet Input/Ouput controller.
     """

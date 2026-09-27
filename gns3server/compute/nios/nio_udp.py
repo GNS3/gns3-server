@@ -22,7 +22,6 @@ from .nio import NIO
 
 
 class NIOUDP(NIO):
-
     """
     UDP NIO.
 
@@ -81,5 +80,5 @@ class NIOUDP(NIO):
             "rhost": self._rhost,
             "suspend": self._suspended,
             "filters": self._filters,
-            "markers": self._markers
+            "markers": self._markers,
         }

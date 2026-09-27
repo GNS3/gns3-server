@@ -35,7 +35,12 @@ from .drawing import Drawing
 from .node import Node
 from .link import Link
 
-from gns3server.utils.hostname import is_ios_hostname_valid, is_rfc1123_hostname_valid, to_rfc1123_hostname, to_ios_hostname
+from gns3server.utils.hostname import (
+    is_ios_hostname_valid,
+    is_rfc1123_hostname_valid,
+    to_rfc1123_hostname,
+    to_ios_hostname,
+)
 from gns3server.schemas.controller.topology import Topology
 from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
 
@@ -227,7 +232,7 @@ def _convert_2_2_0(topo, topo_path):
                 new_name = to_rfc1123_hostname(node["name"])
                 log.info(f"Convert node name {node['name']} to {new_name} (RFC1123)")
                 node["name"] = new_name
-            if node["node_type"] in ("dynamips", "iou") and not is_ios_hostname_valid(node["name"] ):
+            if node["node_type"] in ("dynamips", "iou") and not is_ios_hostname_valid(node["name"]):
                 new_name = to_ios_hostname(node["name"])
                 log.info(f"Convert node name {node['name']} to {new_name} (IOS)")
                 node["name"] = new_name

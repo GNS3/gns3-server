@@ -31,8 +31,10 @@ log = logging.getLogger(__name__)
 
 # ── Helper ─────────────────────────────────────────────────────────────────
 
+
 def _get_connector(gns3_ctx: dict[str, Any]):
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],
@@ -44,9 +46,19 @@ def _get_connector(gns3_ctx: dict[str, Any]):
 # ── Tool handlers ──────────────────────────────────────────────────────────
 
 VALID_TEMPLATE_FIELDS = {
-    "template_id", "name", "version", "category", "default_name_format",
-    "symbol", "template_type", "compute_id", "usage", "tags", "builtin",
-    "created_at", "updated_at",
+    "template_id",
+    "name",
+    "version",
+    "category",
+    "default_name_format",
+    "symbol",
+    "template_type",
+    "compute_id",
+    "usage",
+    "tags",
+    "builtin",
+    "created_at",
+    "updated_at",
 }
 
 TEMPLATE_DEFAULT_FIELDS = ["template_id", "name", "template_type", "category", "default_name_format"]
@@ -67,7 +79,7 @@ def list_templates_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> 
     fields = params.get("fields")
     if fields:
         if not isinstance(fields, list):
-            return {"error": "fields must be a list, e.g. [\"template_id\", \"name\"]"}
+            return {"error": 'fields must be a list, e.g. ["template_id", "name"]'}
         invalid = [f for f in fields if f not in VALID_TEMPLATE_FIELDS]
         if invalid:
             return {

@@ -31,7 +31,7 @@ from gns3server.version import __version__
 @pytest.mark.asyncio
 async def test_project_to_topology_empty(tmpdir):
 
-    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
         project = Project(name="Test")
         topo = project_to_topology(project)
         assert topo == {
@@ -50,18 +50,13 @@ async def test_project_to_topology_empty(tmpdir):
             "snap_to_grid": False,
             "grid_size": 75,
             "drawing_grid_size": 25,
-            "topology": {
-                "nodes": [],
-                "links": [],
-                "computes": [],
-                "drawings": []
-            },
+            "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
             "type": "topology",
             "supplier": None,
             "variables": None,
             "version": __version__,
             "marker_definitions": {},
-            "created_by": None
+            "created_by": None,
         }
 
 
@@ -94,14 +89,8 @@ async def test_basic_topology(controller):
 @pytest.mark.asyncio
 async def test_project_to_topology(controller):
 
-    variables = [
-        {"name": "TEST1"},
-        {"name": "TEST2", "value": "value1"}
-    ]
-    supplier = {
-        'logo': 'logo.png',
-        'url': 'http://example.com'
-    }
+    variables = [{"name": "TEST1"}, {"name": "TEST2", "value": "value1"}]
+    supplier = {"logo": "logo.png", "url": "http://example.com"}
 
     project = Project(name="Test", controller=controller)
     compute = Compute("my_compute", controller)
@@ -119,14 +108,10 @@ def test_load_topology(tmpdir):
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
         "revision": GNS3_FILE_FORMAT_REVISION,
-        "topology": {
-            "nodes": [],
-            "links": [],
-            "computes": [],
-            "drawings": []
-        },
+        "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
         "type": "topology",
-        "version": __version__}
+        "version": __version__,
+    }
 
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
@@ -146,9 +131,7 @@ def test_load_topology_file_error_schema_error(tmpdir):
 
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
-        json.dump({
-            "revision": GNS3_FILE_FORMAT_REVISION
-        }, f)
+        json.dump({"revision": GNS3_FILE_FORMAT_REVISION}, f)
     with pytest.raises(ControllerError):
         load_topology(path)
 
@@ -163,10 +146,10 @@ def test_load_newer_topology(tmpdir):
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
         "revision": 42,
-        "topology": {
-        },
+        "topology": {},
         "type": "topology",
-        "version": __version__}
+        "version": __version__,
+    }
 
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
@@ -177,23 +160,16 @@ def test_load_newer_topology(tmpdir):
 
 def test_load_topology_with_variables(tmpdir):
 
-    variables = [
-        {"name": "TEST1"},
-        {"name": "TEST2", "value": "value1"}
-    ]
+    variables = [{"name": "TEST1"}, {"name": "TEST2", "value": "value1"}]
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
         "revision": GNS3_FILE_FORMAT_REVISION,
-        "topology": {
-            "nodes": [],
-            "links": [],
-            "computes": [],
-            "drawings": []
-        },
+        "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
         "variables": variables,
         "type": "topology",
-        "version": __version__}
+        "version": __version__,
+    }
 
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
@@ -204,23 +180,16 @@ def test_load_topology_with_variables(tmpdir):
 
 def test_load_topology_with_supplier(tmpdir):
 
-    supplier = {
-        'logo': 'logo.png',
-        'url': 'http://example.com'
-    }
+    supplier = {"logo": "logo.png", "url": "http://example.com"}
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
         "revision": GNS3_FILE_FORMAT_REVISION,
-        "topology": {
-            "nodes": [],
-            "links": [],
-            "computes": [],
-            "drawings": []
-        },
+        "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
         "supplier": supplier,
         "type": "topology",
-        "version": __version__}
+        "version": __version__,
+    }
 
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:

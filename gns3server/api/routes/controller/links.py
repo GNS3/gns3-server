@@ -65,7 +65,7 @@ async def dep_link(project_id: UUID, link_id: UUID) -> Link:
     "",
     response_model=List[schemas.Link],
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Link.Audit"))]
+    dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_links(project_id: UUID) -> List[schemas.Link]:
     """
@@ -89,7 +89,7 @@ async def get_links(project_id: UUID) -> List[schemas.Link]:
         404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
         409: {"model": schemas.ErrorMessage, "description": "Could not create link"},
     },
-    dependencies=[Depends(has_privilege("Link.Allocate"))]
+    dependencies=[Depends(has_privilege("Link.Allocate"))],
 )
 async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schemas.Link:
     """
@@ -123,10 +123,7 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schema
     return link.asdict()
 
 
-@router.get(
-    "/{link_id}/available_filters",
-    dependencies=[Depends(has_privilege("Link.Audit"))]
-)
+@router.get("/{link_id}/available_filters", dependencies=[Depends(has_privilege("Link.Audit"))])
 async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
     """
     Return all filters available for a given link.
@@ -141,7 +138,7 @@ async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Link.Audit"))]
+    dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_link(link: Link = Depends(dep_link)) -> schemas.Link:
     """
@@ -157,7 +154,7 @@ async def get_link(link: Link = Depends(dep_link)) -> schemas.Link:
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
+    dependencies=[Depends(has_privilege("Link.Modify"))],
 )
 async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_link)) -> schemas.Link:
     """
@@ -181,14 +178,12 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
 
 
 @router.delete(
-    "/{link_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Link.Allocate"))]
+    "/{link_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Link.Allocate"))]
 )
 async def delete_link(
-        project_id: UUID,
-        link: Link = Depends(dep_link),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    project_id: UUID,
+    link: Link = Depends(dep_link),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a link.
@@ -201,11 +196,7 @@ async def delete_link(
     await rbac_repo.delete_all_ace_starting_with_path(f"/links/{link.id}")
 
 
-@router.post(
-    "/{link_id}/reset",
-    response_model=schemas.Link,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
-)
+@router.post("/{link_id}/reset", response_model=schemas.Link, dependencies=[Depends(has_privilege("Link.Modify"))])
 async def reset_link(link: Link = Depends(dep_link)) -> schemas.Link:
     """
     Reset a link.
@@ -221,12 +212,10 @@ async def reset_link(link: Link = Depends(dep_link)) -> schemas.Link:
     "/{link_id}/capture/start",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Link,
-    dependencies=[Depends(has_privilege("Link.Capture"))]
+    dependencies=[Depends(has_privilege("Link.Capture"))],
 )
 async def start_capture(
-    capture_data: schemas.LinkCapture,
-    http_request: Request,
-    link: Link = Depends(dep_link)
+    capture_data: schemas.LinkCapture, http_request: Request, link: Link = Depends(dep_link)
 ) -> schemas.Link:
     """
     Start packet capture on the link.
@@ -242,7 +231,7 @@ async def start_capture(
         data_link_type=capture_data.data_link_type,
         capture_file_name=capture_data.capture_file_name,
         wireshark=capture_data.wireshark,
-        jwt_token=jwt_token
+        jwt_token=jwt_token,
     )
     return link.asdict()
 
@@ -250,7 +239,7 @@ async def start_capture(
 @router.post(
     "/{link_id}/capture/stop",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Link.Capture"))]
+    dependencies=[Depends(has_privilege("Link.Capture"))],
 )
 async def stop_capture(link: Link = Depends(dep_link)) -> None:
     """
@@ -265,12 +254,9 @@ async def stop_capture(link: Link = Depends(dep_link)) -> None:
 @router.post(
     "/{link_id}/capture/wireshark/restart",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(has_privilege("Link.Capture"))]
+    dependencies=[Depends(has_privilege("Link.Capture"))],
 )
-async def restart_wireshark(
-    http_request: Request,
-    link: Link = Depends(dep_link)
-) -> dict:
+async def restart_wireshark(http_request: Request, link: Link = Depends(dep_link)) -> dict:
     """
     Restart Wireshark window without stopping the capture.
 
@@ -289,10 +275,7 @@ async def restart_wireshark(
     return {"status": "restarted"}
 
 
-@router.get(
-    "/{link_id}/capture/stream",
-    dependencies=[Depends(has_privilege("Link.Capture"))]
-)
+@router.get("/{link_id}/capture/stream", dependencies=[Depends(has_privilege("Link.Capture"))])
 async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> StreamingResponse:
     """
     Stream the PCAP capture file from compute.
@@ -318,13 +301,13 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
         try:
             ssl_context = Controller.instance().ssl_context()
             async with HTTPClient.request(
-                    request.method,
-                    pcap_streaming_url,
-                    user=compute.user,
-                    password=compute.password,
-                    ssl_context=ssl_context,
-                    timeout=None,
-                    data=body
+                request.method,
+                pcap_streaming_url,
+                user=compute.user,
+                password=compute.password,
+                ssl_context=ssl_context,
+                timeout=None,
+                data=body,
             ) as response:
                 async for data in response.content.iter_any():
                     if not data:
@@ -337,9 +320,7 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
 
 
 @router.get(
-    "/{link_id}/capture/file",
-    dependencies=[Depends(has_privilege("Link.Capture"))],
-    response_class=FileResponse
+    "/{link_id}/capture/file", dependencies=[Depends(has_privilege("Link.Capture"))], response_class=FileResponse
 )
 async def download_capture_file(link: Link = Depends(dep_link)):
     """
@@ -359,7 +340,7 @@ async def download_capture_file(link: Link = Depends(dep_link)):
     return FileResponse(
         path=link.capture_file_path,
         filename=os.path.basename(link.capture_file_path),
-        media_type="application/vnd.tcpdump.pcap"
+        media_type="application/vnd.tcpdump.pcap",
     )
 
 
@@ -368,7 +349,7 @@ async def web_wireshark_websocket(
     websocket: WebSocket,
     link_id: str,
     project_id: str,
-    current_user: schemas.User = Depends(has_privilege_on_websocket("Link.Capture"))
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Link.Capture")),
 ):
     """
     WebSocket proxy endpoint for xpra container (Web Wireshark).
@@ -424,10 +405,7 @@ async def web_wireshark_websocket(
             pass
 
 
-@router.get(
-    "/{link_id}/markers",
-    dependencies=[Depends(has_privilege("Link.Audit"))]
-)
+@router.get("/{link_id}/markers", dependencies=[Depends(has_privilege("Link.Audit"))])
 async def get_markers(link: Link = Depends(dep_link)) -> dict:
     """
     Return all traffic-insight markers configured on this link.
@@ -439,14 +417,9 @@ async def get_markers(link: Link = Depends(dep_link)) -> dict:
 
 
 @router.post(
-    "/{link_id}/markers",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
+    "/{link_id}/markers", status_code=status.HTTP_201_CREATED, dependencies=[Depends(has_privilege("Link.Modify"))]
 )
-async def create_marker(
-    marker_data: schemas.MarkerCreate,
-    link: Link = Depends(dep_link)
-) -> dict:
+async def create_marker(marker_data: schemas.MarkerCreate, link: Link = Depends(dep_link)) -> dict:
     """
     Attach a traffic-insight marker to the link.
     On BPF match uBridge emits MARK signals and appends packets to a pcap.
@@ -477,12 +450,9 @@ async def create_marker(
 @router.delete(
     "/{link_id}/markers/{marker_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Link.Modify"))]
+    dependencies=[Depends(has_privilege("Link.Modify"))],
 )
-async def delete_marker(
-    marker_name: str,
-    link: Link = Depends(dep_link)
-) -> None:
+async def delete_marker(marker_name: str, link: Link = Depends(dep_link)) -> None:
     """
     Remove a traffic-insight marker from the link.
 
@@ -492,15 +462,8 @@ async def delete_marker(
     await link.stop_marker(marker_name)
 
 
-@router.put(
-    "/{link_id}/markers/{marker_name}",
-    dependencies=[Depends(has_privilege("Link.Modify"))]
-)
-async def update_marker(
-    marker_name: str,
-    marker_data: schemas.MarkerUpdate,
-    link: Link = Depends(dep_link)
-) -> dict:
+@router.put("/{link_id}/markers/{marker_name}", dependencies=[Depends(has_privilege("Link.Modify"))])
+async def update_marker(marker_name: str, marker_data: schemas.MarkerUpdate, link: Link = Depends(dep_link)) -> dict:
     """
     Update a traffic-insight marker (change BPF, tag, or enabled).
 
@@ -522,7 +485,7 @@ async def update_marker(
 @router.get(
     "/{link_id}/iface",
     response_model=Union[schemas.UDPPortInfo, schemas.EthernetPortInfo],
-    dependencies=[Depends(has_privilege("Link.Audit"))]
+    dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo, schemas.EthernetPortInfo]:
     """
@@ -544,7 +507,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo
         if "ports_mapping" not in response.json:
             continue
         ports_mapping = response.json["ports_mapping"]
-        
+
         for port in ports_mapping:
             port_num = port.get("port_number")
 
@@ -556,7 +519,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo
                         "type": f"{port_type}",
                         "lport": port["lport"],
                         "rhost": port["rhost"],
-                        "rport": port["rport"]
+                        "rport": port["rport"],
                     }
                 else:
                     ifaces_info = {
@@ -564,7 +527,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo
                         "type": f"{port_type}",
                         "interface": port["interface"],
                     }
-    
+
     if not ifaces_info:
         raise ControllerError("Link not connected to Cloud/NAT")
     return ifaces_info

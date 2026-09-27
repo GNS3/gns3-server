@@ -40,7 +40,8 @@ Main modules:
 - vpcs_tools_netmiko: VPCS device configuration tool using Netmiko
 - gns3_create_node: GNS3 node creation tool
 - gns3_create_link: GNS3 link creation tool
-- gns3_start_node: GNS3 node startup tool
+- gns3_start_node: GNS3 node startup tool (immediate return, no boot wait)
+- gns3_wait: Wait timer tool (pair with node start to let devices boot)
 - gns3_get_node_temp: GNS3 template retrieval tool
 - gns3_update_node_name: GNS3 node name update tool
 - gns3_packet_filter: GNS3 packet filter management tool
@@ -62,6 +63,7 @@ from .gns3_start_node import GNS3StartNodeTool
 from .gns3_stop_node import GNS3StopNodeTool
 from .gns3_suspend_node import GNS3SuspendNodeTool
 from .gns3_update_node_name import GNS3UpdateNodeNameTool
+from .gns3_wait import GNS3WaitTool
 from .packet_analysis_tool import PacketAnalysisTool
 
 # Dynamic version management
@@ -89,6 +91,7 @@ __all__ = [
     "GNS3SuspendNodeTool",
     "GNS3UpdateNodeNameTool",
     "GNS3TemplateTool",
+    "GNS3WaitTool",
     "PacketAnalysisTool",
 ]
 

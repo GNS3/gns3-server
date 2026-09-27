@@ -120,7 +120,9 @@ async def test_load_projects_skip_unexpected_errors(controller, projects_dir):
     with open(os.path.join(projects_dir, "broken_project", "broken.gns3"), "w+") as f:
         f.write("")
 
-    with asyncio_patch("gns3server.controller.Controller.load_project", side_effect=Exception("boom")) as mock_load_project:
+    with asyncio_patch(
+        "gns3server.controller.Controller.load_project", side_effect=Exception("boom")
+    ) as mock_load_project:
         await controller.load_projects()
     mock_load_project.assert_called_with(os.path.join(projects_dir, "broken_project", "broken.gns3"), load=False)
 
@@ -340,16 +342,12 @@ async def test_getProject(controller):
 @pytest.mark.asyncio
 async def test_start(controller):
 
-    controller.gns3vm.settings = {
-        "enable": False,
-        "engine": "vmware",
-        "vmname": "GNS3 VM"
-    }
+    controller.gns3vm.settings = {"enable": False, "engine": "vmware", "vmname": "GNS3 VM"}
 
-    #with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
+    # with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
     with asyncio_patch("gns3server.controller.Controller._install_builtin_disks", return_value=[]):
         await controller.start()
-    #assert mock.called
+    # assert mock.called
     assert len(controller.computes) == 1  # Local compute is created
     assert controller.computes["local"].name == f"{socket.gethostname()} (controller)"
 
@@ -360,11 +358,7 @@ async def test_start_vm(controller):
     Start the controller with a GNS3 VM
     """
 
-    controller.gns3vm.settings = {
-        "enable": True,
-        "engine": "vmware",
-        "vmname": "GNS3 VM"
-    }
+    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "vmname": "GNS3 VM"}
 
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
         with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
@@ -392,12 +386,7 @@ async def test_stop_vm(controller):
     Stop GNS3 VM if configured
     """
 
-    controller.gns3vm.settings = {
-        "enable": True,
-        "engine": "vmware",
-        "when_exit": "stop",
-        "vmname": "GNS3 VM"
-    }
+    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "stop", "vmname": "GNS3 VM"}
 
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
@@ -411,12 +400,7 @@ async def test_suspend_vm(controller):
     Suspend GNS3 VM if configured
     """
 
-    controller.gns3vm.settings = {
-        "enable": True,
-        "engine": "vmware",
-        "when_exit": "suspend",
-        "vmname": "GNS3 VM"
-    }
+    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "suspend", "vmname": "GNS3 VM"}
 
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
@@ -430,12 +414,7 @@ async def test_keep_vm(controller):
     Keep GNS3 VM if configured
     """
 
-    controller.gns3vm.settings = {
-        "enable": True,
-        "engine": "vmware",
-        "when_exit": "keep",
-        "vmname": "GNS3 VM"
-    }
+    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "keep", "vmname": "GNS3 VM"}
 
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
@@ -457,15 +436,18 @@ async def test_get_free_project_name(controller):
 async def test_install_base_configs(controller, config, tmpdir):
 
     config.settings.Server.configs_path = str(tmpdir)
-    with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
-        f.write('test')
+    with open(str(tmpdir / "iou_l2_base_startup-config.txt"), "w+") as f:
+        f.write("test")
 
     await controller._install_base_configs()
-    assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
+    assert os.path.exists(str(tmpdir / "iou_l3_base_startup-config.txt"))
+    # the IOL docker base config ships with the server too (referenced by the
+    # GNS3_IOL_STARTUP_CONFIG knob in the documented template)
+    assert os.path.exists(str(tmpdir / "iol-xe-base.txt"))
 
     # Check is the file has not been overwritten
-    with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
-        assert f.read() == 'test'
+    with open(str(tmpdir / "iou_l2_base_startup-config.txt")) as f:
+        assert f.read() == "test"
 
 
 @pytest.mark.asyncio
@@ -483,8 +465,8 @@ async def test_install_base_configs(controller, config, tmpdir):
         "empty200G.qcow2",
         "empty250G.qcow2",
         "empty500G.qcow2",
-        "empty1T.qcow2"
-    ]
+        "empty1T.qcow2",
+    ],
 )
 async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
 
@@ -497,17 +479,12 @@ async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
 @pytest.mark.asyncio
 async def test_appliances(controller, config, tmpdir):
 
-    my_appliance = {
-        "name": "My Appliance",
-        "status": "stable"
-    }
-    with open(str(tmpdir / "my_appliance.gns3a"), 'w+') as f:
+    my_appliance = {"name": "My Appliance", "status": "stable"}
+    with open(str(tmpdir / "my_appliance.gns3a"), "w+") as f:
         json.dump(my_appliance, f)
     # A broken appliance
-    my_appliance = {
-        "name": "Broken"
-    }
-    with open(str(tmpdir / "my_appliance2.gns3a"), 'w+') as f:
+    my_appliance = {"name": "Broken"}
+    with open(str(tmpdir / "my_appliance2.gns3a"), "w+") as f:
         json.dump(my_appliance, f)
 
     config.settings.Server.appliances_path = str(tmpdir)
@@ -534,3 +511,103 @@ async def test_autoidlepc(controller):
         await controller.autoidlepc("local", "c7200", "test.bin", 512)
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0
+
+
+@pytest.mark.asyncio
+async def test_find_projects_using_template_and_images(controller):
+    """
+    The template/image usage checks must see nodes of opened projects
+    (in-memory Node objects) as well as nodes of closed projects (raw
+    node dicts read back from the .gns3 file).
+    """
+
+    compute = MagicMock()
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    project1 = await controller.add_project(name="Test1")
+    project2 = await controller.add_project(name="Test2")
+
+    template_id = str(uuid.uuid4())
+    await project1.add_node(
+        compute,
+        "n1",
+        None,
+        node_type="vpcs",
+        template_id=template_id,
+        properties={"hda_disk_image": "/tmp/images/disk.qcow2", "hda_disk_image_backing_file": "base.qcow2"},
+    )
+    await project2.add_node(compute, "n2", None, node_type="vpcs", properties={})
+
+    # opened projects
+    assert controller.find_projects_using_template(template_id) == ["Test1"]
+    assert controller.find_projects_using_template(str(uuid.uuid4())) == []
+    # image references are matched on file name whether stored as a bare
+    # name or as an absolute path
+    assert controller.find_projects_using_image("base.qcow2") == ["Test1"]
+    assert controller.find_projects_using_image("disk.qcow2") == ["Test1"]
+    assert controller.find_projects_using_image("unknown.qcow2") == []
+    referenced = controller.collect_referenced_image_filenames()
+    assert "base.qcow2" in referenced
+    assert "disk.qcow2" in referenced
+
+    # a second node from the same template in the same project must not
+    # list the project twice
+    await project1.add_node(
+        compute,
+        "n1-bis",
+        None,
+        node_type="vpcs",
+        template_id=template_id,
+        properties={},
+    )
+    assert controller.find_projects_using_template(template_id) == ["Test1"]
+
+    # a second project using the same template and image must be listed too
+    await project2.add_node(
+        compute,
+        "n2-bis",
+        None,
+        node_type="vpcs",
+        template_id=template_id,
+        properties={"hda_disk_image_backing_file": "base.qcow2"},
+    )
+    assert controller.find_projects_using_template(template_id) == ["Test1", "Test2"]
+    assert controller.find_projects_using_image("base.qcow2") == ["Test1", "Test2"]
+    assert controller.find_projects_using_image("disk.qcow2") == ["Test1"]
+
+    # closed projects: same answers from the .gns3 file on disk
+    await project1.close()
+    await project2.close()
+    assert controller.find_projects_using_template(template_id) == ["Test1", "Test2"]
+    assert controller.find_projects_using_image("base.qcow2") == ["Test1", "Test2"]
+    assert controller.find_projects_using_image("disk.qcow2") == ["Test1"]
+
+
+@pytest.mark.asyncio
+async def test_find_projects_skips_unreadable_topology(controller):
+    """
+    A project whose topology cannot be read must not break the usage checks.
+    """
+
+    compute = MagicMock()
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    project = await controller.add_project(name="Broken")
+    await project.add_node(
+        compute,
+        "n1",
+        None,
+        node_type="vpcs",
+        template_id=str(uuid.uuid4()),
+        properties={"hda_disk_image": "lost.qcow2"},
+    )
+    await project.close()
+    os.remove(project.topology_file)
+
+    assert controller.find_projects_using_template(str(uuid.uuid4())) == []
+    assert controller.find_projects_using_image("lost.qcow2") == []
+    assert controller.collect_referenced_image_filenames() == set()

@@ -1,4 +1,5 @@
 """MCP test fixtures."""
+
 import pytest
 
 

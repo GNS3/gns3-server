@@ -39,7 +39,7 @@ router = APIRouter(responses=responses)
     "",
     response_model=List[schemas.Drawing],
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Drawing.Audit"))]
+    dependencies=[Depends(has_privilege("Drawing.Audit"))],
 )
 async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     """
@@ -59,7 +59,7 @@ async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Drawing,
-    dependencies=[Depends(has_privilege("Drawing.Allocate"))]
+    dependencies=[Depends(has_privilege("Drawing.Allocate"))],
 )
 async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
@@ -77,7 +77,7 @@ async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> sch
     "/{drawing_id}",
     response_model=schemas.Drawing,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Drawing.Audit"))]
+    dependencies=[Depends(has_privilege("Drawing.Audit"))],
 )
 async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     """
@@ -95,7 +95,7 @@ async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     "/{drawing_id}",
     response_model=schemas.Drawing,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Drawing.Modify"))]
+    dependencies=[Depends(has_privilege("Drawing.Modify"))],
 )
 async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
@@ -111,14 +111,10 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schem
 
 
 @router.delete(
-    "/{drawing_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Drawing.Allocate"))]
+    "/{drawing_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Drawing.Allocate"))]
 )
 async def delete_drawing(
-        project_id: UUID,
-        drawing_id: UUID,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    project_id: UUID, drawing_id: UUID, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> None:
     """
     Delete a drawing.

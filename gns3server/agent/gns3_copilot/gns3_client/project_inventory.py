@@ -38,9 +38,7 @@ from urllib.parse import urlparse
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import _get_connector
 
 
-def build_nodes_inventory(
-    nodes: list[dict[str, Any]], server_host: str | None
-) -> dict[str, Any]:
+def build_nodes_inventory(nodes: list[dict[str, Any]], server_host: str | None) -> dict[str, Any]:
     """
     Build an inventory-style dict keyed by node name.
 
@@ -70,9 +68,7 @@ def build_nodes_inventory(
     return inventory
 
 
-def build_links_summary(
-    nodes: list[dict[str, Any]], links: list[dict[str, Any]]
-) -> list[dict[str, str]]:
+def build_links_summary(nodes: list[dict[str, Any]], links: list[dict[str, Any]]) -> list[dict[str, str]]:
     """
     Build a human/LLM-friendly link list resolving node and port names.
 
@@ -87,46 +83,40 @@ def build_links_summary(
         side_a = link["nodes"][0]
         side_b = link["nodes"][1]
         try:
-            node_a = next(
-                x for x in nodes if x.get("node_id") == side_a["node_id"]
-            )
+            node_a = next(x for x in nodes if x.get("node_id") == side_a["node_id"])
             port_a = str(
                 next(
                     p["name"]
                     for p in (node_a.get("ports") or [])
-                    if p["port_number"] == side_a["port_number"]
-                    and p["adapter_number"] == side_a["adapter_number"]
+                    if p["port_number"] == side_a["port_number"] and p["adapter_number"] == side_a["adapter_number"]
                 )
             )
-            node_b = next(
-                x for x in nodes if x.get("node_id") == side_b["node_id"]
-            )
+            node_b = next(x for x in nodes if x.get("node_id") == side_b["node_id"])
             port_b = str(
                 next(
                     p["name"]
                     for p in (node_b.get("ports") or [])
-                    if p["port_number"] == side_b["port_number"]
-                    and p["adapter_number"] == side_b["adapter_number"]
+                    if p["port_number"] == side_b["port_number"] and p["adapter_number"] == side_b["adapter_number"]
                 )
             )
             name_a = str(node_a["name"]) if node_a.get("name") else "Unknown"
             name_b = str(node_b["name"]) if node_b.get("name") else "Unknown"
-            summary.append({
-                "link_id": link.get("link_id"),
-                "node_a": name_a,
-                "port_a": port_a,
-                "node_b": name_b,
-                "port_b": port_b,
-            })
+            summary.append(
+                {
+                    "link_id": link.get("link_id"),
+                    "node_a": name_a,
+                    "port_a": port_a,
+                    "node_b": name_b,
+                    "port_b": port_b,
+                }
+            )
         except (StopIteration, KeyError, AttributeError):
             # Prevent errors when lookups can't match data
             continue
     return summary
 
 
-def fetch_project_inventory(
-    gns3_ctx: dict[str, Any], project_id: str
-) -> dict[str, Any]:
+def fetch_project_inventory(gns3_ctx: dict[str, Any], project_id: str) -> dict[str, Any]:
     """
     Fetch a project's metadata, nodes and links and return the aggregated
     inventory — the equivalent of the old ``Project.get()`` +

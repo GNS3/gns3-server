@@ -29,9 +29,17 @@ from gns3server.utils.packet_filter_validation import validate_bpf_syntax, Filte
 # (which has no uBridge) and "ethernet_hub" (still Dynamips-hosted, no
 # uBridge of its own).  "ethernet_switch" hosts markers on the per-port
 # uBridge relays of its brctl kernel-bridge backend.
-_MARKER_CAPABLE_TYPES = frozenset({
-    "vpcs", "qemu", "docker", "iou", "dynamips", "cloud", "ethernet_switch",
-})
+_MARKER_CAPABLE_TYPES = frozenset(
+    {
+        "vpcs",
+        "qemu",
+        "docker",
+        "iou",
+        "dynamips",
+        "cloud",
+        "ethernet_switch",
+    }
+)
 
 
 log = logging.getLogger(__name__)
@@ -42,6 +50,10 @@ class UDPLink(Link):
         super().__init__(project, link_id=link_id)
         self._created = False
         self._link_data = []
+        # True when the link could not be created on the computes because one
+        # of its endpoints has a missing image. The NIO creation is retried
+        # once the image is resolved.
+        self._deferred = False
 
     @property
     def debug_link_data(self):
@@ -49,7 +61,12 @@ class UDPLink(Link):
         Use for the debug exports
         """
         return self._link_data
-    
+
+    @property
+    def deferred(self):
+        """Whether NIO creation is waiting for missing node images."""
+        return self._deferred
+
     def _get_node_filters(self, node1, node2):
         """
         Determine which node gets the active filters applied.
@@ -72,10 +89,14 @@ class UDPLink(Link):
         without an NIO rebuild.
         """
         return {
-            name: {"bpf": m["bpf"], "tag": m.get("tag"), "link_id": self._id,
-                   "direction": m.get("direction"),
-                   "data_link_type": m.get("data_link_type", "DLT_EN10MB"),
-                   "enabled": m.get("enabled", True)}
+            name: {
+                "bpf": m["bpf"],
+                "tag": m.get("tag"),
+                "link_id": self._id,
+                "direction": m.get("direction"),
+                "data_link_type": m.get("data_link_type", "DLT_EN10MB"),
+                "enabled": m.get("enabled", True),
+            }
             for name, m in self._markers.items()
             if m.get("capture_node_id") == node.id
         }
@@ -174,33 +195,24 @@ class UDPLink(Link):
             tuples returned by :meth:`_prepare`.
         """
 
-        (node1, adapter_number1, port_number1, nio_data1), \
-            (node2, adapter_number2, port_number2, nio_data2) = entries
+        (node1, adapter_number1, port_number1, nio_data1), (node2, adapter_number2, port_number2, nio_data2) = entries
 
         # The two ends are independent once the ports and peer addresses are
         # known — each node talks to its own compute/uBridge with no shared
         # lock between them — so the two POSTs overlap. If either fails, roll
         # back whichever side succeeded before re-raising the first error.
         results = await asyncio.gather(
-            node1.post(
-                f"/adapters/{adapter_number1}/ports/{port_number1}/nio", data=nio_data1, timeout=120
-            ),
-            node2.post(
-                f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=nio_data2, timeout=120
-            ),
+            node1.post(f"/adapters/{adapter_number1}/ports/{port_number1}/nio", data=nio_data1, timeout=120),
+            node2.post(f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=nio_data2, timeout=120),
             return_exceptions=True,
         )
         errors = [result for result in results if isinstance(result, Exception)]
         if errors:
             cleanup = []
             if not isinstance(results[0], Exception):
-                cleanup.append(
-                    node1.delete(f"/adapters/{adapter_number1}/ports/{port_number1}/nio", timeout=120)
-                )
+                cleanup.append(node1.delete(f"/adapters/{adapter_number1}/ports/{port_number1}/nio", timeout=120))
             if not isinstance(results[1], Exception):
-                cleanup.append(
-                    node2.delete(f"/adapters/{adapter_number2}/ports/{port_number2}/nio", timeout=120)
-                )
+                cleanup.append(node2.delete(f"/adapters/{adapter_number2}/ports/{port_number2}/nio", timeout=120))
             if cleanup:
                 await asyncio.gather(*cleanup, return_exceptions=True)
             raise errors[0]
@@ -258,6 +270,10 @@ class UDPLink(Link):
         Delete the link and free the resources
         """
         if not self._created:
+            if self._deferred:
+                # There is no NIO on the computes to delete, but the local
+                # back-references created while loading must be cleared.
+                await super().delete()
             return
         try:
             node1 = self._nodes[0]["node"]
@@ -307,7 +323,9 @@ class UDPLink(Link):
             ),
             data=data,
         )
-        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name, wireshark=wireshark, jwt_token=jwt_token)
+        await super().start_capture(
+            data_link_type=data_link_type, capture_file_name=capture_file_name, wireshark=wireshark, jwt_token=jwt_token
+        )
 
     async def stop_capture(self):
         """
@@ -365,10 +383,7 @@ class UDPLink(Link):
 
         # Prefer started.
         for node in self._nodes:
-            if (
-                node["node"].node_type in _MARKER_CAPABLE_TYPES
-                and node["node"].status == "started"
-            ):
+            if node["node"].node_type in _MARKER_CAPABLE_TYPES and node["node"].status == "started":
                 return node
 
         # Accept stopped but capable (marker rides NIO, applied at start).
@@ -376,10 +391,7 @@ class UDPLink(Link):
             if node["node"].node_type in _MARKER_CAPABLE_TYPES:
                 return node
 
-        raise ControllerError(
-            "Cannot add marker because no device on this link supports "
-            "traffic insight"
-        )
+        raise ControllerError("Cannot add marker because no device on this link supports traffic insight")
 
     def _node_by_id(self, node_id):
         """
@@ -402,9 +414,7 @@ class UDPLink(Link):
                     f"marker — no uBridge bridge to attach the filter to"
                 )
             return node
-        raise ControllerNotFoundError(
-            f"Node {node_id} is not an endpoint of link {self._id}"
-        )
+        raise ControllerNotFoundError(f"Node {node_id} is not an endpoint of link {self._id}")
 
     async def node_updated(self, node):
         """
@@ -418,7 +428,21 @@ class UDPLink(Link):
         # explicitly deletes a marker via the REST API, and a marker is torn
         # down automatically only when its link is deleted.
 
-    async def start_marker(self, name, bpf, tag=None, direction=None, data_link_type="DLT_EN10MB", capture_node_id=None, color=None, highlight_duration=None, enabled=True, inherited_from=None, dump=True, memory_only=False):
+    async def start_marker(
+        self,
+        name,
+        bpf,
+        tag=None,
+        direction=None,
+        data_link_type="DLT_EN10MB",
+        capture_node_id=None,
+        color=None,
+        highlight_duration=None,
+        enabled=True,
+        inherited_from=None,
+        dump=True,
+        memory_only=False,
+    ):
         """
         Attach a traffic-insight marker to this link.
 
@@ -558,7 +582,19 @@ class UDPLink(Link):
         if dump:
             self._project.dump()
 
-    async def update_marker(self, name, bpf=None, tag=None, enabled=None, direction=_UNSET, color=None, highlight_duration=None, inherited=False, dump=True, memory_only=False):
+    async def update_marker(
+        self,
+        name,
+        bpf=None,
+        tag=None,
+        enabled=None,
+        direction=_UNSET,
+        color=None,
+        highlight_duration=None,
+        inherited=False,
+        dump=True,
+        memory_only=False,
+    ):
         """
         Update an existing marker's fields and push to uBridge fine-grained — no
         full NIO reapply, so sibling markers' pcaps stay open. bpf/tag/direction

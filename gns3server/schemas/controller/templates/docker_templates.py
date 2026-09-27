@@ -23,13 +23,14 @@ from typing import Optional, List
 
 
 class DockerTemplate(TemplateBase):
-
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "docker_guest"
     image: str = Field(..., description="Docker image name")
     adapters: Optional[int] = Field(1, ge=0, le=100, description="Number of adapters")
-    mac_address: Optional[str] = Field("", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$")
+    mac_address: Optional[str] = Field(
+        "", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
+    )
     start_command: Optional[str] = Field("", description="Docker CMD entry")
     environment: Optional[str] = Field("", description="Docker environment variables")
     console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
@@ -49,12 +50,13 @@ class DockerTemplate(TemplateBase):
     )
     extra_hosts: Optional[str] = Field("", description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List] = Field([], description="Additional directories to make persistent")
-    extra_configs: Optional[List[ExtraConfig]] = Field(default_factory=list, description="Configuration files injected into the container (bind-mounted read-only)")
+    extra_configs: Optional[List[ExtraConfig]] = Field(
+        default_factory=list, description="Configuration files injected into the container (bind-mounted read-only)"
+    )
     memory: Optional[int] = Field(0, ge=0, description="Maximum amount of memory the container can use in MB")
     cpus: Optional[float] = Field(0, ge=0, description="Maximum amount of CPU resources the container can use")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
 class DockerTemplateUpdate(DockerTemplate):
-
     image: Optional[str] = Field(None, description="Docker image name")

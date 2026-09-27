@@ -31,6 +31,20 @@
     },
     "images": [
         {
+            "version": "2.1.0",
+            "filename": "ostinato-lab-2.1.0-1.qcow2",
+            "filesize": 177537024,
+            "md5sum": "ec1e3d202a3a110bf669b551dc9b5af3",
+            "download_url": "https://ostinato.org/pricing/gns3"
+        },
+        {
+            "version": "2.0.0",
+            "filename": "ostinato-lab-2.0.0-1.qcow2",
+            "filesize": 176816128,
+            "md5sum": "a9bd35b3a61560abface695d7952d335",
+            "download_url": "https://ostinato.org/pricing/gns3"
+        },
+        {
             "version": "1.3.0",
             "filename": "ostinatostd-1.3.0-1.qcow2",
             "filesize": 173735936,
@@ -53,6 +67,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.1.0",
+            "images": {
+                "hda_disk_image": "ostinato-lab-2.1.0-1.qcow2"
+            }
+        },
+        {
+            "name": "2.0.0",
+            "images": {
+                "hda_disk_image": "ostinato-lab-2.0.0-1.qcow2"
+            }
+        },
         {
             "name": "1.3.0",
             "images": {

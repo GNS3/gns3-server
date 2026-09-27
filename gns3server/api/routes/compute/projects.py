@@ -86,8 +86,7 @@ def create_compute_project(project_data: schemas.ProjectCreate) -> schemas.Proje
 
 @router.put("/projects/{project_id}", response_model=schemas.Project)
 async def update_compute_project(
-        project_data: schemas.ProjectUpdate,
-        project: Project = Depends(dep_project)
+    project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)
 ) -> schemas.Project:
     """
     Update project on the compute.
@@ -144,8 +143,14 @@ async def _add_nio_binding(node, adapter_number, port_number, nio):
 
     manager_name = type(node.manager).__name__
     # Adapter-based nodes: docker / qemu / vmware / virtualbox take
-    # (adapter_number, nio); iou additionally takes port_number.
-    if manager_name in ("Docker", "Qemu", "VMware", "VirtualBox"):
+    # (adapter_number, nio); iou additionally takes port_number. Docker
+    # adapters can be multi-port (e.g. iol-runner nodes model 4 ports per
+    # adapter): dropping port_number would bind every NIO to port 0, where
+    # add_nio() silently overwrites — the last entry per node wins and links
+    # end up cross-wired (observed as dead direct links after reopen).
+    if manager_name == "Docker":
+        await node.adapter_add_nio_binding(adapter_number, nio, port_number)
+    elif manager_name in ("Qemu", "VMware", "VirtualBox"):
         await node.adapter_add_nio_binding(adapter_number, nio)
     elif manager_name == "IOU":
         await node.adapter_add_nio_binding(adapter_number, port_number, nio)
@@ -176,7 +181,9 @@ def _get_existing_nio(node, adapter_number, port_number):
     """
 
     manager_name = type(node.manager).__name__
-    if manager_name in ("Docker", "Qemu", "VMware", "VirtualBox"):
+    if manager_name == "Docker":
+        return node.get_nio(adapter_number, port_number)
+    elif manager_name in ("Qemu", "VMware", "VirtualBox"):
         return node.get_nio(adapter_number)
     elif manager_name == "IOU":
         return node.get_nio(adapter_number, port_number)
@@ -187,6 +194,7 @@ def _get_existing_nio(node, adapter_number, port_number):
         # via get_nio(port).
         if hasattr(node, "get_nio"):
             import inspect as _inspect
+
             if len(_inspect.signature(node.get_nio).parameters) >= 2:
                 return node.get_nio(adapter_number, port_number)
             return node.get_nio(port_number)
@@ -207,7 +215,9 @@ async def _update_nio_binding(node, adapter_number, port_number, nio):
     """
 
     manager_name = type(node.manager).__name__
-    if manager_name in ("Docker", "Qemu", "VMware", "VirtualBox"):
+    if manager_name == "Docker":
+        await node.adapter_update_nio_binding(adapter_number, nio, port_number)
+    elif manager_name in ("Qemu", "VMware", "VirtualBox"):
         await node.adapter_update_nio_binding(adapter_number, nio)
     elif manager_name == "IOU":
         await node.adapter_update_nio_binding(adapter_number, port_number, nio)
@@ -232,9 +242,9 @@ async def _update_nio_binding(node, adapter_number, port_number, nio):
     status_code=status.HTTP_201_CREATED,
 )
 async def create_batch_nios(
-        project_id: UUID,
-        batch: schemas.BatchNIOCreate,
-        project: Project = Depends(dep_project),
+    project_id: UUID,
+    batch: schemas.BatchNIOCreate,
+    project: Project = Depends(dep_project),
 ) -> dict:
     """
     Create many NIO bindings across nodes in a single request.
@@ -271,9 +281,7 @@ async def create_batch_nios(
                 nio = node.manager.create_nio(nio_settings)
             await _add_nio_binding(node, entry.adapter_number, entry.port_number, nio)
 
-    await asyncio.gather(
-        *[_create_one_node(nid, ents) for nid, ents in per_node.items()]
-    )
+    await asyncio.gather(*[_create_one_node(nid, ents) for nid, ents in per_node.items()])
     return {"added": len(batch.nios)}
 
 
@@ -282,9 +290,9 @@ async def create_batch_nios(
     status_code=status.HTTP_200_OK,
 )
 async def update_batch_nios(
-        project_id: UUID,
-        batch: schemas.BatchNIOCreate,
-        project: Project = Depends(dep_project),
+    project_id: UUID,
+    batch: schemas.BatchNIOCreate,
+    project: Project = Depends(dep_project),
 ) -> dict:
     """
     Update many NIO bindings (filters + markers) across nodes in a single
@@ -312,9 +320,7 @@ async def update_batch_nios(
             nio.markers = e.nio.markers or {}
             await _update_nio_binding(node, e.adapter_number, e.port_number, nio)
 
-    await asyncio.gather(
-        *[_update_one_node(nid, ents) for nid, ents in per_node.items()]
-    )
+    await asyncio.gather(*[_update_one_node(nid, ents) for nid, ents in per_node.items()])
     return {"updated": len(batch.nios)}
 
 
@@ -333,7 +339,7 @@ async def get_compute_node_files(
     node_id: str,
     project: Project = Depends(dep_project),
     path: str = Query("", description="Subdirectory path within node directory"),
-    recursive: bool = Query(False, description="Recursively list all files")
+    recursive: bool = Query(False, description="Recursively list all files"),
 ) -> List[schemas.NodeFile]:
     """
     Return files belonging to a specific node with detailed metadata.
@@ -364,11 +370,7 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
 
 
 @router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def write_compute_project_file(
-        file_path: str,
-        request: Request,
-        project: Project = Depends(dep_project)
-) -> None:
+async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
 
     file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)
@@ -395,10 +397,7 @@ async def write_compute_project_file(
 
 
 @router.delete("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_compute_project_file(
-        file_path: str,
-        project: Project = Depends(dep_project)
-) -> None:
+async def delete_compute_project_file(file_path: str, project: Project = Depends(dep_project)) -> None:
 
     file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)

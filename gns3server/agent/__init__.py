@@ -36,6 +36,7 @@ AI_COPILOT_AVAILABLE = False
 try:
     from .gns3_copilot.project_agent_manager import get_project_agent_manager
     from .gns3_copilot.project_agent_manager import ProjectAgentManager
+
     AI_COPILOT_AVAILABLE = True
 
     # Start skills repository initialization in background.
@@ -64,8 +65,7 @@ except ImportError as e:
             RuntimeError: If AI Copilot dependencies are not installed
         """
         raise RuntimeError(
-            "AI Copilot is not available. "
-            "Install AI dependencies with: pip install gns3-server[ai-features]"
+            "AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
         )
 
     class ProjectAgentManager:
@@ -75,8 +75,7 @@ except ImportError as e:
 
         def __init__(self):
             raise RuntimeError(
-                "AI Copilot is not available. "
-                "Install AI dependencies with: pip install gns3-server[ai-features]"
+                "AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
             )
 
 
@@ -88,6 +87,7 @@ try:
     # Use importlib so the top-level SDK name "mcp" is not bound in this
     # namespace — it would shadow the gns3server.agent.mcp subpackage.
     import importlib
+
     importlib.import_module("mcp.server.fastmcp")
     MCP_AVAILABLE = True
 except ImportError:

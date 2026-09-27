@@ -50,6 +50,7 @@ def _make(transport, tmp_path, monkeypatch, node_id="abc123", host="127.0.0.1"):
 # __init__: transport selection
 # ---------------------------------------------------------------------------
 
+
 def test_init_unix_creates_socket_dir_and_path(tmp_path, monkeypatch):
 
     hyp = _make("unix", tmp_path, monkeypatch, node_id="abc123")
@@ -83,6 +84,7 @@ def test_init_tcp_sets_host_port(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # _build_command + endpoint
 # ---------------------------------------------------------------------------
+
 
 def test_build_command_unix(tmp_path, monkeypatch):
 
@@ -134,6 +136,7 @@ def test_endpoint_tcp(tmp_path, monkeypatch):
 # stop: AF_UNIX socket cleanup
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_stop_unlinks_unix_socket(tmp_path, monkeypatch):
 
@@ -160,8 +163,41 @@ async def test_stop_tcp_has_no_socket_to_unlink(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# version requirement
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_requires_ubridge_1_2_3(tmp_path, monkeypatch):
+
+    hyp = _make("unix", tmp_path, monkeypatch)
+    with patch(
+        "gns3server.compute.ubridge.hypervisor.subprocess_check_output",
+        new_callable=AsyncMock,
+        return_value="ubridge version 1.2.2",
+    ):
+        with pytest.raises(UbridgeError, match=r">= 1\.2\.3"):
+            await hyp._check_ubridge_version()
+
+
+@pytest.mark.asyncio
+async def test_accepts_ubridge_1_2_3(tmp_path, monkeypatch):
+
+    hyp = _make("unix", tmp_path, monkeypatch)
+    with patch(
+        "gns3server.compute.ubridge.hypervisor.subprocess_check_output",
+        new_callable=AsyncMock,
+        return_value="ubridge version 1.2.3",
+    ):
+        await hyp._check_ubridge_version()
+
+    assert hyp.version == "1.2.3"
+
+
+# ---------------------------------------------------------------------------
 # start: fail-fast on an immediately-exiting uBridge
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_start_detects_immediate_exit(tmp_path, monkeypatch):
@@ -172,8 +208,10 @@ async def test_start_detects_immediate_exit(tmp_path, monkeypatch):
     proc = MagicMock()
     proc.pid = 1234
     proc.returncode = 2  # already exited
-    with patch.object(Hypervisor, "_check_ubridge_version", new_callable=AsyncMock), \
-         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+    with (
+        patch.object(Hypervisor, "_check_ubridge_version", new_callable=AsyncMock),
+        patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc),
+    ):
         with pytest.raises(UbridgeError, match="exited immediately"):
             await hyp.start()
 
@@ -185,7 +223,9 @@ async def test_start_proceeds_when_process_keeps_running(tmp_path, monkeypatch):
     proc = MagicMock()
     proc.pid = 1234
     proc.returncode = None  # still running
-    with patch.object(Hypervisor, "_check_ubridge_version", new_callable=AsyncMock), \
-         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+    with (
+        patch.object(Hypervisor, "_check_ubridge_version", new_callable=AsyncMock),
+        patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc),
+    ):
         await hyp.start()  # must NOT raise
     assert hyp._process is proc

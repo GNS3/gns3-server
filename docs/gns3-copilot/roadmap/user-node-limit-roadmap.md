@@ -35,7 +35,7 @@ Add `max_nodes` field to both `User` and `UserGroup` models:
 # In User model
 max_nodes = Column(Integer, nullable=True)  # NULL = no limit
 
-# In UserGroup model  
+# In UserGroup model
 max_nodes = Column(Integer, nullable=True)  # NULL = no limit
 ```
 
@@ -49,9 +49,7 @@ Add node limit configuration to `ControllerSettings`:
 class NodeLimitSettings(BaseModel):
     enabled: bool = False  # Feature toggle (default disabled)
     default_max_nodes: int = 5  # Default limit when enabled
-    excluded_node_types: List[str] = Field(default_factory=lambda: [
-        "ethernet_switch", "ethernet_hub", "cloud", "nat"
-    ])
+    excluded_node_types: List[str] = Field(default_factory=lambda: ["ethernet_switch", "ethernet_hub", "cloud", "nat"])
 ```
 
 #### 3. Core Service Implementation
@@ -83,15 +81,13 @@ Add limit checking to node startup endpoint:
 async def start_node(
     node: Node = Depends(dep_node),
     current_user: User = Depends(get_current_active_user),
-    node_limit_service: NodeLimitService = Depends(get_node_limit_service)
+    node_limit_service: NodeLimitService = Depends(get_node_limit_service),
 ):
     # Node limit check
-    can_start, error_msg = await node_limit_service.check_user_node_limit(
-        current_user, node.project
-    )
+    can_start, error_msg = await node_limit_service.check_user_node_limit(current_user, node.project)
     if not can_start:
         raise HTTPException(status_code=403, detail=error_msg)
-    
+
     # Original startup logic
     await node.start()
 ```

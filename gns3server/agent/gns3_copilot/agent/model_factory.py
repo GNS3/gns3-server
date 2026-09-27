@@ -94,8 +94,7 @@ def create_base_model(
 
     # Log the loaded configuration (mask sensitive data)
     logger.info(
-        "Creating base model: name=%s, provider=%s, base_url=%s, "
-        "temperature=%s",
+        "Creating base model: name=%s, provider=%s, base_url=%s, temperature=%s",
         config_vars["model_name"],
         config_vars["model_provider"],
         config_vars["base_url"] if config_vars["base_url"] else "default",
@@ -163,8 +162,7 @@ def create_title_model(
     config_vars = _load_llm_config(llm_config)
 
     logger.info(
-        "Creating title model: name=%s, provider=%s, base_url=%s, "
-        "temperature=1.0",
+        "Creating title model: name=%s, provider=%s, base_url=%s, temperature=1.0",
         config_vars["model_name"],
         config_vars["model_provider"],
         config_vars["base_url"] if config_vars["base_url"] else "default",

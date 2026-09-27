@@ -798,7 +798,7 @@ OpenAI-compatible message model.
          content=observation,  # Always JSON string format
          tool_call_id=tool_call["id"],
          name=tool_call["name"],
-         metadata={"created_at": datetime.utcnow().isoformat()}
+         metadata={"created_at": datetime.utcnow().isoformat()},
      )
      ```
 
@@ -924,11 +924,7 @@ ToolMessage(content=JSON_string)
 
 **Route Registration**:
 ```python
-router.include_router(
-    chat.router,
-    prefix="/{project_id}/chat",
-    tags=["Chat"]
-)
+router.include_router(chat.router, prefix="/{project_id}/chat", tags=["Chat"])
 ```
 
 **Main Endpoint Implementation**:

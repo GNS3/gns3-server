@@ -29,7 +29,6 @@ BUILTIN_NODES = {"cloud": Cloud, "nat": Nat, "ethernet_hub": EthernetHub, "ether
 
 
 class BuiltinNodeFactory:
-
     """
     Factory to create an builtin object based on the node type.
     """

@@ -46,7 +46,6 @@ log = logging.getLogger(__name__)
 
 
 class BaseNode:
-
     """
     Base node implementation.
 
@@ -340,14 +339,43 @@ class BaseNode:
         """
 
         def set_rw(operation, name, exc):
-            os.chmod(name, stat.S_IWRITE)
+            # Add the missing user permissions instead of replacing the whole mode: chmod'ing
+            # a directory to S_IWRITE removes the search permission on POSIX systems, making
+            # the directory impossible to traverse or to delete. Also note that S_IWRITE
+            # clears the read-only attribute on Windows.
+            try:
+                if os.path.isdir(name) and not os.path.islink(name):
+                    os.chmod(name, os.stat(name).st_mode | stat.S_IRWXU)
+                elif not os.path.islink(name):
+                    os.chmod(name, os.stat(name).st_mode | stat.S_IRUSR | stat.S_IWUSR)
+                # retry the failed operation now that the permissions are fixed
+                # (retrying os.scandir is not possible, the directory is handled by the
+                # retry loop below)
+                if operation in (os.unlink, os.rmdir):
+                    operation(name)
+            except OSError:
+                pass
 
         directory = self.project.node_working_directory(self)
-        if os.path.exists(directory):
+        # Retry the deletion: a concurrent task (e.g. a MD5 checksum computation caching
+        # its result in the node directory) can recreate a file while the directory is
+        # being deleted, and shutil.rmtree silently gives up when its error handler returns
+        for attempt in range(3):
+            if not os.path.exists(directory):
+                return
             try:
                 await wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
             except OSError as e:
                 raise ComputeError(f"Could not delete the node working directory: {e}")
+            if not os.path.exists(directory):
+                return
+            if attempt == 2:
+                raise ComputeError(
+                    f"Could not delete the node working directory '{directory}': a file may have been "
+                    "recreated in it or could not be removed"
+                )
+            log.warning(f"Could not completely delete the node working directory '{directory}', retrying")
+            await asyncio.sleep(0.1)
 
     def start(self):
         """
@@ -431,8 +459,7 @@ class BaseNode:
         while True:
             try:
                 (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
-                    host="127.0.0.1",
-                    port=internal_port
+                    host="127.0.0.1", port=internal_port
                 )
                 break
             except (OSError, ConnectionRefusedError) as e:
@@ -443,10 +470,7 @@ class BaseNode:
         if console_type == "telnet":
             await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
             server = AsyncioTelnetServer(
-                reader=self._wrap_console_reader,
-                writer=self._wrap_console_writer,
-                binary=True,
-                echo=True
+                reader=self._wrap_console_reader, writer=self._wrap_console_writer, binary=True, echo=True
             )
         elif console_type == "ssh":
             server = AsyncioSSHServer(reader=self._wrap_console_reader, writer=self._wrap_console_writer)
@@ -514,8 +538,7 @@ class BaseNode:
         """
 
         log.info(
-            f"New client {websocket.client.host}:{websocket.client.port}  has connected to compute"
-            f" console WebSocket"
+            f"New client {websocket.client.host}:{websocket.client.port}  has connected to compute console WebSocket"
         )
 
         if self.status != "started":
@@ -526,8 +549,7 @@ class BaseNode:
         if self._console_type not in ("telnet", "ssh", "docker_exec"):
             await websocket.close(code=1000)
             log.warning(
-                f"Cannot open console WebSocket: node {self.name} console type '{self._console_type}' "
-                f"is not supported"
+                f"Cannot open console WebSocket: node {self.name} console type '{self._console_type}' is not supported"
             )
             return
 
@@ -580,8 +602,10 @@ class BaseNode:
                 return None
             cols, rows = message.get("cols"), message.get("rows")
             if (
-                isinstance(cols, int) and not isinstance(cols, bool)
-                and isinstance(rows, int) and not isinstance(rows, bool)
+                isinstance(cols, int)
+                and not isinstance(cols, bool)
+                and isinstance(rows, int)
+                and not isinstance(rows, bool)
                 and 2 <= cols <= 5000
                 and 2 <= rows <= 100000
             ):
@@ -691,8 +715,7 @@ class BaseNode:
         """
 
         log.info(
-            f"New client {websocket.client.host}:{websocket.client.port} has connected to compute "
-            f"VNC console WebSocket"
+            f"New client {websocket.client.host}:{websocket.client.port} has connected to compute VNC console WebSocket"
         )
 
         if self.status != "started":
@@ -701,15 +724,13 @@ class BaseNode:
             return
         if self._console_type != "vnc":
             await websocket.close(code=1000)
-            log.warning(
-                f"Cannot open VNC WebSocket: node {self.name} console type '{self._console_type}' is not vnc"
-            )
+            log.warning(f"Cannot open VNC WebSocket: node {self.name} console type '{self._console_type}' is not vnc")
             return
 
         try:
             vnc_reader, vnc_writer = await asyncio.open_connection(
                 self._manager.port_manager.console_host,
-                self.console  # VNC port
+                self.console,  # VNC port
             )
             log.info(f"Connected to VNC server {self._manager.port_manager.console_host}:{self.console}")
         except ConnectionError as e:
@@ -880,9 +901,7 @@ class BaseNode:
             elif console_type == "vnc":
                 vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
                 self._console = self._manager.port_manager.get_free_tcp_port(
-                    self._project,
-                    vnc_console_start_port_range,
-                    vnc_console_end_port_range
+                    self._project, vnc_console_start_port_range, vnc_console_end_port_range
                 )
             else:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
@@ -1015,9 +1034,7 @@ class BaseNode:
         log.debug(f"Starting new uBridge hypervisor at {self._ubridge_hypervisor.endpoint}")
         await self._ubridge_hypervisor.start()
         if self._ubridge_hypervisor:
-            log.info(
-                f"Hypervisor at {self._ubridge_hypervisor.endpoint} has successfully started"
-            )
+            log.info(f"Hypervisor at {self._ubridge_hypervisor.endpoint} has successfully started")
             await self._ubridge_hypervisor.connect()
             # Tell this uBridge where to send MARK signals and which node id to
             # tag them with. Marker is opt-in and inert until a `mark` filter is
@@ -1152,7 +1169,7 @@ class BaseNode:
         """
 
         i = 0
-        for (filter_type, values) in filters.items():
+        for filter_type, values in filters.items():
             if isinstance(values[0], str):
                 for line in values[0].split("\n"):
                     line = line.strip()
@@ -1188,7 +1205,9 @@ class BaseNode:
             dlt = dlt[4:]
         return None if dlt == "EN10MB" else dlt
 
-    async def _ubridge_add_marker_filter(self, bridge_name, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None):
+    async def _ubridge_add_marker_filter(
+        self, bridge_name, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None
+    ):
         """
         Attach a `mark` packet filter to a uBridge bridge for traffic insight.
 
@@ -1217,9 +1236,7 @@ class BaseNode:
         # so allow up to 48 here.
         if not _MARKER_NAME_RE.match(name) or len(name) > 48:
             raise UbridgeError(f"Invalid marker name: {name!r}")
-        cmd = 'bridge add_packet_filter {bridge} {name} mark "{bpf}"'.format(
-            bridge=bridge_name, name=name, bpf=bpf
-        )
+        cmd = 'bridge add_packet_filter {bridge} {name} mark "{bpf}"'.format(bridge=bridge_name, name=name, bpf=bpf)
         if tag is not None:
             cmd += f" tag {tag}"
         # Per-link attribution (contract §3.2): when one ubridge bridge serves
@@ -1324,7 +1341,7 @@ class BaseNode:
         """
         from gns3server.compute.marker.marker_manager import MarkerManager
 
-        markers = nio.markers if hasattr(nio, 'markers') else {}
+        markers = nio.markers if hasattr(nio, "markers") else {}
         manager = MarkerManager.instance()
         markers_dir = self.project.markers_working_directory()
         desired = {(name, spec.get("link_id", "")): spec for name, spec in markers.items()}
@@ -1375,9 +1392,16 @@ class BaseNode:
                     continue  # unchanged
             pcap_path = os.path.join(markers_dir, f"{self._id}_{link_id}_{name}.pcap")
             try:
-                await self._ubridge_add_marker_filter(bridge_name, name, bpf, pcap_path, tag, link_id,
-                                                     direction=spec.get("direction"),
-                                                     data_link_type=spec.get("data_link_type"))
+                await self._ubridge_add_marker_filter(
+                    bridge_name,
+                    name,
+                    bpf,
+                    pcap_path,
+                    tag,
+                    link_id,
+                    direction=spec.get("direction"),
+                    data_link_type=spec.get("data_link_type"),
+                )
             except UbridgeError as e:
                 # Swallow BPF compile errors (warn + skip) so a single bad
                 # expression can't break link creation / node restart — mirrors

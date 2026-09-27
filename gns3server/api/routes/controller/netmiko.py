@@ -55,6 +55,7 @@ def _load_netmiko_device_types() -> schemas.NetmikoDeviceTypeList:
     import importlib
 
     import netmiko
+
     # "from netmiko import ssh_dispatcher" is shadowed by a function of the same
     # name in netmiko's __init__, so import the module through importlib
     sd = importlib.import_module("netmiko.ssh_dispatcher")
@@ -79,9 +80,7 @@ def _load_netmiko_device_types() -> schemas.NetmikoDeviceTypeList:
 
 
 @router.get(
-    "/device_types",
-    response_model=schemas.NetmikoDeviceTypeList,
-    dependencies=[Depends(get_current_active_user)]
+    "/device_types", response_model=schemas.NetmikoDeviceTypeList, dependencies=[Depends(get_current_active_user)]
 )
 def get_netmiko_device_types() -> schemas.NetmikoDeviceTypeList:
     """
@@ -97,6 +96,6 @@ def get_netmiko_device_types() -> schemas.NetmikoDeviceTypeList:
         except ImportError:
             raise HTTPException(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail="Netmiko is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
+                detail="Netmiko is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
             )
     return _device_types_cache
