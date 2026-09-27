@@ -61,9 +61,7 @@ class ProjectAgentManager:
             cls._instance._lock = asyncio.Lock()
         return cls._instance
 
-    async def get_agent(
-        self, project_id: str, project_path: str
-    ) -> AgentService:
+    async def get_agent(self, project_id: str, project_path: str) -> AgentService:
         """
         Get or create an AgentService for a project.
 

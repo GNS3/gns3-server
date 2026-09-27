@@ -156,16 +156,11 @@ class ChatSessionsRepository:
         await self.conn.commit()
 
         session_id = cursor.lastrowid
-        log.info(
-            "Created chat session: id=%s, thread_id=%s, copilot_mode=%s",
-            session_id, thread_id, copilot_mode
-        )
+        log.info("Created chat session: id=%s, thread_id=%s, copilot_mode=%s", session_id, thread_id, copilot_mode)
 
         return await self.get_session_by_id(session_id)
 
-    async def get_session_by_id(
-        self, session_id: int
-    ) -> Optional[ChatSession]:
+    async def get_session_by_id(self, session_id: int) -> Optional[ChatSession]:
         """
         Get a session by its database ID.
 
@@ -175,18 +170,14 @@ class ChatSessionsRepository:
         Returns:
             ChatSession or None
         """
-        cursor = await self.conn.execute(
-            "SELECT * FROM chat_sessions WHERE id = ?", (session_id,)
-        )
+        cursor = await self.conn.execute("SELECT * FROM chat_sessions WHERE id = ?", (session_id,))
         row = await cursor.fetchone()
 
         if row:
             return self._row_to_session(row)
         return None
 
-    async def get_session_by_thread(
-        self, thread_id: str
-    ) -> Optional[ChatSession]:
+    async def get_session_by_thread(self, thread_id: str) -> Optional[ChatSession]:
         """
         Get a session by thread_id.
 
@@ -196,9 +187,7 @@ class ChatSessionsRepository:
         Returns:
             ChatSession or None
         """
-        cursor = await self.conn.execute(
-            "SELECT * FROM chat_sessions WHERE thread_id = ?", (thread_id,)
-        )
+        cursor = await self.conn.execute("SELECT * FROM chat_sessions WHERE thread_id = ?", (thread_id,))
         row = await cursor.fetchone()
 
         if row:
@@ -318,10 +307,7 @@ class ChatSessionsRepository:
         params.append(now)
         params.append(thread_id)
 
-        query = (
-            f"UPDATE chat_sessions SET {', '.join(updates)} WHERE thread_id "
-            f"= ?"
-        )
+        query = f"UPDATE chat_sessions SET {', '.join(updates)} WHERE thread_id = ?"
 
         await self.conn.execute(query, params)
         await self.conn.commit()
@@ -340,21 +326,15 @@ class ChatSessionsRepository:
             True if deleted, False if not found
         """
         # First, delete the checkpoint data
-        await self.conn.execute(
-            "DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,)
-        )
+        await self.conn.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
 
         # Then delete the session
-        cursor = await self.conn.execute(
-            "DELETE FROM chat_sessions WHERE thread_id = ?", (thread_id,)
-        )
+        cursor = await self.conn.execute("DELETE FROM chat_sessions WHERE thread_id = ?", (thread_id,))
         await self.conn.commit()
 
         deleted = cursor.rowcount > 0
         if deleted:
-            log.info(
-                "Deleted chat session and checkpoints: thread_id=%s", thread_id
-            )
+            log.info("Deleted chat session and checkpoints: thread_id=%s", thread_id)
 
         return deleted
 
@@ -378,13 +358,9 @@ class ChatSessionsRepository:
 
         # Delete checkpoints and sessions
         for thread_id in thread_ids:
-            await self.conn.execute(
-                "DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,)
-            )
+            await self.conn.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
 
-        cursor = await self.conn.execute(
-            "DELETE FROM chat_sessions WHERE project_id = ?", (project_id,)
-        )
+        cursor = await self.conn.execute("DELETE FROM chat_sessions WHERE project_id = ?", (project_id,))
         await self.conn.commit()
 
         deleted_count = cursor.rowcount
@@ -397,9 +373,7 @@ class ChatSessionsRepository:
 
         return deleted_count
 
-    async def pin_session(
-        self, thread_id: str, pinned: bool = True
-    ) -> Optional[ChatSession]:
+    async def pin_session(self, thread_id: str, pinned: bool = True) -> Optional[ChatSession]:
         """
         Pin or unpin a session.
 
@@ -412,8 +386,7 @@ class ChatSessionsRepository:
         """
         now = datetime.utcnow().isoformat()
         await self.conn.execute(
-            "UPDATE chat_sessions SET pinned = ?, updated_at = ? WHERE "
-            "thread_id = ?",
+            "UPDATE chat_sessions SET pinned = ?, updated_at = ? WHERE thread_id = ?",
             (1 if pinned else 0, now, thread_id),
         )
         await self.conn.commit()

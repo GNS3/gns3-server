@@ -43,7 +43,6 @@ class VirtualBoxOnCloseAction(str, Enum):
 
 
 class VirtualBoxAdapterType(str, Enum):
-
     pcnet_pci_ii = ("PCnet-PCI II (Am79C970A)",)
     pcnet_fast_iii = ("PCNet-FAST III (Am79C973)",)
     intel_pro_1000_mt_desktop = ("Intel PRO/1000 MT Desktop (82540EM)",)
@@ -92,7 +91,6 @@ class VirtualBoxUpdate(VirtualBoxBase):
 
 
 class VirtualBox(VirtualBoxBase):
-
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

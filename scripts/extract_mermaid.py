@@ -104,10 +104,15 @@ def convert_mermaid_to_svg(
 
         result = subprocess.run(
             [
-                "npx", "--yes", MMDC_PACKAGE,
-                "-i", mmd_path,
-                "-o", output_path,
-                "-b", background,
+                "npx",
+                "--yes",
+                MMDC_PACKAGE,
+                "-i",
+                mmd_path,
+                "-o",
+                output_path,
+                "-b",
+                background,
             ],
             capture_output=True,
             text=True,
@@ -173,17 +178,12 @@ def process_file(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Extract mermaid diagrams from Markdown and convert to SVG."
-    )
+    parser = argparse.ArgumentParser(description="Extract mermaid diagrams from Markdown and convert to SVG.")
     parser.add_argument(
         "source",
         nargs="?",
         default=None,
-        help=(
-            "Markdown file or directory to scan. "
-            "Defaults to all *-overview*.md in docs/gns3-copilot/implemented/."
-        ),
+        help=("Markdown file or directory to scan. Defaults to all *-overview*.md in docs/gns3-copilot/implemented/."),
     )
     parser.add_argument(
         "dest",
@@ -197,23 +197,27 @@ def main():
         help=f"Path to Chrome binary (auto-detected: {DEFAULT_CHROME_PATH})",
     )
     parser.add_argument(
-        "--background", "-b",
+        "--background",
+        "-b",
         default="transparent",
         help="SVG background color (default: transparent)",
     )
     parser.add_argument(
-        "--timeout", "-t",
+        "--timeout",
+        "-t",
         type=int,
         default=30,
         help="Timeout in seconds per diagram (default: 30)",
     )
     parser.add_argument(
-        "--check", "-c",
+        "--check",
+        "-c",
         action="store_true",
         help="Check environment and exit (no conversion).",
     )
     parser.add_argument(
-        "--install", "-i",
+        "--install",
+        "-i",
         action="store_true",
         help="Install missing dependencies (Chrome, mermaid-cli).",
     )
@@ -236,9 +240,7 @@ def main():
         # 2. Install Chrome via puppeteer
         chrome = args.chrome or DEFAULT_CHROME_PATH
         if chrome and os.path.exists(chrome):
-            result = subprocess.run(
-                [chrome, "--version"], capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run([chrome, "--version"], capture_output=True, text=True, timeout=10)
             version = result.stdout.strip() if result.returncode == 0 else "unknown"
             print(f"  Chrome: already installed ({version})")
         else:
@@ -259,7 +261,9 @@ def main():
         print("  mermaid-cli: caching...")
         ret = subprocess.run(
             ["npx", "--yes", MMDC_PACKAGE, "--version"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
         if ret.returncode == 0:
             print("  mermaid-cli: ready")
@@ -285,10 +289,7 @@ def main():
 
         # 2. npx / Node.js
         try:
-            result = subprocess.run(
-                ["npx", "--version"],
-                capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run(["npx", "--version"], capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 print(f"  npx: {result.stdout.strip()}")
             else:
@@ -302,10 +303,7 @@ def main():
         chrome = args.chrome or DEFAULT_CHROME_PATH
         if chrome and os.path.exists(chrome):
             try:
-                result = subprocess.run(
-                    [chrome, "--version"],
-                    capture_output=True, text=True, timeout=10
-                )
+                result = subprocess.run([chrome, "--version"], capture_output=True, text=True, timeout=10)
                 version = result.stdout.strip() if result.returncode == 0 else "?"
                 print(f"  Chrome: {version}")
                 print(f"    Path: {chrome}")
@@ -319,8 +317,7 @@ def main():
         # 4. @mermaid-js/mermaid-cli
         try:
             result = subprocess.run(
-                ["npx", "--yes", MMDC_PACKAGE, "--version"],
-                capture_output=True, text=True, timeout=30
+                ["npx", "--yes", MMDC_PACKAGE, "--version"], capture_output=True, text=True, timeout=30
             )
             if result.returncode == 0:
                 print("  mermaid-cli: available")
@@ -366,13 +363,10 @@ def main():
         docs_dir = os.path.join(project_root, "docs", "gns3-copilot", "implemented")
         if os.path.isdir(docs_dir):
             files_to_process = sorted(
-                os.path.join(docs_dir, f)
-                for f in os.listdir(docs_dir)
-                if "-overview" in f and f.endswith(".md")
+                os.path.join(docs_dir, f) for f in os.listdir(docs_dir) if "-overview" in f and f.endswith(".md")
             )
         else:
-            print("No source specified and default docs directory not found.",
-                  file=sys.stderr)
+            print("No source specified and default docs directory not found.", file=sys.stderr)
             sys.exit(1)
 
     if not files_to_process:
@@ -396,8 +390,7 @@ def main():
     chrome = args.chrome or DEFAULT_CHROME_PATH
     if not chrome:
         print(
-            "WARNING: Chrome not found in puppeteer cache. "
-            "Run: npx puppeteer browsers install chrome-headless-shell",
+            "WARNING: Chrome not found in puppeteer cache. Run: npx puppeteer browsers install chrome-headless-shell",
             file=sys.stderr,
         )
     else:

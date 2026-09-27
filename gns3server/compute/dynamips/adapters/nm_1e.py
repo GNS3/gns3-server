@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class NM_1E(Adapter):
-
     """
     NM-1E Ethernet network module.
     """

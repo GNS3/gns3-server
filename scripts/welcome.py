@@ -31,7 +31,7 @@ from dialog import Dialog, PythonDialogBug
 class Welcome_dialog:
     def __init__(self):
         try:
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, "")
         except locale.Error:
             # Not supported via SSH
             pass
@@ -45,35 +45,36 @@ class Welcome_dialog:
         """
         Return the active IP
         """
-        #request 'ip addr' data in JSON format from shell
-        ip_addr_response = subprocess.run(['ip', '--json', 'addr'],capture_output=True)
-        
-        #process response, decode and use json.loads to convert the string to a dict
+        # request 'ip addr' data in JSON format from shell
+        ip_addr_response = subprocess.run(["ip", "--json", "addr"], capture_output=True)
+
+        # process response, decode and use json.loads to convert the string to a dict
         ip_addr_data = convert(ip_addr_response.stdout.decode("utf-8"))
-        
-        #search ip_addr_data for the first ip adress that is not under a virtual bridge or loopback interface
+
+        # search ip_addr_data for the first ip adress that is not under a virtual bridge or loopback interface
         for i in ip_addr_data:
-            if ('virbr' in i['ifname']) or ('lo' in i['ifname']):
+            if ("virbr" in i["ifname"]) or ("lo" in i["ifname"]):
                 continue
             try:
-                if 'UP' in i['flags']:
-                    ip_addr = i['addr_info'][0]['local']
+                if "UP" in i["flags"]:
+                    ip_addr = i["addr_info"][0]["local"]
                     break
             except:
                 continue
             ip_addr = None
-            
+
         return ip_addr
 
     def repair_remote_install(self):
         """
         This method is only called by remote-install.sh during setup to ensure it is setting the same IP as shown by Dialog
-        """        
+        """
         ip_addr = self.get_ip()
-        subprocess.run(["sed", "-i", f"s/host = 0.0.0.0/host = {ip_addr}/", "/etc/gns3/gns3_server.conf"],capture_output=False)
-        subprocess.run(["service", "gns3", "stop"],capture_output=False)
-        subprocess.run(["service", "gns3", "start"],capture_output=False)
-
+        subprocess.run(
+            ["sed", "-i", f"s/host = 0.0.0.0/host = {ip_addr}/", "/etc/gns3/gns3_server.conf"], capture_output=False
+        )
+        subprocess.run(["service", "gns3", "stop"], capture_output=False)
+        subprocess.run(["service", "gns3", "start"], capture_output=False)
 
     def get_config(self):
         """
@@ -84,15 +85,13 @@ class Welcome_dialog:
         config.read([path], encoding="utf-8")
         return config
 
-
     def write_config(self, config):
         """
         Write the config file
         """
 
-        with open(os.path.expanduser("~/.config/GNS3/gns3_server.conf"), 'w') as f:
+        with open(os.path.expanduser("~/.config/GNS3/gns3_server.conf"), "w") as f:
             config.write(f)
-
 
     def gns3_major_version(self):
         """
@@ -105,7 +104,6 @@ class Welcome_dialog:
             return match.group(0)
         return ""
 
-
     def gns3_version(self):
         """
         Return the GNS3 server version
@@ -115,25 +113,34 @@ class Welcome_dialog:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return None
 
-
     def gns3vm_version(self):
         """
         Return the GNS3 VM version
         """
         try:
-            with open('/home/gns3/.config/GNS3/gns3vm_version') as f:
+            with open("/home/gns3/.config/GNS3/gns3vm_version") as f:
                 return f.read().strip()
         except FileNotFoundError:
             return "Remote Install"
 
-
     def mode(self):
-        if self.display.yesno("This feature is for testers only. You may break your GNS3 installation. Are you REALLY sure you want to continue?", yes_label="Exit (Safe option)", no_label="Continue") == self.display.OK:
+        if (
+            self.display.yesno(
+                "This feature is for testers only. You may break your GNS3 installation. Are you REALLY sure you want to continue?",
+                yes_label="Exit (Safe option)",
+                no_label="Continue",
+            )
+            == self.display.OK
+        ):
             return
-        code, tag = self.display.menu("Select the GNS3 version",
-                        choices=[("2.1", "Stable release for this GNS3 VM (RECOMMENDED)"),
-                                    ("2.1dev", "Development version for stable release"),
-                                    ("2.2", "Latest stable release")])
+        code, tag = self.display.menu(
+            "Select the GNS3 version",
+            choices=[
+                ("2.1", "Stable release for this GNS3 VM (RECOMMENDED)"),
+                ("2.1dev", "Development version for stable release"),
+                ("2.2", "Latest stable release"),
+            ],
+        )
         self.display.clear()
         if code == Dialog.OK:
             os.makedirs(os.path.expanduser("~/.config/GNS3"), exist_ok=True)
@@ -141,7 +148,6 @@ class Welcome_dialog:
                 f.write(tag)
 
             self.update(force=True)
-
 
     def get_release(self):
         try:
@@ -160,15 +166,21 @@ class Welcome_dialog:
         except OSError:
             return "1.5"
 
-
     def update(self, force=False):
         if not force:
-            if self.display.yesno("It is recommended to ensure all Nodes are shutdown before upgrading. Continue?") != self.display.OK:
+            if (
+                self.display.yesno("It is recommended to ensure all Nodes are shutdown before upgrading. Continue?")
+                != self.display.OK
+            ):
                 return
-        code, option = self.display.menu("Select an option",
-                            choices=[("Upgrade GNS3", "Upgrades only the GNS3 pakage and dependences."),
-                                    ("Upgrade All", "Upgrades all avaiable packages"),
-                                    ("Dist Upgrade", "Upgrades all avaiable packages and the Linux Kernel. Requires a reboot.")])
+        code, option = self.display.menu(
+            "Select an option",
+            choices=[
+                ("Upgrade GNS3", "Upgrades only the GNS3 pakage and dependences."),
+                ("Upgrade All", "Upgrades all avaiable packages"),
+                ("Dist Upgrade", "Upgrades all avaiable packages and the Linux Kernel. Requires a reboot."),
+            ],
+        )
         if code == Dialog.OK:
             if option == "Upgrade GNS3":
                 ret = os.system(
@@ -196,18 +208,23 @@ class Welcome_dialog:
                 if self.display.yesno("Reboot now?") == self.display.OK:
                     os.system("sudo reboot now")
 
-
     def migrate(self):
         """
         Migrate GNS3 VM data.
         """
 
-        code, option = self.display.menu("Select an option",
-                            choices=[("Setup", "Configure this VM to send data to another GNS3 VM"),
-                                    ("Send", "Send images and projects to another GNS3 VM")])
+        code, option = self.display.menu(
+            "Select an option",
+            choices=[
+                ("Setup", "Configure this VM to send data to another GNS3 VM"),
+                ("Send", "Send images and projects to another GNS3 VM"),
+            ],
+        )
         self.display.clear()
         if code == Dialog.OK:
-            (answer, destination) = self.display.inputbox("What is IP address or hostname of the other GNS3 VM?", init="172.16.1.128")
+            (answer, destination) = self.display.inputbox(
+                "What is IP address or hostname of the other GNS3 VM?", init="172.16.1.128"
+            )
             if answer != self.display.OK:
                 return
             if destination == self.get_ip():
@@ -217,13 +234,19 @@ class Welcome_dialog:
                 # first make sure they are no files belonging to root
                 os.system("sudo chown -R gns3:gns3 /opt/gns3")
                 # then rsync the data
-                command = r"rsync -az --progress -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/gns3/.ssh/gns3-vm-key' /opt/gns3 gns3@{}:/opt".format(destination)
+                command = r"rsync -az --progress -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/gns3/.ssh/gns3-vm-key' /opt/gns3 gns3@{}:/opt".format(
+                    destination
+                )
                 ret = os.system('bash -c "{}"'.format(command))
                 time.sleep(10)
                 if ret != 0:
                     self.display.msgbox("Could not send data to the other GNS3 VM located at {}".format(destination))
                 else:
-                    self.display.msgbox("Images and projects have been successfully sent to the other GNS3 VM located at {}".format(destination))
+                    self.display.msgbox(
+                        "Images and projects have been successfully sent to the other GNS3 VM located at {}".format(
+                            destination
+                        )
+                    )
             elif option == "Setup":
                 script = """
     if [ ! -f ~/.ssh/gns3-vm-key ]
@@ -237,8 +260,11 @@ class Welcome_dialog:
                 if ret != 0:
                     self.display.msgbox("Error while setting up the migrate feature")
                 else:
-                    self.display.msgbox("Configuration successful, you can now send data to the GNS3 VM located at {} without password".format(destination))
-
+                    self.display.msgbox(
+                        "Configuration successful, you can now send data to the GNS3 VM located at {} without password".format(
+                            destination
+                        )
+                    )
 
     def shrink_disk(self):
 
@@ -247,7 +273,12 @@ class Welcome_dialog:
             self.display.msgbox("Shrinking the disk is only supported when running inside VMware")
             return
 
-        if self.display.yesno("Would you like to shrink the VM disk? The VM will reboot at the end of the process. Continue?") != self.display.OK:
+        if (
+            self.display.yesno(
+                "Would you like to shrink the VM disk? The VM will reboot at the end of the process. Continue?"
+            )
+            != self.display.OK
+        ):
             return
 
         os.system("sudo service gns3 stop")
@@ -256,7 +287,7 @@ class Welcome_dialog:
         os.system("sudo vmware-toolbox-cmd disk shrink /")
 
         self.display.msgbox("The GNS3 VM will reboot")
-        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
+        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
 
     def vm_information(self):
         """
@@ -269,10 +300,11 @@ class Welcome_dialog:
         if version is None:
             content += "GNS3 is not installed please install it with sudo pip3 install gns3-server. Or download a preinstalled VM.\n\n"
         else:
-            content = "GNS3 version: {gns3_version}\nVM version: {gns3vm_version}\nKVM support available: {kvm}\n\n".format(
-                gns3vm_version=self.gns3vm_version(),
-                gns3_version=version,
-                kvm=self.kvm_support())
+            content = (
+                "GNS3 version: {gns3_version}\nVM version: {gns3vm_version}\nKVM support available: {kvm}\n\n".format(
+                    gns3vm_version=self.gns3vm_version(), gns3_version=version, kvm=self.kvm_support()
+                )
+            )
 
         ip = self.get_ip()
 
@@ -297,13 +329,12 @@ Images and projects are located in /opt/gns3
             self.display.msgbox(content)
         # If it's an scp command or any bugs
         except:
-            os.execvp("bash", ['/bin/bash'])
-
+            os.execvp("bash", ["/bin/bash"])
 
     def check_internet_connectivity(self):
         self.display.pause("Please wait...\n\n")
         try:
-            response = urllib.request.urlopen('http://pypi.python.org/', timeout=5)
+            response = urllib.request.urlopen("http://pypi.python.org/", timeout=5)
         except urllib.request.URLError as err:
             self.display.infobox("Can't connect to Internet (pypi.python.org): {}".format(str(err)))
             time.sleep(15)
@@ -311,13 +342,11 @@ Images and projects are located in /opt/gns3
         self.display.infobox("Connection to Internet: OK")
         time.sleep(2)
 
-
     def keyboard_configuration():
         """
         Allow user to change the keyboard layout
         """
         os.system("/usr/bin/sudo dpkg-reconfigure keyboard-configuration")
-
 
     def set_security(self):
         config = self.get_config()
@@ -338,7 +367,6 @@ Images and projects are located in /opt/gns3
 
         self.write_config(config)
 
-
     def log(self):
         os.system("/usr/bin/sudo chmod 755 /var/log/upstart/gns3.log")
         with open("/var/log/upstart/gns3.log") as f:
@@ -348,7 +376,6 @@ Images and projects are located in /opt/gns3
                     sys.stdout.write(line)
             except (KeyboardInterrupt, MemoryError):
                 return
-
 
     def edit_config(self):
         """
@@ -361,7 +388,6 @@ Images and projects are located in /opt/gns3
         else:
             os.system("nano ~/.config/GNS3/gns3_server.conf")
 
-
     def edit_network(self):
         """
         Edit network configuration file
@@ -369,27 +395,30 @@ Images and projects are located in /opt/gns3
         if self.display.yesno("The server will reboot at the end of the process. Continue?") != self.display.OK:
             return
         os.system("sudo nano /etc/network/interfaces")
-        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
-
+        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
 
     def edit_proxy(self):
         """
         Configure proxy settings
         """
-        res, http_proxy = self.display.inputbox(text="HTTP proxy string, for example http://<user>:<password>@<proxy>:<port>. Leave empty for no proxy.")
+        res, http_proxy = self.display.inputbox(
+            text="HTTP proxy string, for example http://<user>:<password>@<proxy>:<port>. Leave empty for no proxy."
+        )
         if res != self.display.OK:
             return
-        res, https_proxy = self.display.inputbox(text="HTTPS proxy string, for example http://<user>:<password>@<proxy>:<port>. Leave empty for no proxy.")
+        res, https_proxy = self.display.inputbox(
+            text="HTTPS proxy string, for example http://<user>:<password>@<proxy>:<port>. Leave empty for no proxy."
+        )
         if res != self.display.OK:
             return
 
-        with open('/tmp/00proxy', 'w+') as f:
+        with open("/tmp/00proxy", "w+") as f:
             f.write('Acquire::http::Proxy "' + http_proxy + '";')
         os.system("sudo mv /tmp/00proxy /etc/apt/apt.conf.d/00proxy")
         os.system("sudo chown root /etc/apt/apt.conf.d/00proxy")
         os.system("sudo chmod 744 /etc/apt/apt.conf.d/00proxy")
 
-        with open('/tmp/proxy.sh', 'w+') as f:
+        with open("/tmp/proxy.sh", "w+") as f:
             f.write('export http_proxy="' + http_proxy + '"\n')
             f.write('export https_proxy="' + https_proxy + '"\n')
             f.write('export HTTP_PROXY="' + http_proxy + '"\n')
@@ -400,15 +429,13 @@ Images and projects are located in /opt/gns3
         os.system("sudo cp /etc/profile.d/proxy.sh /etc/default/docker")
 
         self.display.msgbox("The GNS3 VM will reboot")
-        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
-
+        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
 
     def kvm_support(self):
         """
         Returns true if KVM is available
         """
         return subprocess.call("kvm-ok") == 0
-
 
     def kvm_control(self):
         """
@@ -420,40 +447,53 @@ Images and projects are located in /opt/gns3
         try:
             if config.getboolean("Qemu", "enable_kvm") is True:
                 if kvm_ok is False:
-                    if self.display.yesno("KVM is not available!\n\nQemu VM will crash!!\n\nThe reason could be unsupported hardware or another virtualization solution is already running.\n\nDisable KVM and get lower performances?") == self.display.OK:
+                    if (
+                        self.display.yesno(
+                            "KVM is not available!\n\nQemu VM will crash!!\n\nThe reason could be unsupported hardware or another virtualization solution is already running.\n\nDisable KVM and get lower performances?"
+                        )
+                        == self.display.OK
+                    ):
                         config.set("Qemu", "enable_kvm", False)
                         self.write_config(config)
-                        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
+                        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
             else:
                 if kvm_ok is True:
-                    if self.display.yesno("KVM is available on your computer.\n\nEnable KVM and get better performances?") == self.display.OK:
+                    if (
+                        self.display.yesno(
+                            "KVM is available on your computer.\n\nEnable KVM and get better performances?"
+                        )
+                        == self.display.OK
+                    ):
                         config.set("Qemu", "enable_kvm", True)
                         self.write_config(config)
-                        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
+                        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
         except configparser.NoSectionError:
             return
-
 
     def display_loop(self):
         try:
             while True:
-                code, tag = self.display.menu("GNS3 {}".format(self.gns3_version()),
-                                choices=[("Information", "Display VM information"),
-                                    ("Upgrade", "Upgrade GNS3"),
-                                    ("Migrate", "Migrate data to another GNS3 VM"),
-                                    ("Shell", "Open a console"),
-                                    ("Security", "Configure authentication"),
-                                    ("Keyboard", "Change keyboard layout"),
-                                    ("Configure", "Edit server configuration (advanced users ONLY)"),
-                                    ("Proxy", "Configure proxy settings"),
-                                    ("Networking", "Configure networking settings"),
-                                    ("Log", "Show server log"),
-                                    ("Test", "Check internet connection"),
-                                    ("Shrink", "Shrink the VM disk"),
-                                    ("Version", "Select the GNS3 version"),
-                                    ("Restore", "Restore the VM (if you have trouble for upgrade)"),
-                                    ("Reboot", "Reboot the VM"),
-                                    ("Shutdown", "Shutdown the VM")])
+                code, tag = self.display.menu(
+                    "GNS3 {}".format(self.gns3_version()),
+                    choices=[
+                        ("Information", "Display VM information"),
+                        ("Upgrade", "Upgrade GNS3"),
+                        ("Migrate", "Migrate data to another GNS3 VM"),
+                        ("Shell", "Open a console"),
+                        ("Security", "Configure authentication"),
+                        ("Keyboard", "Change keyboard layout"),
+                        ("Configure", "Edit server configuration (advanced users ONLY)"),
+                        ("Proxy", "Configure proxy settings"),
+                        ("Networking", "Configure networking settings"),
+                        ("Log", "Show server log"),
+                        ("Test", "Check internet connection"),
+                        ("Shrink", "Shrink the VM disk"),
+                        ("Version", "Select the GNS3 version"),
+                        ("Restore", "Restore the VM (if you have trouble for upgrade)"),
+                        ("Reboot", "Reboot the VM"),
+                        ("Shutdown", "Shutdown the VM"),
+                    ],
+                )
                 self.display.clear()
                 if code == Dialog.OK:
                     if tag == "Shell":
@@ -462,11 +502,11 @@ Images and projects are located in /opt/gns3
                     elif tag == "Version":
                         self.mode()
                     elif tag == "Restore":
-                        os.execvp("sudo", ['/usr/bin/sudo', "/usr/local/bin/gns3restore"])
+                        os.execvp("sudo", ["/usr/bin/sudo", "/usr/local/bin/gns3restore"])
                     elif tag == "Reboot":
-                        os.execvp("sudo", ['/usr/bin/sudo', "reboot"])
+                        os.execvp("sudo", ["/usr/bin/sudo", "reboot"])
                     elif tag == "Shutdown":
-                        os.execvp("sudo", ['/usr/bin/sudo', "poweroff"])
+                        os.execvp("sudo", ["/usr/bin/sudo", "poweroff"])
                     elif tag == "Upgrade":
                         self.update()
                     elif tag == "Information":
@@ -491,6 +531,7 @@ Images and projects are located in /opt/gns3
                         self.shrink_disk()
         except KeyboardInterrupt:
             sys.exit(0)
+
 
 if __name__ == "__main__":
     ws = Welcome_dialog()

@@ -69,7 +69,7 @@ def dep_project(project_id: UUID) -> Project:
     "/stream",
     response_model=None,
     summary="Stream chat responses from GNS3 Copilot",
-    description="Send a message to GNS3 Copilot and stream the response via Server-Sent Events (SSE)."
+    description="Send a message to GNS3 Copilot and stream the response via Server-Sent Events (SSE).",
 )
 async def stream_chat(
     request: schemas.ChatRequest,
@@ -96,11 +96,11 @@ async def stream_chat(
             "Chat rejected: project not opened. user_id=%s, project_id=%s, status=%s",
             user_id,
             project.id,
-            project.status
+            project.status,
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to use chat. Current status: {project.status}"
+            detail=f"Project must be opened to use chat. Current status: {project.status}",
         )
 
     log.info(
@@ -124,7 +124,7 @@ async def stream_chat(
         log.warning("LLM config not found for user: %s", user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="LLM configuration not found. Please configure your LLM settings first."
+            detail="LLM configuration not found. Please configure your LLM settings first.",
         )
 
     log.debug(
@@ -161,7 +161,7 @@ async def stream_chat(
                 user_id=user_id,
                 jwt_token=jwt_token,
                 mode=request.mode,
-                llm_config=llm_config
+                llm_config=llm_config,
             ):
                 try:
                     # Validate and serialize chunk
@@ -187,7 +187,7 @@ async def stream_chat(
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
-        }
+        },
     )
 
 
@@ -195,7 +195,7 @@ async def stream_chat(
     "/sessions",
     response_model=List[schemas.ChatSession],
     summary="List chat sessions",
-    description="List all chat sessions for a project, optionally filtered by copilot_mode."
+    description="List all chat sessions for a project, optionally filtered by copilot_mode.",
 )
 async def list_sessions(
     project: Project = Depends(dep_project),
@@ -213,7 +213,7 @@ async def list_sessions(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to access chat sessions. Current status: {project.status}"
+            detail=f"Project must be opened to access chat sessions. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -221,10 +221,7 @@ async def list_sessions(
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
 
     # List sessions with optional copilot_mode filter
-    sessions = await agent_service.list_sessions(
-        user_id=str(current_user.user_id),
-        copilot_mode=copilot_mode
-    )
+    sessions = await agent_service.list_sessions(user_id=str(current_user.user_id), copilot_mode=copilot_mode)
 
     # Convert to schemas
     return [schemas.ChatSession(**s) for s in sessions]
@@ -234,7 +231,7 @@ async def list_sessions(
     "/sessions/{session_id}/history",
     response_model=schemas.ConversationHistory,
     summary="Get conversation history",
-    description="Retrieve the conversation history for a specific session/thread."
+    description="Retrieve the conversation history for a specific session/thread.",
 )
 async def get_history(
     session_id: str,
@@ -250,7 +247,7 @@ async def get_history(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to access chat history. Current status: {project.status}"
+            detail=f"Project must be opened to access chat history. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -267,7 +264,7 @@ async def get_history(
     "/sessions/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a chat session",
-    description="Delete a specific chat session and its checkpoints."
+    description="Delete a specific chat session and its checkpoints.",
 )
 async def delete_session(
     session_id: str,
@@ -282,7 +279,7 @@ async def delete_session(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to delete chat sessions. Current status: {project.status}"
+            detail=f"Project must be opened to delete chat sessions. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -293,17 +290,14 @@ async def delete_session(
     deleted = await agent_service.delete_session(session_id)
 
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
 
 
 @router.post(
     "/sessions/{session_id}/abort",
     status_code=status.HTTP_200_OK,
     summary="Abort a streaming session",
-    description="Abort an ongoing streaming session for a specific session."
+    description="Abort an ongoing streaming session for a specific session.",
 )
 async def abort_session(
     session_id: str,
@@ -321,7 +315,7 @@ async def abort_session(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to abort chat session. Current status: {project.status}"
+            detail=f"Project must be opened to abort chat session. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -338,7 +332,7 @@ async def abort_session(
     "/sessions/{session_id}",
     response_model=schemas.ChatSession,
     summary="Rename a chat session",
-    description="Rename a specific chat session."
+    description="Rename a specific chat session.",
 )
 async def rename_session(
     session_id: str,
@@ -354,7 +348,7 @@ async def rename_session(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to rename chat sessions. Current status: {project.status}"
+            detail=f"Project must be opened to rename chat sessions. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -365,10 +359,7 @@ async def rename_session(
     session = await agent_service.rename_session(session_id, request.title)
 
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
 
     return schemas.ChatSession(**session)
 
@@ -377,7 +368,7 @@ async def rename_session(
     "/sessions/{session_id}/pin",
     response_model=schemas.ChatSession,
     summary="Pin a chat session",
-    description="Pin a chat session to the top of the list."
+    description="Pin a chat session to the top of the list.",
 )
 async def pin_session(
     session_id: str,
@@ -392,7 +383,7 @@ async def pin_session(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to pin chat sessions. Current status: {project.status}"
+            detail=f"Project must be opened to pin chat sessions. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -403,10 +394,7 @@ async def pin_session(
     session = await agent_service.pin_session(session_id, pinned=True)
 
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
 
     return schemas.ChatSession(**session)
 
@@ -415,7 +403,7 @@ async def pin_session(
     "/sessions/{session_id}/pin",
     response_model=schemas.ChatSession,
     summary="Unpin a chat session",
-    description="Unpin a chat session from the top of the list."
+    description="Unpin a chat session from the top of the list.",
 )
 async def unpin_session(
     session_id: str,
@@ -430,7 +418,7 @@ async def unpin_session(
     if project.status != "opened":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to unpin chat sessions. Current status: {project.status}"
+            detail=f"Project must be opened to unpin chat sessions. Current status: {project.status}",
         )
 
     # Get AgentService for this project
@@ -441,10 +429,7 @@ async def unpin_session(
     session = await agent_service.pin_session(session_id, pinned=False)
 
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
 
     return schemas.ChatSession(**session)
 
@@ -453,7 +438,7 @@ async def unpin_session(
     "/inject",
     response_model=None,
     summary="Inject a network fault for troubleshooting practice",
-    description="Inject a realistic network fault into the GNS3 lab for troubleshooting training."
+    description="Inject a realistic network fault into the GNS3 lab for troubleshooting training.",
 )
 async def inject_issue(
     request: schemas.ChatRequest,
@@ -482,11 +467,11 @@ async def inject_issue(
             "Fault injection rejected: project not opened. user_id=%s, project_id=%s, status=%s",
             user_id,
             project.id,
-            project.status
+            project.status,
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Project must be opened to use fault injection. Current status: {project.status}"
+            detail=f"Project must be opened to use fault injection. Current status: {project.status}",
         )
 
     log.info(
@@ -510,7 +495,7 @@ async def inject_issue(
         log.warning("LLM config not found for user: %s", user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="LLM configuration not found. Please configure your LLM settings first."
+            detail="LLM configuration not found. Please configure your LLM settings first.",
         )
 
     # Override copilot_mode to troubleshooting_injection
@@ -546,7 +531,7 @@ async def inject_issue(
                 user_id=user_id,
                 jwt_token=jwt_token,
                 mode=request.mode,
-                llm_config=llm_config
+                llm_config=llm_config,
             ):
                 try:
                     # Validate and serialize chunk
@@ -572,5 +557,5 @@ async def inject_issue(
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
-        }
+        },
     )

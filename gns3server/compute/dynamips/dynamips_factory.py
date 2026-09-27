@@ -52,7 +52,6 @@ DEVICES = {
 
 
 class DynamipsFactory:
-
     """
     Factory to create an Router object based on the correct platform.
     """

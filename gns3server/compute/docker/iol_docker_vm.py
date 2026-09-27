@@ -247,7 +247,8 @@ class IOLDockerVM(VendorDockerVM):
 
         log.debug(
             "IOL container '%s': number of 4-port Ethernet adapters set to %d",
-            self._name, adapters,
+            self._name,
+            adapters,
         )
 
     def _persistent_volume_list(self, image_info, include_network_config=True):

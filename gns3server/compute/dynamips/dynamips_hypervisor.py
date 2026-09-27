@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 
 
 class DynamipsHypervisor:
-
     """
     Creates a new connection to a Dynamips server (also called hypervisor)
 
@@ -90,7 +89,9 @@ class DynamipsHypervisor:
         if not connection_success:
             raise DynamipsError(f"Couldn't connect to hypervisor on {host}:{self._port} :{last_exception}")
         else:
-            log.debug(f"Connected to Dynamips hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
+            log.debug(
+                f"Connected to Dynamips hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds"
+            )
 
         try:
             version = await self.send("hypervisor version")

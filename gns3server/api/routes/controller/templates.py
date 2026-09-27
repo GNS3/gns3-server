@@ -52,11 +52,11 @@ router = APIRouter(responses=responses)
     "",
     response_model=schemas.Template,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Template.Allocate"))]
+    dependencies=[Depends(has_privilege("Template.Allocate"))],
 )
 async def create_template(
     template_create: schemas.TemplateCreate,
-    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
 ) -> schemas.Template:
     """
     Create a new template.
@@ -73,7 +73,7 @@ async def create_template(
     response_model=schemas.Template,
     response_model_exclude_unset=True,
     dependencies=[Depends(get_current_active_user)],
-    #dependencies=[Depends(has_privilege("Template.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    # dependencies=[Depends(has_privilege("Template.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
 )
 async def get_template(
     template_id: UUID,
@@ -102,7 +102,7 @@ async def get_template(
     "/{template_id}",
     response_model=schemas.Template,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Template.Modify"))]
+    dependencies=[Depends(has_privilege("Template.Modify"))],
 )
 async def update_template(
     template_id: UUID,
@@ -119,16 +119,14 @@ async def update_template(
 
 
 @router.delete(
-    "/{template_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Template.Allocate"))]
+    "/{template_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Template.Allocate"))]
 )
 async def delete_template(
-        template_id: UUID,
-        prune_images: Optional[bool] = False,
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    template_id: UUID,
+    prune_images: Optional[bool] = False,
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+    images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a template.
@@ -152,7 +150,8 @@ async def delete_template(
             # the template being deleted is still in the database at this
             # point, exclude it from the other-templates check
             other_templates = [
-                template for template in await images_repo.get_image_templates(image.image_id)
+                template
+                for template in await images_repo.get_image_templates(image.image_id)
                 if str(template.template_id) != str(template_id)
             ]
             if other_templates:
@@ -163,7 +162,9 @@ async def delete_template(
                 referenced_filenames = controller.collect_referenced_image_filenames()
             if image.filename in referenced_filenames:
                 project_names = controller.find_projects_using_image(image.filename)
-                raise ControllerError(f"Image '{image.path}' is used by one or more projects: {', '.join(project_names)}")
+                raise ControllerError(
+                    f"Image '{image.path}' is used by one or more projects: {', '.join(project_names)}"
+                )
             images_to_prune.append(image)
 
     await TemplatesService(templates_repo).delete_template(template_id)
@@ -186,12 +187,12 @@ async def delete_template(
     response_model=List[schemas.Template],
     response_model_exclude_unset=True,
     dependencies=[Depends(get_current_active_user)],
-    #dependencies=[Depends(has_privilege("Template.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    # dependencies=[Depends(has_privilege("Template.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
 )
 async def get_templates(
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        current_user: schemas.User = Depends(get_current_active_user),
-        tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)")
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
 ) -> List[schemas.Template]:
     """
     Return all templates.
@@ -239,10 +240,10 @@ async def get_templates(
     "/{template_id}/duplicate",
     response_model=schemas.Template,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Template.Allocate"))]
+    dependencies=[Depends(has_privilege("Template.Allocate"))],
 )
 async def duplicate_template(
-        template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+    template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Template:
     """
     Duplicate a template.
@@ -253,10 +254,8 @@ async def duplicate_template(
     template = await TemplatesService(templates_repo).duplicate_template(template_id)
     return template
 
-@router.get(
-    "/{template_id}/base-config/{filename}",
-    dependencies=[Depends(has_privilege("Template.Audit"))]
-)
+
+@router.get("/{template_id}/base-config/{filename}", dependencies=[Depends(has_privilege("Template.Audit"))])
 async def get_base_config(
     template_id: UUID,
     filename: str,
@@ -267,17 +266,10 @@ async def get_base_config(
     await service.get_template(template_id)
     content = service.get_file(str(template_id), filename)
 
-    return {
-        "template_id": str(template_id),
-        "filename": os.path.basename(filename),
-        "content": content
-    }
+    return {"template_id": str(template_id), "filename": os.path.basename(filename), "content": content}
 
 
-@router.put(
-    "/{template_id}/base-config/{filename}",
-    dependencies=[Depends(has_privilege("Template.Modify"))]
-)
+@router.put("/{template_id}/base-config/{filename}", dependencies=[Depends(has_privilege("Template.Modify"))])
 async def update_base_config(
     template_id: UUID,
     filename: str,
@@ -291,17 +283,10 @@ async def update_base_config(
     await service.get_template(template_id)
     service.update_file(str(template_id), filename, body["content"])
 
-    return {
-        "template_id": str(template_id),
-        "filename": os.path.basename(filename),
-        "content": body["content"]
-    }
+    return {"template_id": str(template_id), "filename": os.path.basename(filename), "content": body["content"]}
 
 
-@router.get(
-    "/{template_id}/base-configs",
-    dependencies=[Depends(has_privilege("Template.Audit"))]
-)
+@router.get("/{template_id}/base-configs", dependencies=[Depends(has_privilege("Template.Audit"))])
 async def list_base_configs(
     template_id: UUID,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),

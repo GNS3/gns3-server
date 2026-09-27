@@ -110,7 +110,6 @@ PLATFORMS_DEFAULT_RAM = {
 
 
 class Dynamips(BaseManager):
-
     _NODE_CLASS = DynamipsFactory
     _NODE_TYPE = "dynamips"
     _ghost_ios_lock = None
@@ -253,7 +252,9 @@ class Dynamips(BaseManager):
         dynamips_path = self.config.settings.Dynamips.dynamips_path
         if not os.path.isabs(dynamips_path):
             if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                dynamips_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "dynamips"))
+                dynamips_dir = os.path.normpath(
+                    os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "dynamips")
+                )
                 os.environ["PATH"] = os.pathsep.join(dynamips_dir) + os.pathsep + os.environ.get("PATH", "")
             dynamips_path = shutil.which(dynamips_path)
 
@@ -305,14 +306,14 @@ class Dynamips(BaseManager):
         bind_console_host = False
 
         dynamips_version = await self.dynamips_version(self.dynamips_path)
-        if parse_version(dynamips_version) < parse_version('0.2.11'):
+        if parse_version(dynamips_version) < parse_version("0.2.11"):
             raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(dynamips_version))
 
         if not sys.platform.startswith("win"):
             # Hypervisor should always listen to 127.0.0.1
             # See https://github.com/GNS3/dynamips/issues/62
             # This was fixed in Dynamips v0.2.23 which hasn't been built for Windows
-            if parse_version(dynamips_version) >= parse_version('0.2.23'):
+            if parse_version(dynamips_version) >= parse_version("0.2.23"):
                 server_host = "127.0.0.1"
                 bind_console_host = True
 
@@ -331,7 +332,9 @@ class Dynamips(BaseManager):
             raise DynamipsError(f"Could not find free port for the Dynamips hypervisor: {e}")
 
         port_manager = PortManager.instance()
-        hypervisor = Hypervisor(self._dynamips_path, working_dir, server_host, port, port_manager.console_host, bind_console_host)
+        hypervisor = Hypervisor(
+            self._dynamips_path, working_dir, server_host, port, port_manager.console_host, bind_console_host
+        )
 
         log.debug(f"Creating new hypervisor {hypervisor.host}:{hypervisor.port} with working directory {working_dir}")
         await hypervisor.start()
@@ -482,7 +485,9 @@ class Dynamips(BaseManager):
                         if vm.slots[slot_id].removable():
                             await vm.slot_remove_binding(slot_id)
                         else:
-                            log.warning(f"Slot {slot_id} on router '{vm.name}' has a non-removable adapter, skipping replacement")
+                            log.warning(
+                                f"Slot {slot_id} on router '{vm.name}' has a non-removable adapter, skipping replacement"
+                            )
                             continue
                     if not isinstance(vm.slots[slot_id], type(adapter)):
                         await vm.slot_add_binding(slot_id, adapter)
@@ -500,7 +505,11 @@ class Dynamips(BaseManager):
                 wic_name = value
                 wic = WIC_MATRIX[wic_name]()
                 try:
-                    if vm.slots[0] and vm.slots[0].wics[wic_slot_id] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
+                    if (
+                        vm.slots[0]
+                        and vm.slots[0].wics[wic_slot_id]
+                        and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic))
+                    ):
                         await vm.uninstall_wic(wic_slot_id)
                     if vm.slots[0] and not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                         await vm.install_wic(wic_slot_id, wic)

@@ -86,24 +86,18 @@ class MarkerManager:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8 * 1024 * 1024)
 
         try:
-            self._transport, _ = await loop.create_datagram_endpoint(
-                lambda: self._listener, local_addr=(host, port)
-            )
+            self._transport, _ = await loop.create_datagram_endpoint(lambda: self._listener, local_addr=(host, port))
             _configure_transport(self._transport)
         except OSError:
             if port != 0:
-                log.warning(
-                    "Marker listener: port %s unavailable, falling back to OS-assigned port", port
-                )
+                log.warning("Marker listener: port %s unavailable, falling back to OS-assigned port", port)
                 try:
                     self._transport, _ = await loop.create_datagram_endpoint(
                         lambda: self._listener, local_addr=(host, 0)
                     )
                     _configure_transport(self._transport)
                 except OSError as e:
-                    log.error(
-                        "Marker listener startup failed: %s. Traffic insight signals are unavailable.", e
-                    )
+                    log.error("Marker listener startup failed: %s. Traffic insight signals are unavailable.", e)
                     self._listener = None
                     return
             else:
@@ -132,7 +126,9 @@ class MarkerManager:
             if received:
                 log.info(
                     "marker sink: %d matches (%.0f/s), %d errors in last 10s",
-                    received, received / 10.0, errors,
+                    received,
+                    received / 10.0,
+                    errors,
                 )
 
     async def stop(self):

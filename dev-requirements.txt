@@ -1,7 +1,10 @@
 pytest==9.1.1
-flake8==7.3.0
 pytest-timeout==2.4.0
 pytest-asyncio==1.4.0
 httpx==0.28.1
 httpx_ws==0.7.2  # upgrading leads to failures in tests
 pytest-random-order==1.2.0  # opt-in: --random-order --random-order-bucket=global (legacy suites are not shuffle-clean yet, see .claude/skills/gns3-api-test-writing)
+pytest-cov==7.1.0
+ruff==0.16.9
+mypy==2.3.1
+rust-just==1.58.0  # provides the `just` command runner, see justfile

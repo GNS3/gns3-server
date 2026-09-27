@@ -32,23 +32,19 @@ async def create_test_projects(base_url, headers, count, prefix="perf_test_proje
 
             for i in range(batch_start, batch_end):
                 name = f"{prefix}_{i}_{uuid.uuid4().hex[:8]}"
-                task = client.post(
-                    f"{base_url}/projects",
-                    headers=headers,
-                    json={"name": name}
-                )
+                task = client.post(f"{base_url}/projects", headers=headers, json={"name": name})
                 batch_tasks.append(task)
 
             results = await asyncio.gather(*batch_tasks, return_exceptions=True)
 
             for i, result in enumerate(results, batch_start):
-                if hasattr(result, 'status_code'):
+                if hasattr(result, "status_code"):
                     if result.status_code == 201:
-                        print(f"  Created project {i+1}/{count}")
+                        print(f"  Created project {i + 1}/{count}")
                     else:
-                        print(f"  Failed to create project {i+1}: {result.status_code}")
+                        print(f"  Failed to create project {i + 1}: {result.status_code}")
                 else:
-                    print(f"  Error creating project {i+1}: {result}")
+                    print(f"  Error creating project {i + 1}: {result}")
 
 
 async def cleanup_test_projects(base_url, headers, prefix="perf_test_project"):
@@ -62,7 +58,7 @@ async def cleanup_test_projects(base_url, headers, prefix="perf_test_project"):
             if response.status_code == 200:
                 projects = response.json()
 
-                test_projects = [p for p in projects if p.get('name', '').startswith(prefix)]
+                test_projects = [p for p in projects if p.get("name", "").startswith(prefix)]
                 print(f"  Found {len(test_projects)} test projects to delete")
 
                 batch_size = 50
@@ -72,21 +68,18 @@ async def cleanup_test_projects(base_url, headers, prefix="perf_test_project"):
                     batch_tasks = []
 
                     for project in test_projects[batch_start:batch_end]:
-                        task = client.delete(
-                            f"{base_url}/projects/{project['project_id']}",
-                            headers=headers
-                        )
+                        task = client.delete(f"{base_url}/projects/{project['project_id']}", headers=headers)
                         batch_tasks.append(task)
 
                     results = await asyncio.gather(*batch_tasks, return_exceptions=True)
 
                     for i, result in enumerate(results, batch_start):
                         project = test_projects[i]
-                        if hasattr(result, 'status_code') and result.status_code == 204:
+                        if hasattr(result, "status_code") and result.status_code == 204:
                             total_deleted += 1
 
         elapsed = time.time() - cleanup_start
-        print(f"  Deleted {total_deleted} projects in {elapsed:.1f}s ({total_deleted/elapsed:.0f} projects/sec)")
+        print(f"  Deleted {total_deleted} projects in {elapsed:.1f}s ({total_deleted / elapsed:.0f} projects/sec)")
 
     except Exception as e:
         print(f"Error during cleanup: {type(e).__name__}: {e}")
@@ -95,11 +88,11 @@ async def cleanup_test_projects(base_url, headers, prefix="perf_test_project"):
 async def benchmark_get_projects(base_url, headers, project_count, iterations=10, prefix="perf_test_project"):
     """Benchmark GET /projects endpoint"""
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"GET /projects Performance Benchmark")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Server: {base_url}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     if project_count > 0:
         await create_test_projects(base_url, headers, project_count, prefix)
@@ -137,11 +130,11 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
                     projects = response.json()
                     response_times.append(elapsed_ms)
                     project_counts.append(len(projects))
-                    print(f"  Iteration {i+1}: {elapsed_ms:.2f}ms ({len(projects)} projects)")
+                    print(f"  Iteration {i + 1}: {elapsed_ms:.2f}ms ({len(projects)} projects)")
                 else:
-                    print(f"  Iteration {i+1}: ERROR {response.status_code}")
+                    print(f"  Iteration {i + 1}: ERROR {response.status_code}")
             except Exception as e:
-                print(f"  Iteration {i+1}: Exception - {type(e).__name__}: {str(e)}")
+                print(f"  Iteration {i + 1}: Exception - {type(e).__name__}: {str(e)}")
 
     # Cleanup test projects
     if project_count > 0:
@@ -155,17 +148,17 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
         median_time = sorted(response_times)[len(response_times) // 2]
         avg_project_count = sum(project_counts) / len(project_counts) if project_counts else 0
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         if project_count > 0:
             print(f"Results for {project_count} projects (created specifically):")
         else:
             print(f"Results for existing projects (~{avg_project_count:.0f} per request):")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Average: {avg_time:.2f}ms")
         print(f"Median:  {median_time:.2f}ms")
         print(f"Min:     {min_time:.2f}ms")
         print(f"Max:     {max_time:.2f}ms")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # Performance assessment
         if avg_time < 100:
@@ -185,36 +178,43 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
             total_seconds = sum(response_times) / 1000
             projects_per_second = total_projects / total_seconds
             print(f"Throughput: {projects_per_second:.1f} projects/sec")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         return {
-            'project_count': project_count,
-            'avg_time_ms': avg_time,
-            'median_time_ms': median_time,
-            'min_time_ms': min_time,
-            'max_time_ms': max_time,
-            'projects_per_second': projects_per_second if project_counts and sum(response_times) > 0 else 0
+            "project_count": project_count,
+            "avg_time_ms": avg_time,
+            "median_time_ms": median_time,
+            "min_time_ms": min_time,
+            "max_time_ms": max_time,
+            "projects_per_second": projects_per_second if project_counts and sum(response_times) > 0 else 0,
         }
 
 
 async def main():
-    parser = argparse.ArgumentParser(description='Benchmark GET /projects performance on running server')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='GNS3 server host')
-    parser.add_argument('--port', type=int, default=3080, help='GNS3 server port')
-    parser.add_argument('--username', type=str, required=True, help='Username for authentication')
-    parser.add_argument('--password', type=str, required=True, help='Password for authentication')
-    parser.add_argument('--project-counts', type=int, nargs='+', default=[10, 50, 100],
-                        help='Numbers of projects to test (default: 10 50 100)')
-    parser.add_argument('--iterations', type=int, default=10,
-                        help='Number of iterations per test (default: 10)')
-    parser.add_argument('--full-scale', action='store_true',
-                        help='Run full scale test: 10, 50, 100, 200, 500 projects')
-    parser.add_argument('--no-cleanup', action='store_true',
-                        help='Do not create/cleanup test projects (use existing projects)')
-    parser.add_argument('--prefix', type=str, default='perf_test_project',
-                        help='Project name prefix for test/cleanup (default: perf_test_project)')
-    parser.add_argument('--cleanup-only', action='store_true',
-                        help='Only clean up test projects, do not run benchmark')
+    parser = argparse.ArgumentParser(description="Benchmark GET /projects performance on running server")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="GNS3 server host")
+    parser.add_argument("--port", type=int, default=3080, help="GNS3 server port")
+    parser.add_argument("--username", type=str, required=True, help="Username for authentication")
+    parser.add_argument("--password", type=str, required=True, help="Password for authentication")
+    parser.add_argument(
+        "--project-counts",
+        type=int,
+        nargs="+",
+        default=[10, 50, 100],
+        help="Numbers of projects to test (default: 10 50 100)",
+    )
+    parser.add_argument("--iterations", type=int, default=10, help="Number of iterations per test (default: 10)")
+    parser.add_argument("--full-scale", action="store_true", help="Run full scale test: 10, 50, 100, 200, 500 projects")
+    parser.add_argument(
+        "--no-cleanup", action="store_true", help="Do not create/cleanup test projects (use existing projects)"
+    )
+    parser.add_argument(
+        "--prefix",
+        type=str,
+        default="perf_test_project",
+        help="Project name prefix for test/cleanup (default: perf_test_project)",
+    )
+    parser.add_argument("--cleanup-only", action="store_true", help="Only clean up test projects, do not run benchmark")
 
     args = parser.parse_args()
 
@@ -227,8 +227,7 @@ async def main():
     try:
         async with httpx.AsyncClient() as client:
             login_response = await client.post(
-                f"{base_url}/access/users/login",
-                data={"username": args.username, "password": args.password}
+                f"{base_url}/access/users/login", data={"username": args.username, "password": args.password}
             )
 
         if login_response.status_code != 200:
@@ -274,13 +273,13 @@ async def main():
 
     # Summary
     if len(results) > 1:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Summary - Performance Scaling")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"{'Projects':<12} {'Avg (ms)':<12} {'Status':<12}")
-        print(f"{'-'*40}")
+        print(f"{'-' * 40}")
         for r in results:
-            avg = r['avg_time_ms']
+            avg = r["avg_time_ms"]
             if avg < 100:
                 status = "EXCELLENT"
             elif avg < 500:
@@ -290,7 +289,7 @@ async def main():
             else:
                 status = "CRITICAL"
             print(f"{r['project_count']:<12} {avg:<12.2f} {status:<12}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,6 @@ log = logging.getLogger(__name__)
 
 
 class Role(BaseTable):
-
     __tablename__ = "roles"
 
     role_id = Column(GUID, primary_key=True, default=generate_uuid)
@@ -38,7 +37,7 @@ class Role(BaseTable):
     acl_entries = relationship("ACE")
 
 
-@event.listens_for(Role.__table__, 'after_create')
+@event.listens_for(Role.__table__, "after_create")
 def create_default_roles(target, connection, **kw):
 
     default_roles = [
@@ -48,7 +47,7 @@ def create_default_roles(target, connection, **kw):
         {"name": "Template manager", "description": "Role to manage templates", "is_builtin": True},
         {"name": "User manager", "description": "Role to manage users and groups", "is_builtin": True},
         {"name": "ACL manager", "description": "Role to manage other roles and the ACL", "is_builtin": True},
-        {"name": "No Access", "description": "Role with no privileges (used to forbid access)", "is_builtin": True}
+        {"name": "No Access", "description": "Role with no privileges (used to forbid access)", "is_builtin": True},
     ]
 
     stmt = target.insert().values(default_roles)

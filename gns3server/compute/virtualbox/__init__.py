@@ -34,7 +34,6 @@ from .virtualbox_error import VirtualBoxError
 
 
 class VirtualBox(BaseManager):
-
     _NODE_CLASS = VirtualBoxVM
 
     def __init__(self):
@@ -106,10 +105,7 @@ class VirtualBox(BaseManager):
             env["LANG"] = "en"  # force english output because we rely on it to parse the output
             try:
                 process = await asyncio.create_subprocess_exec(
-                    *command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    env=env
+                    *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=env
                 )
             except (OSError, subprocess.SubprocessError) as e:
                 raise VirtualBoxError(f"Could not execute VBoxManage: {e}")

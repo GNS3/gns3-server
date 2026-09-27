@@ -55,16 +55,26 @@ from gns3server.utils.request_utils import extract_client_info
 from gns3server.db.repositories.api_keys import ApiKeysRepository
 from gns3server.db.repositories.users import UsersRepository
 from .projects import (
-    list_projects_handler, get_project_handler, create_project_handler,
-    delete_project_handler, open_project_handler, close_project_handler,
-    get_project_stats_handler, update_project_handler, duplicate_project_handler,
-    get_project_readme_handler, update_project_readme_handler,
-    lock_project_handler, unlock_project_handler,
+    list_projects_handler,
+    get_project_handler,
+    create_project_handler,
+    delete_project_handler,
+    open_project_handler,
+    close_project_handler,
+    get_project_stats_handler,
+    update_project_handler,
+    duplicate_project_handler,
+    get_project_readme_handler,
+    update_project_readme_handler,
+    lock_project_handler,
+    unlock_project_handler,
     get_locked_project_handler,
 )
 from .server import (
-    get_version_handler, get_statistics_handler,
+    get_version_handler,
+    get_statistics_handler,
 )
+
 # Symbol tools are disabled for now: they require a vision-capable model to
 # be genuinely useful (the tools shuttle SVG content, which a text-only LLM
 # cannot inspect or produce). Revisit later.
@@ -74,50 +84,80 @@ from .server import (
 #     upload_symbol_handler, delete_symbol_handler,
 # )
 from .appliances import (
-    get_appliances_handler, get_appliance_handler,
+    get_appliances_handler,
+    get_appliance_handler,
     install_appliance_handler,
 )
 from .images import (
-    get_images_handler, get_image_handler,
-    delete_image_handler, prune_images_handler,
+    get_images_handler,
+    get_image_handler,
+    delete_image_handler,
+    prune_images_handler,
     install_images_handler,
 )
 from .device_config import (
-    device_config_send_handler, device_show_run_handler,
+    device_config_send_handler,
+    device_show_run_handler,
     vpcs_config_set_handler,
 )
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
-    get_nodes_handler, get_node_handler, start_node_handler,
-    stop_node_handler, suspend_node_handler,
-    create_node_handler, delete_node_handler, update_node_handler,
+    get_nodes_handler,
+    get_node_handler,
+    start_node_handler,
+    stop_node_handler,
+    suspend_node_handler,
+    create_node_handler,
+    delete_node_handler,
+    update_node_handler,
     get_node_console_info_handler,
-    list_node_files_handler, get_node_file_handler,
-    write_node_file_handler, delete_node_file_handler,
-    start_all_nodes_handler, stop_all_nodes_handler,
+    list_node_files_handler,
+    get_node_file_handler,
+    write_node_file_handler,
+    delete_node_file_handler,
+    start_all_nodes_handler,
+    stop_all_nodes_handler,
     suspend_all_nodes_handler,
-    duplicate_node_handler, isolate_node_handler,
-    unisolate_node_handler, get_node_links_handler,
-    get_links_handler, get_link_handler, available_filters_handler,
+    duplicate_node_handler,
+    isolate_node_handler,
+    unisolate_node_handler,
+    get_node_links_handler,
+    get_links_handler,
+    get_link_handler,
+    available_filters_handler,
     create_link_handler,
-    delete_link_handler, update_link_handler,
-    reset_link_handler, start_capture_handler, stop_capture_handler,
+    delete_link_handler,
+    update_link_handler,
+    reset_link_handler,
+    start_capture_handler,
+    stop_capture_handler,
     download_capture_file_handler,
-    link_marker_handler, marker_definition_handler,
+    link_marker_handler,
+    marker_definition_handler,
 )
 from .templates import (
-    list_templates_handler, get_template_handler, create_template_handler,
-    update_template_handler, delete_template_handler,
+    list_templates_handler,
+    get_template_handler,
+    create_template_handler,
+    update_template_handler,
+    delete_template_handler,
 )
 from .computes import (
-    list_computes_handler, get_compute_handler, get_compute_images_handler,
+    list_computes_handler,
+    get_compute_handler,
+    get_compute_images_handler,
 )
 from .snapshots import (
-    get_snapshots_handler, create_snapshot_handler,
-    delete_snapshot_handler, restore_snapshot_handler,
+    get_snapshots_handler,
+    create_snapshot_handler,
+    delete_snapshot_handler,
+    restore_snapshot_handler,
 )
 from .drawings import (
-    get_drawings_handler, create_drawing_handler,
-    get_drawing_handler, update_drawing_handler, delete_drawing_handler,
+    get_drawings_handler,
+    create_drawing_handler,
+    get_drawing_handler,
+    update_drawing_handler,
+    delete_drawing_handler,
 )
 
 log = logging.getLogger(__name__)
@@ -177,10 +217,7 @@ async def wait_for_mcp_ready() -> bool:
         log.debug("MCP server is now ready, proceeding with connection")
         return True
     except asyncio.TimeoutError:
-        log.warning(
-            "MCP server ready check timed out after 5 seconds - "
-            "GNS3 server initialization may have issues"
-        )
+        log.warning("MCP server ready check timed out after 5 seconds - GNS3 server initialization may have issues")
         return False
 
 
@@ -188,23 +225,18 @@ async def wait_for_mcp_ready() -> bool:
 # Set during SSE authentication, read by tool handlers running in the
 # same asyncio task (contextvars propagate through asyncio.to_thread).
 
-_jwt_token_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "mcp_jwt_token", default=None
-)
+_jwt_token_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("mcp_jwt_token", default=None)
 # Username extracted during token validation — used by handlers to generate
 # short-lived JWTs for download/console URLs without exposing the raw key.
-_jwt_username_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "mcp_jwt_username", default=None
-)
+_jwt_username_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("mcp_jwt_username", default=None)
 # token_version extracted during token validation — short-lived JWTs minted for
 # download/console URLs must carry the same version, or the revocation check
 # (token_data.token_version != user.token_version) rejects them as "revoked".
-_jwt_token_version_var: contextvars.ContextVar[int] = contextvars.ContextVar(
-    "mcp_jwt_token_version", default=0
-)
+_jwt_token_version_var: contextvars.ContextVar[int] = contextvars.ContextVar("mcp_jwt_token_version", default=0)
 
 
 # ── Token validation ──────────────────────────────────────────────────
+
 
 async def _resolve_token(token: str) -> str | None:
     """Validate a token (JWT or API key) and return the effective JWT to use.
@@ -245,7 +277,9 @@ async def _resolve_token(token: str) -> str | None:
                                 if user:
                                     _jwt_username_var.set(user.username)
                                     _jwt_token_version_var.set(user.token_version)
-                                    fresh_token = auth_service.create_access_token(user.username, token_version=user.token_version)
+                                    fresh_token = auth_service.create_access_token(
+                                        user.username, token_version=user.token_version
+                                    )
                                     return fresh_token
             except Exception:
                 pass
@@ -254,6 +288,7 @@ async def _resolve_token(token: str) -> str | None:
 
 
 # ── Server URL helper ─────────────────────────────────────────────────
+
 
 def _server_url() -> str:
     cfg = Config.instance().settings
@@ -271,6 +306,7 @@ def _server_url() -> str:
 
 
 # ── FastMCP Server ────────────────────────────────────────────────────
+
 
 def _create_mcp_server() -> FastMCP:
     """Create MCP server with security settings from configuration."""
@@ -297,6 +333,7 @@ mcp = _create_mcp_server()
 
 
 # ── Tool handlers ─────────────────────────────────────────────────────
+
 
 def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
     """Run a synchronous Gns3Connector handler in a thread."""
@@ -348,12 +385,14 @@ async def project_open(
     """Open a closed GNS3 project."""
     return await asyncio.to_thread(_run_handler_sync, open_project_handler, {"project_id": project_id})
 
+
 @mcp.tool()
 async def project_close(
     project_id: Annotated[str, Field(description="UUID of the project to close")],
 ) -> list[dict[str, Any]]:
     """Close an open GNS3 project."""
     return await asyncio.to_thread(_run_handler_sync, close_project_handler, {"project_id": project_id})
+
 
 @mcp.tool()
 async def project_stats(
@@ -383,10 +422,19 @@ async def project_update(
     """Update a project's properties (name, auto_close, auto_open, etc.)."""
     params = {"project_id": project_id}
     local_vars = {
-        "name": name, "auto_close": auto_close, "auto_open": auto_open, "auto_start": auto_start,
-        "scene_width": scene_width, "scene_height": scene_height, "zoom": zoom,
-        "show_layers": show_layers, "snap_to_grid": snap_to_grid, "show_grid": show_grid,
-        "grid_size": grid_size, "drawing_grid_size": drawing_grid_size, "show_interface_labels": show_interface_labels,
+        "name": name,
+        "auto_close": auto_close,
+        "auto_open": auto_open,
+        "auto_start": auto_start,
+        "scene_width": scene_width,
+        "scene_height": scene_height,
+        "zoom": zoom,
+        "show_layers": show_layers,
+        "snap_to_grid": snap_to_grid,
+        "show_grid": show_grid,
+        "grid_size": grid_size,
+        "drawing_grid_size": drawing_grid_size,
+        "show_interface_labels": show_interface_labels,
     }
     for key, val in local_vars.items():
         if val is not None:
@@ -421,15 +469,23 @@ async def project_readme_update(
     content: Annotated[str, Field(description="Content to write to README.md (Markdown format)")],
 ) -> list[dict[str, Any]]:
     """Update or create a project's README.md file — the project documentation (Markdown format)."""
-    return await asyncio.to_thread(_run_handler_sync, update_project_readme_handler, {"project_id": project_id, "content": content})
+    return await asyncio.to_thread(
+        _run_handler_sync, update_project_readme_handler, {"project_id": project_id, "content": content}
+    )
 
 
 # ── Node tools ────────────────────────────────────────────────────────
 
+
 @mcp.tool()
 async def node_list(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    fields: Annotated[list[str] | None, Field(description="Optional: return only these fields per node. e.g. [\"name\",\"status\"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type")] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description='Optional: return only these fields per node. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """List all nodes in a project. Use fields=[] to return only what you need."""
     return await asyncio.to_thread(_run_handler_sync, get_nodes_handler, {"project_id": project_id, "fields": fields})
@@ -439,18 +495,32 @@ async def node_list(
 async def node_get(
     project_id: Annotated[str, Field(description="UUID of the project")],
     node_id: Annotated[str, Field(description="UUID of the node")],
-    fields: Annotated[list[str] | None, Field(description="Optional: return only these fields. e.g. [\"name\",\"status\"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type")] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description='Optional: return only these fields. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Get detailed information about a specific node. Use fields=[] to return only what you need."""
-    return await asyncio.to_thread(_run_handler_sync, get_node_handler, {
-        "project_id": project_id, "node_id": node_id, "fields": fields,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_node_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "fields": fields,
+        },
+    )
+
 
 @mcp.tool()
 async def node_start(
     project_id: Annotated[str, Field(description="UUID of the project")],
     node_id: Annotated[str | None, Field(description="Node UUID (single mode)")] = None,
-    node_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — start multiple nodes in parallel")] = None,
+    node_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — start multiple nodes in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Start one or more nodes. Provide node_id for single, or node_ids for batch."""
     params = {"project_id": project_id}
@@ -460,11 +530,14 @@ async def node_start(
         params["node_id"] = node_id
     return await asyncio.to_thread(_run_handler_sync, start_node_handler, params)
 
+
 @mcp.tool()
 async def node_stop(
     project_id: Annotated[str, Field(description="UUID of the project")],
     node_id: Annotated[str | None, Field(description="Node UUID (single mode)")] = None,
-    node_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — stop multiple nodes in parallel")] = None,
+    node_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — stop multiple nodes in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Stop one or more nodes. Provide node_id for single, or node_ids for batch."""
     params = {"project_id": project_id}
@@ -474,11 +547,14 @@ async def node_stop(
         params["node_id"] = node_id
     return await asyncio.to_thread(_run_handler_sync, stop_node_handler, params)
 
+
 @mcp.tool()
 async def node_suspend(
     project_id: Annotated[str, Field(description="UUID of the project")],
     node_id: Annotated[str | None, Field(description="Node UUID (single mode)")] = None,
-    node_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — suspend multiple nodes in parallel")] = None,
+    node_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — suspend multiple nodes in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Suspend one or more nodes. Provide node_id for single, or node_ids for batch."""
     params = {"project_id": project_id}
@@ -492,17 +568,29 @@ async def node_suspend(
 @mcp.tool()
 async def node_create(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    template_id: Annotated[str | None, Field(description="Template UUID (required for single mode; used as default in batch mode)")] = None,
+    template_id: Annotated[
+        str | None, Field(description="Template UUID (required for single mode; used as default in batch mode)")
+    ] = None,
     x: Annotated[int, Field(description="X coordinate (canvas center origin, right positive)")] = 0,
     y: Annotated[int, Field(description="Y coordinate (canvas center origin, down positive)")] = 0,
     compute_id: Annotated[str, Field(description="Compute ID (default: local)")] = "local",
-    nodes: Annotated[list | None, Field(description="Batch mode: [{name, template_id?, x?, y?, compute_id?}] — top-level template_id applies as default")] = None,
-    fields: Annotated[list[str] | None, Field(description="Response fields to include (default: [node_id, name, node_type, status, console]). "
-                                                           "Available: compute_id, name, node_type, node_id, console, console_type, "
-                                                           "console_auto_start, aux, aux_type, properties, label, symbol, x, y, z, "
-                                                           "locked, port_name_format, port_segment_size, first_port_name, "
-                                                           "custom_adapters, tags, template_id, project_id, node_directory, "
-                                                           "status, command_line, width, height, ports, console_host")] = None,
+    nodes: Annotated[
+        list | None,
+        Field(
+            description="Batch mode: [{name, template_id?, x?, y?, compute_id?}] — top-level template_id applies as default"
+        ),
+    ] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description="Response fields to include (default: [node_id, name, node_type, status, console]). "
+            "Available: compute_id, name, node_type, node_id, console, console_type, "
+            "console_auto_start, aux, aux_type, properties, label, symbol, x, y, z, "
+            "locked, port_name_format, port_segment_size, first_port_name, "
+            "custom_adapters, tags, template_id, project_id, node_directory, "
+            "status, command_line, width, height, ports, console_host"
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Create one or more nodes from templates.
 
@@ -514,21 +602,37 @@ async def node_create(
                  port — such batches are created sequentially so those assignments follow submission order.
     """
     if nodes is not None:
-        return await asyncio.to_thread(_run_handler_sync, create_node_handler, {
-            "project_id": project_id, "nodes": nodes, "fields": fields,
+        return await asyncio.to_thread(
+            _run_handler_sync,
+            create_node_handler,
+            {
+                "project_id": project_id,
+                "nodes": nodes,
+                "fields": fields,
+                "template_id": template_id,
+            },
+        )
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_node_handler,
+        {
+            "project_id": project_id,
             "template_id": template_id,
-        })
-    return await asyncio.to_thread(_run_handler_sync, create_node_handler, {
-        "project_id": project_id, "template_id": template_id,
-        "x": x, "y": y, "compute_id": compute_id, "fields": fields,
-    })
+            "x": x,
+            "y": y,
+            "compute_id": compute_id,
+            "fields": fields,
+        },
+    )
 
 
 @mcp.tool()
 async def node_delete(
     project_id: Annotated[str, Field(description="UUID of the project")],
     node_id: Annotated[str | None, Field(description="Node UUID (single mode)")] = None,
-    node_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — delete multiple nodes in parallel")] = None,
+    node_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — delete multiple nodes in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Delete one or more nodes from a project. Provide node_id for single, or node_ids for batch."""
     params = {"project_id": project_id}
@@ -576,17 +680,28 @@ async def node_console(
         device output is not cut off before it arrives
       - Set a timeout to prevent hanging connections
     """
-    return await asyncio.to_thread(_run_handler_sync, get_node_console_info_handler, {
-        "project_id": project_id, "node_id": node_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_node_console_info_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+        },
+    )
 
 
 # ── Link tools ────────────────────────────────────────────────────────
 
+
 @mcp.tool()
 async def link_list(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    fields: Annotated[list[str] | None, Field(description="Optional: return only these fields. e.g. [\"link_id\",\"nodes\"]. Available: link_id, project_id, link_type, nodes, suspend, filters, capturing, capture_file_name, link_style")] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description='Optional: return only these fields. e.g. ["link_id","nodes"]. Available: link_id, project_id, link_type, nodes, suspend, filters, capturing, capture_file_name, link_style'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """List all links in a project. Use fields=[] to return only what you need."""
     return await asyncio.to_thread(_run_handler_sync, get_links_handler, {"project_id": project_id, "fields": fields})
@@ -604,14 +719,27 @@ async def link_get(
 @mcp.tool()
 async def link_create(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    nodes: Annotated[list | None, Field(description="Single mode: [{node_id, adapter_number, port_number}] or compact [id, ad, pt, id, ad, pt]")] = None,
+    nodes: Annotated[
+        list | None,
+        Field(description="Single mode: [{node_id, adapter_number, port_number}] or compact [id, ad, pt, id, ad, pt]"),
+    ] = None,
     link_type: Annotated[str, Field(description="Link type - ethernet or serial")] = "ethernet",
     filters: Annotated[dict | None, Field(description="Optional packet filters")] = None,
-    links: Annotated[list | None, Field(description="Batch mode: [{nodes, link_type?, filters?}] — nodes supports compact [id, ad, pt, id, ad, pt] format")] = None,
-    fields: Annotated[list[str] | None, Field(description="Response fields to include (default: [link_id, link_type, nodes]). "
-                                                           "Available: link_id, project_id, link_type, nodes, suspend, "
-                                                           "link_style, filters, show_filters_icon, capturing, "
-                                                           "capture_file_name, capture_file_path, capture_compute_id, wireshark")] = None,
+    links: Annotated[
+        list | None,
+        Field(
+            description="Batch mode: [{nodes, link_type?, filters?}] — nodes supports compact [id, ad, pt, id, ad, pt] format"
+        ),
+    ] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description="Response fields to include (default: [link_id, link_type, nodes]). "
+            "Available: link_id, project_id, link_type, nodes, suspend, "
+            "link_style, filters, show_filters_icon, capturing, "
+            "capture_file_name, capture_file_path, capture_compute_id, wireshark"
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Create one or more links between nodes.
 
@@ -619,9 +747,15 @@ async def link_create(
     Batch mode:  provide links=[{nodes, link_type?, filters?}] — up to 100 in parallel
     """
     if links:
-        return await asyncio.to_thread(_run_handler_sync, create_link_handler, {
-            "project_id": project_id, "links": links, "fields": fields,
-        })
+        return await asyncio.to_thread(
+            _run_handler_sync,
+            create_link_handler,
+            {
+                "project_id": project_id,
+                "links": links,
+                "fields": fields,
+            },
+        )
     params = {"project_id": project_id, "nodes": nodes, "link_type": link_type, "fields": fields}
     if filters:
         params["filters"] = filters
@@ -632,7 +766,9 @@ async def link_create(
 async def link_delete(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str | None, Field(description="Link UUID (single mode)")] = None,
-    link_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — delete multiple links in parallel")] = None,
+    link_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — delete multiple links in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Delete one or more links from a project."""
     params = {"project_id": project_id}
@@ -685,18 +821,29 @@ async def link_available_filters(
 ) -> list[dict[str, Any]]:
     """List the packet filter types available for a link (frequency_drop, packet_loss, delay, corrupt, bpf)
     with their parameters. Use before setting filters with link_update."""
-    return await asyncio.to_thread(_run_handler_sync, available_filters_handler, {
-        "project_id": project_id, "link_id": link_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        available_filters_handler,
+        {
+            "project_id": project_id,
+            "link_id": link_id,
+        },
+    )
 
 
 # ── Template tools ────────────────────────────────────────────
 
+
 @mcp.tool()
 async def template_list(
-    fields: Annotated[list[str] | None, Field(description="Response fields to include (default: [template_id, name, template_type, category, default_name_format]). "
-                                                           "Available: template_id, name, version, category, default_name_format, symbol, "
-                                                           "template_type, compute_id, usage, tags, builtin, created_at, updated_at")] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description="Response fields to include (default: [template_id, name, template_type, category, default_name_format]). "
+            "Available: template_id, name, version, category, default_name_format, symbol, "
+            "template_type, compute_id, usage, tags, builtin, created_at, updated_at"
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """List all available templates on the server."""
     return await asyncio.to_thread(_run_handler_sync, list_templates_handler, {"fields": fields})
@@ -708,9 +855,14 @@ async def template_get(
     name: Annotated[str | None, Field(description="Template name (optional if template_id is provided)")] = None,
 ) -> list[dict[str, Any]]:
     """Get detailed information about a specific template."""
-    return await asyncio.to_thread(_run_handler_sync, get_template_handler, {
-        "template_id": template_id, "name": name,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_template_handler,
+        {
+            "template_id": template_id,
+            "name": name,
+        },
+    )
 
 
 @mcp.tool()
@@ -718,7 +870,9 @@ async def template_create(
     name: Annotated[str, Field(description="Template name")],
     template_type: Annotated[str, Field(description="Template type (e.g. qemu, docker, dynamips)")],
     compute_id: Annotated[str, Field(description="Compute ID (default: local)")] = "local",
-    image: Annotated[str | None, Field(description="Docker image name or Dynamips IOS image path (required for docker/dynamips)")] = None,
+    image: Annotated[
+        str | None, Field(description="Docker image name or Dynamips IOS image path (required for docker/dynamips)")
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Create a new template.
 
@@ -751,12 +905,18 @@ async def template_delete(
     name: Annotated[str | None, Field(description="Template name (optional if template_id is provided)")] = None,
 ) -> list[dict[str, Any]]:
     """Delete a template."""
-    return await asyncio.to_thread(_run_handler_sync, delete_template_handler, {
-        "template_id": template_id, "name": name,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        delete_template_handler,
+        {
+            "template_id": template_id,
+            "name": name,
+        },
+    )
 
 
 # ── Compute tools ─────────────────────────────────────────────────────
+
 
 @mcp.tool()
 async def compute_list() -> list[dict[str, Any]]:
@@ -769,7 +929,12 @@ async def compute_list() -> list[dict[str, Any]]:
 
 @mcp.tool()
 async def compute_get(
-    compute_id: Annotated[str, Field(description="Compute ID: 'local' (default) for the built-in local compute, or a compute UUID from compute_list")] = "local",
+    compute_id: Annotated[
+        str,
+        Field(
+            description="Compute ID: 'local' (default) for the built-in local compute, or a compute UUID from compute_list"
+        ),
+    ] = "local",
 ) -> list[dict[str, Any]]:
     """Get detailed information about a compute node.
 
@@ -782,16 +947,26 @@ async def compute_get(
 @mcp.tool()
 async def compute_images(
     emulator: Annotated[str, Field(description="Emulator type (e.g. qemu, iou, docker)")],
-    compute_id: Annotated[str, Field(description="Compute ID: 'local' (default) for the built-in local compute, or a compute UUID from compute_list")] = "local",
+    compute_id: Annotated[
+        str,
+        Field(
+            description="Compute ID: 'local' (default) for the built-in local compute, or a compute UUID from compute_list"
+        ),
+    ] = "local",
 ) -> list[dict[str, Any]]:
     """List available images for an emulator on a compute node.
 
     Accepts 'local' for the built-in local compute or a UUID from compute_list
     for a registered remote compute.
     """
-    return await asyncio.to_thread(_run_handler_sync, get_compute_images_handler, {
-        "emulator": emulator, "compute_id": compute_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_compute_images_handler,
+        {
+            "emulator": emulator,
+            "compute_id": compute_id,
+        },
+    )
 
 
 # ── Node file tools ────────────────────────────────────────────────────
@@ -809,9 +984,16 @@ async def node_file_list(
     Use this first to check file sizes before reading files with get_node_file.
     Large config files should be read in chunks using offset/limit.
     """
-    return await asyncio.to_thread(_run_handler_sync, list_node_files_handler, {
-        "project_id": project_id, "node_id": node_id, "path": path, "recursive": recursive,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        list_node_files_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "path": path,
+            "recursive": recursive,
+        },
+    )
 
 
 @mcp.tool()
@@ -831,10 +1013,17 @@ async def node_file_get(
       Large files (>50KB) are auto-truncated; check the metadata.truncated flag.
       For binary files, check the file type via list_node_files first.
     """
-    return await asyncio.to_thread(_run_handler_sync, get_node_file_handler, {
-        "project_id": project_id, "node_id": node_id, "file_path": file_path,
-        "offset": offset, "limit": limit,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_node_file_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "file_path": file_path,
+            "offset": offset,
+            "limit": limit,
+        },
+    )
 
 
 @mcp.tool()
@@ -845,9 +1034,16 @@ async def node_file_write(
     content: Annotated[str, Field(description="Content to write to the file")],
 ) -> list[dict[str, Any]]:
     """Write content to a file in a node directory. Creates the file if it doesn't exist. Overwrites existing content."""
-    return await asyncio.to_thread(_run_handler_sync, write_node_file_handler, {
-        "project_id": project_id, "node_id": node_id, "file_path": file_path, "content": content,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        write_node_file_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "file_path": file_path,
+            "content": content,
+        },
+    )
 
 
 @mcp.tool()
@@ -857,9 +1053,15 @@ async def node_file_delete(
     file_path: Annotated[str, Field(description="Path to the file within the node directory")],
 ) -> list[dict[str, Any]]:
     """Delete a file from a node directory. Cannot be undone."""
-    return await asyncio.to_thread(_run_handler_sync, delete_node_file_handler, {
-        "project_id": project_id, "node_id": node_id, "file_path": file_path,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        delete_node_file_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "file_path": file_path,
+        },
+    )
 
 
 # ── Node bulk / advanced tools ─────────────────────────────────────────
@@ -870,9 +1072,13 @@ async def node_start_all(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Start all nodes in a project."""
-    return await asyncio.to_thread(_run_handler_sync, start_all_nodes_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        start_all_nodes_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -880,9 +1086,13 @@ async def node_stop_all(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Stop all nodes in a project."""
-    return await asyncio.to_thread(_run_handler_sync, stop_all_nodes_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        stop_all_nodes_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -890,9 +1100,13 @@ async def node_suspend_all(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Suspend all nodes in a project."""
-    return await asyncio.to_thread(_run_handler_sync, suspend_all_nodes_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        suspend_all_nodes_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -904,9 +1118,17 @@ async def node_duplicate(
     z: Annotated[int, Field(description="Z layer for the new node")] = 0,
 ) -> list[dict[str, Any]]:
     """Duplicate a node in a project, creating a copy at a new position."""
-    return await asyncio.to_thread(_run_handler_sync, duplicate_node_handler, {
-        "project_id": project_id, "node_id": node_id, "x": x, "y": y, "z": z,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        duplicate_node_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+            "x": x,
+            "y": y,
+            "z": z,
+        },
+    )
 
 
 @mcp.tool()
@@ -915,9 +1137,14 @@ async def node_isolate(
     node_id: Annotated[str, Field(description="UUID of the node to isolate")],
 ) -> list[dict[str, Any]]:
     """Isolate a node by suspending all its attached links (network isolation)."""
-    return await asyncio.to_thread(_run_handler_sync, isolate_node_handler, {
-        "project_id": project_id, "node_id": node_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        isolate_node_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -926,9 +1153,14 @@ async def node_unisolate(
     node_id: Annotated[str, Field(description="UUID of the node to unisolate")],
 ) -> list[dict[str, Any]]:
     """Un-isolate a node by resuming all its suspended links."""
-    return await asyncio.to_thread(_run_handler_sync, unisolate_node_handler, {
-        "project_id": project_id, "node_id": node_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        unisolate_node_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -937,9 +1169,14 @@ async def node_links(
     node_id: Annotated[str, Field(description="UUID of the node")],
 ) -> list[dict[str, Any]]:
     """List all links connected to a specific node."""
-    return await asyncio.to_thread(_run_handler_sync, get_node_links_handler, {
-        "project_id": project_id, "node_id": node_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_node_links_handler,
+        {
+            "project_id": project_id,
+            "node_id": node_id,
+        },
+    )
 
 
 # ── Link capture / reset tools ────────────────────────────────────────
@@ -949,7 +1186,9 @@ async def node_links(
 async def link_reset(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str | None, Field(description="Link UUID (single mode)")] = None,
-    link_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — reset multiple links in parallel")] = None,
+    link_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — reset multiple links in parallel')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Reset one or more links by tearing down and recreating the UDP connection.
 
@@ -977,10 +1216,18 @@ async def link_capture_start(
     data_link_type: Annotated[str, Field(description="Data link type (default: DLT_EN10MB)")] = "DLT_EN10MB",
     capture_file_name: Annotated[str | None, Field(description="Capture file name (optional)")] = None,
     wireshark: Annotated[bool, Field(description="Open Wireshark automatically (default: false)")] = False,
-    link_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — start capture on multiple links in parallel")] = None,
+    link_ids: Annotated[
+        list[str] | None,
+        Field(description='Batch mode: ["uuid1","uuid2"] — start capture on multiple links in parallel'),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Start packet capture on one or more links."""
-    params = {"project_id": project_id, "data_link_type": data_link_type, "capture_file_name": capture_file_name, "wireshark": wireshark}
+    params = {
+        "project_id": project_id,
+        "data_link_type": data_link_type,
+        "capture_file_name": capture_file_name,
+        "wireshark": wireshark,
+    }
     if link_ids:
         params["link_ids"] = link_ids
     else:
@@ -992,7 +1239,10 @@ async def link_capture_start(
 async def link_capture_stop(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str | None, Field(description="Link UUID (single mode)")] = None,
-    link_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — stop capture on multiple links in parallel")] = None,
+    link_ids: Annotated[
+        list[str] | None,
+        Field(description='Batch mode: ["uuid1","uuid2"] — stop capture on multiple links in parallel'),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Stop packet capture on one or more links."""
     params = {"project_id": project_id}
@@ -1007,7 +1257,9 @@ async def link_capture_stop(
 async def link_capture_download(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str | None, Field(description="Link UUID (single mode)")] = None,
-    link_ids: Annotated[list[str] | None, Field(description="Batch mode: [\"uuid1\",\"uuid2\"] — get download URLs for multiple captures")] = None,
+    link_ids: Annotated[
+        list[str] | None, Field(description='Batch mode: ["uuid1","uuid2"] — get download URLs for multiple captures')
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Get download command(s) for PCAP capture file(s).
 
@@ -1037,16 +1289,35 @@ async def link_marker(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str, Field(description="UUID of the link")],
     action: Annotated[str, Field(description="Action: create, update, or delete")],
-    bpf: Annotated[str | None, Field(description="BPF expression, e.g. 'arp', 'icmp', 'tcp port 80' (required for create)")] = None,
+    bpf: Annotated[
+        str | None, Field(description="BPF expression, e.g. 'arp', 'icmp', 'tcp port 80' (required for create)")
+    ] = None,
     marker_name: Annotated[str | None, Field(description="Marker name (required for update/delete actions)")] = None,
-    name: Annotated[str | None, Field(description="Custom marker name for create action (auto-generated if omitted)")] = None,
+    name: Annotated[
+        str | None, Field(description="Custom marker name for create action (auto-generated if omitted)")
+    ] = None,
     tag: Annotated[int | None, Field(description="Numeric tag for packet correlation")] = None,
     enabled: Annotated[bool | None, Field(description="Enable or disable the marker (for update action)")] = None,
-    direction: Annotated[str | None, Field(description="Direction filter: 'tx' (capture node sending only), 'rx' (receiving only), or 'both' (no filter — on update this clears a previously set direction). Omit to leave unchanged on update.")] = None,
-    capture_node_id: Annotated[str | None, Field(description="UUID of the endpoint whose uBridge hosts the marker (the observer; tx/rx are from its perspective). Must be a link endpoint and marker-capable. Omit to auto-pick.")] = None,
+    direction: Annotated[
+        str | None,
+        Field(
+            description="Direction filter: 'tx' (capture node sending only), 'rx' (receiving only), or 'both' (no filter — on update this clears a previously set direction). Omit to leave unchanged on update."
+        ),
+    ] = None,
+    capture_node_id: Annotated[
+        str | None,
+        Field(
+            description="UUID of the endpoint whose uBridge hosts the marker (the observer; tx/rx are from its perspective). Must be a link endpoint and marker-capable. Omit to auto-pick."
+        ),
+    ] = None,
     color: Annotated[str | None, Field(description="Hex color for UI highlight, e.g. '#ff5722'")] = None,
     highlight_duration: Annotated[int | None, Field(description="UI highlight duration in milliseconds")] = None,
-    data_link_type: Annotated[str | None, Field(description="pcap link-layer type for serial links (create-only): DLT_C_HDLC / DLT_PPP_SERIAL / DLT_FRELAY / DLT_ATM_RFC1483, matching the encapsulation on the serial link. Omit = DLT_EN10MB (Ethernet). Ignored on update — changing it would invalidate the capture file.")] = None,
+    data_link_type: Annotated[
+        str | None,
+        Field(
+            description="pcap link-layer type for serial links (create-only): DLT_C_HDLC / DLT_PPP_SERIAL / DLT_FRELAY / DLT_ATM_RFC1483, matching the encapsulation on the serial link. Omit = DLT_EN10MB (Ethernet). Ignored on update — changing it would invalidate the capture file."
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Manage traffic-insight markers on a link.
 
@@ -1063,7 +1334,18 @@ async def link_marker(
     and cannot be modified or deleted via this tool.
     """
     params = {"project_id": project_id, "link_id": link_id, "action": action}
-    for opt in ("bpf", "marker_name", "name", "tag", "enabled", "direction", "capture_node_id", "color", "highlight_duration", "data_link_type"):
+    for opt in (
+        "bpf",
+        "marker_name",
+        "name",
+        "tag",
+        "enabled",
+        "direction",
+        "capture_node_id",
+        "color",
+        "highlight_duration",
+        "data_link_type",
+    ):
         val = locals().get(opt)
         if val is not None:
             params[opt] = val
@@ -1074,13 +1356,22 @@ async def link_marker(
 async def marker_definition(
     project_id: Annotated[str, Field(description="UUID of the project")],
     action: Annotated[str, Field(description="Action: create, update, delete, or list")],
-    bpf: Annotated[str | None, Field(description="BPF expression, e.g. 'arp', 'ospf', 'tcp port 22' (required for create)")] = None,
+    bpf: Annotated[
+        str | None, Field(description="BPF expression, e.g. 'arp', 'ospf', 'tcp port 22' (required for create)")
+    ] = None,
     def_name: Annotated[str | None, Field(description="Definition name (required for update/delete actions)")] = None,
-    name: Annotated[str | None, Field(description="Custom definition name for create action (auto-generated if omitted)")] = None,
+    name: Annotated[
+        str | None, Field(description="Custom definition name for create action (auto-generated if omitted)")
+    ] = None,
     tag: Annotated[int | None, Field(description="Numeric tag for packet correlation")] = None,
     color: Annotated[str | None, Field(description="Hex color for UI highlight, e.g. '#ff5722'")] = None,
     highlight_duration: Annotated[int | None, Field(description="UI highlight duration in milliseconds")] = None,
-    data_link_type: Annotated[str | None, Field(description="pcap link-layer type for serial links (DLT_C_HDLC / DLT_PPP_SERIAL / DLT_FRELAY / DLT_ATM_RFC1483). Omit = Ethernet-only (serial links skipped); setting it also covers serial links with that encapsulation")] = None,
+    data_link_type: Annotated[
+        str | None,
+        Field(
+            description="pcap link-layer type for serial links (DLT_C_HDLC / DLT_PPP_SERIAL / DLT_FRELAY / DLT_ATM_RFC1483). Omit = Ethernet-only (serial links skipped); setting it also covers serial links with that encapsulation"
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Manage project-level marker definitions — traffic-insight rules that apply to ALL links.
 
@@ -1117,9 +1408,13 @@ async def snapshot_list(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """List all snapshots of a project."""
-    return await asyncio.to_thread(_run_handler_sync, get_snapshots_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_snapshots_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1133,9 +1428,14 @@ async def snapshot_create(
     must be stopped first. Use node_stop_all before creating a snapshot.
     Cloud, NAT, and switch nodes are always-running and can be ignored.
     """
-    return await asyncio.to_thread(_run_handler_sync, create_snapshot_handler, {
-        "project_id": project_id, "name": name,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_snapshot_handler,
+        {
+            "project_id": project_id,
+            "name": name,
+        },
+    )
 
 
 @mcp.tool()
@@ -1144,9 +1444,14 @@ async def snapshot_delete(
     snapshot_id: Annotated[str, Field(description="UUID of the snapshot to delete")],
 ) -> list[dict[str, Any]]:
     """Delete a snapshot from a project. Cannot be undone."""
-    return await asyncio.to_thread(_run_handler_sync, delete_snapshot_handler, {
-        "project_id": project_id, "snapshot_id": snapshot_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        delete_snapshot_handler,
+        {
+            "project_id": project_id,
+            "snapshot_id": snapshot_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1155,9 +1460,14 @@ async def snapshot_restore(
     snapshot_id: Annotated[str, Field(description="UUID of the snapshot to restore")],
 ) -> list[dict[str, Any]]:
     """Restore a project to a previous snapshot state. The project may be closed and reopened."""
-    return await asyncio.to_thread(_run_handler_sync, restore_snapshot_handler, {
-        "project_id": project_id, "snapshot_id": snapshot_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        restore_snapshot_handler,
+        {
+            "project_id": project_id,
+            "snapshot_id": snapshot_id,
+        },
+    )
 
 
 # ── Drawing tools ──────────────────────────────────────────────────────
@@ -1168,9 +1478,13 @@ async def drawing_list(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """List all drawings (labels, shapes, images) on a project canvas."""
-    return await asyncio.to_thread(_run_handler_sync, get_drawings_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_drawings_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1198,10 +1512,19 @@ async def drawing_create(
       Line:        <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-width=\"2\"/></svg>
       Dashed line: <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-dasharray=\"5,5\"/></svg>
     """
-    return await asyncio.to_thread(_run_handler_sync, create_drawing_handler, {
-        "project_id": project_id, "svg": svg, "x": x, "y": y, "z": z,
-        "locked": locked, "rotation": rotation,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_drawing_handler,
+        {
+            "project_id": project_id,
+            "svg": svg,
+            "x": x,
+            "y": y,
+            "z": z,
+            "locked": locked,
+            "rotation": rotation,
+        },
+    )
 
 
 @mcp.tool()
@@ -1210,9 +1533,14 @@ async def drawing_get(
     drawing_id: Annotated[str, Field(description="UUID of the drawing")],
 ) -> list[dict[str, Any]]:
     """Get detailed information about a specific drawing."""
-    return await asyncio.to_thread(_run_handler_sync, get_drawing_handler, {
-        "project_id": project_id, "drawing_id": drawing_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_drawing_handler,
+        {
+            "project_id": project_id,
+            "drawing_id": drawing_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1241,9 +1569,14 @@ async def drawing_delete(
     drawing_id: Annotated[str, Field(description="UUID of the drawing to delete")],
 ) -> list[dict[str, Any]]:
     """Delete a drawing from a project canvas. Cannot be undone."""
-    return await asyncio.to_thread(_run_handler_sync, delete_drawing_handler, {
-        "project_id": project_id, "drawing_id": drawing_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        delete_drawing_handler,
+        {
+            "project_id": project_id,
+            "drawing_id": drawing_id,
+        },
+    )
 
 
 # ── Project lock tools ────────────────────────────────────────────────
@@ -1254,9 +1587,13 @@ async def project_lock(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Lock all drawings and nodes in a project to prevent accidental changes."""
-    return await asyncio.to_thread(_run_handler_sync, lock_project_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        lock_project_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1264,9 +1601,13 @@ async def project_unlock(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Unlock a project to allow editing of drawings and nodes."""
-    return await asyncio.to_thread(_run_handler_sync, unlock_project_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        unlock_project_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1274,9 +1615,13 @@ async def project_locked(
     project_id: Annotated[str, Field(description="UUID of the project")],
 ) -> list[dict[str, Any]]:
     """Check whether a project is locked (preventing edits to drawings and nodes)."""
-    return await asyncio.to_thread(_run_handler_sync, get_locked_project_handler, {
-        "project_id": project_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_locked_project_handler,
+        {
+            "project_id": project_id,
+        },
+    )
 
 
 # ── Server info tools ─────────────────────────────────────────────────
@@ -1369,7 +1714,12 @@ async def server_statistics() -> list[dict[str, Any]]:
 
 @mcp.tool()
 async def appliance_list(
-    fields: Annotated[list[str] | None, Field(description="Optional: return only these fields. e.g. [\"name\",\"category\"]. Available: name, category, description, vendor_name, product_name, status, availability, images, versions, tags, symbol, usage, builtin")] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            description='Optional: return only these fields. e.g. ["name","category"]. Available: name, category, description, vendor_name, product_name, status, availability, images, versions, tags, symbol, usage, builtin'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """List all available appliances (template library). Use fields=[] to return only what you need."""
     return await asyncio.to_thread(_run_handler_sync, get_appliances_handler, {"fields": fields} if fields else {})
@@ -1380,15 +1730,24 @@ async def appliance_get(
     appliance_id: Annotated[str, Field(description="UUID of the appliance")],
 ) -> list[dict[str, Any]]:
     """Get detailed information about a specific appliance."""
-    return await asyncio.to_thread(_run_handler_sync, get_appliance_handler, {
-        "appliance_id": appliance_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_appliance_handler,
+        {
+            "appliance_id": appliance_id,
+        },
+    )
 
 
 @mcp.tool()
 async def appliance_install(
     appliance_id: Annotated[str, Field(description="UUID of the appliance to install")],
-    version: Annotated[str | None, Field(description="Version to install (e.g. '2.7.0.356'). Required if the appliance has multiple versions. Use appliance_get to see available versions.")] = None,
+    version: Annotated[
+        str | None,
+        Field(
+            description="Version to install (e.g. '2.7.0.356'). Required if the appliance has multiple versions. Use appliance_get to see available versions."
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Create a template from a GNS3 appliance definition and return the created template.
 
@@ -1397,10 +1756,14 @@ async def appliance_install(
     The appliance definition is read from local .gns3a files bundled with the server.
     Use get_appliance first to see what images are required.
     """
-    return await asyncio.to_thread(_run_handler_sync, install_appliance_handler, {
-        "appliance_id": appliance_id,
-        "version": version,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        install_appliance_handler,
+        {
+            "appliance_id": appliance_id,
+            "version": version,
+        },
+    )
 
 
 # ── Image tools ───────────────────────────────────────────────────────
@@ -1417,9 +1780,13 @@ async def image_get(
     image_id: Annotated[str, Field(description="ID or filename of the image")],
 ) -> list[dict[str, Any]]:
     """Get detailed information about a specific image."""
-    return await asyncio.to_thread(_run_handler_sync, get_image_handler, {
-        "image_id": image_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        get_image_handler,
+        {
+            "image_id": image_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1427,9 +1794,13 @@ async def image_delete(
     image_id: Annotated[str, Field(description="ID or filename of the image to delete")],
 ) -> list[dict[str, Any]]:
     """Delete an image from the server. Cannot be undone."""
-    return await asyncio.to_thread(_run_handler_sync, delete_image_handler, {
-        "image_id": image_id,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        delete_image_handler,
+        {
+            "image_id": image_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -1470,10 +1841,18 @@ async def image_install() -> list[dict[str, Any]]:
 @mcp.tool()
 async def device_config_send(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    device_configs: Annotated[list, Field(
-        description="List of device configs. Each entry: {\"device_name\": \"R1\", \"config_commands\": [\"int lo0\", \"ip add 1.1.1.1 255.255.255.255\"]}"
-    )],
-    template: Annotated[str | None, Field(description="Optional Jinja2 template. Use with vars in each device to reduce token usage for batch config. Example: \"interface lo{{ n }}\\nip address {{ ip }} 255.255.255.255\"")] = None,
+    device_configs: Annotated[
+        list,
+        Field(
+            description='List of device configs. Each entry: {"device_name": "R1", "config_commands": ["int lo0", "ip add 1.1.1.1 255.255.255.255"]}'
+        ),
+    ],
+    template: Annotated[
+        str | None,
+        Field(
+            description='Optional Jinja2 template. Use with vars in each device to reduce token usage for batch config. Example: "interface lo{{ n }}\\nip address {{ ip }} 255.255.255.255"'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Send configuration commands to network devices via console (telnet/SSH).
 
@@ -1499,10 +1878,18 @@ async def device_config_send(
 @mcp.tool()
 async def device_show_run(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    device_configs: Annotated[list, Field(
-        description="List of device commands. Each entry: {\"device_name\": \"R1\", \"commands\": [\"show ip int brief\", \"show running-config\"]}"
-    )],
-    template: Annotated[str | None, Field(description="Optional Jinja2 template. Use with vars per device. Example: \"show ip route {{ protocol }}\"")] = None,
+    device_configs: Annotated[
+        list,
+        Field(
+            description='List of device commands. Each entry: {"device_name": "R1", "commands": ["show ip int brief", "show running-config"]}'
+        ),
+    ],
+    template: Annotated[
+        str | None,
+        Field(
+            description='Optional Jinja2 template. Use with vars per device. Example: "show ip route {{ protocol }}"'
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Run read-only diagnostic (show) commands on network devices via console.
 
@@ -1533,9 +1920,12 @@ async def device_show_run(
 @mcp.tool()
 async def vpcs_config_set(
     project_id: Annotated[str, Field(description="UUID of the project")],
-    device_configs: Annotated[list, Field(
-        description="List of VPCS configs. Each entry: {\"device_name\": \"PC1\", \"commands\": [\"ip 10.0.0.1/24 10.0.0.254\", \"save\"]}"
-    )],
+    device_configs: Annotated[
+        list,
+        Field(
+            description='List of VPCS configs. Each entry: {"device_name": "PC1", "commands": ["ip 10.0.0.1/24 10.0.0.254", "save"]}'
+        ),
+    ],
 ) -> list[dict[str, Any]]:
     """Configure VPCS devices (set IP addresses, gateway, etc.).
 
@@ -1549,12 +1939,18 @@ async def vpcs_config_set(
       - save                            Save config to startup.vpc
       - ping <target>                   Test connectivity
     """
-    return await asyncio.to_thread(_run_handler_sync, vpcs_config_set_handler, {
-        "project_id": project_id, "device_configs": device_configs,
-    })
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        vpcs_config_set_handler,
+        {
+            "project_id": project_id,
+            "device_configs": device_configs,
+        },
+    )
 
 
 # ── Auth‑wrapped SSE app ──────────────────────────────────────────────
+
 
 def _make_auth_wrapper(inner_app):
     """Wrap the SSE app with JWT validation.
@@ -1576,10 +1972,7 @@ def _make_auth_wrapper(inner_app):
                 f"Rejecting MCP connection - GNS3 server initialization not complete. "
                 f"Client: {client_info['host']}:{client_info['port']} ({client_info['user_info']}, Path: {client_info['path']})"
             )
-            response = Response(
-                "GNS3 server initialization not complete - please retry later",
-                status_code=503
-            )
+            response = Response("GNS3 server initialization not complete - please retry later", status_code=503)
             await response(scope, receive, send)
             return
 

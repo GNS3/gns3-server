@@ -53,11 +53,10 @@ def dep_project(project_id: UUID) -> Project:
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Snapshot,
-    dependencies=[Depends(has_privilege("Snapshot.Allocate"))]
+    dependencies=[Depends(has_privilege("Snapshot.Allocate"))],
 )
 async def create_snapshot(
-        snapshot_data: schemas.SnapshotCreate,
-        project: Project = Depends(dep_project)
+    snapshot_data: schemas.SnapshotCreate, project: Project = Depends(dep_project)
 ) -> schemas.Snapshot:
     """
     Create a new snapshot of a project.
@@ -73,7 +72,7 @@ async def create_snapshot(
     "",
     response_model=List[schemas.Snapshot],
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Snapshot.Audit"))]
+    dependencies=[Depends(has_privilege("Snapshot.Audit"))],
 )
 def get_snapshots(project: Project = Depends(dep_project)) -> List[schemas.Snapshot]:
     """
@@ -87,14 +86,10 @@ def get_snapshots(project: Project = Depends(dep_project)) -> List[schemas.Snaps
 
 
 @router.delete(
-    "/{snapshot_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Snapshot.Allocate"))]
+    "/{snapshot_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Snapshot.Allocate"))]
 )
 async def delete_snapshot(
-        snapshot_id: UUID,
-        project: Project = Depends(dep_project),
-        rbac_repo=Depends(get_repository(RbacRepository))
+    snapshot_id: UUID, project: Project = Depends(dep_project), rbac_repo=Depends(get_repository(RbacRepository))
 ) -> None:
     """
     Delete a snapshot.
@@ -110,7 +105,7 @@ async def delete_snapshot(
     "/{snapshot_id}/restore",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
-    dependencies=[Depends(has_privilege("Snapshot.Restore"))]
+    dependencies=[Depends(has_privilege("Snapshot.Restore"))],
 )
 async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)) -> schemas.Project:
     """

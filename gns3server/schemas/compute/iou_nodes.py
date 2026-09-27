@@ -66,7 +66,6 @@ class IOUUpdate(IOUBase):
 
 
 class IOU(IOUBase):
-
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")
@@ -74,6 +73,5 @@ class IOU(IOUBase):
 
 
 class IOUStart(BaseModel):
-
     iourc_content: Optional[str] = Field(None, description="Content of the iourc file")
     license_check: Optional[bool] = Field(None, description="Whether the IOU license should be checked")

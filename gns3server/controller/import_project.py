@@ -41,16 +41,16 @@ Handle the import of project from a .gns3project
 
 
 async def import_project(
-        controller,
-        project_id,
-        stream,
-        location=None,
-        name=None,
-        reset_mac_addresses=False,
-        keep_compute_ids=False,
-        auto_start=False,
-        auto_open=False,
-        auto_close=True,
+    controller,
+    project_id,
+    stream,
+    location=None,
+    name=None,
+    reset_mac_addresses=False,
+    keep_compute_ids=False,
+    auto_start=False,
+    auto_open=False,
+    auto_close=True,
 ):
     """
     Import a project contain in a zip file
@@ -135,7 +135,9 @@ async def import_project(
         else:
             # Round-robin through available compute resources.
             # Only use computes that are connected to avoid import failures
-            available_computes = {compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected}
+            available_computes = {
+                compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected
+            }
             if available_computes:
                 compute_nodes = itertools.cycle(available_computes)
                 for node in topology["topology"]["nodes"]:
@@ -258,6 +260,7 @@ def regenerate_topology_ids(topology, new_project_path, reset_mac_addresses=Fals
     for drawing in topology["topology"]["drawings"]:
         drawing["drawing_id"] = str(uuid.uuid4())
 
+
 def _move_node_file(path, old_id, new_id):
     """
     Move a file from a node when changing its id
@@ -284,7 +287,7 @@ async def _move_files_to_compute(compute, project_id, directory, files_path):
 
     location = os.path.join(directory, files_path)
     if os.path.exists(location):
-        for (dirpath, dirnames, filenames) in os.walk(location, followlinks=False):
+        for dirpath, dirnames, filenames in os.walk(location, followlinks=False):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
                 if os.path.islink(path):
@@ -314,7 +317,7 @@ async def _import_images(controller, images_path):
 
     image_dir = controller.images_path()
     root = images_path
-    for (dirpath, dirnames, filenames) in os.walk(root, followlinks=False):
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         for filename in filenames:
             path = os.path.join(dirpath, filename)
             dst = os.path.join(image_dir, os.path.relpath(path, root))
@@ -326,10 +329,11 @@ async def _import_images(controller, images_path):
                         # read the first 7 bytes of the file.
                         elf_header_start = f.read(7)
                         # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian and have an ELF version of 1
-                        if elf_header_start == b'\x7fELF\x01\x01\x01' or elf_header_start == b'\x7fELF\x02\x01\x01':
+                        if elf_header_start == b"\x7fELF\x01\x01\x01" or elf_header_start == b"\x7fELF\x02\x01\x01":
                             os.chmod(dst, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
                 except OSError as e:
                     continue
+
 
 async def update_snapshots(snapshots_dir, project_path, project_name, project_id, reset_mac_addresses=True):
     """
@@ -342,7 +346,6 @@ async def update_snapshots(snapshots_dir, project_path, project_name, project_id
             continue
         snapshot_path = os.path.join(snapshots_dir, snapshot)
         with tempfile.TemporaryDirectory(dir=snapshots_dir) as tmpdir:
-
             # extract everything to a temporary directory
             try:
                 with open(snapshot_path, "rb") as f:

@@ -48,8 +48,8 @@ async def node(compute_project, manager):
 @pytest.mark.asyncio
 async def test_affect_uuid():
 
-    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
-    assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
+    p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f")
+    assert p.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
 @pytest.mark.asyncio
@@ -58,14 +58,14 @@ async def test_clean_tmp_directory():
     The tmp directory should be clean at project open and close
     """
 
-    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f")
     path = p.tmp_working_directory()
     os.makedirs(path)
     await p.close()
     assert not os.path.exists(path)
 
     os.makedirs(path)
-    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
+    p = Project(project_id="00010203-0405-0607-0809-0a0b0c0d0e0f")
     assert not os.path.exists(path)
 
 
@@ -99,11 +99,7 @@ async def test_variables():
 async def test_json():
 
     p = Project(project_id=str(uuid4()))
-    assert p.asdict() == {
-        "name": p.name,
-        "project_id": p.id,
-        "variables": None
-    }
+    assert p.asdict() == {"name": p.name, "project_id": p.id, "variables": None}
 
 
 @pytest.mark.asyncio
@@ -111,11 +107,7 @@ async def test_json_with_variables():
 
     variables = [{"name": "VAR1", "value": "VAL1"}]
     p = Project(project_id=str(uuid4()), variables=variables)
-    assert p.asdict() == {
-        "name": p.name,
-        "project_id": p.id,
-        "variables": variables
-    }
+    assert p.asdict() == {"name": p.name, "project_id": p.id, "variables": variables}
 
 
 @pytest.mark.asyncio
@@ -123,7 +115,7 @@ async def test_node_working_directory(node, projects_dir):
 
     directory = projects_dir
     p = Project(project_id=str(uuid4()))
-    assert p.node_working_directory(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+    assert p.node_working_directory(node) == os.path.join(directory, p.id, "project-files", node.module_name, node.id)
     assert os.path.exists(p.node_working_directory(node))
 
 
@@ -132,7 +124,7 @@ async def test_node_working_path(node, projects_dir):
 
     directory = projects_dir
     p = Project(project_id=str(uuid4()))
-    assert p.node_working_path(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+    assert p.node_working_path(node) == os.path.join(directory, p.id, "project-files", node.module_name, node.id)
     # after this execution directory structure should not be created
     assert not os.path.exists(p.node_working_path(node))
 
@@ -193,14 +185,8 @@ async def test_list_files():
     files = await project.list_files()
 
     assert files == [
-        {
-            "path": "test.txt",
-            "md5sum": "ad0234829205b9033196ba818f7a872b"
-        },
-        {
-            "path": os.path.join("vm-1", "dynamips", "test.bin"),
-            "md5sum": "098f6bcd4621d373cade4e832627b4f6"
-        }
+        {"path": "test.txt", "md5sum": "ad0234829205b9033196ba818f7a872b"},
+        {"path": os.path.join("vm-1", "dynamips", "test.bin"), "md5sum": "098f6bcd4621d373cade4e832627b4f6"},
     ]
 
 

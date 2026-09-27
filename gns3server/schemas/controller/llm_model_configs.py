@@ -22,7 +22,7 @@ from .base import DateTimeModelMixin
 
 
 # Valid model types
-ModelType = Literal['text', 'vision', 'stt', 'tts', 'multimodal', 'embedding', 'reranking', 'other']
+ModelType = Literal["text", "vision", "stt", "tts", "multimodal", "embedding", "reranking", "other"]
 
 
 # Core model config schema (stored in config JSONB field)
@@ -51,8 +51,7 @@ class LLMModelConfigData(BaseModel):
         "balanced", description="Context trimming strategy: conservative (60%), balanced (75%), aggressive (85%)"
     )
     copilot_mode: Optional[str] = Field(
-        None,
-        description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+        None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
     )
 
     # Allow extra fields for extensibility
@@ -81,8 +80,7 @@ class LLMModelConfigCreate(BaseModel):
         "balanced", description="Context trimming strategy"
     )
     copilot_mode: Optional[str] = Field(
-        None,
-        description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+        None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
     )
 
     # Allow extra config fields
@@ -112,14 +110,13 @@ class LLMModelConfigUpdate(BaseModel):
         None, description="Context trimming strategy"
     )
     copilot_mode: Optional[str] = Field(
-        None,
-        description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+        None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
     )
 
     # Allow extra config fields
     model_config = ConfigDict(extra="allow")
 
-    @field_validator('max_tokens', mode='before')
+    @field_validator("max_tokens", mode="before")
     @classmethod
     def validate_max_tokens(cls, v):
         """Handle string 'null' values for max_tokens."""
@@ -150,8 +147,7 @@ class LLMModelConfigDataWithoutSecret(BaseModel):
         "balanced", description="Context trimming strategy: conservative (60%), balanced (75%), aggressive (85%)"
     )
     copilot_mode: Optional[str] = Field(
-        None,
-        description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+        None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
     )
 
     # Allow extra fields for extensibility

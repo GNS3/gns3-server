@@ -42,7 +42,6 @@ log = logging.getLogger(__name__)
 
 
 class Qemu(BaseManager):
-
     _NODE_CLASS = QemuVM
     _NODE_TYPE = "qemu"
 
@@ -252,17 +251,21 @@ class Qemu(BaseManager):
         :returns: HAXM version number. Returns None if HAXM is not installed.
         """
 
-        assert(sys.platform.startswith("win"))
+        assert sys.platform.startswith("win")
         import winreg
 
-        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products")
+        hkey = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
+        )
         version = None
         for index in range(winreg.QueryInfoKey(hkey)[0]):
             product_id = winreg.EnumKey(hkey, index)
             try:
                 product_key = winreg.OpenKey(hkey, r"{}\InstallProperties".format(product_id))
                 try:
-                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith("Hardware Accelerated Execution Manager"):
+                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith(
+                        "Hardware Accelerated Execution Manager"
+                    ):
                         version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
                         break
                 finally:

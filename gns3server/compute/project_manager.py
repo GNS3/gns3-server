@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class ProjectManager:
-
     """
     This singleton keeps track of available projects.
     """
@@ -106,7 +105,7 @@ class ProjectManager:
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
         project = Project(name=name, project_id=project_id, path=path, variables=variables)
-        #self._check_available_disk_space(project)  # FIXME: disabled for now
+        # self._check_available_disk_space(project)  # FIXME: disabled for now
         self._projects[project.id] = project
         return project
 

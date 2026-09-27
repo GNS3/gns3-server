@@ -81,10 +81,10 @@ def test_get_abs_image_path(qemu, tmpdir, config):
 
     os.makedirs(str(tmpdir / "QEMU"))
     path1 = force_unix_path(str(tmpdir / "test1.bin"))
-    open(path1, 'w+').close()
+    open(path1, "w+").close()
 
     path2 = force_unix_path(str(tmpdir / "QEMU" / "test2.bin"))
-    open(path2, 'w+').close()
+    open(path2, "w+").close()
 
     config.settings.Server.images_path = str(tmpdir)
     assert qemu.get_abs_image_path(path1) == path1
@@ -180,21 +180,21 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     os.makedirs(str(tmpdir / "images1" / "QEMU"))
     os.makedirs(str(tmpdir / "images1" / "VBOX"))
     path1 = force_unix_path(str(tmpdir / "images1" / "test1.bin"))
-    open(path1, 'w+').close()
+    open(path1, "w+").close()
 
     path2 = force_unix_path(str(tmpdir / "images1" / "QEMU" / "test2.bin"))
-    open(path2, 'w+').close()
+    open(path2, "w+").close()
 
     os.makedirs(str(tmpdir / "images2"))
     path3 = force_unix_path(str(tmpdir / "images2" / "test3.bin"))
-    open(path3, 'w+').close()
+    open(path3, "w+").close()
 
     path4 = force_unix_path(str(tmpdir / "test4.bin"))
-    open(path4, 'w+').close()
+    open(path4, "w+").close()
 
     # The user use an image of another emulator we return the full path
     path5 = force_unix_path(str(tmpdir / "images1" / "VBOX" / "test5.bin"))
-    open(path5, 'w+').close()
+    open(path5, "w+").close()
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = str(tmpdir / "images2")
@@ -221,9 +221,9 @@ async def test_list_images(qemu, tmpdir):
             f.write("1234567")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
-        assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
+        assert sorted(await qemu.list_images(), key=lambda k: k["filename"]) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
-            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7}
+            {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
         ]
 
 
@@ -243,11 +243,15 @@ async def test_list_images_recursives(qemu, tmpdir):
             f.write("1234567")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
-
-        assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
+        assert sorted(await qemu.list_images(), key=lambda k: k["filename"]) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7},
-            {"filename": "c.qcow2", "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])), "md5sum": "fcea920f7412b5da7be0cf42b8c93759", "filesize": 7}
+            {
+                "filename": "c.qcow2",
+                "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])),
+                "md5sum": "fcea920f7412b5da7be0cf42b8c93759",
+                "filesize": 7,
+            },
         ]
 
 
@@ -299,10 +303,10 @@ async def test_duplicate_vpcs(vpcs, compute_project):
 @pytest.mark.asyncio
 async def test_duplicate_ethernet_switch(compute_project):
 
-    with asyncio_patch('gns3server.compute.dynamips.nodes.ethernet_switch.EthernetSwitch.create'):
+    with asyncio_patch("gns3server.compute.dynamips.nodes.ethernet_switch.EthernetSwitch.create"):
         dynamips_manager = Dynamips.instance()
         source_node_id = str(uuid.uuid4())
-        await dynamips_manager.create_node("SW-1", compute_project.id, source_node_id, node_type='ethernet_switch')
+        await dynamips_manager.create_node("SW-1", compute_project.id, source_node_id, node_type="ethernet_switch")
         destination_node_id = str(uuid.uuid4())
-        await dynamips_manager.create_node("SW-2", compute_project.id, destination_node_id, node_type='ethernet_switch')
+        await dynamips_manager.create_node("SW-2", compute_project.id, destination_node_id, node_type="ethernet_switch")
         await dynamips_manager.duplicate_node(source_node_id, destination_node_id)

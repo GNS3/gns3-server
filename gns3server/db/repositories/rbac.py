@@ -33,7 +33,6 @@ log = logging.getLogger(__name__)
 
 
 class RbacRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -43,9 +42,7 @@ class RbacRepository(BaseRepository):
         Get a role by its ID.
         """
 
-        query = select(models.Role).\
-            options(selectinload(models.Role.privileges)).\
-            where(models.Role.role_id == role_id)
+        query = select(models.Role).options(selectinload(models.Role.privileges)).where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
@@ -54,9 +51,7 @@ class RbacRepository(BaseRepository):
         Get a role by its name.
         """
 
-        query = select(models.Role).\
-            options(selectinload(models.Role.privileges)).\
-            where(models.Role.name == name)
+        query = select(models.Role).options(selectinload(models.Role.privileges)).where(models.Role.name == name)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
@@ -82,19 +77,13 @@ class RbacRepository(BaseRepository):
         await self._db_session.commit()
         return await self.get_role(db_role.role_id)
 
-    async def update_role(
-            self,
-            role_id: UUID,
-            role_update: schemas.RoleUpdate
-    ) -> Optional[models.Role]:
+    async def update_role(self, role_id: UUID, role_update: schemas.RoleUpdate) -> Optional[models.Role]:
         """
         Update a role.
         """
 
         update_values = role_update.model_dump(exclude_unset=True)
-        query = update(models.Role).\
-            where(models.Role.role_id == role_id).\
-            values(update_values)
+        query = update(models.Role).where(models.Role.role_id == role_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -113,18 +102,12 @@ class RbacRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
-    async def add_privilege_to_role(
-            self,
-            role_id: UUID,
-            privilege: models.Privilege
-    ) -> Union[None, models.Role]:
+    async def add_privilege_to_role(self, role_id: UUID, privilege: models.Privilege) -> Union[None, models.Role]:
         """
         Add a privilege to a role.
         """
 
-        query = select(models.Role).\
-            options(selectinload(models.Role.privileges)).\
-            where(models.Role.role_id == role_id)
+        query = select(models.Role).options(selectinload(models.Role.privileges)).where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         role_db = result.scalars().first()
         if not role_db:
@@ -142,18 +125,12 @@ class RbacRepository(BaseRepository):
         await self._db_session.refresh(role_db)
         return role_db
 
-    async def remove_privilege_from_role(
-            self,
-            role_id: UUID,
-            privilege: models.Privilege
-    ) -> Union[None, models.Role]:
+    async def remove_privilege_from_role(self, role_id: UUID, privilege: models.Privilege) -> Union[None, models.Role]:
         """
         Remove a privilege from a role.
         """
 
-        query = select(models.Role).\
-            options(selectinload(models.Role.privileges)).\
-            where(models.Role.role_id == role_id)
+        query = select(models.Role).options(selectinload(models.Role.privileges)).where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         role_db = result.scalars().first()
         if not role_db:
@@ -169,9 +146,7 @@ class RbacRepository(BaseRepository):
         Get all the role privileges.
         """
 
-        query = select(models.Privilege).\
-            join(models.Privilege.roles).\
-            filter(models.Role.role_id == role_id)
+        query = select(models.Privilege).join(models.Privilege.roles).filter(models.Role.role_id == role_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -237,15 +212,11 @@ class RbacRepository(BaseRepository):
         This method includes related user, group, and role information.
         """
 
-        query = select(models.ACE).\
-            where(
-                (models.ACE.path == path) | (models.ACE.path.startswith(path + "/"))
-            ).\
-            options(
-                selectinload(models.ACE.user),
-                selectinload(models.ACE.group),
-                selectinload(models.ACE.role)
-            )
+        query = (
+            select(models.ACE)
+            .where((models.ACE.path == path) | (models.ACE.path.startswith(path + "/")))
+            .options(selectinload(models.ACE.user), selectinload(models.ACE.group), selectinload(models.ACE.role))
+        )
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
@@ -254,8 +225,7 @@ class RbacRepository(BaseRepository):
         Check if an ACE exists.
         """
 
-        query = select(models.ACE).\
-            where(models.ACE.path == path)
+        query = select(models.ACE).where(models.ACE.path == path)
         result = await self._db_session.execute(query)
         return result.scalars().first() is not None
 
@@ -271,19 +241,13 @@ class RbacRepository(BaseRepository):
         await self._db_session.refresh(db_ace)
         return db_ace
 
-    async def update_ace(
-            self,
-            ace_id: UUID,
-            ace_update: schemas.ACEUpdate
-    ) -> Optional[models.ACE]:
+    async def update_ace(self, ace_id: UUID, ace_update: schemas.ACEUpdate) -> Optional[models.ACE]:
         """
         Update an ACE
         """
 
         update_values = ace_update.model_dump(exclude_unset=True)
-        query = update(models.ACE).\
-            where(models.ACE.ace_id == ace_id).\
-            values(update_values)
+        query = update(models.ACE).where(models.ACE.ace_id == ace_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -307,9 +271,7 @@ class RbacRepository(BaseRepository):
         Delete all ACEs starting with path.
         """
 
-        query = delete(models.ACE).\
-            where(models.ACE.path.startswith(path)).\
-            execution_options(synchronize_session=False)
+        query = delete(models.ACE).where(models.ACE.path.startswith(path)).execution_options(synchronize_session=False)
         result = await self._db_session.execute(query)
         log.debug(f"{result.rowcount} ACE(s) have been deleted")
 
@@ -344,9 +306,11 @@ class RbacRepository(BaseRepository):
         for ace_path, ace_propagate, ace_allowed, ace_privilege in aces:
             if ace_path.startswith("/pool"):
                 resource_pool_id = ace_path.split("/")[2]
-                query = select(models.Resource). \
-                    join(models.Resource.resource_pools). \
-                    filter(models.ResourcePool.resource_pool_id == resource_pool_id)
+                query = (
+                    select(models.Resource)
+                    .join(models.Resource.resource_pools)
+                    .filter(models.ResourcePool.resource_pool_id == resource_pool_id)
+                )
 
                 result = await self._db_session.execute(query)
                 resources = result.scalars().all()
@@ -366,13 +330,15 @@ class RbacRepository(BaseRepository):
         Retrieve all user ACEs matching the user_id and privilege name.
         """
 
-        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name).\
-            join(models.Privilege.roles).\
-            join(models.Role.acl_entries).\
-            join(models.ACE.user). \
-            filter(models.User.user_id == user_id).\
-            filter(models.Privilege.name == privilege_name).\
-            order_by(models.ACE.path.desc())
+        query = (
+            select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
+            .join(models.Privilege.roles)
+            .join(models.Role.acl_entries)
+            .join(models.ACE.user)
+            .filter(models.User.user_id == user_id)
+            .filter(models.Privilege.name == privilege_name)
+            .order_by(models.ACE.path.desc())
+        )
 
         result = await self._db_session.execute(query)
         return result.all()
@@ -382,13 +348,15 @@ class RbacRepository(BaseRepository):
         Retrieve all group ACEs matching the user_id and privilege name.
         """
 
-        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name). \
-            join(models.Privilege.roles). \
-            join(models.Role.acl_entries). \
-            join(models.ACE.group). \
-            join(models.UserGroup.users).\
-            filter(models.User.user_id == user_id). \
-            filter(models.Privilege.name == privilege_name)
+        query = (
+            select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
+            .join(models.Privilege.roles)
+            .join(models.Role.acl_entries)
+            .join(models.ACE.group)
+            .join(models.UserGroup.users)
+            .filter(models.User.user_id == user_id)
+            .filter(models.Privilege.name == privilege_name)
+        )
 
         result = await self._db_session.execute(query)
         return result.all()
@@ -404,12 +372,7 @@ class RbacRepository(BaseRepository):
         pool_resources.extend(await self._get_resources_in_pools(group_aces))
         return list(set(pool_resources))
 
-    async def get_accessible_project_ids(
-            self,
-            user_id: UUID,
-            privilege_name: str,
-            all_project_ids: List[str]
-    ):
+    async def get_accessible_project_ids(self, user_id: UUID, privilege_name: str, all_project_ids: List[str]):
         """
         Batch check which projects a user can access via direct ACE or resource pools.
         Performs 3 fixed DB queries regardless of project count.
@@ -448,8 +411,11 @@ class RbacRepository(BaseRepository):
                 user_denied.add(pid)
 
         # --- User ACE: pool check ---
-        user_pool_ids = {ace_path.split("/")[2] for ace_path, _, ace_allowed, _ in user_aces
-                         if ace_path.startswith("/pools/") and ace_allowed}
+        user_pool_ids = {
+            ace_path.split("/")[2]
+            for ace_path, _, ace_allowed, _ in user_aces
+            if ace_path.startswith("/pools/") and ace_allowed
+        }
 
         pool_accessible_ids = set()
         for pool_id, project_ids in pool_to_projects.items():
@@ -470,8 +436,11 @@ class RbacRepository(BaseRepository):
                 pass
 
         # --- Group ACE: pool check ---
-        group_pool_ids = {ace_path.split("/")[2] for ace_path, _, ace_allowed, _ in group_aces
-                          if ace_path.startswith("/pools/") and ace_allowed}
+        group_pool_ids = {
+            ace_path.split("/")[2]
+            for ace_path, _, ace_allowed, _ in group_aces
+            if ace_path.startswith("/pools/") and ace_allowed
+        }
 
         for pool_id, project_ids in pool_to_projects.items():
             if pool_id in group_pool_ids:

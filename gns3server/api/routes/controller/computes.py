@@ -45,12 +45,12 @@ router = APIRouter(responses=responses)
         409: {"model": schemas.ErrorMessage, "description": "Could not create compute"},
         401: {"model": schemas.ErrorMessage, "description": "Invalid authentication for compute"},
     },
-    dependencies=[Depends(has_privilege("Compute.Allocate"))]
+    dependencies=[Depends(has_privilege("Compute.Allocate"))],
 )
 async def create_compute(
     compute_create: schemas.ComputeCreate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-    connect: Optional[bool] = False
+    connect: Optional[bool] = False,
 ) -> schemas.Compute:
     """
     Create a new compute on the controller.
@@ -64,7 +64,7 @@ async def create_compute(
 @router.post(
     "/{compute_id}/connect",
     status_code=status.HTTP_204_NO_CONTENT,
-    #dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
 )
 async def connect_compute(compute_id: Union[str, UUID]) -> None:
     """
@@ -82,7 +82,7 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
     "/{compute_id}",
     response_model=schemas.Compute,
     response_model_exclude_unset=True,
-    #dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
 )
 async def get_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
@@ -100,7 +100,7 @@ async def get_compute(
     "",
     response_model=List[schemas.Compute],
     response_model_exclude_unset=True,
-    #dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
 )
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
@@ -118,7 +118,7 @@ async def get_computes(
     "/{compute_id}",
     response_model=schemas.Compute,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Compute.Modify"))]
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def update_compute(
     compute_id: Union[str, UUID],
@@ -135,14 +135,12 @@ async def update_compute(
 
 
 @router.delete(
-    "/{compute_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Compute.Allocate"))]
+    "/{compute_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Compute.Allocate"))]
 )
 async def delete_compute(
-        compute_id: Union[str, UUID],
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    compute_id: Union[str, UUID],
+    computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a compute from the controller.
@@ -168,11 +166,10 @@ async def docker_get_images(compute_id: Union[str, UUID]) -> List[schemas.Comput
 @router.post(
     "/{compute_id}/docker/images/pull",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Compute.Modify"))]
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def docker_pull_image(
-        compute_id: Union[str, UUID],
-        image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")
+    compute_id: Union[str, UUID], image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")
 ) -> None:
     """
     Pull or update a Docker image on a compute.

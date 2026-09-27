@@ -27,9 +27,7 @@ import os
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.dirname(test_dir)))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(test_dir)))))
 sys.path.insert(0, project_root)
 
 
@@ -121,6 +119,7 @@ class TestVPCSTelnetInit(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
             VPCSTelnet,
         )
+
         cls.VPCSTelnet = VPCSTelnet
 
     def test_default_enter_parameter(self):
@@ -134,6 +133,7 @@ class TestVPCSTelnetInit(unittest.TestCase):
 
     def test_default_parameters_when_none(self):
         """Test default parameters when not provided."""
+
         # Mock the BaseConnection.__init__ to avoid actual connection
         # But also set device_type since VPCSTelnet.__init__ sets it
         def mock_init(self, *args, **kwargs):
@@ -141,23 +141,20 @@ class TestVPCSTelnetInit(unittest.TestCase):
             kwargs.setdefault("device_type", "gns3_vpcs_telnet")
             self.device_type = kwargs.get("device_type")
 
-        with patch.object(
-            self.VPCSTelnet, "__init__", mock_init
-        ):
+        with patch.object(self.VPCSTelnet, "__init__", mock_init):
             instance = self.VPCSTelnet(host="127.0.0.1")
             self.assertEqual(instance.device_type, "gns3_vpcs_telnet")
 
     def test_device_type_set(self):
         """Test that device_type is set to gns3_vpcs_telnet."""
+
         # Mock the __init__ to set device_type
         def mock_init(self, *args, **kwargs):
             # Simulate what VPCSTelnet.__init__ does
             kwargs.setdefault("device_type", "gns3_vpcs_telnet")
             self.device_type = kwargs.get("device_type")
 
-        with patch.object(
-            self.VPCSTelnet, "__init__", mock_init
-        ):
+        with patch.object(self.VPCSTelnet, "__init__", mock_init):
             instance = self.VPCSTelnet(host="127.0.0.1")
             self.assertEqual(instance.device_type, "gns3_vpcs_telnet")
 
@@ -171,6 +168,7 @@ class TestVPCSTelnetMethods(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
             VPCSTelnet,
         )
+
         cls.VPCSTelnet = VPCSTelnet
 
     def test_check_config_mode_always_false(self):
@@ -213,6 +211,7 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
             VPCSTelnet,
         )
+
         cls.VPCSTelnet = VPCSTelnet
 
     def test_send_command_writes_bytes(self):
@@ -243,7 +242,7 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
 
         # Check that expect_string defaults to r"PC\d+>"
         source = inspect.getsource(self.VPCSTelnet.send_command)
-        self.assertIn("expect_string = r\"PC\\d+>\"", source)
+        self.assertIn('expect_string = r"PC\\d+>"', source)
 
     def test_send_command_timing_calls_send_command(self):
         """Test that send_command_timing delegates to send_command."""
@@ -277,6 +276,7 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
             VPCSTelnet,
         )
+
         cls.VPCSTelnet = VPCSTelnet
 
     def test_telnet_login_default_prompt_pattern(self):
@@ -335,19 +335,16 @@ class TestVPCSTelnetRegistration(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko import (
             vpcs_telnet,
         )
+
         cls.vpcs_telnet = vpcs_telnet
 
     def test_register_function_exists(self):
         """Test that register_custom_device_type function exists."""
-        self.assertTrue(
-            hasattr(self.vpcs_telnet, "register_custom_device_type")
-        )
+        self.assertTrue(hasattr(self.vpcs_telnet, "register_custom_device_type"))
 
     def test_register_function_is_callable(self):
         """Test that register_custom_device_type is callable."""
-        self.assertTrue(
-            callable(self.vpcs_telnet.register_custom_device_type)
-        )
+        self.assertTrue(callable(self.vpcs_telnet.register_custom_device_type))
 
 
 class TestVPCSTelnetAnsiStripping(unittest.TestCase):
@@ -359,6 +356,7 @@ class TestVPCSTelnetAnsiStripping(unittest.TestCase):
         from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
             VPCSTelnet,
         )
+
         cls.VPCSTelnet = VPCSTelnet
 
     def test_strip_ansi_codes_method_exists(self):
@@ -435,14 +433,10 @@ IP/MASK     : 192.168.1.20/24"""
         # Mock necessary attributes
         instance.remote_conn = MagicMock()
         instance.remote_conn.write = MagicMock()
-        instance.read_until_pattern = MagicMock(
-            return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>"
-        )
+        instance.read_until_pattern = MagicMock(return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>")
 
         # Mock _strip_ansi_codes to verify it's called
-        instance._strip_ansi_codes = Mock(
-            return_value="NAME        : PC2\nPC2>"
-        )
+        instance._strip_ansi_codes = Mock(return_value="NAME        : PC2\nPC2>")
 
         # Call send_command
         instance.send_command("show ip")
@@ -476,9 +470,7 @@ def run_tests():
     print("\n" + "=" * 100)
     print("Test Summary:")
     print(f"  Run: {result.testsRun}")
-    success_count = (
-        result.testsRun - len(result.failures) - len(result.errors)
-    )
+    success_count = result.testsRun - len(result.failures) - len(result.errors)
     print(f"  Success: {success_count}")
     print(f"  Failed: {len(result.failures)}")
     print(f"  Errors: {len(result.errors)}")

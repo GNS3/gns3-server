@@ -81,6 +81,7 @@ def _render_template(template: str, device_configs: list[dict], commands_field: 
 
 # ── Tool handlers ──────────────────────────────────────────────────────────
 
+
 def device_config_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> list[dict[str, Any]]:
     """Send configuration commands to network devices via console."""
     project_id = params.get("project_id")
@@ -97,10 +98,12 @@ def device_config_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
     from gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir import ExecuteMultipleDeviceConfigCommands
 
     tool = ExecuteMultipleDeviceConfigCommands()
-    input_data = json.dumps({
-        "project_id": project_id,
-        "device_configs": device_configs,
-    })
+    input_data = json.dumps(
+        {
+            "project_id": project_id,
+            "device_configs": device_configs,
+        }
+    )
     return tool._run(
         input_data,
         jwt_token=gns3_ctx["jwt_token"],
@@ -114,7 +117,12 @@ def device_show_run_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
     device_configs = params.get("device_configs")
     template = params.get("template")
     if not project_id or not device_configs:
-        return [{"status": "failed", "error": "project_id and device_configs (list of {device_name, commands}) are required"}]
+        return [
+            {
+                "status": "failed",
+                "error": "project_id and device_configs (list of {device_name, commands}) are required",
+            }
+        ]
 
     if template:
         device_configs = _render_template(template, device_configs, commands_field="commands")
@@ -124,10 +132,12 @@ def device_show_run_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
     from gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir import ExecuteMultipleDeviceCommands
 
     tool = ExecuteMultipleDeviceCommands()
-    input_data = json.dumps({
-        "project_id": project_id,
-        "device_configs": device_configs,
-    })
+    input_data = json.dumps(
+        {
+            "project_id": project_id,
+            "device_configs": device_configs,
+        }
+    )
     return tool._run(
         input_data,
         jwt_token=gns3_ctx["jwt_token"],
@@ -145,10 +155,12 @@ def vpcs_config_set_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
     from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
 
     tool = VPCSCommands()
-    input_data = json.dumps({
-        "project_id": project_id,
-        "device_configs": device_configs,
-    })
+    input_data = json.dumps(
+        {
+            "project_id": project_id,
+            "device_configs": device_configs,
+        }
+    )
     return tool._run(
         input_data,
         jwt_token=gns3_ctx["jwt_token"],

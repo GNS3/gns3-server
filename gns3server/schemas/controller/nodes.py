@@ -157,13 +157,11 @@ class NodeBase(BaseModel):
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None
     tags: Optional[List[str]] = Field(
-        default_factory=list,
-        description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
+        default_factory=list, description="User-defined metadata tags (e.g. 'vendor:cisco' or 'model:7200')"
     )
 
 
 class NodeCreate(NodeBase):
-
     node_id: UUID = Field(default_factory=uuid4)
 
 
@@ -178,9 +176,9 @@ class NodeUpdate(NodeBase):
 
 
 class Node(NodeBase):
-
-    template_id: Optional[UUID] = Field(None,
-                                        description="Template UUID from which the node has been created. Read only")
+    template_id: Optional[UUID] = Field(
+        None, description="Template UUID from which the node has been created. Read only"
+    )
     project_id: Optional[UUID] = None
     node_directory: Optional[str] = Field(None, description="Working directory of the node. Read only")
     status: Optional[NodeStatus] = Field(None, description="Node status. Read only")

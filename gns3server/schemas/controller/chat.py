@@ -40,7 +40,7 @@ class ChatRequest(BaseModel):
         None,
         description="LLM temperature parameter (NOTE: currently not used. "
         "Temperature is loaded from user's LLM config in database. "
-        "Reserved for future runtime override support.)"
+        "Reserved for future runtime override support.)",
     )
     mode: Literal["text"] = Field(default="text", description="Interaction mode")
 
@@ -49,14 +49,14 @@ class ChatResponse(BaseModel):
     """Chat streaming response model."""
 
     type: Literal[
-        "content",      # AI text content
-        "tool_call",    # Tool call request
-        "tool_start",   # Tool execution started
-        "tool_end",     # Tool execution completed
-        "error",        # Error message
-        "done",         # Stream ended
-        "heartbeat",    # Keep-alive signal
-        "abort"         # Stream aborted
+        "content",  # AI text content
+        "tool_call",  # Tool call request
+        "tool_start",  # Tool execution started
+        "tool_end",  # Tool execution completed
+        "error",  # Error message
+        "done",  # Stream ended
+        "heartbeat",  # Keep-alive signal
+        "abort",  # Stream aborted
     ] = Field(..., description="Response message type")
     content: Optional[str] = Field(None, description="Text content (for type=content)")
     message_id: Optional[str] = Field(None, description="Message ID")

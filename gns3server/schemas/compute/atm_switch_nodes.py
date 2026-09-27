@@ -50,6 +50,5 @@ class ATMSwitchUpdate(ATMSwitchBase):
 
 
 class ATMSwitch(ATMSwitchBase):
-
     project_id: UUID
     status: Optional[NodeStatus] = None

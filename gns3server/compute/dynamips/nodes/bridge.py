@@ -24,7 +24,6 @@ from .device import Device
 
 
 class Bridge(Device):
-
     """
     Dynamips bridge.
 

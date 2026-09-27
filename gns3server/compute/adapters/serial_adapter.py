@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class SerialAdapter(Adapter):
-
     """
     Serial adapter.
     """

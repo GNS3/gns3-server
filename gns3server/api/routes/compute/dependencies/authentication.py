@@ -32,7 +32,7 @@ security = HTTPBasic(auto_error=False)
 def compute_authentication(credentials: Optional[HTTPBasicCredentials] = Depends(security)) -> None:
     """
     Authenticate compute requests.
-    
+
     Returns None if authentication is disabled or if authentication succeeds
     Raises HTTPException if authentication is required but credentials are invalid
     """
@@ -58,9 +58,9 @@ def compute_authentication(credentials: Optional[HTTPBasicCredentials] = Depends
             headers={"WWW-Authenticate": "Basic"},
         )
 
+
 async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSocket]:
-    """
-    """
+    """ """
 
     server_settings = Config.instance().settings.Server
 

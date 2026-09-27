@@ -44,7 +44,6 @@ class ConsoleType(str, Enum):
 
 
 class EthernetSwitchTemplate(TemplateBase):
-
     category: Optional[Category] = Category.switch
     default_name_format: Optional[str] = "Switch{0}"
     symbol: Optional[str] = "ethernet_switch"
@@ -53,5 +52,4 @@ class EthernetSwitchTemplate(TemplateBase):
 
 
 class EthernetSwitchTemplateUpdate(EthernetSwitchTemplate):
-
     pass

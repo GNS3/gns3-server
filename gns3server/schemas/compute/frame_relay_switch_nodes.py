@@ -50,6 +50,5 @@ class FrameRelaySwitchUpdate(FrameRelaySwitchBase):
 
 
 class FrameRelaySwitch(FrameRelaySwitchBase):
-
     project_id: UUID
     status: Optional[NodeStatus] = None

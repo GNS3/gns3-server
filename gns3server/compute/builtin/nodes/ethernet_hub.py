@@ -24,7 +24,6 @@ log = logging.getLogger(__name__)
 
 
 class EthernetHub(BaseNode):
-
     """
     Ethernet hub
 
@@ -40,12 +39,7 @@ class EthernetHub(BaseNode):
 
     def asdict(self):
 
-        return {
-            "name": self.name,
-            "usage": self.usage,
-            "node_id": self.id,
-            "project_id": self.project.id
-        }
+        return {"name": self.name, "usage": self.usage, "node_id": self.id, "project_id": self.project.id}
 
     async def create(self):
         """

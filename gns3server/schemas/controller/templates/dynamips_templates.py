@@ -31,7 +31,6 @@ from enum import Enum
 
 
 class DynamipsTemplate(TemplateBase):
-
     category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "R{0}"
     symbol: Optional[str] = "router"
@@ -69,7 +68,6 @@ class DynamipsTemplate(TemplateBase):
 
 
 class C7200DynamipsTemplate(DynamipsTemplate):
-
     ram: Optional[int] = Field(512, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(512, gt=0, description="Amount of NVRAM in KB")
     npe: Optional[DynamipsNPE] = Field(DynamipsNPE.npe_400, description="NPE model")
@@ -78,13 +76,11 @@ class C7200DynamipsTemplate(DynamipsTemplate):
 
 
 class C7200DynamipsTemplateUpdate(C7200DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C3725DynamipsTemplate(DynamipsTemplate):
-
     ram: Optional[int] = Field(128, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
@@ -92,13 +88,11 @@ class C3725DynamipsTemplate(DynamipsTemplate):
 
 
 class C3725DynamipsTemplateUpdate(C3725DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C3745DynamipsTemplate(DynamipsTemplate):
-
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
@@ -106,20 +100,17 @@ class C3745DynamipsTemplate(DynamipsTemplate):
 
 
 class C3745DynamipsTemplateUpdate(C3745DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C3600ChassisType(str, Enum):
-
     chassis_3620 = "3620"
     chassis_3640 = "3640"
     chassis_3660 = "3660"
 
 
 class C3600DynamipsTemplate(DynamipsTemplate):
-
     chassis: Optional[C3600ChassisType] = Field("c3660", description="Chassis type")
     ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
@@ -128,13 +119,11 @@ class C3600DynamipsTemplate(DynamipsTemplate):
 
 
 class C3600DynamipsTemplateUpdate(C3600DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C2691DynamipsTemplate(DynamipsTemplate):
-
     ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
@@ -142,13 +131,11 @@ class C2691DynamipsTemplate(DynamipsTemplate):
 
 
 class C2691DynamipsTemplateUpdate(C2691DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C2600ChassisType(str, Enum):
-
     chassis_2610 = "2610"
     chassis_2620 = "2620"
     chassis_2610xm = "2610XM"
@@ -161,7 +148,6 @@ class C2600ChassisType(str, Enum):
 
 
 class C2600DynamipsTemplate(DynamipsTemplate):
-
     chassis: Optional[C2600ChassisType] = Field("2651XM", description="Chassis type")
     ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
@@ -170,13 +156,11 @@ class C2600DynamipsTemplate(DynamipsTemplate):
 
 
 class C2600DynamipsTemplateUpdate(C2600DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C1700ChassisType(str, Enum):
-
     chassis_1720 = "1720"
     chassis_1721 = "1721"
     chassis_1750 = "1750"
@@ -185,7 +169,6 @@ class C1700ChassisType(str, Enum):
 
 
 class C1700DynamipsTemplate(DynamipsTemplate):
-
     chassis: Optional[C1700ChassisType] = Field("1760", description="Chassis type")
     ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
@@ -194,6 +177,5 @@ class C1700DynamipsTemplate(DynamipsTemplate):
 
 
 class C1700DynamipsTemplateUpdate(C1700DynamipsTemplate):
-
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")

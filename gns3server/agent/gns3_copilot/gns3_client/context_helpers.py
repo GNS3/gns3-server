@@ -62,12 +62,8 @@ logger = logging.getLogger(__name__)
 
 # Context variables for request-scoped data
 # Automatically cleaned up when request context ends
-_jwt_token_context: ContextVar[Optional[str]] = ContextVar(
-    "_jwt_token_context", default=None
-)
-_llm_config_context: ContextVar[Optional[dict]] = ContextVar(
-    "_llm_config_context", default=None
-)
+_jwt_token_context: ContextVar[Optional[str]] = ContextVar("_jwt_token_context", default=None)
+_llm_config_context: ContextVar[Optional[dict]] = ContextVar("_llm_config_context", default=None)
 
 
 def set_current_jwt_token(token: str) -> None:

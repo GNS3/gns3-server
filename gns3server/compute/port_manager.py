@@ -95,7 +95,6 @@ BANNED_PORTS = {
 
 
 class PortManager:
-
     """
     :param host: IP address to bind for console connections
     """
@@ -318,7 +317,9 @@ class PortManager:
             if port in self._used_tcp_ports:
                 old_port = port
                 port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-                msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                msg = (
+                    f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                )
                 log.debug(msg)
                 return port
             if port < port_range_start or port > port_range_end:
@@ -335,7 +336,9 @@ class PortManager:
             except OSError:
                 old_port = port
                 port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-                msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                msg = (
+                    f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
+                )
                 log.debug(msg)
                 return port
 
@@ -395,8 +398,7 @@ class PortManager:
             if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"UDP port {port} is outside the range "
-                    f"{self._udp_port_range[0]}-{self._udp_port_range[1]}",
+                    detail=f"UDP port {port} is outside the range {self._udp_port_range[0]}-{self._udp_port_range[1]}",
                 )
             self._used_udp_ports.add(port)
             project.record_udp_port(port)

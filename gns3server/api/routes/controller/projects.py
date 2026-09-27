@@ -71,14 +71,10 @@ def dep_project(project_id: UUID) -> Project:
     return project
 
 
-@router.get(
-    "",
-    response_model=List[schemas.Project],
-    response_model_exclude_unset=True
-)
+@router.get("", response_model=List[schemas.Project], response_model_exclude_unset=True)
 async def get_projects(
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> List[schemas.Project]:
     """
     Return all projects.
@@ -124,11 +120,11 @@ async def get_projects(
     response_model=schemas.Project,
     response_model_exclude_unset=True,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def create_project(
-        project_data: schemas.ProjectCreate,
-        current_user: schemas.User = Depends(get_current_active_user),
+    project_data: schemas.ProjectCreate,
+    current_user: schemas.User = Depends(get_current_active_user),
 ) -> schemas.Project:
     """
     Create a new project.
@@ -158,11 +154,10 @@ def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
     "/{project_id}",
     response_model=schemas.Project,
     response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def update_project(
-        project_data: schemas.ProjectUpdate,
-        project: Project = Depends(dep_project)
+    project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)
 ) -> schemas.Project:
     """
     Update a project.
@@ -175,13 +170,11 @@ async def update_project(
 
 
 @router.delete(
-    "/{project_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    "/{project_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def delete_project(
-        project: Project = Depends(dep_project),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    project: Project = Depends(dep_project),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a project.
@@ -272,9 +265,7 @@ async def replay_tag_range(
     Required privilege: Project.Audit
     """
 
-    return await _replay_response(
-        marker_replay.build_timeline(project, tag, filter_expr=filter, link_id=link)
-    )
+    return await _replay_response(marker_replay.build_timeline(project, tag, filter_expr=filter, link_id=link))
 
 
 @router.get(
@@ -306,8 +297,13 @@ async def replay_tag_frames(
 
     return await _replay_response(
         marker_replay.query_frames(
-            project, tag, ts, window_ms=window_ms, limit=limit,
-            filter_expr=filter, link_id=link,
+            project,
+            tag,
+            ts,
+            window_ms=window_ms,
+            limit=limit,
+            filter_expr=filter,
+            link_id=link,
         )
     )
 
@@ -343,9 +339,7 @@ async def replay_tag_frame_detail(
     """
 
     return await _replay_response(
-        marker_replay.decode_frame(
-            project, tag, ts, node_id, link_id, marker, frame_number=frame_number
-        )
+        marker_replay.decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=frame_number)
     )
 
 
@@ -353,10 +347,8 @@ async def replay_tag_frame_detail(
 # Project-level marker definitions (global rules inherited by every link)
 # ---------------------------------------------------------------------------
 
-@router.get(
-    "/{project_id}/marker-definitions",
-    dependencies=[Depends(has_privilege("Project.Audit"))]
-)
+
+@router.get("/{project_id}/marker-definitions", dependencies=[Depends(has_privilege("Project.Audit"))])
 def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
     """
     Return all project-level marker definitions with their bound link IDs.
@@ -368,9 +360,9 @@ def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
     for name, d in project.marker_definitions.items():
         # Collect which links currently carry an inherited copy.
         bound = [
-            lid for lid, link in project.links.items()
-            if f"global-{name}" in link.markers
-            and link.markers[f"global-{name}"].get("inherited_from") == name
+            lid
+            for lid, link in project.links.items()
+            if f"global-{name}" in link.markers and link.markers[f"global-{name}"].get("inherited_from") == name
         ]
         result[name] = {**d, "link_ids": bound}
     return result
@@ -379,11 +371,10 @@ def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
 @router.post(
     "/{project_id}/marker-definitions",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def create_marker_definition(
-    def_data: schemas.MarkerDefinitionCreate,
-    project: Project = Depends(dep_project)
+    def_data: schemas.MarkerDefinitionCreate, project: Project = Depends(dep_project)
 ) -> dict:
     """
     Create a project-level marker definition and fan out to every link.
@@ -406,14 +397,9 @@ async def create_marker_definition(
     return project.marker_definitions.get(name, {})
 
 
-@router.put(
-    "/{project_id}/marker-definitions/{def_name}",
-    dependencies=[Depends(has_privilege("Project.Modify"))]
-)
+@router.put("/{project_id}/marker-definitions/{def_name}", dependencies=[Depends(has_privilege("Project.Modify"))])
 async def update_marker_definition(
-    def_name: str,
-    def_data: schemas.MarkerDefinitionCreate,
-    project: Project = Depends(dep_project)
+    def_name: str, def_data: schemas.MarkerDefinitionCreate, project: Project = Depends(dep_project)
 ) -> dict:
     """
     Update a marker definition and sync all inherited copies on every link.
@@ -436,12 +422,9 @@ async def update_marker_definition(
 @router.post(
     "/{project_id}/marker-definitions/{def_name}/pause",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
-async def pause_marker_definition(
-    def_name: str,
-    project: Project = Depends(dep_project)
-) -> None:
+async def pause_marker_definition(def_name: str, project: Project = Depends(dep_project)) -> None:
     """
     Pause a definition: toggle off every inherited ``global-{def_name}`` copy
     on every link (uBridge ``enable_packet_filter off``, instant — no NIO
@@ -457,12 +440,9 @@ async def pause_marker_definition(
 @router.post(
     "/{project_id}/marker-definitions/{def_name}/resume",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
-async def resume_marker_definition(
-    def_name: str,
-    project: Project = Depends(dep_project)
-) -> None:
+async def resume_marker_definition(def_name: str, project: Project = Depends(dep_project)) -> None:
     """Resume a paused definition (toggle on every inherited copy).
 
     Required privilege: Project.Modify
@@ -474,12 +454,9 @@ async def resume_marker_definition(
 @router.delete(
     "/{project_id}/marker-definitions/{def_name}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
-async def delete_marker_definition(
-    def_name: str,
-    project: Project = Depends(dep_project)
-) -> None:
+async def delete_marker_definition(def_name: str, project: Project = Depends(dep_project)) -> None:
     """
     Delete a marker definition and remove all inherited copies from every link.
 
@@ -493,7 +470,7 @@ async def delete_marker_definition(
     "/{project_id}/close",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def close_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -510,7 +487,7 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def open_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
@@ -528,7 +505,7 @@ async def open_project(project: Project = Depends(dep_project)) -> schemas.Proje
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     """
@@ -552,6 +529,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
 
     from gns3server.api.server import app
+
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
 
@@ -579,9 +557,9 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
 
 @router.websocket("/{project_id}/notifications/ws")
 async def project_ws_notifications(
-        project_id: UUID,
-        websocket: WebSocket,
-        current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit"))
+    project_id: UUID,
+    websocket: WebSocket,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
     Receive project notifications about the controller from WebSocket.
@@ -617,9 +595,9 @@ async def project_ws_notifications(
 
 @router.websocket("/{project_id}/notifications/markers/ws")
 async def project_marker_ws_notifications(
-        project_id: UUID,
-        websocket: WebSocket,
-        current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit"))
+    project_id: UUID,
+    websocket: WebSocket,
+    current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
     Receive marker notifications (e.g. marker.match) for a project on a
@@ -635,14 +613,18 @@ async def project_marker_ws_notifications(
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
 
-    log.info(f"New client has connected to the marker notification stream for project ID '{project.id}' (WebSocket method)")
+    log.info(
+        f"New client has connected to the marker notification stream for project ID '{project.id}' (WebSocket method)"
+    )
     try:
         with controller.notification.project_marker_queue(project.id) as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):
-        log.info(f"Client has disconnected from the marker notification stream for project ID '{project.id}' (WebSocket method)")
+        log.info(
+            f"Client has disconnected from the marker notification stream for project ID '{project.id}' (WebSocket method)"
+        )
     except WebSocketException as e:
         log.warning(f"Error while sending marker event to WebSocket client: {e}")
 
@@ -685,7 +667,9 @@ async def export_project(
             raise ControllerBadRequestError("Compression level must be between 1 and 22 for Zstandard compression")
 
     if compression_level is not None and compression_query in ("none", "lzma"):
-        raise ControllerBadRequestError(f"Compression level is not supported for '{compression_query}' compression method")
+        raise ControllerBadRequestError(
+            f"Compression level is not supported for '{compression_query}' compression method"
+        )
 
     try:
         begin = time.time()
@@ -693,8 +677,9 @@ async def export_project(
         working_dir = os.path.abspath(os.path.join(project.path, os.pardir))
 
         async def streamer():
-            log.info(f"Exporting project '{project.name}' with '{compression_query}' compression "
-                     f"(level {compression_level})")
+            log.info(
+                f"Exporting project '{project.name}' with '{compression_query}' compression (level {compression_level})"
+            )
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 with aiozipstream.ZipFile(compression=compression, compresslevel=compression_level) as zstream:
                     await export_controller_project(
@@ -720,7 +705,7 @@ async def export_project(
     encoded = urllib.parse.quote(project.name, safe="")
     headers = {
         "Content-Disposition": (
-            f'attachment; filename="{fallback}.gns3project"; filename*=UTF-8\'\'{encoded}.gns3project'
+            f"attachment; filename=\"{fallback}.gns3project\"; filename*=UTF-8''{encoded}.gns3project"
         )
     }
     return StreamingResponse(streamer(), media_type="application/gns3project", headers=headers)
@@ -730,13 +715,9 @@ async def export_project(
     "/{project_id}/import",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
-    dependencies=[Depends(has_privilege("Project.Allocate"))]
+    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
-async def import_project(
-        project_id: UUID,
-        request: Request,
-        name: Optional[str] = None
-) -> schemas.Project:
+async def import_project(project_id: UUID, request: Request, name: Optional[str] = None) -> schemas.Project:
     """
     Import a project from a portable archive.
 
@@ -768,14 +749,14 @@ async def import_project(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}},
-    dependencies=[Depends(has_privilege("Project.Audit"))]
+    dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def duplicate_project(
-        project_data: schemas.ProjectDuplicate,
-        project: Project = Depends(dep_project),
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+    project_data: schemas.ProjectDuplicate,
+    project: Project = Depends(dep_project),
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> schemas.Project:
     """
     Duplicate a project.
@@ -790,22 +771,26 @@ async def duplicate_project(
         can_be_duplicated_somewhere = False
         if pool_memberships:
             for pool in pool_memberships:
-                if await rbac_repo.check_user_has_privilege(current_user.user_id, f"/pools/{pool.resource_pool_id}", "Project.Allocate"):
+                if await rbac_repo.check_user_has_privilege(
+                    current_user.user_id, f"/pools/{pool.resource_pool_id}", "Project.Allocate"
+                ):
                     can_be_duplicated_somewhere = True
                     break
 
-        if not can_be_duplicated_somewhere and not await rbac_repo.check_user_has_privilege(current_user.user_id, "/projects", "Project.Allocate"):
+        if not can_be_duplicated_somewhere and not await rbac_repo.check_user_has_privilege(
+            current_user.user_id, "/projects", "Project.Allocate"
+        ):
             log.warning(f"Project {project.name} cannot be duplicated anywhere")
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     reset_mac_addresses = project_data.reset_mac_addresses
-    new_project = await project.duplicate(
-        name=project_data.name, reset_mac_addresses=reset_mac_addresses
-    )
+    new_project = await project.duplicate(name=project_data.name, reset_mac_addresses=reset_mac_addresses)
 
     # Add the new project in the same resource pools if the duplicated project belongs to any
     if pool_memberships:
-        resource_create = schemas.ResourceCreate(resource_id=new_project.id, resource_type="project", name=new_project.name)
+        resource_create = schemas.ResourceCreate(
+            resource_id=new_project.id, resource_type="project", name=new_project.name
+        )
         resource = await pools_repo.create_resource(resource_create)
         for pool in pool_memberships:
             await pools_repo.add_resource_to_pool(pool.resource_pool_id, resource)
@@ -827,7 +812,7 @@ async def locked_project(project: Project = Depends(dep_project)) -> bool:
 @router.post(
     "/{project_id}/lock",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def lock_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -842,7 +827,7 @@ async def lock_project(project: Project = Depends(dep_project)) -> None:
 @router.post(
     "/{project_id}/unlock",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def unlock_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -894,7 +879,7 @@ async def get_project_gns3_file(project: Project = Depends(dep_project)) -> File
 @router.post(
     "/{project_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Project.Modify"))]
+    dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
     """
@@ -929,7 +914,7 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
     response_model=schemas.Node,
     status_code=status.HTTP_201_CREATED,
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or template"}},
-    dependencies=[Depends(has_privilege("Node.Allocate"))]
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
 async def create_node_from_template(
     project_id: UUID,

@@ -70,28 +70,60 @@ MAX_NODE_FILE_BYTES = 50 * 1024  # 50 KiB
 
 VALID_NODE_FIELDS = {
     # NodeBase
-    "compute_id", "name", "node_type", "node_id",
-    "console", "console_type", "console_auto_start",
-    "aux", "aux_type", "properties", "label", "symbol",
-    "x", "y", "z", "locked",
-    "port_name_format", "port_segment_size", "first_port_name",
-    "custom_adapters", "tags",
+    "compute_id",
+    "name",
+    "node_type",
+    "node_id",
+    "console",
+    "console_type",
+    "console_auto_start",
+    "aux",
+    "aux_type",
+    "properties",
+    "label",
+    "symbol",
+    "x",
+    "y",
+    "z",
+    "locked",
+    "port_name_format",
+    "port_segment_size",
+    "first_port_name",
+    "custom_adapters",
+    "tags",
     # Node
-    "template_id", "project_id", "node_directory", "status",
-    "command_line", "width", "height", "ports", "console_host",
+    "template_id",
+    "project_id",
+    "node_directory",
+    "status",
+    "command_line",
+    "width",
+    "height",
+    "ports",
+    "console_host",
 }
 
 VALID_LINK_FIELDS = {
-    "link_id", "project_id", "link_type", "nodes", "suspend",
-    "link_style", "filters", "show_filters_icon",
-    "capturing", "capture_file_name", "capture_file_path",
-    "capture_compute_id", "wireshark",
+    "link_id",
+    "project_id",
+    "link_type",
+    "nodes",
+    "suspend",
+    "link_style",
+    "filters",
+    "show_filters_icon",
+    "capturing",
+    "capture_file_name",
+    "capture_file_path",
+    "capture_compute_id",
+    "wireshark",
 }
 
 LINK_DEFAULT_FIELDS = ["link_id", "link_type", "nodes"]
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def _get_connector(gns3_ctx: dict[str, Any]):
     return Gns3Connector(
@@ -102,9 +134,7 @@ def _get_connector(gns3_ctx: dict[str, Any]):
     )
 
 
-def build_gns3_ctx(
-    jwt_token: str | None = None, url: str | None = None
-) -> dict[str, Any] | None:
+def build_gns3_ctx(jwt_token: str | None = None, url: str | None = None) -> dict[str, Any] | None:
     """
     Build a handler ``gns3_ctx`` for in-process copilot callers.
 
@@ -183,12 +213,13 @@ def _normalize_link_nodes(nodes) -> list[dict[str, Any]]:
         ]
     raise ValueError(
         f"Unrecognized link nodes format. "
-        f"Use standard [{{\"node_id\":\"..\",\"adapter_number\":0,\"port_number\":0}},...] "
-        f"or compact [\"id\",0,0,\"id\",0,0], got: {nodes}"
+        f'Use standard [{{"node_id":"..","adapter_number":0,"port_number":0}},...] '
+        f'or compact ["id",0,0,"id",0,0], got: {nodes}'
     )
 
 
 # ── Node handlers ──────────────────────────────────────────────────────────
+
 
 def get_nodes_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     project_id = params.get("project_id")
@@ -199,7 +230,7 @@ def get_nodes_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[
     fields = params.get("fields")
     if fields:
         if not isinstance(fields, list):
-            return {"error": "fields must be a list of field names, e.g. [\"name\", \"status\"]"}
+            return {"error": 'fields must be a list of field names, e.g. ["name", "status"]'}
         invalid = [f for f in fields if f not in VALID_NODE_FIELDS]
         if invalid:
             return {
@@ -221,7 +252,7 @@ def get_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[s
     fields = params.get("fields")
     if fields:
         if not isinstance(fields, list):
-            return {"error": "fields must be a list of field names, e.g. [\"name\", \"status\"]"}
+            return {"error": 'fields must be a list of field names, e.g. ["name", "status"]'}
         invalid = [f for f in fields if f not in VALID_NODE_FIELDS]
         if invalid:
             return {
@@ -235,12 +266,14 @@ def get_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[s
 
 def _batch_lifecycle(project_id, node_ids, action, conn, action_label):
     """Helper to run a lifecycle action on multiple nodes in parallel."""
+
     def _act(nid):
         try:
             conn.http_call("post", f"{conn.base_url}/projects/{project_id}/nodes/{nid}/{action}")
             return {"node_id": nid, "status": "success", "message": f"Node {nid} {action_label}"}
         except Exception as e:
             return {"node_id": nid, "status": "error", "error": str(e)}
+
     with ThreadPoolExecutor(max_workers=min(len(node_ids), BATCH_MAX_WORKERS)) as pool:
         return list(pool.map(_act, node_ids))
 
@@ -307,7 +340,7 @@ def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
 
     fields = params.get("fields")
     if fields is not None and not isinstance(fields, list):
-        return {"error": "fields must be a list, e.g. [\"node_id\", \"name\"]"}
+        return {"error": 'fields must be a list, e.g. ["node_id", "name"]'}
 
     nodes = params.get("nodes")
     # Batch mode: nodes=[{template_id?, x, y, name?, compute_id?}]
@@ -317,6 +350,7 @@ def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
             return {"error": "nodes must be a non-empty array"}
         default_tid = params.get("template_id")
         conn = _get_connector(gns3_ctx)
+
         def _create_one(node_data):
             tid = node_data.get("template_id", default_tid)
             if not tid:
@@ -335,6 +369,7 @@ def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
                 return {"template_id": tid, "status": "success", "node": _filter_node_response(resp, fields)}
             except Exception as e:
                 return {"template_id": tid, "status": "error", "error": str(e)}
+
         if any(not node.get("name") for node in nodes):
             # The controller assigns default names (R-1, R-2, ...) and console
             # ports in request arrival order, and a parallel fan-out makes the
@@ -375,12 +410,14 @@ def delete_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
         if not isinstance(node_ids, list):
             return {"error": "node_ids must be a list"}
         conn = _get_connector(gns3_ctx)
+
         def _del(nid):
             try:
                 conn.http_call("delete", f"{conn.base_url}/projects/{project_id}/nodes/{nid}")
                 return {"node_id": nid, "status": "success", "message": f"Node {nid} deleted"}
             except Exception as e:
                 return {"node_id": nid, "status": "error", "error": str(e)}
+
         with ThreadPoolExecutor(max_workers=min(len(node_ids), BATCH_MAX_WORKERS)) as pool:
             return list(pool.map(_del, node_ids))
     node_id = params.get("node_id")
@@ -423,12 +460,16 @@ def get_node_console_info_handler(params: dict[str, Any], gns3_ctx: dict[str, An
     # the ~200-char JWT previously embedded here (dropped header segment →
     # "Missing 'alg' value in header" on the server).
     username = gns3_ctx.get("jwt_username")
-    ticket = access_ticket_service.mint(
-        username,
-        token_version=gns3_ctx.get("jwt_token_version", 0),
-        project_id=project_id,
-        node_id=node_id,
-    ) if username else None
+    ticket = (
+        access_ticket_service.mint(
+            username,
+            token_version=gns3_ctx.get("jwt_token_version", 0),
+            project_id=project_id,
+            node_id=node_id,
+        )
+        if username
+        else None
+    )
     raw_url = f"{gns3_ctx['server_url']}/v3/projects/{project_id}/nodes/{node_id}/console/ws"
     if ticket:
         raw_url += f"?token={ticket}"
@@ -499,7 +540,7 @@ def get_node_file_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> d
     total_lines = len(lines)
 
     # Apply offset/limit
-    selected = lines[offset: offset + limit] if offset < total_lines else []
+    selected = lines[offset : offset + limit] if offset < total_lines else []
     has_more = (offset + limit) < total_lines or truncated
     content = "".join(selected)
 
@@ -581,7 +622,9 @@ def duplicate_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> 
         return {"error": "project_id and node_id are required"}
     conn = _get_connector(gns3_ctx)
     data = {k: v for k, v in params.items() if k not in ("project_id", "node_id") and v is not None}
-    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/nodes/{node_id}/duplicate", json_data=data).json()
+    result = conn.http_call(
+        "post", f"{conn.base_url}/projects/{project_id}/nodes/{node_id}/duplicate", json_data=data
+    ).json()
     return {"message": f"Node {node_id} duplicated", "node": result}
 
 
@@ -617,6 +660,7 @@ def get_node_links_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> 
 
 # ── Link handlers ──────────────────────────────────────────────────────────
 
+
 def get_links_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     project_id = params.get("project_id")
     if not project_id:
@@ -626,7 +670,7 @@ def get_links_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[
     fields = params.get("fields")
     if fields:
         if not isinstance(fields, list):
-            return {"error": "fields must be a list, e.g. [\"link_id\", \"nodes\"]"}
+            return {"error": 'fields must be a list, e.g. ["link_id", "nodes"]'}
         invalid = [f for f in fields if f not in VALID_LINK_FIELDS]
         if invalid:
             return {
@@ -669,7 +713,7 @@ def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
 
     fields = params.get("fields")
     if fields is not None and not isinstance(fields, list):
-        return {"error": "fields must be a list, e.g. [\"link_id\", \"nodes\"]"}
+        return {"error": 'fields must be a list, e.g. ["link_id", "nodes"]'}
 
     links = params.get("links")
     # Batch mode: links=[{nodes, link_type?, filters?, suspend?}]
@@ -677,6 +721,7 @@ def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
         if not isinstance(links, list) or not links:
             return {"error": "links must be a non-empty array"}
         conn = _get_connector(gns3_ctx)
+
         def _create_one(link_data):
             raw_nodes = link_data.get("nodes")
             if not raw_nodes:
@@ -694,6 +739,7 @@ def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
                 return {"status": "success", "link": _filter_link_response(resp, fields)}
             except Exception as e:
                 return {"status": "error", "error": str(e)}
+
         with ThreadPoolExecutor(max_workers=min(len(links), BATCH_MAX_WORKERS)) as pool:
             # pool.map keeps the submission order, so callers can correlate
             # results with the links they sent regardless of completion order
@@ -725,12 +771,14 @@ def delete_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
         if not isinstance(link_ids, list):
             return {"error": "link_ids must be a list"}
         conn = _get_connector(gns3_ctx)
+
         def _del(lid):
             try:
                 conn.http_call("delete", f"{conn.base_url}/projects/{project_id}/links/{lid}")
                 return {"link_id": lid, "status": "success", "message": f"Link {lid} deleted"}
             except Exception as e:
                 return {"link_id": lid, "status": "error", "error": str(e)}
+
         with ThreadPoolExecutor(max_workers=min(len(link_ids), BATCH_MAX_WORKERS)) as pool:
             return list(pool.map(_del, link_ids))
     link_id = params.get("link_id")
@@ -770,6 +818,7 @@ def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
         if not isinstance(link_ids, list):
             return {"error": "link_ids must be a list"}
         conn = _get_connector(gns3_ctx)
+
         def _rst(lid):
             try:
                 url = f"{conn.base_url}/projects/{project_id}/links/{lid}/reset"
@@ -777,6 +826,7 @@ def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
                 return {"link_id": lid, "status": "reset", "link": r}
             except Exception as e:
                 return {"link_id": lid, "status": "error", "error": str(e)}
+
         with ThreadPoolExecutor(max_workers=min(len(link_ids), BATCH_MAX_WORKERS)) as pool:
             return list(pool.map(_rst, link_ids))
     link_id = params.get("link_id")
@@ -790,6 +840,7 @@ def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
 
 def _batch_capture(project_id, link_ids, action, data_builder, conn):
     """Helper for batch capture start/stop."""
+
     def _act(lid):
         try:
             url = f"{conn.base_url}/projects/{project_id}/links/{lid}/capture/{action}"
@@ -798,6 +849,7 @@ def _batch_capture(project_id, link_ids, action, data_builder, conn):
             return {"link_id": lid, "status": "success"}
         except Exception as e:
             return {"link_id": lid, "status": "error", "error": str(e)}
+
     with ThreadPoolExecutor(max_workers=min(len(link_ids), BATCH_MAX_WORKERS)) as pool:
         return list(pool.map(_act, link_ids))
 
@@ -814,11 +866,13 @@ def start_capture_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> d
         dlt = params.get("data_link_type", "DLT_EN10MB")
         ws = params.get("wireshark", False)
         fname = params.get("capture_file_name")
+
         def _build(lid):
             data = {"data_link_type": dlt, "wireshark": ws}
             if fname:
                 data["capture_file_name"] = fname
             return {"json_data": data}
+
         return _batch_capture(project_id, link_ids, "start", _build, conn)
     link_id = params.get("link_id")
     if not link_id:
@@ -879,7 +933,11 @@ def download_capture_file_handler(params: dict[str, Any], gns3_ctx: dict[str, An
         if not isinstance(link_ids, list):
             return {"error": "link_ids must be a list"}
         results = [_download(lid) for lid in link_ids]
-        return {"downloads": results, "count": len(results), "note": "Files are in pcap format. URLs include a 10-minute ticket."}
+        return {
+            "downloads": results,
+            "count": len(results),
+            "note": "Files are in pcap format. URLs include a 10-minute ticket.",
+        }
 
     link_id = params.get("link_id")
     if not link_id:
@@ -946,12 +1004,18 @@ def link_marker_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
         elif direction in ("tx", "rx"):
             body["direction"] = direction
         if not body:
-            return {"error": "At least one update field is required (bpf, tag, enabled, direction, color, highlight_duration)"}
+            return {
+                "error": "At least one update field is required (bpf, tag, enabled, direction, color, highlight_duration)"
+            }
         return conn.http_call("put", url, json_data=body).json()
 
     # action == "delete"
     conn.http_call("delete", url)
-    return {"message": f"Marker '{marker_name}' deleted from link {link_id}", "link_id": link_id, "marker_name": marker_name}
+    return {
+        "message": f"Marker '{marker_name}' deleted from link {link_id}",
+        "link_id": link_id,
+        "marker_name": marker_name,
+    }
 
 
 def marker_definition_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
@@ -1002,7 +1066,9 @@ def marker_definition_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
             if params.get(opt) is not None:
                 body[opt] = params[opt]
         if not body:
-            return {"error": "At least one update field is required (bpf, tag, color, highlight_duration, data_link_type)"}
+            return {
+                "error": "At least one update field is required (bpf, tag, color, highlight_duration, data_link_type)"
+            }
         return conn.http_call("put", url, json_data=body).json()
 
     # action == "delete"

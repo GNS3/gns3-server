@@ -113,7 +113,9 @@ def test_aux(compute_project, manager, port_manager):
     aux = port_manager.get_free_tcp_port(compute_project)
     port_manager.release_tcp_port(aux, compute_project)
 
-    node = DockerVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux=aux, aux_type="telnet")
+    node = DockerVM(
+        "test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux=aux, aux_type="telnet"
+    )
     assert node.aux == aux
     node.aux = None
     assert node.aux is None
@@ -125,13 +127,17 @@ def test_allocate_aux(compute_project, manager):
     assert node.aux is None
 
     # Docker has an aux port by default
-    node = DockerVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux_type="telnet")
+    node = DockerVM(
+        "test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux_type="telnet"
+    )
     assert node.aux is not None
 
 
 def test_change_aux_port(compute_project, manager, port_manager):
 
-    node = DockerVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux_type="telnet")
+    node = DockerVM(
+        "test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "ubuntu", aux_type="telnet"
+    )
     port1 = port_manager.get_free_tcp_port(node.project)
     port2 = port_manager.get_free_tcp_port(node.project)
     port_manager.release_tcp_port(port1, node.project)
@@ -145,25 +151,20 @@ def test_change_aux_port(compute_project, manager, port_manager):
 @pytest.mark.asyncio
 async def test_update_ubridge_udp_connection(node):
 
-    filters = {
-        "latency": [10]
-    }
+    filters = {"latency": [10]}
 
     snio = NIOUDP(1245, "localhost", 1246)
     dnio = NIOUDP(1245, "localhost", 1244)
     dnio.filters = filters
     with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
-        await node.update_ubridge_udp_connection('VPCS-10', snio, dnio)
+        await node.update_ubridge_udp_connection("VPCS-10", snio, dnio)
     mock.assert_called_with("VPCS-10", filters)
 
 
 @pytest.mark.asyncio
 async def test_ubridge_apply_filters(node):
 
-    filters = OrderedDict((
-        ('latency', [10]),
-        ('bpf', ["icmp[icmptype] == 8\ntcp src port 53"])
-    ))
+    filters = OrderedDict((("latency", [10]), ("bpf", ["icmp[icmptype] == 8\ntcp src port 53"])))
     node._ubridge_send = AsyncioMagicMock()
     await node._ubridge_apply_filters("VPCS-10", filters)
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
@@ -173,14 +174,12 @@ async def test_ubridge_apply_filters(node):
 @pytest.mark.asyncio
 async def test_ubridge_apply_bpf_filters(node):
 
-    filters = {
-        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
-    }
+    filters = {"bpf": ["icmp[icmptype] == 8\ntcp src port 53"]}
     node._ubridge_send = AsyncioMagicMock()
     await node._ubridge_apply_filters("VPCS-10", filters)
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
-    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 bpf \"icmp[icmptype] == 8\"")
-    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter1 bpf \"tcp src port 53\"")
+    node._ubridge_send.assert_any_call('bridge add_packet_filter VPCS-10 filter0 bpf "icmp[icmptype] == 8"')
+    node._ubridge_send.assert_any_call('bridge add_packet_filter VPCS-10 filter1 bpf "tcp src port 53"')
 
 
 @pytest.mark.asyncio
@@ -259,8 +258,16 @@ async def test_apply_markers_appends_linktype_for_serial(compute_project, manage
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     node._ubridge_send = AsyncioMagicMock()
     nio = NIOUDP(1234, "127.0.0.1", 4321)
-    nio.markers = {"m": {"bpf": "icmp", "tag": None, "link_id": "L1",
-                         "direction": None, "data_link_type": "DLT_C_HDLC", "enabled": True}}
+    nio.markers = {
+        "m": {
+            "bpf": "icmp",
+            "tag": None,
+            "link_id": "L1",
+            "direction": None,
+            "data_link_type": "DLT_C_HDLC",
+            "enabled": True,
+        }
+    }
     with patch("gns3server.compute.marker.marker_manager.MarkerManager") as mm:
         mm.instance.return_value.register = MagicMock()
         await node._ubridge_apply_markers("VPCS-10", nio)
@@ -274,8 +281,16 @@ async def test_apply_markers_omits_linktype_for_ethernet(compute_project, manage
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     node._ubridge_send = AsyncioMagicMock()
     nio = NIOUDP(1234, "127.0.0.1", 4321)
-    nio.markers = {"m": {"bpf": "icmp", "tag": None, "link_id": "L1",
-                         "direction": None, "data_link_type": "DLT_EN10MB", "enabled": True}}
+    nio.markers = {
+        "m": {
+            "bpf": "icmp",
+            "tag": None,
+            "link_id": "L1",
+            "direction": None,
+            "data_link_type": "DLT_EN10MB",
+            "enabled": True,
+        }
+    }
     with patch("gns3server.compute.marker.marker_manager.MarkerManager") as mm:
         mm.instance.return_value.register = MagicMock()
         await node._ubridge_apply_markers("VPCS-10", nio)
@@ -334,8 +349,7 @@ async def test_delete_marker_capture_drops_from_nio_markers(compute_project, man
     # nio.markers and starting the node reinstalls it (empty pcap reappears).
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     nio = NIOUDP(1234, "127.0.0.1", 4321)
-    nio.markers = {"m": {"bpf": "icmp", "tag": None, "link_id": "L1",
-                         "direction": None, "enabled": True}}
+    nio.markers = {"m": {"bpf": "icmp", "tag": None, "link_id": "L1", "direction": None, "enabled": True}}
     await node.delete_marker_capture("m", "L1", nio)
     assert "m" not in nio.markers
 
@@ -404,16 +418,20 @@ async def test_apply_markers_rebuilds_changed_bpf(compute_project, manager):
     node._ubridge_hypervisor = MagicMock()
     node._ubridge_hypervisor.is_running.return_value = True
     node._marker_filter_bridges["m", "L1"] = "VPCS-10"
-    node._marker_specs["m", "L1"] = {"bpf": "icmp", "tag": None, "direction": None,
-                                     "data_link_type": None, "enabled": True}
+    node._marker_specs["m", "L1"] = {
+        "bpf": "icmp",
+        "tag": None,
+        "direction": None,
+        "data_link_type": None,
+        "enabled": True,
+    }
     nio = NIOUDP(1234, "127.0.0.1", 4321)
-    nio.markers = {"m": {"bpf": "tcp", "tag": None, "link_id": "L1",
-                         "direction": None, "enabled": True}}
+    nio.markers = {"m": {"bpf": "tcp", "tag": None, "link_id": "L1", "direction": None, "enabled": True}}
     with patch("gns3server.compute.marker.marker_manager.MarkerManager") as mm:
         mm.instance.return_value.register = MagicMock()
         await node._ubridge_apply_markers("VPCS-10", nio)
     cmds = [c.args[0] for c in node._ubridge_send.call_args_list]
-    assert any("delete_packet_filter VPCS-10 m" in c for c in cmds)   # old removed
+    assert any("delete_packet_filter VPCS-10 m" in c for c in cmds)  # old removed
     assert any("add_packet_filter VPCS-10 m mark" in c and "tcp" in c for c in cmds)  # new added
 
 
@@ -441,10 +459,10 @@ async def test_apply_markers_preserves_markers_on_other_bridges(compute_project,
         mm.instance.return_value.unregister = MagicMock()
         await node._ubridge_apply_markers("VPCS-10", nio)
     cmds = [c.args[0] for c in node._ubridge_send.call_args_list]
-    assert any("delete_packet_filter VPCS-10 m" in c for c in cmds)   # L1 removed on its bridge
-    assert not any("VPCS-20" in c for c in cmds)                      # other bridge untouched
+    assert any("delete_packet_filter VPCS-10 m" in c for c in cmds)  # L1 removed on its bridge
+    assert not any("VPCS-20" in c for c in cmds)  # other bridge untouched
     assert ("m", "L1") not in node._marker_filter_bridges
-    assert ("m", "L2") in node._marker_filter_bridges                 # L2 preserved
+    assert ("m", "L2") in node._marker_filter_bridges  # L2 preserved
 
 
 @pytest.mark.asyncio
@@ -467,6 +485,7 @@ class _GoneConsoleWebsocket:
 
     def __init__(self):
         from types import SimpleNamespace
+
         self.client = SimpleNamespace(host="127.0.0.1", port=5000)
 
     async def receive(self):
@@ -474,12 +493,14 @@ class _GoneConsoleWebsocket:
 
     async def send_bytes(self, data):
         from starlette.websockets import WebSocketDisconnect
+
         raise WebSocketDisconnect(code=1006)
 
 
 @pytest.mark.asyncio
 async def test_console_websocket_client_disconnect_while_node_output_streams(
-        compute_project, manager, port_manager, monkeypatch, caplog):
+    compute_project, manager, port_manager, monkeypatch, caplog
+):
     # regression test: the client disconnects while the node is still streaming
     # console output. telnet_forward used to let the (empty-str) WebSocketDisconnect
     # from send_bytes escape, logging a message-less WARNING.
@@ -505,10 +526,7 @@ async def test_console_websocket_client_disconnect_while_node_output_streams(
 
     assert telnet_writer.close.called
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
-    assert any(
-        "has disconnected from compute console WebSocket while node output" in r.message
-        for r in caplog.records
-    )
+    assert any("has disconnected from compute console WebSocket while node output" in r.message for r in caplog.records)
 
 
 @pytest.mark.asyncio

@@ -55,7 +55,6 @@ async def list_images(image_type):
     default_directory = default_images_directory(image_type)
 
     for directory in images_directories(image_type):
-
         # We limit recursion to path outside the default images directory
         # the reason is in the default directory manage file organization and
         # it should be flatten to keep things simple
@@ -89,15 +88,19 @@ async def list_images(image_type):
                     with open(os.path.join(root, filename), "rb") as f:
                         # read the first 7 bytes of the file.
                         elf_header_start = f.read(7)
-                    if image_type == "dynamips" and elf_header_start != b'\x7fELF\x01\x02\x01':
+                    if image_type == "dynamips" and elf_header_start != b"\x7fELF\x01\x02\x01":
                         # IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
                         log.warning(f"IOS image {filename} does not start with a valid ELF magic number, skipping...")
                         continue
-                    elif image_type == "iou" and elf_header_start != b'\x7fELF\x02\x01\x01' and elf_header_start != b'\x7fELF\x01\x01\x01':
+                    elif (
+                        image_type == "iou"
+                        and elf_header_start != b"\x7fELF\x02\x01\x01"
+                        and elf_header_start != b"\x7fELF\x01\x01\x01"
+                    ):
                         # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian and have an ELF version of 1
                         log.warning(f"IOU image {filename} does not start with a valid ELF magic number, skipping...")
                         continue
-                    elif image_type == "qemu" and elf_header_start[:4] == b'\x7fELF':
+                    elif image_type == "qemu" and elf_header_start[:4] == b"\x7fELF":
                         # QEMU images should not start with an ELF magic number
                         log.warning(f"QEMU image {filename} starts with an ELF magic number, skipping...")
                         continue
@@ -117,7 +120,7 @@ async def list_images(image_type):
 
 def get_builtin_disks() -> List[str]:
     builtin_disks = []
-    for entry in importlib_resources.files('gns3server').joinpath("disks").iterdir():
+    for entry in importlib_resources.files("gns3server").joinpath("disks").iterdir():
         if entry.is_file():
             builtin_disks.append(entry.name)
     return builtin_disks
@@ -132,8 +135,10 @@ async def read_image_info(path: str, expected_image_type: str = None) -> dict:
             if len(image_header) >= header_magic_len:
                 detected_image_type = check_valid_image_header(path, image_header)
                 if expected_image_type and detected_image_type != expected_image_type:
-                    raise InvalidImageError(f"Detected image type for '{path}' is {detected_image_type}, "
-                                            f"expected type is {expected_image_type}")
+                    raise InvalidImageError(
+                        f"Detected image type for '{path}' is {detected_image_type}, "
+                        f"expected type is {expected_image_type}"
+                    )
             else:
                 raise InvalidImageError(f"Image '{path}' is too small to be valid")
     except OSError as e:
@@ -306,7 +311,6 @@ def remove_checksum(path):
 
 
 class InvalidImageError(Exception):
-
     def __init__(self, message: str):
         super().__init__()
         self._message = message
@@ -317,14 +321,14 @@ class InvalidImageError(Exception):
 
 def check_valid_image_header(path: str, data: bytes, allow_raw_image: bool = False) -> str:
 
-    if data[:7] == b'\x7fELF\x01\x02\x01':
+    if data[:7] == b"\x7fELF\x01\x02\x01":
         # for IOS images: file must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
         return "ios"
-    elif data[:7] == b'\x7fELF\x01\x01\x01' or data[:7] == b'\x7fELF\x02\x01\x01':
+    elif data[:7] == b"\x7fELF\x01\x01\x01" or data[:7] == b"\x7fELF\x02\x01\x01":
         # for IOU images: file must start with the ELF magic number, be 32-bit or 64-bit, little endian and
         # have an ELF version of 1 (normal IOS images are big endian!)
         return "iou"
-    elif data[:4] == b'QFI\xfb' or data[:4] == b'KDMV':
+    elif data[:4] == b"QFI\xfb" or data[:4] == b"KDMV":
         # for Qemy images: file must be QCOW2 or VMDK
         return "qemu"
     else:
@@ -334,12 +338,12 @@ def check_valid_image_header(path: str, data: bytes, allow_raw_image: bool = Fal
 
 
 async def write_image(
-        image_filename: str,
-        image_path: str,
-        stream: AsyncGenerator[bytes, None],
-        images_repo: ImagesRepository,
-        check_image_header=True,
-        allow_raw_image=False
+    image_filename: str,
+    image_path: str,
+    stream: AsyncGenerator[bytes, None],
+    images_repo: ImagesRepository,
+    check_image_header=True,
+    allow_raw_image=False,
 ) -> models.Image:
 
     image_dir, image_name = os.path.split(image_filename)
@@ -370,15 +374,17 @@ async def write_image(
             image_path = os.path.abspath(os.path.join(directory, image_filename))
 
         if os.path.exists(image_path):
-            raise InvalidImageError(f"File '{image_path}' already exists, "
-                                    f"please choose a different name or remove the existing image")
+            raise InvalidImageError(
+                f"File '{image_path}' already exists, please choose a different name or remove the existing image"
+            )
 
         checksum = checksum.hexdigest()
         image_dir = os.path.dirname(image_path)
         duplicate_image = await images_repo.get_image_by_checksum(checksum, image_dir)
         if duplicate_image:
-            raise InvalidImageError(f"Image '{duplicate_image.filename}' with the "
-                                    f"same checksum already exists in '{image_dir}'")
+            raise InvalidImageError(
+                f"Image '{duplicate_image.filename}' with the same checksum already exists in '{image_dir}'"
+            )
 
         shutil.move(tmp_path, image_path)
         os.chmod(image_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
@@ -390,10 +396,5 @@ async def write_image(
             log.warning(f"Could not remove '{tmp_path}'")
 
     return await images_repo.add_image(
-        image_name,
-        image_type,
-        image_size,
-        image_path,
-        checksum,
-        checksum_algorithm="md5"
+        image_name, image_type, image_size, image_path, checksum, checksum_algorithm="md5"
     )

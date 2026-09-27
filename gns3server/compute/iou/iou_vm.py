@@ -338,13 +338,11 @@ class IOUVM(BaseNode):
         if elf_header_start[4] == 1:
             # 32-bit loader
             loader = os.path.join(self._lib_base, "lib", "ld-linux.so.2")
-            lib_path = (os.path.join(self._lib_base, "lib"),
-                        os.path.join(self._lib_base, "lib", "i386-linux-gnu"))
+            lib_path = (os.path.join(self._lib_base, "lib"), os.path.join(self._lib_base, "lib", "i386-linux-gnu"))
         else:
             # 64-bit loader
             loader = os.path.join(self._lib_base, "lib64", "ld-linux-x86-64.so.2")
-            lib_path = (os.path.join(self._lib_base, "lib64"),
-                        os.path.join(self._lib_base, "lib", "x86_64-linux-gnu"))
+            lib_path = (os.path.join(self._lib_base, "lib64"), os.path.join(self._lib_base, "lib", "x86_64-linux-gnu"))
         self._loader = []
         if os.path.isfile(loader):
             try:
@@ -475,7 +473,9 @@ class IOUVM(BaseNode):
         """
 
         if not is_ios_hostname_valid(new_name):
-            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer.")
+            raise IOUError(
+                f"'{new_name}' is an invalid name to rename IOU node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer."
+            )
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
@@ -613,7 +613,7 @@ class IOUVM(BaseNode):
                 raise IOUError(f"Invalid hostid detected: {hostid}")
             for x in hostname:
                 ioukey += ord(x)
-            pad1 = b"\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A"
+            pad1 = b"\x4b\x58\x21\x81\x56\x7b\x0d\xf3\x21\x43\x9b\x7e\xac\x1d\xe6\x8a"
             pad2 = b"\x80" + 39 * b"\0"
             ioukey = hashlib.md5(pad1 + pad2 + struct.pack("!I", ioukey) + pad1).hexdigest()[:16]
             if ioukey != user_ioukey:
@@ -668,7 +668,6 @@ class IOUVM(BaseNode):
 
         await self._check_requirements()
         if not self.is_running():
-
             await self._library_check()
 
             try:
@@ -709,7 +708,7 @@ class IOUVM(BaseNode):
                 if len(iou_image_path) > 63:
                     # IOU file basename length must be <= 63 chars
                     iou_file_name, iou_file_ext = os.path.splitext(iou_image_path)
-                    iou_image_path = iou_file_name[:63 - len(iou_file_ext)] + iou_file_ext
+                    iou_image_path = iou_file_name[: 63 - len(iou_file_ext)] + iou_file_ext
                 symlink = os.path.join(self.working_dir, iou_image_path)
                 if os.path.islink(symlink):
                     os.unlink(symlink)
@@ -729,7 +728,8 @@ class IOUVM(BaseNode):
                     log.debug(f"Starting IOU: {command}")
                 self.command_line = " ".join(command)
                 self._iou_process = await asyncio.create_subprocess_exec(
-                    *self._loader, *command,
+                    *self._loader,
+                    *command,
                     stdout=asyncio.subprocess.PIPE,
                     stdin=asyncio.subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -743,7 +743,9 @@ class IOUVM(BaseNode):
                 gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
             except FileNotFoundError as e:
                 self._stop_l1_keepalive_responder()
-                raise IOUError(f"Could not start IOU: {e}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead")
+                raise IOUError(
+                    f"Could not start IOU: {e}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead"
+                )
             except (OSError, subprocess.SubprocessError) as e:
                 self._stop_l1_keepalive_responder()
                 iou_stdout = self.read_iou_stdout()
@@ -775,8 +777,7 @@ class IOUVM(BaseNode):
                 await self.stop()
                 raise IOUError(
                     "Could not start {} server on socket {}:{}: {}".format(
-                        error_prefix,
-                        self._manager.port_manager.console_host, self.console, e
+                        error_prefix, self._manager.port_manager.console_host, self.console, e
                     )
                 )
 
@@ -1281,13 +1282,11 @@ class IOUVM(BaseNode):
         """
         from gns3server.compute.marker.marker_manager import MarkerManager
 
-        markers = nio.markers if hasattr(nio, 'markers') else {}
+        markers = nio.markers if hasattr(nio, "markers") else {}
         manager = MarkerManager.instance()
         markers_dir = self.project.markers_working_directory()
         bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-        location = "{bridge_name} {bay} {unit}".format(
-            bridge_name=bridge_name, bay=adapter_number, unit=port_number
-        )
+        location = "{bridge_name} {bay} {unit}".format(bridge_name=bridge_name, bay=adapter_number, unit=port_number)
         desired = {(name, spec.get("link_id", "")): spec for name, spec in markers.items()}
 
         # 1. Remove installed markers that are no longer desired.
@@ -1331,9 +1330,7 @@ class IOUVM(BaseNode):
                     continue
             pcap_path = os.path.join(markers_dir, f"{self._id}_{link_id}_{name}.pcap")
             # iol_bridge add_packet_filter {br} {bay} {unit} {name} mark "{bpf}" [tag {id}] pcap "{path}"
-            cmd = 'iol_bridge add_packet_filter {loc} {name} mark "{bpf}"'.format(
-                loc=location, name=name, bpf=bpf
-            )
+            cmd = 'iol_bridge add_packet_filter {loc} {name} mark "{bpf}"'.format(loc=location, name=name, bpf=bpf)
             if tag is not None:
                 cmd += f" tag {tag}"
             if link_id:

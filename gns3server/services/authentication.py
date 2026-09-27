@@ -48,16 +48,15 @@ def _extract_alg(token: str) -> str:
 
 
 class AuthService:
-
     def hash_password(self, password: str) -> str:
 
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password=password.encode('utf-8'), salt=salt)
-        return hashed_password.decode('utf-8')
+        hashed_password = bcrypt.hashpw(password=password.encode("utf-8"), salt=salt)
+        return hashed_password.decode("utf-8")
 
     def verify_password(self, password, hashed_password) -> bool:
 
-        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hashed_password.encode('utf-8'))
+        return bcrypt.checkpw(password=password.encode("utf-8"), hashed_password=hashed_password.encode("utf-8"))
 
     def _create_token(self, username, token_version, token_type, expires_in, secret_key=None) -> str:
         """Shared helper to create any kind of signed JWT token."""
@@ -80,7 +79,9 @@ class AuthService:
             expires_in = Config.instance().settings.Controller.jwt_access_token_expire_minutes
         return self._create_token(username, token_version, "access", expires_in, secret_key)
 
-    def create_refresh_token(self, username, token_version: int = 0, secret_key: str = None, expires_in: int = 0) -> str:
+    def create_refresh_token(
+        self, username, token_version: int = 0, secret_key: str = None, expires_in: int = 0
+    ) -> str:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_refresh_token_expire_minutes

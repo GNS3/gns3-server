@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class ImagesRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -43,8 +42,9 @@ class ImagesRepository(BaseRepository):
 
         image_dir, image_name = os.path.split(image_path)
         if image_dir:
-            query = select(models.Image).\
-                where(models.Image.filename == image_name, models.Image.path.endswith(image_path))
+            query = select(models.Image).where(
+                models.Image.filename == image_name, models.Image.path.endswith(image_path)
+            )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
@@ -56,8 +56,9 @@ class ImagesRepository(BaseRepository):
         """
 
         if image_dir:
-            query = select(models.Image).\
-                where(models.Image.checksum == checksum, models.Image.path.startswith(image_dir))
+            query = select(models.Image).where(
+                models.Image.checksum == checksum, models.Image.path.startswith(image_dir)
+            )
             result = await self._db_session.execute(query)
             return result.scalars().one_or_none()
         else:
@@ -82,9 +83,7 @@ class ImagesRepository(BaseRepository):
         Get all templates that an image belongs to.
         """
 
-        query = select(models.Template).\
-            join(models.Template.images).\
-            filter(models.Image.image_id == image_id)
+        query = select(models.Template).join(models.Template.images).filter(models.Image.image_id == image_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -101,7 +100,7 @@ class ImagesRepository(BaseRepository):
             image_size=image_size,
             path=path,
             checksum=checksum,
-            checksum_algorithm=checksum_algorithm
+            checksum_algorithm=checksum_algorithm,
         )
 
         self._db_session.add(db_image)
@@ -114,9 +113,11 @@ class ImagesRepository(BaseRepository):
         Update an image.
         """
 
-        query = update(models.Image).\
-            where(models.Image.path == image_path).\
-            values(checksum=checksum, checksum_algorithm=checksum_algorithm)
+        query = (
+            update(models.Image)
+            .where(models.Image.path == image_path)
+            .values(checksum=checksum, checksum_algorithm=checksum_algorithm)
+        )
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -132,9 +133,11 @@ class ImagesRepository(BaseRepository):
 
         image_dir, image_name = os.path.split(image_path)
         if image_dir:
-            query = delete(models.Image).\
-                where(models.Image.filename == image_name, models.Image.path.endswith(image_path)).\
-                execution_options(synchronize_session=False)
+            query = (
+                delete(models.Image)
+                .where(models.Image.filename == image_name, models.Image.path.endswith(image_path))
+                .execution_options(synchronize_session=False)
+            )
         else:
             query = delete(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
@@ -146,8 +149,7 @@ class ImagesRepository(BaseRepository):
         Prune images not attached to any template.
         """
 
-        query = select(models.Image).\
-            filter(~models.Image.templates.any())
+        query = select(models.Image).filter(~models.Image.templates.any())
         result = await self._db_session.execute(query)
         images = result.scalars().all()
         images_deleted = 0

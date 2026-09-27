@@ -24,7 +24,6 @@ from .images import image_template_map
 
 
 class Template(BaseTable):
-
     __tablename__ = "templates"
 
     template_id = Column(GUID, primary_key=True, default=generate_uuid)
@@ -49,7 +48,6 @@ class Template(BaseTable):
 
 
 class CloudTemplate(Template):
-
     __tablename__ = "cloud_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -63,7 +61,6 @@ class CloudTemplate(Template):
 
 
 class DockerTemplate(Template):
-
     __tablename__ = "docker_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -89,7 +86,6 @@ class DockerTemplate(Template):
 
 
 class DynamipsTemplate(Template):
-
     __tablename__ = "dynamips_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -132,7 +128,6 @@ class DynamipsTemplate(Template):
 
 
 class EthernetHubTemplate(Template):
-
     __tablename__ = "ethernet_hub_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -142,7 +137,6 @@ class EthernetHubTemplate(Template):
 
 
 class EthernetSwitchTemplate(Template):
-
     __tablename__ = "ethernet_switch_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -153,7 +147,6 @@ class EthernetSwitchTemplate(Template):
 
 
 class IOUTemplate(Template):
-
     __tablename__ = "iou_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -173,7 +166,6 @@ class IOUTemplate(Template):
 
 
 class QemuTemplate(Template):
-
     __tablename__ = "qemu_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -220,7 +212,6 @@ class QemuTemplate(Template):
 
 
 class VirtualBoxTemplate(Template):
-
     __tablename__ = "virtualbox_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -243,7 +234,6 @@ class VirtualBoxTemplate(Template):
 
 
 class VMwareTemplate(Template):
-
     __tablename__ = "vmware_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
@@ -265,7 +255,6 @@ class VMwareTemplate(Template):
 
 
 class VPCSTemplate(Template):
-
     __tablename__ = "vpcs_templates"
 
     template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)

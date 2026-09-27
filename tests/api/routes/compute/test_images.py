@@ -24,27 +24,22 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestImagesRoutes:
-
     async def test_pull_docker_image(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
         with asyncio_patch("gns3server.compute.docker.Docker.pull_image") as mock:
             response = await compute_client.post(
-                app.url_path_for("compute:pull_docker_image"),
-                json={"image": "nginx:latest"}
+                app.url_path_for("compute:pull_docker_image"), json={"image": "nginx:latest"}
             )
             mock.assert_called_once_with("nginx:latest", force=True)
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     @pytest.mark.parametrize("image", ["", "   ", "nginx latest"])
     async def test_pull_docker_image_rejects_invalid_name(
-            self, app: FastAPI, compute_client: AsyncClient, image: str
+        self, app: FastAPI, compute_client: AsyncClient, image: str
     ) -> None:
 
         with asyncio_patch("gns3server.compute.docker.Docker.pull_image") as mock:
-            response = await compute_client.post(
-                app.url_path_for("compute:pull_docker_image"),
-                json={"image": image}
-            )
+            response = await compute_client.post(app.url_path_for("compute:pull_docker_image"), json={"image": image})
             mock.assert_not_called()
             assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
@@ -52,8 +47,7 @@ class TestImagesRoutes:
 
         with asyncio_patch("gns3server.compute.docker.Docker.load_image") as mock:
             response = await compute_client.post(
-                app.url_path_for("compute:load_docker_image"),
-                content=b"docker-save-tar-bytes"
+                app.url_path_for("compute:load_docker_image"), content=b"docker-save-tar-bytes"
             )
             mock.assert_called_once()
             # the tar is streamed to the Docker daemon as an async iterable

@@ -46,12 +46,12 @@ logger = logging.getLogger(__name__)
 
 # Built-in templates to filter out (utility templates, not actual network devices)
 FILTERED_TEMPLATES = {
-    "atm_switch",          # ATM switch
-    "cloud",               # Cloud
-    "ethernet_hub",        # Ethernet hub
-    "ethernet_switch",     # Ethernet switch (built-in)
+    "atm_switch",  # ATM switch
+    "cloud",  # Cloud
+    "ethernet_hub",  # Ethernet hub
+    "ethernet_switch",  # Ethernet switch (built-in)
     "frame_relay_switch",  # Frame Relay switch
-    "nat",                 # NAT device
+    "nat",  # NAT device
 }
 
 
@@ -131,17 +131,10 @@ class GNS3TemplateTool(BaseTool):
 
             if gns3_server is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": (
-                        "Failed to connect to GNS3 server. "
-                        "Please check your configuration."
-                    )
-                }
+                return {"error": ("Failed to connect to GNS3 server. Please check your configuration.")}
 
             # Retrieve all available templates
-            templates = gns3_server.http_call(
-                "get", f"{gns3_server.base_url}/templates"
-            ).json()
+            templates = gns3_server.http_call("get", f"{gns3_server.base_url}/templates").json()
 
             # Filter out utility templates and extract relevant info
             template_info = []
@@ -154,11 +147,13 @@ class GNS3TemplateTool(BaseTool):
                     continue
 
                 # Extract name, template_id, and template_type
-                template_info.append({
-                    "name": template.get("name", "N/A"),
-                    "template_id": template.get("template_id", "N/A"),
-                    "template_type": template.get("template_type", "N/A"),
-                })
+                template_info.append(
+                    {
+                        "name": template.get("name", "N/A"),
+                        "template_id": template.get("template_id", "N/A"),
+                        "template_type": template.get("template_type", "N/A"),
+                    }
+                )
 
             # Return JSON-formatted result with full logging
             result = {"templates": template_info}
@@ -172,9 +167,7 @@ class GNS3TemplateTool(BaseTool):
             return result
 
         except Exception as e:
-            logger.error(
-                "Failed to connect to GNS3 server or retrieve templates: %s", e
-            )
+            logger.error("Failed to connect to GNS3 server or retrieve templates: %s", e)
             return {"error": f"Failed to retrieve templates: {str(e)}"}
 
 

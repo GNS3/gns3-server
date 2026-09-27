@@ -7,7 +7,7 @@ from gns3server.utils.packet_filter_validation import (
     validate_filter_parameters,
     validate_all_filters,
     filter_inactive_filters,
-    FilterValidationError
+    FilterValidationError,
 )
 
 
@@ -143,17 +143,14 @@ class TestPacketFilterValidation:
 
     def test_validate_all_filters(self):
         """Test validating multiple filters at once."""
-        filters = {
-            "frequency_drop": [10],
-            "delay": [100, 50]
-        }
+        filters = {"frequency_drop": [10], "delay": [100, 50]}
         validate_all_filters(filters)  # Should not raise
 
     def test_validate_all_filters_with_invalid(self):
         """Test validate_all_filters with invalid filter."""
         filters = {
             "frequency_drop": [10],
-            "packet_loss": [150]  # Invalid: over 100%
+            "packet_loss": [150],  # Invalid: over 100%
         }
         with pytest.raises(FilterValidationError):
             validate_all_filters(filters)
@@ -242,16 +239,13 @@ class TestFilterInactiveFilters:
     def test_filter_inactive_multiple_filters_mixed(self):
         """Test multiple filters with mixed active/inactive states."""
         filters = {
-            "delay": [0, 0],           # Disabled: [0, 0]
-            "packet_loss": [0],         # Disabled: 0%
-            "corrupt": [2],             # Active: 2%
-            "frequency_drop": [10]      # Active: every 10th packet
+            "delay": [0, 0],  # Disabled: [0, 0]
+            "packet_loss": [0],  # Disabled: 0%
+            "corrupt": [2],  # Active: 2%
+            "frequency_drop": [10],  # Active: every 10th packet
         }
         result = filter_inactive_filters(filters)
-        assert result == {
-            "corrupt": [2],
-            "frequency_drop": [10]
-        }
+        assert result == {"corrupt": [2], "frequency_drop": [10]}
 
     def test_filter_inactive_empty_filters(self):
         """Test empty filters dictionary."""

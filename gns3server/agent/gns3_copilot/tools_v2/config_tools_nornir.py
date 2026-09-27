@@ -196,56 +196,35 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if (
-            isinstance(device_configs_list, list)
-            and len(device_configs_list) > 0
-            and "error" in device_configs_list[0]
-        ):
+        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
 
         # Filter forbidden commands and store blocked commands info
-        device_configs_list, blocked_commands_map = (
-            self._filter_forbidden_commands_from_device_configs(
-                device_configs_list
-            )
+        device_configs_list, blocked_commands_map = self._filter_forbidden_commands_from_device_configs(
+            device_configs_list
         )
 
         # Expand multiline commands (e.g., banner commands with embedded newlines)
         # This converts commands like "banner motd #\nline1\nline2\n#" into
         # separate commands: ["banner motd #", "line1", "line2", "#"]
-        device_configs_list = self._expand_multiline_commands(
-            device_configs_list
-        )
+        device_configs_list = self._expand_multiline_commands(device_configs_list)
 
         # Create a mapping of device names to their configuration commands
         device_configs_map = self._configs_map(device_configs_list)
 
         # Prepare device hosts data
         try:
-            hosts_data = self._prepare_device_hosts_data(
-                device_configs_list, project_id, jwt_token=jwt_token, url=url
-            )
+            hosts_data = self._prepare_device_hosts_data(device_configs_list, project_id, jwt_token=jwt_token, url=url)
         except ValueError as e:
             logger.error("Failed to prepare device hosts data: %s", e)
             return [{"status": "failed", "error": str(e)}]
 
         # Check if any devices have errors (e.g., missing device_type tag)
-        error_devices = {
-            name: data
-            for name, data in hosts_data.items()
-            if "error" in data
-        }
+        error_devices = {name: data for name, data in hosts_data.items() if "error" in data}
         if error_devices:
-            logger.error(
-                "Devices with configuration errors: %s",
-                list(error_devices.keys())
-            )
+            logger.error("Devices with configuration errors: %s", list(error_devices.keys()))
             return [
-                {
-                    "device_name": name,
-                    "status": "failed",
-                    "error": data["error"]
-                }
+                {"device_name": name, "status": "failed", "error": data["error"]}
                 for name, data in error_devices.items()
             ]
 
@@ -275,9 +254,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         except Exception as e:
             # Overall execution failed
-            logger.error(
-                "Error executing configurations on all devices: %s", e
-            )
+            logger.error("Error executing configurations on all devices: %s", e)
             return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
 
         logger.info(
@@ -287,22 +264,16 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         return results
 
-    def _run_all_device_configs_with_single_retry(
-        self, task: Task, device_configs_map: dict[str, list[str]]
-    ) -> Result:
+    def _run_all_device_configs_with_single_retry(self, task: Task, device_configs_map: dict[str, list[str]]) -> Result:
         """Execute configuration commands with single retry mechanism."""
         device_name = task.host.name
         config_commands = device_configs_map.get(device_name, [])
 
         if not config_commands:
-            return Result(
-                host=task.host, result="No configuration commands to execute"
-            )
+            return Result(host=task.host, result="No configuration commands to execute")
 
         try:
-            _result = task.run(
-                task=netmiko_send_config, config_commands=config_commands
-            )
+            _result = task.run(task=netmiko_send_config, config_commands=config_commands)
             return Result(host=task.host, result=_result.result)
 
         except ReadTimeout as e:
@@ -322,9 +293,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             # Handle Cisco IOSv L2 where '#' prompt char may be delayed,
             # causing Netmiko failures. Implements retry logic.
             if "netmiko_send_config (failed)" in str(e):
-                _result = task.run(
-                    task=netmiko_send_config, config_commands=config_commands
-                )
+                _result = task.run(task=netmiko_send_config, config_commands=config_commands)
                 return Result(host=task.host, result=_result.result)
 
             # Log any other exceptions with full details
@@ -364,9 +333,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
                 parsed_input = json.loads(tool_input)
                 logger.debug("Successfully parsed tool input from JSON string.")
             except json.JSONDecodeError as e:
-                logger.error(
-                    "Invalid JSON string received as tool input: %s", e
-                )
+                logger.error("Invalid JSON string received as tool input: %s", e)
                 return (
                     [{"status": "failed", "error": f"Invalid JSON string input from model: {e}"}],
                     None,
@@ -392,10 +359,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
                 return ([{"status": "failed", "error": error_msg}], None)
 
             if not self._validate_project_id(project_id):
-                error_msg = (
-                    f"Invalid project_id format: {project_id}. "
-                    "Expected UUID format."
-                )
+                error_msg = f"Invalid project_id format: {project_id}. Expected UUID format."
                 logger.error(error_msg)
                 return ([{"status": "failed", "error": error_msg}], None)
 
@@ -413,10 +377,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         # Handle legacy format: [...]
         elif isinstance(parsed_input, list):
-            logger.warning(
-                "Using legacy format without project_id. "
-                "Please use new format with project_id."
-            )
+            logger.warning("Using legacy format without project_id. Please use new format with project_id.")
             return parsed_input, None
 
         else:
@@ -438,9 +399,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
         Returns:
             True if valid UUID format, False otherwise
         """
-        uuid_pattern = (
-            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-        )
+        uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         return bool(re.match(uuid_pattern, project_id, re.IGNORECASE))
 
     def _filter_forbidden_commands_from_device_configs(
@@ -465,9 +424,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             commands = device_config["config_commands"]
 
             # Filter commands
-            allowed_commands, blocked_info = filter_forbidden_commands(
-                commands
-            )
+            allowed_commands, blocked_info = filter_forbidden_commands(commands)
 
             # Update device config with allowed commands only
             filtered_config = device_config.copy()
@@ -486,9 +443,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         return filtered_list, blocked_commands_map
 
-    def _expand_multiline_commands(
-        self, device_configs_list: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def _expand_multiline_commands(self, device_configs_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Expand commands that contain embedded newline characters.
 
@@ -540,9 +495,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         return expanded_list
 
-    def _configs_map(
-        self, device_config_list: list[dict[str, Any]]
-    ) -> dict[str, list[str]]:
+    def _configs_map(self, device_config_list: list[dict[str, Any]]) -> dict[str, list[str]]:
         """Create a mapping of device names to their configuration commands."""
         device_configs_map = {}
         for device_config in device_config_list:
@@ -561,15 +514,10 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
     ) -> dict[str, dict[str, Any]]:
         """Prepare device hosts data from topology information."""
         # Extract device names list
-        device_names = [
-            device_config["device_name"]
-            for device_config in device_config_list
-        ]
+        device_names = [device_config["device_name"] for device_config in device_config_list]
 
         # Get device port information with project_id
-        hosts_data = get_device_ports_from_topology(
-            device_names, project_id, jwt_token=jwt_token, url=url
-        )
+        hosts_data = get_device_ports_from_topology(device_names, project_id, jwt_token=jwt_token, url=url)
 
         if not hosts_data:
             error_msg = (
@@ -589,9 +537,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         return hosts_data
 
-    def _initialize_nornir(
-        self, hosts_data: dict[str, dict[str, Any]]
-    ) -> Nornir:
+    def _initialize_nornir(self, hosts_data: dict[str, dict[str, Any]]) -> Nornir:
         """
         Initialize Nornir with the provided hosts data.
 
@@ -616,8 +562,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
             # Log device types being configured
             device_types = [
-                host["connection_options"]["netmiko"]["extras"]["device_type"]
-                for host in hosts_data.values()
+                host["connection_options"]["netmiko"]["extras"]["device_type"] for host in hosts_data.values()
             ]
             logger.info(
                 "Initializing Nornir: host=%s, device_types=%s, hosts=%d",
@@ -665,16 +610,11 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
                 device_result = {
                     "device_name": device_name,
                     "status": "failed",
-                    "error": (
-                        f"Device '{device_name}' not found in topology or "
-                        "missing console_port"
-                    ),
+                    "error": (f"Device '{device_name}' not found in topology or missing console_port"),
                 }
                 # Add blocked commands info if any
                 if blocked_commands_info:
-                    device_result["blocked_commands"] = list(
-                        blocked_commands_info.keys()
-                    )
+                    device_result["blocked_commands"] = list(blocked_commands_info.keys())
                     device_result["blocked_info"] = blocked_commands_info
                 results.append(device_result)
                 continue
@@ -684,15 +624,11 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
                 device_result = {
                     "device_name": device_name,
                     "status": "failed",
-                    "error": (
-                        f"Device '{device_name}' not found in task results"
-                    ),
+                    "error": (f"Device '{device_name}' not found in task results"),
                 }
                 # Add blocked commands info if any
                 if blocked_commands_info:
-                    device_result["blocked_commands"] = list(
-                        blocked_commands_info.keys()
-                    )
+                    device_result["blocked_commands"] = list(blocked_commands_info.keys())
                     device_result["blocked_info"] = blocked_commands_info
                 results.append(device_result)
                 continue
@@ -704,9 +640,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             if multi_result[0].failed:
                 # Execution failed
                 device_result["status"] = "failed"
-                device_result["error"] = (
-                    f"Configuration execution failed: {multi_result[0].result}"
-                )
+                device_result["error"] = f"Configuration execution failed: {multi_result[0].result}"
                 device_result["output"] = multi_result[0].result
             else:
                 # Execution successful
@@ -716,9 +650,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
             # Add blocked commands info if any
             if blocked_commands_info:
-                device_result["blocked_commands"] = list(
-                    blocked_commands_info.keys()
-                )
+                device_result["blocked_commands"] = list(blocked_commands_info.keys())
                 device_result["blocked_info"] = blocked_commands_info
                 # Update status if some commands were blocked but succeeded
                 if device_result["status"] == "success":

@@ -98,9 +98,7 @@ class ToolCallStreamAccumulator:
                                     "id": tc_id,
                                     "type": "function",
                                     "function": {
-                                        "name": self._current_tool_call[
-                                            "name"
-                                        ],
+                                        "name": self._current_tool_call["name"],
                                         "arguments": "",
                                     },
                                 },
@@ -122,9 +120,7 @@ class ToolCallStreamAccumulator:
 
                         # Core: string concatenation
                         if isinstance(args_chunk, str):
-                            tool_data[
-                                "args_string"
-                            ] += args_chunk
+                            tool_data["args_string"] += args_chunk
 
                             # Send updated tool_call event with accumulated args
                             chunks.append(
@@ -135,9 +131,7 @@ class ToolCallStreamAccumulator:
                                         "type": "function",
                                         "function": {
                                             "name": tool_data["name"],
-                                            "arguments": tool_data[
-                                                "args_string"
-                                            ],
+                                            "arguments": tool_data["args_string"],
                                         },
                                     },
                                 }
@@ -147,15 +141,9 @@ class ToolCallStreamAccumulator:
             # complete ==========
             # Check finish_reason == "tool_calls" or "STOP"
             response_metadata = getattr(chunk, "response_metadata", {})
-            finish_reason = (
-                response_metadata.get("finish_reason")
-                if isinstance(response_metadata, dict)
-                else None
-            )
+            finish_reason = response_metadata.get("finish_reason") if isinstance(response_metadata, dict) else None
 
-            if (finish_reason == "tool_calls") or (
-                finish_reason == "stop" and self._current_tool_call is not None
-            ):
+            if (finish_reason == "tool_calls") or (finish_reason == "stop" and self._current_tool_call is not None):
                 if self._current_tool_call:
                     tool_data = self._current_tool_call
 

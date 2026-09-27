@@ -32,7 +32,6 @@ from typing import Optional, List
 
 
 class QemuTemplate(TemplateBase):
-
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "qemu_guest"
@@ -62,13 +61,21 @@ class QemuTemplate(TemplateBase):
     aux_type: Optional[QemuConsoleType] = Field(QemuConsoleType.none, description="Auxiliary console type")
     boot_priority: Optional[QemuBootPriority] = Field(QemuBootPriority.c, description="QEMU boot priority")
     hda_disk_image: Optional[str] = Field("", description="QEMU hda disk image path")
-    hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hda interface")
+    hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(
+        QemuDiskInterfaceType.none, description="QEMU hda interface"
+    )
     hdb_disk_image: Optional[str] = Field("", description="QEMU hdb disk image path")
-    hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdb interface")
+    hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(
+        QemuDiskInterfaceType.none, description="QEMU hdb interface"
+    )
     hdc_disk_image: Optional[str] = Field("", description="QEMU hdc disk image path")
-    hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdc interface")
+    hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(
+        QemuDiskInterfaceType.none, description="QEMU hdc interface"
+    )
     hdd_disk_image: Optional[str] = Field("", description="QEMU hdd disk image path")
-    hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(QemuDiskInterfaceType.none, description="QEMU hdd interface")
+    hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(
+        QemuDiskInterfaceType.none, description="QEMU hdd interface"
+    )
     cdrom_image: Optional[str] = Field("", description="QEMU cdrom image path")
     initrd: Optional[str] = Field("", description="QEMU initrd path")
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
@@ -82,13 +89,16 @@ class QemuTemplate(TemplateBase):
     )
     tpm: Optional[bool] = Field(False, description="Enable Trusted Platform Module (TPM)")
     uefi: Optional[bool] = Field(False, description="Enable UEFI boot mode")
-    on_close: Optional[QemuOnCloseAction] = Field(QemuOnCloseAction.power_off, description="Action to execute on the VM is closed")
+    on_close: Optional[QemuOnCloseAction] = Field(
+        QemuOnCloseAction.power_off, description="Action to execute on the VM is closed"
+    )
     cpu_throttling: Optional[int] = Field(0, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
-    process_priority: Optional[QemuProcessPriority] = Field(QemuProcessPriority.normal, description="Process priority for QEMU")
+    process_priority: Optional[QemuProcessPriority] = Field(
+        QemuProcessPriority.normal, description="Process priority for QEMU"
+    )
     options: Optional[str] = Field("", description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
 class QemuTemplateUpdate(QemuTemplate):
-
     pass

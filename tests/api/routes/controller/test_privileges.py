@@ -19,7 +19,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestPrivilegesRoute:
-
     async def test_get_privileges(self, app: FastAPI, client: AsyncClient) -> None:
         response = await client.get(app.url_path_for("get_privileges"))
         assert response.status_code == status.HTTP_200_OK
