@@ -22,7 +22,6 @@ import pytest
 from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, locking
 
 
-
 @pytest.mark.asyncio
 async def test_wait_run_in_executor():
 
@@ -59,7 +58,6 @@ async def test_lock_decorator():
     """
 
     class TestLock:
-
         def __init__(self):
             self._test_val = 0
 
@@ -72,4 +70,9 @@ async def test_lock_decorator():
 
     i = TestLock()
     res = set(await asyncio.gather(i.method_to_lock(), i.method_to_lock()))
-    assert res == set((0, 1,))  # We use a set to test this to avoid order issue
+    assert res == set(
+        (
+            0,
+            1,
+        )
+    )  # We use a set to test this to avoid order issue

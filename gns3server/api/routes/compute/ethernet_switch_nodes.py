@@ -82,8 +82,7 @@ def get_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> schemas.Eth
 
 @router.post("/{node_id}/duplicate", response_model=schemas.EthernetSwitch, status_code=status.HTTP_201_CREATED)
 async def duplicate_ethernet_switch(
-        destination_node_id: UUID = Body(..., embed=True),
-        node: EthernetSwitch = Depends(dep_node)
+    destination_node_id: UUID = Body(..., embed=True), node: EthernetSwitch = Depends(dep_node)
 ) -> schemas.EthernetSwitch:
     """
     Duplicate an Ethernet switch.
@@ -95,8 +94,7 @@ async def duplicate_ethernet_switch(
 
 @router.put("/{node_id}", response_model=schemas.EthernetSwitch)
 async def update_ethernet_switch(
-        node_data: schemas.EthernetSwitchUpdate,
-        node: EthernetSwitch = Depends(dep_node)
+    node_data: schemas.EthernetSwitchUpdate, node: EthernetSwitch = Depends(dep_node)
 ) -> schemas.EthernetSwitch:
     """
     Update an Ethernet switch.
@@ -132,8 +130,7 @@ def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Start is not supported for Ethernet switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Start is not supported for Ethernet switches"
     )
 
 
@@ -144,8 +141,7 @@ def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Stop is not supported for Ethernet switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Stop is not supported for Ethernet switches"
     )
 
 
@@ -156,8 +152,7 @@ def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Suspend is not supported for Ethernet switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Suspend is not supported for Ethernet switches"
     )
 
 
@@ -169,8 +164,7 @@ def reload_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Reload is not supported for Ethernet switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Reload is not supported for Ethernet switches"
     )
 
 
@@ -180,11 +174,11 @@ def reload_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     response_model=schemas.UDPNIO,
 )
 async def create_ethernet_switch_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        nio_data: schemas.UDPNIO,
-        node: EthernetSwitch = Depends(dep_node)
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    nio_data: schemas.UDPNIO,
+    node: EthernetSwitch = Depends(dep_node),
 ) -> schemas.UDPNIO:
 
     nio = Builtin.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
@@ -198,11 +192,11 @@ async def create_ethernet_switch_nio(
     response_model=schemas.UDPNIO,
 )
 async def update_ethernet_switch_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        nio_data: schemas.UDPNIO,
-        node: EthernetSwitch = Depends(dep_node)
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    nio_data: schemas.UDPNIO,
+    node: EthernetSwitch = Depends(dep_node),
 ) -> schemas.UDPNIO:
     """
     Update a NIO (Network Input/Output) on the node: re-apply the packet
@@ -221,10 +215,7 @@ async def update_ethernet_switch_nio(
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_ethernet_switch_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: EthernetSwitch = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: EthernetSwitch = Depends(dep_node)
 ) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -236,11 +227,11 @@ async def delete_ethernet_switch_nio(
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_ethernet_switch_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node_capture_data: schemas.NodeCapture,
-        node: EthernetSwitch = Depends(dep_node),
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    node_capture_data: schemas.NodeCapture,
+    node: EthernetSwitch = Depends(dep_node),
 ) -> dict:
     """
     Start a packet capture on the node.
@@ -256,10 +247,7 @@ async def start_ethernet_switch_capture(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
 async def stop_ethernet_switch_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: EthernetSwitch = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: EthernetSwitch = Depends(dep_node)
 ) -> None:
     """
     Stop a packet capture on the node.
@@ -271,10 +259,7 @@ async def stop_ethernet_switch_capture(
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: EthernetSwitch = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: EthernetSwitch = Depends(dep_node)
 ) -> StreamingResponse:
     """
     Stream the pcap capture file.
@@ -288,9 +273,7 @@ async def stream_pcap_file(
 
 @router.put("/{node_id}/markers/{marker_name}")
 async def toggle_ethernet_switch_marker(
-        marker_name: str,
-        toggle_data: schemas.MarkerToggle,
-        node: EthernetSwitch = Depends(dep_node)
+    marker_name: str, toggle_data: schemas.MarkerToggle, node: EthernetSwitch = Depends(dep_node)
 ) -> dict:
     """
     Toggle a marker filter on/off without an NIO rebuild (ubridge contract §3.2).
@@ -322,12 +305,12 @@ async def resume_ethernet_switch_markers(node: EthernetSwitch = Depends(dep_node
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_ethernet_switch_marker_capture(
-        *,
-        marker_name: str,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        link_id: str = "",
-        node: EthernetSwitch = Depends(dep_node)
+    *,
+    marker_name: str,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    link_id: str = "",
+    node: EthernetSwitch = Depends(dep_node),
 ) -> None:
     """
     Delete a marker's capture pcap (called by the controller when the marker is
@@ -342,9 +325,7 @@ async def delete_ethernet_switch_marker_capture(
 
 @router.put("/{node_id}/markers/{marker_name}/rebuild")
 async def rebuild_ethernet_switch_marker(
-        marker_name: str,
-        rebuild_data: schemas.MarkerRebuild,
-        node: EthernetSwitch = Depends(dep_node)
+    marker_name: str, rebuild_data: schemas.MarkerRebuild, node: EthernetSwitch = Depends(dep_node)
 ) -> dict:
     """
     Re-install a single marker filter with new BPF/tag/direction (delete + add,
@@ -352,7 +333,11 @@ async def rebuild_ethernet_switch_marker(
     """
 
     await node.rebuild_marker_filter(
-        marker_name, rebuild_data.link_id, rebuild_data.bpf,
-        rebuild_data.tag, rebuild_data.direction, rebuild_data.enabled,
+        marker_name,
+        rebuild_data.link_id,
+        rebuild_data.bpf,
+        rebuild_data.tag,
+        rebuild_data.direction,
+        rebuild_data.enabled,
     )
     return {"marker_name": marker_name}

@@ -53,7 +53,6 @@ if __version_info__[3] != 0:
 
 
 class CrashReport:
-
     """
     Report crash to a third party service
     """
@@ -74,10 +73,9 @@ class CrashReport:
             # Don't send log records as events.
             sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
             try:
-                sentry_sdk.init(dsn=CrashReport.DSN,
-                                release=__version__,
-                                default_integrations=False,
-                                integrations=[sentry_logging])
+                sentry_sdk.init(
+                    dsn=CrashReport.DSN, release=__version__, default_integrations=False, integrations=[sentry_logging]
+                )
             except Exception as e:
                 log.error("Crash report could not be sent: {}".format(e))
                 return
@@ -88,7 +86,6 @@ class CrashReport:
                 "os:win_32": " ".join(platform.win32_ver()),
                 "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
                 "os:linux": distro.name(pretty=True),
-
             }
 
             with sentry_sdk.configure_scope() as scope:
@@ -137,7 +134,6 @@ class CrashReport:
             return
 
         if Config.instance().settings.Server.report_errors:
-
             if not SENTRY_SDK_AVAILABLE:
                 log.warning("Cannot capture exception: Sentry SDK is not available")
                 return

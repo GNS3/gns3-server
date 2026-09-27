@@ -33,7 +33,6 @@ log = logging.getLogger(__name__)
 
 
 class UsersRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -82,10 +81,7 @@ class UsersRepository(BaseRepository):
 
         hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            hashed_password=hashed_password
+            username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
         )
         self._db_session.add(db_user)
         await self._db_session.commit()
@@ -102,9 +98,7 @@ class UsersRepository(BaseRepository):
         if password:
             update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
 
-        query = update(models.User).\
-            where(models.User.user_id == user_id).\
-            values(update_values)
+        query = update(models.User).where(models.User.user_id == user_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -118,9 +112,11 @@ class UsersRepository(BaseRepository):
         Increment token_version to invalidate all existing tokens for the user.
         """
 
-        query = update(models.User).\
-            where(models.User.user_id == user_id).\
-            values(token_version=models.User.token_version + 1)
+        query = (
+            update(models.User)
+            .where(models.User.user_id == user_id)
+            .values(token_version=models.User.token_version + 1)
+        )
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -147,8 +143,9 @@ class UsersRepository(BaseRepository):
         # this is useful for manual password recovery like:
         # sqlite3 gns3_controller.db "UPDATE users SET hashed_password = null WHERE username = 'admin';"
         if user.hashed_password is None:
-            log.warning(f"User '{username}' has been authenticated without a password "
-                        f"configured. Please set a new password.")
+            log.warning(
+                f"User '{username}' has been authenticated without a password configured. Please set a new password."
+            )
             return user
         if not self._auth_service.verify_password(password, user.hashed_password):
             return None
@@ -168,9 +165,7 @@ class UsersRepository(BaseRepository):
         Get all user memberships (user groups).
         """
 
-        query = select(models.UserGroup).\
-            join(models.UserGroup.users).\
-            filter(models.User.user_id == user_id)
+        query = select(models.UserGroup).join(models.UserGroup.users).filter(models.User.user_id == user_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -214,18 +209,14 @@ class UsersRepository(BaseRepository):
         return db_user_group
 
     async def update_user_group(
-            self,
-            user_group_id: UUID,
-            user_group_update: schemas.UserGroupUpdate
+        self, user_group_id: UUID, user_group_update: schemas.UserGroupUpdate
     ) -> Optional[models.UserGroup]:
         """
         Update a user group.
         """
 
         update_values = user_group_update.model_dump(exclude_unset=True)
-        query = update(models.UserGroup).\
-            where(models.UserGroup.user_group_id == user_group_id).\
-            values(update_values)
+        query = update(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -244,18 +235,16 @@ class UsersRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
-    async def add_member_to_user_group(
-            self,
-            user_group_id: UUID,
-            user: models.User
-    ) -> Union[None, models.UserGroup]:
+    async def add_member_to_user_group(self, user_group_id: UUID, user: models.User) -> Union[None, models.UserGroup]:
         """
         Add a member to a user group.
         """
 
-        query = select(models.UserGroup).\
-            options(selectinload(models.UserGroup.users)).\
-            where(models.UserGroup.user_group_id == user_group_id)
+        query = (
+            select(models.UserGroup)
+            .options(selectinload(models.UserGroup.users))
+            .where(models.UserGroup.user_group_id == user_group_id)
+        )
         result = await self._db_session.execute(query)
         user_group_db = result.scalars().first()
         if not user_group_db:
@@ -267,17 +256,17 @@ class UsersRepository(BaseRepository):
         return user_group_db
 
     async def remove_member_from_user_group(
-            self,
-            user_group_id: UUID,
-            user: models.User
+        self, user_group_id: UUID, user: models.User
     ) -> Union[None, models.UserGroup]:
         """
         Remove a member from a user group.
         """
 
-        query = select(models.UserGroup).\
-            options(selectinload(models.UserGroup.users)).\
-            where(models.UserGroup.user_group_id == user_group_id)
+        query = (
+            select(models.UserGroup)
+            .options(selectinload(models.UserGroup.users))
+            .where(models.UserGroup.user_group_id == user_group_id)
+        )
         result = await self._db_session.execute(query)
         user_group_db = result.scalars().first()
         if not user_group_db:
@@ -293,9 +282,7 @@ class UsersRepository(BaseRepository):
         Get all members from a user group.
         """
 
-        query = select(models.User).\
-            join(models.User.groups).\
-            filter(models.UserGroup.user_group_id == user_group_id)
+        query = select(models.User).join(models.User.groups).filter(models.UserGroup.user_group_id == user_group_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()

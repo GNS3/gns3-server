@@ -71,9 +71,7 @@ def get_device_ports_from_topology(
         Devices that don't exist or missing console_port will not be included
     """
     # Log received parameters
-    logger.info(
-        "Called with device_names=%s, project_id=%s", device_names, project_id
-    )
+    logger.info("Called with device_names=%s, project_id=%s", device_names, project_id)
 
     try:
         # Lazy import to avoid circular dependency
@@ -93,9 +91,7 @@ def get_device_ports_from_topology(
         for device_name in device_names:
             # Check if device exists in topology
             if device_name not in topology.get("nodes", {}):
-                logger.warning(
-                    "Device '%s' not found in topology", device_name
-                )
+                logger.warning("Device '%s' not found in topology", device_name)
                 continue
 
             node_info = topology["nodes"][device_name]
@@ -133,9 +129,7 @@ def get_device_ports_from_topology(
                     f"Current tags: {tags}"
                 )
                 logger.error(error_msg)
-                hosts_data[device_name] = {
-                    "error": error_msg
-                }
+                hosts_data[device_name] = {"error": error_msg}
                 continue
 
             logger.debug(
@@ -170,11 +164,7 @@ def get_device_ports_from_topology(
                 "platform": platform,
                 "node_type": node_info.get("type"),
                 "groups": ["network_devices"],  # For inheriting hostname, timeout, etc.
-                "connection_options": {
-                    "netmiko": {
-                        "extras": {"device_type": device_type}
-                    }
-                },
+                "connection_options": {"netmiko": {"extras": {"device_type": device_type}}},
             }
 
             # Per-node default credentials (seeded from the template appliance

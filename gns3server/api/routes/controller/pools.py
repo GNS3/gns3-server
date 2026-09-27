@@ -24,11 +24,7 @@ from uuid import UUID
 from typing import List
 
 from gns3server import schemas
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerBadRequestError,
-    ControllerNotFoundError
-)
+from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
 
 from gns3server.controller import Controller
 from gns3server.db.repositories.rbac import RbacRepository
@@ -44,13 +40,9 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get(
-    "",
-    response_model=List[schemas.ResourcePool],
-    dependencies=[Depends(has_privilege("Pool.Audit"))]
-)
+@router.get("", response_model=List[schemas.ResourcePool], dependencies=[Depends(has_privilege("Pool.Audit"))])
 async def get_resource_pools(
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> List[schemas.ResourcePool]:
     """
     Get all resource pools.
@@ -65,11 +57,11 @@ async def get_resource_pools(
     "",
     response_model=schemas.ResourcePool,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Pool.Allocate"))]
+    dependencies=[Depends(has_privilege("Pool.Allocate"))],
 )
 async def create_resource_pool(
-        resource_pool_create: schemas.ResourcePoolCreate,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+    resource_pool_create: schemas.ResourcePoolCreate,
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> schemas.ResourcePool:
     """
     Create a new resource pool
@@ -78,19 +70,16 @@ async def create_resource_pool(
     """
 
     if await pools_repo.get_resource_pool_by_name(resource_pool_create.name):
-       raise ControllerBadRequestError(f"Resource pool '{resource_pool_create.name}' already exists")
+        raise ControllerBadRequestError(f"Resource pool '{resource_pool_create.name}' already exists")
 
     return await pools_repo.create_resource_pool(resource_pool_create)
 
 
 @router.get(
-    "/{resource_pool_id}",
-    response_model=schemas.ResourcePool,
-    dependencies=[Depends(has_privilege("Pool.Audit"))]
+    "/{resource_pool_id}", response_model=schemas.ResourcePool, dependencies=[Depends(has_privilege("Pool.Audit"))]
 )
 async def get_resource_pool(
-        resource_pool_id: UUID,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+    resource_pool_id: UUID, pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
 ) -> schemas.ResourcePool:
     """
     Get a resource pool.
@@ -105,14 +94,12 @@ async def get_resource_pool(
 
 
 @router.put(
-    "/{resource_pool_id}",
-    response_model=schemas.ResourcePool,
-    dependencies=[Depends(has_privilege("Pool.Modify"))]
+    "/{resource_pool_id}", response_model=schemas.ResourcePool, dependencies=[Depends(has_privilege("Pool.Modify"))]
 )
 async def update_resource_pool(
-        resource_pool_id: UUID,
-        resource_pool_update: schemas.ResourcePoolUpdate,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+    resource_pool_id: UUID,
+    resource_pool_update: schemas.ResourcePoolUpdate,
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> schemas.ResourcePool:
     """
     Update a resource pool.
@@ -130,12 +117,12 @@ async def update_resource_pool(
 @router.delete(
     "/{resource_pool_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Pool.Allocate"))]
+    dependencies=[Depends(has_privilege("Pool.Allocate"))],
 )
 async def delete_resource_pool(
-        resource_pool_id: UUID,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    resource_pool_id: UUID,
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a resource pool.
@@ -184,11 +171,11 @@ async def delete_resource_pool(
 @router.get(
     "/{resource_pool_id}/resources",
     response_model=List[schemas.Resource],
-    dependencies=[Depends(has_privilege("Pool.Audit"))]
+    dependencies=[Depends(has_privilege("Pool.Audit"))],
 )
 async def get_pool_resources(
-        resource_pool_id: UUID,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
+    resource_pool_id: UUID,
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> List[schemas.Resource]:
     """
     Get all resource in a pool.
@@ -202,12 +189,12 @@ async def get_pool_resources(
 @router.put(
     "/{resource_pool_id}/resources/{resource_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Pool.Modify"))]
+    dependencies=[Depends(has_privilege("Pool.Modify"))],
 )
 async def add_resource_to_pool(
-        resource_pool_id: UUID,
-        resource_id: UUID,
-        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
+    resource_pool_id: UUID,
+    resource_id: UUID,
+    pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
 ) -> None:
     """
     Add resource to a resource pool.
@@ -240,7 +227,7 @@ async def add_resource_to_pool(
 @router.delete(
     "/{resource_pool_id}/resources/{resource_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Pool.Modify"))]
+    dependencies=[Depends(has_privilege("Pool.Modify"))],
 )
 async def remove_resource_from_pool(
     resource_pool_id: UUID,

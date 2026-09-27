@@ -65,10 +65,10 @@ async def test_add_node(project, compute):
             "port": node1._ports[0],
             "adapter_number": 0,
             "port_number": 4,
-            'label': {
-                'text': '0/4',
-                'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
-            }
+            "label": {
+                "text": "0/4",
+                "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+            },
         }
     ]
     assert project.dump.called
@@ -205,32 +205,32 @@ async def test_json(project, compute):
                 "node_id": node1.id,
                 "adapter_number": 0,
                 "port_number": 4,
-                'label': {
-                    'text': '0/4',
-                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
-                }
+                "label": {
+                    "text": "0/4",
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                },
             },
             {
                 "node_id": node2.id,
                 "adapter_number": 1,
                 "port_number": 3,
-                'label': {
-                    'text': '1/3',
-                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
-                }
-            }
+                "label": {
+                    "text": "1/3",
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                },
+            },
         ],
         "filters": {},
         "markers": {},
         "show_filters_icon": True,
         "link_style": {},
         "suspend": False,
-        'wireshark': False,
+        "wireshark": False,
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
         "capture_file_path": None,
-        "capture_compute_id": None
+        "capture_compute_id": None,
     }
     assert link.asdict(topology_dump=True) == {
         "link_id": link.id,
@@ -239,26 +239,26 @@ async def test_json(project, compute):
                 "node_id": node1.id,
                 "adapter_number": 0,
                 "port_number": 4,
-                'label': {
-                    'text': '0/4',
-                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
-                }
+                "label": {
+                    "text": "0/4",
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                },
             },
             {
                 "node_id": node2.id,
                 "adapter_number": 1,
                 "port_number": 3,
-                'label': {
-                    'text': '1/3',
-                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
-                }
-            }
+                "label": {
+                    "text": "1/3",
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                },
+            },
         ],
         "link_style": {},
         "filters": {},
         "markers": {},
         "show_filters_icon": True,
-        "suspend": False
+        "suspend": False,
     }
 
 
@@ -294,7 +294,6 @@ async def test_default_capture_file_name(project, compute):
 
 @pytest.mark.asyncio
 async def test_start_capture(link):
-
 
     async def fake_reader():
         return AsyncioBytesIO()
@@ -355,16 +354,8 @@ async def test_update_filters(project, compute):
 
     link.update = AsyncioMagicMock()
     assert link._created
-    await link.update_filters({
-        "packet_loss": [10],
-        "delay": [50, 10],
-        "frequency_drop": [0],
-        "bpf": [" \n  "]
-    })
-    assert link.filters == {
-        "packet_loss": [10],
-        "delay": [50, 10]
-    }
+    await link.update_filters({"packet_loss": [10], "delay": [50, 10], "frequency_drop": [0], "bpf": [" \n  "]})
+    assert link.filters == {"packet_loss": [10], "delay": [50, 10]}
     assert link.update.called
 
 
@@ -404,14 +395,16 @@ async def test_update_link_style(project, compute):
     await link.add_node(node1, 0, 4)
     await link.add_node(node2, 1, 3)
 
-    await link.update_link_style({
-        "color": "#00ff00",
-        "width": 3,
-        "type": 1,
-        "link_type": "flowchart",
-        "bezier_curviness": 150,
-        "flowchart_roundness": 20,
-    })
+    await link.update_link_style(
+        {
+            "color": "#00ff00",
+            "width": 3,
+            "type": 1,
+            "link_type": "flowchart",
+            "bezier_curviness": 150,
+            "flowchart_roundness": 20,
+        }
+    )
 
     assert link.asdict()["link_style"] == {
         "color": "#00ff00",

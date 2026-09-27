@@ -209,7 +209,7 @@ class GNS3HuaweiTelnetCE(HuaweiBase):
 
         # Ensure we're in a clean state
         try:
-            if hasattr(self, 'base_prompt') and self.base_prompt:
+            if hasattr(self, "base_prompt") and self.base_prompt:
                 self._test_channel_read(pattern=self.base_prompt)
             else:
                 # If base_prompt is not set yet, just read to clear buffer
@@ -288,9 +288,7 @@ class GNS3HuaweiTelnetCE(HuaweiBase):
         # This method keeps reading until there is no new data for
         # 'last_read' seconds. This is the proper Netmiko way to handle
         # command output
-        output += self.read_channel_timing(
-            read_timeout=read_timeout, last_read=2.0
-        )
+        output += self.read_channel_timing(read_timeout=read_timeout, last_read=2.0)
 
         # Exit config mode if requested
         if exit_config_mode:
@@ -318,9 +316,7 @@ class GNS3HuaweiTelnetCE(HuaweiBase):
 
         return output
 
-    def exit_config_mode(
-        self, exit_config: str = "return", pattern: str = r"<\S+>|>\s*$"
-    ) -> str:
+    def exit_config_mode(self, exit_config: str = "return", pattern: str = r"<\S+>|>\s*$") -> str:
         r"""
         Exit configuration mode for Huawei devices.
 
@@ -376,6 +372,7 @@ class GNS3HuaweiTelnetCE(HuaweiBase):
 
 # Register the custom device type with Netmiko
 _registered = False  # Flag to prevent duplicate registration
+
 
 def register_custom_device_type() -> None:
     """
@@ -451,7 +448,4 @@ try:
 except Exception as e:
     # Log but don't fail on import
     logger = logging.getLogger(__name__)
-    logger.warning(
-        f"Failed to register custom device type: {e}",
-        exc_info=True
-    )
+    logger.warning(f"Failed to register custom device type: {e}", exc_info=True)

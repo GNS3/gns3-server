@@ -92,10 +92,7 @@ logger = logging.getLogger(__name__)
 def setup_logging(verbose: bool = False):
     """Setup logging configuration."""
     level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
 async def cmd_start(args) -> int:
@@ -119,7 +116,7 @@ async def cmd_start(args) -> int:
             image=args.image,
             memory=args.memory,
             cpus=args.cpus,
-            pids_limit=args.pids_limit
+            pids_limit=args.pids_limit,
         )
 
         print(json.dumps(result, indent=2))
@@ -143,10 +140,7 @@ async def cmd_stop(args) -> int:
     """
     manager = WebWiresharkManager()
     try:
-        await manager.stop_wireshark_session(
-            project_id=args.project_id,
-            link_id=args.link_id
-        )
+        await manager.stop_wireshark_session(project_id=args.project_id, link_id=args.link_id)
         print(json.dumps({"status": "stopped"}))
         return 0
     except Exception as e:
@@ -172,7 +166,7 @@ async def cmd_restart(args) -> int:
             project_id=args.project_id,
             link_id=args.link_id,
             jwt_token=args.jwt_token,
-            capture_stream_url=args.capture_url
+            capture_stream_url=args.capture_url,
         )
         print(json.dumps(result, indent=2))
         return 0
@@ -274,14 +268,8 @@ async def cmd_delete(args) -> int:
 
 def create_parser() -> argparse.ArgumentParser:
     """Create command line argument parser."""
-    parser = argparse.ArgumentParser(
-        description="Web Wireshark container management"
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose logging"
-    )
+    parser = argparse.ArgumentParser(description="Web Wireshark container management")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -290,32 +278,13 @@ def create_parser() -> argparse.ArgumentParser:
     start_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
     start_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
     start_parser.add_argument("--jwt-token", required=True, help="JWT token")
+    start_parser.add_argument("--capture-url", help="Capture stream URL (auto-detected if not provided)")
     start_parser.add_argument(
-        "--capture-url",
-        help="Capture stream URL (auto-detected if not provided)"
+        "--image", default="gns3/web-wireshark:latest", help="Docker image (default: gns3/web-wireshark:latest)"
     )
-    start_parser.add_argument(
-        "--image",
-        default="gns3/web-wireshark:latest",
-        help="Docker image (default: gns3/web-wireshark:latest)"
-    )
-    start_parser.add_argument(
-        "--memory",
-        default="2g",
-        help="Memory limit (default: 2g)"
-    )
-    start_parser.add_argument(
-        "--cpus",
-        type=float,
-        default=1.0,
-        help="CPU cores (default: 1.0)"
-    )
-    start_parser.add_argument(
-        "--pids-limit",
-        type=int,
-        default=1000,
-        help="Process limit (default: 1000)"
-    )
+    start_parser.add_argument("--memory", default="2g", help="Memory limit (default: 2g)")
+    start_parser.add_argument("--cpus", type=float, default=1.0, help="CPU cores (default: 1.0)")
+    start_parser.add_argument("--pids-limit", type=int, default=1000, help="Process limit (default: 1000)")
 
     # Stop command
     stop_parser = subparsers.add_parser("stop", help="Stop Web Wireshark session")
@@ -327,10 +296,7 @@ def create_parser() -> argparse.ArgumentParser:
     restart_parser.add_argument("--project-id", required=True, type=validate_uuid, help="Project ID")
     restart_parser.add_argument("--link-id", required=True, type=validate_uuid, help="Link ID")
     restart_parser.add_argument("--jwt-token", required=True, help="JWT token")
-    restart_parser.add_argument(
-        "--capture-url",
-        help="Capture stream URL (auto-detected if not provided)"
-    )
+    restart_parser.add_argument("--capture-url", help="Capture stream URL (auto-detected if not provided)")
 
     # Stop all command
     stop_all_parser = subparsers.add_parser("stop-all", help="Stop all sessions")

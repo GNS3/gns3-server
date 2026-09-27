@@ -30,12 +30,7 @@ async def collect_webwireshark_stats(projects: List) -> Dict:
     """
     from .manager import WebWiresharkManager
 
-    stats = {
-        "total_containers": 0,
-        "running_containers": 0,
-        "active_sessions": 0,
-        "containers": []
-    }
+    stats = {"total_containers": 0, "running_containers": 0, "active_sessions": 0, "containers": []}
 
     # Create a single manager instance and reuse it
     manager = WebWiresharkManager()
@@ -70,15 +65,14 @@ async def collect_webwireshark_stats(projects: List) -> Dict:
                     pids_limit = host_config.get("PidsLimit", 0)
 
                     # Count active capture sessions
-                    active_sessions = sum(
-                        1 for link in project.links.values()
-                        if getattr(link, "capturing", False)
-                    )
+                    active_sessions = sum(1 for link in project.links.values() if getattr(link, "capturing", False))
                     stats["active_sessions"] += active_sessions
                     container_info["active_sessions"] = active_sessions
 
                     # Add resource limits
-                    container_info["memory_limit"] = f"{memory_limit / (1024**3):.1f} GB" if memory_limit > 0 else "unlimited"
+                    container_info["memory_limit"] = (
+                        f"{memory_limit / (1024**3):.1f} GB" if memory_limit > 0 else "unlimited"
+                    )
                     container_info["cpu_limit"] = f"{cpu_quota / 1000000000:.1f}" if cpu_quota > 0 else "unlimited"
                     container_info["pids_limit"] = pids_limit if pids_limit > 0 else "unlimited"
 
@@ -111,21 +105,15 @@ async def _get_container_resource_stats(container_id: str) -> Optional[Dict]:
     """
     try:
         result = subprocess.run(
-            ["docker", "stats", "--no-stream", "--format",
-             "{{.MemUsage}}\t{{.CPUPerc}}\t{{.PIDs}}",
-             container_id],
+            ["docker", "stats", "--no-stream", "--format", "{{.MemUsage}}\t{{.CPUPerc}}\t{{.PIDs}}", container_id],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=2,
         )
         if result.returncode == 0:
             parts = result.stdout.strip().split("\t")
             if len(parts) >= 3:
-                return {
-                    "memory": parts[0],
-                    "cpu": parts[1],
-                    "pids": int(parts[2])
-                }
+                return {"memory": parts[0], "cpu": parts[1], "pids": int(parts[2])}
     except subprocess.TimeoutExpired:
         logger.debug(f"Docker stats timeout for container {container_id[:12]}")
     except Exception as e:

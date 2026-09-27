@@ -44,7 +44,6 @@ log = logging.getLogger(__name__)
 
 
 class Server:
-
     _stream_handler = None
 
     @staticmethod
@@ -157,6 +156,7 @@ class Server:
     def _signal_handling(self):
 
         from gns3server.controller import Controller
+
         def signal_handler(signame, *args):
 
             try:
@@ -245,11 +245,13 @@ class Server:
             log.info("Compute authentication is disabled")
         elif not config.Server.compute_password.get_secret_value():
             alphabet = string.ascii_letters + string.digits + string.punctuation
-            generated_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+            generated_password = "".join(secrets.choice(alphabet) for _ in range(16))
             config.Server.compute_password = SecretStr(generated_password)
-            log.warning(f"Compute authentication is enabled with username '{config.Server.compute_username}' and "
-                        f"a randomly generated password. Please set a password in the config file if this compute "
-                        f"is to be used by an external controller")
+            log.warning(
+                f"Compute authentication is enabled with username '{config.Server.compute_username}' and "
+                f"a randomly generated password. Please set a password in the config file if this compute "
+                f"is to be used by an external controller"
+            )
         else:
             log.info(f"Compute authentication is enabled with username '{config.Server.compute_username}'")
 
@@ -274,6 +276,7 @@ class Server:
 
         try:
             import truststore
+
             truststore.inject_into_ssl()
             log.info("Using system certificate store for SSL connections")
         except ImportError:
@@ -284,6 +287,7 @@ class Server:
         port = config.Server.port
 
         from gns3server.compute.port_manager import PortManager
+
         PortManager.instance().console_host = host
         self._signal_handling()
 
@@ -306,7 +310,7 @@ class Server:
                 access_log=access_log,
                 ssl_certfile=config.Server.certfile,
                 ssl_keyfile=config.Server.certkey,
-                lifespan="on"
+                lifespan="on",
             )
 
             # overwrite uvicorn loggers with our own logger

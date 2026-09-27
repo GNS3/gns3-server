@@ -50,7 +50,6 @@ CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class BaseManager:
-
     """
     Base class for all Manager classes.
     Responsible of management of a node pool of the same type.
@@ -222,7 +221,7 @@ class BaseManager:
 
         if hasattr(source_node, "status") and source_node.status != "stopped":
             raise ComputeError("Cannot duplicate node data while the node is running")
- 
+
         destination_dir = destination_node.working_dir
         try:
             shutil.rmtree(destination_dir)
@@ -431,7 +430,6 @@ class BaseManager:
             )
 
         if not os.path.isabs(orig_path):
-
             for directory in valid_directory_prefices:
                 log.debug(f"Searching for image '{orig_path}' in '{directory}'")
                 path = self._recursive_search_file_in_directory(directory, orig_path)
@@ -466,7 +464,7 @@ class BaseManager:
 
         for root, dirs, files in os.walk(directory):
             for file in files:
-                if s[1] == file and (s[0] == '' or root == os.path.join(directory, s[0])):
+                if s[1] == file and (s[0] == "" or root == os.path.join(directory, s[0])):
                     path = os.path.normpath(os.path.join(root, s[1]))
                     if os.path.exists(path):
                         return path

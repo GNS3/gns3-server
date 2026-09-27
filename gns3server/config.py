@@ -110,20 +110,30 @@ class Config:
             self._files = []
 
         if self._main_config_file is None:
-
             if not os.path.exists(versioned_user_dir):
                 # Try to migrate the configuration files and database from the previous version if it exists
                 previous_version = f"{__version_info__[0]}.{int(__version_info__[1]) - 1}"
                 if self._profile:
-                    previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version, "profiles", self._profile)
+                    previous_versioned_user_dir = os.path.join(
+                        home, ".config", appname, previous_version, "profiles", self._profile
+                    )
                 else:
                     previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version)
                 if os.path.exists(previous_versioned_user_dir):
                     try:
-                        shutil.copytree(previous_versioned_user_dir, versioned_user_dir, symlinks=True, ignore_dangling_symlinks=True)
-                        log.info(f"Migrated configuration files and database from '{previous_versioned_user_dir}' to '{versioned_user_dir}'")
+                        shutil.copytree(
+                            previous_versioned_user_dir,
+                            versioned_user_dir,
+                            symlinks=True,
+                            ignore_dangling_symlinks=True,
+                        )
+                        log.info(
+                            f"Migrated configuration files and database from '{previous_versioned_user_dir}' to '{versioned_user_dir}'"
+                        )
                     except OSError as e:
-                        log.error(f"Cannot migrate old config files and database from '{previous_versioned_user_dir}: {e}")
+                        log.error(
+                            f"Cannot migrate old config files and database from '{previous_versioned_user_dir}: {e}"
+                        )
 
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:

@@ -50,44 +50,36 @@ class LLMModelConfigsRepository(BaseRepository):
     async def get_user_config(self, config_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a user's LLM model configuration by ID."""
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.user_id.isnot(None)
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.user_id.isnot(None))
         )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_user_configs(self, user_id: UUID) -> List[models.LLMModelConfig]:
         """Get all LLM model configurations for a user."""
-        query = select(models.LLMModelConfig).where(
-            models.LLMModelConfig.user_id == user_id
-        ).order_by(models.LLMModelConfig.created_at)
+        query = (
+            select(models.LLMModelConfig)
+            .where(models.LLMModelConfig.user_id == user_id)
+            .order_by(models.LLMModelConfig.created_at)
+        )
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
     async def get_user_default_config(self, user_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a user's default LLM model configuration."""
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.user_id == user_id,
-                models.LLMModelConfig.is_default
-            )
+            and_(models.LLMModelConfig.user_id == user_id, models.LLMModelConfig.is_default)
         )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def create_user_config(
-        self,
-        user_id: UUID,
-        name: str,
-        model_type: str,
-        config_data: Dict[str, Any],
-        is_default: bool = False
+        self, user_id: UUID, name: str, model_type: str, config_data: Dict[str, Any], is_default: bool = False
     ) -> models.LLMModelConfig:
         """Create a new LLM model configuration for a user."""
         # Encrypt API key if present
         from gns3server.utils.encryption import encrypt
+
         config_to_store = config_data.copy()
         if "api_key" in config_to_store and config_to_store["api_key"]:
             try:
@@ -105,7 +97,7 @@ class LLMModelConfigsRepository(BaseRepository):
             user_id=user_id,
             is_default=is_default,
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
         self._db_session.add(db_config)
         await self._db_session.commit()
@@ -113,11 +105,7 @@ class LLMModelConfigsRepository(BaseRepository):
         return db_config
 
     async def update_user_config(
-        self,
-        config_id: UUID,
-        user_id: UUID,
-        updates: Dict[str, Any],
-        expected_version: Optional[int] = None
+        self, config_id: UUID, user_id: UUID, updates: Dict[str, Any], expected_version: Optional[int] = None
     ) -> Optional[models.LLMModelConfig]:
         """
         Update a user's LLM model configuration.
@@ -130,10 +118,7 @@ class LLMModelConfigsRepository(BaseRepository):
         :raises ValueError: If version mismatch (concurrent modification)
         """
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.user_id == user_id
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.user_id == user_id)
         )
         result = await self._db_session.execute(query)
         db_config = result.scalars().first()
@@ -193,10 +178,7 @@ class LLMModelConfigsRepository(BaseRepository):
     async def delete_user_config(self, config_id: UUID, user_id: UUID) -> bool:
         """Delete a user's LLM model configuration."""
         query = delete(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.user_id == user_id
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.user_id == user_id)
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
@@ -208,22 +190,16 @@ class LLMModelConfigsRepository(BaseRepository):
         # First, unset current default
         await self._db_session.execute(
             update(models.LLMModelConfig)
-            .where(
-                and_(
-                    models.LLMModelConfig.user_id == user_id,
-                    models.LLMModelConfig.is_default
-                )
-            )
+            .where(and_(models.LLMModelConfig.user_id == user_id, models.LLMModelConfig.is_default))
             .values(is_default=False, updated_at=now)
         )
 
         # Set new default
-        query = update(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.user_id == user_id
-            )
-        ).values(is_default=True, updated_at=now)
+        query = (
+            update(models.LLMModelConfig)
+            .where(and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.user_id == user_id))
+            .values(is_default=True, updated_at=now)
+        )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
@@ -233,44 +209,36 @@ class LLMModelConfigsRepository(BaseRepository):
     async def get_group_config(self, config_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a group's LLM model configuration by ID."""
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.group_id.isnot(None)
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.group_id.isnot(None))
         )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_group_configs(self, group_id: UUID) -> List[models.LLMModelConfig]:
         """Get all LLM model configurations for a group."""
-        query = select(models.LLMModelConfig).where(
-            models.LLMModelConfig.group_id == group_id
-        ).order_by(models.LLMModelConfig.created_at)
+        query = (
+            select(models.LLMModelConfig)
+            .where(models.LLMModelConfig.group_id == group_id)
+            .order_by(models.LLMModelConfig.created_at)
+        )
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
     async def get_group_default_config(self, group_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a group's default LLM model configuration."""
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.group_id == group_id,
-                models.LLMModelConfig.is_default
-            )
+            and_(models.LLMModelConfig.group_id == group_id, models.LLMModelConfig.is_default)
         )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def create_group_config(
-        self,
-        group_id: UUID,
-        name: str,
-        model_type: str,
-        config_data: Dict[str, Any],
-        is_default: bool = False
+        self, group_id: UUID, name: str, model_type: str, config_data: Dict[str, Any], is_default: bool = False
     ) -> models.LLMModelConfig:
         """Create a new LLM model configuration for a group."""
         # Encrypt API key if present
         from gns3server.utils.encryption import encrypt
+
         config_to_store = config_data.copy()
         if "api_key" in config_to_store and config_to_store["api_key"]:
             try:
@@ -288,7 +256,7 @@ class LLMModelConfigsRepository(BaseRepository):
             group_id=group_id,
             is_default=is_default,
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
         self._db_session.add(db_config)
         await self._db_session.commit()
@@ -296,11 +264,7 @@ class LLMModelConfigsRepository(BaseRepository):
         return db_config
 
     async def update_group_config(
-        self,
-        config_id: UUID,
-        group_id: UUID,
-        updates: Dict[str, Any],
-        expected_version: Optional[int] = None
+        self, config_id: UUID, group_id: UUID, updates: Dict[str, Any], expected_version: Optional[int] = None
     ) -> Optional[models.LLMModelConfig]:
         """
         Update a group's LLM model configuration.
@@ -313,10 +277,7 @@ class LLMModelConfigsRepository(BaseRepository):
         :raises ValueError: If version mismatch (concurrent modification)
         """
         query = select(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.group_id == group_id
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.group_id == group_id)
         )
         result = await self._db_session.execute(query)
         db_config = result.scalars().first()
@@ -376,10 +337,7 @@ class LLMModelConfigsRepository(BaseRepository):
     async def delete_group_config(self, config_id: UUID, group_id: UUID) -> bool:
         """Delete a group's LLM model configuration."""
         query = delete(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.group_id == group_id
-            )
+            and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.group_id == group_id)
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
@@ -391,22 +349,16 @@ class LLMModelConfigsRepository(BaseRepository):
         # First, unset current default
         await self._db_session.execute(
             update(models.LLMModelConfig)
-            .where(
-                and_(
-                    models.LLMModelConfig.group_id == group_id,
-                    models.LLMModelConfig.is_default
-                )
-            )
+            .where(and_(models.LLMModelConfig.group_id == group_id, models.LLMModelConfig.is_default))
             .values(is_default=False, updated_at=now)
         )
 
         # Set new default
-        query = update(models.LLMModelConfig).where(
-            and_(
-                models.LLMModelConfig.config_id == config_id,
-                models.LLMModelConfig.group_id == group_id
-            )
-        ).values(is_default=True, updated_at=now)
+        query = (
+            update(models.LLMModelConfig)
+            .where(and_(models.LLMModelConfig.config_id == config_id, models.LLMModelConfig.group_id == group_id))
+            .values(is_default=True, updated_at=now)
+        )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
@@ -414,10 +366,7 @@ class LLMModelConfigsRepository(BaseRepository):
     # Inheritance methods
 
     async def get_user_effective_configs(
-        self,
-        user_id: UUID,
-        current_user_id: Optional[UUID] = None,
-        current_user_is_superadmin: bool = False
+        self, user_id: UUID, current_user_id: Optional[UUID] = None, current_user_is_superadmin: bool = False
     ) -> Dict[str, Any]:
         """
         Get user's effective configurations (own + inherited from groups).
@@ -429,9 +378,7 @@ class LLMModelConfigsRepository(BaseRepository):
         user_configs = await self.get_user_configs(user_id)
 
         # Get user's groups
-        query = select(models.UserGroup).\
-            join(models.UserGroup.users).\
-            filter(models.User.user_id == user_id)
+        query = select(models.UserGroup).join(models.UserGroup.users).filter(models.User.user_id == user_id)
         result = await self._db_session.execute(query)
         user_groups = result.scalars().all()
 
@@ -453,28 +400,8 @@ class LLMModelConfigsRepository(BaseRepository):
             # Always hide API key for security
             config_dict = self._hide_api_key(config.config)
 
-            configs_with_source.append({
-                "config_id": config.config_id,
-                "name": config.name,
-                "model_type": config.model_type,
-                "config": config_dict,
-                "user_id": config.user_id,
-                "group_id": config.group_id,
-                "is_default": config.is_default,
-                "version": config.version,
-                "created_at": config.created_at,
-                "updated_at": config.updated_at,
-                "source": "user",
-                "group_name": None
-            })
-
-        # Add inherited group configs (always shown, regardless of user configs)
-        for group_id, configs in group_configs_map.items():
-            for config in configs:
-                # Always hide API key for security
-                config_dict = self._hide_api_key(config.config)
-
-                configs_with_source.append({
+            configs_with_source.append(
+                {
                     "config_id": config.config_id,
                     "name": config.name,
                     "model_type": config.model_type,
@@ -485,9 +412,33 @@ class LLMModelConfigsRepository(BaseRepository):
                     "version": config.version,
                     "created_at": config.created_at,
                     "updated_at": config.updated_at,
-                    "source": "group",
-                    "group_name": group_names_map[group_id]
-                })
+                    "source": "user",
+                    "group_name": None,
+                }
+            )
+
+        # Add inherited group configs (always shown, regardless of user configs)
+        for group_id, configs in group_configs_map.items():
+            for config in configs:
+                # Always hide API key for security
+                config_dict = self._hide_api_key(config.config)
+
+                configs_with_source.append(
+                    {
+                        "config_id": config.config_id,
+                        "name": config.name,
+                        "model_type": config.model_type,
+                        "config": config_dict,
+                        "user_id": config.user_id,
+                        "group_id": config.group_id,
+                        "is_default": config.is_default,
+                        "version": config.version,
+                        "created_at": config.created_at,
+                        "updated_at": config.updated_at,
+                        "source": "group",
+                        "group_name": group_names_map[group_id],
+                    }
+                )
 
         # Select default_config with proper priority:
         # 1. User's config marked with is_default: true
@@ -508,7 +459,4 @@ class LLMModelConfigsRepository(BaseRepository):
         if default_config is None and configs_with_source:
             default_config = configs_with_source[0]
 
-        return {
-            "configs": configs_with_source,
-            "default_config": default_config
-        }
+        return {"configs": configs_with_source, "default_config": default_config}

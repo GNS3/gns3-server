@@ -76,10 +76,7 @@ def _get_url_from_controller() -> Optional[str]:
         controller = Controller.instance()
         local_compute = controller.get_compute("local")
 
-        url = (
-            f"{local_compute.protocol}://{local_compute.host}:"
-            f"{local_compute.port}"
-        )
+        url = f"{local_compute.protocol}://{local_compute.host}:{local_compute.port}"
         logger.debug(
             "Got GNS3 URL from Controller: %s (protocol=%s, host=%s, port=%s)",
             url,
@@ -98,9 +95,7 @@ def _get_url_from_controller() -> Optional[str]:
         logger.debug("Local compute not found in Controller: %s", str(e))
         return None
     except Exception as e:
-        logger.warning(
-            "Unexpected error getting URL from Controller: %s", str(e)
-        )
+        logger.warning("Unexpected error getting URL from Controller: %s", str(e))
         return None
 
 
@@ -114,10 +109,7 @@ def _get_url_from_config() -> Optional[str]:
         from gns3server.config import Config
 
         server_config = Config.instance().settings.Server
-        url = (
-            f"{server_config.protocol.value}://{server_config.host}:"
-            f"{server_config.port}"
-        )
+        url = f"{server_config.protocol.value}://{server_config.host}:{server_config.port}"
         logger.debug(
             "Got GNS3 URL from Config: %s (protocol=%s, host=%s, port=%s)",
             url,
@@ -137,9 +129,7 @@ def _get_url_from_config() -> Optional[str]:
         return None
 
 
-def get_gns3_connector(
-    jwt_token: Optional[str] = None, url: Optional[str] = None
-) -> Optional[Gns3Connector]:
+def get_gns3_connector(jwt_token: Optional[str] = None, url: Optional[str] = None) -> Optional[Gns3Connector]:
     """Create and return a Gns3Connector instance with JWT authentication.
 
     URL Resolution Strategy (in order):
@@ -223,9 +213,7 @@ def get_gns3_connector(
         return connector
 
     except Exception as e:
-        logger.error(
-            "Failed to create Gns3Connector: %s", str(e), exc_info=True
-        )
+        logger.error("Failed to create Gns3Connector: %s", str(e), exc_info=True)
         return None
 
 
@@ -284,9 +272,7 @@ async def get_gns3_connector_with_llm_config(
             url = _detect_url_for_api()
 
         # Step 3: Get LLM config
-        llm_config = get_llm_config(
-            user_id=user_id, jwt_token=jwt_token, app=app
-        )
+        llm_config = get_llm_config(user_id=user_id, jwt_token=jwt_token, app=app)
 
         if not llm_config:
             logger.warning(f"No LLM config found for user {user_id}")
@@ -303,9 +289,7 @@ async def get_gns3_connector_with_llm_config(
         return {"connector": connector, "llm_config": llm_config}
 
     except Exception as e:
-        logger.error(
-            f"Failed to get GNS3 connector with LLM config: {e}", exc_info=True
-        )
+        logger.error(f"Failed to get GNS3 connector with LLM config: {e}", exc_info=True)
         return None
 
 
@@ -375,9 +359,7 @@ def get_gns3_server_host() -> str:
         logger.debug("Extracted GNS3 server host: %s from URL: %s", host, url)
         return host
     except Exception as e:
-        logger.warning(
-            "Failed to extract host from URL %s: %s, using fallback", url, e
-        )
+        logger.warning("Failed to extract host from URL %s: %s, using fallback", url, e)
         return DEFAULT_GNS3_URL.split("://")[1].split(":")[0]
 
 
@@ -428,9 +410,7 @@ def get_llm_config(user_id, jwt_token: str, app=None) -> Optional[dict]:
                 # We're in an async context with a running loop
                 # This shouldn't happen since this is a sync function
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        asyncio.run, get_user_llm_config_with_app(user_id, app)
-                    )
+                    future = executor.submit(asyncio.run, get_user_llm_config_with_app(user_id, app))
                     return future.result(timeout=10)
             except RuntimeError:
                 # No running event loop - we're in a sync context
@@ -449,26 +429,19 @@ def get_llm_config(user_id, jwt_token: str, app=None) -> Optional[dict]:
                         return future.result(timeout=10)
                 else:
                     # Loop exists but not running - use it
-                    return loop.run_until_complete(
-                        get_user_llm_config_with_app(user_id, app)
-                    )
+                    return loop.run_until_complete(get_user_llm_config_with_app(user_id, app))
             except RuntimeError:
                 # No event loop exists - create a new one
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    return loop.run_until_complete(
-                        get_user_llm_config_with_app(user_id, app)
-                    )
+                    return loop.run_until_complete(get_user_llm_config_with_app(user_id, app))
                 finally:
                     loop.close()
 
         # Fallback: No app provided, try API call (will mask group config API
         # keys)
-        logger.warning(
-            "No app provided for get_llm_config, group config API keys may be "
-            "masked"
-        )
+        logger.warning("No app provided for get_llm_config, group config API keys may be masked")
         return None
 
     except Exception as e:

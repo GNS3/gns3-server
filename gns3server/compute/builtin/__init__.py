@@ -18,7 +18,6 @@
 Builtin nodes server module.
 """
 
-
 from ..base_manager import BaseManager
 from .builtin_node_factory import BuiltinNodeFactory, BUILTIN_NODES
 
@@ -28,7 +27,6 @@ log = logging.getLogger(__name__)
 
 
 class Builtin(BaseManager):
-
     _NODE_CLASS = BuiltinNodeFactory
 
     def __init__(self):

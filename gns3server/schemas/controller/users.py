@@ -61,7 +61,6 @@ class LoggedInUserUpdate(BaseModel):
 
 
 class User(DateTimeModelMixin, UserBase):
-
     user_id: UUID
     last_login: Optional[datetime] = None
     is_superadmin: bool = False
@@ -93,13 +92,11 @@ class UserGroupUpdate(UserGroupBase):
 
 
 class UserGroup(DateTimeModelMixin, UserGroupBase):
-
     user_group_id: UUID
     is_builtin: bool
     model_config = ConfigDict(from_attributes=True)
 
 
 class Credentials(BaseModel):
-
     username: str
     password: str

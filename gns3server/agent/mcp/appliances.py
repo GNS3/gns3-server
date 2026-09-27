@@ -28,8 +28,10 @@ log = logging.getLogger(__name__)
 
 # ── Helper ─────────────────────────────────────────────────────────────────
 
+
 def _get_connector(gns3_ctx: dict[str, Any]):
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],
@@ -41,12 +43,32 @@ def _get_connector(gns3_ctx: dict[str, Any]):
 # ── Tool handlers ──────────────────────────────────────────────────────────
 
 VALID_APPLIANCE_FIELDS = {
-    "appliance_id", "name", "category", "description", "vendor_name",
-    "vendor_url", "product_name", "product_url", "documentation_url",
-    "status", "availability", "maintainer", "usage", "symbol",
-    "images", "versions", "tags", "builtin",
-    "first_port_name", "port_name_format", "port_segment_size",
-    "linked_clone", "docker", "iou", "dynamips", "qemu",
+    "appliance_id",
+    "name",
+    "category",
+    "description",
+    "vendor_name",
+    "vendor_url",
+    "product_name",
+    "product_url",
+    "documentation_url",
+    "status",
+    "availability",
+    "maintainer",
+    "usage",
+    "symbol",
+    "images",
+    "versions",
+    "tags",
+    "builtin",
+    "first_port_name",
+    "port_name_format",
+    "port_segment_size",
+    "linked_clone",
+    "docker",
+    "iou",
+    "dynamips",
+    "qemu",
 }
 
 
@@ -56,7 +78,7 @@ def get_appliances_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> 
     fields = params.get("fields")
     if fields:
         if not isinstance(fields, list):
-            return {"error": "fields must be a list, e.g. [\"name\", \"category\"]"}
+            return {"error": 'fields must be a list, e.g. ["name", "category"]'}
         invalid = [f for f in fields if f not in VALID_APPLIANCE_FIELDS]
         if invalid:
             return {

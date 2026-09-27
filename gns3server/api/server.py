@@ -40,7 +40,7 @@ from gns3server.controller.controller_error import (
     ControllerTimeoutError,
     ControllerForbiddenError,
     ControllerUnauthorizedError,
-    ComputeConflictError
+    ComputeConflictError,
 )
 
 from gns3server.api.routes import controller, index
@@ -52,6 +52,7 @@ from gns3server.agent import MCP_AVAILABLE
 
 if MCP_AVAILABLE:
     from gns3server.agent import mcp
+
     _mcp_router = mcp.router
 else:
     from fastapi import APIRouter
@@ -62,8 +63,9 @@ else:
     async def mcp_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="MCP is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
+            detail="MCP is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
+
 
 import logging
 
@@ -78,7 +80,7 @@ def get_application() -> FastAPI:
         description="This page describes the public controller API for GNS3",
         version="3.0.0",
         docs_url=None,
-        redoc_url=None
+        redoc_url=None,
     )
 
     application.add_middleware(
@@ -91,7 +93,7 @@ def get_application() -> FastAPI:
 
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
-    application.mount("/static", StaticFiles(packages=[('gns3server', 'static')], html=True), name="static")
+    application.mount("/static", StaticFiles(packages=[("gns3server", "static")], html=True), name="static")
     application.mount("/v3/compute", compute_api, name="compute")
 
     # Register MCP routes (stub returns 501 if MCP dependencies are not installed)
@@ -118,6 +120,7 @@ def handle_exit(*args, **kwargs):
 
 UvicornServer.handle_exit = handle_exit
 
+
 # Configure self-hosting JavaScript and CSS for docs
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -127,8 +130,9 @@ async def custom_swagger_ui_html():
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url="/static/swagger-ui-bundle.js",
         swagger_css_url="/static/swagger-ui.css",
-        swagger_favicon_url="/static/favicon.ico"
+        swagger_favicon_url="/static/favicon.ico",
     )
+
 
 @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
 async def swagger_ui_redirect():
@@ -141,8 +145,9 @@ async def redoc_html():
         openapi_url=app.openapi_url,
         title=app.title + " - ReDoc",
         redoc_js_url="/static/redoc.standalone.js",
-        redoc_favicon_url="/static/favicon.ico"
+        redoc_favicon_url="/static/favicon.ico",
     )
+
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
@@ -210,11 +215,7 @@ async def compute_conflict_error_handler(request: Request, exc: ComputeConflictE
 # make sure the content key is "message", not "detail" per default
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"message": exc.detail},
-        headers=exc.headers
-    )
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail}, headers=exc.headers)
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -229,7 +230,4 @@ async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        content={"message": str(exc)}
-    )
+    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"message": str(exc)})

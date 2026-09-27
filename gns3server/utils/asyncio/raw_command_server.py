@@ -48,7 +48,7 @@ class AsyncioRawCommandServer:
             *self._command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
-            stdin=asyncio.subprocess.PIPE
+            stdin=asyncio.subprocess.PIPE,
         )
         try:
             await self._process(network_reader, network_writer, process.stdout, process.stdin)

@@ -22,7 +22,6 @@ import unittest.mock
 
 
 class _asyncio_patch:
-
     """
     A wrapper around python patch supporting asyncio.
     Like the original patch you can use it as context
@@ -52,10 +51,12 @@ class _asyncio_patch:
 def asyncio_patch(function, *args, **kwargs):
     return _asyncio_patch(function, *args, **kwargs)
 
+
 # monkey patch MagicMock,
 # FIXME: would probably be better to use asynctest or pytest.asyncio to test our asyncio code
 async def async_magic():
     pass
+
 
 unittest.mock.MagicMock.__await__ = lambda x: async_magic().__await__()
 

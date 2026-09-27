@@ -21,7 +21,6 @@ from enum import Enum
 
 
 class UDPNIOType(str, Enum):
-
     udp = "nio_udp"
 
 
@@ -40,7 +39,6 @@ class UDPNIO(BaseModel):
 
 
 class EthernetNIOType(str, Enum):
-
     ethernet = "nio_ethernet"
 
 
@@ -54,7 +52,6 @@ class EthernetNIO(BaseModel):
 
 
 class TAPNIOType(str, Enum):
-
     tap = "nio_tap"
 
 

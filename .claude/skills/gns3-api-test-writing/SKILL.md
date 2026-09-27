@@ -33,7 +33,7 @@ from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
-response = await client.get(url, headers={"Authorization": f"Bearer {token}"})      # specific user
+response = await client.get(url, headers={"Authorization": f"Bearer {token}"})  # specific user
 response = await client.get(url, headers={"Authorization": "Bearer invalid_token"})  # 401
 ```
 

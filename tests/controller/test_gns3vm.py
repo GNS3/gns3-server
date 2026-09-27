@@ -52,10 +52,15 @@ def dummy_gns3vm(controller, dummy_engine):
 async def test_list(controller):
 
     vm = GNS3VM(controller)
-    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.list", return_value=[{"vmname": "test", "vmx_path": "test"}]):
+    with asyncio_patch(
+        "gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.list",
+        return_value=[{"vmname": "test", "vmx_path": "test"}],
+    ):
         res = await vm.list("vmware")
         assert res == [{"vmname": "test"}]  # Information specific to VMware is stripped
-    with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM.list", return_value=[{"vmname": "test"}]):
+    with asyncio_patch(
+        "gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM.list", return_value=[{"vmname": "test"}]
+    ):
         res = await vm.list("virtualbox")
         assert res == [{"vmname": "test"}]
     with pytest.raises(NotImplementedError):
@@ -73,11 +78,7 @@ async def test_json(controller):
 async def test_update_settings(controller):
 
     vm = GNS3VM(controller)
-    vm.settings = {
-        "enable": True,
-        "engine": "vmware",
-        "vmname": "GNS3 VM"
-    }
+    vm.settings = {"enable": True, "engine": "vmware", "vmname": "GNS3 VM"}
 
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start"):
         with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):

@@ -20,7 +20,6 @@ from .base import BaseTable, GUID
 
 
 class ApiKey(BaseTable):
-
     __tablename__ = "api_keys"
 
     api_key_id = Column(GUID, primary_key=True)

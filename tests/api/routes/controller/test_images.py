@@ -43,7 +43,7 @@ def iou_32_bit_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "iou_32bit.bin")
     with open(path, "wb+") as f:
-        f.write(b'\x7fELF\x01\x01\x01')
+        f.write(b"\x7fELF\x01\x01\x01")
     return path
 
 
@@ -55,7 +55,7 @@ def iou_64_bit_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "iou_64bit.bin")
     with open(path, "wb+") as f:
-        f.write(b'\x7fELF\x02\x01\x01')
+        f.write(b"\x7fELF\x02\x01\x01")
     return path
 
 
@@ -67,7 +67,7 @@ def ios_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "ios_image.bin")
     with open(path, "wb+") as f:
-        f.write(b'\x7fELF\x01\x02\x01')
+        f.write(b"\x7fELF\x01\x02\x01")
     return path
 
 
@@ -79,7 +79,7 @@ def qcow2_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "image.qcow2")
     with open(path, "wb+") as f:
-        f.write(b'QFI\xfb\x00\x00\x00')
+        f.write(b"QFI\xfb\x00\x00\x00")
     return path
 
 
@@ -91,7 +91,7 @@ def invalid_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "invalid_image.bin")
     with open(path, "wb+") as f:
-        f.write(b'\x01\x01\x01\x01')
+        f.write(b"\x01\x01\x01\x01")
     return path
 
 
@@ -103,21 +103,21 @@ def empty_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "empty_image.bin")
     with open(path, "wb+") as f:
-        f.write(b'')
+        f.write(b"")
     return path
 
 
 class TestImageRoutes:
-
     async def test_create_image(self, app: FastAPI, client: AsyncClient, images_dir) -> None:
 
         Qemu.instance().create_disk_image = AsyncioMagicMock()
         path = os.path.join(os.path.join(images_dir, "QEMU", "new_image.qcow2"))
         with open(path, "wb+") as f:
-            f.write(b'QFI\xfb\x00\x00\x00')
+            f.write(b"QFI\xfb\x00\x00\x00")
         image_name = os.path.basename(path)
         response = await client.post(
-            app.url_path_for("create_qemu_image", image_path=image_name), json={"format": "qcow2", "size": 30})
+            app.url_path_for("create_qemu_image", image_path=image_name), json={"format": "qcow2", "size": 30}
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     @pytest.mark.parametrize(
@@ -129,18 +129,18 @@ class TestImageRoutes:
             ("ios", "ios_image", True),
             ("ios", "invalid_image", False),
             ("qemu", "qcow2_image", True),
-            ("qemu", "empty_image", False)
+            ("qemu", "empty_image", False),
         ),
     )
     async def test_upload_image(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            images_dir: str,
-            image_type: str,
-            fixture_name: str,
-            valid_request: bool,
-            request
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        images_dir: str,
+        image_type: str,
+        fixture_name: str,
+        valid_request: bool,
+        request,
     ) -> None:
 
         image_path = request.getfixturevalue(fixture_name)
@@ -150,9 +150,7 @@ class TestImageRoutes:
             image_data = f.read()
         image_checksum.update(image_data)
 
-        response = await client.post(
-            app.url_path_for("upload_image", image_path=image_name),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path=image_name), content=image_data)
 
         if valid_request:
             assert response.status_code == status.HTTP_201_CREATED
@@ -179,21 +177,15 @@ class TestImageRoutes:
 
         with open(qcow2_image, "rb") as f:
             image_data = f.read()
-        response = await client.post(
-            app.url_path_for("upload_image", image_path="image1.qcow2"),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path="image1.qcow2"), content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
         # same image with same name is uploaded again, it should return 409 Conflict
-        response = await client.post(
-            app.url_path_for("upload_image", image_path="image1.qcow2"),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path="image1.qcow2"), content=image_data)
         assert response.status_code == status.HTTP_409_CONFLICT
 
         # same image with different name but same checksum is uploaded again, it should return 409 Conflict
-        response = await client.post(
-           app.url_path_for("upload_image", image_path="image2.qcow2"),
-           content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path="image2.qcow2"), content=image_data)
         assert response.status_code == status.HTTP_409_CONFLICT
 
     async def test_image_delete(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
@@ -208,14 +200,14 @@ class TestImageRoutes:
         response = await client.get(app.url_path_for("get_image", image_path=image_name))
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_image_deleted_on_disk(self, app: FastAPI, client: AsyncClient, images_dir: str, qcow2_image: str) -> None:
+    async def test_image_deleted_on_disk(
+        self, app: FastAPI, client: AsyncClient, images_dir: str, qcow2_image: str
+    ) -> None:
 
         image_name = os.path.basename(qcow2_image)
         with open(qcow2_image, "rb") as f:
             image_data = f.read()
-        response = await client.post(
-            app.url_path_for("upload_image", image_path=image_name),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path=image_name), content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
         response = await client.delete(app.url_path_for("delete_image", image_path=image_name))
@@ -230,42 +222,30 @@ class TestImageRoutes:
         ),
     )
     async def test_upload_image_subdir(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            images_dir: str,
-            qcow2_image: str,
-            subdir: str,
-            expected_result: int,
-            db_session: AsyncSession
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        images_dir: str,
+        qcow2_image: str,
+        subdir: str,
+        expected_result: int,
+        db_session: AsyncSession,
     ) -> None:
 
         image_name = os.path.basename(qcow2_image)
         with open(qcow2_image, "rb") as f:
             image_data = f.read()
         image_path = os.path.join(subdir, image_name)
-        response = await client.post(
-            app.url_path_for("upload_image", image_path=image_path),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path=image_path), content=image_data)
         assert response.status_code == expected_result
 
-    async def test_image_delete_multiple_match(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            qcow2_image: str
-    ) -> None:
+    async def test_image_delete_multiple_match(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
         response = await client.delete(app.url_path_for("delete_image", image_path=image_name))
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_image_delete_with_subdir(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            qcow2_image: str
-    ) -> None:
+    async def test_image_delete_with_subdir(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
         image_path = os.path.join("subdir", image_name)
@@ -302,17 +282,20 @@ class TestImageRoutes:
         with open(os.path.join(project_dir, f"{name}.gns3"), "w+") as f:
             json.dump(topology, f)
         return await controller.add_project(
-            project_id=project_id, name=name, path=project_dir,
-            filename=f"{name}.gns3", status="closed",
+            project_id=project_id,
+            name=name,
+            path=project_dir,
+            filename=f"{name}.gns3",
+            status="closed",
         )
 
     async def test_image_delete_used_by_project(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller,
-            db_session: AsyncSession,
-            tmpdir: str,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        controller: Controller,
+        db_session: AsyncSession,
+        tmpdir: str,
     ) -> None:
         """
         An image referenced by a node in a project must not be deleted,
@@ -321,15 +304,21 @@ class TestImageRoutes:
 
         image_path = os.path.join(tmpdir, "used.qcow2")
         with open(image_path, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
 
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image("used.qcow2", "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
 
         guarded_project = await self._add_closed_project_with_node(
-            controller, "Guarded",
-            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
-             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+            controller,
+            "Guarded",
+            {
+                "node_id": str(uuid.uuid4()),
+                "node_type": "qemu",
+                "compute_id": "local",
+                "name": "n1",
+                "properties": {"hda_disk_image_backing_file": "used.qcow2"},
+            },
         )
 
         response = await client.delete(app.url_path_for("delete_image", image_path="used.qcow2"))
@@ -344,12 +333,12 @@ class TestImageRoutes:
         assert not os.path.exists(image_path)
 
     async def test_prune_images_keeps_project_referenced(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller,
-            db_session: AsyncSession,
-            tmpdir: str,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        controller: Controller,
+        db_session: AsyncSession,
+        tmpdir: str,
     ) -> None:
         """
         Pruning must keep images referenced by a project node while
@@ -360,13 +349,19 @@ class TestImageRoutes:
         for filename in ("used.qcow2", "unused.qcow2"):
             image_path = os.path.join(tmpdir, filename)
             with open(image_path, "wb+") as f:
-                f.write(b'\x42\x42\x42\x42')
+                f.write(b"\x42\x42\x42\x42")
             await images_repo.add_image(filename, "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
 
         await self._add_closed_project_with_node(
-            controller, "Guarded",
-            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
-             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+            controller,
+            "Guarded",
+            {
+                "node_id": str(uuid.uuid4()),
+                "node_type": "qemu",
+                "compute_id": "local",
+                "name": "n1",
+                "properties": {"hda_disk_image_backing_file": "used.qcow2"},
+            },
         )
 
         response = await client.delete(app.url_path_for("prune_images"))
@@ -378,10 +373,7 @@ class TestImageRoutes:
         assert not os.path.exists(os.path.join(tmpdir, "unused.qcow2"))
 
     async def test_image_upload_create_appliance(
-            self, app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, controller: Controller
     ) -> None:
 
         await controller.appliance_manager.install_builtin_appliances()
@@ -393,7 +385,8 @@ class TestImageRoutes:
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
             params={"install_appliances": "true"},
-            content=image_data)
+            content=image_data,
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
         templates_repo = TemplatesRepository(db_session)
@@ -404,19 +397,14 @@ class TestImageRoutes:
         await templates_repo.delete_template(templates[0].template_id)
 
     async def test_install_all(
-            self, app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, controller: Controller
     ) -> None:
 
         image_path = "tests/resources/empty100G.qcow2"
         image_name = os.path.basename(image_path)
         with open(image_path, "rb") as f:
             image_data = f.read()
-        response = await client.post(
-            app.url_path_for("upload_image", image_path=image_name),
-            content=image_data)
+        response = await client.post(app.url_path_for("upload_image", image_path=image_name), content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
         controller.appliance_manager.load_appliances()  # make sure appliances are loaded
@@ -437,10 +425,7 @@ class TestImageRoutes:
         await templates_repo.delete_template(templates[0].template_id)
 
     async def test_install_all_skips_existing_template_name(
-            self, app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, controller: Controller
     ) -> None:
         # two images matching two versions of the same appliance must not
         # produce two templates with the same name
@@ -455,8 +440,8 @@ class TestImageRoutes:
             with open(image_path, "rb") as f:
                 image_data = f.read()
             response = await client.post(
-                app.url_path_for("upload_image", image_path=os.path.basename(image_path)),
-                content=image_data)
+                app.url_path_for("upload_image", image_path=os.path.basename(image_path)), content=image_data
+            )
             assert response.status_code == status.HTTP_201_CREATED
 
         controller.appliance_manager.load_appliances()  # make sure appliances are loaded

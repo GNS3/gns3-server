@@ -24,7 +24,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestNetmikoRoutes:
-
     async def test_device_types(self, app: FastAPI, client: AsyncClient) -> None:
         """
         Test listing the device types supported by the installed Netmiko library.

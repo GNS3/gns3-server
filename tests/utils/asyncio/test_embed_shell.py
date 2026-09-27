@@ -17,9 +17,9 @@
 
 import asyncio
 
-#from gns3server.utils.asyncio.embed_shell import EmbedShell
+# from gns3server.utils.asyncio.embed_shell import EmbedShell
 
-#FIXME: this is broken with recent Python >= 3.6
+# FIXME: this is broken with recent Python >= 3.6
 # def test_embed_shell_help(async_run):
 #     class Application(EmbedShell):
 #

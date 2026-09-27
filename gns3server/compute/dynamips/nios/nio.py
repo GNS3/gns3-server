@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class NIO:
-
     """
     Base NIO class
 

@@ -66,7 +66,6 @@ class StandardPortFactory:
             ethernet_adapters = properties.get("adapters", 1)
 
         for adapter_number in range(adapter_number, ethernet_adapters + adapter_number):
-
             custom_adapter_settings = {}
             if custom_adapters:
                 for custom_adapter in custom_adapters:

@@ -520,9 +520,14 @@ The tools call the shared REST handler layer (`gns3_copilot.gns3_client.api_hand
 
 ```python
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
-    build_gns3_ctx, create_node_handler, create_link_handler,
-    get_nodes_handler, start_node_handler, stop_node_handler,
-    suspend_node_handler, update_node_handler,
+    build_gns3_ctx,
+    create_node_handler,
+    create_link_handler,
+    get_nodes_handler,
+    start_node_handler,
+    stop_node_handler,
+    suspend_node_handler,
+    update_node_handler,
 )
 
 gns3_ctx = build_gns3_ctx()  # JWT + server URL from the request context
@@ -650,10 +655,7 @@ Note: These special node types are filtered out by GNS3TemplateTool and won't ap
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3StartNodeTool
 
 tool = GNS3StartNodeTool()
-result = tool._run(json.dumps({
-    "project_id": "abc-123-def",
-    "node_ids": ["node-1", "node-2", "node-3"]
-}))
+result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1", "node-2", "node-3"]}))
 
 # Output includes progress bar and final status
 ```
@@ -664,10 +666,7 @@ result = tool._run(json.dumps({
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3StopNodeTool
 
 tool = GNS3StopNodeTool()
-result = tool._run(json.dumps({
-    "project_id": "abc-123-def",
-    "node_ids": ["node-1", "node-2"]
-}))
+result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1", "node-2"]}))
 
 # Immediate return with stop status
 ```
@@ -677,19 +676,13 @@ result = tool._run(json.dumps({
 ```python
 # Lab deployment
 start_tool = GNS3StartNodeTool()
-start_result = start_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": all_node_ids
-}))
+start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 
 # ... Run tests ...
 
 # Lab shutdown
 stop_tool = GNS3StopNodeTool()
-stop_result = stop_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": all_node_ids
-}))
+stop_result = stop_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 ```
 
 ### Example 4: Lab Pause and Resume
@@ -699,56 +692,45 @@ from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
 
 # Start lab
 start_tool = GNS3StartNodeTool()
-start_result = start_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": all_node_ids
-}))
+start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 
 # ... Configure devices ...
 # ... Run some tests ...
 
 # Suspend lab (preserves all state)
 suspend_tool = GNS3SuspendNodeTool()
-suspend_result = suspend_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": all_node_ids
-}))
+suspend_result = suspend_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 # Nodes suspended - state preserved in memory
 
 # ... Take a break, work on something else ...
 
 # Resume lab (quick recovery)
-start_result = start_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": all_node_ids
-}))
+start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 # Back to previous state in seconds!
 ```
 
 ### Example 5: Suspend While Renaming Nodes
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import (
-    GNS3SuspendNodeTool,
-    GNS3UpdateNodeNameTool
-)
+from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool, GNS3UpdateNodeNameTool
 
 # Suspend nodes first (allows renaming)
 suspend_tool = GNS3SuspendNodeTool()
-suspend_result = suspend_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": node_ids
-}))
+suspend_result = suspend_tool._run(json.dumps({"project_id": project_id, "node_ids": node_ids}))
 
 # Now rename nodes (possible while suspended!)
 rename_tool = GNS3UpdateNodeNameTool()
-rename_result = rename_tool._run(json.dumps({
-    "project_id": project_id,
-    "nodes": [
-        {"node_id": "node-1", "new_name": "Router-Primary"},
-        {"node_id": "node-2", "new_name": "Router-Backup"}
-    ]
-}))
+rename_result = rename_tool._run(
+    json.dumps(
+        {
+            "project_id": project_id,
+            "nodes": [
+                {"node_id": "node-1", "new_name": "Router-Primary"},
+                {"node_id": "node-2", "new_name": "Router-Backup"},
+            ],
+        }
+    )
+)
 
 # Resume when ready
 # Note: Cannot rename while started, but CAN rename while suspended!
@@ -777,21 +759,17 @@ result = tool._run("")
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3CreateNodeTool
 
 tool = GNS3CreateNodeTool()
-result = tool._run(json.dumps({
-    "project_id": "abc-123-def",
-    "nodes": [
+result = tool._run(
+    json.dumps(
         {
-            "template_id": "uuid-of-router-template",
-            "x": 100,
-            "y": -200
-        },
-        {
-            "template_id": "uuid-of-switch-template",
-            "x": -200,
-            "y": 300
+            "project_id": "abc-123-def",
+            "nodes": [
+                {"template_id": "uuid-of-router-template", "x": 100, "y": -200},
+                {"template_id": "uuid-of-switch-template", "x": -200, "y": 300},
+            ],
         }
-    ]
-}))
+    )
+)
 
 # Creates two nodes with specified templates and positions
 ```
@@ -802,23 +780,27 @@ result = tool._run(json.dumps({
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3LinkTool
 
 tool = GNS3LinkTool()
-result = tool._run(json.dumps({
-    "project_id": "abc-123-def",
-    "links": [
+result = tool._run(
+    json.dumps(
         {
-            "node_id1": "uuid-of-node1",
-            "port1": "Ethernet0/0",
-            "node_id2": "uuid-of-node2",
-            "port2": "Ethernet0/0"
-        },
-        {
-            "node_id1": "uuid-of-node1",
-            "port1": "Ethernet0/1",
-            "node_id2": "uuid-of-node3",
-            "port2": "Ethernet0/0"
+            "project_id": "abc-123-def",
+            "links": [
+                {
+                    "node_id1": "uuid-of-node1",
+                    "port1": "Ethernet0/0",
+                    "node_id2": "uuid-of-node2",
+                    "port2": "Ethernet0/0",
+                },
+                {
+                    "node_id1": "uuid-of-node1",
+                    "port1": "Ethernet0/1",
+                    "node_id2": "uuid-of-node3",
+                    "port2": "Ethernet0/0",
+                },
+            ],
         }
-    ]
-}))
+    )
+)
 
 # Creates two links connecting the nodes
 ```
@@ -829,15 +811,19 @@ result = tool._run(json.dumps({
 from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
 
 tool = GNS3UpdateNodeNameTool()
-result = tool._run(json.dumps({
-    "project_id": "abc-123-def",
-    "nodes": [
-        {"node_id": "node-1", "new_name": "R1-Core"},
-        {"node_id": "node-2", "new_name": "R2-Core"},
-        {"node_id": "node-3", "new_name": "S1-Access"},
-        {"node_id": "node-4", "new_name": "S2-Access"}
-    ]
-}))
+result = tool._run(
+    json.dumps(
+        {
+            "project_id": "abc-123-def",
+            "nodes": [
+                {"node_id": "node-1", "new_name": "R1-Core"},
+                {"node_id": "node-2", "new_name": "R2-Core"},
+                {"node_id": "node-3", "new_name": "S1-Access"},
+                {"node_id": "node-4", "new_name": "S2-Access"},
+            ],
+        }
+    )
+)
 
 # Applies consistent naming to all nodes
 ```
@@ -850,7 +836,7 @@ from gns3server.agent.gns3_copilot.tools_v2 import (
     GNS3CreateNodeTool,
     GNS3LinkTool,
     GNS3UpdateNodeNameTool,
-    GNS3StartNodeTool
+    GNS3StartNodeTool,
 )
 
 # Step 1: Get available templates
@@ -860,44 +846,63 @@ templates = template_tool._run("")
 
 # Step 2: Create nodes
 create_tool = GNS3CreateNodeTool()
-nodes = create_tool._run(json.dumps({
-    "project_id": project_id,
-    "nodes": [
-        {"template_id": router_template_id, "x": 0, "y": -200},
-        {"template_id": router_template_id, "x": 200, "y": -200},
-        {"template_id": switch_template_id, "x": 100, "y": 0}
-    ]
-}))
+nodes = create_tool._run(
+    json.dumps(
+        {
+            "project_id": project_id,
+            "nodes": [
+                {"template_id": router_template_id, "x": 0, "y": -200},
+                {"template_id": router_template_id, "x": 200, "y": -200},
+                {"template_id": switch_template_id, "x": 100, "y": 0},
+            ],
+        }
+    )
+)
 
 # Step 3: Connect nodes
 link_tool = GNS3LinkTool()
-links = link_tool._run(json.dumps({
-    "project_id": project_id,
-    "links": [
-        {"node_id1": nodes["created_nodes"][0]["node_id"], "port1": "Ethernet0/0",
-         "node_id2": nodes["created_nodes"][2]["node_id"], "port2": "Ethernet0/0"},
-        {"node_id1": nodes["created_nodes"][1]["node_id"], "port1": "Ethernet0/0",
-         "node_id2": nodes["created_nodes"][2]["node_id"], "port2": "Ethernet0/1"}
-    ]
-}))
+links = link_tool._run(
+    json.dumps(
+        {
+            "project_id": project_id,
+            "links": [
+                {
+                    "node_id1": nodes["created_nodes"][0]["node_id"],
+                    "port1": "Ethernet0/0",
+                    "node_id2": nodes["created_nodes"][2]["node_id"],
+                    "port2": "Ethernet0/0",
+                },
+                {
+                    "node_id1": nodes["created_nodes"][1]["node_id"],
+                    "port1": "Ethernet0/0",
+                    "node_id2": nodes["created_nodes"][2]["node_id"],
+                    "port2": "Ethernet0/1",
+                },
+            ],
+        }
+    )
+)
 
 # Step 4: Apply naming
 name_tool = GNS3UpdateNodeNameTool()
-names = name_tool._run(json.dumps({
-    "project_id": project_id,
-    "nodes": [
-        {"node_id": nodes["created_nodes"][0]["node_id"], "new_name": "R1"},
-        {"node_id": nodes["created_nodes"][1]["node_id"], "new_name": "R2"},
-        {"node_id": nodes["created_nodes"][2]["node_id"], "new_name": "SW1"}
-    ]
-}))
+names = name_tool._run(
+    json.dumps(
+        {
+            "project_id": project_id,
+            "nodes": [
+                {"node_id": nodes["created_nodes"][0]["node_id"], "new_name": "R1"},
+                {"node_id": nodes["created_nodes"][1]["node_id"], "new_name": "R2"},
+                {"node_id": nodes["created_nodes"][2]["node_id"], "new_name": "SW1"},
+            ],
+        }
+    )
+)
 
 # Step 5: Start nodes
 start_tool = GNS3StartNodeTool()
-start_result = start_tool._run(json.dumps({
-    "project_id": project_id,
-    "node_ids": [n["node_id"] for n in nodes["created_nodes"]]
-}))
+start_result = start_tool._run(
+    json.dumps({"project_id": project_id, "node_ids": [n["node_id"] for n in nodes["created_nodes"]]})
+)
 ```
 
 ## Error Handling

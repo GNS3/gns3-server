@@ -54,11 +54,15 @@ class DockerBase(BaseModel):
     usage: Optional[str] = Field(None, description="How to use the Docker container")
     start_command: Optional[str] = Field(None, description="Docker CMD entry")
     adapters: Optional[int] = Field(None, ge=0, le=99, description="Number of adapters")
-    mac_address: Optional[str] = Field(None, description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+    mac_address: Optional[str] = Field(
+        None, description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+    )
     environment: Optional[str] = Field(None, description="Docker environment variables")
     extra_hosts: Optional[str] = Field(None, description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List[str]] = Field(None, description="Additional directories to make persistent")
-    extra_configs: Optional[List[ExtraConfig]] = Field(None, description="Configuration files injected into the container (bind-mounted read-only)")
+    extra_configs: Optional[List[ExtraConfig]] = Field(
+        None, description="Configuration files injected into the container (bind-mounted read-only)"
+    )
     startup_config_content: Optional[str] = Field(
         None, description="Startup-config content (IOL runner images: materialized into the node's NVRAM at start)"
     )
@@ -76,10 +80,11 @@ class DockerCreate(DockerBase):
         None, ge=1, le=1022, description="IOL application ID for iol-runner images (allocated by the controller)"
     )
     image_digest: Optional[str] = Field(
-        None, pattern=r"^sha256:[a-f0-9]{64}$",
+        None,
+        pattern=r"^sha256:[a-f0-9]{64}$",
         description="Image id the controller expects for 'image' (sha256:<hex>, resolved from the Docker "
-                    "daemon on the controller host). When set and the compute holds a different image "
-                    "under the same tag, the image is reported as missing so the controller re-syncs it"
+        "daemon on the controller host). When set and the compute holds a different image "
+        "under the same tag, the image is reported as missing so the controller re-syncs it",
     )
 
 
@@ -93,7 +98,6 @@ class DockerUpdate(DockerBase):
 
 
 class Docker(DockerBase):
-
     container_id: str = Field(
         ..., min_length=12, max_length=64, pattern="^[a-f0-9]+$", description="Docker container ID (read only)"
     )

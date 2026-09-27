@@ -98,8 +98,9 @@ def _icmp_frame():
 
     icmp = bytes([8, 0, 0, 0]) + struct.pack(">HHH", 1, 1, 0) + b"payload12"
     icmp = icmp[:2] + struct.pack(">H", _cksum(icmp)) + icmp[4:]
-    ip0 = struct.pack(">BBHHHBBH4s4s", 0x45, 0, 20 + len(icmp), 1, 0, 64, 1, 0,
-                      bytes([10, 0, 0, 1]), bytes([10, 0, 0, 3]))
+    ip0 = struct.pack(
+        ">BBHHHBBH4s4s", 0x45, 0, 20 + len(icmp), 1, 0, 64, 1, 0, bytes([10, 0, 0, 1]), bytes([10, 0, 0, 3])
+    )
     ip = ip0[:10] + struct.pack(">H", _cksum(ip0)) + ip0[12:]
     return bytes.fromhex("0200000000020200000000010800") + ip + icmp
 
@@ -108,8 +109,9 @@ def _tcp_syn_frame():
     """A minimal TCP SYN (10.0.0.1:472 → 10.0.0.3:22)."""
 
     tcp = struct.pack(">HHIIBBHHH", 472, 22, 0, 0, 0x50, 0x02, 64240, 0, 0)
-    ip0 = struct.pack(">BBHHHBBH4s4s", 0x45, 0, 20 + len(tcp), 2, 0, 64, 6, 0,
-                      bytes([10, 0, 0, 1]), bytes([10, 0, 0, 3]))
+    ip0 = struct.pack(
+        ">BBHHHBBH4s4s", 0x45, 0, 20 + len(tcp), 2, 0, 64, 6, 0, bytes([10, 0, 0, 1]), bytes([10, 0, 0, 3])
+    )
     ip = ip0[:10] + struct.pack(">H", _cksum(ip0)) + ip0[12:]
     tcp = tcp[:16] + struct.pack(">H", _cksum(ip0[12:] + tcp)) + tcp[18:]
     return bytes.fromhex("0200000000020200000000010800") + ip + tcp
@@ -122,10 +124,17 @@ def _fake_project(tmp_path, markers, markers_dir=None):
 
 
 def _marker_entry(tag, enabled=True, node_id="node-1"):
-    return {"bpf": "icmp", "tag": tag, "enabled": enabled, "color": None,
-            "highlight_duration": None, "capture_node_id": node_id,
-            "direction": None, "data_link_type": "DLT_EN10MB",
-            "node_id": node_id}
+    return {
+        "bpf": "icmp",
+        "tag": tag,
+        "enabled": enabled,
+        "color": None,
+        "highlight_duration": None,
+        "capture_node_id": node_id,
+        "direction": None,
+        "data_link_type": "DLT_EN10MB",
+        "node_id": node_id,
+    }
 
 
 def _fake_columns(monkeypatch, mapping):
@@ -142,8 +151,7 @@ def _fake_columns(monkeypatch, mapping):
 
 
 def _cols(src="10.0.0.1", dst="10.0.0.3", proto="ICMP", info="Echo (ping) request"):
-    return {"src": src, "dst": dst, "proto": proto, "info": info,
-            "bg": "ffffff", "fg": "000000"}
+    return {"src": src, "dst": dst, "proto": proto, "info": info, "bg": "ffffff", "fg": "000000"}
 
 
 class _FakeSession:
@@ -180,17 +188,20 @@ def _pretend_sharkd(monkeypatch):
 # pcap scanning (engine-free backbone)
 # ---------------------------------------------------------------------------
 
-class TestScanPcap:
 
+class TestScanPcap:
     async def test_scans_frames_and_truncated_tail(self, tmp_path):
         pcap = tmp_path / "a.pcap"
-        _write_pcap(pcap, [
-            (1693472000, 123456, b"x" * 60),
-            (1693472001, 654321, b"y" * 40),
-        ])
+        _write_pcap(
+            pcap,
+            [
+                (1693472000, 123456, b"x" * 60),
+                (1693472001, 654321, b"y" * 40),
+            ],
+        )
         # Tear the final record in half: a snapshot mid-write must not raise.
         data = bytearray(pcap.read_bytes())
-        pcap.write_bytes(data[:len(data) - 20])
+        pcap.write_bytes(data[: len(data) - 20])
 
         frames = scan_pcap_frames(str(pcap))
         assert frames == [(1693472000, 123456, 60)]
@@ -202,10 +213,13 @@ class TestScanPcap:
 
     async def test_read_frame_bytes_offsets(self, tmp_path):
         pcap = tmp_path / "b.pcap"
-        _write_pcap(pcap, [
-            (100, 0, b"first" + b"0" * 55),   # 60 bytes
-            (200, 0, b"second"),               # 6 bytes
-        ])
+        _write_pcap(
+            pcap,
+            [
+                (100, 0, b"first" + b"0" * 55),  # 60 bytes
+                (200, 0, b"second"),  # 6 bytes
+            ],
+        )
         assert read_frame_bytes(str(pcap), 2) == b"second".hex()
         assert read_frame_bytes(str(pcap), 1) == (b"first" + b"0" * 55).hex()
         assert read_frame_bytes(str(pcap), 3) is None
@@ -221,18 +235,21 @@ class TestScanPcap:
 # Tag gate (engine-free — raised before any sharkd work)
 # ---------------------------------------------------------------------------
 
-class TestGate:
 
+class TestGate:
     async def test_unknown_tag_404(self, tmp_path):
         project = _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=1)})
         with pytest.raises(ControllerNotFoundError):
             await build_timeline(project, tag=7)
 
     async def test_gate_409_while_capturing(self, tmp_path):
-        project = _fake_project(tmp_path, {
-            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
-            "linkB/icmp": _marker_entry(tag=7, enabled=True, node_id="n2"),
-        })
+        project = _fake_project(
+            tmp_path,
+            {
+                "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+                "linkB/icmp": _marker_entry(tag=7, enabled=True, node_id="n2"),
+            },
+        )
         with pytest.raises(ControllerError, match="linkB"):
             await build_timeline(project, tag=7)
 
@@ -247,26 +264,38 @@ class TestGate:
 # Timeline assembly (columns injected — no engine needed)
 # ---------------------------------------------------------------------------
 
-class TestTimeline:
 
+class TestTimeline:
     async def test_merge_orders_by_ts_with_stable_tiebreak(self, tmp_path, monkeypatch):
         # Two sources, deliberately interleaved in time, colliding on one µs.
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 500000, b"a" * 60),   # t1 sourceA
-            (1693472002, 000000, b"a" * 60),   # t3 sourceA
-        ])
-        _write_pcap(tmp_path / "n2_linkB_icmp.pcap", [
-            (1693472001, 000000, b"b" * 60),   # t2 sourceB
-            (1693472002, 000000, b"b" * 60),   # t3 sourceB — same µs as t3 sourceA
-        ])
-        _fake_columns(monkeypatch, {
-            "n1_linkA_icmp.pcap": {1: _cols(), 2: _cols()},
-            "n2_linkB_icmp.pcap": {1: _cols(src="10.0.0.2"), 2: _cols(src="10.0.0.2")},
-        })
-        project = _fake_project(tmp_path, {
-            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
-            "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="n2"),
-        })
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 500000, b"a" * 60),  # t1 sourceA
+                (1693472002, 000000, b"a" * 60),  # t3 sourceA
+            ],
+        )
+        _write_pcap(
+            tmp_path / "n2_linkB_icmp.pcap",
+            [
+                (1693472001, 000000, b"b" * 60),  # t2 sourceB
+                (1693472002, 000000, b"b" * 60),  # t3 sourceB — same µs as t3 sourceA
+            ],
+        )
+        _fake_columns(
+            monkeypatch,
+            {
+                "n1_linkA_icmp.pcap": {1: _cols(), 2: _cols()},
+                "n2_linkB_icmp.pcap": {1: _cols(src="10.0.0.2"), 2: _cols(src="10.0.0.2")},
+            },
+        )
+        project = _fake_project(
+            tmp_path,
+            {
+                "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+                "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="n2"),
+            },
+        )
 
         timeline = await build_timeline(project, tag=7)
         assert timeline["frame_count"] == 4
@@ -306,10 +335,14 @@ class TestTimeline:
     async def test_frame_list_is_uncapped(self, tmp_path, monkeypatch):
         # The list is the whole contract — no truncation flag, no buckets,
         # however many frames the tag holds.
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 0, b"a" * 60), (1693472000, 500000, b"a" * 60),
-            (1693472001, 0, b"a" * 60),
-        ])
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 0, b"a" * 60),
+                (1693472000, 500000, b"a" * 60),
+                (1693472001, 0, b"a" * 60),
+            ],
+        )
         _fake_columns(monkeypatch, {"n1_linkA_icmp.pcap": {1: _cols(), 2: _cols(), 3: _cols()}})
         project = _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1")})
 
@@ -321,11 +354,14 @@ class TestTimeline:
     async def test_filter_applies_before_count_and_slice(self, tmp_path, monkeypatch):
         # Three frames; the injected "matching set" (what a real engine would
         # return for the filter) contains only frames 1 and 3.
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 0, b"a" * 60),
-            (1693472001, 0, b"a" * 60),
-            (1693472002, 0, b"a" * 60),
-        ])
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 0, b"a" * 60),
+                (1693472001, 0, b"a" * 60),
+                (1693472002, 0, b"a" * 60),
+            ],
+        )
         _fake_columns(monkeypatch, {"n1_linkA_icmp.pcap": {1: _cols(), 3: _cols(proto="TCP")}})
         project = _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1")})
 
@@ -346,14 +382,20 @@ class TestLinkFilter:
     counting/slicing/bucketing; sources stay the full inventory."""
 
     def _project(self, tmp_path, monkeypatch, columns_override=None):
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 500000, b"a" * 60),
-            (1693472002, 000000, b"a" * 60),
-        ])
-        _write_pcap(tmp_path / "n2_linkB_icmp.pcap", [
-            (1693472001, 000000, b"b" * 60),
-            (1693472002, 000000, b"b" * 60),
-        ])
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 500000, b"a" * 60),
+                (1693472002, 000000, b"a" * 60),
+            ],
+        )
+        _write_pcap(
+            tmp_path / "n2_linkB_icmp.pcap",
+            [
+                (1693472001, 000000, b"b" * 60),
+                (1693472002, 000000, b"b" * 60),
+            ],
+        )
 
         async def fake_columns(pcap, filter_expr):
             if columns_override is not None:
@@ -362,10 +404,13 @@ class TestLinkFilter:
             return {1: _cols(src=src), 2: _cols(src=src)}
 
         monkeypatch.setattr(marker_replay, "_columns_for", fake_columns)
-        return _fake_project(tmp_path, {
-            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
-            "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="n2"),
-        })
+        return _fake_project(
+            tmp_path,
+            {
+                "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+                "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="n2"),
+            },
+        )
 
     async def test_link_narrows_before_count_and_slice(self, tmp_path, monkeypatch):
         timeline = await build_timeline(self._project(tmp_path, monkeypatch), tag=7, link_id="linkA")
@@ -373,9 +418,7 @@ class TestLinkFilter:
         assert timeline["start"] == "1693472000.500000"
         assert [f["link_id"] for f in timeline["frames"]] == ["linkA", "linkA"]
         # sources stay the FULL inventory with engine-free totals.
-        assert sorted((s["link_id"], s["count"]) for s in timeline["sources"]) == [
-            ("linkA", 2), ("linkB", 2)
-        ]
+        assert sorted((s["link_id"], s["count"]) for s in timeline["sources"]) == [("linkA", 2), ("linkB", 2)]
 
     async def test_unknown_link_is_empty_success(self, tmp_path, monkeypatch):
         timeline = await build_timeline(self._project(tmp_path, monkeypatch), tag=7, link_id="nope")
@@ -403,35 +446,35 @@ class TestLinkFilter:
 
     async def test_query_frames_window_over_link_stream(self, tmp_path, monkeypatch):
         project = self._project(tmp_path, monkeypatch)
-        result = await query_frames(project, tag=7, ts="1693472002.000000",
-                                    window_ms=0, link_id="linkB")
+        result = await query_frames(project, tag=7, ts="1693472002.000000", window_ms=0, link_id="linkB")
         assert [f["link_id"] for f in result["frames"]] == ["linkB"]
 
 
 class TestQueryFrames:
-
     def _project(self, tmp_path, monkeypatch):
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 0, b"a" * 60),
-            (1693472000, 150000, b"a" * 60),
-            (1693472005, 0, b"a" * 60),
-        ])
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 0, b"a" * 60),
+                (1693472000, 150000, b"a" * 60),
+                (1693472005, 0, b"a" * 60),
+            ],
+        )
         _fake_columns(monkeypatch, {"n1_linkA_icmp.pcap": {i: _cols() for i in (1, 2, 3)}})
         return _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1")})
 
     async def test_window_inclusive_bounds(self, tmp_path, monkeypatch):
-        result = await query_frames(self._project(tmp_path, monkeypatch), tag=7,
-                                    ts="1693472000.000000", window_ms=150)
+        result = await query_frames(self._project(tmp_path, monkeypatch), tag=7, ts="1693472000.000000", window_ms=150)
         assert [f["ts"] for f in result["frames"]] == ["1693472000.000000", "1693472000.150000"]
 
     async def test_window_miss_is_empty_success(self, tmp_path, monkeypatch):
-        result = await query_frames(self._project(tmp_path, monkeypatch), tag=7,
-                                    ts="1693472001.000000", window_ms=100)
+        result = await query_frames(self._project(tmp_path, monkeypatch), tag=7, ts="1693472001.000000", window_ms=100)
         assert result == {"frames": []}
 
     async def test_limit_applies(self, tmp_path, monkeypatch):
-        result = await query_frames(self._project(tmp_path, monkeypatch), tag=7,
-                                    ts="1693472000.000000", window_ms=150, limit=1)
+        result = await query_frames(
+            self._project(tmp_path, monkeypatch), tag=7, ts="1693472000.000000", window_ms=150, limit=1
+        )
         assert len(result["frames"]) == 1
 
 
@@ -439,20 +482,30 @@ class TestQueryFrames:
 # Tree key renaming
 # ---------------------------------------------------------------------------
 
-class TestRename:
 
+class TestRename:
     async def test_renames_closed_key_set_and_drops_hf_id(self):
         node = {
-            "t": "proto", "l": "Time to Live: 64", "fn": "ip.ttl",
-            "f": "ip.ttl == 64", "h": [22, 1], "s": None, "g": False,
+            "t": "proto",
+            "l": "Time to Live: 64",
+            "fn": "ip.ttl",
+            "f": "ip.ttl == 64",
+            "h": [22, 1],
+            "s": None,
+            "g": False,
             "e": 8472,
             "n": [{"l": "nested", "h": [23, 2], "n": []}],
         }
         renamed = _rename_value(node)
         assert renamed == {
-            "element": "proto", "label": "Time to Live: 64", "name": "ip.ttl",
-            "filter_expr": "ip.ttl == 64", "pos": 22, "size": 1,
-            "expert": None, "generated": False,
+            "element": "proto",
+            "label": "Time to Live: 64",
+            "name": "ip.ttl",
+            "filter_expr": "ip.ttl == 64",
+            "pos": 22,
+            "size": 1,
+            "expert": None,
+            "generated": False,
             "children": [{"label": "nested", "pos": 23, "size": 2, "children": []}],
         }
 
@@ -470,8 +523,8 @@ class TestRename:
 # sharkd sessions + engine-backed behaviour
 # ---------------------------------------------------------------------------
 
-class TestSessions:
 
+class TestSessions:
     async def test_missing_sharkd_raises_501_error(self, tmp_path):
         _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [(1693472000, 0, b"a" * 60)])
         project = _fake_project(tmp_path, {"linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1")})
@@ -539,9 +592,7 @@ class TestSessions:
         pcap = tmp_path / "n1_linkA_icmp.pcap"
         _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
         with patch.object(manager, "_spawn", side_effect=slow_spawn):
-            first, second = await asyncio.gather(
-                manager._acquire(str(pcap)), manager._acquire(str(pcap))
-            )
+            first, second = await asyncio.gather(manager._acquire(str(pcap)), manager._acquire(str(pcap)))
         assert first is second  # concurrent requests share one spawn
         assert len(spawns) == 1
         await manager.close_all()
@@ -553,12 +604,12 @@ class TestSessions:
         # A process that never answers: the session must die (never serve the
         # late reply to a later request) instead of staying resident.
         proc = await asyncio.create_subprocess_exec(
-            "sleep", "60",
-            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            "sleep",
+            "60",
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
         )
-        session = marker_replay._SharkdSession(
-            str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap))
-        )
+        session = marker_replay._SharkdSession(str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap)))
         with pytest.raises(SharkdError, match="timed out"):
             await session.rpc("frames", {})
         assert session.alive() is False
@@ -579,12 +630,12 @@ class TestSessions:
         pcap = tmp_path / "n1_linkA_icmp.pcap"
         _write_pcap(pcap, [(1693472000, 0, b"a" * 60)])
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, str(fake),
-            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            sys.executable,
+            str(fake),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
         )
-        session = marker_replay._SharkdSession(
-            str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap))
-        )
+        session = marker_replay._SharkdSession(str(pcap), str(tmp_path / "scratch"), "unused", proc, os.stat(str(pcap)))
         with pytest.raises(SharkdError, match="id mismatch"):
             await session.rpc("frames", {})
         assert session.alive() is False
@@ -635,10 +686,13 @@ class TestSessions:
 
     @sharkd_present
     async def test_real_session_columns_and_filter(self, tmp_path):
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 123456, _icmp_frame()),
-            (1693472001, 0, _tcp_syn_frame()),
-        ])
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 123456, _icmp_frame()),
+                (1693472001, 0, _tcp_syn_frame()),
+            ],
+        )
         manager = marker_replay._get_manager()
         try:
             columns = await marker_replay._columns_for(str(tmp_path / "n1_linkA_icmp.pcap"), None)
@@ -683,47 +737,51 @@ class TestSessions:
 
 
 class TestDecodeFrame:
-
     def _project(self, tmp_path):
-        _write_pcap(tmp_path / "n1_linkA_icmp.pcap", [
-            (1693472000, 123456, _icmp_frame()),
-        ])
-        return _fake_project(tmp_path, {
-            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
-        })
+        _write_pcap(
+            tmp_path / "n1_linkA_icmp.pcap",
+            [
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
+        return _fake_project(
+            tmp_path,
+            {
+                "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+            },
+        )
 
     async def test_ts_mismatch_guard_404(self, tmp_path):
         project = self._project(tmp_path)
         with pytest.raises(ControllerNotFoundError, match="rebuilt"):
-            await decode_frame(project, tag=7, ts="1.000000",
-                               node_id="n1", link_id="linkA", marker="icmp")
+            await decode_frame(project, tag=7, ts="1.000000", node_id="n1", link_id="linkA", marker="icmp")
 
     async def test_unknown_source_404(self, tmp_path):
         project = self._project(tmp_path)
         with pytest.raises(ControllerNotFoundError):
-            await decode_frame(project, tag=7, ts="1693472000.123456",
-                               node_id="nobody", link_id="linkA", marker="icmp")
+            await decode_frame(project, tag=7, ts="1693472000.123456", node_id="nobody", link_id="linkA", marker="icmp")
 
     async def test_explicit_frame_number_out_of_range_404(self, tmp_path):
         project = self._project(tmp_path)
         with pytest.raises(ControllerNotFoundError, match="rebuilt"):
-            await decode_frame(project, tag=7, ts="1693472000.123456",
-                               node_id="n1", link_id="linkA", marker="icmp", frame_number=5)
+            await decode_frame(
+                project, tag=7, ts="1693472000.123456", node_id="n1", link_id="linkA", marker="icmp", frame_number=5
+            )
 
     async def test_explicit_frame_number_ts_mismatch_404(self, tmp_path):
         # The frame number must still land on the exact round-tripped ts —
         # a rebuilt capture cannot be decoded by stale coordinates.
         project = self._project(tmp_path)
         with pytest.raises(ControllerNotFoundError, match="rebuilt"):
-            await decode_frame(project, tag=7, ts="1693472001.000000",
-                               node_id="n1", link_id="linkA", marker="icmp", frame_number=1)
+            await decode_frame(
+                project, tag=7, ts="1693472001.000000", node_id="n1", link_id="linkA", marker="icmp", frame_number=1
+            )
 
     async def test_hex_read_failure_is_404_not_null_hex(self, tmp_path, monkeypatch):
         project = self._project(tmp_path)
         monkeypatch.setattr(marker_replay, "read_frame_bytes", lambda path, n: None)
         with pytest.raises(ControllerNotFoundError, match="rebuilt"):
-            await decode_frame(project, tag=7, ts="1693472000.123456",
-                               node_id="n1", link_id="linkA", marker="icmp")
+            await decode_frame(project, tag=7, ts="1693472000.123456", node_id="n1", link_id="linkA", marker="icmp")
 
     @sharkd_present
     async def test_same_microsecond_frames_disambiguated_by_frame_number(self, tmp_path):
@@ -732,16 +790,20 @@ class TestDecodeFrame:
         pcap = tmp_path / "n1_linkA_icmp.pcap"
         icmp, tcp = _icmp_frame(), _tcp_syn_frame()
         _write_pcap(pcap, [(1693472000, 123456, icmp), (1693472000, 123456, tcp)])
-        project = _fake_project(tmp_path, {
-            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
-        })
+        project = _fake_project(
+            tmp_path,
+            {
+                "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="n1"),
+            },
+        )
         manager = marker_replay._get_manager()
         try:
-            default = await decode_frame(project, tag=7, ts="1693472000.123456",
-                                         node_id="n1", link_id="linkA", marker="icmp")
-            second = await decode_frame(project, tag=7, ts="1693472000.123456",
-                                        node_id="n1", link_id="linkA", marker="icmp",
-                                        frame_number=2)
+            default = await decode_frame(
+                project, tag=7, ts="1693472000.123456", node_id="n1", link_id="linkA", marker="icmp"
+            )
+            second = await decode_frame(
+                project, tag=7, ts="1693472000.123456", node_id="n1", link_id="linkA", marker="icmp", frame_number=2
+            )
         finally:
             await manager.close_all()
         # Without a frame number: first ts match.
@@ -757,8 +819,9 @@ class TestDecodeFrame:
         manager = marker_replay._get_manager()
         try:
             project = self._project(tmp_path)
-            detail = await decode_frame(project, tag=7, ts="1693472000.123456",
-                                        node_id="n1", link_id="linkA", marker="icmp")
+            detail = await decode_frame(
+                project, tag=7, ts="1693472000.123456", node_id="n1", link_id="linkA", marker="icmp"
+            )
         finally:
             await manager.close_all()
 
@@ -789,10 +852,13 @@ class TestDecodeFrame:
         trees, sharkd's raw key set stays within the census-known keys."""
 
         pcap = tmp_path / "proto_mix.pcap"
-        _write_pcap(pcap, [
-            (1693472000, 100000, _icmp_frame()),
-            (1693472001, 0, _tcp_syn_frame()),
-        ])
+        _write_pcap(
+            pcap,
+            [
+                (1693472000, 100000, _icmp_frame()),
+                (1693472001, 0, _tcp_syn_frame()),
+            ],
+        )
         manager = marker_replay._get_manager()
         try:
             known = set(marker_replay._KEY_RENAME) | {"h", "e"}

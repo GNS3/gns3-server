@@ -113,9 +113,7 @@ class VendorDockerVM(DockerVM):
                 if _line.startswith("GNS3_SKIP_INIT="):
                     self._gns3_init = _line.split("=", 1)[1].strip().lower() not in ("1", "true", "yes")
                 elif _line.startswith("GNS3_INTERFACE_NAMES="):
-                    self._interface_names = [
-                        n.strip() for n in _line.split("=", 1)[1].split(",") if n.strip()
-                    ]
+                    self._interface_names = [n.strip() for n in _line.split("=", 1)[1].split(",") if n.strip()]
                 elif _line.startswith("GNS3_CONSOLE_CMD="):
                     self._console_cmd = _line.split("=", 1)[1].strip()
                 elif _line.startswith("GNS3_CONSOLE_RESIZE="):
@@ -172,19 +170,20 @@ class VendorDockerVM(DockerVM):
         if self._unix_socket_nio:
             socket_dir = self._unix_socket_dir.rstrip("/")
             if not any(
-                v.rstrip("/") == socket_dir or socket_dir.startswith(v.rstrip("/") + "/")
-                for v in self._volumes
+                v.rstrip("/") == socket_dir or socket_dir.startswith(v.rstrip("/") + "/") for v in self._volumes
             ):
                 # The image's network agent drops privileges before using the
                 # socket directory, so it must be writable by the server user:
                 # bind a per-node directory from the runtime directory (see
                 # _unix_socket_host_dir).
-                binds.append({
-                    "Type": "bind",
-                    "Source": self._unix_socket_host_dir(),
-                    "Target": socket_dir,
-                    "BindOptions": {"Propagation": "rprivate"},
-                })
+                binds.append(
+                    {
+                        "Type": "bind",
+                        "Source": self._unix_socket_host_dir(),
+                        "Target": socket_dir,
+                        "BindOptions": {"Propagation": "rprivate"},
+                    }
+                )
         if self._gns3_init:
             return binds
         binds = [b for b in binds if b.get("Target") != "/gns3volumes/etc/network"]
@@ -198,7 +197,7 @@ class VendorDockerVM(DockerVM):
         for bind in binds:
             target = bind.get("Target", "")
             if target.startswith("/gns3volumes"):
-                volume = target[len("/gns3volumes"):]
+                volume = target[len("/gns3volumes") :]
                 if volume in self._volumes:
                     bind = {**bind, "Target": volume}
             retargeted.append(bind)
@@ -249,8 +248,11 @@ class VendorDockerVM(DockerVM):
 
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker", "create", self._image,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                "docker",
+                "create",
+                self._image,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
         except OSError as e:
             raise DockerError(f"Could not seed persistent volumes for '{self._name}': {e}")
@@ -271,8 +273,13 @@ class VendorDockerVM(DockerVM):
 
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker", "cp", "-a", f"{seed_cid}:{volume}/.", host_dir + "/",
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                "docker",
+                "cp",
+                "-a",
+                f"{seed_cid}:{volume}/.",
+                host_dir + "/",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
         except OSError as e:
             raise DockerError(f"Could not seed persistent volume '{volume}' for '{self._name}': {e}")
@@ -283,7 +290,10 @@ class VendorDockerVM(DockerVM):
             # init.sh's first copy (cp -a ... 2>/dev/null).
             log.info(
                 "Persistent volume '%s' on '%s' not seedable from image '%s' (%s); starting empty",
-                volume, self._name, self._image, stderr.decode(errors="replace").strip(),
+                volume,
+                self._name,
+                self._image,
+                stderr.decode(errors="replace").strip(),
             )
             return
         log.info("Seeded persistent volume '%s' for '%s' from image '%s'", volume, self._name, self._image)
@@ -295,8 +305,12 @@ class VendorDockerVM(DockerVM):
 
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker", "rm", "-f", seed_cid,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                "docker",
+                "rm",
+                "-f",
+                seed_cid,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
         except OSError:
             return
@@ -348,9 +362,7 @@ class VendorDockerVM(DockerVM):
         try:
             os.makedirs(host_dir, mode=0o700, exist_ok=True)
         except OSError as e:
-            raise DockerError(
-                f"Could not create unix-socket directory '{host_dir}' for container '{self._name}': {e}"
-            )
+            raise DockerError(f"Could not create unix-socket directory '{host_dir}' for container '{self._name}': {e}")
         return host_dir
 
     def _remove_unix_socket_host_dir(self):
@@ -448,7 +460,11 @@ class VendorDockerVM(DockerVM):
         adapter.host_ifc = local_sock  # bookkeeping / removal logging only
         log.debug(
             "Adapter %d port %d of container '%s' wired via unix sockets %s <-> %s",
-            adapter_number, port_number, self._name, local_sock, remote_sock,
+            adapter_number,
+            port_number,
+            self._name,
+            local_sock,
+            remote_sock,
         )
 
         if nio:
@@ -564,7 +580,8 @@ class VendorDockerVM(DockerVM):
         if state == "stopped" or state == "exited":
             log.info(
                 "Container '%s' is %s, skipping permission fix (next start will fix)",
-                self._name, state,
+                self._name,
+                state,
             )
             return
 
@@ -601,7 +618,9 @@ class VendorDockerVM(DockerVM):
                 stderr = (await process.stderr.read()).decode(errors="replace").strip()
                 log.error(
                     "Failed to fix permissions on '%s' for container '%s': %s",
-                    volume, self._name, stderr or f"exit code {process.returncode}",
+                    volume,
+                    self._name,
+                    stderr or f"exit code {process.returncode}",
                 )
             else:
                 self._permissions_fixed = True
@@ -640,9 +659,7 @@ class VendorDockerVM(DockerVM):
             allow_resize=self._console_resize,
         )
         try:
-            self._telnet_servers.append(
-                await telnet.start(self._manager.port_manager.console_host, self.console)
-            )
+            self._telnet_servers.append(await telnet.start(self._manager.port_manager.console_host, self.console))
         except OSError as e:
             raise DockerError(
                 f"Could not start console server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"

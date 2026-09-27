@@ -16,7 +16,6 @@
 
 
 class WIC_1T:
-
     """
     WIC-1T Serial
     """

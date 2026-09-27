@@ -23,7 +23,6 @@ from typing import Optional
 
 
 class IOUTemplate(TemplateBase):
-
     category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
@@ -46,5 +45,4 @@ class IOUTemplate(TemplateBase):
 
 
 class IOUTemplateUpdate(IOUTemplate):
-
     path: Optional[str] = Field(None, description="Path of IOU executable")

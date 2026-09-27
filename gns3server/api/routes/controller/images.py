@@ -31,7 +31,13 @@ from typing import List, Optional
 from gns3server import schemas
 from gns3server.config import Config
 from gns3server.compute.qemu import Qemu
-from gns3server.utils.images import InvalidImageError, write_image, read_image_info, default_images_directory, get_builtin_disks
+from gns3server.utils.images import (
+    InvalidImageError,
+    write_image,
+    read_image_info,
+    default_images_directory,
+    get_builtin_disks,
+)
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -40,7 +46,7 @@ from gns3server.controller.controller_error import (
     ControllerError,
     ControllerNotFoundError,
     ControllerForbiddenError,
-    ControllerBadRequestError
+    ControllerBadRequestError,
 )
 
 from .dependencies.authentication import get_current_active_user
@@ -51,17 +57,17 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post(
     "/qemu/{image_path:path}",
     response_model=schemas.Image,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
 async def create_qemu_image(
-        image_path: str,
-        image_data: schemas.QemuDiskImageCreate,
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-
+    image_path: str,
+    image_data: schemas.QemuDiskImageCreate,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> schemas.Image:
     """
     Create a new blank Qemu image.
@@ -104,14 +110,11 @@ async def create_qemu_image(
     else:
         return await images_repo.add_image(**image_info)
 
-@router.get(
-    "",
-    response_model=List[schemas.Image],
-    dependencies=[Depends(has_privilege("Image.Audit"))]
-)
+
+@router.get("", response_model=List[schemas.Image], dependencies=[Depends(has_privilege("Image.Audit"))])
 async def get_images(
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        image_type: Optional[schemas.ImageType] = None
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    image_type: Optional[schemas.ImageType] = None,
 ) -> List[schemas.Image]:
     """
     Return all images.
@@ -126,16 +129,16 @@ async def get_images(
     "/upload/{image_path:path}",
     response_model=schemas.Image,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
 async def upload_image(
-        image_path: str,
-        request: Request,
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        install_appliances: Optional[bool] = False,
+    image_path: str,
+    request: Request,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    install_appliances: Optional[bool] = False,
 ) -> schemas.Image:
     """
     Upload an image.
@@ -161,9 +164,7 @@ async def upload_image(
         duplicate = await images_repo.get_image_by_checksum(checksum_header, check_dir)
         if duplicate:
             location = f" in '{check_dir}'" if check_dir else ""
-            raise ControllerError(
-                f"Image '{duplicate.filename}' with the same checksum already exists{location}"
-            )
+            raise ControllerError(f"Image '{duplicate.filename}' with the same checksum already exists{location}")
 
     try:
         allow_raw_image = Config.instance().settings.Server.allow_raw_images
@@ -180,19 +181,17 @@ async def upload_image(
             templates_repo,
             rbac_repo,
             current_user,
-            os.path.dirname(image.path)
+            os.path.dirname(image.path),
         )
 
     return image
 
 
 @router.delete(
-    "/prune",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
+    "/prune", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Image.Allocate"))]
 )
 async def prune_images(
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> None:
     """
     Prune images not attached to any template.
@@ -209,14 +208,10 @@ async def prune_images(
     await images_repo.prune_images(list(skip_images) + list(referenced_filenames))
 
 
-@router.post(
-    "/install",
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
-)
+@router.post("/install", status_code=status.HTTP_200_OK, dependencies=[Depends(has_privilege("Image.Allocate"))])
 async def install_images(
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
 ) -> dict:
     """
     Attempt to automatically create templates based on image checksums.
@@ -239,19 +234,15 @@ async def install_images(
         if templates:
             # the image is already used by a template
             log.warning(f"Image '{image.path}' is used by one or more templates")
-            skipped.append({
-                "name": image.filename,
-                "reason": "image is already used by one or more templates",
-            })
+            skipped.append(
+                {
+                    "name": image.filename,
+                    "reason": "image is already used by one or more templates",
+                }
+            )
             continue
         results = await Controller.instance().appliance_manager.install_appliances_from_image(
-            image.path,
-            image.checksum,
-            images_repo,
-            templates_repo,
-            None,
-            None,
-            os.path.dirname(image.path)
+            image.path, image.checksum, images_repo, templates_repo, None, None, os.path.dirname(image.path)
         )
         for result in results:
             if result.get("status") == "created":
@@ -261,14 +252,10 @@ async def install_images(
     return {"created": created, "skipped": skipped}
 
 
-@router.get(
-    "/{image_path:path}",
-    response_model=schemas.Image,
-    dependencies=[Depends(has_privilege("Image.Audit"))]
-)
+@router.get("/{image_path:path}", response_model=schemas.Image, dependencies=[Depends(has_privilege("Image.Audit"))])
 async def get_image(
-        image_path: str,
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    image_path: str,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> schemas.Image:
     """
     Return an image.
@@ -286,11 +273,11 @@ async def get_image(
 @router.delete(
     "/{image_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Image.Allocate"))]
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
 async def delete_image(
-        image_path: str,
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    image_path: str,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> None:
     """
     Delete an image.
@@ -303,8 +290,9 @@ async def delete_image(
     try:
         image = await images_repo.get_image(image_path)
     except MultipleResultsFound:
-        raise ControllerBadRequestError(f"Image '{image_path}' matches multiple images. "
-                                        f"Please include the absolute path of the image")
+        raise ControllerBadRequestError(
+            f"Image '{image_path}' matches multiple images. Please include the absolute path of the image"
+        )
 
     if not image:
         raise ControllerNotFoundError(f"Image '{image_path}' not found")

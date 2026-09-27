@@ -55,27 +55,29 @@ def _add_marker(project, tag, enabled, node_id, frames=None):
     """Create a paused/capturing link+marker and optionally its pcap."""
 
     link = UDPLink(project)
-    link._markers["icmp"] = {"bpf": "icmp", "tag": tag, "enabled": enabled, "color": None,
-                             "highlight_duration": None, "capture_node_id": node_id,
-                             "direction": None, "data_link_type": "DLT_EN10MB"}
+    link._markers["icmp"] = {
+        "bpf": "icmp",
+        "tag": tag,
+        "enabled": enabled,
+        "color": None,
+        "highlight_duration": None,
+        "capture_node_id": node_id,
+        "direction": None,
+        "data_link_type": "DLT_EN10MB",
+    }
     project._links[link.id] = link
     if frames is not None:
-        _write_pcap(
-            f"{project.markers_directory}/{node_id}_{link.id}_icmp.pcap", frames
-        )
+        _write_pcap(f"{project.markers_directory}/{node_id}_{link.id}_icmp.pcap", frames)
     return link
 
 
 class TestReplayRoutes:
-
     async def test_range_409_while_capturing(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         _add_marker(project, tag=7, enabled=False, node_id="n1")
         running = _add_marker(project, tag=7, enabled=True, node_id="n2")
 
-        response = await client.get(
-            app.url_path_for("replay_tag_range", project_id=project.id, tag=7)
-        )
+        response = await client.get(app.url_path_for("replay_tag_range", project_id=project.id, tag=7))
         assert response.status_code == status.HTTP_409_CONFLICT
         assert "icmp" in response.json()["message"]
         assert running.id in response.json()["message"]
@@ -84,23 +86,25 @@ class TestReplayRoutes:
 
         _add_marker(project, tag=7, enabled=False, node_id="n1")
 
-        response = await client.get(
-            app.url_path_for("replay_tag_range", project_id=project.id, tag=99)
-        )
+        response = await client.get(app.url_path_for("replay_tag_range", project_id=project.id, tag=99))
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_range_501_without_sharkd(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         # A non-empty pcap: the engine must be consulted, and without sharkd
         # the whole feature is unavailable (hard requirement, no degraded mode).
-        _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-        ])
+        _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
 
         with patch("gns3server.controller.marker_replay.shutil.which", return_value=None):
-            response = await client.get(
-                app.url_path_for("replay_tag_range", project_id=project.id, tag=7)
-            )
+            response = await client.get(app.url_path_for("replay_tag_range", project_id=project.id, tag=7))
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
         # The app's HTTPException handler unifies the body as {"message": …}.
         assert "sharkd" in response.json()["message"]
@@ -115,9 +119,16 @@ class TestReplayRoutes:
         project._links.update({r1.id: r1, r2.id: r2})
 
         def _wire(link, node_id, frames):
-            link._markers["icmp"] = {"bpf": "icmp", "tag": 7, "enabled": False, "color": None,
-                                     "highlight_duration": None, "capture_node_id": node_id,
-                                     "direction": None, "data_link_type": "DLT_EN10MB"}
+            link._markers["icmp"] = {
+                "bpf": "icmp",
+                "tag": 7,
+                "enabled": False,
+                "color": None,
+                "highlight_duration": None,
+                "capture_node_id": node_id,
+                "direction": None,
+                "data_link_type": "DLT_EN10MB",
+            }
             _write_pcap(f"{project.markers_directory}/{node_id}_{link.id}_icmp.pcap", frames)
 
         # r1→r2 captures at t1 and t3; r2→r3 captures at t2 and t3 (same µs
@@ -132,9 +143,7 @@ class TestReplayRoutes:
 
         monkeypatch.setattr(marker_replay, "_columns_for", fake_columns)
 
-        response = await client.get(
-            app.url_path_for("replay_tag_range", project_id=project.id, tag=7)
-        )
+        response = await client.get(app.url_path_for("replay_tag_range", project_id=project.id, tag=7))
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert body["tag"] == 7
@@ -143,8 +152,10 @@ class TestReplayRoutes:
         assert body["end"] == "1693472002.000000"
         assert [f["node_id"] for f in body["frames"]] == ["n1", "n2", "n1", "n2"]
         assert [f["ts"] for f in body["frames"]] == [
-            "1693472000.500000", "1693472001.000000",
-            "1693472002.000000", "1693472002.000000",
+            "1693472000.500000",
+            "1693472001.000000",
+            "1693472002.000000",
+            "1693472002.000000",
         ]
         # Wireshark-style columns ride along on every frame entry.
         assert body["frames"][0]["src"] == "10.0.0.1"
@@ -156,9 +167,15 @@ class TestReplayRoutes:
         self, app: FastAPI, client: AsyncClient, project: Project, monkeypatch
     ) -> None:
 
-        _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 0, b"a" * 60),
-        ])
+        _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 0, b"a" * 60),
+            ],
+        )
 
         async def fake_columns(pcap, filter_expr):
             return {1: _cols()}
@@ -172,14 +189,18 @@ class TestReplayRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {"frames": []}
 
-    async def test_frames_window_hit(
-        self, app: FastAPI, client: AsyncClient, project: Project, monkeypatch
-    ) -> None:
+    async def test_frames_window_hit(self, app: FastAPI, client: AsyncClient, project: Project, monkeypatch) -> None:
 
-        _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 0, b"a" * 60),
-            (1693472000, 150000, b"a" * 60),
-        ])
+        _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 0, b"a" * 60),
+                (1693472000, 150000, b"a" * 60),
+            ],
+        )
 
         async def fake_columns(pcap, filter_expr):
             return {1: _cols(), 2: _cols()}
@@ -191,15 +212,19 @@ class TestReplayRoutes:
             params={"ts": "1693472000.000000", "window_ms": 150},
         )
         assert response.status_code == status.HTTP_200_OK
-        assert [f["ts"] for f in response.json()["frames"]] == [
-            "1693472000.000000", "1693472000.150000"
-        ]
+        assert [f["ts"] for f in response.json()["frames"]] == ["1693472000.000000", "1693472000.150000"]
 
     async def test_detail_404_on_ts_mismatch(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
-        link = _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-        ])
+        link = _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
 
         response = await client.get(
             app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
@@ -216,9 +241,16 @@ class TestReplayRoutes:
         project._links.update({r1.id: r1, r2.id: r2})
 
         def _wire(link, node_id, frames):
-            link._markers["icmp"] = {"bpf": "icmp", "tag": 7, "enabled": False, "color": None,
-                                     "highlight_duration": None, "capture_node_id": node_id,
-                                     "direction": None, "data_link_type": "DLT_EN10MB"}
+            link._markers["icmp"] = {
+                "bpf": "icmp",
+                "tag": 7,
+                "enabled": False,
+                "color": None,
+                "highlight_duration": None,
+                "capture_node_id": node_id,
+                "direction": None,
+                "data_link_type": "DLT_EN10MB",
+            }
             _write_pcap(f"{project.markers_directory}/{node_id}_{link.id}_icmp.pcap", frames)
 
         _wire(r1, "n1", [(1693472000, 0, b"a" * 60), (1693472002, 0, b"a" * 60)])
@@ -254,15 +286,19 @@ class TestReplayRoutes:
         self, app: FastAPI, client: AsyncClient, project: Project, no_residual_sessions
     ) -> None:
 
-        _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-            (1693472001, 0, _tcp_syn_frame()),
-        ])
+        _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+                (1693472001, 0, _tcp_syn_frame()),
+            ],
+        )
 
         # Unfiltered: both frames with real engine columns.
-        response = await client.get(
-            app.url_path_for("replay_tag_range", project_id=project.id, tag=7)
-        )
+        response = await client.get(app.url_path_for("replay_tag_range", project_id=project.id, tag=7))
         assert response.status_code == status.HTTP_200_OK
         frames = response.json()["frames"]
         assert [f["proto"] for f in frames] == ["ICMP", "TCP"]
@@ -285,9 +321,15 @@ class TestReplayRoutes:
         self, app: FastAPI, client: AsyncClient, project: Project, no_residual_sessions
     ) -> None:
 
-        _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-        ])
+        _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
 
         response = await client.get(
             app.url_path_for("replay_tag_range", project_id=project.id, tag=7),
@@ -308,14 +350,19 @@ class TestReplayRoutes:
         self, app: FastAPI, client: AsyncClient, project: Project, no_residual_sessions
     ) -> None:
 
-        link = _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-        ])
+        link = _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
 
         response = await client.get(
             app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
-            params={"ts": "1693472000.123456", "node_id": "n1",
-                    "link_id": link.id, "marker": "icmp"},
+            params={"ts": "1693472000.123456", "node_id": "n1", "link_id": link.id, "marker": "icmp"},
         )
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
@@ -345,12 +392,17 @@ class TestReplayRoutes:
 
         # Two frames in the same microsecond: only the explicit frame number
         # (from the frame list entry) tells them apart.
-        link = _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-            (1693472000, 123456, _tcp_syn_frame()),
-        ])
-        common = {"ts": "1693472000.123456", "node_id": "n1",
-                  "link_id": link.id, "marker": "icmp"}
+        link = _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+                (1693472000, 123456, _tcp_syn_frame()),
+            ],
+        )
+        common = {"ts": "1693472000.123456", "node_id": "n1", "link_id": link.id, "marker": "icmp"}
 
         response = await client.get(
             app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
@@ -369,18 +421,21 @@ class TestReplayRoutes:
         assert response.json()["hex"] == _tcp_syn_frame().hex()
 
     @sharkd_present
-    async def test_detail_501_when_sharkd_disappears(
-        self, app: FastAPI, client: AsyncClient, project: Project
-    ) -> None:
+    async def test_detail_501_when_sharkd_disappears(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
-        link = _add_marker(project, tag=7, enabled=False, node_id="n1", frames=[
-            (1693472000, 123456, _icmp_frame()),
-        ])
+        link = _add_marker(
+            project,
+            tag=7,
+            enabled=False,
+            node_id="n1",
+            frames=[
+                (1693472000, 123456, _icmp_frame()),
+            ],
+        )
 
         with patch("gns3server.controller.marker_replay.shutil.which", return_value=None):
             response = await client.get(
                 app.url_path_for("replay_tag_frame_detail", project_id=project.id, tag=7),
-                params={"ts": "1693472000.123456", "node_id": "n1",
-                        "link_id": link.id, "marker": "icmp"},
+                params={"ts": "1693472000.123456", "node_id": "n1", "link_id": link.id, "marker": "icmp"},
             )
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED

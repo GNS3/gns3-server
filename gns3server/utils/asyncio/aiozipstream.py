@@ -56,20 +56,24 @@ def _get_compressor(compress_type, compresslevel=None):
 
     if compress_type == zipfile.ZIP_DEFLATED:
         from zipfile import zlib
+
         if compresslevel is not None:
             return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
         return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
     elif compress_type == zipfile.ZIP_BZIP2:
         from zipfile import bz2
+
         if compresslevel is not None:
             return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
     # compresslevel is ignored for ZIP_LZMA
     elif compress_type == zipfile.ZIP_LZMA:
         from zipfile import LZMACompressor
+
         return LZMACompressor()
     elif compress_type == ZIP_ZSTANDARD:
         import zstandard as zstd
+
         if compresslevel is not None:
             # for threads param a value of -1 means to set the number of threads to the number of detected logical CPUs
             return zstd.ZstdCompressor(level=compresslevel, threads=-1).compressobj()
@@ -141,13 +145,13 @@ class ZipInfo(zipfile.ZipInfo):
 
 class ZipFile(zipfile.ZipFile):
     def __init__(
-            self,
-            fileobj=None,
-            mode="w",
-            compression=zipfile.ZIP_STORED,
-            allowZip64=True,
-            compresslevel=None,
-            chunksize=32768
+        self,
+        fileobj=None,
+        mode="w",
+        compression=zipfile.ZIP_STORED,
+        allowZip64=True,
+        compresslevel=None,
+        chunksize=32768,
     ):
         """Open the ZIP file with mode write "w"."""
 
@@ -158,11 +162,7 @@ class ZipFile(zipfile.ZipFile):
 
         self._comment = b""
         zipfile.ZipFile.__init__(
-            self, fileobj,
-            mode=mode,
-            compression=compression,
-            compresslevel=compresslevel,
-            allowZip64=allowZip64
+            self, fileobj, mode=mode, compression=compression, compresslevel=compresslevel, allowZip64=allowZip64
         )
         self._chunksize = chunksize
         self.paths_to_write = []
@@ -232,7 +232,7 @@ class ZipFile(zipfile.ZipFile):
             "filename": filename,
             "arcname": arcname,
             "compress_type": compress_type,
-            "compresslevel": compresslevel
+            "compresslevel": compresslevel,
         }
         self.paths_to_write.append(kwargs)
 
@@ -245,7 +245,7 @@ class ZipFile(zipfile.ZipFile):
             "arcname": arcname,
             "iterable": iterable,
             "compress_type": compress_type,
-            "compresslevel": compresslevel
+            "compresslevel": compresslevel,
         }
         self.paths_to_write.append(kwargs)
 

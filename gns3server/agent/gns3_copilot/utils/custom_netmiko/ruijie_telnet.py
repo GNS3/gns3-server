@@ -60,12 +60,12 @@ class RuijieTelnetEnhanced(RuijieOSBase):
     # Interactive command patterns that trigger [yes/no] prompts
     # These are commands that commonly require confirmation
     INTERACTIVE_PATTERNS = [
-        re.compile(r'^router-id\s+', re.IGNORECASE),  # OSPF router-id
-        re.compile(r'^erase\s+', re.IGNORECASE),  # erase startup-config
-        re.compile(r'^delete\s+', re.IGNORECASE),  # delete files
-        re.compile(r'^format\s+', re.IGNORECASE),  # format filesystem
-        re.compile(r'^reload\b', re.IGNORECASE),  # reload/reboot
-        re.compile(r'^boot\s+system\s+', re.IGNORECASE),  # change boot image
+        re.compile(r"^router-id\s+", re.IGNORECASE),  # OSPF router-id
+        re.compile(r"^erase\s+", re.IGNORECASE),  # erase startup-config
+        re.compile(r"^delete\s+", re.IGNORECASE),  # delete files
+        re.compile(r"^format\s+", re.IGNORECASE),  # format filesystem
+        re.compile(r"^reload\b", re.IGNORECASE),  # reload/reboot
+        re.compile(r"^boot\s+system\s+", re.IGNORECASE),  # change boot image
     ]
 
     def __init__(
@@ -80,9 +80,7 @@ class RuijieTelnetEnhanced(RuijieOSBase):
             kwargs["default_enter"] = "\r\n"
         super().__init__(*args, **kwargs)
 
-    def _preprocess_interactive_commands(
-        self, config_commands: list[str]
-    ) -> list[str]:
+    def _preprocess_interactive_commands(self, config_commands: list[str]) -> list[str]:
         """
         Preprocess commands to insert 'yes' after interactive commands.
 
@@ -105,8 +103,7 @@ class RuijieTelnetEnhanced(RuijieOSBase):
             for pattern in self.INTERACTIVE_PATTERNS:
                 if pattern.match(cmd.strip()):
                     logging.info(
-                        "Ruijie device: Detected interactive command '%s', "
-                        "inserting 'yes'",
+                        "Ruijie device: Detected interactive command '%s', inserting 'yes'",
                         cmd.strip(),
                     )
                     # Insert 'yes' after this command
@@ -153,25 +150,18 @@ class RuijieTelnetEnhanced(RuijieOSBase):
             output += self.config_mode()
 
         # Preprocess: Insert 'yes' after known interactive commands
-        processed_commands = self._preprocess_interactive_commands(
-            config_commands
-        )
+        processed_commands = self._preprocess_interactive_commands(config_commands)
 
         # Try batch send first (fast path)
         try:
-            output += self._send_config_batch(
-                processed_commands, read_timeout, delay_factor
-            )
+            output += self._send_config_batch(processed_commands, read_timeout, delay_factor)
         except Exception as batch_error:
             logging.warning(
-                "Ruijie device: Batch send failed, "
-                "falling back to one-by-one: %s",
+                "Ruijie device: Batch send failed, falling back to one-by-one: %s",
                 batch_error,
             )
             # Fallback to one-by-one send with real-time detection
-            output += self._send_config_one_by_one(
-                config_commands, read_timeout, delay_factor
-            )
+            output += self._send_config_one_by_one(config_commands, read_timeout, delay_factor)
 
         # Exit config mode if requested
         if exit_config_mode:
@@ -179,9 +169,7 @@ class RuijieTelnetEnhanced(RuijieOSBase):
 
         return output
 
-    def _send_config_batch(
-        self, commands: list[str], read_timeout: int, delay_factor: float
-    ) -> str:
+    def _send_config_batch(self, commands: list[str], read_timeout: int, delay_factor: float) -> str:
         """
         Send configuration commands in batch (fast).
 
@@ -197,15 +185,11 @@ class RuijieTelnetEnhanced(RuijieOSBase):
 
         # Read all output at once
         # Use same default as Netmiko (2.0 seconds) to ensure complete output
-        output += self.read_channel_timing(
-            read_timeout=read_timeout, last_read=2.0
-        )
+        output += self.read_channel_timing(read_timeout=read_timeout, last_read=2.0)
 
         return output
 
-    def _send_config_one_by_one(
-        self, commands: list[str], read_timeout: int, delay_factor: float
-    ) -> str:
+    def _send_config_one_by_one(self, commands: list[str], read_timeout: int, delay_factor: float) -> str:
         """
         Send commands one-by-one with real-time prompt detection.
 
@@ -225,26 +209,21 @@ class RuijieTelnetEnhanced(RuijieOSBase):
             time.sleep(0.05)
 
             # Read output after this command
-            new_output = self.read_channel_timing(
-                read_timeout=10, last_read=0.5
-            )
+            new_output = self.read_channel_timing(read_timeout=10, last_read=0.5)
             output += new_output
 
             # Check if interactive prompt appeared after this command
             for pattern in interactive_patterns:
                 if re.search(pattern, new_output, re.IGNORECASE):
                     logging.info(
-                        "Ruijie device: Detected interactive prompt "
-                        "after '%s', sending 'yes'",
+                        "Ruijie device: Detected interactive prompt after '%s', sending 'yes'",
                         cmd,
                     )
                     # Send 'yes' to confirm
                     self.write_channel(f"yes{self.RETURN}")
                     time.sleep(0.3)
                     # Read the confirmation response
-                    output += self.read_channel_timing(
-                        read_timeout=30, last_read=0.5
-                    )
+                    output += self.read_channel_timing(read_timeout=30, last_read=0.5)
                     break
 
         return output
@@ -252,6 +231,7 @@ class RuijieTelnetEnhanced(RuijieOSBase):
 
 # Register the custom device type with Netmiko
 _registered = False  # Flag to prevent duplicate registration
+
 
 def register_custom_device_type() -> None:
     """
@@ -295,7 +275,4 @@ try:
     register_custom_device_type()
 except Exception as e:
     logger = logging.getLogger(__name__)
-    logger.warning(
-        f"Failed to register Ruijie device type: {e}",
-        exc_info=True
-    )
+    logger.warning(f"Failed to register Ruijie device type: {e}", exc_info=True)

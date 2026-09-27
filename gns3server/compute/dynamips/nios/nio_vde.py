@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class NIOVDE(NIO):
-
     """
     Dynamips VDE NIO.
 
@@ -81,8 +80,4 @@ class NIOVDE(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_vde",
-            "local_file": self._local_file,
-            "control_file": self._control_file
-        }
+        return {"type": "nio_vde", "local_file": self._local_file, "control_file": self._control_file}

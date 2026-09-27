@@ -100,13 +100,8 @@ class GNS3SuspendNodeTool(BaseTool):
 
             # Validate input
             if not project_id or not node_ids:
-                logger.error(
-                    "Missing required fields: project_id or node_ids."
-                )
-                return {
-                    "error": "Missing required fields: "
-                    "project_id and node_ids."
-                }
+                logger.error("Missing required fields: project_id or node_ids.")
+                return {"error": "Missing required fields: project_id and node_ids."}
 
             if not isinstance(node_ids, list):
                 logger.error("node_ids must be a list.")
@@ -118,10 +113,7 @@ class GNS3SuspendNodeTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Verify nodes exist and capture names (one call)
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -137,14 +129,8 @@ class GNS3SuspendNodeTool(BaseTool):
             )
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
-            suspend_results = suspend_node_handler(
-                {"project_id": project_id, "node_ids": known_ids}, gns3_ctx
-            )
-            suspend_errors = {
-                r["node_id"]: r.get("error")
-                for r in suspend_results
-                if r.get("status") == "error"
-            }
+            suspend_results = suspend_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
+            suspend_errors = {r["node_id"]: r.get("error") for r in suspend_results if r.get("status") == "error"}
 
             # Get updated status — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -154,9 +140,7 @@ class GNS3SuspendNodeTool(BaseTool):
 
             for node_id in node_ids:
                 if node_id not in nodes_by_id:
-                    logger.error(
-                        "Node %s not found in project %s", node_id, project_id
-                    )
+                    logger.error("Node %s not found in project %s", node_id, project_id)
                     results.append(
                         {
                             "node_id": node_id,
@@ -195,9 +179,7 @@ class GNS3SuspendNodeTool(BaseTool):
                     )
 
             # Analyze results
-            successful_nodes = [
-                r for r in results if r.get("status") != "error"
-            ]
+            successful_nodes = [r for r in results if r.get("status") != "error"]
             failed_nodes = [r for r in results if r.get("status") == "error"]
 
             # Construct final response
@@ -207,10 +189,7 @@ class GNS3SuspendNodeTool(BaseTool):
                 "successful": len(successful_nodes),
                 "failed": len(failed_nodes),
                 "nodes": results,
-                "note": (
-                    "Suspended nodes preserve their state in memory. "
-                    "Use resume to continue where you left off."
-                ),
+                "note": ("Suspended nodes preserve their state in memory. Use resume to continue where you left off."),
             }
 
             logger.info(
@@ -235,9 +214,7 @@ if __name__ == "__main__":
     test_input_single = json.dumps(
         {
             "project_id": "<PROJECT_UUID>",  # Replace with actual project UUID
-            "node_ids": [
-                "fbeda109-9a74-4d8c-a749-cc3847911a90"
-            ],  # Replace with actual node UUID
+            "node_ids": ["fbeda109-9a74-4d8c-a749-cc3847911a90"],  # Replace with actual node UUID
         }
     )
     tool = GNS3SuspendNodeTool()

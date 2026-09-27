@@ -88,9 +88,7 @@ class GNS3WaitTool(BaseTool):
             if not isinstance(seconds, int) or isinstance(seconds, bool):
                 return {"error": "seconds must be an integer (1-600)."}
             if not 1 <= seconds <= MAX_WAIT_SECONDS:
-                return {
-                    "error": f"seconds must be between 1 and {MAX_WAIT_SECONDS}."
-                }
+                return {"error": f"seconds must be between 1 and {MAX_WAIT_SECONDS}."}
 
             logger.info("Waiting %d seconds...", seconds)
             waited = 0

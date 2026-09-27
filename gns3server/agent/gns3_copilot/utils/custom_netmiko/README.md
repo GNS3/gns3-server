@@ -69,11 +69,9 @@ The drivers are auto-registered when the tools are imported:
 from gns3server.agent.gns3_copilot.tools_v2 import DisplayToolNornir
 
 tool = DisplayToolNornir()
-result = tool._run(json.dumps({
-    "device_names": ["huawei-sw1"],
-    "commands": ["display version"],
-    "project_id": "project-uuid"
-}))
+result = tool._run(
+    json.dumps({"device_names": ["huawei-sw1"], "commands": ["display version"], "project_id": "project-uuid"})
+)
 ```
 
 ## Running Tests
@@ -145,10 +143,13 @@ Create `tests/test_cisco.py`:
 import unittest
 from gns3server.agent.gns3_copilot.utils.custom_netmiko import cisco
 
+
 class TestCustomCiscoDriver(unittest.TestCase):
     def test_device_type_registered(self):
         from netmiko.ssh_dispatcher import CLASS_MAPPER
+
         self.assertIn("cisco_custom", CLASS_MAPPER)
+
 
 if __name__ == "__main__":
     unittest.main()

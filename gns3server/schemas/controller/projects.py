@@ -31,13 +31,11 @@ class ProjectStatus(str, Enum):
 
 
 class Supplier(BaseModel):
-
     logo: str = Field(..., description="Path to the project supplier logo")
     url: Optional[HttpUrl] = Field(None, description="URL to the project supplier site")
 
 
 class Variable(BaseModel):
-
     name: str = Field(..., description="Variable name")
     value: Optional[str] = Field(None, description="Variable value")
 
@@ -91,7 +89,6 @@ class ProjectUpdate(ProjectBase):
 
 
 class Project(ProjectBase):
-
     project_id: UUID
     name: Optional[str] = None
     status: Optional[ProjectStatus] = None
@@ -100,7 +97,6 @@ class Project(ProjectBase):
 
 
 class ProjectFile(BaseModel):
-
     path: str = Field(..., description="File path")
     md5sum: str = Field(..., description="File checksum")
 

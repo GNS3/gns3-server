@@ -139,17 +139,11 @@ class Gns3Connector:
         self.session.headers["Accept"] = "application/json"  # pragma: no cover
 
         # Set authentication based on API version
-        if (
-            self.auth_type == "basic"
-            and self.user is not None
-            and self.cred is not None
-        ):
+        if self.auth_type == "basic" and self.user is not None and self.cred is not None:
             self.session.auth = (self.user, self.cred)  # pragma: no cover
 
         elif self.auth_type == "jwt" and self.access_token:
-            self.session.headers["Authorization"] = (
-                f"Bearer {self.access_token}"
-            )
+            self.session.headers["Authorization"] = f"Bearer {self.access_token}"
 
     def _authenticate_v3(self) -> None:
         """
@@ -161,15 +155,10 @@ class Gns3Connector:
             return
 
         if not self.user or not self.cred:
-            raise ValueError(
-                "Username and password are required for v3 authentication "
-                "when no JWT token is provided"
-            )
+            raise ValueError("Username and password are required for v3 authentication when no JWT token is provided")
 
         # Construct authentication URL (v3 API uses different base URL)
-        auth_url = (
-            f"{self.base_url.replace('/v3', '')}/v3/access/users/authenticate"
-        )
+        auth_url = f"{self.base_url.replace('/v3', '')}/v3/access/users/authenticate"
         auth_data = {"username": self.user, "password": self.cred}
 
         # Use temporary session for authentication
@@ -177,21 +166,14 @@ class Gns3Connector:
         temp_session.headers["Content-Type"] = "application/json"
 
         try:
-            response = temp_session.post(
-                auth_url, json=auth_data, verify=self.verify, timeout=10.0
-            )
+            response = temp_session.post(auth_url, json=auth_data, verify=self.verify, timeout=10.0)
             if response.status_code == 200:
                 auth_result = response.json()
                 self.access_token = auth_result["access_token"]
                 # Update session with new token
-                self.session.headers["Authorization"] = (
-                    f"Bearer {self.access_token}"
-                )
+                self.session.headers["Authorization"] = f"Bearer {self.access_token}"
             else:
-                raise HTTPError(
-                    f"v3 API authentication failed: {response.status_code} - "
-                    f"{response.text}"
-                )
+                raise HTTPError(f"v3 API authentication failed: {response.status_code} - {response.text}")
         except Exception as e:
             raise HTTPError(f"v3 API authentication error: {str(e)}") from e
 
@@ -205,9 +187,7 @@ class Gns3Connector:
 
         try:
             # Decode token without verification to check expiry
-            decoded: dict[str, Any] = jwt.decode(
-                token, options={"verify_signature": False}
-            )
+            decoded: dict[str, Any] = jwt.decode(token, options={"verify_signature": False})
             exp = decoded.get("exp")
             if exp is not None:
                 return time.time() > float(exp)
@@ -237,12 +217,7 @@ class Gns3Connector:
         """
 
         # Handle JWT authentication
-        if (
-            self.auth_type == "jwt"
-            and not self.access_token
-            and self.user
-            and self.cred
-        ):
+        if self.auth_type == "jwt" and not self.access_token and self.user and self.cred:
             self._authenticate_v3()
 
         # Get request function (e.g., session.get, session.post)
@@ -285,15 +260,10 @@ class Gns3Connector:
 
         try:
             # Only attempt parsing when Content-Type is JSON
-            if (
-                "application/json"
-                in response.headers.get("Content-Type", "").lower()
-            ):
+            if "application/json" in response.headers.get("Content-Type", "").lower():
                 error_json = response.json()
                 status = error_json.get("status", "Unknown Status")
-                message = error_json.get(
-                    "message", "No message provided in JSON."
-                )
+                message = error_json.get("message", "No message provided in JSON.")
                 # Construct a more descriptive new error
                 new_err = HTTPError(
                     f"{status}: {message} (Original {response.status_code} Error)",

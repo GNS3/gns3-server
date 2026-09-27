@@ -18,6 +18,5 @@ from pydantic import BaseModel, Field
 
 
 class IOULicense(BaseModel):
-
     iourc_content: str = Field(..., description="Content of iourc file")
     license_check: bool = Field(..., description="Whether the license must be checked or not")

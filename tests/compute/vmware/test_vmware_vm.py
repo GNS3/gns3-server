@@ -58,7 +58,9 @@ async def test_json(vm, tmpdir, compute_project):
 async def test_start_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio(
+        {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"}
+    )
     vm.adapters = 1
     await vm.adapter_add_nio_binding(0, nio)
     await vm.start_capture(0, output_file)
@@ -69,7 +71,9 @@ async def test_start_capture(vm, tmpdir, manager, free_console_port):
 async def test_stop_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
-    nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
+    nio = manager.create_nio(
+        {"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"}
+    )
     vm.adapters = 1
     await vm.adapter_add_nio_binding(0, nio)
     await vm.start_capture(0, output_file)

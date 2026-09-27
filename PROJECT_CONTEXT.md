@@ -126,34 +126,37 @@ flake8 gns3server/utils/
 import os  # Never used
 # Good: Delete this line
 
+
 # F841: Mark as intentionally unused
 # Bad
 def foo():
     x = 1  # Never used
+
 
 # Good: Use or mark as intentionally unused
 def foo():
     x = 1
     _ = x  # Mark as intentionally unused
 
+
 # F824: Remove unnecessary global declaration
 # Bad
 def foo():
     global _fernet  # Never assigned in this scope
+
 
 # Good: Remove global statement (if only reading)
 def foo():
     # Just read the global variable, no global declaration needed
     pass
 
+
 # E501: Break long lines
 # Bad
 raise RuntimeError("Encryption not initialized. Call init_encryption() first.")
 
 # Good
-raise RuntimeError(
-    "Encryption not initialized. Call init_encryption() first."
-)
+raise RuntimeError("Encryption not initialized. Call init_encryption() first.")
 ```
 
 #### Ruff (Alternative)
@@ -176,6 +179,7 @@ ruff format gns3server/         # Format code
 # 1. Type annotations
 def process_data(input_data: dict[str, Any]) -> list[dict[str, Any]]:
     pass
+
 
 # 2. Error handling
 try:

@@ -42,7 +42,6 @@ log = logging.getLogger(__name__)
 
 
 class VMwareVM(BaseNode):
-
     """
     VMware VM implementation.
     """
@@ -257,7 +256,6 @@ class VMwareVM(BaseNode):
 
         # first some sanity checks
         for adapter_number in range(0, self._adapters):
-
             # we want the vmnet interface to be connected when starting the VM
             connected = f"ethernet{adapter_number}.startConnected"
             if self._get_vmx_setting(connected):
@@ -271,7 +269,6 @@ class VMwareVM(BaseNode):
         self.manager.refresh_vmnet_list(ubridge=use_ubridge)
         # then configure VMware network adapters
         for adapter_number in range(0, self._adapters):
-
             custom_adapter = self._get_custom_adapter_settings(adapter_number)
             adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
 
@@ -365,7 +362,9 @@ class VMwareVM(BaseNode):
                 await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
             else:
                 # special case on macOS, we cannot bind VMnet interfaces using the libpcap
-                await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
+                await self._ubridge_send(
+                    'bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface)
+                )
         else:
             await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 

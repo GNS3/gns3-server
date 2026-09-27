@@ -21,7 +21,6 @@ from .base import BaseTable, GUID
 
 
 class Compute(BaseTable):
-
     __tablename__ = "computes"
 
     compute_id = Column(GUID, primary_key=True)
