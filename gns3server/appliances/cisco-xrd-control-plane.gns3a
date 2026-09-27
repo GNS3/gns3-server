@@ -1,0 +1,140 @@
+{
+    "appliance_id": "e4a3a5fe-3a13-521b-abd1-ab9483e83aa2",
+    "name": "XRd Control Plane",
+    "category": "router",
+    "description": "Cisco IOS XRd Control Plane runs the full IOS XR control plane (BGP, OSPF, IS-IS, MPLS, segment routing, NETCONF/YANG, gNMI) as a Docker container with a Linux-kernel data plane — designed for control-plane labs and automation, not forwarding performance.\n\nThis appliance runs the unmodified Cisco image inside a GNS3 Docker node. The Web console opens directly in the IOS XR CLI (xr_cli via the docker_exec console).",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://www.cisco.com/",
+    "documentation_url": "https://xrdocs.io/virtual-routing/",
+    "product_name": "XRd Control Plane",
+    "product_url": "https://www.cisco.com/c/en/us/products/collateral/routers/ios-xrd/datasheet-c78-744298.html",
+    "registry_version": 8,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The official image must be loaded on the GNS3 server first (it is not on Docker Hub). The tag must be `ios-xr/xrd-control-plane:<version>`, or edit the template image afterwards:\n\n```bash\ndocker load -i xrd-control-plane-<version>.tar.gz   # from Cisco with a valid account\n```\n\n**Other versions (25.x, 26.x, ...):** the appliance pins one tested image tag, and Docker appliances have no per-version selector in the `.gns3a` format — just load the tarball you want and change the template's image field to `ios-xr/xrd-control-plane:<version>` (templates are version-agnostic here: same env vars, volumes and interface mapping).\n\n**Host preparation** (once, XRd requirements — GNS3 warns about these at Docker connect):\n\n```bash\nsudo sysctl -w fs.inotify.max_user_instances=64000 fs.inotify.max_user_watches=524288 fs.file-max=1000000\nsudo modprobe fuse\n# persist them under /etc/sysctl.d/\n```\n\nEach node uses about **4 GB RAM** and takes 2-3 minutes to boot.\n\n**Default login:** `admin` / `cisco` (created by the injected first-boot config).\n\nThe first-boot config only applies while the XR config storage is empty; to re-seed it, delete and recreate the node. Committed configuration persists across stop/start (via `/xr-storage`).\n\nData interfaces need an address and `no shutdown` before they pass traffic.",
+    "netmiko_device_type": "cisco_xr_telnet",
+    "symbol": ":/symbols/router.svg",
+    "settings": [
+        {
+            "name": "Default template settings",
+            "default": true,
+            "template_type": "docker",
+            "template_properties": {
+                "adapters": 24,
+                "image": "ios-xr/xrd-control-plane:24.4.1",
+                "console_type": "docker_exec",
+                "environment": "GNS3_SKIP_INIT=1\nGNS3_CONSOLE_CMD=/pkg/bin/xr_cli.sh\nGNS3_CONSOLE_RESIZE=0\nGNS3_MASK_UDEV=1\nGNS3_SHM_SIZE=1024\nGNS3_DEVICES=/dev/fuse\nGNS3_STOP_TIMEOUT=40\nXR_FIRST_BOOT_CONFIG=/firstboot.cfg\nXR_MGMT_INTERFACES=linux:eth0,xr_name=Mg0/RP0/CPU0/0,chksum,snoop_v4,snoop_v6\nXR_INTERFACES=linux:eth1,xr_name=Gi0/0/0/0;linux:eth2,xr_name=Gi0/0/0/1;linux:eth3,xr_name=Gi0/0/0/2;linux:eth4,xr_name=Gi0/0/0/3;linux:eth5,xr_name=Gi0/0/0/4;linux:eth6,xr_name=Gi0/0/0/5;linux:eth7,xr_name=Gi0/0/0/6;linux:eth8,xr_name=Gi0/0/0/7;linux:eth9,xr_name=Gi0/0/0/8;linux:eth10,xr_name=Gi0/0/0/9;linux:eth11,xr_name=Gi0/0/0/10;linux:eth12,xr_name=Gi0/0/0/11;linux:eth13,xr_name=Gi0/0/0/12;linux:eth14,xr_name=Gi0/0/0/13;linux:eth15,xr_name=Gi0/0/0/14;linux:eth16,xr_name=Gi0/0/0/15;linux:eth17,xr_name=Gi0/0/0/16;linux:eth18,xr_name=Gi0/0/0/17;linux:eth19,xr_name=Gi0/0/0/18;linux:eth20,xr_name=Gi0/0/0/19;linux:eth21,xr_name=Gi0/0/0/20;linux:eth22,xr_name=Gi0/0/0/21;linux:eth23,xr_name=Gi0/0/0/22",
+                "extra_volumes": [
+                    "/xr-storage",
+                    "/xr-storage-shadow"
+                ],
+                "extra_configs": [
+                    {
+                        "target": "/firstboot.cfg",
+                        "content": "!\nusername admin\n group root-lr\n secret cisco\n!\nend\n"
+                    }
+                ],
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "port_name": "MgmtEth0/RP0/CPU0/0"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "port_name": "Gi0/0/0/0"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "port_name": "Gi0/0/0/1"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "port_name": "Gi0/0/0/2"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "port_name": "Gi0/0/0/3"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "port_name": "Gi0/0/0/4"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "port_name": "Gi0/0/0/5"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "port_name": "Gi0/0/0/6"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "port_name": "Gi0/0/0/7"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "port_name": "Gi0/0/0/8"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "port_name": "Gi0/0/0/9"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "port_name": "Gi0/0/0/10"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "port_name": "Gi0/0/0/11"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "port_name": "Gi0/0/0/12"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "port_name": "Gi0/0/0/13"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "port_name": "Gi0/0/0/14"
+                    },
+                    {
+                        "adapter_number": 16,
+                        "port_name": "Gi0/0/0/15"
+                    },
+                    {
+                        "adapter_number": 17,
+                        "port_name": "Gi0/0/0/16"
+                    },
+                    {
+                        "adapter_number": 18,
+                        "port_name": "Gi0/0/0/17"
+                    },
+                    {
+                        "adapter_number": 19,
+                        "port_name": "Gi0/0/0/18"
+                    },
+                    {
+                        "adapter_number": 20,
+                        "port_name": "Gi0/0/0/19"
+                    },
+                    {
+                        "adapter_number": 21,
+                        "port_name": "Gi0/0/0/20"
+                    },
+                    {
+                        "adapter_number": 22,
+                        "port_name": "Gi0/0/0/21"
+                    },
+                    {
+                        "adapter_number": 23,
+                        "port_name": "Gi0/0/0/22"
+                    }
+                ]
+            }
+        }
+    ]
+}

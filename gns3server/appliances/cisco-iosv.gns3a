@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "vios-adventerprisek9-m.spa.159-3.m12.qcow2",
+            "version": "15.9(3)M12",
+            "md5sum": "61d2d7cf16c8a3efa01db6545dcecdfd",
+            "filesize": 57326080,
+            "download_url": "https://u.cisco.com/my-learning/my-account"
+        },
+        {
             "filename": "vios-adventerprisek9-m.spa.159-3.m10.qcow2",
             "version": "15.9(3)M10",
             "md5sum": "960ff630ce3fc030f6155a8e77d64105",
@@ -120,6 +127,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.9(3)M12",
+            "images": {
+                "hda_disk_image": "vios-adventerprisek9-m.spa.159-3.m12.qcow2",
+                "hdb_disk_image": "IOSv_startup_config.img"
+            }
+        },
         {
             "name": "15.9(3)M10",
             "images": {
