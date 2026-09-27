@@ -112,6 +112,15 @@ class Link:
         return self._filters
 
     @property
+    def kernel_datapath(self):
+        """
+        Whether this link is wired on the kernel datapath (veth pairs
+        enslaved into a per-link Linux bridge — no uBridge relay in the
+        forwarding path, so filters, markers and capture are unavailable).
+        """
+        return any(d.get("type") == "nio_bridge" for d in (getattr(self, "_link_data", None) or []))
+
+    @property
     def markers(self):
         """
         Get the traffic insight markers dict: name → {bpf, tag, enabled}
@@ -223,6 +232,12 @@ class Link:
             validate_all_filters(new_filters)
         except FilterValidationError as e:
             raise ControllerError(f"Invalid packet filter parameters: {e!s}")
+
+        if new_filters and self.kernel_datapath:
+            raise ControllerError(
+                "Packet filters are not supported on kernel-datapath links (no uBridge relay "
+                "in the forwarding path); delete and recreate the link to use filters"
+            )
 
         if new_filters != self.filters:
             self._filters = new_filters

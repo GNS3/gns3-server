@@ -16,7 +16,7 @@
 
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -65,6 +65,27 @@ class TAPNIO(BaseModel):
     tap_device: str = Field(..., description="TAP device name e.g. tap0")
 
 
+class BridgeNIOType(str, Enum):
+
+    bridge = "nio_bridge"
+
+
+class BridgeNIO(BaseModel):
+    """
+    Kernel-datapath bridge Network Input/Output properties. The NIO tells the
+    node to enslave its veth host end into the named kernel bridge instead of
+    wiring a uBridge UDP relay. ``filters`` and ``markers`` must stay empty on
+    this datapath; they are accepted (and rejected server-side) only because
+    link update payloads always carry the full NIO dictionary.
+    """
+
+    type: BridgeNIOType
+    bridge: str = Field(..., description="Kernel bridge name e.g. gns3a1b2c3d4e5")
+    suspend: Optional[bool] = Field(None, description="Suspend the NIO")
+    filters: Optional[dict] = Field(None, description="Packet filters (unsupported, must be empty)")
+    markers: Optional[dict] = Field(None, description="Traffic-insight markers (unsupported, must be empty)")
+
+
 class MarkerToggle(BaseModel):
     """
     Body for the per-marker enable/disable toggle endpoint: flips a running
@@ -99,7 +120,7 @@ class BatchNIOEntry(BaseModel):
     node_id: str = Field(..., description="Node the NIO is attached to")
     adapter_number: int = Field(0, ge=0, description="Adapter number")
     port_number: int = Field(0, ge=0, description="Port number")
-    nio: UDPNIO = Field(..., description="NIO settings")
+    nio: Union[UDPNIO, BridgeNIO] = Field(..., description="NIO settings")
 
 
 class BatchNIOCreate(BaseModel):

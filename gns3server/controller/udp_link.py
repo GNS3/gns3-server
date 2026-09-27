@@ -19,6 +19,7 @@
 import asyncio
 import logging
 
+from gns3server.config import Config
 from gns3server.utils.packet_filter_validation import validate_bpf_syntax
 
 from .controller_error import ControllerError, ControllerNotFoundError
@@ -44,6 +45,19 @@ _MARKER_CAPABLE_TYPES = frozenset(
 
 
 log = logging.getLogger(__name__)
+
+
+def _is_unix_socket_docker(node):
+    """
+    Best-effort detection of vendor containers bridged through AF_UNIX
+    socket pairs (GNS3_UNIX_SOCKET_NIO in their environment): they have no
+    host-side interface to enslave into a kernel bridge. The compute side
+    independently rejects kernel-datapath NIOs on these containers, so a
+    missed detection here only surfaces as a clearer-late error.
+    """
+
+    environment = (node.properties or {}).get("environment") or ""
+    return "GNS3_UNIX_SOCKET_NIO" in environment
 
 
 class UDPLink(Link):
@@ -110,6 +124,38 @@ class UDPLink(Link):
         """
         return self._markers_for_node(node1), self._markers_for_node(node2)
 
+    def _kernel_datapath_eligible(self, node1, node2):
+        """
+        Whether this link can be wired on the kernel datapath (veth pairs
+        enslaved into a per-link Linux bridge) instead of the uBridge UDP
+        relay. The kernel path has no userspace relay, so filters, markers
+        and packet capture — which all live in the relay — disqualify it.
+        It is host-local (same compute) and requires the adapter interfaces
+        to be created as veths at container start, hence stopped nodes only.
+        """
+
+        if not Config.instance().settings.Server.enable_kernel_datapath:
+            return False
+        if node1.node_type != "docker" or node2.node_type != "docker":
+            return False
+        if node1.compute.id != node2.compute.id:
+            return False
+        if self.get_active_filters():
+            return False
+        if self._markers:
+            return False
+        # Project-level marker definitions are inherited by every link right
+        # after creation (apply_defs_to_new_link) and need the relay datapath.
+        if getattr(self._project, "_marker_definitions", None):
+            return False
+        # Running nodes already have relay TAPs wired into uBridge; the
+        # kernel path needs the veth variant created at container start.
+        if node1.status != "stopped" or node2.status != "stopped":
+            return False
+        if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
+            return False
+        return True
+
     async def _prepare(self):
         """
         Local-only link setup: resolve peer addresses, reserve UDP ports and
@@ -134,6 +180,22 @@ class UDPLink(Link):
         node2 = self._nodes[1]["node"]
         adapter_number2 = self._nodes[1]["adapter_number"]
         port_number2 = self._nodes[1]["port_number"]
+
+        if self._kernel_datapath_eligible(node1, node2):
+            # Kernel datapath: each endpoint enslaves its veth host end into
+            # a per-link Linux bridge. The name derives from the link id so
+            # both ends compute it independently (no coordinator) and crash
+            # leftovers sweep deterministically; 11 hex chars fill IFNAMSIZ
+            # (15), pushing name-collision probability to irrelevance.
+            bridge_name = "gns3" + self._id.replace("-", "")[:11]
+            self._link_data = [
+                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": {}, "suspend": self._suspended},
+                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": {}, "suspend": self._suspended},
+            ]
+            return [
+                (node1, adapter_number1, port_number1, self._link_data[0]),
+                (node2, adapter_number2, port_number2, self._link_data[1]),
+            ]
 
         # Get an IP allowing communication between both host
         try:
@@ -471,6 +533,12 @@ class UDPLink(Link):
 
         if name in self._markers:
             raise ControllerError(f"Marker '{name}' already exists on link {self._id}")
+
+        if self.kernel_datapath:
+            raise ControllerError(
+                "Markers are not supported on kernel-datapath links (no uBridge relay in the "
+                "forwarding path); delete and recreate the link to use markers"
+            )
 
         # Validate the BPF only for private per-link markers. An inherited copy
         # (``inherited_from`` set) fans out from a definition whose BPF was

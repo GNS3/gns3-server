@@ -44,6 +44,7 @@ from gns3server.utils.hostname import is_rfc1123_hostname_valid
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 from ..error import ImageMissingError
+from ..nios.nio_bridge import NIOBridge
 from ..nios.nio_udp import NIOUDP
 from .docker_error import DockerError, DockerHttp404Error, DockerHttp409Error
 
@@ -169,6 +170,10 @@ class DockerVM(BaseNode):
         self._volumes = []
         # Keep a list of created bridge
         self._bridges = set()
+        # (adapter_number, port_number) -> veth host-end name for adapters
+        # wired on the kernel datapath (NIOBridge). The host end lives in the
+        # root namespace and survives container death, unlike relay TAPs.
+        self._kernel_veths = {}
 
         if adapters is None:
             self.adapters = 1
@@ -1422,6 +1427,9 @@ class DockerVM(BaseNode):
                 self._console_websocket = None
             self._cleanup_console_resources()
             await self._clean_servers()
+            # veth host ends live in the root namespace and survive container
+            # death — remove them while the uBridge control channel is still up.
+            await self._remove_kernel_veths()
             await self._stop_ubridge()
 
             try:
@@ -1745,6 +1753,10 @@ class DockerVM(BaseNode):
                 f"Port {port_number} doesn't exist on adapter {adapter_number} of Docker container '{self.name}'"
             )
 
+        if isinstance(nio, NIOBridge):
+            await self._add_ubridge_kernel_connection(nio, adapter_number, port_number)
+            return
+
         for index in range(4096):
             if f"tap-gns3-e{index}" not in psutil.net_if_addrs():
                 adapter.host_ifc = f"tap-gns3-e{index!s}"
@@ -1758,11 +1770,7 @@ class DockerVM(BaseNode):
         self._bridges.add(bridge_name)
         await self._ubridge_send(f"bridge add_nio_tap {bridge_name} {adapter.host_ifc} off")
 
-        mac_address = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
-        custom_adapter = self._get_custom_adapter_settings(adapter_number)
-        custom_mac_address = custom_adapter.get("mac_address")
-        if custom_mac_address:
-            mac_address = custom_mac_address
+        mac_address = self._adapter_mac_address(adapter_number)
 
         try:
             await self._ubridge_send(f"docker set_mac_addr {adapter.host_ifc} {mac_address}")
@@ -1782,13 +1790,131 @@ class DockerVM(BaseNode):
             await self._connect_nio(adapter_number, nio, port_number)
             await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
 
+    def _adapter_mac_address(self, adapter_number):
+        """
+        MAC address for an adapter: the node base address plus the adapter
+        number, unless the adapter has a custom MAC configured.
+        """
+
+        mac_address = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
+        custom_adapter = self._get_custom_adapter_settings(adapter_number)
+        custom_mac_address = custom_adapter.get("mac_address")
+        if custom_mac_address:
+            mac_address = custom_mac_address
+        return mac_address
+
+    def _veth_names(self, adapter_number, port_number=0):
+        """
+        Deterministic veth pair names for a kernel-datapath adapter port.
+        The host end stays in the root namespace (enslaved to the per-link
+        kernel bridge); the guest end is moved into the container namespace
+        and renamed. The ``gv``/``gc`` prefixes keep these out of the ``gns3``
+        bridge/TAP name space and serve as search keys for stale-interface
+        cleanup. 8 hex chars of the node id + adapter/port keep the names
+        unique and within IFNAMSIZ (15).
+        """
+
+        suffix = f"{self._id.replace('-', '')[:8]}e{adapter_number}p{port_number}"
+        return f"gv{suffix}", f"gc{suffix}"
+
+    async def _add_ubridge_kernel_connection(self, nio, adapter_number, port_number=0):
+        """
+        Wire an adapter port on the kernel datapath (NIOBridge): a veth pair
+        whose host end will be enslaved to the per-link kernel bridge, and
+        whose guest end becomes the container interface (the role the TAP
+        plays on the relay path). No uBridge relay bridge is created — frames
+        flow entirely in the kernel, which is also why filters, markers and
+        capture are unavailable on this datapath.
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except IndexError:
+            raise DockerError(
+                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
+
+        host_ifc, guest_ifc = self._veth_names(adapter_number, port_number)
+        # The host end lives in the root namespace and survives container
+        # death: best-effort removal of a stale pair from a previous run
+        # (unclean stop or crash) before recreating it.
+        for stale_ifc in (host_ifc, guest_ifc):
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'docker delete_veth "{stale_ifc}"')
+
+        mac_address = self._adapter_mac_address(adapter_number)
+        try:
+            await self._ubridge_send(f'docker create_veth "{host_ifc}" "{guest_ifc}"')
+            # create_veth leaves the host end UP; carrier must be off until
+            # a link attaches (mirrors "bridge add_nio_tap ... off").
+            await self._ubridge_send(f'link set "{host_ifc}" down')
+            try:
+                await self._ubridge_send(f"docker set_mac_addr {guest_ifc} {mac_address}")
+            except UbridgeError:
+                log.warning(f"Could not set MAC address {mac_address} on interface {guest_ifc}")
+
+            ifname = self._get_container_ifname(adapter_number)
+            log.debug(f"Move container {self.name} adapter {guest_ifc} -> {ifname} in ns {self._namespace}")
+            try:
+                await self._ubridge_send(f"docker move_to_ns {guest_ifc} {self._namespace} {ifname}")
+            except UbridgeError as e:
+                raise UbridgeNamespaceError(e)
+        except UbridgeNamespaceError:
+            raise
+        except Exception:
+            # Don't leave a half-created pair behind (the next start would
+            # fail on create_veth EEXIST until the stale sweep runs).
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'docker delete_veth "{host_ifc}"')
+            raise
+
+        adapter.host_ifc = host_ifc
+        self._kernel_veths[(adapter_number, port_number)] = host_ifc
+        log.debug(
+            "Created kernel-datapath adapter {adapter_number} port {port_number} with MAC address {mac_address} in namespace {namespace}".format(
+                adapter_number=adapter_number, port_number=port_number,
+                mac_address=mac_address, namespace=self._namespace,
+            )
+        )
+
+        if nio:
+            await self._connect_nio(adapter_number, nio, port_number)
+            await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
+
+    async def _remove_kernel_veths(self):
+        """
+        Delete the root-namespace veth host ends. Unlike relay TAPs (which die
+        with the container network namespace) the host end outlives the
+        container and must be removed explicitly. Deleting an enslaved veth
+        detaches it from its bridge automatically.
+        """
+
+        if self.ubridge:
+            for host_ifc in self._kernel_veths.values():
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'docker delete_veth "{host_ifc}"')
+        self._kernel_veths.clear()
+
     async def _get_namespace(self):
 
         result = await self.manager.query("GET", f"containers/{self._cid}/json")
         return int(result["State"]["Pid"])
 
     async def _set_adapter_carrier(self, adapter_number, connected, port_number=0):
-        """Replicate a Docker adapter's connection state on its TAP device."""
+        """Replicate a Docker adapter's connection state on its host interface.
+
+        Kernel-datapath adapters toggle the veth host end's admin state (the
+        container end loses carrier when its peer is down); relay adapters
+        toggle the TAP carrier from the uBridge fd holder.
+        """
+
+        host_ifc = self._kernel_veths.get((adapter_number, port_number))
+        if host_ifc is not None:
+            state = "up" if connected else "down"
+            await self._ubridge_send(f'link set "{host_ifc}" {state}')
+            return
 
         bridge_name = self._bridge_name(adapter_number, port_number)
         state = "on" if connected else "off"
@@ -1796,8 +1922,45 @@ class DockerVM(BaseNode):
 
     async def _connect_nio(self, adapter_number, nio, port_number=0):
 
+        if isinstance(nio, NIOBridge):
+            host_ifc = self._kernel_veths.get((adapter_number, port_number))
+            if host_ifc is None:
+                raise DockerError(
+                    "Adapter {adapter_number} port {port_number} of container '{name}' has no "
+                    "kernel-datapath interface (it was started on the relay datapath); "
+                    "restart the node to attach a kernel link to it".format(
+                        adapter_number=adapter_number, port_number=port_number, name=self.name
+                    )
+                )
+            # Both endpoints run this concurrently and either may create the
+            # bridge first: treat an existing bridge as success instead of a
+            # create race failure.
+            try:
+                await self._ubridge_send(f'brctl create "{nio.bridge}"')
+            except UbridgeError:
+                # Raises again if the bridge genuinely does not exist.
+                await self._ubridge_send(f'brctl show "{nio.bridge}"')
+            await self._ubridge_send(f'link set "{nio.bridge}" up')
+            await self._ubridge_send(f'brctl addif "{nio.bridge}" "{host_ifc}"')
+            return
+
         bridge_name = self._bridge_name(adapter_number, port_number)
-        await self._ubridge_send(f"bridge add_nio_udp {bridge_name} {nio.lport} {nio.rhost} {nio.rport}")
+        if (adapter_number, port_number) in self._kernel_veths and bridge_name not in self._bridges:
+            # A veth adapter attaching a UDP NIO (kernel link deleted and a
+            # relay link created on the running node): relay through AF_PACKET
+            # on the veth host end instead of a TAP.
+            await self._ubridge_send(f"bridge create {bridge_name}")
+            self._bridges.add(bridge_name)
+            await self._ubridge_send(
+                'bridge add_nio_ethernet {bridge_name} "{hostif}"'.format(
+                    bridge_name=bridge_name, hostif=self._kernel_veths[(adapter_number, port_number)]
+                )
+            )
+        await self._ubridge_send(
+            "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
+                bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+            )
+        )
         if nio.capturing:
             await self._ubridge_send(f'bridge start_capture {bridge_name} "{nio.pcap_output_file}"')
         await self._ubridge_send(f"bridge start {bridge_name}")
@@ -1840,6 +2003,16 @@ class DockerVM(BaseNode):
         """
 
         if self.ubridge:
+            if isinstance(nio, NIOBridge):
+                if nio.filters or nio.markers:
+                    raise DockerError(
+                        "Packet filters and markers are not supported on kernel-datapath links; "
+                        "delete and recreate the link to use them"
+                    )
+                if self.status == "started":
+                    await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
+                return
+
             bridge_name = self._bridge_name(adapter_number, port_number)
             if bridge_name in self._bridges:
                 await self._ubridge_apply_filters(bridge_name, nio.filters)
@@ -1865,15 +2038,40 @@ class DockerVM(BaseNode):
         await self.stop_capture(adapter_number, port_number)
         if self.ubridge:
             nio = adapter.get_nio(port_number)
-            bridge_name = self._bridge_name(adapter_number, port_number)
-            if self.status == "started":
-                await self._set_adapter_carrier(adapter_number, False, port_number)
-            await self._ubridge_send(f"bridge stop {bridge_name}")
-            await self._ubridge_send(f"bridge remove_nio_udp {bridge_name} {nio.lport} {nio.rhost} {nio.rport}")
+            if isinstance(nio, NIOBridge):
+                await self._remove_kernel_nio(nio, adapter_number, port_number)
+            else:
+                bridge_name = self._bridge_name(adapter_number, port_number)
+                if self.status == "started":
+                    await self._set_adapter_carrier(adapter_number, False, port_number)
+                await self._ubridge_send(f"bridge stop {bridge_name}")
+                await self._ubridge_send(
+                    "bridge remove_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
+                        bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+                    )
+                )
 
         adapter.remove_nio(port_number)
 
         log.debug(f"Docker VM '{self.name}' [{self.id}]: {adapter.host_ifc} removed from adapter {adapter_number}")
+
+    async def _remove_kernel_nio(self, nio, adapter_number, port_number=0):
+        """
+        Detach a kernel-datapath adapter port from its per-link kernel bridge.
+        Both endpoints run this concurrently: deleting a bridge that still has
+        the peer's port enslaved fails with EBUSY, so the last endpoint to
+        remove its port wins the deletion and the loser's failure is expected
+        and suppressed.
+        """
+
+        host_ifc = self._kernel_veths.get((adapter_number, port_number))
+        if self.status == "started" and host_ifc is not None:
+            await self._set_adapter_carrier(adapter_number, False, port_number)
+        if host_ifc is not None:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
+        with contextlib.suppress(UbridgeError):
+            await self._ubridge_send(f'brctl delete "{nio.bridge}"')
 
     def get_nio(self, adapter_number, port_number=0):
         """
@@ -1964,6 +2162,11 @@ class DockerVM(BaseNode):
         nio = self.get_nio(adapter_number, port_number)
         if nio.capturing:
             raise DockerError(f"Packet capture is already activated on adapter {adapter_number}")
+        if isinstance(nio, NIOBridge):
+            raise DockerError(
+                "Packet capture is not supported on kernel-datapath links (there is no uBridge "
+                "relay in the forwarding path); delete and recreate the link to capture it"
+            )
 
         nio.start_packet_capture(output_file)
         if self.status == "started" and self.ubridge:

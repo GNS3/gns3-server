@@ -902,3 +902,18 @@ async def test_create_reparse_refreshes_env_knobs(compute_project, manager):
 
     assert vm._stop_timeout == 5
     assert vm._gns3_init is True  # removed entry reset to default
+
+
+# ---------------------------------------------------------------------------
+# Kernel-datapath (NIOBridge) rejection
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_unix_socket_nio_rejects_kernel_datapath_link(compute_project, manager):
+
+    vm = _make_vm(compute_project, manager, environment="GNS3_UNIX_SOCKET_NIO=1")
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    nio = manager.create_nio({"type": "nio_bridge", "bridge": "gns3a1b2c3d4e5f"})
+    with pytest.raises(DockerError, match="kernel-datapath"):
+        await vm._add_ubridge_connection(nio, 0)

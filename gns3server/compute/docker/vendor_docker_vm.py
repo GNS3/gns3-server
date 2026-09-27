@@ -36,6 +36,7 @@ import tempfile
 
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 
@@ -414,6 +415,12 @@ class VendorDockerVM(DockerVM):
 
         if not self._unix_socket_nio:
             return await super()._add_ubridge_connection(nio, adapter_number, port_number)
+
+        if isinstance(nio, NIOBridge):
+            raise DockerError(
+                f"Container '{self._name}' bridges its adapters through AF_UNIX sockets; "
+                "kernel-datapath links are not supported for this container"
+            )
 
         try:
             adapter = self._ethernet_adapters[adapter_number]
