@@ -14,7 +14,7 @@
     "availability": "free",
     "maintainer": "Westermo",
     "maintainer_email": "info@westermo.com",
-    "usage": "\nFactory Configuration\n=====================\nAll ports are in VLAN1 untagged. The system will acquire a link-local\nIPv4 address (169.254.0.0/16) and will also request an address using\nDHCP. mDNS is enabled and the device is reachable under these names\n(where XX-XX-XX corresponds to the last three octets in the device's\nMAC address): zero-XX-XX-XX.local, zero.local, and weos.local.\n\nManagement\n==========\nAccessible via console, ssh, and http/https.\n\nUsername: admin\nPassword: admin\n\nUpgrade\n=======\nTo upgrade a device, simply download the new version and replace the\nHDA (Primary Master) image under the HDD tab in the configuration pane\nof the device.\n",
+    "usage": "All ports are in VLAN1 and untagged. The system will acquire a link-local IPv4 address (169.254.0.0/16) and will also request an address using DHCP. mDNS is enabled and the device is reachable under these names (where XX-XX-XX corresponds to the last three octets in the device's MAC address): zero-XX-XX-XX.local, zero.local, and weos.local. Management: Accessible via console, ssh, and http/https. Username: admin Password: admin.",
     "symbol": ":/symbols/classic/router.svg",
     "port_name_format": "eth{0}",
     "linked_clone": true,
@@ -37,6 +37,13 @@
             "md5sum": "afe7b74683971fec48802997f6470ca5",
             "filesize": 17825792,
             "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=e6a7676d-85a7-4374-8961-c68aacb74921"
+        },
+        {
+            "filename": "WeOS-zero-5.30.0.disk",
+            "version": "5.30.0",
+            "filesize": 81788928,
+            "md5sum": "a0eb21084bfa2b39ea42c2e5b59a3eb1",
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=ee83b507-927d-4421-a1d5-fa60f7b00328"
         },
         {
             "filename": "WeOS-zero-5.29.0.disk",
@@ -62,6 +69,12 @@
     ],
     "versions": [
         {
+            "name": "5.30.0",
+            "images": {
+                "hda_disk_image": "WeOS-zero-5.30.0.disk",
+                "hdb_disk_image": "Config-zero-1.0.0.disk"
+            }
+        },        {
             "name": "5.29.0",
             "images": {
                 "hda_disk_image": "WeOS-zero-5.29.0.disk",
