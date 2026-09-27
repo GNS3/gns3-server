@@ -1,5 +1,92 @@
 # Change Log
 
+## 3.1.0a6 27/09/2026
+
+* Bundle web-ui v3.1.0a6
+* ci: no flake8 checks for now, ruff covers them
+* ci: run just test
+* fix(qemu): Fixed missing image replacement for linked-clone nodes
+* Allow projects containing missing images to open in a degraded state instead of failing to load
+* fix: make node working directory deletion robust
+* feat: keep Docker images on computes consistent with the controller host
+* feat: sync Docker images from the controller to remote computes
+* fix: run the reclaim helper as root regardless of the image's default USER
+* fix: reclaim root-owned container files so docker nodes and projects can be deleted
+* ci: install sharkd in the test workflow and make manager tests hermetic
+* fix: harden sharkd replay sessions and serve the uncapped frame list
+* feat: accept link=<link_id> on the replay range and frames endpoints
+* feat: drive marker replay with resident sharkd sessions
+* fix: stop leaking a global os.kill mock from the shutdown route test
+* fix: keep port_number in Docker NIO dispatch of the batch endpoints
+* feat(copilot): make start_gns3_node immediate-return, add wait_seconds tool
+* fix: keep upstream link-carrier commands off unix-socket NIO bridges
+* feat: ship an iol-xe-base.txt base config for IOL Docker nodes
+* fix: keep payload-delivered state across container (re)creation
+* feat: IOU-style startup-config for IOL Docker nodes
+* fix: normalize marker.match event tag to int to match the REST schema
+* feat: allocate IOL Docker application IDs from a pool disjoint from IOU
+* fix: derive per-node IOL app id so linked routers get distinct MACs
+* feat: model IOL adapters as 4-port units like the IOU node type
+* revert IOL port-name override; document custom_adapters instead
+* feat: show IOL-style interface names on iol-runner ports
+* refactor: wire unix-socket NIOs through a per-node runtime directory
+* refactor: reach unix-socket NIOs through the container root in /proc
+* fix: alias long unix-socket NIO paths through the runtime dir
+* feat: add IOL (iol-runner) Docker node support
+* fix: normalize marker.match event tag to int to match the REST schema
+* fix: Fix failing tests and adress the MCP 2.x incompatibility failures
+* feat: Add Docker link carrier and interface status support
+* fix: list every project in template/image in-use refusal, not just the first
+* feat: forbid deleting templates and images still used by projects
+* fix: publish-api-documentation.yml
+* fix: handle client disconnect in compute console WebSocket forwarding
+* fix: update link_capture_download and symbol_get tool descriptions for tickets
+* fix: replace Bearer JWTs with path-bound access tickets in MCP download tools
+* fix: issue short-lived console tickets instead of JWTs in node_console MCP tool
+* fix: handle client disconnect in console WebSocket forwarding
+* fix: accept the 'local' compute id in compute tools
+* fix: unify the device tool error contract
+* fix: reject non-VPCS nodes in the VPCS config tool
+* fix: dedupe and report automatic template creation from images
+* fix: return the created template from appliance install
+* fix: keep default node naming aligned with batch submission order
+* fix: keep node file content byte-faithful in node_file_get
+* fix: keep submission order and unify status in MCP batch handlers
+* fix: propagate 405 when suspending a node without suspend support
+* fix: report empty projects as not locked
+* feat: expose data_link_type on the link_marker MCP tool (create-only)
+* fix: never allow the projects directory to become a project directory
+* refactor: sink shared REST handlers into gns3_client, drop gns3fy wrappers
+* api: add endpoint serving the project .gns3 topology file
+* fix: type optional configuration fields as Optional
+* feat: add GET/PUT /v3/settings server settings API
+* feat: add config read-modify-write update and harden file watcher
+* refactor: move MCP service from api/routes to agent package
+* fix: notification ping starved under sustained event load
+* fix: compute notification stream silently died on uncaught exceptions
+* docker: replace vendor SKIP_INIT exec volume bridge with create-time direct binds
+* feat(copilot): device skills per-topic split layout and topic retrieval
+* docker: don't lose a client size that races the exec creation
+* docker: add GNS3_CONSOLE_RESIZE knob for paging CLIs
+* console: forward client terminal size over the console WebSocket
+* controller: allow markers and packet filters on Ethernet switch links
+* docker: don't recreate containers on empty-string property PUTs
+* mcp: don't run API keys through JWT validation
+* mcp: fingerprint short-lived console tokens for copy-corruption checks
+* auth: split JWT validation errors by failure cause
+* docker: give the docker_exec console a tall default PTY geometry
+* copilot: log into devices using the node default credentials
+* api: expose installed netmiko device types for the web UI
+* nodes: per-node default credentials seeded from the template
+* templates: persist appliance metadata on install
+* fix: address appliance v8 install review findings
+* copilot: prefer netmiko_device_type over the device_type:<type> tag
+* appliance: seed netmiko_device_type from the appliance file
+* nodes: per-node netmiko_device_type (controller-only)
+* templates: add netmiko_device_type for automation tools
+* appliance: close the v8 gaps for Docker vendor appliances
+* appliance: implement install support for registry version 8
+
 ## 3.1.0a5 19/08/2026
 
 * Bundle web-ui v3.1.0a5
