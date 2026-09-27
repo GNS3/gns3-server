@@ -88,6 +88,13 @@ class UDPLink(Link):
 
         :returns: Tuple of (node1_filters, node2_filters)
         """
+        # Kernel-datapath links implement suspend natively (interface carrier
+        # driven by the NIO suspend flag). The synthetic frequency_drop filter
+        # that get_active_filters() injects for suspended links is a
+        # relay-datapath emulation mechanism — sending it would trip the
+        # compute-side kernel guard, so kernel links always push empty filters.
+        if self.kernel_datapath:
+            return {}, {}
         filter_node = self._get_filter_node()
         return (
             self.get_active_filters() if filter_node == node1 else {},

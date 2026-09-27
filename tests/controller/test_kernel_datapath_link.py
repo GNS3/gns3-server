@@ -225,3 +225,32 @@ async def test_kernel_datapath_property(project):
     assert link.kernel_datapath is False
     await link._prepare()
     assert link.kernel_datapath is True
+
+
+@pytest.mark.asyncio
+async def test_update_suspend_kernel_link_sends_no_synthetic_filter(project):
+    """
+    Suspend is emulated on the relay datapath via a synthetic frequency_drop
+    filter (get_active_filters); kernel links implement it natively via
+    interface carrier and must push empty filters — the compute-side guard
+    rejects non-empty filters on kernel NIOs.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    await link._prepare()
+
+    bodies = []
+
+    async def capture_put(path, data=None, **kwargs):
+        bodies.append(data)
+
+    node1.put = capture_put
+    node2.put = capture_put
+
+    await link.update_suspend(True)
+
+    assert link._suspended is True
+    assert len(bodies) == 2
+    for body in bodies:
+        assert body["filters"] == {}
+        assert body["suspend"] is True
