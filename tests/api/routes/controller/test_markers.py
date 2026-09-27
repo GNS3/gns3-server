@@ -35,14 +35,17 @@ pytestmark = pytest.mark.asyncio
 def _inherited(link, name="arp"):
     """Inject an inherited marker so the controller's inheritance guard can fire."""
     link._markers[f"global-{name}"] = {
-        "bpf": name, "tag": None, "enabled": True, "color": None,
-        "highlight_duration": None, "capture_node_id": "node-id",
+        "bpf": name,
+        "tag": None,
+        "enabled": True,
+        "color": None,
+        "highlight_duration": None,
+        "capture_node_id": "node-id",
         "inherited_from": name,
     }
 
 
 class TestMarkerRoutes:
-
     # -----------------------------------------------------------------------
     # Per-link markers
     # -----------------------------------------------------------------------
@@ -81,7 +84,9 @@ class TestMarkerRoutes:
         _, kwargs = mock.call_args
         assert kwargs["name"] == "web"
 
-    async def test_create_marker_global_prefix_rejected(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+    async def test_create_marker_global_prefix_rejected(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
 
         link = UDPLink(project)
         project._links = {link.id: link}
@@ -105,7 +110,9 @@ class TestMarkerRoutes:
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_create_marker_name_too_long_rejected(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+    async def test_create_marker_name_too_long_rejected(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
 
         link = UDPLink(project)
         project._links = {link.id: link}
@@ -119,13 +126,17 @@ class TestMarkerRoutes:
     async def test_get_markers(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         link = UDPLink(project)
-        link._markers["web"] = {"bpf": "tcp port 80", "tag": None, "enabled": True,
-                                "color": None, "highlight_duration": 800, "capture_node_id": "n1"}
+        link._markers["web"] = {
+            "bpf": "tcp port 80",
+            "tag": None,
+            "enabled": True,
+            "color": None,
+            "highlight_duration": 800,
+            "capture_node_id": "n1",
+        }
         project._links = {link.id: link}
 
-        response = await client.get(
-            app.url_path_for("get_markers", project_id=project.id, link_id=link.id)
-        )
+        response = await client.get(app.url_path_for("get_markers", project_id=project.id, link_id=link.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["web"]["highlight_duration"] == 800
 
@@ -197,7 +208,9 @@ class TestMarkerRoutes:
         assert kwargs["bpf"] == "arp"
         assert kwargs["highlight_duration"] == 1200
 
-    async def test_create_marker_definition_global_prefix_rejected(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+    async def test_create_marker_definition_global_prefix_rejected(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
 
         with asyncio_patch("gns3server.controller.project.Project.create_marker_definition") as mock:
             response = await client.post(
@@ -235,9 +248,7 @@ class TestMarkerRoutes:
         }
         project._links = {}
 
-        response = await client.get(
-            app.url_path_for("get_marker_definitions", project_id=project.id)
-        )
+        response = await client.get(app.url_path_for("get_marker_definitions", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert body["arp"]["bpf"] == "arp"
@@ -251,13 +262,17 @@ class TestMarkerRoutes:
     async def test_get_project_markers(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         link = UDPLink(project)
-        link._markers["icmp"] = {"bpf": "icmp", "tag": 1, "enabled": True, "color": "#ff5722",
-                                 "highlight_duration": 800, "capture_node_id": "node-1"}
+        link._markers["icmp"] = {
+            "bpf": "icmp",
+            "tag": 1,
+            "enabled": True,
+            "color": "#ff5722",
+            "highlight_duration": 800,
+            "capture_node_id": "node-1",
+        }
         project._links = {link.id: link}
 
-        response = await client.get(
-            app.url_path_for("get_project_markers", project_id=project.id)
-        )
+        response = await client.get(app.url_path_for("get_project_markers", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
         key = f"{link.id}/icmp"

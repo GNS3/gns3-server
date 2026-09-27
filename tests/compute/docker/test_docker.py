@@ -40,7 +40,7 @@ async def test_query_success(vm):
 
     response = MagicMock()
     response.status = 200
-    response.headers = {'CONTENT-TYPE': 'application/json'}
+    response.headers = {"CONTENT-TYPE": "application/json"}
 
     async def read():
         return b'{"c": false}'
@@ -48,12 +48,14 @@ async def test_query_success(vm):
     response.read.side_effect = read
     vm._session.request = AsyncioMagicMock(return_value=response)
     data = await vm.query("POST", "test", data={"a": True}, params={"b": 1})
-    vm._session.request.assert_called_with('POST',
-                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
-                                           data='{"a": true}',
-                                           headers={'content-type': 'application/json'},
-                                           params={'b': 1},
-                                           timeout=300)
+    vm._session.request.assert_called_with(
+        "POST",
+        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        data='{"a": true}',
+        headers={"content-type": "application/json"},
+        params={"b": 1},
+        timeout=300,
+    )
 
     assert data == {"c": False}
 
@@ -71,12 +73,14 @@ async def test_query_error(vm):
     vm._session.request = AsyncioMagicMock(return_value=response)
     with pytest.raises(DockerError):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
-    vm._session.request.assert_called_with('POST',
-                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
-                                           data='{"a": true}',
-                                           headers={'content-type': 'application/json'},
-                                           params={'b': 1},
-                                           timeout=300)
+    vm._session.request.assert_called_with(
+        "POST",
+        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        data='{"a": true}',
+        headers={"content-type": "application/json"},
+        params={"b": 1},
+        timeout=300,
+    )
 
 
 @pytest.mark.asyncio
@@ -92,12 +96,14 @@ async def test_query_error_json(vm):
     vm._session.request = AsyncioMagicMock(return_value=response)
     with pytest.raises(DockerError):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
-    vm._session.request.assert_called_with('POST',
-                                           'http://docker/v{}/test'.format(DOCKER_MINIMUM_API_VERSION),
-                                           data='{"a": true}',
-                                           headers={'content-type': 'application/json'},
-                                           params={'b': 1},
-                                           timeout=300)
+    vm._session.request.assert_called_with(
+        "POST",
+        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        data='{"a": true}',
+        headers={"content-type": "application/json"},
+        params={"b": 1},
+        timeout=300,
+    )
 
 
 @pytest.mark.asyncio
@@ -105,28 +111,20 @@ async def test_list_images():
 
     response = [
         {
-            "RepoTags": [
-                "ubuntu:12.04",
-                "ubuntu:precise",
-                "ubuntu:latest"
-            ],
+            "RepoTags": ["ubuntu:12.04", "ubuntu:precise", "ubuntu:latest"],
             "Id": "8dbd9e392a964056420e5d58ca5cc376ef18e2de93b5cc90e868a1bbc8318c1c",
             "Created": 1365714795,
             "Size": 131506275,
-            "VirtualSize": 131506275
+            "VirtualSize": 131506275,
         },
         {
-            "RepoTags": [
-                "ubuntu:12.10",
-                "ubuntu:quantal",
-                "<none>:<none>"
-            ],
+            "RepoTags": ["ubuntu:12.10", "ubuntu:quantal", "<none>:<none>"],
             "ParentId": "27cf784147099545",
             "Id": "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
             "Created": 1364102658,
             "Size": 24653,
-            "VirtualSize": 180116135
-        }
+            "VirtualSize": 180116135,
+        },
     ]
 
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
@@ -196,7 +194,6 @@ async def test_force_pull_image():
 async def test_pull_image_error():
 
     class Content:
-
         def __init__(self):
             self._chunks = [b'{"error": "image not found"}', b""]
 
@@ -217,7 +214,6 @@ async def test_pull_image_error():
 async def test_pull_image_rejects_incomplete_response():
 
     class Content:
-
         def __init__(self):
             self._read = False
 
@@ -241,7 +237,6 @@ async def test_pull_image_rejects_incomplete_response():
 async def test_pull_image_propagates_timeout():
 
     class Content:
-
         async def read(self, size):
             raise asyncio.TimeoutError
 
@@ -259,7 +254,6 @@ async def test_pull_image_propagates_timeout():
 async def test_load_image():
 
     class Content:
-
         def __init__(self):
             self._chunks = [b'{"stream": "Loaded image ID: sha256:e90e34656806"}', b""]
 
@@ -285,7 +279,6 @@ async def test_load_image():
 async def test_load_image_error():
 
     class Content:
-
         def __init__(self):
             self._chunks = [b'{"error": "invalid tar file"}', b""]
 
@@ -307,13 +300,12 @@ async def test_load_image_error():
 @pytest.mark.asyncio
 async def test_docker_check_connection_docker_minimum_version(vm):
 
-    response = {
-        'ApiVersion': '1.01',
-        'Version': '1.12'
-    }
+    response = {"ApiVersion": "1.01", "Version": "1.12"}
 
-    with patch("gns3server.compute.docker.Docker.connector"), \
-        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+    with (
+        patch("gns3server.compute.docker.Docker.connector"),
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response),
+    ):
         vm._connected = False
         with pytest.raises(DockerError):
             await vm._check_connection()
@@ -323,13 +315,14 @@ async def test_docker_check_connection_docker_minimum_version(vm):
 async def test_docker_check_connection_docker_preferred_version_against_newer(vm):
 
     response = {
-        'ApiVersion': '1.52',
-        'Version': '29.0.1',
-
+        "ApiVersion": "1.52",
+        "Version": "29.0.1",
     }
 
-    with patch("gns3server.compute.docker.Docker.connector"), \
-        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+    with (
+        patch("gns3server.compute.docker.Docker.connector"),
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response),
+    ):
         vm._connected = False
         await vm._check_connection()
         assert vm._api_version == DOCKER_PREFERRED_API_VERSION
@@ -338,14 +331,12 @@ async def test_docker_check_connection_docker_preferred_version_against_newer(vm
 @pytest.mark.asyncio
 async def test_docker_check_connection_docker_preferred_version_against_older(vm):
 
-    response = {
-        'ApiVersion': '1.43',
-        'Version': '24.0.2',
-        'MinAPIVersion': '1.40'
-    }
+    response = {"ApiVersion": "1.43", "Version": "24.0.2", "MinAPIVersion": "1.40"}
 
-    with patch("gns3server.compute.docker.Docker.connector"), \
-        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+    with (
+        patch("gns3server.compute.docker.Docker.connector"),
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response),
+    ):
         vm._connected = False
         await vm._check_connection()
         assert vm._api_version == DOCKER_MINIMUM_API_VERSION
@@ -355,12 +346,14 @@ async def test_docker_check_connection_docker_preferred_version_against_older(vm
 async def test_docker_check_connection_docker_unsupported_version(vm):
 
     response = {
-        'ApiVersion': '1.25',
-        'Version': '1.13.1',
+        "ApiVersion": "1.25",
+        "Version": "1.13.1",
     }
 
-    with patch("gns3server.compute.docker.Docker.connector"), \
-        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+    with (
+        patch("gns3server.compute.docker.Docker.connector"),
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response),
+    ):
         vm._connected = False
         with pytest.raises(DockerError) as e:
             await vm._check_connection()
@@ -370,12 +363,14 @@ async def test_docker_check_connection_docker_unsupported_version(vm):
 async def test_install_busybox():
 
     mock_process = MagicMock()
-    mock_process.returncode = 1 # means that busybox is not dynamically linked
+    mock_process.returncode = 1  # means that busybox is not dynamically linked
     mock_process.communicate = AsyncioMagicMock(return_value=(b"", b"not a dynamic executable"))
 
     with patch("gns3server.compute.docker.os.path.isfile", return_value=False):
         with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
-            with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
+            with asyncio_patch(
+                "gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process
+            ) as create_subprocess_mock:
                 with patch("gns3server.compute.docker.shutil.copy2") as copy2_mock:
                     dst_dir = Docker.resources_path()
                     await Docker.install_busybox(dst_dir)
@@ -396,12 +391,18 @@ async def test_install_busybox_dynamic_linked():
     mock_process.communicate = AsyncioMagicMock(return_value=(b"Dynamically linked library", b""))
 
     with patch("os.path.isfile", return_value=False):
-        with patch("gns3server.compute.docker.shutil.which", side_effect=lambda name: "/usr/bin/busybox" if name == "busybox" else None):
+        with patch(
+            "gns3server.compute.docker.shutil.which",
+            side_effect=lambda name: "/usr/bin/busybox" if name == "busybox" else None,
+        ):
             with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process):
                 with pytest.raises(DockerError) as e:
                     dst_dir = Docker.resources_path()
                     await Docker.install_busybox(dst_dir)
-                assert str(e.value) == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+                assert (
+                    str(e.value)
+                    == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+                )
 
 
 @pytest.mark.asyncio
@@ -412,7 +413,10 @@ async def test_install_busybox_no_executables():
             with pytest.raises(DockerError) as e:
                 dst_dir = Docker.resources_path()
                 await Docker.install_busybox(dst_dir)
-            assert str(e.value) == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+            assert (
+                str(e.value)
+                == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+            )
 
 
 @pytest.mark.asyncio
@@ -494,4 +498,4 @@ async def test_check_host_readiness_continues_past_unreadable_key(caplog):
 
     message = " ".join(r.message for r in caplog.records)
     assert "max_user_instances=128" in message  # collected before the gap
-    assert "modprobe fuse" in message            # FUSE check still ran
+    assert "modprobe fuse" in message  # FUSE check still ran

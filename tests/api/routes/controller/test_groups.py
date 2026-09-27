@@ -28,7 +28,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestGroupRoutes:
-
     async def test_create_group(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_group = {"name": "group1"}
@@ -56,47 +55,30 @@ class TestGroupRoutes:
 
         update_group = {"name": "group42"}
         response = await client.put(
-            app.url_path_for("update_user_group", user_group_id=group_in_db.user_group_id),
-            json=update_group
+            app.url_path_for("update_user_group", user_group_id=group_in_db.user_group_id), json=update_group
         )
         assert response.status_code == status.HTTP_200_OK
         updated_group_in_db = await user_repo.get_user_group(group_in_db.user_group_id)
         assert updated_group_in_db.name == "group42"
 
-    async def test_cannot_update_admin_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_cannot_update_admin_group(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("Administrators")
         update_group = {"name": "Hackers"}
         response = await client.put(
-            app.url_path_for("update_user_group", user_group_id=group_in_db.user_group_id),
-            json=update_group
+            app.url_path_for("update_user_group", user_group_id=group_in_db.user_group_id), json=update_group
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    async def test_delete_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_delete_group(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("group42")
         response = await client.delete(app.url_path_for("delete_user_group", user_group_id=group_in_db.user_group_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    async def test_cannot_delete_admin_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_cannot_delete_admin_group(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("Administrators")
@@ -105,32 +87,21 @@ class TestGroupRoutes:
 
 
 class TestGroupMembersRoutes:
-
     async def test_add_to_group_already_member(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, test_user: User, db_session: AsyncSession
     ) -> None:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("Users")
         response = await client.put(
             app.url_path_for(
-                "add_member_to_group",
-                user_group_id=group_in_db.user_group_id,
-                user_id=str(test_user.user_id)
+                "add_member_to_group", user_group_id=group_in_db.user_group_id, user_id=str(test_user.user_id)
             )
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_add_member_to_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, test_user: User, db_session: AsyncSession
     ) -> None:
 
         user_repo = UsersRepository(db_session)
@@ -140,9 +111,7 @@ class TestGroupMembersRoutes:
         group_in_db = await user_repo.create_user_group(new_user_group)
         response = await client.put(
             app.url_path_for(
-                "add_member_to_group",
-                user_group_id=group_in_db.user_group_id,
-                user_id=str(test_user.user_id)
+                "add_member_to_group", user_group_id=group_in_db.user_group_id, user_id=str(test_user.user_id)
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -150,29 +119,16 @@ class TestGroupMembersRoutes:
         assert len(members) == 1
         assert members[0].username == test_user.username
 
-    async def test_get_user_group_members(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_get_user_group_members(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("test_group")
-        response = await client.get(
-            app.url_path_for(
-                "get_user_group_members",
-                user_group_id=group_in_db.user_group_id)
-        )
+        response = await client.get(app.url_path_for("get_user_group_members", user_group_id=group_in_db.user_group_id))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 1
 
     async def test_remove_member_from_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            test_user: User,
-            db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, test_user: User, db_session: AsyncSession
     ) -> None:
 
         user_repo = UsersRepository(db_session)
@@ -180,9 +136,7 @@ class TestGroupMembersRoutes:
 
         response = await client.delete(
             app.url_path_for(
-                "remove_member_from_group",
-                user_group_id=group_in_db.user_group_id,
-                user_id=str(test_user.user_id)
+                "remove_member_from_group", user_group_id=group_in_db.user_group_id, user_id=str(test_user.user_id)
             ),
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT

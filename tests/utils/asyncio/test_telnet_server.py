@@ -113,9 +113,7 @@ async def test_telnet_server_naws_callback_uses_negotiated_dimensions():
 
     client_writer = None
     try:
-        _, client_writer = await telnetlib3.open_connection(
-            "127.0.0.1", port, encoding=False, cols=132, rows=44
-        )
+        _, client_writer = await telnetlib3.open_connection("127.0.0.1", port, encoding=False, cols=132, rows=44)
 
         await asyncio.wait_for(callback_event.wait(), timeout=2)
         assert callback_result == {"columns": 132, "rows": 44}

@@ -179,11 +179,7 @@ class VPCSCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if (
-            isinstance(device_configs_list, list)
-            and len(device_configs_list) > 0
-            and "error" in device_configs_list[0]
-        ):
+        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
 
         # Create a mapping of device names to their commands
@@ -191,30 +187,17 @@ class VPCSCommands(BaseTool):
 
         # Prepare device hosts data
         try:
-            hosts_data = self._prepare_device_hosts_data(
-                device_configs_list, project_id, jwt_token=jwt_token, url=url
-            )
+            hosts_data = self._prepare_device_hosts_data(device_configs_list, project_id, jwt_token=jwt_token, url=url)
         except ValueError as e:
             logger.error("Failed to prepare device hosts data: %s", e)
             return [{"status": "failed", "error": str(e)}]
 
         # Check if any devices have errors (e.g., missing device)
-        error_devices = {
-            name: data
-            for name, data in hosts_data.items()
-            if "error" in data
-        }
+        error_devices = {name: data for name, data in hosts_data.items() if "error" in data}
         if error_devices:
-            logger.error(
-                "Devices with configuration errors: %s",
-                list(error_devices.keys())
-            )
+            logger.error("Devices with configuration errors: %s", list(error_devices.keys()))
             return [
-                {
-                    "device_name": name,
-                    "status": "failed",
-                    "error": data["error"]
-                }
+                {"device_name": name, "status": "failed", "error": data["error"]}
                 for name, data in error_devices.items()
             ]
 
@@ -253,17 +236,13 @@ class VPCSCommands(BaseTool):
 
         return results
 
-    def _run_vpcs_commands(
-        self, task: Task, device_configs_map: dict[str, list[str]]
-    ) -> Result:
+    def _run_vpcs_commands(self, task: Task, device_configs_map: dict[str, list[str]]) -> Result:
         """Execute VPCS commands with single retry."""
         device_name = task.host.name
         commands = device_configs_map.get(device_name, [])
 
         if not commands:
-            return Result(
-                host=task.host, result="No commands to execute"
-            )
+            return Result(host=task.host, result="No commands to execute")
 
         try:
             # Use netmiko_multiline for VPCS commands
@@ -334,9 +313,7 @@ class VPCSCommands(BaseTool):
                 parsed_input = json.loads(tool_input)
                 logger.info("Successfully parsed tool input from JSON string.")
             except json.JSONDecodeError as e:
-                logger.error(
-                    "Invalid JSON string received as tool input: %s", e
-                )
+                logger.error("Invalid JSON string received as tool input: %s", e)
                 return (
                     [{"status": "failed", "error": f"Invalid JSON string input from model: {e}"}],
                     None,
@@ -377,10 +354,7 @@ class VPCSCommands(BaseTool):
             return device_configs, project_id
 
         else:
-            error_msg = (
-                "Tool input must be JSON with project_id and device_configs, "
-                f"got {type(parsed_input).__name__}"
-            )
+            error_msg = f"Tool input must be JSON with project_id and device_configs, got {type(parsed_input).__name__}"
             logger.error(error_msg)
             return ([{"status": "failed", "error": error_msg}], None)
 
@@ -394,14 +368,10 @@ class VPCSCommands(BaseTool):
         Returns:
             True if valid UUID format, False otherwise
         """
-        uuid_pattern = (
-            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-        )
+        uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         return bool(re.match(uuid_pattern, project_id, re.IGNORECASE))
 
-    def _configs_map(
-        self, device_config_list: list[dict[str, Any]]
-    ) -> dict[str, list[str]]:
+    def _configs_map(self, device_config_list: list[dict[str, Any]]) -> dict[str, list[str]]:
         """
         Create a mapping of device names to their command lists.
 
@@ -411,10 +381,7 @@ class VPCSCommands(BaseTool):
         Returns:
             Dictionary mapping device names to command lists
         """
-        return {
-            config["device_name"]: config["commands"]
-            for config in device_config_list
-        }
+        return {config["device_name"]: config["commands"] for config in device_config_list}
 
     def _prepare_device_hosts_data(
         self,
@@ -445,18 +412,14 @@ class VPCSCommands(BaseTool):
         device_names = [config["device_name"] for config in device_configs_list]
 
         # Get device port mappings from topology
-        device_ports = get_device_ports_from_topology(
-            device_names, project_id=project_id, jwt_token=jwt_token, url=url
-        )
+        device_ports = get_device_ports_from_topology(device_names, project_id=project_id, jwt_token=jwt_token, url=url)
 
         # Build Nornir inventory hosts data
         hosts_data = {}
         for device_name in device_names:
             if device_name not in device_ports:
                 logger.error("Device '%s' not found in topology", device_name)
-                hosts_data[device_name] = {
-                    "error": f"Device '{device_name}' not found in topology"
-                }
+                hosts_data[device_name] = {"error": f"Device '{device_name}' not found in topology"}
                 continue
 
             port = device_ports[device_name]["port"]
@@ -498,9 +461,7 @@ class VPCSCommands(BaseTool):
 
         return hosts_data
 
-    def _initialize_nornir(
-        self, hosts_data: dict[str, dict[str, Any]]
-    ) -> "Nornir":
+    def _initialize_nornir(self, hosts_data: dict[str, dict[str, Any]]) -> "Nornir":
         """
         Initialize Nornir with VPCS device inventory.
 
@@ -576,12 +537,14 @@ class VPCSCommands(BaseTool):
 
             # Check if device had an error during preparation
             if device_name in hosts_data and "error" in hosts_data[device_name]:
-                results.append({
-                    "device_name": device_name,
-                    "status": "failed",
-                    "error": hosts_data[device_name]["error"],
-                    "commands": device_config["commands"],
-                })
+                results.append(
+                    {
+                        "device_name": device_name,
+                        "status": "failed",
+                        "error": hosts_data[device_name]["error"],
+                        "commands": device_config["commands"],
+                    }
+                )
                 continue
 
             # Get result from Nornir task
@@ -591,28 +554,34 @@ class VPCSCommands(BaseTool):
                 if host_result.failed:
                     # Task failed
                     error_msg = str(host_result.result) if host_result.result else "Unknown error"
-                    results.append({
-                        "device_name": device_name,
-                        "status": "failed",
-                        "error": error_msg,
-                        "commands": device_config["commands"],
-                    })
+                    results.append(
+                        {
+                            "device_name": device_name,
+                            "status": "failed",
+                            "error": error_msg,
+                            "commands": device_config["commands"],
+                        }
+                    )
                 else:
                     # Task succeeded
-                    results.append({
-                        "device_name": device_name,
-                        "status": "success",
-                        "output": host_result.result,
-                        "commands": device_config["commands"],
-                    })
+                    results.append(
+                        {
+                            "device_name": device_name,
+                            "status": "success",
+                            "output": host_result.result,
+                            "commands": device_config["commands"],
+                        }
+                    )
             else:
                 # Device not in task result (shouldn't happen)
-                results.append({
-                    "device_name": device_name,
-                    "status": "failed",
-                    "error": f"Device '{device_name}' not in task results",
-                    "commands": device_config["commands"],
-                })
+                results.append(
+                    {
+                        "device_name": device_name,
+                        "status": "failed",
+                        "error": f"Device '{device_name}' not in task results",
+                        "commands": device_config["commands"],
+                    }
+                )
 
         return results
 

@@ -62,7 +62,6 @@ class VPCSUpdate(VPCSBase):
 
 
 class VPCS(VPCSBase):
-
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

@@ -327,8 +327,7 @@ def test_v8_iou_version_images_mapped_to_path():
         "name": "IOU L3",
         "category": "router",
         "settings": [
-            {"name": "only", "template_type": "iou",
-             "template_properties": {"ethernet_adapters": 4, "ram": 256}},
+            {"name": "only", "template_type": "iou", "template_properties": {"ethernet_adapters": 4, "ram": 256}},
         ],
     }
     version = {"name": "15.9", "images": {"image": "i86bi-linux-l3-15.9.bin"}}
@@ -346,8 +345,7 @@ def test_v8_dynamips_idlepc_from_version():
         "name": "Cisco 7200",
         "category": "router",
         "settings": [
-            {"name": "only", "template_type": "dynamips",
-             "template_properties": {"ram": 512, "platform": "c7200"}},
+            {"name": "only", "template_type": "dynamips", "template_properties": {"ram": 512, "platform": "c7200"}},
         ],
     }
     version = {"name": "12.4", "idlepc": "0x613080c0", "images": {"image": "c7200.bin"}}
@@ -368,8 +366,7 @@ def test_v8_dynamips_settings_idlepc_precedence():
         "name": "Cisco 7200",
         "category": "router",
         "settings": [
-            {"name": "only", "template_type": "dynamips",
-             "template_properties": {"ram": 512, "idlepc": "0x6142da40"}},
+            {"name": "only", "template_type": "dynamips", "template_properties": {"ram": 512, "idlepc": "0x6142da40"}},
         ],
     }
     version = {"name": "12.4", "idlepc": "0x613080c0", "images": {"image": "c7200.bin"}}
@@ -390,8 +387,11 @@ def test_v8_qemu_kvm_disable_forces_accel_tcg():
         "name": "QEMU VM",
         "category": "guest",
         "settings": [
-            {"name": "only", "template_type": "qemu",
-             "template_properties": {"ram": 512, "options": "-m 512", "kvm": "disable"}},
+            {
+                "name": "only",
+                "template_type": "qemu",
+                "template_properties": {"ram": 512, "options": "-m 512", "kvm": "disable"},
+            },
         ],
     }
 
@@ -407,8 +407,11 @@ def test_v8_qemu_kvm_allow_keeps_options():
         "name": "QEMU VM",
         "category": "guest",
         "settings": [
-            {"name": "only", "template_type": "qemu",
-             "template_properties": {"ram": 512, "options": "-m 512", "kvm": "allow"}},
+            {
+                "name": "only",
+                "template_type": "qemu",
+                "template_properties": {"ram": 512, "options": "-m 512", "kvm": "allow"},
+            },
         ],
     }
 
@@ -429,10 +432,17 @@ def test_v8_no_cross_type_inheritance():
         "name": "Mixed",
         "category": "router",
         "settings": [
-            {"name": "default qemu", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 2048, "adapters": 10}},
-            {"name": "docker alt", "template_type": "docker",
-             "template_properties": {"image": "xrd:latest", "adapters": 2}},
+            {
+                "name": "default qemu",
+                "default": True,
+                "template_type": "qemu",
+                "template_properties": {"ram": 2048, "adapters": 10},
+            },
+            {
+                "name": "docker alt",
+                "template_type": "docker",
+                "template_properties": {"image": "xrd:latest", "adapters": 2},
+            },
         ],
     }
     version = {"name": "1.0", "settings": "docker alt", "images": {"image": "xrd:1.0"}}
@@ -456,10 +466,8 @@ def test_v8_multiple_defaults_inherit_first_same_type():
         "name": "Multi",
         "category": "router",
         "settings": [
-            {"name": "default one", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 1024}},
-            {"name": "default two", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 2048}},
+            {"name": "default one", "default": True, "template_type": "qemu", "template_properties": {"ram": 1024}},
+            {"name": "default two", "default": True, "template_type": "qemu", "template_properties": {"ram": 2048}},
             {"name": "alt", "template_type": "qemu", "template_properties": {"cpus": 2}},
         ],
     }
@@ -482,8 +490,7 @@ def test_v8_symbol_fallback_uses_effective_category():
         "name": "Test",
         "category": "router",
         "settings": [
-            {"name": "only", "template_type": "qemu",
-             "template_properties": {"ram": 512, "category": "guest"}},
+            {"name": "only", "template_type": "qemu", "template_properties": {"ram": 512, "category": "guest"}},
         ],
     }
     template = ApplianceToTemplate().new_template(appliance, None, "local")
@@ -514,13 +521,16 @@ def test_v8_reserved_keys_cannot_be_overridden():
         "name": "Test",
         "category": "router",
         "settings": [
-            {"name": "only", "template_type": "docker",
-             "template_properties": {
-                 "image": "xrd:latest",
-                 "template_type": "qemu",
-                 "compute_id": "evil-compute",
-                 "version": "9.9",
-             }},
+            {
+                "name": "only",
+                "template_type": "docker",
+                "template_properties": {
+                    "image": "xrd:latest",
+                    "template_type": "qemu",
+                    "compute_id": "evil-compute",
+                    "version": "9.9",
+                },
+            },
         ],
     }
 
@@ -543,10 +553,8 @@ def test_v8_get_template_type():
         "name": "Mixed",
         "category": "router",
         "settings": [
-            {"name": "default", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 512}},
-            {"name": "alt", "template_type": "docker",
-             "template_properties": {"image": "xrd:latest"}},
+            {"name": "default", "default": True, "template_type": "qemu", "template_properties": {"ram": 512}},
+            {"name": "alt", "template_type": "docker", "template_properties": {"image": "xrd:latest"}},
         ],
     }
 

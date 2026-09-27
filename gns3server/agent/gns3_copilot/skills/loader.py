@@ -201,7 +201,9 @@ class SkillsLoader:
                     topic_key = yaml_file.stem
                     logger.warning(f"No 'topic' field in {yaml_file}, using filename '{topic_key}'")
                 if topic_key in topics:
-                    logger.warning(f"Duplicate topic '{topic_key}' in {device_path.name} (from {yaml_file}), overwriting")
+                    logger.warning(
+                        f"Duplicate topic '{topic_key}' in {device_path.name} (from {yaml_file}), overwriting"
+                    )
 
                 # category/topics belong to the base skill only
                 topic_data.pop("category", None)

@@ -90,20 +90,13 @@ class GNS3ProjectInfoTool(BaseTool):
         """
 
         # Log received input
-        logger.info(
-            "Received tool_input: %s, project_id: %s", tool_input, project_id
-        )
+        logger.info("Received tool_input: %s, project_id: %s", tool_input, project_id)
 
         try:
             # Validate project_id parameter
             if not project_id:
                 logger.error("project_id parameter is required.")
-                return {
-                    "error": (
-                        "project_id parameter is required. Please provide a valid "
-                        "project UUID."
-                    )
-                }
+                return {"error": ("project_id parameter is required. Please provide a valid project UUID.")}
 
             # Build handler context (JWT + server URL from request context)
             logger.debug("Connecting to GNS3 server...")
@@ -111,17 +104,10 @@ class GNS3ProjectInfoTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": (
-                        "Failed to connect to GNS3 server. Please check your "
-                        "configuration."
-                    )
-                }
+                return {"error": ("Failed to connect to GNS3 server. Please check your configuration.")}
 
             # Use the provided project_id directly
-            logger.info(
-                f"Retrieving project info for project_id: {project_id}"
-            )
+            logger.info(f"Retrieving project info for project_id: {project_id}")
             inventory = fetch_project_inventory(gns3_ctx, project_id)
 
             # Get node and link counts

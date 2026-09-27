@@ -62,11 +62,7 @@ def check_docker():
 
     # Check if Docker daemon is running
     try:
-        result = subprocess.run(
-            ["docker", "info"],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True)
         if result.returncode != 0:
             print("Error: Docker daemon is not running", file=sys.stderr)
             print("Please start Docker and try again", file=sys.stderr)
@@ -82,11 +78,7 @@ def image_exists():
     """Check if the Docker image already exists."""
 
     try:
-        result = subprocess.run(
-            ["docker", "image", "inspect", DOCKER_IMAGE],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["docker", "image", "inspect", DOCKER_IMAGE], capture_output=True, text=True)
         return result.returncode == 0
     except Exception:
         return False
@@ -115,11 +107,7 @@ def pull_image():
     print(f"Pulling Docker image: {DOCKER_IMAGE}")
     print("-" * 60)
 
-    result = subprocess.run(
-        ["docker", "pull", DOCKER_IMAGE],
-        capture_output=True,
-        text=True
-    )
+    result = subprocess.run(["docker", "pull", DOCKER_IMAGE], capture_output=True, text=True)
 
     # Store output for network error detection
     pull_output = result.stdout + result.stderr
@@ -140,33 +128,17 @@ def build_image(dockerfile_path):
     print("-" * 60)
 
     result = subprocess.run(
-        ["docker", "build", "-t", DOCKER_IMAGE, "-f", dockerfile_path, "."],
-        cwd=dockerfile_dir,
-        pass_fds=(1, 2)
+        ["docker", "build", "-t", DOCKER_IMAGE, "-f", dockerfile_path, "."], cwd=dockerfile_dir, pass_fds=(1, 2)
     )
 
     return result.returncode == 0
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Setup Web Wireshark Docker image for GNS3"
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Force rebuild even if image exists"
-    )
-    parser.add_argument(
-        "--build-only",
-        action="store_true",
-        help="Only build locally, skip pull"
-    )
-    parser.add_argument(
-        "--pull-only",
-        action="store_true",
-        help="Only pull from registry, skip build"
-    )
+    parser = argparse.ArgumentParser(description="Setup Web Wireshark Docker image for GNS3")
+    parser.add_argument("--force", action="store_true", help="Force rebuild even if image exists")
+    parser.add_argument("--build-only", action="store_true", help="Only build locally, skip pull")
+    parser.add_argument("--pull-only", action="store_true", help="Only pull from registry, skip build")
 
     args = parser.parse_args()
 
@@ -183,7 +155,7 @@ def main():
     if image_exists() and not args.force:
         print(f"Image {DOCKER_IMAGE} already exists.")
         response = input("Do you want to rebuild it? [y/N]: ").strip().lower()
-        if response != 'y':
+        if response != "y":
             print("Setup cancelled.")
             sys.exit(0)
         print()

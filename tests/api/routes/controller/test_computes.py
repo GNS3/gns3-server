@@ -30,15 +30,9 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
 class TestComputeRoutes:
-
     async def test_compute_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 84,
-            "user": "julien",
-            "password": "secure"}
+        params = {"protocol": "http", "host": "localhost", "port": 84, "user": "julien", "password": "secure"}
 
         response = await client.post(app.url_path_for("create_compute"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -57,7 +51,8 @@ class TestComputeRoutes:
             "host": "127.0.0.1",
             "port": 84,
             "user": "julien",
-            "password": "secure"}
+            "password": "secure",
+        }
 
         response = await client.post(app.url_path_for("create_compute"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -82,7 +77,8 @@ class TestComputeRoutes:
     async def test_compute_get_local(self, app: FastAPI, client: AsyncClient, controller) -> None:
 
         await controller.add_compute(
-            compute_id="local", name="local", host="127.0.0.1", port=3080, force=True, connect=False)
+            compute_id="local", name="local", host="127.0.0.1", port=3080, force=True, connect=False
+        )
 
         response = await client.get(app.url_path_for("get_compute", compute_id="local"))
         assert response.status_code == status.HTTP_200_OK
@@ -91,13 +87,7 @@ class TestComputeRoutes:
 
     async def test_compute_update(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 42,
-            "user": "julien",
-            "password": "secure"
-        }
+        params = {"protocol": "http", "host": "localhost", "port": 42, "user": "julien", "password": "secure"}
 
         response = await client.post(app.url_path_for("create_compute"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -118,29 +108,22 @@ class TestComputeRoutes:
 
 
 class TestComputeFeatures:
-
     async def test_compute_list_docker_images(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 84,
-            "user": "julien",
-            "password": "secure"
-        }
+        params = {"protocol": "http", "host": "localhost", "port": 84, "user": "julien", "password": "secure"}
 
         response = await client.post(app.url_path_for("create_compute"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         compute_id = response.json()["compute_id"]
 
-        with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[{"image": "docker1"}, {"image": "docker2"}]) as mock:
+        with asyncio_patch(
+            "gns3server.controller.compute.Compute.forward", return_value=[{"image": "docker1"}, {"image": "docker2"}]
+        ) as mock:
             response = await client.get(app.url_path_for("docker_get_images", compute_id=compute_id))
             mock.assert_called_with("GET", "docker", "images")
             assert response.json() == [{"image": "docker1"}, {"image": "docker2"}]
 
-    async def test_compute_pull_docker_image(
-            self, app: FastAPI, client: AsyncClient, test_compute: Compute
-    ) -> None:
+    async def test_compute_pull_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
         compute = MagicMock()
         compute.forward = AsyncioMagicMock(return_value={})
@@ -148,20 +131,14 @@ class TestComputeFeatures:
             controller.return_value.get_compute.return_value = compute
             response = await client.post(
                 app.url_path_for("docker_pull_image", compute_id=test_compute.compute_id),
-                json={"image": "nginx:latest"}
+                json={"image": "nginx:latest"},
             )
             compute.forward.assert_called_with("POST", "docker", "images/pull", data={"image": "nginx:latest"})
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_compute_list_virtualbox_vms(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 4242,
-            "user": "julien",
-            "password": "secure"
-        }
+        params = {"protocol": "http", "host": "localhost", "port": 4242, "user": "julien", "password": "secure"}
         response = await client.post(app.url_path_for("get_computes"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         compute_id = response.json()["compute_id"]
@@ -173,13 +150,7 @@ class TestComputeFeatures:
 
     async def test_compute_list_vmware_vms(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 4243,
-            "user": "julien",
-            "password": "secure"
-        }
+        params = {"protocol": "http", "host": "localhost", "port": 4243, "user": "julien", "password": "secure"}
         response = await client.post(app.url_path_for("get_computes"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         compute_id = response.json()["compute_id"]

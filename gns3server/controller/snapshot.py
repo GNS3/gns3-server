@@ -42,6 +42,7 @@ FILENAME_DATETIME_FORMAT = "%d%m%y_%H%M%S"
 # Used to create a description of the snapshot with a human-readable date and time
 DESCRIPTION_DATETIME_FORMAT = "%Y-%m-%d at %H:%M:%S"
 
+
 class Snapshot:
     """
     A snapshot object
@@ -69,10 +70,16 @@ class Snapshot:
         else:
             self._name = filename.rsplit("_", 2)[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
-            self._created_at = int(datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=timezone.utc).timestamp())
+            self._created_at = int(
+                datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=timezone.utc).timestamp()
+            )
 
         if not description:
-            date = datetime.fromtimestamp(self._created_at, tz=timezone.utc).replace(tzinfo=None).strftime(DESCRIPTION_DATETIME_FORMAT)
+            date = (
+                datetime.fromtimestamp(self._created_at, tz=timezone.utc)
+                .replace(tzinfo=None)
+                .strftime(DESCRIPTION_DATETIME_FORMAT)
+            )
             description = "Snapshot '{}' taken on {}".format(self._name, date)
 
         self._description = description
@@ -149,7 +156,7 @@ class Snapshot:
                     location=self._project.path,
                     auto_start=self._project.auto_start,
                     auto_open=self._project.auto_open,
-                    auto_close=self._project.auto_close
+                    auto_close=self._project.auto_close,
                 )
             log.info("Snapshot '{}' restored in {:.4f} seconds".format(self.name, time.time() - begin))
         except (OSError, PermissionError) as e:
@@ -165,5 +172,5 @@ class Snapshot:
             "created_at": self._created_at,
             "description": self._description,
             "filename": self._filename,
-            "project_id": self._project.id
+            "project_id": self._project.id,
         }

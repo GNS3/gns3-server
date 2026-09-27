@@ -35,13 +35,10 @@ from gns3server.config import Config
 SKILLS_CONFIG = {
     # Git repository URL for skills
     "repo_url": "https://github.com/gns3/gns3-skills.git",
-
     # Git branch to use
     "branch": "main",
-
     # Automatically pull updates on reload
     "auto_update": True,
-
     # Enable external skills loading
     # If False, use the built-in hardcoded skills
     "enabled": True,

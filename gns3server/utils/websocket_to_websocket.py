@@ -41,7 +41,7 @@ async def websocket_proxy(
     target_url: str,
     requested_protocols: list = None,
     buffer_size: int = 65536,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
 ) -> None:
     """
     Proxy binary WebSocket data between client and target WebSocket server.
@@ -116,28 +116,20 @@ async def websocket_proxy(
                 if sys.version_info >= (3, 11, 0):
                     aws = [
                         asyncio.create_task(forward_client_to_target(target_ws)),
-                        asyncio.create_task(forward_target_to_client(target_ws))
+                        asyncio.create_task(forward_target_to_client(target_ws)),
                     ]
                 else:
-                    aws = [
-                        forward_client_to_target(target_ws),
-                        forward_target_to_client(target_ws)
-                    ]
+                    aws = [forward_client_to_target(target_ws), forward_target_to_client(target_ws)]
 
                 try:
-                    done, pending = await asyncio.wait(
-                        aws,
-                        return_when=asyncio.FIRST_COMPLETED
-                    )
+                    done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
                 except Exception as e:
                     log.error(f"asyncio.wait raised exception: {e}")
 
                 # Check for exceptions
                 for task in done:
                     if task.exception():
-                        log.warning(
-                            f"WebSocket proxy task exception: {task.exception()}"
-                        )
+                        log.warning(f"WebSocket proxy task exception: {task.exception()}")
 
                 # Cancel pending tasks
                 for task in pending:
@@ -145,16 +137,10 @@ async def websocket_proxy(
 
     except aiohttp.ClientError as e:
         log.error(f"WebSocket proxy connection error: {e}")
-        await client_ws.close(
-            code=status.WS_1011_INTERNAL_ERROR,
-            reason=f"Proxy connection failed: {e}"
-        )
+        await client_ws.close(code=status.WS_1011_INTERNAL_ERROR, reason=f"Proxy connection failed: {e}")
     except Exception as e:
         log.error(f"WebSocket proxy unexpected error: {e}")
-        await client_ws.close(
-            code=status.WS_1011_INTERNAL_ERROR,
-            reason=str(e)
-        )
+        await client_ws.close(code=status.WS_1011_INTERNAL_ERROR, reason=str(e))
 
 
 async def websocket_proxy_with_manual_accept(
@@ -162,7 +148,7 @@ async def websocket_proxy_with_manual_accept(
     target_url: str,
     requested_protocols: list = None,
     buffer_size: int = 65536,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
 ) -> None:
     """
     Proxy binary WebSocket data between client and target WebSocket server.
@@ -181,7 +167,7 @@ async def websocket_proxy_with_manual_accept(
     Raises:
         aiohttp.ClientError: If connection to target fails
     """
-    client_info = f"{client_ws.client.host}:{client_ws.client.port}" if hasattr(client_ws, 'client') else "unknown"
+    client_info = f"{client_ws.client.host}:{client_ws.client.port}" if hasattr(client_ws, "client") else "unknown"
 
     async def forward_client_to_target(target_ws):
         """Client → Target: Forward binary WebSocket data."""
@@ -252,20 +238,14 @@ async def websocket_proxy_with_manual_accept(
                 if sys.version_info >= (3, 11, 0):
                     aws = [
                         asyncio.create_task(forward_client_to_target(target_ws)),
-                        asyncio.create_task(forward_target_to_client(target_ws))
+                        asyncio.create_task(forward_target_to_client(target_ws)),
                     ]
                 else:
-                    aws = [
-                        forward_client_to_target(target_ws),
-                        forward_target_to_client(target_ws)
-                    ]
+                    aws = [forward_client_to_target(target_ws), forward_target_to_client(target_ws)]
 
                 log.info(f"About to call asyncio.wait with {len(aws)} tasks")
                 try:
-                    done, pending = await asyncio.wait(
-                        aws,
-                        return_when=asyncio.FIRST_COMPLETED
-                    )
+                    done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
                     log.info(f"asyncio.wait returned. done={len(done)}, pending={len(pending)}")
                 except Exception as e:
                     log.error(f"asyncio.wait raised exception: {e}")
@@ -274,9 +254,7 @@ async def websocket_proxy_with_manual_accept(
                 # Check for exceptions
                 for task in done:
                     if task.exception():
-                        log.warning(
-                            f"WebSocket proxy task exception: {task.exception()}"
-                        )
+                        log.warning(f"WebSocket proxy task exception: {task.exception()}")
 
                 # Cancel pending tasks
                 for task in pending:

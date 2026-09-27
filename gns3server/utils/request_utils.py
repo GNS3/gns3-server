@@ -73,7 +73,7 @@ def extract_client_info(scope: Dict[str, Any], auth_service_instance: Optional[A
         "path": path,
         "method": method,
         "username": username,
-        "user_info": user_info
+        "user_info": user_info,
     }
 
 

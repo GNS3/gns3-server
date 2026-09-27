@@ -60,40 +60,28 @@ def write_config(tmpdir, settings):
 @pytest.mark.parametrize(
     "setting, value, result",
     (
-            ("allowed_interfaces", "", []),
-            ("allowed_interfaces", "eth0", ["eth0"]),
-            ("allowed_interfaces", "eth1,eth2", ["eth1", "eth2"]),
-            ("additional_images_paths", "", []),
-            ("additional_images_paths", "/path/to/dir1", ["/path/to/dir1"]),
-            ("additional_images_paths", "/path/to/dir1;/path/to/dir2", ["/path/to/dir1", "/path/to/dir2"])
-    )
+        ("allowed_interfaces", "", []),
+        ("allowed_interfaces", "eth0", ["eth0"]),
+        ("allowed_interfaces", "eth1,eth2", ["eth1", "eth2"]),
+        ("additional_images_paths", "", []),
+        ("additional_images_paths", "/path/to/dir1", ["/path/to/dir1"]),
+        ("additional_images_paths", "/path/to/dir1;/path/to/dir2", ["/path/to/dir1", "/path/to/dir2"]),
+    ),
 )
 def test_server_settings_to_list(tmpdir, setting: str, value: str, result: str):
 
-    config = load_config(tmpdir, {
-        "Server": {
-            setting: value
-        }
-    })
+    config = load_config(tmpdir, {"Server": {setting: value}})
 
     assert config.settings.model_dump(exclude_unset=True)["Server"][setting] == result
 
 
 def test_reload(tmpdir):
 
-    config = load_config(tmpdir, {
-        "Server": {
-            "host": "127.0.0.1"
-        }
-    })
+    config = load_config(tmpdir, {"Server": {"host": "127.0.0.1"}})
 
     assert config.settings.Server.host == "127.0.0.1"
 
-    write_config(tmpdir, {
-        "Server": {
-            "host": "192.168.1.2"
-        }
-    })
+    write_config(tmpdir, {"Server": {"host": "192.168.1.2"}})
 
     config.reload()
     assert config.settings.Server.host == "192.168.1.2"
@@ -110,24 +98,24 @@ def test_server_password_hidden():
 @pytest.mark.parametrize(
     "settings, exception_expected",
     (
-            ({"protocol": "https1"}, True),
-            ({"console_start_port_range": 15000, "console_end_port_range": 20000}, False),
-            ({"console_start_port_range": 0}, True),
-            ({"console_start_port_range": 68000}, True),
-            ({"console_end_port_range": 15000}, False),
-            ({"console_end_port_range": 0}, True),
-            ({"console_end_port_range": 68000}, True),
-            ({"console_start_port_range": 10000, "console_end_port_range": 5000}, True),
-            ({"vnc_console_start_port_range": 6000}, False),
-            ({"vnc_console_start_port_range": 1000}, True),
-            ({"vnc_console_end_port_range": 6000}, False),
-            ({"vnc_console_end_port_range": 1000}, True),
-            ({"vnc_console_start_port_range": 7000, "vnc_console_end_port_range": 6000}, True),
-            ({"enable_ssl": True, "certfile": "/path/to/certfile", "certkey": "/path/to/certkey"}, True),
-            ({"enable_ssl": True}, True),
-            ({"enable_ssl": True, "certfile": "/path/to/certfile"}, True),
-            ({"enable_ssl": True, "certkey": "/path/to/certkey"}, True)
-    )
+        ({"protocol": "https1"}, True),
+        ({"console_start_port_range": 15000, "console_end_port_range": 20000}, False),
+        ({"console_start_port_range": 0}, True),
+        ({"console_start_port_range": 68000}, True),
+        ({"console_end_port_range": 15000}, False),
+        ({"console_end_port_range": 0}, True),
+        ({"console_end_port_range": 68000}, True),
+        ({"console_start_port_range": 10000, "console_end_port_range": 5000}, True),
+        ({"vnc_console_start_port_range": 6000}, False),
+        ({"vnc_console_start_port_range": 1000}, True),
+        ({"vnc_console_end_port_range": 6000}, False),
+        ({"vnc_console_end_port_range": 1000}, True),
+        ({"vnc_console_start_port_range": 7000, "vnc_console_end_port_range": 6000}, True),
+        ({"enable_ssl": True, "certfile": "/path/to/certfile", "certkey": "/path/to/certkey"}, True),
+        ({"enable_ssl": True}, True),
+        ({"enable_ssl": True, "certfile": "/path/to/certfile"}, True),
+        ({"enable_ssl": True, "certkey": "/path/to/certkey"}, True),
+    ),
 )
 def test_server_settings(settings: dict, exception_expected: bool):
 
@@ -143,13 +131,13 @@ def test_server_settings(settings: dict, exception_expected: bool):
 @pytest.mark.parametrize(
     "settings, exception_expected",
     (
-            ({"vmnet_start_range": 0}, True),
-            ({"vmnet_start_range": 256}, True),
-            ({"vmnet_end_range": 0}, True),
-            ({"vmnet_end_range": 256}, True),
-            ({"vmnet_start_range": 2, "vmnet_end_range": 10}, False),
-            ({"vmnet_start_range": 5, "vmnet_end_range": 3}, True)
-    )
+        ({"vmnet_start_range": 0}, True),
+        ({"vmnet_start_range": 256}, True),
+        ({"vmnet_end_range": 0}, True),
+        ({"vmnet_end_range": 256}, True),
+        ({"vmnet_start_range": 2, "vmnet_end_range": 10}, False),
+        ({"vmnet_start_range": 5, "vmnet_end_range": 3}, True),
+    ),
 )
 def test_vmware_settings(settings: dict, exception_expected: bool):
 
@@ -169,15 +157,17 @@ def test_update_config_writes_ini_types(tmpdir):
         f.write("# a comment\n[Server]\nhost = 127.0.0.1\nfrobnicate = 42\n")
 
     config = Config(files=[path])
-    changed = config.update_config({
-        "Server": {
-            "port": 3081,
-            "report_errors": False,
-            "allowed_interfaces": ["eth0", "eth1"],
-            "default_symbol_theme": "Classic",
-            "additional_images_paths": ["/path/to/dir1", "/path/to/dir2"],
+    changed = config.update_config(
+        {
+            "Server": {
+                "port": 3081,
+                "report_errors": False,
+                "allowed_interfaces": ["eth0", "eth1"],
+                "default_symbol_theme": "Classic",
+                "additional_images_paths": ["/path/to/dir1", "/path/to/dir2"],
+            }
         }
-    })
+    )
 
     parsed = configparser.ConfigParser()
     parsed.read(path)

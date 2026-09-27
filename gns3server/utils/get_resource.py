@@ -26,6 +26,7 @@ except ImportError:
 
 
 from contextlib import ExitStack
+
 resource_manager = ExitStack()
 atexit.register(resource_manager.close)
 

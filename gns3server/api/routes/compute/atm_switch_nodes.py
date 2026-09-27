@@ -79,8 +79,7 @@ def get_atm_switch(node: ATMSwitch = Depends(dep_node)) -> schemas.ATMSwitch:
 
 @router.post("/{node_id}/duplicate", response_model=schemas.ATMSwitch, status_code=status.HTTP_201_CREATED)
 async def duplicate_atm_switch(
-        destination_node_id: UUID = Body(..., embed=True),
-        node: ATMSwitch = Depends(dep_node)
+    destination_node_id: UUID = Body(..., embed=True), node: ATMSwitch = Depends(dep_node)
 ) -> schemas.ATMSwitch:
     """
     Duplicate an ATM switch node.
@@ -92,8 +91,7 @@ async def duplicate_atm_switch(
 
 @router.put("/{node_id}", response_model=schemas.ATMSwitch)
 async def update_atm_switch(
-        node_data: schemas.ATMSwitchUpdate,
-        node: ATMSwitch = Depends(dep_node)
+    node_data: schemas.ATMSwitchUpdate, node: ATMSwitch = Depends(dep_node)
 ) -> schemas.ATMSwitch:
     """
     Update an ATM switch node.
@@ -124,8 +122,7 @@ def start_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Start is not supported for ATM switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Start is not supported for ATM switches"
     )
 
 
@@ -135,10 +132,7 @@ def stop_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     Stop an ATM switch node.
     """
 
-    raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Stop is not supported for ATM switches"
-    )
+    raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Stop is not supported for ATM switches")
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
@@ -149,8 +143,7 @@ def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     """
 
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Suspend is not supported for ATM switches"
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Suspend is not supported for ATM switches"
     )
 
 
@@ -160,11 +153,11 @@ def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
     response_model=schemas.UDPNIO,
 )
 async def create_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        nio_data: schemas.UDPNIO,
-        node: ATMSwitch = Depends(dep_node)
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    nio_data: schemas.UDPNIO,
+    node: ATMSwitch = Depends(dep_node),
 ) -> schemas.UDPNIO:
     """
     Add a NIO (Network Input/Output) to the node.
@@ -189,11 +182,11 @@ async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = De
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node_capture_data: schemas.NodeCapture,
-        node: ATMSwitch = Depends(dep_node)
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    node_capture_data: schemas.NodeCapture,
+    node: ATMSwitch = Depends(dep_node),
 ) -> dict:
     """
     Start a packet capture on the node.
@@ -210,10 +203,7 @@ async def start_capture(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def stop_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: ATMSwitch = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: ATMSwitch = Depends(dep_node)
 ) -> None:
     """
     Stop a packet capture on the node.
@@ -225,10 +215,7 @@ async def stop_capture(
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: ATMSwitch = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: ATMSwitch = Depends(dep_node)
 ) -> StreamingResponse:
     """
     Stream the pcap capture file.

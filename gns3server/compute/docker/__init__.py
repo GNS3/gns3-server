@@ -34,7 +34,12 @@ from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
+from gns3server.compute.docker.docker_error import (
+    DockerError,
+    DockerHttp304Error,
+    DockerHttp404Error,
+    DockerHttp409Error,
+)
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +52,6 @@ CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class Docker(BaseManager):
-
     _NODE_CLASS = DockerVM
 
     def __init__(self):
@@ -97,10 +101,7 @@ class Docker(BaseManager):
                     # check that busybox is statically linked
                     # (dynamically linked busybox will fail to run in a container)
                     proc = await asyncio.create_subprocess_exec(
-                        "ldd",
-                        busybox_path,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.DEVNULL
+                        "ldd", busybox_path, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
                     )
                     stdout, _ = await proc.communicate()
                     if proc.returncode == 1 or "static" in busybox_exec:
@@ -111,11 +112,15 @@ class Docker(BaseManager):
                         shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
                         return
                     else:
-                        log.warning(f"Busybox '{busybox_path}' is dynamically linked\n"
-                                    f"{stdout.decode('utf-8', errors='ignore').strip()}")
+                        log.warning(
+                            f"Busybox '{busybox_path}' is dynamically linked\n"
+                            f"{stdout.decode('utf-8', errors='ignore').strip()}"
+                        )
                 except OSError as e:
                     raise DockerError(f"Could not install busybox: {e}")
-        raise DockerError("No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH")
+        raise DockerError(
+            "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
+        )
 
     @staticmethod
     def resources_path():
@@ -142,6 +147,7 @@ class Docker(BaseManager):
             dst_path = self.resources_path()
             log.info(f"Installing Docker resources in '{dst_path}'")
             from gns3server.controller import Controller
+
             await Controller.instance().install_resource_files(dst_path, "compute/docker/resources")
             await self.install_busybox(dst_path)
         except OSError as e:
@@ -157,12 +163,12 @@ class Docker(BaseManager):
                 self._connected = False
                 raise DockerError("Can't connect to Docker daemon")
 
-            api_version = parse_version(docker_info['ApiVersion'])
+            api_version = parse_version(docker_info["ApiVersion"])
             version = docker_info["Version"]
 
             if api_version < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError(f"Docker version is {version}. "
-                                  f"GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}"
+                raise DockerError(
+                    f"Docker version is {version}. GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}"
                 )
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
@@ -170,7 +176,7 @@ class Docker(BaseManager):
                 self._api_version = DOCKER_PREFERRED_API_VERSION
             else:
                 # use the Min API version supported by the daemon
-                self._api_version = docker_info['MinAPIVersion']
+                self._api_version = docker_info["MinAPIVersion"]
                 log.warning("Using Docker client with the minimum API version {}".format(self._api_version))
 
             log.info("Connected to Docker daemon version {} using API version {}".format(version, self._api_version))
@@ -264,7 +270,7 @@ class Docker(BaseManager):
         response = await self.http_query(method, path, data=data, params=params)
         body = await response.read()
         response.close()
-        if response.headers.get('CONTENT-TYPE') == 'application/json':
+        if response.headers.get("CONTENT-TYPE") == "application/json":
             body = json.loads(body.decode("utf-8", errors="ignore"))
         else:
             body = body.decode("utf-8", errors="ignore")
@@ -292,7 +298,7 @@ class Docker(BaseManager):
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
-        if path == 'version':
+        if path == "version":
             url = "http://docker/" + path
         else:
             await self._check_connection()  # version is use by check connection
@@ -380,9 +386,7 @@ class Docker(BaseManager):
                         f"Disconnected while pulling Docker image '{image}' from Docker repository"
                     ) from e
                 except asyncio.TimeoutError as e:
-                    raise DockerError(
-                        f"Timeout while pulling Docker image '{image}' from Docker repository"
-                    ) from e
+                    raise DockerError(f"Timeout while pulling Docker image '{image}' from Docker repository") from e
                 if not chunk:
                     break
                 content += chunk.decode("utf-8")

@@ -23,7 +23,11 @@ import html
 from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.config import Config
-from gns3server.utils.packet_filter_validation import validate_all_filters, filter_inactive_filters, FilterValidationError
+from gns3server.utils.packet_filter_validation import (
+    validate_all_filters,
+    filter_inactive_filters,
+    FilterValidationError,
+)
 
 import logging
 
@@ -164,7 +168,7 @@ class Link:
         """
         Get whether to show filters icon in Web UI
         """
-        return getattr(self, '_show_filters_icon', True)
+        return getattr(self, "_show_filters_icon", True)
 
     @property
     def project(self):
@@ -438,14 +442,13 @@ class Link:
                 jwt_token=jwt_token,
                 memory=webwireshark_config.memory,
                 cpus=webwireshark_config.cpus,
-                pids_limit=webwireshark_config.pids_limit
+                pids_limit=webwireshark_config.pids_limit,
             )
 
             # Send notification
-            self._project.emit_notification("link.web_wireshark_started", {
-                "link_id": self.id,
-                "ws_url": result.get("ws_url", result.get("url"))
-            })
+            self._project.emit_notification(
+                "link.web_wireshark_started", {"link_id": self.id, "ws_url": result.get("ws_url", result.get("url"))}
+            )
 
             log.info(f"Web Wireshark started for link {self.id}: {result.get('ws_url')}")
             self._wireshark = True
@@ -466,10 +469,7 @@ class Link:
         try:
             log.info(f"Stopping Web Wireshark for link {self.id}")
 
-            await manager.stop_wireshark_session(
-                project_id=self._project.id,
-                link_id=self.id
-            )
+            await manager.stop_wireshark_session(project_id=self._project.id, link_id=self.id)
 
             log.info(f"Web Wireshark stopped for link {self.id}")
             self._wireshark = False
@@ -494,15 +494,12 @@ class Link:
             log.info(f"Restarting Web Wireshark for link {self.id}")
 
             result = await manager.restart_wireshark_session(
-                project_id=self._project.id,
-                link_id=self.id,
-                jwt_token=jwt_token
+                project_id=self._project.id, link_id=self.id, jwt_token=jwt_token
             )
 
-            self._project.emit_notification("link.web_wireshark_started", {
-                "link_id": self.id,
-                "ws_url": result.get("ws_url", result.get("url"))
-            })
+            self._project.emit_notification(
+                "link.web_wireshark_started", {"link_id": self.id, "ws_url": result.get("ws_url", result.get("url"))}
+            )
 
             log.info(f"Web Wireshark restarted for link {self.id}: {result.get('ws_url')}")
 
@@ -660,7 +657,7 @@ class Link:
                 "markers": self._persist_markers(),
                 "link_style": self._link_style,
                 "suspend": self._suspended,
-                "show_filters_icon": getattr(self, '_show_filters_icon', True),
+                "show_filters_icon": getattr(self, "_show_filters_icon", True),
             }
         result = {
             "nodes": res,
@@ -676,6 +673,6 @@ class Link:
             "suspend": self._suspended,
             "link_style": self._link_style,
             "wireshark": self._wireshark,
-            "show_filters_icon": getattr(self, '_show_filters_icon', True),
+            "show_filters_icon": getattr(self, "_show_filters_icon", True),
         }
         return result

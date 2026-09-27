@@ -119,9 +119,9 @@ class AsyncioTelnetServer:
         :param keepalive_interval: interval in seconds for sending NOP keep-alive (0 to disable).
         """
 
-        assert connection_factory is None or (
-            connection_factory is not None and reader is None and writer is None
-        ), "Please use either reader and writer either connection_factory, otherwise duplicate data may be produced."
+        assert connection_factory is None or (connection_factory is not None and reader is None and writer is None), (
+            "Please use either reader and writer either connection_factory, otherwise duplicate data may be produced."
+        )
 
         self._reader = reader
         self._writer = writer

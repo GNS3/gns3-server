@@ -23,7 +23,6 @@ from typing import Optional
 
 
 class VPCSTemplate(TemplateBase):
-
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "PC{0}"
     symbol: Optional[str] = "vpcs_guest"
@@ -35,5 +34,4 @@ class VPCSTemplate(TemplateBase):
 
 
 class VPCSTemplateUpdate(VPCSTemplate):
-
     pass

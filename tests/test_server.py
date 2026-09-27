@@ -33,12 +33,12 @@ def test_locale_check():
     except:  # Locale is not available on the server
         return
     Server._locale_check()
-    assert locale.getlocale() == ('fr_FR', 'UTF-8')
+    assert locale.getlocale() == ("fr_FR", "UTF-8")
 
 
 def parse_arguments(server, argv):
 
-    parser, args= parse(argv)
+    parser, args = parse(argv)
     return server._load_config_and_set_defaults(parser, args, argv)
 
 
@@ -87,7 +87,7 @@ def test_parse_arguments(capsys, config, tmpdir):
     assert parse_arguments(server, []).port == 8003
 
     assert parse_arguments(server, ["--ssl"]).ssl
-    assert parse_arguments(server,[]).ssl is False
+    assert parse_arguments(server, []).ssl is False
     with tempfile.NamedTemporaryFile(dir=str(tmpdir)) as f:
         server_config.certfile = f.name
         server_config.certkey = f.name
@@ -95,28 +95,28 @@ def test_parse_arguments(capsys, config, tmpdir):
         assert parse_arguments(server, []).ssl
 
     assert parse_arguments(server, ["--certfile", "bla"]).certfile == "bla"
-    assert parse_arguments(server,["--certkey", "blu"]).certkey == "blu"
+    assert parse_arguments(server, ["--certkey", "blu"]).certkey == "blu"
 
-    assert parse_arguments(server,["-L"]).local
-    assert parse_arguments(server,["--local"]).local
+    assert parse_arguments(server, ["-L"]).local
+    assert parse_arguments(server, ["--local"]).local
     server_config.local = False
-    assert parse_arguments(server,[]).local is False
+    assert parse_arguments(server, []).local is False
     server_config.local = True
-    assert parse_arguments(server,[]).local
+    assert parse_arguments(server, []).local
 
-    assert parse_arguments(server,["-A"]).allow
-    assert parse_arguments(server,["--allow"]).allow
-    assert parse_arguments(server,[]).allow is False
+    assert parse_arguments(server, ["-A"]).allow
+    assert parse_arguments(server, ["--allow"]).allow
+    assert parse_arguments(server, []).allow is False
     server_config.allow_remote_console = True
-    assert parse_arguments(server,[]).allow
+    assert parse_arguments(server, []).allow
 
-    assert parse_arguments(server,["-q"]).quiet
-    assert parse_arguments(server,["--quiet"]).quiet
-    assert parse_arguments(server,[]).quiet is False
+    assert parse_arguments(server, ["-q"]).quiet
+    assert parse_arguments(server, ["--quiet"]).quiet
+    assert parse_arguments(server, []).quiet is False
 
-    assert parse_arguments(server,["-d"]).debug
-    assert parse_arguments(server,["--debug"]).debug
-    assert parse_arguments(server,[]).debug is False
+    assert parse_arguments(server, ["-d"]).debug
+    assert parse_arguments(server, ["--debug"]).debug
+    assert parse_arguments(server, []).debug is False
 
 
 def test_set_config_with_args(tmpdir):
@@ -126,18 +126,23 @@ def test_set_config_with_args(tmpdir):
     with tempfile.NamedTemporaryFile(dir=str(tmpdir)) as f:
         certfile = f.name
         certkey = f.name
-        args = parse_arguments(server, ["--host",
-                                        "192.168.1.1",
-                                        "--local",
-                                        "--allow",
-                                        "--port",
-                                        "8001",
-                                        "--ssl",
-                                        "--certfile",
-                                        certfile,
-                                        "--certkey",
-                                        certkey,
-                                        "--debug"])
+        args = parse_arguments(
+            server,
+            [
+                "--host",
+                "192.168.1.1",
+                "--local",
+                "--allow",
+                "--port",
+                "8001",
+                "--ssl",
+                "--certfile",
+                certfile,
+                "--certkey",
+                certkey,
+                "--debug",
+            ],
+        )
         server._set_config_defaults_from_command_line(args)
 
     server_config = config.settings.Server

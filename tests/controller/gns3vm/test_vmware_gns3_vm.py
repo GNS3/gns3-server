@@ -41,20 +41,19 @@ async def test_set_extra_options(gns3vm, vmx_path, windows_platform):
     gns3vm._vmx_path = vmx_path
 
     # when there is not an entry, we modify it
-    with open(vmx_path, 'w') as f:
+    with open(vmx_path, "w") as f:
         f.write("")
 
     await gns3vm._set_extra_options()
 
-    with open(vmx_path, 'r') as f:
+    with open(vmx_path, "r") as f:
         assert f.read() == 'vhv.enable = "TRUE"\n'
 
     # when there is an entry, we don't modify it
-    with open(vmx_path, 'w') as f:
+    with open(vmx_path, "w") as f:
         f.write('vhv.enable = "FALSE"\n')
 
     await gns3vm._set_extra_options()
 
-    with open(vmx_path, 'r') as f:
+    with open(vmx_path, "r") as f:
         assert f.read() == 'vhv.enable = "FALSE"\n'
-

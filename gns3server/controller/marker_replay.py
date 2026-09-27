@@ -124,10 +124,10 @@ class _SharkdRpcError(Exception):
 # magic → (byte order, timestamp unit). Both pcap families uBridge can write
 # (libpcap default µs; ns variant accepted defensively) and both endiannesses.
 _PCAP_MAGICS = {
-    0xA1B2C3D4: ("<", 1),      # little-endian, microseconds
-    0xD4C3B2A1: (">", 1),      # big-endian, microseconds
-    0xA1B23C4D: ("<", 1000),   # little-endian, nanoseconds
-    0x4D3CB2A1: (">", 1000),   # big-endian, nanoseconds
+    0xA1B2C3D4: ("<", 1),  # little-endian, microseconds
+    0xD4C3B2A1: (">", 1),  # big-endian, microseconds
+    0xA1B23C4D: ("<", 1000),  # little-endian, nanoseconds
+    0x4D3CB2A1: (">", 1000),  # big-endian, nanoseconds
 }
 
 
@@ -174,9 +174,7 @@ def scan_pcap_frames(path):
 
     pos = 24
     while pos + 16 <= len(data):
-        ts_sec, ts_frac, incl_len, _orig_len = struct.unpack(
-            byteorder + "IIII", data[pos:pos + 16]
-        )
+        ts_sec, ts_frac, incl_len, _orig_len = struct.unpack(byteorder + "IIII", data[pos : pos + 16])
         if incl_len > 0xFFFF or pos + 16 + incl_len > len(data):
             break  # truncated tail (snapshot mid-write / torn final record)
         # Normalize ns pcaps to µs by truncation — uBridge writes µs anyway.
@@ -197,7 +195,7 @@ def read_frame_bytes(path, frame_number):
         return None
     # Offset arithmetic mirrors the header scan: global header + every full
     # record before the target + the target's own record header.
-    offset = 24 + sum(16 + incl for _s, _u, incl in frames[:frame_number - 1]) + 16
+    offset = 24 + sum(16 + incl for _s, _u, incl in frames[: frame_number - 1]) + 16
     incl_len = frames[frame_number - 1][2]
     with open(path, "rb") as f:
         f.seek(offset)
@@ -213,10 +211,7 @@ def read_frame_bytes(path, frame_number):
 # (/etc/wireshark &c.), so the column indexes in _columns_for are a contract
 # we own rather than an environment default. Exactly the four columns the
 # frame entries consume — nothing else rides along in every page.
-_PINNED_COLUMNS = (
-    'gui.column.format: "Source", "%s", "Destination", "%d", '
-    '"Protocol", "%p", "Info", "%i"\n'
-)
+_PINNED_COLUMNS = 'gui.column.format: "Source", "%s", "Destination", "%d", "Protocol", "%p", "Info", "%i"\n'
 
 
 async def _prepare_scratch(pcap):
@@ -262,13 +257,13 @@ def _engine_env(scratch_dir):
 # semantics live in VALUES (field names, labels, filter expressions), which
 # are never touched.
 _KEY_RENAME = {
-    "t": "element",       # node type ("proto", …)
-    "l": "label",         # display text
-    "fn": "name",         # field name (e.g. "ip.ttl")
-    "f": "filter_expr",   # ready-made display filter with the value baked in
-    "s": "expert",        # expert severity name ("Chat", "Warn", …)
-    "g": "generated",     # generated-by-wireshark flag
-    "n": "children",      # nested fields
+    "t": "element",  # node type ("proto", …)
+    "l": "label",  # display text
+    "fn": "name",  # field name (e.g. "ip.ttl")
+    "f": "filter_expr",  # ready-made display filter with the value baked in
+    "s": "expert",  # expert severity name ("Chat", "Warn", …)
+    "g": "generated",  # generated-by-wireshark flag
+    "n": "children",  # nested fields
 }
 # "h" → pos + size (byte range for hex highlighting) — handled specially.
 # "e" is sharkd's internal header-field registry id — unstable across
@@ -307,6 +302,7 @@ def _count_tree_nodes(value):
 # ---------------------------------------------------------------------------
 # sharkd sessions (one resident process per source pcap)
 # ---------------------------------------------------------------------------
+
 
 class _SharkdSession:
     """A resident `sharkd -` process with one pcap loaded, addressed through
@@ -425,8 +421,7 @@ class _SharkdManager:
     async def _acquire(self, pcap):
         if shutil.which("sharkd") is None:
             raise SharkdMissingError(
-                "sharkd is not available on this server — marker replay requires sharkd "
-                "(part of the Wireshark package)"
+                "sharkd is not available on this server — marker replay requires sharkd (part of the Wireshark package)"
             )
         try:
             stat = os.stat(pcap)
@@ -492,9 +487,12 @@ class _SharkdManager:
         scratch_dir, scratch = await _prepare_scratch(pcap)
         try:
             proc = await asyncio.create_subprocess_exec(
-                "sharkd", "-",
-                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL, env=_engine_env(scratch_dir),
+                "sharkd",
+                "-",
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+                env=_engine_env(scratch_dir),
                 limit=_STREAM_LIMIT_BYTES,
             )
         except OSError as e:
@@ -540,6 +538,7 @@ async def close_sessions():
 # ---------------------------------------------------------------------------
 # Columns + display filter (sharkd `frames` RPC)
 # ---------------------------------------------------------------------------
+
 
 async def _columns_for(pcap, filter_expr):
     """
@@ -596,6 +595,7 @@ async def _columns_for(pcap, filter_expr):
 # Tag gate + timeline assembly
 # ---------------------------------------------------------------------------
 
+
 def _tag_markers(project, tag):
     """
     Every marker entry in the project carrying ``tag`` (flat
@@ -606,13 +606,15 @@ def _tag_markers(project, tag):
     for key, info in project.markers.items():
         if info.get("tag") == tag:
             link_id, _, name = key.partition("/")
-            entries.append({
-                "node_id": info["node_id"],
-                "link_id": link_id,
-                "marker": name,
-                "enabled": info.get("enabled", True),
-                "data_link_type": info.get("data_link_type", "DLT_EN10MB"),
-            })
+            entries.append(
+                {
+                    "node_id": info["node_id"],
+                    "link_id": link_id,
+                    "marker": name,
+                    "enabled": info.get("enabled", True),
+                    "data_link_type": info.get("data_link_type", "DLT_EN10MB"),
+                }
+            )
     return entries
 
 
@@ -659,13 +661,12 @@ async def _merged_frames(project, entries, filter_expr=None, link_id=None):
     merged = []
     sources = []
     for entry in entries:
-        pcap = os.path.join(
-            markers_dir, f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}.pcap"
-        )
+        pcap = os.path.join(markers_dir, f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}.pcap")
         frames = scan_pcap_frames(pcap) if os.path.exists(pcap) else []
         # Inventory first: every source, engine-free totals.
-        sources.append({**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
-                        "count": len(frames)})
+        sources.append(
+            {**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")}, "count": len(frames)}
+        )
         if link_id and entry["link_id"] != link_id:
             continue  # link narrows the stream before any engine work
         if frames:
@@ -677,22 +678,24 @@ async def _merged_frames(project, entries, filter_expr=None, link_id=None):
             if filter_expr is not None and frame_number not in columns:
                 continue
             cols = columns.get(frame_number, {})
-            merged.append({
-                "ts": _format_ts(sec, usec),
-                "ts_us": sec * 1_000_000 + usec,
-                "_source": source_key,
-                "len": incl_len,
-                "node_id": entry["node_id"],
-                "link_id": entry["link_id"],
-                "marker": entry["marker"],
-                "frame_number": frame_number,
-                "src": cols.get("src"),
-                "dst": cols.get("dst"),
-                "proto": cols.get("proto"),
-                "info": cols.get("info"),
-                "bg": cols.get("bg"),
-                "fg": cols.get("fg"),
-            })
+            merged.append(
+                {
+                    "ts": _format_ts(sec, usec),
+                    "ts_us": sec * 1_000_000 + usec,
+                    "_source": source_key,
+                    "len": incl_len,
+                    "node_id": entry["node_id"],
+                    "link_id": entry["link_id"],
+                    "marker": entry["marker"],
+                    "frame_number": frame_number,
+                    "src": cols.get("src"),
+                    "dst": cols.get("dst"),
+                    "proto": cols.get("proto"),
+                    "info": cols.get("info"),
+                    "bg": cols.get("bg"),
+                    "fg": cols.get("fg"),
+                }
+            )
     merged.sort(key=lambda f: (f["ts_us"], f["_source"], f["frame_number"]))
     for frame in merged:
         del frame["ts_us"]
@@ -702,9 +705,7 @@ async def _merged_frames(project, entries, filter_expr=None, link_id=None):
 
 def _validate_filter(filter_expr):
     if filter_expr is not None and len(filter_expr) > FILTER_MAX_LENGTH:
-        raise ControllerBadRequestError(
-            f"Display filter too long (max {FILTER_MAX_LENGTH} characters)"
-        )
+        raise ControllerBadRequestError(f"Display filter too long (max {FILTER_MAX_LENGTH} characters)")
 
 
 async def build_timeline(project, tag, filter_expr=None, link_id=None):
@@ -746,12 +747,13 @@ async def query_frames(project, tag, ts, window_ms=100, limit=1000, filter_expr=
     start_us = _parse_ts(ts)
     end_us = start_us + max(window_ms, 0) * 1000
     hits = [f for f in frames if start_us <= _parse_ts(f["ts"]) <= end_us]
-    return {"frames": hits[:max(limit, 0)]}
+    return {"frames": hits[: max(limit, 0)]}
 
 
 # ---------------------------------------------------------------------------
 # Frame detail (lazy — one frame per call, via the resident session)
 # ---------------------------------------------------------------------------
+
 
 async def decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=None):
     """
@@ -770,29 +772,23 @@ async def decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=
 
     entries = gate_tag(project, tag)
     entry = next(
-        (e for e in entries
-         if e["node_id"] == node_id and e["link_id"] == link_id and e["marker"] == marker),
+        (e for e in entries if e["node_id"] == node_id and e["link_id"] == link_id and e["marker"] == marker),
         None,
     )
     if entry is None:
-        raise ControllerNotFoundError(
-            f"No marker '{marker}' with tag {tag} on link {link_id} captured by {node_id}"
-        )
+        raise ControllerNotFoundError(f"No marker '{marker}' with tag {tag} on link {link_id} captured by {node_id}")
 
     pcap = os.path.join(project.markers_directory, f"{node_id}_{link_id}_{marker}.pcap")
     if not os.path.exists(pcap):
         raise ControllerNotFoundError(f"No capture file for marker '{marker}' (nothing ever matched)")
 
     frames = scan_pcap_frames(pcap)
-    rebuilt_message = (
-        f"No frame at ts {ts} in marker '{marker}' (the capture may have been rebuilt)"
-    )
+    rebuilt_message = f"No frame at ts {ts} in marker '{marker}' (the capture may have been rebuilt)"
     if frame_number is None:
         # The ts must be the exact string the timeline returned; find the frame
         # it identifies rather than trusting any position hint from the client.
         frame_number = next(
-            (i for i, (sec, usec, _len) in enumerate(frames, start=1)
-             if _format_ts(sec, usec) == ts),
+            (i for i, (sec, usec, _len) in enumerate(frames, start=1) if _format_ts(sec, usec) == ts),
             None,
         )
         if frame_number is None:
@@ -820,8 +816,7 @@ async def decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=
     tree = _rename_value(result.get("tree", []))
     return {
         "ts": ts,
-        "source": {"node_id": node_id, "link_id": link_id, "marker": marker,
-                   "frame_number": frame_number},
+        "source": {"node_id": node_id, "link_id": link_id, "marker": marker, "frame_number": frame_number},
         "field_count": _count_tree_nodes(tree),
         "hex": raw_hex,
         "tree": tree,

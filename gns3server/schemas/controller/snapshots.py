@@ -28,6 +28,7 @@ class SnapshotBase(BaseModel):
     name: str = Field(..., description="Name of the snapshot")
     description: Optional[str] = Field(None, description="Description of the snapshot")
 
+
 class SnapshotCreate(SnapshotBase):
     """
     Properties for snapshot creation.
@@ -37,7 +38,6 @@ class SnapshotCreate(SnapshotBase):
 
 
 class Snapshot(SnapshotBase):
-
     snapshot_id: UUID
     project_id: UUID
     name: str = Field(..., description="Name of the snapshot")

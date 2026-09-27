@@ -50,21 +50,28 @@ class LLMModelConfig(BaseTable):
     __table_args__ = (
         # Ensure a config belongs to either a user or a group, not both
         CheckConstraint(
-            "(user_id IS NOT NULL AND group_id IS NULL) OR "
-            "(user_id IS NULL AND group_id IS NOT NULL)",
-            name="single_owner_check"
+            "(user_id IS NOT NULL AND group_id IS NULL) OR (user_id IS NULL AND group_id IS NOT NULL)",
+            name="single_owner_check",
         ),
         # Validate model_type values
         CheckConstraint(
             "model_type IN ('text', 'vision', 'stt', 'tts', 'multimodal', 'embedding', 'reranking', 'other')",
-            name="valid_model_type_check"
+            name="valid_model_type_check",
         ),
         # Each user can have at most one default config (partial unique index, PostgreSQL only)
-        Index("unique_user_default", "user_id", unique=True,
-              postgresql_where=text("is_default = TRUE AND user_id IS NOT NULL")),
+        Index(
+            "unique_user_default",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_default = TRUE AND user_id IS NOT NULL"),
+        ),
         # Each group can have at most one default config (partial unique index, PostgreSQL only)
-        Index("unique_group_default", "group_id", unique=True,
-              postgresql_where=text("is_default = TRUE AND group_id IS NOT NULL")),
+        Index(
+            "unique_group_default",
+            "group_id",
+            unique=True,
+            postgresql_where=text("is_default = TRUE AND group_id IS NOT NULL"),
+        ),
         # Indexes for efficient queries
         Index("idx_llm_model_configs_user_id", "user_id"),
         Index("idx_llm_model_configs_group_id", "group_id"),

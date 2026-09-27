@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class C7200_IO_2FE(Adapter):
-
     """
     C7200-IO-2FE FastEthernet Input/Ouput controller.
     """

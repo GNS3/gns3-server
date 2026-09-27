@@ -21,11 +21,13 @@ Shared node type constants used across the controller.
 
 # Node types that are always running (builtin/virtual switch nodes).
 # These nodes do not require explicit start/stop and have limited feature support.
-BUILTIN_NODE_TYPES = frozenset({
-    "cloud",
-    "nat",
-    "ethernet_switch",
-    "ethernet_hub",
-    "frame_relay_switch",
-    "atm_switch",
-})
+BUILTIN_NODE_TYPES = frozenset(
+    {
+        "cloud",
+        "nat",
+        "ethernet_switch",
+        "ethernet_hub",
+        "frame_relay_switch",
+        "atm_switch",
+    }
+)

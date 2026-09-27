@@ -149,10 +149,7 @@ class VPCSTelnet(BaseConnection):
         # Step 3: Wait for VPCS prompt pattern
         try:
             # Read until we see the prompt
-            output = self.read_until_pattern(
-                pattern=pri_prompt_terminator,
-                read_timeout=10
-            )
+            output = self.read_until_pattern(pattern=pri_prompt_terminator, read_timeout=10)
             return_msg += output
 
             if re.search(pri_prompt_terminator, return_msg, flags=re.M):
@@ -291,9 +288,7 @@ class VPCSTelnet(BaseConnection):
             strip_command=strip_command,
         )
 
-    def check_config_mode(
-        self, check_string: str = "", pattern: str = "", force_regex: bool = False
-    ) -> bool:
+    def check_config_mode(self, check_string: str = "", pattern: str = "", force_regex: bool = False) -> bool:
         """
         VPCS has no configuration mode.
 
@@ -326,9 +321,7 @@ class VPCSTelnet(BaseConnection):
         """
         return ANSI_ESCAPE_PATTERN.sub("", text)
 
-    def config_mode(
-        self, config_command: str = "", pattern: str = "", re_flags: int = 0
-    ) -> str:
+    def config_mode(self, config_command: str = "", pattern: str = "", re_flags: int = 0) -> str:
         """
         VPCS has no configuration mode.
 
@@ -369,6 +362,7 @@ class VPCSTelnet(BaseConnection):
 
 # Register the custom device type with Netmiko
 _registered = False  # Flag to prevent duplicate registration
+
 
 def register_custom_device_type() -> None:
     """
@@ -431,8 +425,4 @@ try:
     register_custom_device_type()
 except Exception as e:
     # Log but don't fail on import
-    logger.warning(
-        "Failed to register VPCS device type: %s",
-        e,
-        exc_info=True
-    )
+    logger.warning("Failed to register VPCS device type: %s", e, exc_info=True)

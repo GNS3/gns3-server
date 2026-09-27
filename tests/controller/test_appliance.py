@@ -54,9 +54,7 @@ XRD_V8 = {
                     {"adapter_number": 0, "port_name": "MgmtEth0/RP0/CPU0/0"},
                     {"adapter_number": 1, "port_name": "Gi0/0/0/0"},
                 ],
-                "extra_configs": [
-                    {"target": "/firstboot.cfg", "content": "!\nend\n"}
-                ],
+                "extra_configs": [{"target": "/firstboot.cfg", "content": "!\nend\n"}],
             },
         }
     ],
@@ -141,8 +139,7 @@ def test_v8_docker_settings_require_image():
     appliance = dict(
         XRD_V8,
         settings=[
-            {"name": "only", "default": True, "template_type": "docker",
-             "template_properties": {"adapters": 2}},
+            {"name": "only", "default": True, "template_type": "docker", "template_properties": {"adapters": 2}},
         ],
     )
     with pytest.raises(pydantic.ValidationError):
@@ -158,8 +155,12 @@ def test_v8_template_properties_validated_against_template_type():
     appliance = dict(
         XRD_V8,
         settings=[
-            {"name": "only", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 512, "boot_priority": "zzz"}},
+            {
+                "name": "only",
+                "default": True,
+                "template_type": "qemu",
+                "template_properties": {"ram": 512, "boot_priority": "zzz"},
+            },
         ],
     )
     with pytest.raises(pydantic.ValidationError):
@@ -170,8 +171,12 @@ def test_v8_qemu_kvm_property_validates():
     appliance = dict(
         XRD_V8,
         settings=[
-            {"name": "only", "default": True, "template_type": "qemu",
-             "template_properties": {"ram": 512, "kvm": "disable"}},
+            {
+                "name": "only",
+                "default": True,
+                "template_type": "qemu",
+                "template_properties": {"ram": 512, "kvm": "disable"},
+            },
         ],
     )
     model = ApplianceModel.model_validate(appliance)
@@ -184,8 +189,12 @@ def test_v8_qemu_cpu_throttling_range():
     qemu template (int, 0-800).
     """
 
-    settings = {"name": "only", "default": True, "template_type": "qemu",
-                "template_properties": {"ram": 512, "cpu_throttling": 500}}
+    settings = {
+        "name": "only",
+        "default": True,
+        "template_type": "qemu",
+        "template_properties": {"ram": 512, "cpu_throttling": 500},
+    }
     model = ApplianceModel.model_validate(dict(XRD_V8, settings=[settings]))
     assert model.settings[0].template_properties.cpu_throttling == 500
 

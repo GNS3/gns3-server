@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class NM_1FE_TX(Adapter):
-
     """
     NM-1FE-TX FastEthernet network module.
     """

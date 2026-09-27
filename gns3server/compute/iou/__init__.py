@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class IOU(BaseManager):
-
     _NODE_CLASS = IOUVM
     _NODE_TYPE = "iou"
 

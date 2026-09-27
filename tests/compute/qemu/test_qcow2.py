@@ -28,10 +28,7 @@ def qemu_img():
     We can't use shutil.which because for safety reason we break
     the PATH to avoid test interacting with real binaries
     """
-    paths = [
-        "/usr/bin/qemu-img",
-        "/usr/local/bin/qemu-img"
-    ]
+    paths = ["/usr/bin/qemu-img", "/usr/local/bin/qemu-img"]
     for path in paths:
         if os.path.exists(path):
             return path
@@ -60,9 +57,9 @@ def test_invalid_file():
 
 def test_invalid_empty_file(tmpdir):
 
-    open(str(tmpdir / 'a'), 'w+').close()
+    open(str(tmpdir / "a"), "w+").close()
     with pytest.raises(Qcow2Error):
-        Qcow2(str(tmpdir / 'a'))
+        Qcow2(str(tmpdir / "a"))
 
 
 @pytest.mark.skipif(qemu_img() is None, reason="qemu-img is not available")

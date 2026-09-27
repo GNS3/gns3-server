@@ -16,7 +16,6 @@
 
 
 class Device:
-
     """
     Base device for switches and hubs
 

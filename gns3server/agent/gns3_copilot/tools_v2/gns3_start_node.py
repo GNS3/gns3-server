@@ -106,13 +106,8 @@ class GNS3StartNodeTool(BaseTool):
 
             # Validate input
             if not project_id or not node_ids:
-                logger.error(
-                    "Missing required fields: project_id or node_ids."
-                )
-                return {
-                    "error": "Missing required fields: "
-                    "project_id and node_ids."
-                }
+                logger.error("Missing required fields: project_id or node_ids.")
+                return {"error": "Missing required fields: project_id and node_ids."}
 
             if not isinstance(node_ids, list):
                 logger.error("node_ids must be a list.")
@@ -124,10 +119,7 @@ class GNS3StartNodeTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Verify nodes exist and capture pre-start info (one call)
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -143,14 +135,8 @@ class GNS3StartNodeTool(BaseTool):
             )
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
-            start_results = start_node_handler(
-                {"project_id": project_id, "node_ids": known_ids}, gns3_ctx
-            )
-            start_errors = {
-                r["node_id"]: r.get("error")
-                for r in start_results
-                if r.get("status") == "error"
-            }
+            start_results = start_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
+            start_errors = {r["node_id"]: r.get("error") for r in start_results if r.get("status") == "error"}
 
             # Get immediate status (likely 'starting' or 'stopped') — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -160,9 +146,7 @@ class GNS3StartNodeTool(BaseTool):
 
             for node_id in node_ids:
                 if node_id not in nodes_by_id:
-                    logger.error(
-                        "Node %s not found in project %s", node_id, project_id
-                    )
+                    logger.error("Node %s not found in project %s", node_id, project_id)
                     results.append(
                         {
                             "node_id": node_id,
@@ -204,9 +188,7 @@ class GNS3StartNodeTool(BaseTool):
                 )
 
             # Analyze results (count based on successful command sending)
-            successful_nodes = [
-                r for r in results if r.get("status") != "error"
-            ]
+            successful_nodes = [r for r in results if r.get("status") != "error"]
             failed_nodes = [r for r in results if r.get("status") == "error"]
 
             # Construct final response
@@ -217,8 +199,7 @@ class GNS3StartNodeTool(BaseTool):
                 "failed": len(failed_nodes),
                 "nodes": results,
                 "note": (
-                    "Start commands sent. Nodes are booting in background. "
-                    "Use wait_seconds, then check node status."
+                    "Start commands sent. Nodes are booting in background. Use wait_seconds, then check node status."
                 ),
             }
 
@@ -249,9 +230,7 @@ if __name__ == "__main__":
     test_input_single = json.dumps(
         {
             "project_id": "<PROJECT_UUID>",  # Replace with actual project UUID
-            "node_ids": [
-                "fbeda109-9a74-4d8c-a749-cc3847911a90"
-            ],  # Replace with actual node UUID
+            "node_ids": ["fbeda109-9a74-4d8c-a749-cc3847911a90"],  # Replace with actual node UUID
         }
     )
     tool = GNS3StartNodeTool()

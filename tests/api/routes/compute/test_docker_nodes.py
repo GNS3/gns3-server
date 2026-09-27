@@ -31,7 +31,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestDockerNodesRoutes:
-
     @pytest.fixture
     def base_params(self) -> dict:
         """Return standard parameters"""
@@ -44,10 +43,9 @@ class TestDockerNodesRoutes:
             "environment": "YES=1\nNO=0",
             "console_type": "telnet",
             "console_resolution": "1280x1024",
-            "extra_hosts": "test:127.0.0.1"
+            "extra_hosts": "test:127.0.0.1",
         }
         return params
-
 
     # @pytest.yield_fixture(autouse=True)
     # def mock_connection():
@@ -58,30 +56,20 @@ class TestDockerNodesRoutes:
     #     yield
     #     Docker._instance = None
 
-
     @pytest_asyncio.fixture
-    async def vm(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            base_params: dict
-    ) -> dict:
+    async def vm(self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict) -> dict:
 
         with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
                 with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="exited"):
-                    response = await compute_client.post(app.url_path_for("compute:create_docker_node", project_id=compute_project.id),
-                                                 json=base_params)
+                    response = await compute_client.post(
+                        app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=base_params
+                    )
         assert response.status_code == status.HTTP_201_CREATED
         return response.json()
 
-
     async def test_docker_create(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            base_params: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict
     ) -> None:
 
         with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
@@ -99,12 +87,8 @@ class TestDockerNodesRoutes:
         assert response.json()["console_resolution"] == "1280x1024"
         assert response.json()["extra_hosts"] == "test:127.0.0.1"
 
-
     async def test_docker_create_iol_startup_config(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            base_params: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict
     ) -> None:
         """
         The controller materializes the GNS3_IOL_STARTUP_CONFIG knob into
@@ -157,13 +141,13 @@ class TestDockerNodesRoutes:
         ),
     )
     async def test_docker_create_with_invalid_name(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            base_params: dict,
-            name: str,
-            status_code: int
+        self,
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        base_params: dict,
+        name: str,
+        status_code: int,
     ) -> None:
 
         base_params["name"] = name
@@ -174,81 +158,71 @@ class TestDockerNodesRoutes:
                 )
         assert response.status_code == status_code
 
-
     async def test_docker_start(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.start", return_value=True) as mock:
-
-            response = await compute_client.post(app.url_path_for("compute:start_docker_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
+            response = await compute_client.post(
+                app.url_path_for("compute:start_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
     async def test_docker_stop(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.stop", return_value=True) as mock:
-            response = await compute_client.post(app.url_path_for("compute:stop_docker_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
+            response = await compute_client.post(
+                app.url_path_for("compute:stop_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
     async def test_docker_reload(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.restart", return_value=True) as mock:
-            response = await compute_client.post(app.url_path_for("compute:reload_docker_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
+            response = await compute_client.post(
+                app.url_path_for("compute:reload_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
     async def test_docker_delete(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.delete", return_value=True) as mock:
-            response = await compute_client.delete(app.url_path_for("compute:delete_docker_node",
-                                                            project_id=vm["project_id"],
-                                                            node_id=vm["node_id"]))
+            response = await compute_client.delete(
+                app.url_path_for("compute:delete_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
     async def test_docker_pause(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.pause", return_value=True) as mock:
-            response = await compute_client.post(app.url_path_for("compute:pause_docker_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
+            response = await compute_client.post(
+                app.url_path_for("compute:pause_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
     async def test_docker_unpause(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.unpause", return_value=True) as mock:
-            response = await compute_client.post(app.url_path_for("compute:unpause_docker_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
+            response = await compute_client.post(
+                app.url_path_for("compute:unpause_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+            )
             assert mock.called
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
-
     async def test_docker_nio_create_udp(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-        params = {
-            "type": "nio_udp",
-            "lport": 4242,
-            "rport": 4343,
-            "rhost": "127.0.0.1"}
+        params = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
 
-        url = app.url_path_for("compute:create_docker_node_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:create_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         response = await compute_client.post(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
@@ -281,7 +255,6 @@ class TestDockerNodesRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["added"] == 2
 
-
     async def test_docker_update_nio(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         params = {
@@ -290,25 +263,29 @@ class TestDockerNodesRoutes:
             "rport": 4343,
             "rhost": "127.0.0.1",
             "filters": {"packet_loss": 10},
-            "suspend": False
+            "suspend": False,
         }
 
-        url = app.url_path_for("compute:create_docker_node_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:create_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         response = await compute_client.post(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["filters"] == {"packet_loss": 10}
         params["filters"] = {}
         params["suspend"] = True
 
-        url = app.url_path_for("compute:update_docker_node_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:update_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_update_nio_binding"):
             response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -318,30 +295,34 @@ class TestDockerNodesRoutes:
 
     async def test_docker_delete_nio(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-        url = app.url_path_for("compute:delete_docker_node_nio",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:delete_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_remove_nio_binding"):
             response = await compute_client.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-
-    async def test_docker_update(self, app: FastAPI, compute_client: AsyncClient, vm: dict, free_console_port: int) -> None:
+    async def test_docker_update(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict, free_console_port: int
+    ) -> None:
 
         params = {
             "name": "test",
             "console": free_console_port,
             "start_command": "yes",
             "environment": "GNS3=1\nGNS4=0",
-            "extra_hosts": "test:127.0.0.1"
+            "extra_hosts": "test:127.0.0.1",
         }
 
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
-            response = await compute_client.put(app.url_path_for("compute:update_docker_node",
-                                                         project_id=vm["project_id"],
-                                                         node_id=vm["node_id"]), json=params)
+            response = await compute_client.put(
+                app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+                json=params,
+            )
 
         assert response.status_code == 200
         assert mock.called
@@ -352,10 +333,7 @@ class TestDockerNodesRoutes:
         assert response.json()["extra_hosts"] == "test:127.0.0.1"
 
     async def test_docker_update_empty_strings_do_not_recreate_container(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project
     ) -> None:
         """
         Web clients serialize empty form fields as "" while unset values are
@@ -390,14 +368,15 @@ class TestDockerNodesRoutes:
         assert response.json()["start_command"] is None
         assert response.json()["console_http_path"] == "/"
 
-
     async def test_docker_start_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-        url = app.url_path_for("compute:start_docker_node_capture",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:start_docker_node_capture",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
 
         with patch("gns3server.compute.docker.docker_vm.DockerVM.is_running", return_value=True):
             with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.start_capture") as mock:
@@ -407,14 +386,15 @@ class TestDockerNodesRoutes:
                 assert mock.called
                 assert "test.pcap" in response.json()["pcap_file_path"]
 
-
     async def test_docker_stop_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
-        url = app.url_path_for("compute:stop_docker_node_capture",
-                               project_id=vm["project_id"],
-                               node_id=vm["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:stop_docker_node_capture",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
 
         with patch("gns3server.compute.docker.docker_vm.DockerVM.is_running", return_value=True):
             with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.stop_capture") as mock:
@@ -422,18 +402,21 @@ class TestDockerNodesRoutes:
                 assert response.status_code == status.HTTP_204_NO_CONTENT
                 assert mock.called
 
-
-    async def test_docker_duplicate(self, app: FastAPI, compute_client: AsyncClient, vm: dict, base_params: dict) -> None:
+    async def test_docker_duplicate(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict, base_params: dict
+    ) -> None:
 
         # create destination node first
         with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
-                response = await compute_client.post(app.url_path_for("compute:create_docker_node",
-                                                              project_id=vm["project_id"]), json=base_params)
+                response = await compute_client.post(
+                    app.url_path_for("compute:create_docker_node", project_id=vm["project_id"]), json=base_params
+                )
         assert response.status_code == status.HTTP_201_CREATED
 
         params = {"destination_node_id": response.json()["node_id"]}
-        response = await compute_client.post(app.url_path_for("compute:duplicate_docker_node",
-                                                      project_id=vm["project_id"],
-                                                      node_id=vm["node_id"]), json=params)
+        response = await compute_client.post(
+            app.url_path_for("compute:duplicate_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+            json=params,
+        )
         assert response.status_code == status.HTTP_201_CREATED

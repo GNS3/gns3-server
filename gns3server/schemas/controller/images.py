@@ -21,7 +21,6 @@ from .base import DateTimeModelMixin
 
 
 class ImageType(str, Enum):
-
     qemu = "qemu"
     ios = "ios"
     iou = "iou"

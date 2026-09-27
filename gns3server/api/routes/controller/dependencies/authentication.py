@@ -50,13 +50,12 @@ def _reject_refresh_token(token_data) -> None:
 
 
 async def get_user_from_token(
-        request: Request,
-        bearer_token: str = Depends(oauth2_scheme),
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-        token: Optional[str] = Query(None, include_in_schema=False)
+    request: Request,
+    bearer_token: str = Depends(oauth2_scheme),
+    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
+    token: Optional[str] = Query(None, include_in_schema=False),
 ) -> schemas.User:
-
 
     if bearer_token:
         # bearer token is used first, then any token passed as a URL parameter
@@ -147,9 +146,9 @@ async def get_user_from_token(
 
 
 async def get_current_active_user(
-        request: Request,
-        current_user: schemas.User = Depends(get_user_from_token),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    request: Request,
+    current_user: schemas.User = Depends(get_user_from_token),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> schemas.User:
 
     # Super admin is always authorized
@@ -167,9 +166,9 @@ async def get_current_active_user(
 
 
 async def get_current_active_user_from_websocket(
-        websocket: WebSocket,
-        token: str = Query(...),
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    websocket: WebSocket,
+    token: str = Query(...),
+    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> Optional[schemas.User]:
 
     # Extract requested subprotocols from headers for proper WebSocket negotiation
@@ -209,12 +208,11 @@ async def get_current_active_user_from_websocket(
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Could not validate credentials for '{token_data.username}'"
+                detail=f"Could not validate credentials for '{token_data.username}'",
             )
         if token_data.token_version != user.token_version:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Token has been revoked for '{token_data.username}'"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Token has been revoked for '{token_data.username}'"
             )
 
         # Super admin is always authorized
@@ -223,8 +221,7 @@ async def get_current_active_user_from_websocket(
 
         if not user.is_active:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"'{token_data.username}' is not an active user"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"'{token_data.username}' is not an active user"
             )
 
         return user
@@ -242,4 +239,3 @@ async def get_current_active_user_from_websocket(
         await websocket.send_json(websocket_error)
         log.error(err_msg)
         return await websocket.close(code=1008)
-

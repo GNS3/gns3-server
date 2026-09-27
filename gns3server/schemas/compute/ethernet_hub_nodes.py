@@ -22,7 +22,6 @@ from ..common import NodeStatus
 
 
 class EthernetHubPort(BaseModel):
-
     name: str
     port_number: int
 
@@ -55,7 +54,6 @@ class EthernetHubUpdate(EthernetHubBase):
 
 
 class EthernetHub(EthernetHubBase):
-
     name: str
     node_id: UUID
     project_id: UUID

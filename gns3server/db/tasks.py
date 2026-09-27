@@ -79,7 +79,9 @@ async def connect_to_db(app: FastAPI) -> None:
 
     db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
-    engine = create_async_engine(db_url, connect_args={"check_same_thread": False, "timeout": 20}, future=True, pool_size=512, max_overflow=1024)
+    engine = create_async_engine(
+        db_url, connect_args={"check_same_thread": False, "timeout": 20}, future=True, pool_size=512, max_overflow=1024
+    )
 
     # Register PRAGMA on the sync engine to ensure it fires for async connections
     @event.listens_for(engine.sync_engine, "connect")
@@ -91,19 +93,21 @@ async def connect_to_db(app: FastAPI) -> None:
 
     # Verify WAL mode is active
     async with engine.connect() as _verify_conn:
+
         def _check_wal(conn):
             cursor = conn.connection.cursor()
             cursor.execute("PRAGMA journal_mode")
             row = cursor.fetchone()
             cursor.close()
             return row[0] if row else "unknown"
+
         wal_mode = await _verify_conn.run_sync(_check_wal)
         log.info(f"SQLite journal mode: {wal_mode}")
         if wal_mode and wal_mode.upper() != "WAL":
             log.warning("WAL mode not active - concurrent writes may cause 'database is locked' errors")
     alembic_cfg = config.Config()
     alembic_cfg.set_main_option("script_location", "gns3server:db_migrations")
-    #alembic_cfg.set_main_option('sqlalchemy.url', db_url)
+    # alembic_cfg.set_main_option('sqlalchemy.url', db_url)
     try:
         async with engine.connect() as conn:
             current_rev, head_rev = await conn.run_sync(check_revision, alembic_cfg)
@@ -116,27 +120,27 @@ async def connect_to_db(app: FastAPI) -> None:
                     inspector = sa.inspect(connection)
                     tables = inspector.get_table_names()
 
-                    if 'users' not in tables:
-                        return 'new'  # Truly new database
+                    if "users" not in tables:
+                        return "new"  # Truly new database
 
                     # Check for new feature columns that indicate this is already migrated
-                    columns = [col['name'] for col in inspector.get_columns('users')]
-                    if 'llm_model_configs' in tables:
+                    columns = [col["name"] for col in inspector.get_columns("users")]
+                    if "llm_model_configs" in tables:
                         # The llm_model_configs table already exists (created from code)
-                        return 'new_with_llm_configs'
+                        return "new_with_llm_configs"
                     else:
                         # Old database without llm_model_configs table, needs migration
-                        return 'old_needs_migration'
+                        return "old_needs_migration"
 
                 db_state = await conn.run_sync(check_db_state)
 
-                if db_state == 'new':
+                if db_state == "new":
                     # Truly new database: create all tables and stamp
                     await conn.run_sync(Base.metadata.create_all)
                     await conn.run_sync(run_stamp, alembic_cfg)
                     await conn.commit()
                     log.info("Created new database and stamped to head revision")
-                elif db_state == 'new_with_llm_configs':
+                elif db_state == "new_with_llm_configs":
                     # Database already has llm_model_configs table (from Base.metadata.create_all)
                     # Just stamp the version
                     await conn.run_sync(run_stamp, alembic_cfg)
@@ -216,6 +220,7 @@ async def update_disk_checksums(updated_disks: List[str]) -> None:
     """
 
     from gns3server.api.server import app
+
     async with AsyncSession(app.state._db_engine) as db_session:
         images_repository = ImagesRepository(db_session)
         for path in updated_disks:
@@ -225,6 +230,7 @@ async def update_disk_checksums(updated_disks: List[str]) -> None:
                 checksum = await wait_run_in_executor(md5sum, path, cache_to_md5file=False)
                 if image.checksum != checksum:
                     await images_repository.update_image(path, checksum, "md5")
+
 
 class EventHandler(PatternMatchingEventHandler):
     """
@@ -237,13 +243,14 @@ class EventHandler(PatternMatchingEventHandler):
         self._queue = queue
 
         # ignore temporary files, md5sum files, hidden files and directories
-        super().__init__(ignore_patterns=["*.tmp", "*.md5sum", ".*"], ignore_directories = True, **kwargs)
+        super().__init__(ignore_patterns=["*.tmp", "*.md5sum", ".*"], ignore_directories=True, **kwargs)
 
     def on_closed(self, event: FileSystemEvent) -> None:
         # monitor for closed files (e.g. when a file has finished to be copied)
         if "/lib/" in event.src_path or "/lib64/" in event.src_path:
             return  # ignore custom IOU libraries
         self._loop.call_soon_threadsafe(self._queue.put_nowait, event)
+
 
 class EventIterator(object):
     """
@@ -263,13 +270,11 @@ class EventIterator(object):
             raise StopAsyncIteration
         return item
 
+
 async def monitor_images_on_filesystem(app: FastAPI):
 
     def watchdog(
-            path: str,
-            queue: asyncio.Queue,
-            loop: asyncio.BaseEventLoop,
-            app: FastAPI, recursive: bool = False
+        path: str, queue: asyncio.Queue, loop: asyncio.BaseEventLoop, app: FastAPI, recursive: bool = False
     ) -> None:
         """
         Thread to monitor a directory for new images.
@@ -294,7 +299,7 @@ async def monitor_images_on_filesystem(app: FastAPI):
     loop = asyncio.get_event_loop()
     server_config = Config.instance().settings.Server
     image_dir = os.path.expanduser(server_config.images_path)
-    asyncio.get_event_loop().run_in_executor(None, watchdog,image_dir, queue, loop, app, True)
+    asyncio.get_event_loop().run_in_executor(None, watchdog, image_dir, queue, loop, app, True)
 
     async for filesystem_event in EventIterator(queue):
         # read the file system event from the queue
@@ -352,7 +357,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
             result = await repo.get_user_effective_configs(
                 user_uuid,
                 current_user_id=user_uuid,  # Viewing own config
-                current_user_is_superadmin=False
+                current_user_is_superadmin=False,
             )
 
             if not result or not result.get("default_config"):
@@ -393,7 +398,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
                 "group_name": default_config.get("group_name"),
                 "user_id": str(full_config.user_id) if full_config.user_id else None,
                 "group_id": str(full_config.group_id) if full_config.group_id else None,
-                **config_data  # provider, api_key, model, temperature, etc.
+                **config_data,  # provider, api_key, model, temperature, etc.
             }
 
             # Validate required fields
@@ -415,4 +420,3 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
     except Exception as e:
         log.error(f"Failed to retrieve LLM config for user {user_id}: {e}", exc_info=True)
         return None
-

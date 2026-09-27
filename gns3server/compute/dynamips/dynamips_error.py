@@ -22,5 +22,4 @@ from ..error import NodeError
 
 
 class DynamipsError(NodeError):
-
     pass

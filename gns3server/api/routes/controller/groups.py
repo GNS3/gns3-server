@@ -44,13 +44,9 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get(
-    "",
-    response_model=List[schemas.UserGroup],
-    dependencies=[Depends(has_privilege("Group.Audit"))]
-)
+@router.get("", response_model=List[schemas.UserGroup], dependencies=[Depends(has_privilege("Group.Audit"))])
 async def get_user_groups(
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> List[schemas.UserGroup]:
     """
     Get all user groups.
@@ -65,11 +61,10 @@ async def get_user_groups(
     "",
     response_model=schemas.UserGroup,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("Group.Allocate"))]
+    dependencies=[Depends(has_privilege("Group.Allocate"))],
 )
 async def create_user_group(
-        user_group_create: schemas.UserGroupCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_group_create: schemas.UserGroupCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.UserGroup:
     """
     Create a new user group.
@@ -83,14 +78,10 @@ async def create_user_group(
     return await users_repo.create_user_group(user_group_create)
 
 
-@router.get(
-    "/{user_group_id}",
-    response_model=schemas.UserGroup,
-    dependencies=[Depends(has_privilege("Group.Audit"))]
-)
+@router.get("/{user_group_id}", response_model=schemas.UserGroup, dependencies=[Depends(has_privilege("Group.Audit"))])
 async def get_user_group(
-        user_group_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    user_group_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.UserGroup:
     """
     Get a user group.
@@ -104,15 +95,11 @@ async def get_user_group(
     return user_group
 
 
-@router.put(
-    "/{user_group_id}",
-    response_model=schemas.UserGroup,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
-)
+@router.put("/{user_group_id}", response_model=schemas.UserGroup, dependencies=[Depends(has_privilege("Group.Modify"))])
 async def update_user_group(
-        user_group_id: UUID,
-        user_group_update: schemas.UserGroupUpdate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_group_id: UUID,
+    user_group_update: schemas.UserGroupUpdate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.UserGroup:
     """
     Update a user group.
@@ -130,14 +117,12 @@ async def update_user_group(
 
 
 @router.delete(
-    "/{user_group_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Group.Allocate"))]
+    "/{user_group_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Group.Allocate"))]
 )
 async def delete_user_group(
-        user_group_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    user_group_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a user group.
@@ -159,13 +144,10 @@ async def delete_user_group(
 
 
 @router.get(
-    "/{user_group_id}/members",
-    response_model=List[schemas.User],
-    dependencies=[Depends(has_privilege("Group.Audit"))]
+    "/{user_group_id}/members", response_model=List[schemas.User], dependencies=[Depends(has_privilege("Group.Audit"))]
 )
 async def get_user_group_members(
-        user_group_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_group_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> List[schemas.User]:
     """
     Get all user group members.
@@ -179,12 +161,10 @@ async def get_user_group_members(
 @router.put(
     "/{user_group_id}/members/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def add_member_to_group(
-        user_group_id: UUID,
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_group_id: UUID, user_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> None:
     """
     Add member to a user group.
@@ -209,7 +189,7 @@ async def add_member_to_group(
 @router.delete(
     "/{user_group_id}/members/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Group.Modify"))]
+    dependencies=[Depends(has_privilege("Group.Modify"))],
 )
 async def remove_member_from_group(
     user_group_id: UUID,

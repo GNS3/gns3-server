@@ -29,10 +29,7 @@ from typing import Iterator, List, Sequence
 
 
 from gns3server import schemas
-from gns3server.controller.controller_error import (
-    ControllerBadRequestError,
-    ControllerNotFoundError
-)
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerNotFoundError
 
 from gns3server.controller import Controller
 from gns3server.db.repositories.users import UsersRepository
@@ -69,7 +66,9 @@ def _iter_route_paths(routes: Sequence[BaseRoute], prefix: str = "", include_mou
     for route in routes:
         if isinstance(route, _IncludedRouter):
             include_prefix = route.include_context.prefix or ""
-            yield from _iter_route_paths(route.original_router.routes, _join_paths(prefix, include_prefix), include_mounted_routes)
+            yield from _iter_route_paths(
+                route.original_router.routes, _join_paths(prefix, include_prefix), include_mounted_routes
+            )
             continue
 
         if isinstance(route, APIRoute):
@@ -82,16 +81,12 @@ def _iter_route_paths(routes: Sequence[BaseRoute], prefix: str = "", include_mou
                 yield from _iter_route_paths(mounted_routes, _join_paths(prefix, route.path), include_mounted_routes)
 
 
-@router.get(
-    "/endpoints",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("ACE.Audit"))]
-)
+@router.get("/endpoints", status_code=status.HTTP_201_CREATED, dependencies=[Depends(has_privilege("ACE.Audit"))])
 async def endpoints(
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
 ) -> List[dict]:
     """
     List all endpoints to be used in ACL entries.
@@ -123,7 +118,7 @@ async def endpoints(
             add_to_endpoints(
                 f"/projects/{project.id}/nodes/{node['node_id']}",
                 f'Node "{node["name"]}" in project "{project.name}"',
-                endpoint_type="node"
+                endpoint_type="node",
             )
 
         # links
@@ -140,7 +135,7 @@ async def endpoints(
             add_to_endpoints(
                 f"/projects/{project.id}/links/{link['link_id']}",
                 f'Link from "{node_name_1}" to "{node_name_2}" in project "{project.name}"',
-                endpoint_type="link"
+                endpoint_type="link",
             )
 
     # users
@@ -179,14 +174,8 @@ async def endpoints(
     return endpoints
 
 
-@router.get(
-    "",
-    response_model=List[schemas.ACE],
-    dependencies=[Depends(has_privilege("ACE.Audit"))]
-)
-async def get_aces(
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> List[schemas.ACE]:
+@router.get("", response_model=List[schemas.ACE], dependencies=[Depends(has_privilege("ACE.Audit"))])
+async def get_aces(rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))) -> List[schemas.ACE]:
     """
     Get all ACL entries.
 
@@ -200,12 +189,10 @@ async def get_aces(
     "",
     response_model=schemas.ACE,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(has_privilege("ACE.Allocate"))]
+    dependencies=[Depends(has_privilege("ACE.Allocate"))],
 )
 async def create_ace(
-        request: Request,
-        ace_create: schemas.ACECreate,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    request: Request, ace_create: schemas.ACECreate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.ACE:
     """
     Create a new ACL entry.
@@ -217,11 +204,12 @@ async def create_ace(
         print(route_path)
 
     for route_path in _iter_route_paths(request.app.routes, include_mounted_routes=True):
-
         # remove the prefix (e.g. "/v3") from the route path
         normalized_path = re.sub(r"^/v[0-9]", "", route_path)
         # replace route path ID parameters by a UUID regex
-        normalized_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", normalized_path)
+        normalized_path = re.sub(
+            r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", normalized_path
+        )
         # replace remaining route path parameters by a word matching regex
         normalized_path = re.sub(r"/{[\w:]+}", r"/\\w+", normalized_path)
 
@@ -232,14 +220,10 @@ async def create_ace(
     raise ControllerBadRequestError(f"Path '{ace_create.path}' doesn't match any existing endpoint")
 
 
-@router.get(
-    "/{ace_id}",
-    response_model=schemas.ACE,
-    dependencies=[Depends(has_privilege("ACE.Audit"))]
-)
+@router.get("/{ace_id}", response_model=schemas.ACE, dependencies=[Depends(has_privilege("ACE.Audit"))])
 async def get_ace(
-        ace_id: UUID,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    ace_id: UUID,
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> schemas.ACE:
     """
     Get an ACL entry.
@@ -253,15 +237,9 @@ async def get_ace(
     return ace
 
 
-@router.put(
-    "/{ace_id}",
-    response_model=schemas.ACE,
-    dependencies=[Depends(has_privilege("ACE.Modify"))]
-)
+@router.put("/{ace_id}", response_model=schemas.ACE, dependencies=[Depends(has_privilege("ACE.Modify"))])
 async def update_ace(
-        ace_id: UUID,
-        ace_update: schemas.ACEUpdate,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    ace_id: UUID, ace_update: schemas.ACEUpdate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.ACE:
     """
     Update an ACL entry.
@@ -277,9 +255,7 @@ async def update_ace(
 
 
 @router.delete(
-    "/{ace_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("ACE.Allocate"))]
+    "/{ace_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("ACE.Allocate"))]
 )
 async def delete_ace(
     ace_id: UUID,

@@ -23,7 +23,6 @@ from .base import DateTimeModelMixin
 
 
 class ResourceType(str, Enum):
-
     project = "project"
 
 
@@ -47,7 +46,6 @@ class ResourceCreate(ResourceBase):
 
 
 class Resource(DateTimeModelMixin, ResourceBase):
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -76,6 +74,5 @@ class ResourcePoolUpdate(ResourcePoolBase):
 
 
 class ResourcePool(DateTimeModelMixin, ResourcePoolBase):
-
     resource_pool_id: UUID
     model_config = ConfigDict(from_attributes=True)

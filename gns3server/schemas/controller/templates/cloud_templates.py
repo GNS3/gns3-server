@@ -16,19 +16,13 @@
 
 
 from . import Category, TemplateBase
-from gns3server.schemas.compute.cloud_nodes import (
-    EthernetPort,
-    TAPPort,
-    UDPPort,
-    CloudConsoleType
-)
+from gns3server.schemas.compute.cloud_nodes import EthernetPort, TAPPort, UDPPort, CloudConsoleType
 
 from pydantic import Field
 from typing import Optional, Union, List
 
 
 class CloudTemplate(TemplateBase):
-
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "Cloud{0}"
     symbol: Optional[str] = "cloud"
@@ -40,5 +34,4 @@ class CloudTemplate(TemplateBase):
 
 
 class CloudTemplateUpdate(CloudTemplate):
-
     pass

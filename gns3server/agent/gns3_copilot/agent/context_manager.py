@@ -67,9 +67,12 @@ logger = logging.getLogger(__name__)
 
 # Initialize tiktoken encoding (required dependency)
 import time
+
 logger.debug("Initializing tiktoken encoding (cl100k_base)...")
 logger.debug(f"Cache directory: {_cache_dir}")
-logger.debug("This may take a moment on first run (downloading ~1.6MB encoding file from openaipublic.blob.core.windows.net)")
+logger.debug(
+    "This may take a moment on first run (downloading ~1.6MB encoding file from openaipublic.blob.core.windows.net)"
+)
 start_time = time.time()
 _tiktoken_encoding = tiktoken.get_encoding("cl100k_base")
 elapsed = time.time() - start_time
@@ -149,21 +152,16 @@ def estimate_tool_tokens(tools: list[Any]) -> int:
             if hasattr(tool, "args_schema") and tool.args_schema:
                 try:
                     # Try Pydantic v2 method (model_json_schema)
-                    tool_schema["function"]["parameters"] = (
-                        tool.args_schema.model_json_schema()
-                    )
+                    tool_schema["function"]["parameters"] = tool.args_schema.model_json_schema()
                 except AttributeError:
                     # Fallback to Pydantic v1 method (schema)
                     try:
-                        tool_schema["function"]["parameters"] = (
-                            tool.args_schema.schema()
-                        )
+                        tool_schema["function"]["parameters"] = tool.args_schema.schema()
                     except Exception:
                         # Both methods failed, use empty schema
                         tool_name = getattr(tool, "name", "unknown")
                         logger.debug(
-                            "Failed to get schema for tool %s, using empty "
-                            "parameters",
+                            "Failed to get schema for tool %s, using empty parameters",
                             tool_name,
                         )
                         tool_schema["function"]["parameters"] = {}
@@ -171,15 +169,12 @@ def estimate_tool_tokens(tools: list[Any]) -> int:
                     # model_json_schema() raised an exception
                     tool_name = getattr(tool, "name", "unknown")
                     logger.debug(
-                        "model_json_schema() failed for tool %s: %s, "
-                        "trying v1 fallback",
+                        "model_json_schema() failed for tool %s: %s, trying v1 fallback",
                         tool_name,
                         e,
                     )
                     try:
-                        tool_schema["function"]["parameters"] = (
-                            tool.args_schema.schema()
-                        )
+                        tool_schema["function"]["parameters"] = tool.args_schema.schema()
                     except Exception:
                         tool_schema["function"]["parameters"] = {}
 
@@ -331,14 +326,11 @@ def create_pre_model_hook(
 
         if not llm_config:
             logger.error("LLM config not found. context_limit is required.")
-            raise ValueError(
-                "LLM config not found. context_limit is required."
-            )
+            raise ValueError("LLM config not found. context_limit is required.")
 
         if "context_limit" not in llm_config:
             logger.error(
-                "context_limit not found in LLM config. "
-                "This is a required field. Please configure context_limit."
+                "context_limit not found in LLM config. This is a required field. Please configure context_limit."
             )
             raise ValueError("context_limit is required in LLM config")
 
@@ -385,9 +377,7 @@ def create_pre_model_hook(
         system_tokens = _count_tokens_for_message(system_message)
 
         # Calculate tokens for messages_with_system (including system)
-        messages_with_system_tokens = sum(
-            _count_tokens_for_message(m) for m in messages_with_system
-        )
+        messages_with_system_tokens = sum(_count_tokens_for_message(m) for m in messages_with_system)
 
         # Calculate available budget
         model_limit_tokens = context_limit_k * TOKENS_PER_K
@@ -449,14 +439,11 @@ def create_pre_model_hook(
 
             # Calculate final token counts
             final_total = sum(_count_tokens_for_message(m) for m in trimmed)
-            usage_percent = (
-                (final_total + tool_tokens) / model_limit_tokens * 100
-            )
+            usage_percent = (final_total + tool_tokens) / model_limit_tokens * 100
 
             if len(trimmed) < len(messages_with_system):
                 logger.info(
-                    "Messages trimmed: %d → %d msgs. Total: ~%d tokens + %d "
-                    "tools = %d / %dK (%.1f%%), strategy=%s",
+                    "Messages trimmed: %d → %d msgs. Total: ~%d tokens + %d tools = %d / %dK (%.1f%%), strategy=%s",
                     len(messages_with_system),
                     len(trimmed),
                     final_total,
@@ -468,8 +455,7 @@ def create_pre_model_hook(
                 )
             else:
                 logger.info(
-                    "Context ready: %d msgs, ~%d tokens + %d tools = %d / %dK "
-                    "(%.1f%%), strategy=%s",
+                    "Context ready: %d msgs, ~%d tokens + %d tools = %d / %dK (%.1f%%), strategy=%s",
                     len(trimmed),
                     final_total,
                     tool_tokens,
@@ -520,33 +506,23 @@ def _inject_topology_into_system(
 
     if topology_data:
         topology_str = str(topology_data)
-        formatted_prompt = system_prompt.replace(
-            "{{topology_info}}", f"\n\n## Current Topology\n{topology_str}"
-        )
+        formatted_prompt = system_prompt.replace("{{topology_info}}", f"\n\n## Current Topology\n{topology_str}")
         logger.info(
             "✓ Topology injected: %d chars, nodes: %s",
             len(topology_str),
             list(topology_data.get("nodes", {}).keys())[:5],
         )  # Show first 5 node names
-        logger.debug(
-            "Full topology data: %s", topology_str[:500]
-        )  # First 500 chars
+        logger.debug("Full topology data: %s", topology_str[:500])  # First 500 chars
     else:
-        formatted_prompt = system_prompt.replace(
-            "{{topology_info}}", "(No topology information available)"
-        )
+        formatted_prompt = system_prompt.replace("{{topology_info}}", "(No topology information available)")
         logger.warning("✗ Topology data is None, injecting placeholder")
 
     # Filter out existing SystemMessage instances
-    non_system_messages = [
-        m for m in messages if not isinstance(m, SystemMessage)
-    ]
+    non_system_messages = [m for m in messages if not isinstance(m, SystemMessage)]
 
     filtered_count = len(messages) - len(non_system_messages)
     if filtered_count > 0:
-        logger.debug(
-            "Filtered out %d existing SystemMessage(s)", filtered_count
-        )
+        logger.debug("Filtered out %d existing SystemMessage(s)", filtered_count)
 
     return [SystemMessage(content=formatted_prompt)] + non_system_messages
 
@@ -568,8 +544,7 @@ def prepare_context_messages(
     **DEPRECATED**: Use create_pre_model_hook() instead.
     """
     warnings.warn(
-        "prepare_context_messages() is deprecated. Use "
-        "create_pre_model_hook() instead.",
+        "prepare_context_messages() is deprecated. Use create_pre_model_hook() instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -577,13 +552,9 @@ def prepare_context_messages(
     if "{{topology_info}}" not in system_prompt:
         formatted_prompt = system_prompt
     elif topology_context:
-        formatted_prompt = system_prompt.replace(
-            "{{topology_info}}", f"\n\n## Current Topology\n{topology_context}"
-        )
+        formatted_prompt = system_prompt.replace("{{topology_info}}", f"\n\n## Current Topology\n{topology_context}")
     else:
-        formatted_prompt = system_prompt.replace(
-            "{{topology_info}}", "(No topology information available)"
-        )
+        formatted_prompt = system_prompt.replace("{{topology_info}}", "(No topology information available)")
 
     return [SystemMessage(content=formatted_prompt)] + state_messages
 
@@ -629,9 +600,7 @@ if __name__ == "__main__":
     # Test invocation
     print("\nTest 3: Invoke pre_model_hook")
     test_state = {
-        "messages": [
-            HumanMessage(f"Message {i}: {'x' * 50}") for i in range(5)
-        ],
+        "messages": [HumanMessage(f"Message {i}: {'x' * 50}") for i in range(5)],
         "topology_info": {"project_id": "test123", "nodes": 3},
     }
 

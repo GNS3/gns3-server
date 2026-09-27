@@ -32,13 +32,11 @@ class PrivilegeBase(BaseModel):
 
 
 class Privilege(DateTimeModelMixin, PrivilegeBase):
-
     privilege_id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class ACEType(str, Enum):
-
     user = "user"
     group = "group"
 
@@ -75,7 +73,6 @@ class ACEUpdate(ACEBase):
 
 
 class ACE(DateTimeModelMixin, ACEBase):
-
     ace_id: UUID
     model_config = ConfigDict(from_attributes=True)
 
@@ -106,7 +103,6 @@ class RoleUpdate(RoleBase):
 
 
 class Role(DateTimeModelMixin, RoleBase):
-
     role_id: UUID
     is_builtin: bool
     privileges: List[Privilege]

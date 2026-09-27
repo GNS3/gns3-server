@@ -24,6 +24,7 @@ if AI_COPILOT_AVAILABLE:
     from . import chat
     from . import copilot
     from . import llm_model_configs
+
     _chat_router = chat.router
     _copilot_router = copilot.router
     _llm_router = llm_model_configs.router
@@ -39,8 +40,9 @@ else:
     async def ai_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
+            detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
+
 
 from . import controller
 from . import appliances
@@ -68,148 +70,65 @@ from .dependencies.authentication import get_current_active_user
 
 router = APIRouter()
 
+router.include_router(controller.router, tags=["Controller"])
+
+router.include_router(settings.router, prefix="/settings", tags=["Server settings"])
+
+router.include_router(users.router, prefix="/access/users", tags=["Users"])
+
+router.include_router(groups.router, prefix="/access/groups", tags=["Users groups"])
+
+router.include_router(roles.router, prefix="/access/roles", tags=["Roles"])
+
 router.include_router(
-    controller.router,
-    tags=["Controller"]
+    privileges.router, dependencies=[Depends(get_current_active_user)], prefix="/access/privileges", tags=["Privileges"]
+)
+
+router.include_router(acl.router, prefix="/access/acl", tags=["ACL"])
+
+router.include_router(images.router, prefix="/images", tags=["Images"])
+
+router.include_router(templates.router, prefix="/templates", tags=["Templates"])
+
+router.include_router(projects.router, prefix="/projects", tags=["Projects"])
+
+router.include_router(nodes.router, prefix="/projects/{project_id}/nodes", tags=["Nodes"])
+
+router.include_router(links.router, prefix="/projects/{project_id}/links", tags=["Links"])
+
+router.include_router(drawings.router, prefix="/projects/{project_id}/drawings", tags=["Drawings"])
+
+router.include_router(symbols.router, prefix="/symbols", tags=["Symbols"])
+
+router.include_router(snapshots.router, prefix="/projects/{project_id}/snapshots", tags=["Snapshots"])
+
+router.include_router(
+    computes.router, dependencies=[Depends(get_current_active_user)], prefix="/computes", tags=["Computes"]
+)
+
+router.include_router(appliances.router, prefix="/appliances", tags=["Appliances"])
+
+router.include_router(netmiko.router, prefix="/netmiko", tags=["Netmiko"])
+
+router.include_router(pools.router, prefix="/pools", tags=["Resource pools"])
+
+router.include_router(
+    gns3vm.router, dependencies=[Depends(get_current_active_user)], deprecated=True, prefix="/gns3vm", tags=["GNS3 VM"]
 )
 
 router.include_router(
-    settings.router,
-    prefix="/settings",
-    tags=["Server settings"]
+    _llm_router, prefix="/access", dependencies=[Depends(get_current_active_user)], tags=["LLM Model Configurations"]
 )
 
 router.include_router(
-    users.router,
-    prefix="/access/users",
-    tags=["Users"]
-)
-
-router.include_router(
-    groups.router,
-    prefix="/access/groups",
-    tags=["Users groups"]
-)
-
-router.include_router(
-    roles.router,
-    prefix="/access/roles",
-    tags=["Roles"]
-)
-
-router.include_router(
-    privileges.router,
-    dependencies=[Depends(get_current_active_user)],
-    prefix="/access/privileges",
-    tags=["Privileges"]
-)
-
-router.include_router(
-    acl.router,
-    prefix="/access/acl",
-    tags=["ACL"]
-)
-
-router.include_router(
-    images.router,
-    prefix="/images",
-    tags=["Images"]
-)
-
-router.include_router(
-    templates.router,
-    prefix="/templates",
-    tags=["Templates"]
-)
-
-router.include_router(
-    projects.router,
-    prefix="/projects",
-    tags=["Projects"])
-
-router.include_router(
-    nodes.router,
-    prefix="/projects/{project_id}/nodes",
-    tags=["Nodes"]
-)
-
-router.include_router(
-    links.router,
-    prefix="/projects/{project_id}/links",
-    tags=["Links"]
-)
-
-router.include_router(
-    drawings.router,
-    prefix="/projects/{project_id}/drawings",
-    tags=["Drawings"])
-
-router.include_router(
-    symbols.router,
-    prefix="/symbols", tags=["Symbols"]
-)
-
-router.include_router(
-    snapshots.router,
-    prefix="/projects/{project_id}/snapshots",
-    tags=["Snapshots"])
-
-router.include_router(
-    computes.router,
-    dependencies=[Depends(get_current_active_user)],
-    prefix="/computes",
-    tags=["Computes"]
-)
-
-router.include_router(
-    appliances.router,
-    prefix="/appliances",
-    tags=["Appliances"]
-)
-
-router.include_router(
-    netmiko.router,
-    prefix="/netmiko",
-    tags=["Netmiko"]
-)
-
-router.include_router(
-    pools.router,
-    prefix="/pools",
-    tags=["Resource pools"]
-)
-
-router.include_router(
-    gns3vm.router,
-    dependencies=[Depends(get_current_active_user)],
-    deprecated=True,
-    prefix="/gns3vm",
-    tags=["GNS3 VM"]
-)
-
-router.include_router(
-    _llm_router,
-    prefix="/access",
-    dependencies=[Depends(get_current_active_user)],
-    tags=["LLM Model Configurations"]
-)
-
-router.include_router(
-    _copilot_router,
-    prefix="/copilot",
-    dependencies=[Depends(get_current_active_user)],
-    tags=["GNS3 Copilot"]
+    _copilot_router, prefix="/copilot", dependencies=[Depends(get_current_active_user)], tags=["GNS3 Copilot"]
 )
 
 router.include_router(
     _chat_router,
     prefix="/copilot/projects/{project_id}/chat",
     dependencies=[Depends(get_current_active_user)],
-    tags=["GNS3 Copilot"]
+    tags=["GNS3 Copilot"],
 )
 
-router.include_router(
-    api_keys.router,
-    dependencies=[Depends(get_current_active_user)],
-    tags=["API Keys"]
-)
+router.include_router(api_keys.router, dependencies=[Depends(get_current_active_user)], tags=["API Keys"])

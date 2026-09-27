@@ -42,22 +42,16 @@ def demo_topology():
         "revision": 5,
         "topology": {
             "computes": [
-                {
-                    "compute_id": "local",
-                    "host": "127.0.0.1",
-                    "name": "atlantis",
-                    "port": 3080,
-                    "protocol": "http"
-                }
+                {"compute_id": "local", "host": "127.0.0.1", "name": "atlantis", "port": 3080, "protocol": "http"}
             ],
             "drawings": [
                 {
                     "drawing_id": "48bdaa23-326a-4de0-bf7d-cc22709689ec",
                     "rotation": 0,
-                    "svg": "<svg height=\"100\" width=\"200\"><rect fill=\"#ffffff\" fill-opacity=\"1.0\" height=\"100\" stroke=\"#000000\" stroke-width=\"2\" width=\"200\" /></svg>",
+                    "svg": '<svg height="100" width="200"><rect fill="#ffffff" fill-opacity="1.0" height="100" stroke="#000000" stroke-width="2" width="200" /></svg>',
                     "x": -226,
                     "y": 57,
-                    "z": 0
+                    "z": 0,
                 }
             ],
             "links": [
@@ -71,10 +65,10 @@ def demo_topology():
                                 "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                                 "text": "Ethernet0",
                                 "x": 72,
-                                "y": 32
+                                "y": 32,
                             },
                             "node_id": "64ba8408-afbf-4b66-9cdd-1fd854427478",
-                            "port_number": 0
+                            "port_number": 0,
                         },
                         {
                             "adapter_number": 0,
@@ -83,12 +77,12 @@ def demo_topology():
                                 "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                                 "text": "Ethernet0",
                                 "x": -7,
-                                "y": 26
+                                "y": 26,
                             },
                             "node_id": "748bcd89-624a-40eb-a8d3-1d2e85c99b51",
-                            "port_number": 0
-                        }
-                    ]
+                            "port_number": 0,
+                        },
+                    ],
                 }
             ],
             "nodes": [
@@ -102,18 +96,17 @@ def demo_topology():
                         "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                         "text": "PC1",
                         "x": 18,
-                        "y": -25
+                        "y": -25,
                     },
                     "name": "PC1",
                     "node_id": "64ba8408-afbf-4b66-9cdd-1fd854427478",
                     "node_type": "vpcs",
-                    "properties": {
-                    },
+                    "properties": {},
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,
                     "x": -300,
                     "y": -118,
-                    "z": 1
+                    "z": 1,
                 },
                 {
                     "compute_id": "vm",
@@ -125,28 +118,27 @@ def demo_topology():
                         "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                         "text": "PC2",
                         "x": 18,
-                        "y": -25
+                        "y": -25,
                     },
                     "name": "PC2",
                     "node_id": "748bcd89-624a-40eb-a8d3-1d2e85c99b51",
                     "node_type": "vpcs",
-                    "properties": {
-                    },
+                    "properties": {},
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,
                     "x": -71,
                     "y": -98,
-                    "z": 1
-                }
-            ]
+                    "z": 1,
+                },
+            ],
         },
         "type": "topology",
-        "version": "2.0.0"
+        "version": "2.0.0",
     }
 
 
 # @pytest.mark.asyncio
-#async def test_load_project(controller, tmpdir, demo_topology, http_client):
+# async def test_load_project(controller, tmpdir, demo_topology, http_client):
 #
 #     with open(str(tmpdir / "demo.gns3"), "w+") as f:
 #         json.dump(demo_topology, f)
@@ -182,14 +174,9 @@ async def test_open(controller, projects_dir):
         "name": "demo",
         "project_id": "3c1be6f9-b4ba-4737-b209-63c47c23359f",
         "revision": 5,
-        "topology": {
-            "computes": [],
-            "drawings": [],
-            "links": [],
-            "nodes": []
-        },
+        "topology": {"computes": [], "drawings": [], "links": [], "nodes": []},
         "type": "topology",
-        "version": "2.0.0"
+        "version": "2.0.0",
     }
 
     project_dir = os.path.join(projects_dir, "demo")
@@ -197,12 +184,14 @@ async def test_open(controller, projects_dir):
     with open(os.path.join(project_dir, "demo.gns3"), "w+") as f:
         json.dump(simple_topology, f)
 
-    project = Project(name="demo",
-                      project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
-                      path=project_dir,
-                      controller=controller,
-                      filename="demo.gns3",
-                      status="closed")
+    project = Project(
+        name="demo",
+        project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
+        path=project_dir,
+        controller=controller,
+        filename="demo.gns3",
+        status="closed",
+    )
 
     await project.open()
     assert project.status == "opened"
@@ -212,7 +201,7 @@ async def test_open(controller, projects_dir):
 
 
 # @pytest.mark.asyncio
-#async def test_open_missing_compute(controller, tmpdir, demo_topology, http_client):
+# async def test_open_missing_compute(controller, tmpdir, demo_topology, http_client):
 #     """
 #     If a compute is missing the project should not be open and the .gns3 should
 #     be the one before opening the project
