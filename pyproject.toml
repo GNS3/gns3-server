@@ -364,7 +364,6 @@ module = [
   "gns3server.compute.docker.docker_vm",  # 3
   "gns3server.compute.docker.iol_docker_vm",  # 3
   "gns3server.compute.dynamips.nodes.router",  # 2
-  "gns3server.compute.iou.iou_vm",  # 4
   "gns3server.compute.iou.utils.iou_export",  # 2
   "gns3server.compute.iou.utils.iou_import",  # 2
   "gns3server.compute.project",  # 1

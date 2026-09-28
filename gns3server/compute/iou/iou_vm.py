@@ -139,8 +139,8 @@ class IOUVM(BaseNode):
     # Class-level caches shared across all IOU VM instances using the same image.
     # These avoid redundant subprocess calls during project loading when multiple
     # IOU nodes use the same image.
-    _loader_cache = {}  # image path -> loader command list
-    _default_values_cache = {}  # image path -> (ram, nvram)
+    _loader_cache: dict[str, list[str]] = {}  # image path -> loader command list
+    _default_values_cache: dict[str, tuple[int, int]] = {}  # image path -> (ram, nvram)
 
     """
     IOU VM implementation.
@@ -464,7 +464,11 @@ class IOUVM(BaseNode):
         )
         self._nvram = nvram
 
-    @BaseNode.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Sets the name of this IOU VM.
@@ -949,7 +953,11 @@ class IOUVM(BaseNode):
             return True
         return False
 
-    @BaseNode.console_type.setter
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
     def console_type(self, new_console_type):
         """
         Sets the console type for this IOU VM.
