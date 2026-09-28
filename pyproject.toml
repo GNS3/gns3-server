@@ -374,13 +374,10 @@ module = [
   "gns3server.db.repositories.templates",  # 6
   "gns3server.db.repositories.users",  # 12
   "gns3server.db.tasks",  # 12
-  "gns3server.schemas.compute.atm_switch_nodes",  # 5
   "gns3server.schemas.compute.cloud_nodes",  # 1
   "gns3server.schemas.compute.docker_nodes",  # 2
-  "gns3server.schemas.compute.dynamips_nodes",  # 1
   "gns3server.schemas.compute.frame_relay_switch_nodes",  # 5
   "gns3server.schemas.compute.iou_nodes",  # 3
-  "gns3server.schemas.compute.nat_nodes",  # 1
   "gns3server.schemas.compute.qemu_nodes",  # 1
   "gns3server.schemas.compute.virtualbox_nodes",  # 2
   "gns3server.schemas.compute.vmware_nodes",  # 3
