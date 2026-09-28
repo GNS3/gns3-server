@@ -278,7 +278,7 @@ def _batch_lifecycle(project_id, node_ids, action, conn, action_label):
         return list(pool.map(_act, node_ids))
 
 
-def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -296,7 +296,7 @@ def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
     return {"message": f"Node {node_id} started", "node_id": node_id}
 
 
-def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -314,7 +314,7 @@ def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[
     return {"message": f"Node {node_id} stopped", "node_id": node_id}
 
 
-def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
