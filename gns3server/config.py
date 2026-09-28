@@ -48,6 +48,10 @@ class ConfigConflictError(Exception):
 LIST_OPTION_SEPARATORS = {"additional_images_paths": ";"}
 
 
+def parser_sections(parser: configparser.ConfigParser) -> dict[str, dict[str, str]]:
+    return {section: dict(parser[section]) for section in parser.sections()}
+
+
 class Config:
     """
     Configuration file management using configparser.
@@ -328,7 +332,7 @@ class Config:
                 changed.append(f"{section}.{option}")
 
         # validate the merged settings before touching the file on disk
-        ServerConfig(**merged_parser._sections)
+        ServerConfig(**parser_sections(merged_parser))
 
         directory_name = os.path.dirname(main_config_file)
         if directory_name:
@@ -414,7 +418,7 @@ class Config:
             self._watched_files[file] = os.stat(file).st_mtime
 
         try:
-            self._settings = ServerConfig(**config._sections)
+            self._settings = ServerConfig(**parser_sections(config))
         except ValidationError as e:
             log.critical(f"Could not validate configuration file settings: {e}")
             raise
