@@ -334,7 +334,6 @@ module = [
   "gns3server.api.routes.compute.notifications",  # 4
   "gns3server.api.routes.compute.projects",  # 7
   "gns3server.api.routes.compute.virtualbox_nodes",  # 20
-  "gns3server.api.routes.compute.vpcs_nodes",  # 9
   "gns3server.api.routes.controller.acl",  # 5
   "gns3server.api.routes.controller.api_keys",  # 1
   "gns3server.api.routes.controller.chat",  # 1
