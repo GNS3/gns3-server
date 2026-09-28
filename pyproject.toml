@@ -304,7 +304,6 @@ module = [
   "gns3server.agent.gns3_copilot.gns3_client.project_inventory",  # 2
   "gns3server.agent.gns3_copilot.skills.loader",  # 1
   "gns3server.agent.gns3_copilot.skills.manager",  # 4
-  "gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir",  # 6
   "gns3server.agent.gns3_copilot.tools_v2.gns3_packet_filter",  # 1
   "gns3server.agent.gns3_copilot.tools_v2.gns3_start_node",  # 3
   "gns3server.agent.gns3_copilot.tools_v2.gns3_stop_node",  # 3
