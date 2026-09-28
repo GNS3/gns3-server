@@ -168,8 +168,8 @@ ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 | `delay [ms, jitter]` | `delay X jitter Y` | jitter 0 omitted |
 | `packet_loss [%]` | `loss P` | per direction (see below) |
 | `corrupt [%]` | `corrupt P` | |
-| `frequency_drop` | — no netem equivalent | 409 on kernel links; relay fallback |
-| `bpf` | — needs a tc classifier | 409 on kernel links; relay fallback |
+| `frequency_drop` | — no netem equivalent | 409 on kernel links; relay fallback (eBPF classifier spec'd: [ubridge-kernel-impairment-spec](../design/ubridge-kernel-impairment-spec.md)) |
+| `bpf` | — needs a tc classifier | 409 on kernel links; relay fallback (cBPF match-drop spec'd, same doc) |
 
 Semantics:
 
@@ -192,6 +192,11 @@ Semantics:
 * A link carrying `frequency_drop` or `bpf` is wired on the **relay** (they
   only exist in uBridge's userspace filters); `available_filters` hides them
   on kernel links and setting them returns 409 with a clear message.
+  Kernel-side implementations are frozen in
+  [docs/design/ubridge-kernel-impairment-spec.md](../design/ubridge-kernel-impairment-spec.md)
+  (eBPF stateful classifier for `frequency_drop` + quota/window/flow modes,
+  classic-BPF match-drop for `bpf`, plus netem keyword extensions: rate,
+  reorder, gemodel loss, jitter distributions).
 
 ## uBridge command surface
 
