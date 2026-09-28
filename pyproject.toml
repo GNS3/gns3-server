@@ -391,7 +391,6 @@ module = [
   "gns3server.schemas.controller.projects",  # 2
   "gns3server.schemas.controller.settings",  # 3
   "gns3server.schemas.controller.templates.docker_templates",  # 1
-  "gns3server.schemas.qemu_disk_image",  # 2
   "gns3server.services.computes",  # 4
   "gns3server.services.templates",  # 18
   "gns3server.utils.asyncio.aiozipstream",  # 8
