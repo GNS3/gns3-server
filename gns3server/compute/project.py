@@ -466,7 +466,7 @@ class Project:
             )
 
         # Non-recursive: list only the current directory level
-        files = []
+        files: list[dict] = []
         try:
             scandir_iter = os.scandir(target_path)
         except PermissionError:
