@@ -365,7 +365,6 @@ module = [
   "gns3server.compute.iou.utils.iou_export",  # 2
   "gns3server.compute.iou.utils.iou_import",  # 2
   "gns3server.compute.project",  # 1
-  "gns3server.compute.qemu.qemu_vm",  # 2
   "gns3server.compute.virtualbox.virtualbox_vm",  # 1
   "gns3server.compute.vpcs.vpcs_vm",  # 2
   "gns3server.controller.appliance",  # 2
