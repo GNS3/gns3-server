@@ -318,7 +318,6 @@ module = [
   "gns3server.agent.mcp",  # 34
   "gns3server.agent.mcp.appliances",  # 1
   "gns3server.agent.web_wireshark.docker_client",  # 5
-  "gns3server.agent.web_wireshark.manage_wireshark",  # 1
   "gns3server.agent.web_wireshark.manager",  # 9
   "gns3server.agent.web_wireshark.stats",  # 4
   "gns3server.api.routes.compute.atm_switch_nodes",  # 9
