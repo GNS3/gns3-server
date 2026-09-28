@@ -25,13 +25,14 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.routing import APIRoute, _IncludedRouter
 from starlette.routing import BaseRoute, Mount
 from uuid import UUID
-from typing import Iterator, List, Sequence
+from typing import Iterator, List, Optional, Sequence
 
 
 from gns3server import schemas
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerNotFoundError
 
 from gns3server.controller import Controller
+import gns3server.db.models as models
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
@@ -96,7 +97,7 @@ async def endpoints(
     endpoints = [{"endpoint": "/", "name": "All endpoints", "endpoint_type": "root"}]
 
     def add_to_endpoints(endpoint: str, name: str, endpoint_type: str) -> None:
-        if endpoint not in endpoints:
+        if not any(e["endpoint"] == endpoint for e in endpoints):
             endpoints.append({"endpoint": endpoint, "name": name, "endpoint_type": endpoint_type})
 
     # projects
@@ -175,7 +176,7 @@ async def endpoints(
 
 
 @router.get("", response_model=List[schemas.ACE], dependencies=[Depends(has_privilege("ACE.Audit"))])
-async def get_aces(rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))) -> List[schemas.ACE]:
+async def get_aces(rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))) -> List[models.ACE]:
     """
     Get all ACL entries.
 
@@ -193,7 +194,7 @@ async def get_aces(rbac_repo: RbacRepository = Depends(get_repository(RbacReposi
 )
 async def create_ace(
     request: Request, ace_create: schemas.ACECreate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> schemas.ACE:
+) -> models.ACE:
     """
     Create a new ACL entry.
 
@@ -224,7 +225,7 @@ async def create_ace(
 async def get_ace(
     ace_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> schemas.ACE:
+) -> models.ACE:
     """
     Get an ACL entry.
 
@@ -240,7 +241,7 @@ async def get_ace(
 @router.put("/{ace_id}", response_model=schemas.ACE, dependencies=[Depends(has_privilege("ACE.Modify"))])
 async def update_ace(
     ace_id: UUID, ace_update: schemas.ACEUpdate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> schemas.ACE:
+) -> Optional[models.ACE]:
     """
     Update an ACL entry.
 
