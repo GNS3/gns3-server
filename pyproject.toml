@@ -356,7 +356,6 @@ module = [
   "gns3server.api.routes.controller.templates",  # 10
   "gns3server.api.routes.controller.users",  # 14
   "gns3server.compute.virtualbox.virtualbox_vm",  # 1
-  "gns3server.controller.appliance",  # 2
   "gns3server.controller.appliance_manager",  # 5
   "gns3server.controller.project",  # 2
   "gns3server.controller.topology",  # 1
