@@ -123,11 +123,16 @@ async def test_kernel_datapath_eligible_with_project_marker_definitions(project)
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_for_running_nodes(project):
+async def test_kernel_datapath_eligible_for_running_nodes(project):
+    """
+    Docker adapters are born as veths (unified interface), so links attach
+    to running containers too — no stopped-node requirement.
+    """
 
     link, node1, node2 = await _kernel_link(project)
     node1._status = "started"
-    assert link._kernel_datapath_eligible(node1, node2) is False
+    node2._status = "started"
+    assert link._kernel_datapath_eligible(node1, node2) is True
 
 
 @pytest.mark.asyncio

@@ -125,10 +125,11 @@ async def test_add_ubridge_kernel_connection(vm):
 
 
 @pytest.mark.asyncio
-async def test_add_ubridge_connection_none_nio_stays_on_tap_path(vm):
+async def test_add_ubridge_connection_none_nio_creates_veth(vm):
     """
-    Unconnected adapters keep the relay TAP: the veth variant is only created
-    for adapters whose NIO is a kernel one at start time.
+    Unconnected adapters are born as veths too (the unified interface): the
+    interface exists inside the container with carrier off, and any link
+    type can be attached later — at runtime — without rebirthing it.
     """
 
     vm._ubridge_hypervisor = MagicMock()
@@ -136,11 +137,42 @@ async def test_add_ubridge_connection_none_nio_stays_on_tap_path(vm):
 
     await vm._add_ubridge_connection(None, 0)
 
+    host_ifc, guest_ifc = vm._veth_names(0, 0)
     vm._ubridge_hypervisor.assert_has_calls([
-        call.send("bridge create bridge0"),
-        call.send("bridge add_nio_tap bridge0 tap-gns3-e0 off"),
+        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+        call.send(f'link set "{host_ifc}" down'),
+        call.send(f'docker move_to_ns {guest_ifc} 42 eth0'),
     ], any_order=True)
-    assert vm._kernel_veths == {}
+    assert vm._kernel_veths[(0, 0)] == host_ifc
+    # no relay bridge and no TAP for an unconnected adapter
+    assert "bridge0" not in vm._bridges
+    for c in vm._ubridge_hypervisor.method_calls:
+        assert "add_nio_tap" not in str(c)
+
+
+@pytest.mark.asyncio
+async def test_add_ubridge_connection_udp_relays_over_veth(vm):
+    """
+    A relay NIO at start: the adapter is born as a veth and the uBridge
+    relay attaches to its host end via AF_PACKET (add_nio_ethernet) —
+    no TAP anywhere.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+
+    nio = vm.manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
+    await vm._add_ubridge_connection(nio, 0)
+
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._ubridge_hypervisor.assert_has_calls([
+        call.send(f'docker create_veth "{host_ifc}" "{vm._veth_names(0, 0)[1]}"'),
+        call.send("bridge create bridge0"),
+        call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
+        call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
+        call.send("bridge start bridge0"),
+    ], any_order=True)
+    assert "bridge0" in vm._bridges
 
 
 @pytest.mark.asyncio

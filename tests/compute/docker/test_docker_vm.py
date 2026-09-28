@@ -1541,14 +1541,17 @@ async def test_add_ubridge_connection(vm):
     vm._namespace = 42
     await vm._add_ubridge_connection(nio, 0)
 
+    host_ifc, guest_ifc = vm._veth_names(0, 0)
     calls = [
+        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+        call.send(f'link set "{host_ifc}" down'),
+        call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
         call.send("bridge create bridge0"),
-        call.send("bridge add_nio_tap bridge0 tap-gns3-e0 off"),
-        call.send("docker move_to_ns tap-gns3-e0 42 eth0"),
+        call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
         call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
         call.send('bridge start_capture bridge0 "/tmp/capture.pcap"'),
         call.send("bridge start bridge0"),
-        call.send("bridge set_nio_tap_carrier bridge0 on"),
+        call.send(f'link set "{host_ifc}" up'),
     ]
     assert "bridge0" in vm._bridges
     # We need to check any_order otherwise mock is confused by asyncio
@@ -1571,11 +1574,13 @@ async def test_add_ubridge_connections_with_base_mac_address(vm):
     nio = vm.manager.create_nio(nio_params)
     await vm._add_ubridge_connection(nio, 1)
 
+    _, guest0 = vm._veth_names(0, 0)
+    _, guest1 = vm._veth_names(1, 0)
     calls = [
         call.send("bridge create bridge0"),
         call.send("bridge create bridge1"),
-        call.send("docker set_mac_addr tap-gns3-e0 02:42:42:42:42:00"),
-        call.send("docker set_mac_addr tap-gns3-e0 02:42:42:42:42:01"),
+        call.send(f"docker set_mac_addr {guest0} 02:42:42:42:42:00"),
+        call.send(f"docker set_mac_addr {guest1} 02:42:42:42:42:01"),
     ]
 
     # We need to check any_order otherwise mock is confused by asyncio
@@ -1591,12 +1596,14 @@ async def test_add_ubridge_connection_none_nio(vm):
 
     await vm._add_ubridge_connection(nio, 0)
 
+    host_ifc, guest_ifc = vm._veth_names(0, 0)
     calls = [
-        call.send("bridge create bridge0"),
-        call.send("bridge add_nio_tap bridge0 tap-gns3-e0 off"),
-        call.send("docker move_to_ns tap-gns3-e0 42 eth0"),
+        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+        call.send(f'link set "{host_ifc}" down'),
+        call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
     ]
-    assert "bridge0" in vm._bridges
+    # unconnected adapter: interface exists (carrier off), no relay bridge
+    assert "bridge0" not in vm._bridges
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
@@ -1624,19 +1631,6 @@ async def test_add_ubridge_connection_invalid_adapter_number(vm):
     nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
         await vm._add_ubridge_connection(nio, 12)
-
-
-@pytest.mark.asyncio
-async def test_add_ubridge_connection_no_free_interface(vm):
-
-    nio = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(nio)
-    with pytest.raises(DockerError):
-        # We create fake ethernet interfaces for docker
-        interfaces = [f"tap-gns3-e{index}" for index in range(4096)]
-
-        with patch("psutil.net_if_addrs", return_value=interfaces):
-            await vm._add_ubridge_connection(nio, 0)
 
 
 @pytest.mark.asyncio

@@ -314,7 +314,7 @@ async def test_move_to_ns_uses_renamed_interface(compute_project, manager):
     # adapter 0 should be renamed to mgmt0
     move_calls = [c for c in vm._ubridge_hypervisor.method_calls if "move_to_ns" in str(c)]
     assert move_calls, "move_to_ns was not sent"
-    assert call.send("docker move_to_ns tap-gns3-e0 42 mgmt0") in move_calls
+    assert call.send(f"docker move_to_ns {vm._veth_names(0, 0)[1]} 42 mgmt0") in move_calls
 
 
 @pytest.mark.asyncio
@@ -326,7 +326,7 @@ async def test_move_to_ns_falls_back_to_eth(compute_project, manager):
     nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
     await vm._add_ubridge_connection(nio, 1)
     move_calls = [c for c in vm._ubridge_hypervisor.method_calls if "move_to_ns" in str(c)]
-    assert call.send("docker move_to_ns tap-gns3-e0 42 eth1") in move_calls
+    assert call.send(f"docker move_to_ns {vm._veth_names(1, 0)[1]} 42 eth1") in move_calls
 
 
 # ---------------------------------------------------------------------------

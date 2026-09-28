@@ -138,8 +138,12 @@ class UDPLink(Link):
         relay. The kernel path has no userspace relay, so filters — which
         live in the relay — disqualify it. Markers and capture are served
         by uBridge's AF_PACKET modules on the veth host end.
-        It is host-local (same compute) and requires the adapter interfaces
-        to be created as veths at container start, hence stopped nodes only.
+
+        Docker adapters are born as veth pairs (unified interface), so the
+        datapath is a runtime decision — links attach to running containers
+        too: the compute side enslaves the veth host end (brctl) or attaches
+        the relay to it (add_nio_ethernet) without touching the container's
+        interfaces.
         """
 
         if not Config.instance().settings.Server.enable_kernel_datapath:
@@ -149,10 +153,6 @@ class UDPLink(Link):
         if node1.compute.id != node2.compute.id:
             return False
         if self.get_active_filters():
-            return False
-        # Running nodes already have relay TAPs wired into uBridge; the
-        # kernel path needs the veth variant created at container start.
-        if node1.status != "stopped" or node2.status != "stopped":
             return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
