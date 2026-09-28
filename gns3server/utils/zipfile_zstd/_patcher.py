@@ -1,8 +1,9 @@
 import functools
+from typing import Any
 
 
 class patch:
-    originals = {}
+    originals: dict[str, Any] = {}
 
     def __init__(self, host, name):
         self.host = host
