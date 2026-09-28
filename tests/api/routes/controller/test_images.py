@@ -111,14 +111,17 @@ class TestImageRoutes:
 
     async def test_create_image(self, app: FastAPI, client: AsyncClient, images_dir) -> None:
 
-        Qemu.instance().create_disk_image = AsyncioMagicMock()
+        async def create_disk(path, options):
+            with open(path, "wb") as f:
+                f.write(b'QFI\xfb\x00\x00\x00')
+
+        Qemu.instance().create_disk_image = AsyncioMagicMock(side_effect=create_disk)
         path = os.path.join(os.path.join(images_dir, "QEMU", "new_image.qcow2"))
-        with open(path, "wb+") as f:
-            f.write(b'QFI\xfb\x00\x00\x00')
         image_name = os.path.basename(path)
         response = await client.post(
             app.url_path_for("create_qemu_image", image_path=image_name), json={"format": "qcow2", "size": 30})
         assert response.status_code == status.HTTP_201_CREATED
+        assert os.path.isfile(path)
 
     @pytest.mark.parametrize(
         "image_type, fixture_name, valid_request",

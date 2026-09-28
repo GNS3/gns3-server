@@ -26,22 +26,22 @@ from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db, discover_images_on_filesystem
+from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db
+from gns3server.services.image_reconciliation import get_image_reconciliation_service
 
 
 import logging
 
 log = logging.getLogger(__name__)
 
-auto_discover_images_task_handle = None
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
     await startup(app)
-    yield
-    await shutdown(app)
+    try:
+        yield
+    finally:
+        await shutdown(app)
 
 
 async def startup(app: FastAPI) -> None:
@@ -66,19 +66,7 @@ async def startup(app: FastAPI) -> None:
 
     await Controller.instance().start(computes)
 
-    # Because with a large image collection
-    # without md5sum already computed we start the
-    # computing with server start
-    from gns3server.compute.qemu import Qemu
-
-    if Config.instance().settings.Server.auto_discover_images is True:
-        # Start the discovering new images on file system 5 seconds after the server has started
-        # to give it a chance to process API requests
-        global auto_discover_images_task_handle
-        auto_discover_images_task_handle = asyncio.get_event_loop().call_later(
-            5,
-            lambda: asyncio.create_task(discover_images_on_filesystem(app))
-        )
+    get_image_reconciliation_service(app).start_background()
 
     for module in MODULES:
         log.debug(f"Loading module {module.__name__}")
@@ -107,8 +95,10 @@ async def shutdown(app: FastAPI) -> None:
     Tasks to be performed when the server is exiting.
     """
 
-    if auto_discover_images_task_handle is not None and not auto_discover_images_task_handle.cancelled():
-        auto_discover_images_task_handle.cancel()
+    service = getattr(app.state, "image_reconciliation", None)
+    if service is not None:
+        await service.close()
+        del app.state.image_reconciliation
     await HTTPClient.close_session()
     await MarkerManager.instance().stop()
     # Kill resident sharkd sessions (marker replay) and drop their /tmp

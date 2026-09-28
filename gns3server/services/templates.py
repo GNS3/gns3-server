@@ -276,7 +276,8 @@ class TemplatesService:
 
         if not image_path:
             return
-        image = await self._templates_repo.get_image(image_path)
+        # Removing an association must also find missing/invalid image rows.
+        image = await self._templates_repo.get_image(image_path, include_unavailable=True)
         if image is None:
             return
         await self._templates_repo.remove_image_from_template(template_id, image)

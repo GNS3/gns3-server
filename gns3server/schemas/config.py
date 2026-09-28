@@ -197,6 +197,8 @@ class ServerSettings(BaseModel):
         True, description="Allow raw images to be uploaded to the server")
     auto_discover_images: bool = Field(
         True, description="Automatically discover images in the images directory")
+    image_sync_interval: int = Field(
+        900, ge=10, description="Seconds between automatic image inventory scans")
     report_errors: bool = Field(
         True, description="Automatically send crash reports to the GNS3 team")
     additional_images_paths: List[str] = Field(

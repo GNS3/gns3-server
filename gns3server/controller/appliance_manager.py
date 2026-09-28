@@ -35,6 +35,7 @@ from ..utils.http_client import HTTPClient
 from .controller_error import ControllerBadRequestError, ControllerNotFoundError, ControllerError
 from .appliance_to_template import ApplianceToTemplate
 from ..utils.images import InvalidImageError, write_image, read_image_info
+from ..utils.image_inventory import image_lock
 
 from gns3server import schemas
 from gns3server.schemas.controller.appliances import ApplianceModel
@@ -184,13 +185,14 @@ class ApplianceManager:
                             # check if the image is on disk but it not yet in the database
                             image_path = os.path.join(image_dir, appliance_file)
                             if os.path.exists(image_path):
-                                image_info = await read_image_info(image_path)
-                                if image_info.get("checksum") == image_checksum:
-                                    log.info(f"Adding image '{image_path}' to the database")
+                                async with image_lock(image_path):
+                                    image_info = await read_image_info(image_path, allow_raw_image=True)
+                                    if image_info["checksum"] != image_checksum:
+                                        raise ControllerError(f"Image '{image_path}' does not match the appliance checksum")
                                     try:
-                                        await images_repo.add_image(**image_info)
+                                        await images_repo.save_verified_image(image_info)
                                     except SQLAlchemyError as e:
-                                        log.warning(f"Error while adding image '{image['path']}' to the database: {e}")
+                                        raise ControllerError(f"Could not register image '{image_path}': {e}") from e
                             else:
                                 # download the image if there is a direct download URL
                                 direct_download_url = image.get("direct_download_url")
