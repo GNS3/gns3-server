@@ -427,8 +427,6 @@ module = [
   "gns3server.utils.images",  # 4
   "gns3server.utils.packet_filter_validation",  # 16
   "gns3server.utils.websocket_to_websocket",  # 12
-  "gns3server.utils.zipfile_zstd",  # 2
   "gns3server.utils.zipfile_zstd._patcher",  # 1
-  "gns3server.utils.zipfile_zstd._zipfile",  # 5
 ]
 ignore_errors = true
