@@ -227,7 +227,11 @@ class DockerVM(BaseNode):
                 return display
             display += 1
 
-    @BaseNode.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Sets the name of this Qemu VM.
@@ -737,13 +741,15 @@ class DockerVM(BaseNode):
             params["Env"].append("{}={}".format(var_name, formatted))
 
         if self._environment:
-            for e in self._environment.strip().split("\n"):
-                e = e.strip()
-                if e.split("=")[0] == "":
-                    self.project.emit("log.warning", {"message": f"{self.name} has invalid environment variable: {e}"})
+            for env in self._environment.strip().split("\n"):
+                env = env.strip()
+                if env.split("=")[0] == "":
+                    self.project.emit(
+                        "log.warning", {"message": f"{self.name} has invalid environment variable: {env}"}
+                    )
                     continue
-                if not e.startswith("GNS3_"):
-                    formatted = self._format_env(variables, e)
+                if not env.startswith("GNS3_"):
+                    formatted = self._format_env(variables, env)
                     vm_name = self._name.replace(",", ",,")
                     project_path = self.project.path.replace(",", ",,")
                     formatted = formatted.replace("%vm-name%", '"' + vm_name.replace('"', '\\"') + '"')

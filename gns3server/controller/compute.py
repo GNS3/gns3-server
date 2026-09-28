@@ -216,6 +216,13 @@ class Compute:
         """
         return self._host
 
+    @host.setter
+    def host(self, host):
+        self._host = host
+        self._host_ip_cache = None  # invalidate; re-resolve on next access
+        if self._console_host is None:
+            self._console_host = host
+
     @property
     def host_ip(self):
         """
@@ -227,13 +234,6 @@ class Compute:
             except socket.gaierror:
                 self._host_ip_cache = "0.0.0.0"
         return self._host_ip_cache
-
-    @host.setter
-    def host(self, host):
-        self._host = host
-        self._host_ip_cache = None  # invalidate; re-resolve on next access
-        if self._console_host is None:
-            self._console_host = host
 
     @property
     def console_host(self):

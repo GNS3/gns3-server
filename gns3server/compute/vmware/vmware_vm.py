@@ -952,7 +952,11 @@ class VMwareVM(BaseNode):
         await self._stop_remote_console()
         await self._start_console()
 
-    @BaseNode.console_type.setter
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
     def console_type(self, new_console_type):
         """
         Sets the console type for this VMware VM.
