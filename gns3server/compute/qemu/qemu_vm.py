@@ -189,7 +189,11 @@ class QemuVM(BaseNode):
 
         log.debug(f'QEMU VM "{self._name}" [{self._id}] has been created')
 
-    @BaseNode.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Sets the name of this Qemu VM.
@@ -1864,7 +1868,11 @@ class QemuVM(BaseNode):
 
         return " ".join(self._build_command())
 
-    @BaseNode.console_type.setter
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
     def console_type(self, new_console_type):
         """
         Sets the console type for this QEMU VM.
