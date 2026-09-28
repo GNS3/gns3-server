@@ -46,6 +46,14 @@ unchanged. Each compute process runs one UDP listener serving every uBridge on t
 `node` and `link` fields in each signal together identify the source link (see
 [Per-link attribution](#per-link-attribution)).
 
+On **kernel-datapath** links (see
+[docker-kernel-datapath.md](docker-kernel-datapath.md)) there is no relay
+bridge: the marker attaches directly to the veth host end via uBridge's
+AF_PACKET marker module (`marker add_kernel`), with identical BPF matching,
+signals, pcaps and REST operations. Deployment convention: only the capture
+node's end carries the marker, so each exchange produces one clean
+`tx`/`rx` signal pair.
+
 ## Business Process
 
 ```mermaid
