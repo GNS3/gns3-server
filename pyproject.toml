@@ -361,8 +361,6 @@ module = [
   "gns3server.api.routes.controller.users",  # 14
   "gns3server.api.routes.index",  # 1
   "gns3server.api.server",  # 2
-  "gns3server.compute.docker.docker_vm",  # 3
-  "gns3server.compute.docker.iol_docker_vm",  # 3
   "gns3server.compute.dynamips.nodes.router",  # 2
   "gns3server.compute.iou.iou_vm",  # 4
   "gns3server.compute.iou.utils.iou_export",  # 2

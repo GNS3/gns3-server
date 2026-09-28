@@ -92,8 +92,8 @@ class IOLDockerVM(VendorDockerVM):
     # controller-allocated application id (MACs would flip to the fallback
     # hash, colliding with the allocation pool) and any pending
     # startup-config delivered by a PUT.
-    _application_id = None
-    _startup_config_content = None
+    _application_id: int | None = None
+    _startup_config_content: str | None = None
     _startup_config_dirty = False
 
     def _parse_vendor_environment(self):
@@ -119,7 +119,7 @@ class IOLDockerVM(VendorDockerVM):
                         pass
 
     @property
-    def application_id(self) -> int:
+    def application_id(self) -> int | None:
         """
         IOL application ID: drives interface MACs (aabb.cc{app}{iface}) and
         the NVRAM file name. Allocated by the controller from the IOL Docker
@@ -178,6 +178,8 @@ class IOLDockerVM(VendorDockerVM):
         initial configuration dialog.
         """
 
+        if self._startup_config_content is None:
+            return
         content = self._startup_config_content.replace("%h", self._name)
         nvram_file = self._iol_nvram_file()
         os.makedirs(os.path.dirname(nvram_file), exist_ok=True)
@@ -189,7 +191,11 @@ class IOLDockerVM(VendorDockerVM):
             raise DockerError(f"Could not write IOL startup-config to NVRAM of container '{self._name}': {e}")
         log.debug("IOL container '%s': startup-config written to %s", self._name, nvram_file)
 
-    @DockerVM.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Override: keep the hostname line inside the NVRAM in sync with the
@@ -228,7 +234,11 @@ class IOLDockerVM(VendorDockerVM):
         result["startup_config_content"] = self._startup_config_content
         return result
 
-    @DockerVM.adapters.setter
+    @property
+    def adapters(self):
+        return len(self._ethernet_adapters)
+
+    @adapters.setter
     def adapters(self, adapters):
         """
         Override: one IOL adapter is a 4-port unit — the IOU model. The
