@@ -18,6 +18,7 @@
 API routes for Frame Relay switch nodes.
 """
 
+from typing import Any
 import os
 
 from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
@@ -29,7 +30,9 @@ from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.frame_relay_switch import FrameRelaySwitch
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Frame Relay switch node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Frame Relay switch node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -59,13 +62,13 @@ async def create_frame_relay_switch(
 
     # Use the Dynamips Frame Relay switch to simulate this node
     dynamips_manager = Dynamips.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     node = await dynamips_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
+        data.get("node_id"),
         node_type="frame_relay_switch",
-        mappings=node_data.get("mappings"),
+        mappings=data.get("mappings"),
     )
     return node.asdict()
 
@@ -99,11 +102,11 @@ async def update_frame_relay_switch(
     Update an Frame Relay switch node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in node_data and node.name != node_data["name"]:
-        await node.set_name(node_data["name"])
-    if "mappings" in node_data:
-        node.mappings = node_data["mappings"]
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in data and node.name != data["name"]:
+        await node.set_name(data["name"])
+    if "mappings" in data:
+        node.mappings = data["mappings"]
     node.updated()
     return node.asdict()
 
