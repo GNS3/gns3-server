@@ -323,7 +323,6 @@ module = [
   "gns3server.api.routes.compute.capabilities",  # 1
   "gns3server.api.routes.compute.cloud_nodes",  # 14
   "gns3server.api.routes.compute.compute",  # 1
-  "gns3server.api.routes.compute.docker_nodes",  # 26
   "gns3server.api.routes.compute.dynamips_nodes",  # 9
   "gns3server.api.routes.compute.ethernet_hub_nodes",  # 9
   "gns3server.api.routes.compute.ethernet_switch_nodes",  # 16
