@@ -317,7 +317,6 @@ module = [
   "gns3server.agent.web_wireshark.manager",  # 9
   "gns3server.agent.web_wireshark.stats",  # 4
   "gns3server.api.routes.compute.capabilities",  # 1
-  "gns3server.api.routes.compute.cloud_nodes",  # 14
   "gns3server.api.routes.compute.compute",  # 1
   "gns3server.api.routes.compute.dependencies.authentication",  # 3
   "gns3server.api.routes.compute.docker_nodes",  # 26
