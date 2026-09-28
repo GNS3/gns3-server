@@ -376,7 +376,6 @@ module = [
   "gns3server.controller.appliance",  # 2
   "gns3server.controller.appliance_manager",  # 5
   "gns3server.controller.compute",  # 2
-  "gns3server.controller.project",  # 2
   "gns3server.controller.topology",  # 1
   "gns3server.db.models.acl",  # 1
   "gns3server.db.models.images",  # 1

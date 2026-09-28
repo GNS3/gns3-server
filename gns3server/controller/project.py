@@ -479,10 +479,6 @@ class Project:
     def path(self):
         return self._path
 
-    @property
-    def status(self):
-        return self._status
-
     @path.setter
     def path(self, path):
         check_path_allowed(path)
@@ -509,6 +505,10 @@ class Project:
             )
 
         self._path = path
+
+    @property
+    def status(self):
+        return self._status
 
     @property
     def captures_directory(self):
