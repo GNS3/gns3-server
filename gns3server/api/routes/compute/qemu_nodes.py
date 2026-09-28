@@ -23,7 +23,7 @@ import os
 from fastapi import APIRouter, WebSocket, Depends, Body, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
+from typing import Any, Union
 from uuid import UUID
 
 from gns3server import schemas
@@ -36,7 +36,9 @@ import logging
 
 log = logging.getLogger(__name__)
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -64,29 +66,29 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
     """
 
     qemu = Qemu.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    disk_images_to_reset = set(node_data.pop("disk_images_to_reset", []))
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    disk_images_to_reset = set(data.pop("disk_images_to_reset", []))
     vm = await qemu.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.pop("node_id", None),
-        linked_clone=node_data.get("linked_clone", True),
-        qemu_path=node_data.pop("qemu_path", None),
-        console=node_data.pop("console", None),
-        console_type=node_data.pop("console_type", "telnet"),
-        aux=node_data.get("aux"),
-        aux_type=node_data.pop("aux_type", "none"),
-        platform=node_data.pop("platform", None),
+        data.pop("node_id", None),
+        linked_clone=data.get("linked_clone", True),
+        qemu_path=data.pop("qemu_path", None),
+        console=data.pop("console", None),
+        console_type=data.pop("console_type", "telnet"),
+        aux=data.get("aux"),
+        aux_type=data.pop("aux_type", "none"),
+        platform=data.pop("platform", None),
     )
 
     # update the disk image with the backing file if provided
     # this is needed when duplicating a node that uses backed disk images
     drives = ["a", "b", "c", "d"]
     for drive in drives:
-        disk_image_backing_file = node_data.get(f"hd{drive}_disk_image_backing_file")
+        disk_image_backing_file = data.get(f"hd{drive}_disk_image_backing_file")
         if disk_image_backing_file:
             log.debug(f"Updating disk image for drive {drive} with backing file {disk_image_backing_file}")
-            node_data[f"hd{drive}_disk_image"] = disk_image_backing_file
+            data[f"hd{drive}_disk_image"] = disk_image_backing_file
 
     # Validate every explicitly replaced disk before removing its stale
     # overlay. Other unresolved disks may still make this create request fail,
@@ -94,7 +96,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
     for drive in drives:
         disk_image_property = f"hd{drive}_disk_image"
         if disk_image_property in disk_images_to_reset:
-            replacement_image = node_data.get(disk_image_property)
+            replacement_image = data.get(disk_image_property)
             if replacement_image:
                 vm.manager.get_abs_image_path(replacement_image, vm.working_dir)
             local_disk_name = f"hd{drive}_disk.qcow2"
@@ -107,11 +109,11 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate) -> s
                 log.info(
                     "Removing stale linked-clone disk '%s' before using replacement image '%s'",
                     local_disk,
-                    node_data.get(disk_image_property),
+                    data.get(disk_image_property),
                 )
                 vm.delete_disk_image(local_disk_name)
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
             setattr(vm, name, value)
 
@@ -133,10 +135,10 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
     Update a Qemu node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     # update the console first to avoid issue if updating console type
-    node.console = node_data.pop("console", node.console)
-    for name, value in node_data.items():
+    node.console = data.pop("console", node.console)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             await node.update_property(name, value)
     node.updated()
