@@ -18,10 +18,7 @@ from typing import List, Optional
 import sys
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
 
@@ -41,8 +38,7 @@ class TelnetClient:
         try:
             log.debug(f"Client {self.client_id}: Connecting to {self.host}:{self.port}...")
             self.reader, self.writer = await asyncio.wait_for(
-                asyncio.open_connection(self.host, self.port),
-                timeout=5.0
+                asyncio.open_connection(self.host, self.port), timeout=5.0
             )
             self.connected = True
             log.debug(f"Client {self.client_id}: Connected successfully")
@@ -57,7 +53,7 @@ class TelnetClient:
             return False
 
         try:
-            self.writer.write(command.encode() + b'\r\n')
+            self.writer.write(command.encode() + b"\r\n")
             await asyncio.wait_for(self.writer.drain(), timeout=2.0)
             log.debug(f"Client {self.client_id}: Sent command: {command.strip()}")
             return True
@@ -73,7 +69,7 @@ class TelnetClient:
         try:
             data = await asyncio.wait_for(self.reader.read(1024), timeout=timeout)
             if data:
-                response = data.decode('utf-8', errors='ignore')
+                response = data.decode("utf-8", errors="ignore")
                 log.debug(f"Client {self.client_id}: Received: {response[:50]}...")
                 return response
         except asyncio.TimeoutError:
@@ -121,7 +117,7 @@ async def rapid_fire_client(
     max_delay: float = 0.01,
     receive_before_disconnect: bool = False,
     immediate_disconnect: bool = True,
-    device_type: str = "iou-l3"
+    device_type: str = "iou-l3",
 ):
     """
     A client that rapidly connects, sends commands, and disconnects.
@@ -220,13 +216,7 @@ async def rapid_fire_client(
     return success_count, fail_count
 
 
-async def long_lived_client(
-    client_id: int,
-    host: str,
-    port: str,
-    duration: float,
-    send_interval: float = 1.0
-):
+async def long_lived_client(client_id: int, host: str, port: str, duration: float, send_interval: float = 1.0):
     """
     A long-lived client that stays connected and periodically sends commands.
 
@@ -273,7 +263,7 @@ async def run_stress_test(
     long_lived_clients: int,
     iterations_per_client: int,
     test_duration: float,
-    device_type: str = "iou-l3"
+    device_type: str = "iou-l3",
 ):
     """
     Run the stress test with multiple concurrent clients.
@@ -306,13 +296,7 @@ async def run_stress_test(
     # Start long-lived clients first (simulate web console users)
     for i in range(long_lived_clients):
         task = asyncio.create_task(
-            long_lived_client(
-                client_id=1000 + i,
-                host=host,
-                port=port,
-                duration=test_duration,
-                send_interval=2.0
-            )
+            long_lived_client(client_id=1000 + i, host=host, port=port, duration=test_duration, send_interval=2.0)
         )
         tasks.append(task)
         await asyncio.sleep(0.1)  # Stagger connections
@@ -332,10 +316,10 @@ async def run_stress_test(
                 port=port,
                 iterations=iterations_per_client,
                 min_delay=0.001,  # 1ms - very fast
-                max_delay=0.01,   # 10ms - still fast
+                max_delay=0.01,  # 10ms - still fast
                 receive_before_disconnect=False,  # Don't wait for response
                 immediate_disconnect=True,  # Abrupt close
-                device_type=device_type
+                device_type=device_type,
             )
         )
         rapid_tasks.append(task)
@@ -393,62 +377,31 @@ Device Types:
   iou-l3   - Cisco IOS L3 router (uses show/run/write commands that trigger broadcast)
   vpcs     - VPCS simulator (simple commands)
   generic  - Generic device (basic test commands)
-        """
+        """,
     )
 
-    parser.add_argument(
-        '--host',
-        default='127.0.0.1',
-        help='Telnet server host (default: 127.0.0.1)'
-    )
+    parser.add_argument("--host", default="127.0.0.1", help="Telnet server host (default: 127.0.0.1)")
+
+    parser.add_argument("--port", type=int, default=2000, help="Telnet server port (default: 2000)")
 
     parser.add_argument(
-        '--port',
-        type=int,
-        default=2000,
-        help='Telnet server port (default: 2000)'
+        "--rapid-clients", type=int, default=10, help="Number of rapid connect/disconnect clients (default: 10)"
     )
 
-    parser.add_argument(
-        '--rapid-clients',
-        type=int,
-        default=10,
-        help='Number of rapid connect/disconnect clients (default: 10)'
-    )
+    parser.add_argument("--long-lived", type=int, default=2, help="Number of long-lived clients (default: 2)")
+
+    parser.add_argument("--iterations", type=int, default=50, help="Iterations per rapid client (default: 50)")
+
+    parser.add_argument("--duration", type=float, default=30.0, help="Test duration in seconds (default: 30.0)")
 
     parser.add_argument(
-        '--long-lived',
-        type=int,
-        default=2,
-        help='Number of long-lived clients (default: 2)'
+        "--device-type",
+        default="iou-l3",
+        choices=["iou-l3", "vpcs", "generic"],
+        help="Device type for commands (default: iou-l3)",
     )
 
-    parser.add_argument(
-        '--iterations',
-        type=int,
-        default=50,
-        help='Iterations per rapid client (default: 50)'
-    )
-
-    parser.add_argument(
-        '--duration',
-        type=float,
-        default=30.0,
-        help='Test duration in seconds (default: 30.0)'
-    )
-
-    parser.add_argument(
-        '--device-type',
-        default='iou-l3',
-        choices=['iou-l3', 'vpcs', 'generic'],
-        help='Device type for commands (default: iou-l3)'
-    )
-
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
     args = parser.parse_args()
 
@@ -456,19 +409,21 @@ Device Types:
         logging.getLogger().setLevel(logging.DEBUG)
 
     try:
-        asyncio.run(run_stress_test(
-            host=args.host,
-            port=args.port,
-            rapid_clients=args.rapid_clients,
-            long_lived_clients=args.long_lived,
-            iterations_per_client=args.iterations,
-            test_duration=args.duration,
-            device_type=args.device_type
-        ))
+        asyncio.run(
+            run_stress_test(
+                host=args.host,
+                port=args.port,
+                rapid_clients=args.rapid_clients,
+                long_lived_clients=args.long_lived,
+                iterations_per_client=args.iterations,
+                test_duration=args.duration,
+                device_type=args.device_type,
+            )
+        )
     except KeyboardInterrupt:
         log.info("Test interrupted by user")
         sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

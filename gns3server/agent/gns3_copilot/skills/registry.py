@@ -115,7 +115,7 @@ def _ensure_skills_manager():
         manager = SkillsManager(
             repo_url=config.get("repo_url"),
             branch=config.get("branch", "main"),
-            auto_update=config.get("auto_update", False)
+            auto_update=config.get("auto_update", False),
         )
 
         if not manager.initialize():
@@ -224,7 +224,7 @@ def reload_injection_skills() -> dict[str, Any]:
             "success": False,
             "message": "Skills manager not initialized",
             "skill_count": len(INJECTION_SKILLS_REGISTRY),
-            "version": ""
+            "version": "",
         }
 
     try:
@@ -233,7 +233,7 @@ def reload_injection_skills() -> dict[str, Any]:
             "success": success,
             "message": "Skills reloaded successfully" if success else "Failed to reload skills",
             "skill_count": manager.get_skill_count(),
-            "version": manager.get_current_version()
+            "version": manager.get_current_version(),
         }
     except Exception as e:
         logger.error(f"Error during skills reload: {e}")
@@ -241,7 +241,7 @@ def reload_injection_skills() -> dict[str, Any]:
             "success": False,
             "message": f"Error: {str(e)}",
             "skill_count": len(INJECTION_SKILLS_REGISTRY),
-            "version": ""
+            "version": "",
         }
 
 
@@ -263,12 +263,7 @@ def reload_prompts() -> dict[str, Any]:
     """
     manager = get_skills_manager()
     if manager is None:
-        return {
-            "success": False,
-            "message": "Skills manager not initialized",
-            "prompt_count": 0,
-            "version": ""
-        }
+        return {"success": False, "message": "Skills manager not initialized", "prompt_count": 0, "version": ""}
 
     try:
         success = manager.reload_prompts()
@@ -276,7 +271,7 @@ def reload_prompts() -> dict[str, Any]:
             "success": success,
             "message": "Prompts reloaded successfully" if success else "Failed to reload prompts",
             "prompt_count": manager.get_prompt_count(),
-            "version": manager.get_current_version()
+            "version": manager.get_current_version(),
         }
     except Exception as e:
         logger.error(f"Error during prompts reload: {e}")
@@ -285,7 +280,7 @@ def reload_prompts() -> dict[str, Any]:
             "success": False,
             "message": f"Error: {str(e)}",
             "prompt_count": manager.get_prompt_count() if manager else 0,
-            "version": ""
+            "version": "",
         }
 
 
@@ -315,16 +310,11 @@ def reload_forbidden_commands() -> dict[str, Any]:
             "success": True,
             "message": "Forbidden commands reloaded",
             "command_count": len(commands),
-            "version": manager.get_current_version() if manager else ""
+            "version": manager.get_current_version() if manager else "",
         }
     except Exception as e:
         logger.error(f"Error during forbidden commands reload: {e}")
-        return {
-            "success": False,
-            "message": f"Error: {str(e)}",
-            "command_count": 0,
-            "version": ""
-        }
+        return {"success": False, "message": f"Error: {str(e)}", "command_count": 0, "version": ""}
 
 
 def get_prompt(prompt_name: str) -> str:
@@ -360,10 +350,7 @@ def get_skills_repository_info() -> dict[str, Any]:
     """
     manager = get_skills_manager()
     if manager is None:
-        return {
-            "initialized": False,
-            "message": "Skills manager not initialized"
-        }
+        return {"initialized": False, "message": "Skills manager not initialized"}
 
     return manager.get_repository_info()
 
@@ -411,8 +398,7 @@ def get_skill(
                 "error": f"device_type '{device_type}' is not in category '{category}'",
                 "device_category": skill.get("category"),
                 "available_in_category": [
-                    did for did, s in SKILLS_REGISTRY.items()
-                    if s.get("category", "").lower() == category.lower()
+                    did for did, s in SKILLS_REGISTRY.items() if s.get("category", "").lower() == category.lower()
                 ],
             }
 
@@ -484,8 +470,7 @@ def get_skill(
         }
         if topics:
             result["topics"] = {
-                k: {"name": v.get("name", k), "description": v.get("description", "")}
-                for k, v in topics.items()
+                k: {"name": v.get("name", k), "description": v.get("description", "")} for k, v in topics.items()
             }
         return result
 
@@ -503,19 +488,23 @@ def list_available_skills(category: str | None = None) -> list[dict[str, Any]]:
     for did, skill in SKILLS_REGISTRY.items():
         if category:
             if skill.get("category", "").lower() == category.lower():
-                skills.append({
+                skills.append(
+                    {
+                        "device_type": did,
+                        "name": skill.get("name", did),
+                        "category": skill.get("category"),
+                        "topic_count": len(skill.get("topics", {})),
+                    }
+                )
+        else:
+            skills.append(
+                {
                     "device_type": did,
                     "name": skill.get("name", did),
                     "category": skill.get("category"),
                     "topic_count": len(skill.get("topics", {})),
-                })
-        else:
-            skills.append({
-                "device_type": did,
-                "name": skill.get("name", did),
-                "category": skill.get("category"),
-                "topic_count": len(skill.get("topics", {})),
-            })
+                }
+            )
     return skills
 
 
@@ -541,7 +530,7 @@ def get_injection_skill(
         return {
             "error": f"Unknown injection fault type: {device_type}",
             "available_fault_types": list(INJECTION_SKILLS_REGISTRY.keys()),
-            "hint": "Use {'action': 'list'} to see all available fault types"
+            "hint": "Use {'action': 'list'} to see all available fault types",
         }
 
     issues = skill.get("issues", {})
@@ -611,11 +600,13 @@ def list_available_injection_skills(context: list[str] | None = None) -> list[di
             category_lower = category.lower()
             if not any(kw.lower() in category_lower or kw.lower() in did.lower() for kw in context):
                 continue
-        skills.append({
-            "device_type": did,
-            "name": skill.get("name", did),
-            "category": category,
-        })
+        skills.append(
+            {
+                "device_type": did,
+                "name": skill.get("name", did),
+                "category": category,
+            }
+        )
     return skills
 
 
@@ -658,11 +649,13 @@ def list_available_packet_analysis_protocols() -> list[dict[str, str]]:
     """
     protocols = []
     for key, data in PACKET_ANALYSIS_REGISTRY.items():
-        protocols.append({
-            "protocol": key,
-            "name": data.get("name", key),
-            "description": data.get("description", ""),
-        })
+        protocols.append(
+            {
+                "protocol": key,
+                "name": data.get("name", key),
+                "description": data.get("description", ""),
+            }
+        )
     return protocols
 
 
@@ -711,10 +704,14 @@ class DeviceSkillsTool(BaseTool):
             try:
                 params = json.loads(tool_input)
             except json.JSONDecodeError as e:
-                return json.dumps({
-                    "error": f"Invalid JSON input: {e}",
-                    "hint": 'Expected format: {"device_type": "xxx"} or {"action": "list"}'
-                }, ensure_ascii=False, indent=2)
+                return json.dumps(
+                    {
+                        "error": f"Invalid JSON input: {e}",
+                        "hint": 'Expected format: {"device_type": "xxx"} or {"action": "list"}',
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
         else:
             params = tool_input
 
@@ -722,18 +719,19 @@ class DeviceSkillsTool(BaseTool):
 
         if action == "list":
             skills = list_available_skills()
-            return json.dumps({
-                "count": len(skills),
-                "skills": skills
-            }, ensure_ascii=False, indent=2)
+            return json.dumps({"count": len(skills), "skills": skills}, ensure_ascii=False, indent=2)
 
         device_type = params.get("device_type")
         if not device_type:
-            return json.dumps({
-                "error": "Missing required field: device_type",
-                "available_device_types": list(SKILLS_REGISTRY.keys()),
-                "hint": 'Use {"action": "list"} to see all available device types'
-            }, ensure_ascii=False, indent=2)
+            return json.dumps(
+                {
+                    "error": "Missing required field: device_type",
+                    "available_device_types": list(SKILLS_REGISTRY.keys()),
+                    "hint": 'Use {"action": "list"} to see all available device types',
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         category = params.get("category")
         detail = params.get("detail", "full")
@@ -788,10 +786,14 @@ class InjectionSkillsTool(BaseTool):
             try:
                 params = json.loads(tool_input)
             except json.JSONDecodeError as e:
-                return json.dumps({
-                    "error": f"Invalid JSON input: {e}",
-                    "hint": 'Expected format: {"device_type": "xxx"} or {"action": "list"}'
-                }, ensure_ascii=False, indent=2)
+                return json.dumps(
+                    {
+                        "error": f"Invalid JSON input: {e}",
+                        "hint": 'Expected format: {"device_type": "xxx"} or {"action": "list"}',
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
         else:
             params = tool_input
 
@@ -800,33 +802,44 @@ class InjectionSkillsTool(BaseTool):
         if action == "list":
             context = params.get("context")
             if not context or not isinstance(context, list) or len(context) == 0:
-                return json.dumps({
-                    "error": "context parameter is required when action='list'",
-                    "hint": "Analyze the topology and device configurations first, "
-                            "then pass the protocols/services you found as context. "
-                            'Example: {"action": "list", "context": ["ospf", "bgp", "vlan"]}',
-                    "available_categories": sorted(set(
-                        skill.get("category", "")
-                        for skill in INJECTION_SKILLS_REGISTRY.values()
-                    ))
-                }, ensure_ascii=False, indent=2)
+                return json.dumps(
+                    {
+                        "error": "context parameter is required when action='list'",
+                        "hint": "Analyze the topology and device configurations first, "
+                        "then pass the protocols/services you found as context. "
+                        'Example: {"action": "list", "context": ["ospf", "bgp", "vlan"]}',
+                        "available_categories": sorted(
+                            set(skill.get("category", "") for skill in INJECTION_SKILLS_REGISTRY.values())
+                        ),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
 
             skills = list_available_injection_skills(context=context)
             logger.debug(f"Injection skills filtered by context={context}: {len(skills)} matching")
-            return json.dumps({
-                "count": len(skills),
-                "total_available": len(INJECTION_SKILLS_REGISTRY),
-                "context": context,
-                "fault_types": skills
-            }, ensure_ascii=False, indent=2)
+            return json.dumps(
+                {
+                    "count": len(skills),
+                    "total_available": len(INJECTION_SKILLS_REGISTRY),
+                    "context": context,
+                    "fault_types": skills,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         device_type = params.get("device_type")
         if not device_type:
-            return json.dumps({
-                "error": "Missing required field: device_type",
-                "available_fault_types": list(INJECTION_SKILLS_REGISTRY.keys()),
-                "hint": 'Use {"action": "list"} to see all available fault types'
-            }, ensure_ascii=False, indent=2)
+            return json.dumps(
+                {
+                    "error": "Missing required field: device_type",
+                    "available_fault_types": list(INJECTION_SKILLS_REGISTRY.keys()),
+                    "hint": 'Use {"action": "list"} to see all available fault types',
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         detail = params.get("detail", "full")
         issue = params.get("issue")
@@ -876,10 +889,14 @@ class PacketAnalysisSkillsTool(BaseTool):
             try:
                 params = json.loads(tool_input)
             except json.JSONDecodeError as e:
-                return json.dumps({
-                    "error": f"Invalid JSON input: {e}",
-                    "hint": 'Expected format: {"action": "get", "protocol": "ospf"}'
-                }, ensure_ascii=False, indent=2)
+                return json.dumps(
+                    {
+                        "error": f"Invalid JSON input: {e}",
+                        "hint": 'Expected format: {"action": "get", "protocol": "ospf"}',
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
         else:
             params = tool_input
 
@@ -887,17 +904,18 @@ class PacketAnalysisSkillsTool(BaseTool):
 
         if action == "list":
             protocols = list_available_packet_analysis_protocols()
-            return json.dumps({
-                "count": len(protocols),
-                "protocols": protocols
-            }, ensure_ascii=False, indent=2)
+            return json.dumps({"count": len(protocols), "protocols": protocols}, ensure_ascii=False, indent=2)
 
         protocol = params.get("protocol")
         if not protocol:
-            return json.dumps({
-                "error": "Missing required field: protocol",
-                "available_protocols": list(PACKET_ANALYSIS_REGISTRY.keys()),
-            }, ensure_ascii=False, indent=2)
+            return json.dumps(
+                {
+                    "error": "Missing required field: protocol",
+                    "available_protocols": list(PACKET_ANALYSIS_REGISTRY.keys()),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         result = get_packet_analysis_protocol(protocol)
         return json.dumps(result, ensure_ascii=False, indent=2)

@@ -21,11 +21,10 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
 from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import as_declarative
+from sqlalchemy.orm import DeclarativeBase
 
 
-@as_declarative()
-class Base:
+class Base(DeclarativeBase):
     def asdict(self):
 
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
@@ -84,7 +83,7 @@ class ListType(TypeDecorator):
     impl = VARCHAR
     cache_ok = True
 
-    def __init__(self, separator=',', *args, **kwargs):
+    def __init__(self, separator=",", *args, **kwargs):
 
         self._separator = separator
         super().__init__(*args, **kwargs)
@@ -92,8 +91,7 @@ class ListType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is not None:
             if any(self._separator in str(item) for item in value):
-                raise ListException(f"List values cannot contain '{self._separator}'"
-                                    f"Please use a different separator.")
+                raise ListException(f"List values cannot contain '{self._separator}'Please use a different separator.")
             return self._separator.join(map(str, value))
 
     def process_result_value(self, value, dialect):
@@ -104,7 +102,6 @@ class ListType(TypeDecorator):
 
 
 class BaseTable(Base):
-
     __abstract__ = True
 
     created_at = Column(DateTime, server_default=func.current_timestamp())

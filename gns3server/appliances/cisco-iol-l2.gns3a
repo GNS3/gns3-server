@@ -1,0 +1,35 @@
+{
+    "appliance_id": "329a24ea-9476-470a-bedd-6a79c1dd9867",
+    "name": "Cisco IOL-L2",
+    "category": "multilayer_switch",
+    "description": "Cisco IOL-L2 is the containerized Layer-2 switch image from Cisco Modeling Labs: the real IOS code in a scratch image driven by CML's iol-runner. This appliance runs the unmodified image inside a GNS3 Docker node — the console opens directly in the IOS CLI and links are wired through unix-socket NIO instead of a TAP interface.",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://www.cisco.com/",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/",
+    "product_name": "Cisco IOL-L2",
+    "product_url": "https://developer.cisco.com/modeling-labs/",
+    "registry_version": 8,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "**Server requirement:** a GNS3 server with IOL Docker (iol-runner) support — selected by the `GNS3_IOL_RUNNER` environment marker. This is not in stock gns3-server releases yet.\n\nThe image is not on Docker Hub: it ships with Cisco Modeling Labs and requires a CML account. Load it on the GNS3 server and make sure the tag matches (`iol-xe/ioll2-xe:17-18-02`), or edit the template image afterwards:\n\n```bash\ndocker load -i <ioll2-xe tarball from CML>   # or pull from Cisco's registry with your CML account\ndocker tag <loaded-image> iol-xe/ioll2-xe:17-18-02\n```\n\n**Other versions:** Docker appliances have no per-version selector in the `.gns3a` format — load the version you want and change the template's image field (templates are version-agnostic: same env vars and volumes).\n\nNodes boot straight into a minimal base config (hostname = node name, `no ip domain lookup`, console timeouts off — from `iol-xe-base.txt`, installed by the server) with no initial setup dialog. `write memory` persists across stop/start; to re-seed a node from the base config, delete its NVRAM or recreate the node.\n\nThe console is the IOS CLI (telnet, PID 1 stdio). Keystroke echo follows the IOS console poll cadence (~50 ms) — paste long commands instead of typing them. Interface names are IOL-style `Ethernet0/0`; one adapter is a 4-port unit (8 units max), change the count while the node is stopped. MAC addresses are derived from the node's application ID (`aabb.cc…`) and cannot be set. If you cap `memory`, keep it at IOL memory + ~512 MB headroom (default 2048 MB + no cap).",
+    "netmiko_device_type": "cisco_ios_telnet",
+    "symbol": ":/symbols/multilayer_switch.svg",
+    "settings": [
+        {
+            "name": "Default template settings",
+            "default": true,
+            "template_type": "docker",
+            "template_properties": {
+                "adapters": 4,
+                "image": "iol-xe/ioll2-xe:17-18-02",
+                "console_type": "telnet",
+                "environment": "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=iol-xe-base.txt",
+                "extra_volumes": [
+                    "/config"
+                ]
+            }
+        }
+    ]
+}

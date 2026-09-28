@@ -97,7 +97,6 @@ class VMwareUpdate(VMwareBase):
 
 
 class VMware(VMwareBase):
-
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

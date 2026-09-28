@@ -39,6 +39,7 @@ def get_netmiko_version() -> str:
     """Get Netmiko library version."""
     try:
         import netmiko
+
         return netmiko.__version__
     except Exception:
         return "Unknown"
@@ -68,47 +69,39 @@ def register_custom_drivers() -> set:
 
     try:
         # Import and register Huawei CE driver
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko \
-            import huawei_ce
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko import huawei_ce
 
         # Store custom device types before registration
         custom_devices.add("gns3_huawei_telnet_ce")
 
         # The driver auto-registers on import, but we can call it
         # explicitly
-        if hasattr(huawei_ce, 'register_custom_device_type'):
+        if hasattr(huawei_ce, "register_custom_device_type"):
             huawei_ce.register_custom_device_type()
     except ImportError:
         # Silently skip if custom drivers are not available
         pass
     except Exception as e:
         # Log but don't fail
-        print(
-            f"Warning: Failed to register Huawei CE driver: {e}",
-            file=sys.stderr
-        )
+        print(f"Warning: Failed to register Huawei CE driver: {e}", file=sys.stderr)
 
     try:
         # Import and register Ruijie Telnet driver
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko \
-            import ruijie_telnet
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko import ruijie_telnet
 
         # Store custom device types before registration
         custom_devices.add("gns3_ruijie_telnet")
 
         # The driver auto-registers on import, but we can call it
         # explicitly
-        if hasattr(ruijie_telnet, 'register_custom_device_type'):
+        if hasattr(ruijie_telnet, "register_custom_device_type"):
             ruijie_telnet.register_custom_device_type()
     except ImportError:
         # Silently skip if custom drivers are not available
         pass
     except Exception as e:
         # Log but don't fail
-        print(
-            f"Warning: Failed to register Ruijie driver: {e}",
-            file=sys.stderr
-        )
+        print(f"Warning: Failed to register Ruijie driver: {e}", file=sys.stderr)
 
     return custom_devices
 
@@ -124,32 +117,32 @@ def extract_brand_name(device_type: str) -> str:
         Brand name in a standardized format
     """
     # Remove common suffixes
-    name = device_type.replace('_telnet', '').replace('_ssh', '')
-    name = name.replace('_serial', '')
+    name = device_type.replace("_telnet", "").replace("_ssh", "")
+    name = name.replace("_serial", "")
 
     # Map to standard brand names
     brand_mapping = {
-        'cisco': 'Cisco',
-        'huawei': 'Huawei',
-        'juniper': 'Juniper',
-        'arista': 'Arista',
-        'hp': 'HP',
-        'aruba': 'Aruba',
-        'dell': 'Dell',
-        'brocade': 'Brocade',
-        'extreme': 'Extreme',
-        'ruckus': 'Ruckus',
-        'ruijie': 'Ruijie (锐捷)',
-        'zte': 'ZTE (中兴)',
-        'maipu': 'Maipu (迈普)',
-        'h3c': 'H3C (华三)',
-        'nokia': 'Nokia',
-        'paloalto': 'Palo Alto',
-        'f5': 'F5',
-        'checkpoint': 'Check Point',
-        'generic': 'Generic',
-        'huaweiyt': 'HuaweiYT',
-        'vsz': 'Ruckus',
+        "cisco": "Cisco",
+        "huawei": "Huawei",
+        "juniper": "Juniper",
+        "arista": "Arista",
+        "hp": "HP",
+        "aruba": "Aruba",
+        "dell": "Dell",
+        "brocade": "Brocade",
+        "extreme": "Extreme",
+        "ruckus": "Ruckus",
+        "ruijie": "Ruijie (锐捷)",
+        "zte": "ZTE (中兴)",
+        "maipu": "Maipu (迈普)",
+        "h3c": "H3C (华三)",
+        "nokia": "Nokia",
+        "paloalto": "Palo Alto",
+        "f5": "F5",
+        "checkpoint": "Check Point",
+        "generic": "Generic",
+        "huaweiyt": "HuaweiYT",
+        "vsz": "Ruckus",
     }
 
     # Check for exact matches first
@@ -163,7 +156,7 @@ def extract_brand_name(device_type: str) -> str:
             return value
 
     # Return capitalized version of the first part
-    return name.split('_')[0].capitalize()
+    return name.split("_")[0].capitalize()
 
 
 def group_devices_by_brand(device_types: List[str]) -> Dict[str, List[str]]:
@@ -205,8 +198,8 @@ def get_devices_by_protocol() -> Tuple[List[str], List[str]]:
 
         for device_type in CLASS_MAPPER.keys():
             device_lower = device_type.lower()
-            has_telnet = 'telnet' in device_lower
-            has_ssh = 'ssh' in device_lower
+            has_telnet = "telnet" in device_lower
+            has_ssh = "ssh" in device_lower
 
             if has_telnet and has_ssh:
                 both_protocols.append(device_type)
@@ -230,17 +223,14 @@ def get_total_device_count() -> int:
     """Get total number of device types in Netmiko."""
     try:
         from netmiko.ssh_dispatcher import CLASS_MAPPER
+
         return len(CLASS_MAPPER)
     except ImportError:
         return 0
 
 
 def generate_markdown(
-    version: str,
-    ssh_devices: List[str],
-    telnet_devices: List[str],
-    total_count: int,
-    custom_devices: set
+    version: str, ssh_devices: List[str], telnet_devices: List[str], total_count: int, custom_devices: set
 ) -> str:
     """
     Generate Markdown documentation with table format.
@@ -261,7 +251,7 @@ def generate_markdown(
     md_lines.append("# Netmiko Supported Devices")
     md_lines.append("")
     md_lines.append(f"**Netmiko Version:** {version}")
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     md_lines.append(f"**Generated:** {timestamp}")
     md_lines.append("")
     md_lines.append("---")
@@ -313,8 +303,7 @@ def generate_markdown(
     # Footer
     md_lines.append("---")
     md_lines.append("")
-    md_lines.append("*This document was generated automatically by the "
-                    "Netmiko device list script.*")
+    md_lines.append("*This document was generated automatically by the Netmiko device list script.*")
 
     return "\n".join(md_lines)
 
@@ -332,10 +321,8 @@ def save_markdown(content: str, filename: str = "netmiko_devices.md") -> None:
     # Go up from: .../gns3server/agent/gns3_copilot/utils/
     #            custom_netmiko/scripts to project root
     # That's 6 levels up
-    project_root = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.dirname(
-            os.path.dirname(os.path.dirname(script_dir))))
-        )
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))))
     )
 
     # Target directory: docs/gns3-copilot
@@ -348,17 +335,15 @@ def save_markdown(content: str, filename: str = "netmiko_devices.md") -> None:
     output_path = os.path.join(target_dir, filename)
 
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"Markdown document saved to: {output_path}")
     except IOError as e:
-        print(f"Error: Failed to save Markdown file: {e}",
-              file=sys.stderr)
+        print(f"Error: Failed to save Markdown file: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def print_summary(version: str, ssh_count: int, telnet_count: int,
-                  total_count: int, output_file: str) -> None:
+def print_summary(version: str, ssh_count: int, telnet_count: int, total_count: int, output_file: str) -> None:
     """Print summary to console."""
     print("=" * 80)
     print("Netmiko Device List Generator")
@@ -402,7 +387,7 @@ def main() -> int:
         ssh_devices=ssh_devices,
         telnet_devices=telnet_devices,
         total_count=total_count,
-        custom_devices=custom_devices
+        custom_devices=custom_devices,
     )
 
     # Save to file
@@ -415,7 +400,7 @@ def main() -> int:
         ssh_count=len(ssh_devices),
         telnet_count=len(telnet_devices),
         total_count=total_count,
-        output_file=output_file
+        output_file=output_file,
     )
 
     return 0

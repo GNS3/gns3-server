@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class C1700_MB_1FE(Adapter):
-
     """
     Integrated 1 port FastEthernet adapter for c1700 platform.
     """

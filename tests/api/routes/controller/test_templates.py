@@ -41,7 +41,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestTemplateRoutes:
-
     async def test_route_exist(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_template = {
@@ -54,7 +53,7 @@ class TestTemplateRoutes:
             "compute_id": "local",
             "symbol": ":/symbols/vpcs_guest.svg",
             "template_type": "vpcs",
-            "tags": ["tag1", "tag2"]
+            "tags": ["tag1", "tag2"],
         }
 
         response = await client.post(app.url_path_for("create_template"), json=new_template)
@@ -78,11 +77,7 @@ class TestTemplateRoutes:
         ),
     )
     async def test_template_list_with_tags(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            tags: list,
-            expected_match: bool
+        self, app: FastAPI, client: AsyncClient, tags: list, expected_match: bool
     ) -> None:
 
         params = {"tags": tags}
@@ -100,11 +95,13 @@ class TestTemplateRoutes:
     async def test_template_get(self, app: FastAPI, client: AsyncClient) -> None:
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "VPCS_TEST",
-                  "version": "1.0",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {
+            "template_id": template_id,
+            "name": "VPCS_TEST",
+            "version": "1.0",
+            "compute_id": "local",
+            "template_type": "vpcs",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -114,26 +111,22 @@ class TestTemplateRoutes:
         assert response.json()["template_id"] == template_id
 
     async def test_template_create_same_name_and_version(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, controller: Controller
     ) -> None:
 
-        params = {"name": "VPCS_TEST",
-                  "version": "1.0",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {"name": "VPCS_TEST", "version": "1.0", "compute_id": "local", "template_type": "vpcs"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_409_CONFLICT
 
     async def test_template_create_wrong_type(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
-        params = {"name": "VPCS_TEST",
-                  "version": "2.0",
-                  "compute_id": "local",
-                  "template_type": "invalid_template_type"}
+        params = {
+            "name": "VPCS_TEST",
+            "version": "2.0",
+            "compute_id": "local",
+            "template_type": "invalid_template_type",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
@@ -148,7 +141,7 @@ class TestTemplateRoutes:
             "compute_id": "local",
             "template_type": "vpcs",
             "tags": ["tag1", "tag2"],
-            "netmiko_device_type": "generic_termserver_telnet"
+            "netmiko_device_type": "generic_termserver_telnet",
         }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
@@ -215,11 +208,13 @@ class TestTemplateRoutes:
     async def test_template_delete(self, app: FastAPI, client: AsyncClient) -> None:
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "VPCS_TEST",
-                  "version": "4.0",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {
+            "template_id": template_id,
+            "name": "VPCS_TEST",
+            "version": "4.0",
+            "compute_id": "local",
+            "template_type": "vpcs",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -228,32 +223,34 @@ class TestTemplateRoutes:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_template_delete_with_prune_images(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            tmpdir: str,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        tmpdir: str,
     ) -> None:
 
         image1 = os.path.join(tmpdir, "image1.qcow2")
         with open(image1, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
 
         image2 = os.path.join(tmpdir, "image2.qcow2")
         with open(image2, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
 
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image("image1.qcow2", "qemu", 42, image1, "e342eb86c1229b6c154367a5476969b5", "md5")
         await images_repo.add_image("image2.qcow2", "qemu", 42, image2, "e342eb86c1229b6c154367a5476969b5", "md5")
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "QEMU_TEMPLATE",
-                  "compute_id": "local",
-                  "hda_disk_image": "image1.qcow2",
-                  "hdb_disk_image": "image2.qcow2",
-                  "template_type": "qemu"}
+        params = {
+            "template_id": template_id,
+            "name": "QEMU_TEMPLATE",
+            "compute_id": "local",
+            "hda_disk_image": "image1.qcow2",
+            "hdb_disk_image": "image2.qcow2",
+            "template_type": "qemu",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -263,8 +260,7 @@ class TestTemplateRoutes:
         assert len(images) == 2
 
         response = await client.delete(
-            app.url_path_for("delete_template", template_id=template_id),
-            params={"prune_images": True}
+            app.url_path_for("delete_template", template_id=template_id), params={"prune_images": True}
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -291,15 +287,18 @@ class TestTemplateRoutes:
         # an explicit project_id marks this as an existing on-disk project
         # (same path load_project takes at startup)
         return await controller.add_project(
-            project_id=project_id, name=name, path=project_dir,
-            filename=f"{name}.gns3", status="closed",
+            project_id=project_id,
+            name=name,
+            path=project_dir,
+            filename=f"{name}.gns3",
+            status="closed",
         )
 
     async def test_template_delete_used_by_project(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        controller: Controller,
     ) -> None:
         """
         A template referenced by a node in a project must not be deleted,
@@ -307,18 +306,22 @@ class TestTemplateRoutes:
         """
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "VPCS_GUARDED",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {"template_id": template_id, "name": "VPCS_GUARDED", "compute_id": "local", "template_type": "vpcs"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
 
         guarded_project = await self._add_closed_project_with_node(
-            controller, "Guarded",
-            {"node_id": str(uuid.uuid4()), "node_type": "vpcs", "compute_id": "local",
-             "name": "n1", "template_id": template_id, "properties": {}},
+            controller,
+            "Guarded",
+            {
+                "node_id": str(uuid.uuid4()),
+                "node_type": "vpcs",
+                "compute_id": "local",
+                "name": "n1",
+                "template_id": template_id,
+                "properties": {},
+            },
         )
 
         response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
@@ -335,12 +338,12 @@ class TestTemplateRoutes:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_template_delete_with_prune_images_used_by_project(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller,
-            db_session: AsyncSession,
-            tmpdir: str,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        controller: Controller,
+        db_session: AsyncSession,
+        tmpdir: str,
     ) -> None:
         """
         Pruning an image still referenced by a project node must be refused
@@ -349,17 +352,19 @@ class TestTemplateRoutes:
 
         image_path = os.path.join(tmpdir, "used.qcow2")
         with open(image_path, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
 
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image("used.qcow2", "qemu", 42, image_path, "e342eb86c1229b6c154367a5476969b5", "md5")
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "QEMU_GUARDED",
-                  "compute_id": "local",
-                  "hda_disk_image": "used.qcow2",
-                  "template_type": "qemu"}
+        params = {
+            "template_id": template_id,
+            "name": "QEMU_GUARDED",
+            "compute_id": "local",
+            "hda_disk_image": "used.qcow2",
+            "template_type": "qemu",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -367,14 +372,19 @@ class TestTemplateRoutes:
         # the node references the image but not the template: the template
         # check passes, the image check must still refuse the prune
         guarded_project = await self._add_closed_project_with_node(
-            controller, "Guarded",
-            {"node_id": str(uuid.uuid4()), "node_type": "qemu", "compute_id": "local",
-             "name": "n1", "properties": {"hda_disk_image_backing_file": "used.qcow2"}},
+            controller,
+            "Guarded",
+            {
+                "node_id": str(uuid.uuid4()),
+                "node_type": "qemu",
+                "compute_id": "local",
+                "name": "n1",
+                "properties": {"hda_disk_image_backing_file": "used.qcow2"},
+            },
         )
 
         response = await client.delete(
-            app.url_path_for("delete_template", template_id=template_id),
-            params={"prune_images": True}
+            app.url_path_for("delete_template", template_id=template_id), params={"prune_images": True}
         )
         assert response.status_code == status.HTTP_409_CONFLICT
         assert "Guarded" in response.json()["message"]
@@ -386,8 +396,7 @@ class TestTemplateRoutes:
 
         controller.remove_project(guarded_project)
         response = await client.delete(
-            app.url_path_for("delete_template", template_id=template_id),
-            params={"prune_images": True}
+            app.url_path_for("delete_template", template_id=template_id), params={"prune_images": True}
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not os.path.exists(image_path)
@@ -415,34 +424,25 @@ class TestTemplateRoutes:
     async def test_get_base_config(self, app: FastAPI, client: AsyncClient):
 
         async def mock_get_current_active_user():
-            return schemas.User(
-                username="admin",
-                user_id=uuid.uuid4(),
-                is_superadmin=True,
-                is_active=True
-            )
+            return schemas.User(username="admin", user_id=uuid.uuid4(), is_superadmin=True, is_active=True)
+
         app.dependency_overrides[get_current_active_user] = mock_get_current_active_user
         try:
-            create_resp = await client.post(app.url_path_for("create_template"), json={
-                "name": "TEST",
-                "compute_id": "local",
-                "template_type": "vpcs"
-            })
+            create_resp = await client.post(
+                app.url_path_for("create_template"),
+                json={"name": "TEST", "compute_id": "local", "template_type": "vpcs"},
+            )
 
             assert create_resp.status_code == 201
             template_id = create_resp.json()["template_id"]
 
             await client.put(
                 app.url_path_for("update_base_config", template_id=template_id, filename="test.txt"),
-                json={"content": "hello"}
+                json={"content": "hello"},
             )
 
             response = await client.get(
-                app.url_path_for(
-                    "get_base_config",
-                    template_id=template_id,
-                    filename="test.txt"
-                )
+                app.url_path_for("get_base_config", template_id=template_id, filename="test.txt")
             )
 
             assert response.status_code == 200
@@ -453,27 +453,21 @@ class TestTemplateRoutes:
     async def test_update_base_config(self, app: FastAPI, client: AsyncClient):
 
         async def mock_get_current_active_user():
-            return schemas.User(
-                username="admin",
-                user_id=uuid.uuid4(),
-                is_superadmin=True,
-                is_active=True
-            )
+            return schemas.User(username="admin", user_id=uuid.uuid4(), is_superadmin=True, is_active=True)
+
         app.dependency_overrides[get_current_active_user] = mock_get_current_active_user
         try:
             template_name = f"TEST_UPDATE_{uuid.uuid4().hex[:8]}"
-            create_resp = await client.post(app.url_path_for("create_template"), json={
-                "name": template_name,
-                "compute_id": "local",
-                "template_type": "vpcs"
-            })
+            create_resp = await client.post(
+                app.url_path_for("create_template"),
+                json={"name": template_name, "compute_id": "local", "template_type": "vpcs"},
+            )
             assert create_resp.status_code == 201
             template_id = create_resp.json()["template_id"]
 
             payload = {"content": "hello world"}
             response = await client.put(
-                app.url_path_for("update_base_config", template_id=template_id, filename="test.txt"),
-                json=payload
+                app.url_path_for("update_base_config", template_id=template_id, filename="test.txt"), json=payload
             )
 
             assert response.status_code == 200
@@ -484,26 +478,20 @@ class TestTemplateRoutes:
     async def test_update_base_config_missing_content(self, app: FastAPI, client: AsyncClient):
 
         async def mock_get_current_active_user():
-            return schemas.User(
-                username="admin",
-                user_id=uuid.uuid4(),
-                is_superadmin=True,
-                is_active=True
-            )
+            return schemas.User(username="admin", user_id=uuid.uuid4(), is_superadmin=True, is_active=True)
+
         app.dependency_overrides[get_current_active_user] = mock_get_current_active_user
         try:
             template_name = f"TEST_MISSING_{uuid.uuid4().hex[:8]}"
-            create_resp = await client.post(app.url_path_for("create_template"), json={
-                "name": template_name,
-                "compute_id": "local",
-                "template_type": "vpcs"
-            })
+            create_resp = await client.post(
+                app.url_path_for("create_template"),
+                json={"name": template_name, "compute_id": "local", "template_type": "vpcs"},
+            )
             assert create_resp.status_code == 201
             template_id = create_resp.json()["template_id"]
 
             response = await client.put(
-                app.url_path_for("update_base_config", template_id=template_id, filename="test.txt"),
-                json={}
+                app.url_path_for("update_base_config", template_id=template_id, filename="test.txt"), json={}
             )
 
             assert response.status_code in (400, 422)
@@ -520,35 +508,28 @@ class TestTemplateRoutes:
     async def test_list_base_configs(self, app: FastAPI, client: AsyncClient):
 
         async def mock_get_current_active_user():
-            return schemas.User(
-                username="admin",
-                user_id=uuid.uuid4(),
-                is_superadmin=True,
-                is_active=True
-            )
+            return schemas.User(username="admin", user_id=uuid.uuid4(), is_superadmin=True, is_active=True)
+
         app.dependency_overrides[get_current_active_user] = mock_get_current_active_user
         try:
             template_name = f"TEST_LIST_{uuid.uuid4().hex[:8]}"
-            create_resp = await client.post(app.url_path_for("create_template"), json={
-                "name": template_name,
-                "compute_id": "local",
-                "template_type": "vpcs"
-            })
+            create_resp = await client.post(
+                app.url_path_for("create_template"),
+                json={"name": template_name, "compute_id": "local", "template_type": "vpcs"},
+            )
             assert create_resp.status_code == 201
             template_id = create_resp.json()["template_id"]
 
             await client.put(
                 app.url_path_for("update_base_config", template_id=template_id, filename="config1.txt"),
-                json={"content": "file1"}
+                json={"content": "file1"},
             )
             await client.put(
                 app.url_path_for("update_base_config", template_id=template_id, filename="config2.txt"),
-                json={"content": "file2"}
+                json={"content": "file2"},
             )
 
-            response = await client.get(
-                app.url_path_for("list_base_configs", template_id=template_id)
-            )
+            response = await client.get(app.url_path_for("list_base_configs", template_id=template_id))
 
             assert response.status_code == 200
             filenames = [item["filename"] for item in response.json()]
@@ -559,14 +540,10 @@ class TestTemplateRoutes:
 
 
 class TestDuplicateTemplates:
-
     async def test_template_duplicate(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
         template_id = str(uuid.uuid4())
-        params = {"template_id": template_id,
-                  "name": "VPCS_TEST",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {"template_id": template_id, "name": "VPCS_TEST", "compute_id": "local", "template_type": "vpcs"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -582,10 +559,7 @@ class TestDuplicateTemplates:
         assert len(response.json()) == 9  # includes builtin templates
 
     async def test_template_duplicate_invalid_template_id(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, controller: Controller
     ) -> None:
 
         template_id = str(uuid.uuid4())
@@ -594,7 +568,6 @@ class TestDuplicateTemplates:
 
 
 class TestBuiltinTemplates:
-
     async def test_list_builtin_templates(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
         response = await client.get(app.url_path_for("get_templates"))
@@ -627,10 +600,7 @@ class TestBuiltinTemplates:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_list_builtin_templates_not_enabled(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            controller: Controller
+        self, app: FastAPI, client: AsyncClient, controller: Controller
     ) -> None:
 
         config = Config.instance()
@@ -640,14 +610,15 @@ class TestBuiltinTemplates:
 
 
 class TestDynamipsTemplate:
-
     async def test_c7200_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c7200 template",
-                  "platform": "c7200",
-                  "compute_id": "local",
-                  "image": "c7200-adventerprisek9-mz.124-24.T5.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c7200 template",
+            "platform": "c7200",
+            "compute_id": "local",
+            "image": "c7200-adventerprisek9-mz.124-24.T5.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -655,45 +626,49 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c7200-adventerprisek9-mz.124-24.T5.image",
-                                 "mac_addr": "",
-                                 "midplane": "vxr",
-                                 "mmap": True,
-                                 "name": "Cisco c7200 template",
-                                 "npe": "npe-400",
-                                 "nvram": 512,
-                                 "platform": "c7200",
-                                 "private_config": "",
-                                 "ram": 512,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c7200-adventerprisek9-mz.124-24.T5.image",
+                "mac_addr": "",
+                "midplane": "vxr",
+                "mmap": True,
+                "name": "Cisco c7200 template",
+                "npe": "npe-400",
+                "nvram": 512,
+                "platform": "c7200",
+                "private_config": "",
+                "ram": 512,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c3745_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3745 template",
-                  "platform": "c3745",
-                  "compute_id": "local",
-                  "image": "c3745-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c3745 template",
+            "platform": "c3745",
+            "compute_id": "local",
+            "image": "c3745-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -701,44 +676,48 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c3745-adventerprisek9-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c3745 template",
-                                 "iomem": 5,
-                                 "nvram": 256,
-                                 "platform": "c3745",
-                                 "private_config": "",
-                                 "ram": 256,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c3745-adventerprisek9-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c3745 template",
+                "iomem": 5,
+                "nvram": 256,
+                "platform": "c3745",
+                "private_config": "",
+                "ram": 256,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c3725_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3725 template",
-                  "platform": "c3725",
-                  "compute_id": "local",
-                  "image": "c3725-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c3725 template",
+            "platform": "c3725",
+            "compute_id": "local",
+            "image": "c3725-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -746,45 +725,49 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c3725-adventerprisek9-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c3725 template",
-                                 "iomem": 5,
-                                 "nvram": 256,
-                                 "platform": "c3725",
-                                 "private_config": "",
-                                 "ram": 128,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c3725-adventerprisek9-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c3725 template",
+                "iomem": 5,
+                "nvram": 256,
+                "platform": "c3725",
+                "private_config": "",
+                "ram": 128,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c3600_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3600 template",
-                  "platform": "c3600",
-                  "chassis": "3660",
-                  "compute_id": "local",
-                  "image": "c3660-a3jk9s-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c3600 template",
+            "platform": "c3600",
+            "chassis": "3660",
+            "compute_id": "local",
+            "image": "c3660-a3jk9s-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -792,57 +775,63 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c3660-a3jk9s-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c3600 template",
-                                 "iomem": 5,
-                                 "nvram": 128,
-                                 "platform": "c3600",
-                                 "chassis": "3660",
-                                 "private_config": "",
-                                 "ram": 192,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c3660-a3jk9s-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c3600 template",
+                "iomem": 5,
+                "nvram": 128,
+                "platform": "c3600",
+                "chassis": "3660",
+                "private_config": "",
+                "ram": 192,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c3600_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3600 template with wrong chassis",
-                  "platform": "c3600",
-                  "chassis": "3650",
-                  "compute_id": "local",
-                  "image": "c3660-a3jk9s-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c3600 template with wrong chassis",
+            "platform": "c3600",
+            "chassis": "3650",
+            "compute_id": "local",
+            "image": "c3660-a3jk9s-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_c2691_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c2691 template",
-                  "platform": "c2691",
-                  "compute_id": "local",
-                  "image": "c2691-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c2691 template",
+            "platform": "c2691",
+            "compute_id": "local",
+            "image": "c2691-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -850,45 +839,49 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c2691-adventerprisek9-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c2691 template",
-                                 "iomem": 5,
-                                 "nvram": 256,
-                                 "platform": "c2691",
-                                 "private_config": "",
-                                 "ram": 192,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c2691-adventerprisek9-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c2691 template",
+                "iomem": 5,
+                "nvram": 256,
+                "platform": "c2691",
+                "private_config": "",
+                "ram": 192,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c2600_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c2600 template",
-                  "platform": "c2600",
-                  "chassis": "2651XM",
-                  "compute_id": "local",
-                  "image": "c2600-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c2600 template",
+            "platform": "c2600",
+            "chassis": "2651XM",
+            "compute_id": "local",
+            "image": "c2600-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -896,58 +889,64 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c2600-adventerprisek9-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c2600 template",
-                                 "iomem": 15,
-                                 "nvram": 128,
-                                 "platform": "c2600",
-                                 "chassis": "2651XM",
-                                 "private_config": "",
-                                 "ram": 160,
-                                 "sparsemem": True,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c2600-adventerprisek9-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c2600 template",
+                "iomem": 15,
+                "nvram": 128,
+                "platform": "c2600",
+                "chassis": "2651XM",
+                "private_config": "",
+                "ram": 160,
+                "sparsemem": True,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c2600_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c2600 template with wrong chassis",
-                  "platform": "c2600",
-                  "chassis": "2660XM",
-                  "compute_id": "local",
-                  "image": "c2600-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c2600 template with wrong chassis",
+            "platform": "c2600",
+            "chassis": "2660XM",
+            "compute_id": "local",
+            "image": "c2600-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_c1700_dynamips_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c1700 template",
-                  "platform": "c1700",
-                  "chassis": "1760",
-                  "compute_id": "local",
-                  "image": "c1700-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c1700 template",
+            "platform": "c1700",
+            "chassis": "1760",
+            "compute_id": "local",
+            "image": "c1700-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -955,71 +954,73 @@ class TestDynamipsTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "dynamips",
-                                 "auto_delete_disks": False,
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "R{0}",
-                                 "disk0": 0,
-                                 "disk1": 0,
-                                 "exec_area": 64,
-                                 "idlemax": 500,
-                                 "idlepc": "",
-                                 "idlesleep": 30,
-                                 "image": "c1700-adventerprisek9-mz.124-25d.image",
-                                 "mac_addr": "",
-                                 "mmap": True,
-                                 "name": "Cisco c1700 template",
-                                 "iomem": 15,
-                                 "nvram": 128,
-                                 "platform": "c1700",
-                                 "chassis": "1760",
-                                 "private_config": "",
-                                 "ram": 160,
-                                 "sparsemem": False,
-                                 "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "system_id": "FTX0945W0MY"}
+            expected_response = {
+                "template_type": "dynamips",
+                "auto_delete_disks": False,
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "R{0}",
+                "disk0": 0,
+                "disk1": 0,
+                "exec_area": 64,
+                "idlemax": 500,
+                "idlepc": "",
+                "idlesleep": 30,
+                "image": "c1700-adventerprisek9-mz.124-25d.image",
+                "mac_addr": "",
+                "mmap": True,
+                "name": "Cisco c1700 template",
+                "iomem": 15,
+                "nvram": 128,
+                "platform": "c1700",
+                "chassis": "1760",
+                "private_config": "",
+                "ram": 160,
+                "sparsemem": False,
+                "startup_config": "ios_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "system_id": "FTX0945W0MY",
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
     async def test_c1700_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c1700 template with wrong chassis",
-                  "platform": "c1700",
-                  "chassis": "1770",
-                  "compute_id": "local",
-                  "image": "c1700-adventerprisek9-mz.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c1700 template with wrong chassis",
+            "platform": "c1700",
+            "chassis": "1770",
+            "compute_id": "local",
+            "image": "c1700-adventerprisek9-mz.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_dynamips_template_create_wrong_platform(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3900 template",
-                  "platform": "c3900",
-                  "compute_id": "local",
-                  "image": "c3900-test.124-25d.image",
-                  "template_type": "dynamips"}
+        params = {
+            "name": "Cisco c3900 template",
+            "platform": "c3900",
+            "compute_id": "local",
+            "image": "c3900-test.124-25d.image",
+            "template_type": "dynamips",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 class TestIOUTemplate:
-
     async def test_iou_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
         image_path = str(Path("/path/to/i86bi_linux-ipbase-ms-12.4.bin"))
-        params = {"name": "IOU template",
-                  "compute_id": "local",
-                  "path": image_path,
-                  "template_type": "iou"}
+        params = {"name": "IOU template", "compute_id": "local", "path": image_path, "template_type": "iou"}
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -1027,75 +1028,81 @@ class TestIOUTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"template_type": "iou",
-                                 "builtin": False,
-                                 "category": "router",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "default_name_format": "IOU{0}",
-                                 "ethernet_adapters": 2,
-                                 "name": "IOU template",
-                                 "nvram": 256,
-                                 "path": image_path,
-                                 "private_config": "",
-                                 "ram": 1024,
-                                 "serial_adapters": 2,
-                                 "startup_config": "iou_l3_base_startup-config.txt",
-                                 "symbol": unittest.mock.ANY,
-                                 "use_default_iou_values": False,
-                                 "l1_keepalives": False}
+            expected_response = {
+                "template_type": "iou",
+                "builtin": False,
+                "category": "router",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "default_name_format": "IOU{0}",
+                "ethernet_adapters": 2,
+                "name": "IOU template",
+                "nvram": 256,
+                "path": image_path,
+                "private_config": "",
+                "ram": 1024,
+                "serial_adapters": 2,
+                "startup_config": "iou_l3_base_startup-config.txt",
+                "symbol": unittest.mock.ANY,
+                "use_default_iou_values": False,
+                "l1_keepalives": False,
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
 
 class TestDockerTemplate:
-
     async def test_docker_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Docker template",
-                  "compute_id": "local",
-                  "image": "gns3/endhost:latest",
-                  "template_type": "docker"}
+        params = {
+            "name": "Docker template",
+            "compute_id": "local",
+            "image": "gns3/endhost:latest",
+            "template_type": "docker",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"adapters": 1,
-                             "template_type": "docker",
-                             "builtin": False,
-                             "category": "guest",
-                             "compute_id": "local",
-                             "console_auto_start": False,
-                             "console_http_path": "/",
-                             "console_http_port": 80,
-                             "console_resolution": "1024x768",
-                             "console_type": "telnet",
-                             "default_name_format": "{name}-{0}",
-                             "environment": "",
-                             "extra_hosts": "",
-                             "image": "gns3/endhost:latest",
-                             "name": "Docker template",
-                             "start_command": "",
-                             "symbol": unittest.mock.ANY,
-                             "custom_adapters": []}
+        expected_response = {
+            "adapters": 1,
+            "template_type": "docker",
+            "builtin": False,
+            "category": "guest",
+            "compute_id": "local",
+            "console_auto_start": False,
+            "console_http_path": "/",
+            "console_http_port": 80,
+            "console_resolution": "1024x768",
+            "console_type": "telnet",
+            "default_name_format": "{name}-{0}",
+            "environment": "",
+            "extra_hosts": "",
+            "image": "gns3/endhost:latest",
+            "name": "Docker template",
+            "start_command": "",
+            "symbol": unittest.mock.ANY,
+            "custom_adapters": [],
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestQemuTemplate:
-
     async def test_qemu_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Qemu template",
-                  "compute_id": "local",
-                  "platform": "i386",
-                  "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
-                  "ram": 512,
-                  "template_type": "qemu"}
+        params = {
+            "name": "Qemu template",
+            "compute_id": "local",
+            "platform": "i386",
+            "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
+            "ram": 512,
+            "template_type": "qemu",
+        }
 
         with asyncio_patch("gns3server.services.templates.TemplatesService._find_images", return_value=[]) as mock:
             response = await client.post(app.url_path_for("create_template"), json=params)
@@ -1103,368 +1110,314 @@ class TestQemuTemplate:
             assert response.status_code == status.HTTP_201_CREATED
             assert response.json()["template_id"] is not None
 
-            expected_response = {"adapter_type": "e1000",
-                                 "adapters": 1,
-                                 "template_type": "qemu",
-                                 "bios_image": "",
-                                 "boot_priority": "c",
-                                 "builtin": False,
-                                 "category": "guest",
-                                 "cdrom_image": "",
-                                 "compute_id": "local",
-                                 "console_auto_start": False,
-                                 "console_type": "telnet",
-                                 "cpu_throttling": 0,
-                                 "cpus": 1,
-                                 "default_name_format": "{name}-{0}",
-                                 "first_port_name": "",
-                                 "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
-                                 "hda_disk_interface": "none",
-                                 "hdb_disk_image": "",
-                                 "hdb_disk_interface": "none",
-                                 "hdc_disk_image": "",
-                                 "hdc_disk_interface": "none",
-                                 "hdd_disk_image": "",
-                                 "hdd_disk_interface": "none",
-                                 "initrd": "",
-                                 "kernel_command_line": "",
-                                 "kernel_image": "",
-                                 "linked_clone": True,
-                                 "mac_address": "",
-                                 "name": "Qemu template",
-                                 "on_close": "power_off",
-                                 "options": "",
-                                 "platform": "i386",
-                                 "port_name_format": "Ethernet{0}",
-                                 "port_segment_size": 0,
-                                 "process_priority": "normal",
-                                 "qemu_path": "",
-                                 "ram": 512,
-                                 "symbol": unittest.mock.ANY,
-                                 "usage": "",
-                                 "custom_adapters": []}
+            expected_response = {
+                "adapter_type": "e1000",
+                "adapters": 1,
+                "template_type": "qemu",
+                "bios_image": "",
+                "boot_priority": "c",
+                "builtin": False,
+                "category": "guest",
+                "cdrom_image": "",
+                "compute_id": "local",
+                "console_auto_start": False,
+                "console_type": "telnet",
+                "cpu_throttling": 0,
+                "cpus": 1,
+                "default_name_format": "{name}-{0}",
+                "first_port_name": "",
+                "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
+                "hda_disk_interface": "none",
+                "hdb_disk_image": "",
+                "hdb_disk_interface": "none",
+                "hdc_disk_image": "",
+                "hdc_disk_interface": "none",
+                "hdd_disk_image": "",
+                "hdd_disk_interface": "none",
+                "initrd": "",
+                "kernel_command_line": "",
+                "kernel_image": "",
+                "linked_clone": True,
+                "mac_address": "",
+                "name": "Qemu template",
+                "on_close": "power_off",
+                "options": "",
+                "platform": "i386",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "process_priority": "normal",
+                "qemu_path": "",
+                "ram": 512,
+                "symbol": unittest.mock.ANY,
+                "usage": "",
+                "custom_adapters": [],
+            }
 
             for item, value in expected_response.items():
                 assert response.json().get(item) == value
 
 
 class TestVMwareTemplate:
-
     async def test_vmware_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
         vmx_path = str(Path("/path/to/vm.vmx"))
-        params = {"name": "VMware template",
-                  "compute_id": "local",
-                  "template_type": "vmware",
-                  "vmx_path": vmx_path}
+        params = {"name": "VMware template", "compute_id": "local", "template_type": "vmware", "vmx_path": vmx_path}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"adapter_type": "e1000",
-                             "adapters": 1,
-                             "template_type": "vmware",
-                             "builtin": False,
-                             "category": "guest",
-                             "compute_id": "local",
-                             "console_auto_start": False,
-                             "console_type": "none",
-                             "default_name_format": "{name}-{0}",
-                             "first_port_name": "",
-                             "headless": False,
-                             "linked_clone": False,
-                             "name": "VMware template",
-                             "on_close": "power_off",
-                             "port_name_format": "Ethernet{0}",
-                             "port_segment_size": 0,
-                             "symbol": unittest.mock.ANY,
-                             "use_any_adapter": False,
-                             "vmx_path": vmx_path,
-                             "custom_adapters": []}
+        expected_response = {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "template_type": "vmware",
+            "builtin": False,
+            "category": "guest",
+            "compute_id": "local",
+            "console_auto_start": False,
+            "console_type": "none",
+            "default_name_format": "{name}-{0}",
+            "first_port_name": "",
+            "headless": False,
+            "linked_clone": False,
+            "name": "VMware template",
+            "on_close": "power_off",
+            "port_name_format": "Ethernet{0}",
+            "port_segment_size": 0,
+            "symbol": unittest.mock.ANY,
+            "use_any_adapter": False,
+            "vmx_path": vmx_path,
+            "custom_adapters": [],
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestVirtualBoxTemplate:
-
     async def test_virtualbox_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "VirtualBox template",
-                  "compute_id": "local",
-                  "template_type": "virtualbox",
-                  "vmname": "My VirtualBox VM"}
+        params = {
+            "name": "VirtualBox template",
+            "compute_id": "local",
+            "template_type": "virtualbox",
+            "vmname": "My VirtualBox VM",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
-                             "adapters": 1,
-                             "template_type": "virtualbox",
-                             "builtin": False,
-                             "category": "guest",
-                             "compute_id": "local",
-                             "console_auto_start": False,
-                             "console_type": "none",
-                             "default_name_format": "{name}-{0}",
-                             "first_port_name": "",
-                             "headless": False,
-                             "linked_clone": False,
-                             "name": "VirtualBox template",
-                             "on_close": "power_off",
-                             "port_name_format": "Ethernet{0}",
-                             "port_segment_size": 0,
-                             "ram": 256,
-                             "symbol": unittest.mock.ANY,
-                             "use_any_adapter": False,
-                             "vmname": "My VirtualBox VM",
-                             "custom_adapters": []}
+        expected_response = {
+            "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
+            "adapters": 1,
+            "template_type": "virtualbox",
+            "builtin": False,
+            "category": "guest",
+            "compute_id": "local",
+            "console_auto_start": False,
+            "console_type": "none",
+            "default_name_format": "{name}-{0}",
+            "first_port_name": "",
+            "headless": False,
+            "linked_clone": False,
+            "name": "VirtualBox template",
+            "on_close": "power_off",
+            "port_name_format": "Ethernet{0}",
+            "port_segment_size": 0,
+            "ram": 256,
+            "symbol": unittest.mock.ANY,
+            "use_any_adapter": False,
+            "vmname": "My VirtualBox VM",
+            "custom_adapters": [],
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestVPCSTemplate:
-
     async def test_vpcs_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "VPCS template",
-                  "compute_id": "local",
-                  "template_type": "vpcs"}
+        params = {"name": "VPCS template", "compute_id": "local", "template_type": "vpcs"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"template_type": "vpcs",
-                             "base_script_file": "vpcs_base_config.txt",
-                             "builtin": False,
-                             "category": "guest",
-                             "compute_id": "local",
-                             "console_auto_start": False,
-                             "console_type": "telnet",
-                             "default_name_format": "PC{0}",
-                             "name": "VPCS template",
-                             "symbol": unittest.mock.ANY}
+        expected_response = {
+            "template_type": "vpcs",
+            "base_script_file": "vpcs_base_config.txt",
+            "builtin": False,
+            "category": "guest",
+            "compute_id": "local",
+            "console_auto_start": False,
+            "console_type": "telnet",
+            "default_name_format": "PC{0}",
+            "name": "VPCS template",
+            "symbol": unittest.mock.ANY,
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestEthernetSwitchTemplate:
-
     async def test_ethernet_switch_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Ethernet switch template",
-                  "compute_id": "local",
-                  "template_type": "ethernet_switch"}
+        params = {"name": "Ethernet switch template", "compute_id": "local", "template_type": "ethernet_switch"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"template_type": "ethernet_switch",
-                             "builtin": False,
-                             "category": "switch",
-                             "compute_id": "local",
-                             "console_type": "none",
-                             "default_name_format": "Switch{0}",
-                             "name": "Ethernet switch template",
-                             "ports_mapping": [{"ethertype": "0x8100",
-                                                "name": "Ethernet0",
-                                                "port_number": 0,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet1",
-                                                "port_number": 1,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet2",
-                                                "port_number": 2,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet3",
-                                                "port_number": 3,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet4",
-                                                "port_number": 4,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet5",
-                                                "port_number": 5,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet6",
-                                                "port_number": 6,
-                                                "type": "access",
-                                                "vlan": 1
-                                                },
-                                               {"ethertype": "0x8100",
-                                                "name": "Ethernet7",
-                                                "port_number": 7,
-                                                "type": "access",
-                                                "vlan": 1
-                                                }],
-                             "symbol": unittest.mock.ANY}
+        expected_response = {
+            "template_type": "ethernet_switch",
+            "builtin": False,
+            "category": "switch",
+            "compute_id": "local",
+            "console_type": "none",
+            "default_name_format": "Switch{0}",
+            "name": "Ethernet switch template",
+            "ports_mapping": [
+                {"ethertype": "0x8100", "name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet1", "port_number": 1, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet2", "port_number": 2, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet3", "port_number": 3, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet4", "port_number": 4, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet5", "port_number": 5, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet6", "port_number": 6, "type": "access", "vlan": 1},
+                {"ethertype": "0x8100", "name": "Ethernet7", "port_number": 7, "type": "access", "vlan": 1},
+            ],
+            "symbol": unittest.mock.ANY,
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestHubTemplate:
-
     async def test_ethernet_hub_template_create(self, app: FastAPI, client: AsyncClient) -> None:
-        params = {"name": "Ethernet hub template",
-                  "compute_id": "local",
-                  "template_type": "ethernet_hub"}
+        params = {"name": "Ethernet hub template", "compute_id": "local", "template_type": "ethernet_hub"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"ports_mapping": [{"port_number": 0,
-                                                "name": "Ethernet0"
-                                                },
-                                               {"port_number": 1,
-                                                "name": "Ethernet1"
-                                                },
-                                               {"port_number": 2,
-                                                "name": "Ethernet2"
-                                                },
-                                               {"port_number": 3,
-                                                "name": "Ethernet3"
-                                                },
-                                               {"port_number": 4,
-                                                "name": "Ethernet4"
-                                                },
-                                               {"port_number": 5,
-                                                "name": "Ethernet5"
-                                                },
-                                               {"port_number": 6,
-                                                "name": "Ethernet6"
-                                                },
-                                               {"port_number": 7,
-                                                "name": "Ethernet7"
-                                                }],
-                             "compute_id": "local",
-                             "name": "Ethernet hub template",
-                             "symbol": unittest.mock.ANY,
-                             "default_name_format": "Hub{0}",
-                             "template_type": "ethernet_hub",
-                             "category": "switch",
-                             "builtin": False}
+        expected_response = {
+            "ports_mapping": [
+                {"port_number": 0, "name": "Ethernet0"},
+                {"port_number": 1, "name": "Ethernet1"},
+                {"port_number": 2, "name": "Ethernet2"},
+                {"port_number": 3, "name": "Ethernet3"},
+                {"port_number": 4, "name": "Ethernet4"},
+                {"port_number": 5, "name": "Ethernet5"},
+                {"port_number": 6, "name": "Ethernet6"},
+                {"port_number": 7, "name": "Ethernet7"},
+            ],
+            "compute_id": "local",
+            "name": "Ethernet hub template",
+            "symbol": unittest.mock.ANY,
+            "default_name_format": "Hub{0}",
+            "template_type": "ethernet_hub",
+            "category": "switch",
+            "builtin": False,
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestCloudTemplate:
-
     async def test_cloud_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cloud template",
-                  "compute_id": "local",
-                  "template_type": "cloud"}
+        params = {"name": "Cloud template", "compute_id": "local", "template_type": "cloud"}
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["template_id"] is not None
 
-        expected_response = {"template_type": "cloud",
-                             "builtin": False,
-                             "category": "guest",
-                             "compute_id": "local",
-                             "default_name_format": "Cloud{0}",
-                             "name": "Cloud template",
-                             "ports_mapping": [],
-                             "symbol": unittest.mock.ANY,
-                             "remote_console_host": "127.0.0.1",
-                             "remote_console_port": 23,
-                             "remote_console_type": "none",
-                             "remote_console_http_path": "/"}
+        expected_response = {
+            "template_type": "cloud",
+            "builtin": False,
+            "category": "guest",
+            "compute_id": "local",
+            "default_name_format": "Cloud{0}",
+            "name": "Cloud template",
+            "ports_mapping": [],
+            "symbol": unittest.mock.ANY,
+            "remote_console_host": "127.0.0.1",
+            "remote_console_port": 23,
+            "remote_console_type": "none",
+            "remote_console_http_path": "/",
+        }
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
 
 class TestImageAssociationWithTemplate:
-
     @pytest.mark.parametrize(
         "image_name, image_type, params",
         (
-                (
-                        "c7200-adventerprisek9-mz.124-24.T5.image",
-                        "ios",
-                        {
-                            "template_id": "6d85c8db-640f-4547-8955-bc132f7d7196",
-                            "name": "Cisco c7200 template",
-                            "platform": "c7200",
-                            "compute_id": "local",
-                            "image": "<replace_image>",
-                            "template_type": "dynamips"
-                        }
-                ),
-                (
-                        "i86bi_linux-ipbase-ms-12.4.bin",
-                        "iou",
-                        {
-                            "template_id": "0014185e-bdfe-454b-86cd-9009c23900c5",
-                            "name": "IOU template",
-                            "compute_id": "local",
-                            "path": "<replace_image>",
-                            "template_type": "iou"
-                        }
-                ),
-                (
-                        "image.qcow2",
-                        "qemu",
-                        {
-                            "template_id": "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
-                            "name": "Qemu template",
-                            "compute_id": "local",
-                            "platform": "i386",
-                            "hda_disk_image": "<replace_image>",
-                            "hdb_disk_image": "<replace_image>",
-                            "hdc_disk_image": "<replace_image>",
-                            "hdd_disk_image": "<replace_image>",
-                            "cdrom_image": "<replace_image>",
-                            "kernel_image": "<replace_image>",
-                            "bios_image": "<replace_image>",
-                            "ram": 512,
-                            "template_type": "qemu"
-                        }
-                ),
+            (
+                "c7200-adventerprisek9-mz.124-24.T5.image",
+                "ios",
+                {
+                    "template_id": "6d85c8db-640f-4547-8955-bc132f7d7196",
+                    "name": "Cisco c7200 template",
+                    "platform": "c7200",
+                    "compute_id": "local",
+                    "image": "<replace_image>",
+                    "template_type": "dynamips",
+                },
+            ),
+            (
+                "i86bi_linux-ipbase-ms-12.4.bin",
+                "iou",
+                {
+                    "template_id": "0014185e-bdfe-454b-86cd-9009c23900c5",
+                    "name": "IOU template",
+                    "compute_id": "local",
+                    "path": "<replace_image>",
+                    "template_type": "iou",
+                },
+            ),
+            (
+                "image.qcow2",
+                "qemu",
+                {
+                    "template_id": "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
+                    "name": "Qemu template",
+                    "compute_id": "local",
+                    "platform": "i386",
+                    "hda_disk_image": "<replace_image>",
+                    "hdb_disk_image": "<replace_image>",
+                    "hdc_disk_image": "<replace_image>",
+                    "hdd_disk_image": "<replace_image>",
+                    "cdrom_image": "<replace_image>",
+                    "kernel_image": "<replace_image>",
+                    "bios_image": "<replace_image>",
+                    "ram": 512,
+                    "template_type": "qemu",
+                },
+            ),
         ),
     )
     async def test_template_create_with_images(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            tmpdir: str,
-            image_name: str,
-            image_type: str,
-            params: dict
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        tmpdir: str,
+        image_name: str,
+        image_type: str,
+        params: dict,
     ) -> None:
 
         path = os.path.join(tmpdir, image_name)
         with open(path, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image(image_name, image_type, 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
         for key, value in params.items():
@@ -1481,53 +1434,53 @@ class TestImageAssociationWithTemplate:
     @pytest.mark.parametrize(
         "image_name, image_type, template_id, params",
         (
-                (
-                        "c7200-adventerprisek9-mz.155-2.XB.image",
-                        "ios",
-                        "6d85c8db-640f-4547-8955-bc132f7d7196",
-                        {
-                            "image": "<replace_image>",
-                        }
-                ),
-                (
-                        "i86bi-linux-l2-adventerprisek9-15.2d.bin",
-                        "iou",
-                        "0014185e-bdfe-454b-86cd-9009c23900c5",
-                        {
-                            "path": "<replace_image>",
-                        }
-                ),
-                (
-                        "new_image.qcow2",
-                        "qemu",
-                        "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
-                        {
-                            "hda_disk_image": "<replace_image>",
-                            "hdb_disk_image": "<replace_image>",
-                            "hdc_disk_image": "<replace_image>",
-                            "hdd_disk_image": "<replace_image>",
-                            "cdrom_image": "<replace_image>",
-                            "kernel_image": "<replace_image>",
-                            "bios_image": "<replace_image>",
-                        }
-                ),
+            (
+                "c7200-adventerprisek9-mz.155-2.XB.image",
+                "ios",
+                "6d85c8db-640f-4547-8955-bc132f7d7196",
+                {
+                    "image": "<replace_image>",
+                },
+            ),
+            (
+                "i86bi-linux-l2-adventerprisek9-15.2d.bin",
+                "iou",
+                "0014185e-bdfe-454b-86cd-9009c23900c5",
+                {
+                    "path": "<replace_image>",
+                },
+            ),
+            (
+                "new_image.qcow2",
+                "qemu",
+                "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
+                {
+                    "hda_disk_image": "<replace_image>",
+                    "hdb_disk_image": "<replace_image>",
+                    "hdc_disk_image": "<replace_image>",
+                    "hdd_disk_image": "<replace_image>",
+                    "cdrom_image": "<replace_image>",
+                    "kernel_image": "<replace_image>",
+                    "bios_image": "<replace_image>",
+                },
+            ),
         ),
     )
     async def test_template_update_with_images(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            tmpdir: str,
-            image_name: str,
-            image_type: str,
-            template_id: str,
-            params: dict
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        tmpdir: str,
+        image_name: str,
+        image_type: str,
+        template_id: str,
+        params: dict,
     ) -> None:
 
         path = os.path.join(tmpdir, image_name)
         with open(path, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image(image_name, image_type, 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
 
@@ -1545,39 +1498,34 @@ class TestImageAssociationWithTemplate:
     @pytest.mark.parametrize(
         "template_id, params",
         (
-                (
-                        "6d85c8db-640f-4547-8955-bc132f7d7196",
-                        {
-                            "image": "<remove_image>",
-                        }
-                ),
-                (
-                        "0014185e-bdfe-454b-86cd-9009c23900c5",
-                        {
-                            "path": "<remove_image>",
-                        }
-                ),
-                (
-                        "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
-                        {
-                            "hda_disk_image": "<remove_image>",
-                            "hdb_disk_image": "<remove_image>",
-                            "hdc_disk_image": "<remove_image>",
-                            "hdd_disk_image": "<remove_image>",
-                            "cdrom_image": "<remove_image>",
-                            "kernel_image": "<remove_image>",
-                            "bios_image": "<remove_image>",
-                        }
-                ),
+            (
+                "6d85c8db-640f-4547-8955-bc132f7d7196",
+                {
+                    "image": "<remove_image>",
+                },
+            ),
+            (
+                "0014185e-bdfe-454b-86cd-9009c23900c5",
+                {
+                    "path": "<remove_image>",
+                },
+            ),
+            (
+                "97ef56a5-7ae4-4795-ad4c-e7dcdd745cff",
+                {
+                    "hda_disk_image": "<remove_image>",
+                    "hdb_disk_image": "<remove_image>",
+                    "hdc_disk_image": "<remove_image>",
+                    "hdd_disk_image": "<remove_image>",
+                    "cdrom_image": "<remove_image>",
+                    "kernel_image": "<remove_image>",
+                    "bios_image": "<remove_image>",
+                },
+            ),
         ),
     )
     async def test_remove_images_from_template(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            template_id: str,
-            params: dict
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, template_id: str, params: dict
     ) -> None:
 
         for key, value in params.items():
@@ -1591,25 +1539,27 @@ class TestImageAssociationWithTemplate:
         assert len(db_template.images) == 0
 
     async def test_template_create_with_image_in_subdir(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            tmpdir: str,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        tmpdir: str,
     ) -> None:
 
-        params = {"name": "Qemu template",
-                  "version": "1.0",
-                  "compute_id": "local",
-                  "platform": "i386",
-                  "hda_disk_image": "subdir/image.qcow2",
-                  "ram": 512,
-                  "template_type": "qemu"}
+        params = {
+            "name": "Qemu template",
+            "version": "1.0",
+            "compute_id": "local",
+            "platform": "i386",
+            "hda_disk_image": "subdir/image.qcow2",
+            "ram": 512,
+            "template_type": "qemu",
+        }
 
         path = os.path.join(tmpdir, "subdir", "image.qcow2")
         os.makedirs(os.path.dirname(path))
         with open(path, "wb+") as f:
-            f.write(b'\x42\x42\x42\x42')
+            f.write(b"\x42\x42\x42\x42")
         images_repo = ImagesRepository(db_session)
         await images_repo.add_image("image.qcow2", "qemu", 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
 
@@ -1624,12 +1574,14 @@ class TestImageAssociationWithTemplate:
 
     async def test_template_create_with_non_existing_image(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Qemu template with non existing image",
-                  "compute_id": "local",
-                  "platform": "i386",
-                  "hda_disk_image": "unkown_image.qcow2",
-                  "ram": 512,
-                  "template_type": "qemu"}
+        params = {
+            "name": "Qemu template with non existing image",
+            "compute_id": "local",
+            "platform": "i386",
+            "hda_disk_image": "unkown_image.qcow2",
+            "ram": 512,
+            "template_type": "qemu",
+        }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_404_NOT_FOUND

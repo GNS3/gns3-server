@@ -172,49 +172,38 @@ class TestAccessTicketWebSocketAuth:
         monkeypatch.setattr(
             HTTPClient,
             "get_client",
-            classmethod(lambda cls: SimpleNamespace(ws_connect=lambda *args, **kwargs: compute_ws))
+            classmethod(lambda cls: SimpleNamespace(ws_connect=lambda *args, **kwargs: compute_ws)),
         )
         return compute_ws
 
     async def test_console_ws_accepts_valid_ticket(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient,
-            compute_credentials,
-            project: Project,
-            node: Node,
-            monkeypatch
+        self, app: FastAPI, base_client: AsyncClient, compute_credentials, project: Project, node: Node, monkeypatch
     ) -> None:
         # admin is the seeded superadmin, so the RBAC privilege check is skipped
         ticket = access_ticket_service.mint("admin", 0, project_id=project.id, node_id=node.id)
-        self._forward_compute_ws(monkeypatch, [
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None),
-        ])
+        self._forward_compute_ws(
+            monkeypatch,
+            [
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None),
+            ],
+        )
 
         async with self._ws_client(app, base_client) as client:
             async with aconnect_ws(
-                    f"/v3/projects/{project.id}/nodes/{node.id}/console/ws",
-                    client,
-                    params={"token": ticket}
+                f"/v3/projects/{project.id}/nodes/{node.id}/console/ws", client, params={"token": ticket}
             ) as ws:
                 # reaching the compute forwarding loop means ticket auth succeeded
                 assert await ws.receive_text() == "device output"
 
     async def test_console_ws_rejects_ticket_bound_to_other_node(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient,
-            project: Project,
-            node: Node
+        self, app: FastAPI, base_client: AsyncClient, project: Project, node: Node
     ) -> None:
 
         other_node = "00000000-0000-0000-0000-000000000000"
         ticket = access_ticket_service.mint("admin", 0, project_id=project.id, node_id=other_node)
         async with self._ws_client(app, base_client) as client:
             async with aconnect_ws(
-                    f"/v3/projects/{project.id}/nodes/{node.id}/console/ws",
-                    client,
-                    params={"token": ticket}
+                f"/v3/projects/{project.id}/nodes/{node.id}/console/ws", client, params={"token": ticket}
             ) as ws:
                 notification = await ws.receive_json()
                 assert notification["event"]["message"] == (
@@ -224,28 +213,18 @@ class TestAccessTicketWebSocketAuth:
                 )
 
     async def test_console_ws_rejects_ticket_with_stale_token_version(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient,
-            project: Project,
-            node: Node
+        self, app: FastAPI, base_client: AsyncClient, project: Project, node: Node
     ) -> None:
         # logging out bumps the user's token_version: outstanding tickets must die with it
         ticket = access_ticket_service.mint("admin", 999, project_id=project.id, node_id=node.id)
         async with self._ws_client(app, base_client) as client:
             async with aconnect_ws(
-                    f"/v3/projects/{project.id}/nodes/{node.id}/console/ws",
-                    client,
-                    params={"token": ticket}
+                f"/v3/projects/{project.id}/nodes/{node.id}/console/ws", client, params={"token": ticket}
             ) as ws:
                 notification = await ws.receive_json()
                 assert "Token has been revoked for 'admin'" in notification["event"]["message"]
 
-    async def test_ticket_rejected_on_non_console_websocket(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient
-    ) -> None:
+    async def test_ticket_rejected_on_non_console_websocket(self, app: FastAPI, base_client: AsyncClient) -> None:
         # the controller notification stream shares the WS auth dependency but has
         # no node binding: a console ticket must not authenticate it
         ticket = access_ticket_service.mint("admin", 0, project_id="p1", node_id="n1")
@@ -263,42 +242,26 @@ class TestAccessTicketRestAuth:
 
     pytestmark = pytest.mark.asyncio
 
-    async def test_rest_accepts_path_bound_ticket(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient
-    ) -> None:
+    async def test_rest_accepts_path_bound_ticket(self, app: FastAPI, base_client: AsyncClient) -> None:
         # base_client carries no Authorization header, so the ?token= parameter is used
         ticket = access_ticket_service.mint("admin", 0, path="/v3/projects")
         response = await base_client.get("/v3/projects", params={"token": ticket})
         assert response.status_code == status.HTTP_200_OK
 
-    async def test_rest_rejects_ticket_bound_to_other_path(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient
-    ) -> None:
+    async def test_rest_rejects_ticket_bound_to_other_path(self, app: FastAPI, base_client: AsyncClient) -> None:
 
         ticket = access_ticket_service.mint("admin", 0, path="/v3/symbols/router.svg/raw")
         response = await base_client.get("/v3/projects", params={"token": ticket})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert "Invalid or expired access ticket" in response.text
 
-    async def test_rest_rejects_node_bound_ticket(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient
-    ) -> None:
+    async def test_rest_rejects_node_bound_ticket(self, app: FastAPI, base_client: AsyncClient) -> None:
         # node-bound (console) tickets must not authenticate REST resources
         ticket = access_ticket_service.mint("admin", 0, project_id="p1", node_id="n1")
         response = await base_client.get("/v3/projects", params={"token": ticket})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    async def test_rest_rejects_ticket_with_stale_token_version(
-            self,
-            app: FastAPI,
-            base_client: AsyncClient
-    ) -> None:
+    async def test_rest_rejects_ticket_with_stale_token_version(self, app: FastAPI, base_client: AsyncClient) -> None:
         # logging out bumps the user's token_version: outstanding tickets must die with it
         ticket = access_ticket_service.mint("admin", 999, path="/v3/projects")
         response = await base_client.get("/v3/projects", params={"token": ticket})

@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class PA_GE(Adapter):
-
     """
     PA-GE GigabitEthernet port adapter.
     """

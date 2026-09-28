@@ -76,12 +76,14 @@ def test_vboxmanage_path(manager, config, tmpdir):
 @pytest.mark.asyncio
 async def test_list_vms(manager):
 
-    vm_list = ['"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
-               '"Carriage',
-               'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c3f3}',
-               '',
-               '"<inaccessible>" {42b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
-               '"Linux Microcore 4.7.1" {ccd8c50b-c172-457d-99fa-dd69371ede0e}']
+    vm_list = [
+        '"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
+        '"Carriage',
+        'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c3f3}',
+        "",
+        '"<inaccessible>" {42b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
+        '"Linux Microcore 4.7.1" {ccd8c50b-c172-457d-99fa-dd69371ede0e}',
+    ]
 
     async def execute_mock(cmd, args):
         if cmd == "list":
@@ -96,7 +98,4 @@ async def test_list_vms(manager):
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock
         vms = await manager.list_vms()
-    assert vms == [
-        {"vmname": "Windows 8.1", "ram": 512},
-        {"vmname": "Linux Microcore 4.7.1", "ram": 256}
-    ]
+    assert vms == [{"vmname": "Windows 8.1", "ram": 512}, {"vmname": "Linux Microcore 4.7.1", "ram": 256}]

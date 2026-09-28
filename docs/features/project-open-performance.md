@@ -51,8 +51,8 @@ Each IOU VM creation spawned `ld-linux --verify` and `iou-image -h` subprocesses
 
 ```python
 # Class-level caches shared across all instances
-IOUVM._loader_cache = {}           # image path → loader command
-IOUVM._default_values_cache = {}   # image path → (ram, nvram)
+IOUVM._loader_cache = {}  # image path → loader command
+IOUVM._default_values_cache = {}  # image path → (ram, nvram)
 ```
 
 Only the first node with a given image runs the subprocesses; subsequent nodes reuse cached values.

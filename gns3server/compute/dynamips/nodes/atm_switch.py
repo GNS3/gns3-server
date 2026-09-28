@@ -32,7 +32,6 @@ log = logging.getLogger(__name__)
 
 
 class ATMSwitch(Device):
-
     """
     Dynamips ATM switch.
 

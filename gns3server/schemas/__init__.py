@@ -20,16 +20,51 @@ from .common import ErrorMessage
 from .version import Version
 
 # Controller schemas
-from .controller.links import LinkCreate, LinkUpdate, Link, UDPPortInfo, EthernetPortInfo, LinkCapture, MarkerCreate, MarkerUpdate, MarkerDefinitionCreate
-from .controller.computes import ComputeCreate, ComputeUpdate, ComputeVirtualBoxVM, ComputeVMwareVM, ComputeDockerImage, AutoIdlePC, Compute
+from .controller.links import (
+    LinkCreate,
+    LinkUpdate,
+    Link,
+    UDPPortInfo,
+    EthernetPortInfo,
+    LinkCapture,
+    MarkerCreate,
+    MarkerUpdate,
+    MarkerDefinitionCreate,
+)
+from .controller.computes import (
+    ComputeCreate,
+    ComputeUpdate,
+    ComputeVirtualBoxVM,
+    ComputeVMwareVM,
+    ComputeDockerImage,
+    AutoIdlePC,
+    Compute,
+)
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
 from .controller.images import Image, ImageType, ImageSyncRequest, ImageSyncJob
 from .controller.appliances import ApplianceVersion, ApplianceVersionV8, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
 from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
-from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile, ProjectCompression, NodeFile
-from .controller.users import UserCreate, UserUpdate, LoggedInUserUpdate, User, Credentials, UserGroupCreate, UserGroupUpdate, UserGroup
+from .controller.projects import (
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectDuplicate,
+    Project,
+    ProjectFile,
+    ProjectCompression,
+    NodeFile,
+)
+from .controller.users import (
+    UserCreate,
+    UserUpdate,
+    LoggedInUserUpdate,
+    User,
+    Credentials,
+    UserGroupCreate,
+    UserGroupUpdate,
+    UserGroup,
+)
 
 # Conditionally import AI-related schemas
 try:
@@ -40,7 +75,7 @@ try:
         LLMModelConfigResponse,
         LLMModelConfigWithSource,
         LLMModelConfigInheritedResponse,
-        LLMModelConfigListResponse
+        LLMModelConfigListResponse,
     )
     from .controller.chat import (
         OpenAIToolCall,
@@ -49,7 +84,7 @@ try:
         OpenAIMessage,
         ConversationHistory,
         ChatSession,
-        RenameSession
+        RenameSession,
     )
 except ImportError:
     # AI schemas are not available (should not happen as they don't depend on external libs)
@@ -89,7 +124,7 @@ from .controller.templates.dynamips_templates import (
     C3745DynamipsTemplate,
     C3745DynamipsTemplateUpdate,
     C7200DynamipsTemplate,
-    C7200DynamipsTemplateUpdate
+    C7200DynamipsTemplateUpdate,
 )
 
 # Compute schemas

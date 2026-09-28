@@ -111,6 +111,7 @@ def is_ipv6_enabled() -> bool:
             return True
         raise
 
+
 def md5sum(filename):
     """
     Calculate the MD5 checksum of a file.

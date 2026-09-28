@@ -37,7 +37,6 @@ log = logging.getLogger(__name__)
 
 
 class Project:
-
     """
     A project contains a list of nodes.
     In theory nodes are isolated project/project.
@@ -82,11 +81,7 @@ class Project:
 
     def asdict(self):
 
-        return {
-            "name": self._name,
-            "project_id": self._id,
-            "variables": self._variables
-        }
+        return {"name": self._name, "project_id": self._id, "variables": self._variables}
 
     @property
     def id(self):
@@ -461,18 +456,17 @@ class Project:
 
         # Security check: ensure the path is within the node directory
         if not os.path.commonpath([target_path, node_full_path]) == node_full_path:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                              detail="Path is outside the node directory")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Path is outside the node directory")
         if not os.path.exists(target_path):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Path not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Path not found")
 
         if recursive:
-            return await self._list_node_files_recursive(node_full_path, target_path,
-                                                         node_full_path if subpath else None)
+            return await self._list_node_files_recursive(
+                node_full_path, target_path, node_full_path if subpath else None
+            )
 
         # Non-recursive: list only the current directory level
-        files = []
+        files: list[dict] = []
         try:
             scandir_iter = os.scandir(target_path)
         except PermissionError:
@@ -492,20 +486,20 @@ class Project:
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
                         created_at = modified_at = ""
-                    files.append({
-                        "path": rel_path,
-                        "size": stat_info.st_size,
-                        "created_at": created_at,
-                        "modified_at": modified_at,
-                        "file_type": "directory"
-                    })
+                    files.append(
+                        {
+                            "path": rel_path,
+                            "size": stat_info.st_size,
+                            "created_at": created_at,
+                            "modified_at": modified_at,
+                            "file_type": "directory",
+                        }
+                    )
                 else:
                     if name.endswith(".ghost"):
                         continue
                     try:
-                        file_type = await wait_run_in_executor(
-                            lambda e=entry: magic.from_file(e.path, mime=False)
-                        )
+                        file_type = await wait_run_in_executor(lambda e=entry: magic.from_file(e.path, mime=False))
                     except Exception as e:
                         log.warning(f"Error getting file type for '{rel_path}': {e}")
                         file_type = ""
@@ -514,13 +508,15 @@ class Project:
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
                         created_at = modified_at = ""
-                    files.append({
-                        "path": rel_path,
-                        "size": stat_info.st_size,
-                        "created_at": created_at,
-                        "modified_at": modified_at,
-                        "file_type": file_type
-                    })
+                    files.append(
+                        {
+                            "path": rel_path,
+                            "size": stat_info.st_size,
+                            "created_at": created_at,
+                            "modified_at": modified_at,
+                            "file_type": file_type,
+                        }
+                    )
             except OSError:
                 continue
         return files
@@ -543,13 +539,15 @@ class Project:
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
                         created_at = modified_at = ""
-                    files.append({
-                        "path": os.path.relpath(dir_full_path, base_path),
-                        "size": stat_info.st_size,
-                        "created_at": created_at,
-                        "modified_at": modified_at,
-                        "file_type": "directory"
-                    })
+                    files.append(
+                        {
+                            "path": os.path.relpath(dir_full_path, base_path),
+                            "size": stat_info.st_size,
+                            "created_at": created_at,
+                            "modified_at": modified_at,
+                            "file_type": "directory",
+                        }
+                    )
                 except OSError:
                     continue
 
@@ -561,9 +559,7 @@ class Project:
                 try:
                     stat_info = await wait_run_in_executor(os.stat, file_path)
                     try:
-                        file_type = await wait_run_in_executor(
-                            lambda fp=file_path: magic.from_file(fp, mime=False)
-                        )
+                        file_type = await wait_run_in_executor(lambda fp=file_path: magic.from_file(fp, mime=False))
                     except Exception as e:
                         log.warning(f"Error getting file type for '{rel_path}': {e}")
                         file_type = ""
@@ -573,13 +569,15 @@ class Project:
                     except (OSError, OverflowError, ValueError) as e:
                         log.warning(f"Invalid timestamp for '{rel_path}': {e}")
                         created_at = modified_at = ""
-                    files.append({
-                        "path": rel_path,
-                        "size": stat_info.st_size,
-                        "created_at": created_at,
-                        "modified_at": modified_at,
-                        "file_type": file_type
-                    })
+                    files.append(
+                        {
+                            "path": rel_path,
+                            "size": stat_info.st_size,
+                            "created_at": created_at,
+                            "modified_at": modified_at,
+                            "file_type": file_type,
+                        }
+                    )
                 except OSError as e:
                     log.warning(f"Error getting metadata for file '{rel_path}': {e}")
                     continue

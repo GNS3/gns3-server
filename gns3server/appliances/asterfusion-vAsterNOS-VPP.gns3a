@@ -14,8 +14,16 @@
     "availability": "with-registration",
     "images": [
         {
+            "filename": "AsterNOS-VPP_V6.1-R0104P02_x86.img",
+            "version": "6.1_R0104P02",
+            "md5sum": "a02926586176559b9ead106baa934ce0",
+            "filesize": 2584018944,
+            "download_url": "https://asternos.dev/api/file/db840750-01fd-4d1f-9e35-efa3ce30193f",
+            "compression": "gzip"
+        },
+        {
             "filename": "AsterNOS-VPP_V6.1-R0101P02_x86.img",
-            "version": "6.1",
+            "version": "6.1_R0101P02",
             "md5sum": "55834c3e8849ab226144d79ef76acf81",
             "filesize": 1318201015,
             "download_url": "https://asternos.dev/api/file/b2c9fd83-a9d3-46f3-9676-6b49dd481d6c",
@@ -33,7 +41,13 @@
     },
     "versions": [
         {
-            "name": "6.1",
+            "name": "6.1_R0104P02",
+            "images": {
+                "hda_disk_image": "AsterNOS-VPP_V6.1-R0104P02_x86.img"
+            }
+        },
+        {
+            "name": "6.1_R0101P02",
             "images": {
                 "hda_disk_image": "AsterNOS-VPP_V6.1-R0101P02_x86.img"
             }

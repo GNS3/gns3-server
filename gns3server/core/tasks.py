@@ -34,6 +34,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
@@ -86,6 +87,7 @@ async def startup(app: FastAPI) -> None:
 
     if MCP_AVAILABLE:
         from gns3server.agent.mcp import set_mcp_server_ready
+
         set_mcp_server_ready(True)
     log.info("GNS3 server startup completed")
 

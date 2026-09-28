@@ -74,7 +74,9 @@ async def connect_to_db(app: FastAPI) -> None:
 
     db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
-    engine = create_async_engine(db_url, connect_args={"check_same_thread": False, "timeout": 20}, future=True, pool_size=512, max_overflow=1024)
+    engine = create_async_engine(
+        db_url, connect_args={"check_same_thread": False, "timeout": 20}, future=True, pool_size=512, max_overflow=1024
+    )
 
     # Register PRAGMA on the sync engine to ensure it fires for async connections
     @event.listens_for(engine.sync_engine, "connect")
@@ -86,19 +88,21 @@ async def connect_to_db(app: FastAPI) -> None:
 
     # Verify WAL mode is active
     async with engine.connect() as _verify_conn:
+
         def _check_wal(conn):
             cursor = conn.connection.cursor()
             cursor.execute("PRAGMA journal_mode")
             row = cursor.fetchone()
             cursor.close()
             return row[0] if row else "unknown"
+
         wal_mode = await _verify_conn.run_sync(_check_wal)
         log.info(f"SQLite journal mode: {wal_mode}")
         if wal_mode and wal_mode.upper() != "WAL":
             log.warning("WAL mode not active - concurrent writes may cause 'database is locked' errors")
     alembic_cfg = config.Config()
     alembic_cfg.set_main_option("script_location", "gns3server:db_migrations")
-    #alembic_cfg.set_main_option('sqlalchemy.url', db_url)
+    # alembic_cfg.set_main_option('sqlalchemy.url', db_url)
     try:
         async with engine.connect() as conn:
             current_rev, head_rev = await conn.run_sync(check_revision, alembic_cfg)
@@ -111,35 +115,39 @@ async def connect_to_db(app: FastAPI) -> None:
                     inspector = sa.inspect(connection)
                     tables = inspector.get_table_names()
 
-                    if 'users' not in tables:
-                        return 'new'  # Truly new database
+                    if "users" not in tables:
+                        return "new"  # Truly new database
 
                     # Check for new feature columns that indicate this is already migrated
-                    columns = [col['name'] for col in inspector.get_columns('users')]
-                    if 'llm_model_configs' in tables:
+                    columns = [col["name"] for col in inspector.get_columns("users")]
+                    if "llm_model_configs" in tables:
                         # The llm_model_configs table already exists (created from code)
-                        return 'new_with_llm_configs'
+                        return "new_with_llm_configs"
                     else:
                         # Old database without llm_model_configs table, needs migration
-                        return 'old_needs_migration'
+                        return "old_needs_migration"
 
                 db_state = await conn.run_sync(check_db_state)
 
-                if db_state == 'new':
+                if db_state == "new":
                     # Truly new database: create all tables and stamp
                     await conn.run_sync(Base.metadata.create_all)
                     await conn.run_sync(run_stamp, alembic_cfg)
                     await conn.commit()
                     log.info("Created new database and stamped to head revision")
-                elif db_state == 'new_with_llm_configs':
+                elif db_state == "new_with_llm_configs":
                     # Database already has llm_model_configs table (from Base.metadata.create_all)
                     # Older unversioned metadata databases lack inventory fields.
                     # Ensure the additive schema before stamping the current head.
                     def upgrade_inventory(connection):
                         from alembic.operations import Operations
-                        from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import upgrade
+                        from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
+                            upgrade,
+                        )
+
                         with Operations.context(MigrationContext.configure(connection)):
                             upgrade()
+
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
                     await conn.commit()
@@ -188,6 +196,7 @@ async def update_disk_checksums(updated_disks: List[str]) -> None:
     """Refresh complete metadata after a server-managed disk modification."""
     from gns3server.api.server import app
     from gns3server.utils.image_inventory import image_lock
+
     for path in updated_disks:
         async with image_lock(path):
             async with AsyncSession(app.state._db_engine, expire_on_commit=False) as session:
@@ -234,7 +243,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
             result = await repo.get_user_effective_configs(
                 user_uuid,
                 current_user_id=user_uuid,  # Viewing own config
-                current_user_is_superadmin=False
+                current_user_is_superadmin=False,
             )
 
             if not result or not result.get("default_config"):
@@ -275,7 +284,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
                 "group_name": default_config.get("group_name"),
                 "user_id": str(full_config.user_id) if full_config.user_id else None,
                 "group_id": str(full_config.group_id) if full_config.group_id else None,
-                **config_data  # provider, api_key, model, temperature, etc.
+                **config_data,  # provider, api_key, model, temperature, etc.
             }
 
             # Validate required fields

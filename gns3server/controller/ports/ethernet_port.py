@@ -18,12 +18,10 @@
 Ethernet port for Ethernet link end points.
 """
 
-
 from .port import Port
 
 
 class EthernetPort(Port):
-
     """
     Ethernet port.
     """

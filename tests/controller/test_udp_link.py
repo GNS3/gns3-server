@@ -72,25 +72,33 @@ async def test_create(project):
     compute2.host = "example.org"
     await link.add_node(node2, 3, 1)
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 1024,
-        "rhost": "192.168.1.2",
-        "rport": 2048,
-        "type": "nio_udp",
-        "filters": {"delay": [10, 0]},
-        "markers": {},
-        "suspend": False,
-    }, timeout=120)
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.2",
+            "rport": 2048,
+            "type": "nio_udp",
+            "filters": {"delay": [10, 0]},
+            "markers": {},
+            "suspend": False,
+        },
+        timeout=120,
+    )
 
-    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
-        "lport": 2048,
-        "rhost": "192.168.1.1",
-        "rport": 1024,
-        "type": "nio_udp",
-        "filters": {},
-        "markers": {},
-        "suspend": False,
-    }, timeout=120)
+    compute2.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        data={
+            "lport": 2048,
+            "rhost": "192.168.1.1",
+            "rport": 1024,
+            "type": "nio_udp",
+            "filters": {},
+            "markers": {},
+            "suspend": False,
+        },
+        timeout=120,
+    )
 
 
 @pytest.mark.asyncio
@@ -142,27 +150,37 @@ async def test_create_one_side_failure(project):
     with pytest.raises(ControllerError):
         await link.add_node(node2, 3, 1)
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 1024,
-        "rhost": "192.168.1.2",
-        "rport": 2048,
-        "type": "nio_udp",
-        "filters": {},
-        "markers": {},
-        "suspend": False,
-    }, timeout=120)
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.2",
+            "rport": 2048,
+            "type": "nio_udp",
+            "filters": {},
+            "markers": {},
+            "suspend": False,
+        },
+        timeout=120,
+    )
 
-    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
-        "lport": 2048,
-        "rhost": "192.168.1.1",
-        "rport": 1024,
-        "type": "nio_udp",
-        "filters": {},
-        "markers": {},
-        "suspend": False,
-    }, timeout=120)
+    compute2.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        data={
+            "lport": 2048,
+            "rhost": "192.168.1.1",
+            "rport": 1024,
+            "type": "nio_udp",
+            "filters": {},
+            "markers": {},
+            "suspend": False,
+        },
+        timeout=120,
+    )
     # The link creation has failed we rollback the nio
-    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
+    compute1.delete.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120
+    )
 
 
 @pytest.mark.asyncio
@@ -183,8 +201,12 @@ async def test_delete(project):
 
     await link.delete()
 
-    compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
-    compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120)
+    compute1.delete.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120
+    )
+    compute2.delete.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120
+    )
 
 
 @pytest.mark.asyncio
@@ -286,15 +308,19 @@ async def test_reset(project):
     assert link.debug_link_data[0]["lport"] != link.debug_link_data[0]["rport"]
     assert link.debug_link_data[1]["lport"] != link.debug_link_data[1]["rport"]
     # the committed NIO carries the fresh pair, not the released one
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 4096,
-        "rhost": "192.168.1.2",
-        "rport": 8192,
-        "type": "nio_udp",
-        "filters": {},
-        "markers": {},
-        "suspend": False,
-    }, timeout=120)
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 4096,
+            "rhost": "192.168.1.2",
+            "rport": 8192,
+            "type": "nio_udp",
+            "filters": {},
+            "markers": {},
+            "suspend": False,
+        },
+        timeout=120,
+    )
 
 
 @pytest.mark.asyncio
@@ -373,15 +399,17 @@ async def test_capture(project):
     await link.start_capture()
     assert link.capturing
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/start".format(project.id, node_vpcs.id), data={
-        "capture_file_name": link.default_capture_file_name(),
-        "data_link_type": "DLT_EN10MB"
-    })
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/start".format(project.id, node_vpcs.id),
+        data={"capture_file_name": link.default_capture_file_name(), "data_link_type": "DLT_EN10MB"},
+    )
 
     await link.stop_capture()
     assert link.capturing is False
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/stop".format(project.id, node_vpcs.id))
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/stop".format(project.id, node_vpcs.id)
+    )
 
 
 @pytest.mark.asyncio
@@ -453,40 +481,49 @@ async def test_update(project):
     compute2.host = "example.org"
     await link.add_node(node2, 3, 1)
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 1024,
-        "rhost": "192.168.1.2",
-        "rport": 2048,
-        "type": "nio_udp",
-        "suspend": False,
-        "markers": {},
-        "filters": {"delay": [10, 0]}
-    }, timeout=120)
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.2",
+            "rport": 2048,
+            "type": "nio_udp",
+            "suspend": False,
+            "markers": {},
+            "filters": {"delay": [10, 0]},
+        },
+        timeout=120,
+    )
 
-    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
-        "lport": 2048,
-        "rhost": "192.168.1.1",
-        "rport": 1024,
-        "type": "nio_udp",
-        "suspend": False,
-        "markers": {},
-        "filters": {}
-    }, timeout=120)
+    compute2.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        data={
+            "lport": 2048,
+            "rhost": "192.168.1.1",
+            "rport": 1024,
+            "type": "nio_udp",
+            "suspend": False,
+            "markers": {},
+            "filters": {},
+        },
+        timeout=120,
+    )
 
     assert link.created
     await link.update_filters({"frequency_drop": [5], "bpf": ["icmp[icmptype] == 8"]})
-    compute1.put.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 1024,
-        "rhost": "192.168.1.2",
-        "rport": 2048,
-        "type": "nio_udp",
-        "suspend": False,
-        "markers": {},
-        "filters": {
-            "frequency_drop": [5],
-            "bpf": ["icmp[icmptype] == 8"]
-        }
-    }, timeout=120)
+    compute1.put.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.2",
+            "rport": 2048,
+            "type": "nio_udp",
+            "suspend": False,
+            "markers": {},
+            "filters": {"frequency_drop": [5], "bpf": ["icmp[icmptype] == 8"]},
+        },
+        timeout=120,
+    )
 
 
 @pytest.mark.asyncio
@@ -533,8 +570,9 @@ async def test_update_ethernet_switch_nio(project):
             "type": "nio_udp",
             "suspend": False,
             "markers": {},
-            "filters": {}
-        }, timeout=221
+            "filters": {},
+        },
+        timeout=221,
     )
 
 
@@ -585,22 +623,30 @@ async def test_update_suspend(project):
     compute2.host = "example.org"
     await link.add_node(node2, 3, 1)
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
-        "lport": 1024,
-        "rhost": "192.168.1.2",
-        "rport": 2048,
-        "type": "nio_udp",
-        "filters": {"frequency_drop": [-1]},
-        "markers": {},
-        "suspend": True
-    }, timeout=120)
+    compute1.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        data={
+            "lport": 1024,
+            "rhost": "192.168.1.2",
+            "rport": 2048,
+            "type": "nio_udp",
+            "filters": {"frequency_drop": [-1]},
+            "markers": {},
+            "suspend": True,
+        },
+        timeout=120,
+    )
 
-    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
-        "lport": 2048,
-        "rhost": "192.168.1.1",
-        "rport": 1024,
-        "type": "nio_udp",
-        "filters": {},
-        "markers": {},
-        "suspend": True
-    }, timeout=120)
+    compute2.post.assert_any_call(
+        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        data={
+            "lport": 2048,
+            "rhost": "192.168.1.1",
+            "rport": 1024,
+            "type": "nio_udp",
+            "filters": {},
+            "markers": {},
+            "suspend": True,
+        },
+        timeout=120,
+    )

@@ -22,13 +22,14 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "3.1.0.dev6"
+__version__ = "3.1.0.dev7"
 __version_info__ = (3, 1, 0, 99)
 
 if "dev" in __version__:
     try:
         import os
         import subprocess
+
         if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
             r = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip("\n")
             __version__ += "+" + r

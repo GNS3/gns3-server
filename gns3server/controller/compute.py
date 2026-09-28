@@ -40,7 +40,7 @@ from ..controller.controller_error import (
     ControllerTimeoutError,
     ControllerUnauthorizedError,
     ComputeError,
-    ComputeConflictError
+    ComputeConflictError,
 )
 from ..version import __version__, __version_info__
 
@@ -216,6 +216,13 @@ class Compute:
         """
         return self._host
 
+    @host.setter
+    def host(self, host):
+        self._host = host
+        self._host_ip_cache = None  # invalidate; re-resolve on next access
+        if self._console_host is None:
+            self._console_host = host
+
     @property
     def host_ip(self):
         """
@@ -227,13 +234,6 @@ class Compute:
             except socket.gaierror:
                 self._host_ip_cache = "0.0.0.0"
         return self._host_ip_cache
-
-    @host.setter
-    def host(self, host):
-        self._host = host
-        self._host_ip_cache = None  # invalidate; re-resolve on next access
-        if self._console_host is None:
-            self._console_host = host
 
     @property
     def console_host(self):
@@ -483,10 +483,7 @@ class Compute:
                             self._controller.notification.controller_emit("compute.updated", self.asdict())
                         else:
                             await self._controller.notification.dispatch(
-                                action,
-                                event,
-                                project_id=project_id,
-                                compute_id=self.id
+                                action, event, project_id=project_id, compute_id=self.id
                             )
                     else:
                         if response.type == aiohttp.WSMsgType.CLOSE:
@@ -514,6 +511,7 @@ class Compute:
             self._controller.notification.controller_emit("compute.updated", self.asdict())
             # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a resources usage bomb)
             from gns3server.api.server import app
+
             if not app.state.exiting and not hasattr(sys, "_called_from_test"):
                 log.info(f"Reconnecting to compute '{self._id}' WebSocket '{ws_url}'")
                 asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
@@ -534,7 +532,7 @@ class Compute:
         return f"{self._protocol}://{host}:{self._port}/v3/compute{path}"
 
     def get_url(self, path):
-        """ Returns URL for specific path at Compute"""
+        """Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
     async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):
@@ -567,7 +565,14 @@ class Compute:
         try:
             log.debug(f"Attempting request to compute: {method} {url} {headers}")
             response = await self._session().request(
-                method, url, headers=headers, data=data, auth=self._auth, params=params, chunked=chunked, timeout=timeout
+                method,
+                url,
+                headers=headers,
+                data=data,
+                auth=self._auth,
+                params=params,
+                chunked=chunked,
+                timeout=timeout,
             )
         except asyncio.TimeoutError:
             raise ComputeError(f"Timeout error for {method} call to {url} after {timeout}s")
@@ -627,7 +632,7 @@ class Compute:
                 raise HTTPException(
                     status_code=response.status,
                     detail=f"HTTP error {response.status} received from compute "
-                           f"'{self.name}' for request {method} {path}: {msg}"
+                    f"'{self.name}' for request {method} {path}: {msg}",
                 )
 
         if body and len(body):

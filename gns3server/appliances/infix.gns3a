@@ -2,7 +2,7 @@
     "appliance_id": "4d351078-c6f5-444c-ab30-0ef20e3d8c53",
     "name": "Infix",
     "category": "router",
-    "description": "Infix OS is a free Linux-based operating system with made-easy management using NETCONF, RESTCONF, or the built-in command line interface (CLI). It is suitable for both end-devices with a single Ethernet port and switches/routers with multiple ports. Immutable by design, extensions are possible using Docker containers.",
+    "description": "Infix OS is a free Linux-based operating system with made-easy management using the built-in web interface, NETCONF, RESTCONF, or the command line interface (CLI). It is suitable for both end-devices with a single Ethernet port and switches/routers with multiple ports. Immutable by design, extensions are possible using Docker containers.",
     "vendor_name": "KernelKit",
     "vendor_url": "https://github.com/kernelkit",
     "vendor_logo_url": "https://kernelkit.org/assets/img/jack.png",
@@ -146,9 +146,23 @@
             "md5sum": "79ca8bd8534bbaa1af0ab874a49d6f4c",
             "version": "26.06.0",
             "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v26.06.0/infix-x86_64-v26.06.0.qcow2"
+        },
+        {
+            "filename": "infix-x86_64-v26.08.0.qcow2",
+            "filesize": 364118016,
+            "md5sum": "0bcf79a0dc88df0e340e43bcf62e8d40",
+            "version": "26.08.0",
+            "direct_download_url": "https://github.com/kernelkit/infix/releases/download/v26.08.0/infix-x86_64-v26.08.0.qcow2"
         }
     ],
     "versions": [
+        {
+            "name": "26.08.0",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "infix-x86_64-v26.08.0.qcow2"
+            }
+        },
         {
             "name": "26.06.0",
             "images": {

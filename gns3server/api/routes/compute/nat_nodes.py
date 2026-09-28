@@ -117,10 +117,7 @@ async def stop_nat_node(node: Nat = Depends(dep_node)) -> None:
     Stop a NAT node.
     """
 
-    raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Stop is not supported for NAT nodes"
-    )
+    raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Stop is not supported for NAT nodes")
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
@@ -129,10 +126,7 @@ async def suspend_nat_node(node: Nat = Depends(dep_node)) -> None:
     Suspend a NAT node.
     """
 
-    raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Suspend is not supported for NAT nodes"
-    )
+    raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Suspend is not supported for NAT nodes")
 
 
 @router.post(
@@ -141,11 +135,11 @@ async def suspend_nat_node(node: Nat = Depends(dep_node)) -> None:
     response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
 )
 async def create_nat_node_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-        node: Nat = Depends(dep_node),
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Nat = Depends(dep_node),
 ) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
@@ -163,11 +157,11 @@ async def create_nat_node_nio(
     response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
 )
 async def update_nat_node_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-        node: Nat = Depends(dep_node),
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Nat = Depends(dep_node),
 ) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
     """
     Update a NIO (Network Input/Output) to the node.
@@ -184,10 +178,7 @@ async def update_nat_node_nio(
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nat_node_nio(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: Nat = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: Nat = Depends(dep_node)
 ) -> None:
     """
     Remove a NIO (Network Input/Output) from the node.
@@ -199,11 +190,11 @@ async def delete_nat_node_nio(
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_nat_node_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node_capture_data: schemas.NodeCapture,
-        node: Nat = Depends(dep_node)
+    *,
+    adapter_number: int = Path(..., ge=0, le=0),
+    port_number: int,
+    node_capture_data: schemas.NodeCapture,
+    node: Nat = Depends(dep_node),
 ) -> dict:
     """
     Start a packet capture on the node.
@@ -219,10 +210,7 @@ async def start_nat_node_capture(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
 async def stop_nat_node_capture(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: Nat = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: Nat = Depends(dep_node)
 ) -> None:
     """
     Stop a packet capture on the node.
@@ -234,10 +222,7 @@ async def stop_nat_node_capture(
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(
-        *,
-        adapter_number: int = Path(..., ge=0, le=0),
-        port_number: int,
-        node: Nat = Depends(dep_node)
+    *, adapter_number: int = Path(..., ge=0, le=0), port_number: int, node: Nat = Depends(dep_node)
 ) -> StreamingResponse:
     """
     Stream the pcap capture file.

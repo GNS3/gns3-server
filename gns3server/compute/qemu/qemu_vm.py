@@ -57,10 +57,8 @@ import logging
 log = logging.getLogger(__name__)
 
 # forbidden additional options
-FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd",
-                     "-fsdev", "-virtfs", "-nic", "-netdev"}
-FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS
-                      if opt.startswith("-") and not opt.startswith("--")}
+FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd", "-fsdev", "-virtfs", "-nic", "-netdev"}
+FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS if opt.startswith("-") and not opt.startswith("--")}
 
 
 class QemuVM(BaseNode):
@@ -132,8 +130,10 @@ class QemuVM(BaseNode):
             except QemuError:
                 # If the binary is not found for topologies 1.4 and later
                 # search via the platform otherwise use the binary name
-                log.warning(f"Could not find the QEMU binary {qemu_path} on this system, "
-                            f"trying to find one using platform {platform}")
+                log.warning(
+                    f"Could not find the QEMU binary {qemu_path} on this system, "
+                    f"trying to find one using platform {platform}"
+                )
                 if platform:
                     self.platform = platform
                 else:
@@ -189,7 +189,11 @@ class QemuVM(BaseNode):
 
         log.debug(f'QEMU VM "{self._name}" [{self._id}] has been created')
 
-    @BaseNode.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Sets the name of this Qemu VM.
@@ -198,7 +202,9 @@ class QemuVM(BaseNode):
         """
 
         if not is_rfc1123_hostname_valid(new_name):
-            raise QemuError(f"'{new_name}' is an invalid name to rename Qemu node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen.")
+            raise QemuError(
+                f"'{new_name}' is an invalid name to rename Qemu node '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen."
+            )
         super(QemuVM, QemuVM).name.__set__(self, new_name)
 
     @property
@@ -267,7 +273,7 @@ class QemuVM(BaseNode):
             if qemu_bin == "qemu":
                 self._platform = "i386"
             else:
-                self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, flags=re.IGNORECASE)
+                self._platform = re.sub(r"^qemu-system-(\w+).*$", r"\1", qemu_bin, flags=re.IGNORECASE)
         if self._platform.split(".")[0] not in list(QemuPlatform):
             raise QemuError(f"Platform {self._platform} is unknown")
         log.debug(f'QEMU VM "{self._name}" [{self._name}] has set the QEMU path to {qemu_path}')
@@ -1082,9 +1088,7 @@ class QemuVM(BaseNode):
         else:
             priority = 0
         try:
-            process = await asyncio.create_subprocess_exec(
-                "renice", "-n", str(priority), "-p", str(self._process.pid)
-            )
+            process = await asyncio.create_subprocess_exec("renice", "-n", str(priority), "-p", str(self._process.pid))
             await process.wait()
         except (OSError, subprocess.SubprocessError) as e:
             log.error(f'Could not change process priority for QEMU VM "{self._name}": {e}')
@@ -1108,11 +1112,18 @@ class QemuVM(BaseNode):
 
         try:
             if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                cpulimit_exec = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe")
+                cpulimit_exec = os.path.join(
+                    os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe"
+                )
             else:
                 cpulimit_exec = "cpulimit"
 
-            command = [cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)]
+            command = [
+                cpulimit_exec,
+                "--lazy",
+                "--pid={}".format(self._process.pid),
+                "--limit={}".format(self._cpu_throttling),
+            ]
             self._cpulimit_process = subprocess.Popen(command, cwd=self.working_dir)
             log.debug(f"CPU throttled to {self._cpu_throttling}%")
         except FileNotFoundError:
@@ -1251,10 +1262,12 @@ class QemuVM(BaseNode):
                 if "TPM result for CMD_INIT" in qemu_stdout:
                     partition = self._find_partition_for_path(self.project.path)
                     if partition and partition.mountpoint != "/":
-                        qemu_stdout += "\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor.\n" \
-                                        "Please try to execute the following commands on the server:\n\n" \
-                                        "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n" \
-                                        "sudo service apparmor restart".format(os.path.dirname(self.project.path))
+                        qemu_stdout += (
+                            "\nTPM error: the project directory is not on the same partition as the root directory which can be a problem when using AppArmor.\n"
+                            "Please try to execute the following commands on the server:\n\n"
+                            "echo 'owner {}/** rwk,' | sudo tee /etc/apparmor.d/local/usr.bin.swtpm > /dev/null\n"
+                            "sudo service apparmor restart".format(os.path.dirname(self.project.path))
+                        )
                 self.project.emit(
                     "log.error",
                     {"message": f"QEMU process has stopped, return code: {returncode}\n{qemu_stdout}"},
@@ -1272,7 +1285,6 @@ class QemuVM(BaseNode):
             if self.is_running():
                 log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
                 try:
-
                     if self.on_close == "save_vm_state":
                         await self._control_vm("stop")
                         await self._control_vm("savevm GNS3_SAVED_STATE")
@@ -1399,7 +1411,6 @@ class QemuVM(BaseNode):
         """
 
         if self.is_running() and self._monitor:
-
             reader, writer = await self._open_qemu_monitor_connection_vm()
             if reader is None and writer is None:
                 return
@@ -1729,7 +1740,9 @@ class QemuVM(BaseNode):
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
-                raise QemuError(f"Could not create '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
+                raise QemuError(
+                    f"Could not create '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}"
+                )
             else:
                 log.debug(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image'{disk_name}' created")
         except (OSError, subprocess.SubprocessError) as e:
@@ -1757,7 +1770,9 @@ class QemuVM(BaseNode):
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
-                raise QemuError(f"Could not update '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
+                raise QemuError(
+                    f"Could not update '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}"
+                )
             else:
                 log.debug(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image '{disk_name}' extended by {extend} MB")
         except (OSError, subprocess.SubprocessError) as e:
@@ -1853,7 +1868,11 @@ class QemuVM(BaseNode):
 
         return " ".join(self._build_command())
 
-    @BaseNode.console_type.setter
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
     def console_type(self, new_console_type):
         """
         Sets the console type for this QEMU VM.
@@ -1894,9 +1913,7 @@ class QemuVM(BaseNode):
                         console_host = "::"
                 except OSError as e:
                     raise QemuError("Could not check if IPv6 is enabled: {}".format(e))
-            return ["-spice",
-                    f"addr={console_host},port={port},disable-ticketing",
-                    "-vga", "qxl"]
+            return ["-spice", f"addr={console_host},port={port},disable-ticketing", "-vga", "qxl"]
         else:
             return []
 
@@ -2015,11 +2032,31 @@ class QemuVM(BaseNode):
             if base_qcow2 and base_qcow2.crypt_method:
                 # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
                 # (we have to pass -u and the size).  Also embed secret name.
-                command = [qemu_img_path, "create", "-b", backing_options,
-                           "-F", backing_file_format, "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
+                command = [
+                    qemu_img_path,
+                    "create",
+                    "-b",
+                    backing_options,
+                    "-F",
+                    backing_file_format,
+                    "-f",
+                    "qcow2",
+                    "-u",
+                    disk,
+                    str(base_qcow2.size),
+                ]
             else:
-                command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image),
-                           "-F", backing_file_format, "-f", "qcow2", disk]
+                command = [
+                    qemu_img_path,
+                    "create",
+                    "-o",
+                    "backing_file={}".format(disk_image),
+                    "-F",
+                    backing_file_format,
+                    "-f",
+                    "qcow2",
+                    disk,
+                ]
 
             retcode = await self._qemu_img_exec(command)
             if retcode:
@@ -2186,8 +2223,7 @@ class QemuVM(BaseNode):
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
                 if os.path.islink(disk_image):
                     raise QemuError(
-                        f"'{disk_name}' disk image linked to "
-                        f"'{os.path.realpath(disk_image)}' is not accessible"
+                        f"'{disk_name}' disk image linked to '{os.path.realpath(disk_image)}' is not accessible"
                     )
                 else:
                     raise QemuError(f"'{disk_image}' is not accessible")
@@ -2203,7 +2239,7 @@ class QemuVM(BaseNode):
                         if await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", f"{disk_image}"]) == 3:
                             self.project.emit(
                                 "log.warning",
-                                {"message": f"Disk image '{disk_image}' has leaked clusters and could not be fixed"}
+                                {"message": f"Disk image '{disk_image}' has leaked clusters and could not be fixed"},
                             )
                     elif retcode == 2:
                         # image is corrupted, let's try to fix it
@@ -2211,15 +2247,14 @@ class QemuVM(BaseNode):
                         if await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", f"{disk_image}"]) == 2:
                             self.project.emit(
                                 "log.warning",
-                                {"message": f"Disk image '{disk_image}' is corrupted and could not be fixed"}
+                                {"message": f"Disk image '{disk_image}' is corrupted and could not be fixed"},
                             )
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError(f"Could not check '{disk_name}' disk image: {e}\n{stdout}")
 
             if self.linked_clone and os.path.dirname(disk_image) != self.working_dir:
-
-                #cloned_disk_image = os.path.splitext(os.path.basename(disk_image))
+                # cloned_disk_image = os.path.splitext(os.path.basename(disk_image))
                 disk = os.path.join(self.working_dir, f"{disk_name}_disk.qcow2")
                 if not os.path.exists(disk):
                     # create the disk
@@ -2305,8 +2340,9 @@ class QemuVM(BaseNode):
             else:
                 # Use a manual case-insensitive search instead
                 try:
-                    system_ovmf_firmware_path = next((f for f in system_ovmf_firmware_dir.glob("*.fd")
-                                                      if f.name.lower() == "ovmf_code_4m.fd"), None)
+                    system_ovmf_firmware_path = next(
+                        (f for f in system_ovmf_firmware_dir.glob("*.fd") if f.name.lower() == "ovmf_code_4m.fd"), None
+                    )
                 except (FileNotFoundError, StopIteration):
                     system_ovmf_firmware_path = None
 
@@ -2321,8 +2357,9 @@ class QemuVM(BaseNode):
 
             # try to use the UEFI variables store from the system first
             try:
-                system_ovmf_vars_path = next((f for f in system_ovmf_firmware_dir.glob("*.fd")
-                                              if f.name.lower() == "ovmf_vars_4m.fd"), None)
+                system_ovmf_vars_path = next(
+                    (f for f in system_ovmf_firmware_dir.glob("*.fd") if f.name.lower() == "ovmf_vars_4m.fd"), None
+                )
             except (FileNotFoundError, StopIteration):
                 system_ovmf_vars_path = None
             if system_ovmf_vars_path:
@@ -2389,15 +2426,18 @@ class QemuVM(BaseNode):
         swtpm_version = await self.manager.get_swtpm_version(swtpm)
         if swtpm_version and parse_version(swtpm_version) < parse_version("0.8.0"):
             # swtpm >= version 0.8.0 is required
-            raise QemuError("swtpm version 0.8.0 or above must be installed (detected version is {})".format(swtpm_version))
+            raise QemuError(
+                "swtpm version 0.8.0 or above must be installed (detected version is {})".format(swtpm_version)
+            )
         try:
             command = [
                 swtpm,
                 "socket",
                 "--tpm2",
-                '--tpmstate', "dir={}".format(tpm_dir),
+                "--tpmstate",
+                "dir={}".format(tpm_dir),
                 "--ctrl",
-                "type=unixio,path={},terminate".format(tpm_sock)
+                "type=unixio,path={},terminate".format(tpm_sock),
             ]
             command_string = " ".join(shlex.quote(s) for s in command)
             log.debug("Starting swtpm (TPM emulator) with: {}".format(command_string))
@@ -2429,7 +2469,7 @@ class QemuVM(BaseNode):
             "-tpmdev",
             "emulator,id=tpm0,chardev=chrtpm",
             "-device",
-            "tpm-tis,tpmdev=tpm0"
+            "tpm-tis,tpmdev=tpm0",
         ]
         return options
 
@@ -2506,7 +2546,7 @@ class QemuVM(BaseNode):
         Disable graphics depending of the QEMU version
         """
 
-        if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl" "-spice", "-vnc"]):
+        if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl-spice", "-vnc"]):
             return []
         if self._qemu_version and parse_version(self._qemu_version) >= parse_version("3.0"):
             return ["-display", "none"]
@@ -2663,7 +2703,11 @@ class QemuVM(BaseNode):
                 command.extend(["-enable-kvm"])
                 # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
                 # https://github.com/GNS3/gns3-server/issues/685
-                if self._qemu_version and parse_version(self._qemu_version) >= parse_version("2.4.0") and self.platform == "x86_64":
+                if (
+                    self._qemu_version
+                    and parse_version(self._qemu_version) >= parse_version("2.4.0")
+                    and self.platform == "x86_64"
+                ):
                     command.extend(["-machine", "smm=off"])
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
@@ -2701,7 +2745,7 @@ class QemuVM(BaseNode):
 
         # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
         if self._console_type == "vnc":
-            command.extend(['-machine', 'usb=on', '-device', 'usb-tablet'])
+            command.extend(["-machine", "usb=on", "-device", "usb-tablet"])
         return command
 
     def asdict(self):

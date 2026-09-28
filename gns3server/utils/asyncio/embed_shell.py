@@ -114,7 +114,7 @@ class EmbedShell:
         if not cmd[0].strip():
             return ""
 
-        for (name, meth) in inspect.getmembers(self):
+        for name, meth in inspect.getmembers(self):
             if name == cmd[0]:
                 cmd.pop(0)
                 res = await meth(*cmd)
@@ -177,10 +177,10 @@ class UnstoppableEventLoop(EventLoop):
         self._loop = loop
 
     def close(self):
-        " Ignore. "
+        "Ignore."
 
     def stop(self):
-        " Ignore. "
+        "Ignore."
 
     def run_in_executor(self, *args, **kwargs):
         return self._loop.run_in_executor(*args, **kwargs)
@@ -236,12 +236,11 @@ class ShellConnection(TelnetConnection):
     async def disconnected(self):
         pass
 
-    @asyncio.coroutine
-    def window_size_changed(self, columns, rows):
+    async def window_size_changed(self, columns, rows):
         self._size = Size(rows=rows, columns=columns)
         self._cb.terminal_size_changed()
         if self._window_size_changed_callback:
-            yield from self._window_size_changed_callback(columns, rows)
+            await self._window_size_changed_callback(columns, rows)
 
     async def feed(self, data):
         data = data.decode()
@@ -264,18 +263,18 @@ class ShellConnection(TelnetConnection):
             self.reset()
 
     def reset(self):
-        """ Resets terminal screen"""
+        """Resets terminal screen"""
         self._cli.reset()
         self._cli.buffers[DEFAULT_BUFFER].reset()
         self._cli.renderer.request_absolute_cursor_position()
         self._cli._redraw()
 
     def write(self, data):
-        """ Compat with CLI"""
+        """Compat with CLI"""
         self.send(data)
 
     def flush(self):
-        """ Compat with CLI"""
+        """Compat with CLI"""
         pass
 
 

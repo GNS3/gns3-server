@@ -22,7 +22,6 @@ from .nio import NIO
 
 
 class NIOEthernet(NIO):
-
     """
     Generic Ethernet NIO.
 
@@ -50,7 +49,4 @@ class NIOEthernet(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_ethernet",
-            "ethernet_device": self._ethernet_device
-        }
+        return {"type": "nio_ethernet", "ethernet_device": self._ethernet_device}

@@ -61,10 +61,7 @@ def format_error_message(error: Exception) -> str:
 
     # Check if error message contains HTML
     if _contains_html(error_str):
-        logger.warning(
-            "Detected HTML in error message, likely due to incorrect API "
-            "configuration or base URL"
-        )
+        logger.warning("Detected HTML in error message, likely due to incorrect API configuration or base URL")
         return (
             "API request failed. The error response indicates an issue with "
             "your API configuration. Please check:\n"

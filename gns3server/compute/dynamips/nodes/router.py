@@ -42,7 +42,6 @@ from gns3server.utils.images import md5sum
 
 
 class Router(BaseNode):
-
     """
     Dynamips router implementation.
 
@@ -80,7 +79,14 @@ class Router(BaseNode):
             raise DynamipsError(f"{name} is an invalid name to create a Dynamips node")
 
         super().__init__(
-            name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type,
+            name,
+            node_id,
+            project,
+            manager,
+            console=console,
+            console_type=console_type,
+            aux=aux,
+            aux_type=aux_type,
             wrap_console=(console_type == "ssh"),
             wrap_aux=(aux_type == "ssh"),
         )
@@ -242,7 +248,6 @@ class Router(BaseNode):
         )
 
         if not self._ghost_flag:
-
             log.debug(
                 'Router {platform} "{name}" [{id}] has been created'.format(
                     name=self._name, platform=self._platform, id=self._id
@@ -252,7 +257,9 @@ class Router(BaseNode):
             if self._console is not None:
                 # For SSH console, tell Dynamips to listen on the internal port so that
                 # the AsyncioSSHServer proxy can wrap it on the external console port.
-                con_port = self._internal_console_port if self._wrap_console and self._internal_console_port else self._console
+                con_port = (
+                    self._internal_console_port if self._wrap_console and self._internal_console_port else self._console
+                )
                 await self._hypervisor.send(f'vm set_con_tcp_port "{self._name}" {con_port}')
 
             if self.aux is not None:
@@ -287,7 +294,6 @@ class Router(BaseNode):
         if status == "suspended":
             await self.resume()
         elif status == "inactive":
-
             if not os.path.isfile(self._image) or not os.path.exists(self._image):
                 if os.path.islink(self._image):
                     raise DynamipsError(
@@ -1026,8 +1032,11 @@ class Router(BaseNode):
         if self.console_type != console_type:
             status = await self.get_status()
             if status == "running":
-                raise DynamipsError('"{name}" must be stopped to change the console type to {console_type}'.format(name=self._name,
-                                                                                                                   console_type=console_type))
+                raise DynamipsError(
+                    '"{name}" must be stopped to change the console type to {console_type}'.format(
+                        name=self._name, console_type=console_type
+                    )
+                )
 
         self.console_type = console_type
 
@@ -1068,9 +1077,10 @@ class Router(BaseNode):
         if self.aux_type != aux_type:
             status = await self.get_status()
             if status == "running":
-                raise DynamipsError('"{name}" must be stopped to change the auxiliary console type to {aux_type}'.format(
-                    name=self._name,
-                    aux_type=aux_type)
+                raise DynamipsError(
+                    '"{name}" must be stopped to change the auxiliary console type to {aux_type}'.format(
+                        name=self._name, aux_type=aux_type
+                    )
                 )
 
         self.aux_type = aux_type
@@ -1228,7 +1238,6 @@ class Router(BaseNode):
 
         # Generate an OIR event if the router is running
         if is_running:
-
             await self._hypervisor.send(
                 'vm slot_oir_start "{name}" {slot_number} 0'.format(name=self._name, slot_number=slot_number)
             )
@@ -1274,7 +1283,6 @@ class Router(BaseNode):
 
         # Generate an OIR event if the router is running
         if is_running:
-
             await self._hypervisor.send(
                 'vm slot_oir_stop "{name}" {slot_number} 0'.format(name=self._name, slot_number=slot_number)
             )
@@ -1722,7 +1730,9 @@ class Router(BaseNode):
         """
 
         if not is_ios_hostname_valid(new_name):
-            raise DynamipsError(f"{new_name} is an invalid name to rename router '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer.")
+            raise DynamipsError(
+                f"{new_name} is an invalid name to rename router '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name must start with a letter, end with a letter or digit, and be 63 characters or fewer."
+            )
 
         await self._hypervisor.send(f'vm rename "{self._name}" "{new_name}"')
 

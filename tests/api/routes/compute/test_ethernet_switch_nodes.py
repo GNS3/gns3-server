@@ -34,12 +34,14 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestEthernetSwitchNodesRoutes:
-
     @pytest_asyncio.fixture(autouse=True)
     async def stub_ubridge(self):
         """Keep uBridge from really starting and capture every command."""
-        with asyncio_patch(f"{_NODE}._start_ubridge"), asyncio_patch(f"{_NODE}._stop_ubridge"), \
-                asyncio_patch(f"{_NODE}._ubridge_send"):
+        with (
+            asyncio_patch(f"{_NODE}._start_ubridge"),
+            asyncio_patch(f"{_NODE}._stop_ubridge"),
+            asyncio_patch(f"{_NODE}._ubridge_send"),
+        ):
             yield
 
     @pytest_asyncio.fixture
@@ -47,8 +49,7 @@ class TestEthernetSwitchNodesRoutes:
 
         params = {"name": "Ethernet Switch"}
         response = await compute_client.post(
-            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id),
-            json=params
+            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id), json=params
         )
         assert response.status_code == status.HTTP_201_CREATED
 
@@ -65,15 +66,12 @@ class TestEthernetSwitchNodesRoutes:
         return {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
 
     async def test_ethernet_switch_create(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project
     ) -> None:
 
         params = {"name": "Ethernet Switch 1"}
         response = await compute_client.post(
-            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id),
-            json=params
+            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id), json=params
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "Ethernet Switch 1"
@@ -83,25 +81,24 @@ class TestEthernetSwitchNodesRoutes:
         # creation stands up the kernel bridge with VLAN filtering
         node = compute_project.get_node(response.json()["node_id"])
         br = node._bridge_name
-        node._ubridge_send.assert_has_calls([
-            call(f'brctl delete "{br}"'),
-            call(f'brctl create "{br}"'),
-            call(f'link set "{br}" up'),
-            call(f'brctl vlanfiltering "{br}" on'),
-        ])
+        node._ubridge_send.assert_has_calls(
+            [
+                call(f'brctl delete "{br}"'),
+                call(f'brctl create "{br}"'),
+                call(f'link set "{br}" up'),
+                call(f'brctl vlanfiltering "{br}" on'),
+            ]
+        )
 
     async def test_ethernet_switch_get(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         response = await compute_client.get(
             app.url_path_for(
                 "compute:get_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_200_OK
@@ -110,18 +107,13 @@ class TestEthernetSwitchNodesRoutes:
         assert response.json()["status"] == "started"
 
     async def test_ethernet_switch_duplicate(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # create destination switch first
         params = {"name": "Ethernet Switch 2"}
         response = await compute_client.post(
-            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id),
-            json=params
+            app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id), json=params
         )
         assert response.status_code == status.HTTP_201_CREATED
 
@@ -130,16 +122,14 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:duplicate_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]), json=params
+                node_id=ethernet_switch["node_id"],
+            ),
+            json=params,
         )
         assert response.status_code == status.HTTP_201_CREATED
 
     async def test_ethernet_switch_update(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         params = {"name": "test", "console_type": "none"}
@@ -148,8 +138,9 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:update_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]),
-            json=params
+                node_id=ethernet_switch["node_id"],
+            ),
+            json=params,
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -160,11 +151,7 @@ class TestEthernetSwitchNodesRoutes:
         node._ubridge_send.assert_not_called()
 
     async def test_ethernet_switch_update_ports_qinq_proto(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # a QinQ port with the 802.1ad ethertype must switch the bridge protocol
@@ -179,8 +166,9 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:update_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]),
-            json=port_params
+                node_id=ethernet_switch["node_id"],
+            ),
+            json=port_params,
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -190,55 +178,60 @@ class TestEthernetSwitchNodesRoutes:
     @pytest.mark.parametrize(
         "ports_settings",
         (
-                {"name": "Ethernet0", "port_number": 0, "type": "dot42q", "vlan": 1},          # bad type
-                {"name": "Ethernet0", "port_number": 0, "type": "access"},                     # missing vlan
-                {"name": "Ethernet0", "port_number": 0, "type": "dot1q", "vlan": 1,
-                 "ethertype": "0x88A8"},                                                       # ethertype only for qinq
-                {"name": "Ethernet0", "port_number": 0, "type": "qinq", "vlan": 1,
-                 "ethertype": "0x4242"},                                                        # bad ethertype
-                {"name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 0},          # vlan < 1
-                {"name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 4242},       # vlan > 4094
-        )
+            {"name": "Ethernet0", "port_number": 0, "type": "dot42q", "vlan": 1},  # bad type
+            {"name": "Ethernet0", "port_number": 0, "type": "access"},  # missing vlan
+            {
+                "name": "Ethernet0",
+                "port_number": 0,
+                "type": "dot1q",
+                "vlan": 1,
+                "ethertype": "0x88A8",
+            },  # ethertype only for qinq
+            {"name": "Ethernet0", "port_number": 0, "type": "qinq", "vlan": 1, "ethertype": "0x4242"},  # bad ethertype
+            {"name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 0},  # vlan < 1
+            {"name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 4242},  # vlan > 4094
+        ),
     )
     async def test_ethernet_switch_update_ports_invalid(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            ethernet_switch: dict,
-            ports_settings: dict,
+        self,
+        app: FastAPI,
+        compute_client: AsyncClient,
+        ethernet_switch: dict,
+        ports_settings: dict,
     ) -> None:
 
         response = await compute_client.put(
             app.url_path_for(
                 "compute:update_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]),
-            json={"ports_mapping": [ports_settings]}
+                node_id=ethernet_switch["node_id"],
+            ),
+            json={"ports_mapping": [ports_settings]},
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_ethernet_switch_delete(
-            self, app: FastAPI,
-            compute_client: AsyncClient,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict
     ) -> None:
 
         response = await compute_client.delete(
             app.url_path_for(
                 "compute:delete_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    async def test_ethernet_switch_start(self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict) -> None:
+    async def test_ethernet_switch_start(
+        self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict
+    ) -> None:
 
         response = await compute_client.post(
             app.url_path_for(
                 "compute:start_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
@@ -249,39 +242,39 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:stop_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    async def test_ethernet_switch_suspend(self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict) -> None:
+    async def test_ethernet_switch_suspend(
+        self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict
+    ) -> None:
 
         response = await compute_client.post(
             app.url_path_for(
                 "compute:suspend_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    async def test_ethernet_switch_reload(self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict) -> None:
+    async def test_ethernet_switch_reload(
+        self, app: FastAPI, compute_client: AsyncClient, ethernet_switch: dict
+    ) -> None:
 
         response = await compute_client.post(
             app.url_path_for(
                 "compute:reload_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]
+                node_id=ethernet_switch["node_id"],
             )
         )
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     async def test_ethernet_switch_create_udp_access(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         url = app.url_path_for(
@@ -289,7 +282,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         response = await compute_client.post(url, json=self._udp_params())
         assert response.status_code == status.HTTP_201_CREATED
@@ -301,23 +294,21 @@ class TestEthernetSwitchNodesRoutes:
         tap = f"{br}-0"
         relay = f"{node.id}-0"
         # access VLAN 1 (default): drop default PVID 1, re-add 1 as PVID/untagged
-        node._ubridge_send.assert_has_calls([
-            call(f"bridge create {relay}"),
-            call(f'bridge add_nio_tap {relay} "{tap}"'),
-            call(f'brctl addif "{br}" "{tap}"'),
-            call(f'brctl vlan_del "{br}" "{tap}" 1'),
-            call(f'brctl vlan_add "{br}" "{tap}" 1 pvid untagged'),
-            call(f"bridge add_nio_udp {relay} {nio.lport} {nio.rhost} {nio.rport}"),
-            call(f"bridge reset_packet_filters {relay}"),
-            call(f"bridge start {relay}"),
-        ])
+        node._ubridge_send.assert_has_calls(
+            [
+                call(f"bridge create {relay}"),
+                call(f'bridge add_nio_tap {relay} "{tap}"'),
+                call(f'brctl addif "{br}" "{tap}"'),
+                call(f'brctl vlan_del "{br}" "{tap}" 1'),
+                call(f'brctl vlan_add "{br}" "{tap}" 1 pvid untagged'),
+                call(f"bridge add_nio_udp {relay} {nio.lport} {nio.rhost} {nio.rport}"),
+                call(f"bridge reset_packet_filters {relay}"),
+                call(f"bridge start {relay}"),
+            ]
+        )
 
     async def test_ethernet_switch_create_udp_dot1q(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # make port 0 a dot1q trunk with native VLAN 10
@@ -325,10 +316,13 @@ class TestEthernetSwitchNodesRoutes:
             app.url_path_for(
                 "compute:update_ethernet_switch",
                 project_id=ethernet_switch["project_id"],
-                node_id=ethernet_switch["node_id"]),
-            json={"ports_mapping": [
-                {"name": "Ethernet0", "port_number": 0, "type": "dot1q", "vlan": 10},
-            ]}
+                node_id=ethernet_switch["node_id"],
+            ),
+            json={
+                "ports_mapping": [
+                    {"name": "Ethernet0", "port_number": 0, "type": "dot1q", "vlan": 10},
+                ]
+            },
         )
         node = compute_project.get_node(ethernet_switch["node_id"])
         node._ubridge_send.reset_mock()
@@ -338,7 +332,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         response = await compute_client.post(url, json=self._udp_params())
         assert response.status_code == status.HTTP_201_CREATED
@@ -346,18 +340,16 @@ class TestEthernetSwitchNodesRoutes:
         br = node._bridge_name
         tap = f"{br}-0"
         # trunk: drop default 1, admit all VIDs tagged, mark native 10 PVID/untagged
-        node._ubridge_send.assert_has_calls([
-            call(f'brctl vlan_del "{br}" "{tap}" 1'),
-            call(f'brctl vlan_add "{br}" "{tap}" 1 vid 4094'),
-            call(f'brctl vlan_add "{br}" "{tap}" 10 pvid untagged'),
-        ])
+        node._ubridge_send.assert_has_calls(
+            [
+                call(f'brctl vlan_del "{br}" "{tap}" 1'),
+                call(f'brctl vlan_add "{br}" "{tap}" 1 vid 4094'),
+                call(f'brctl vlan_add "{br}" "{tap}" 10 pvid untagged'),
+            ]
+        )
 
     async def test_ethernet_switch_delete_nio(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         url = app.url_path_for(
@@ -365,7 +357,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         await compute_client.post(url, json=self._udp_params())
 
@@ -377,7 +369,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         response = await compute_client.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -386,17 +378,15 @@ class TestEthernetSwitchNodesRoutes:
         br = node._bridge_name
         tap = f"{br}-0"
         relay = f"{node.id}-0"
-        node._ubridge_send.assert_has_calls([
-            call(f'brctl delif "{br}" "{tap}"'),
-            call(f"bridge delete {relay}"),
-        ])
+        node._ubridge_send.assert_has_calls(
+            [
+                call(f'brctl delif "{br}" "{tap}"'),
+                call(f"bridge delete {relay}"),
+            ]
+        )
 
     async def test_ethernet_switch_update_nio(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         url = app.url_path_for(
@@ -404,7 +394,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         params = self._udp_params()
         params["filters"] = {"delay": [10, 0]}
@@ -421,7 +411,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         response = await compute_client.put(url, json=params)
         assert response.status_code == status.HTTP_201_CREATED
@@ -432,11 +422,7 @@ class TestEthernetSwitchNodesRoutes:
         node._ubridge_send.assert_any_call(f"bridge reset_packet_filters {relay}")
 
     async def test_ethernet_switch_toggle_marker(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # a marker installed via the NIO registers in the node's filter-bridge map
@@ -445,7 +431,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         params = self._udp_params()
         params["markers"] = {"icmp": {"bpf": "icmp", "link_id": "link-1", "enabled": True}}
@@ -459,7 +445,7 @@ class TestEthernetSwitchNodesRoutes:
             "compute:toggle_ethernet_switch_marker",
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
-            marker_name="icmp"
+            marker_name="icmp",
         )
         response = await compute_client.put(url, json={"enabled": False})
         assert response.status_code == status.HTTP_200_OK
@@ -472,17 +458,13 @@ class TestEthernetSwitchNodesRoutes:
             "compute:toggle_ethernet_switch_marker",
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
-            marker_name="nope"
+            marker_name="nope",
         )
         response = await compute_client.put(url, json={"enabled": True})
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_ethernet_switch_start_capture(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # capture needs a wired port
@@ -491,7 +473,7 @@ class TestEthernetSwitchNodesRoutes:
             project_id=ethernet_switch["project_id"],
             node_id=ethernet_switch["node_id"],
             adapter_number="0",
-            port_number="0"
+            port_number="0",
         )
         await compute_client.post(url, json=self._udp_params())
 
@@ -499,11 +481,13 @@ class TestEthernetSwitchNodesRoutes:
         node._ubridge_send.reset_mock()
 
         params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-        url = app.url_path_for("compute:start_ethernet_switch_capture",
-                               project_id=ethernet_switch["project_id"],
-                               node_id=ethernet_switch["node_id"],
-                               adapter_number="0",
-                               port_number="0")
+        url = app.url_path_for(
+            "compute:start_ethernet_switch_capture",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
 
         response = await compute_client.post(url, json=params)
         assert response.status_code == status.HTTP_200_OK
@@ -512,11 +496,7 @@ class TestEthernetSwitchNodesRoutes:
         node._ubridge_send.assert_any_call(f'bridge start_capture {relay} "{node.get_nio(0).pcap_output_file}"')
 
     async def test_ethernet_switch_stop_capture(
-            self,
-            app: FastAPI,
-            compute_client: AsyncClient,
-            compute_project: Project,
-            ethernet_switch: dict
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
 
         # start a capture first
@@ -526,17 +506,19 @@ class TestEthernetSwitchNodesRoutes:
                 project_id=ethernet_switch["project_id"],
                 node_id=ethernet_switch["node_id"],
                 adapter_number="0",
-                port_number="0"
+                port_number="0",
             ),
-            json=self._udp_params()
+            json=self._udp_params(),
         )
         await compute_client.post(
-            app.url_path_for("compute:start_ethernet_switch_capture",
-                             project_id=ethernet_switch["project_id"],
-                             node_id=ethernet_switch["node_id"],
-                             adapter_number="0",
-                             port_number="0"),
-            json={"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+            app.url_path_for(
+                "compute:start_ethernet_switch_capture",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number="0",
+            ),
+            json={"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"},
         )
 
         node = compute_project.get_node(ethernet_switch["node_id"])
@@ -544,11 +526,13 @@ class TestEthernetSwitchNodesRoutes:
         relay = f"{node.id}-0"
 
         response = await compute_client.post(
-            app.url_path_for("compute:stop_ethernet_switch_capture",
-                             project_id=ethernet_switch["project_id"],
-                             node_id=ethernet_switch["node_id"],
-                             adapter_number="0",
-                             port_number="0")
+            app.url_path_for(
+                "compute:stop_ethernet_switch_capture",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number="0",
+            )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         node._ubridge_send.assert_any_call(f"bridge stop_capture {relay}")

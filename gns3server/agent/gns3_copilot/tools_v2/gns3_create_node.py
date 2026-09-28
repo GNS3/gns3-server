@@ -169,9 +169,7 @@ class GNS3CreateNodeTool(BaseTool):
             # Validate each node in the array
             for i, node_data in enumerate(nodes):
                 if not isinstance(node_data, dict):
-                    logger.error(
-                        "Invalid input: Node %d must be a dictionary.", i + 1
-                    )
+                    logger.error("Invalid input: Node %d must be a dictionary.", i + 1)
                     return {"error": f"Node {i + 1} must be a dictionary."}
 
                 template_id = node_data.get("template_id")
@@ -187,14 +185,10 @@ class GNS3CreateNodeTool(BaseTool):
                     ]
                 ):
                     logger.error(
-                        "Invalid input: Node %d missing or invalid "
-                        "template_id, x, or y.",
+                        "Invalid input: Node %d missing or invalid template_id, x, or y.",
                         i + 1,
                     )
-                    return {
-                        "error": f"Node {i + 1} missing or invalid "
-                        f"template_id, x, or y."
-                    }
+                    return {"error": f"Node {i + 1} missing or invalid template_id, x, or y."}
 
             # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
@@ -202,15 +196,10 @@ class GNS3CreateNodeTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Create nodes
-            logger.info(
-                "Creating %d nodes in project %s...", len(nodes), project_id
-            )
+            logger.info("Creating %d nodes in project %s...", len(nodes), project_id)
             results: list[dict[str, Any]] = []
 
             for i, node_data in enumerate(nodes):
@@ -261,12 +250,8 @@ class GNS3CreateNodeTool(BaseTool):
                     # Continue with next node even if one fails
 
             # Calculate summary statistics
-            successful_nodes = len(
-                [r for r in results if r.get("status") == "success"]
-            )
-            failed_nodes = len(
-                [r for r in results if r.get("status") == "failed"]
-            )
+            successful_nodes = len([r for r in results if r.get("status") == "success"])
+            failed_nodes = len([r for r in results if r.get("status") == "failed"])
 
             # Prepare final result
             final_result = {
@@ -293,9 +278,7 @@ class GNS3CreateNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to process node creation request: %s", e)
-            return {
-                "error": f"Failed to process node creation request: {str(e)}"
-            }
+            return {"error": f"Failed to process node creation request: {str(e)}"}
 
 
 if __name__ == "__main__":

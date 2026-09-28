@@ -49,11 +49,11 @@ def _get_windows_interfaces_from_registry():
             netcard, _ = winreg.QueryValueEx(hkeycard, "Description")
             connection = (
                 r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}"
-                + fr"\{guid}\Connection"
+                + rf"\{guid}\Connection"
             )
             hkeycon = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, connection)
             name, _ = winreg.QueryValueEx(hkeycon, "Name")
-            interface = fr"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{guid}"
+            interface = rf"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{guid}"
             hkeyinterface = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, interface)
             is_dhcp_enabled, _ = winreg.QueryValueEx(hkeyinterface, "EnableDHCP")
             if is_dhcp_enabled:
@@ -160,7 +160,6 @@ def is_interface_up(interface):
     """
 
     if sys.platform.startswith("linux") or sys.platform.startswith("openbsd"):
-
         if interface not in psutil.net_if_addrs():
             return False
 
@@ -218,13 +217,9 @@ def interfaces():
                 # legacy single-value behavior (keeps the last IPv4 seen)
                 ip_address = addr.address
                 netmask = addr.netmask
-                ip_addresses.append(
-                    {"family": "ipv4", "address": addr.address, "netmask": addr.netmask or None}
-                )
+                ip_addresses.append({"family": "ipv4", "address": addr.address, "netmask": addr.netmask or None})
             elif addr.family == socket.AF_INET6:
-                ip_addresses.append(
-                    {"family": "ipv6", "address": addr.address, "netmask": addr.netmask or None}
-                )
+                ip_addresses.append({"family": "ipv6", "address": addr.address, "netmask": addr.netmask or None})
             if addr.family == psutil.AF_LINK:
                 mac_address = addr.address
         if interface.startswith("tap"):
@@ -283,7 +278,7 @@ def interfaces():
             "vmware",
             "virtualbox",
             "gns3",
-            "veb"
+            "veb",
         ):
             if result["name"].lower().startswith(special_interface):
                 result["special"] = True

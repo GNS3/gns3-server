@@ -123,19 +123,25 @@ class PacketAnalysisTool(BaseTool):
 
             query = query.strip()
             if len(query.split()) > 1:
-                return json.dumps({
-                    "error": "Only one keyword allowed",
-                    "hint": 'Use a single keyword like "ospf.lsa" or "bgp", not multiple words',
-                })
+                return json.dumps(
+                    {
+                        "error": "Only one keyword allowed",
+                        "hint": 'Use a single keyword like "ospf.lsa" or "bgp", not multiple words',
+                    }
+                )
 
             tshark = subprocess.Popen(
                 ["tshark", "-G", "fields"],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
             )
             grep = subprocess.Popen(
                 ["grep", "-iF", query, "-"],
-                stdin=tshark.stdout, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL, text=True,
+                stdin=tshark.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
             )
             tshark.stdout.close()
             stdout, _ = grep.communicate(timeout=30)
@@ -151,21 +157,27 @@ class PacketAnalysisTool(BaseTool):
                 name = parts[2]
                 if name not in seen:
                     seen.add(name)
-                    results.append({
-                        "field": name,
-                        "type": parts[3] if len(parts) > 3 else "",
-                        "protocol": parts[4] if len(parts) > 4 else "",
-                        "description": parts[7] if len(parts) > 7 else "",
-                    })
+                    results.append(
+                        {
+                            "field": name,
+                            "type": parts[3] if len(parts) > 3 else "",
+                            "protocol": parts[4] if len(parts) > 4 else "",
+                            "description": parts[7] if len(parts) > 7 else "",
+                        }
+                    )
             if len(results) >= 40:
                 break
 
-        return json.dumps({
-            "query": query,
-            "count": len(results),
-            "fields": results,
-            "hint": "Use the 'field' values in tshark_args with -e",
-        }, ensure_ascii=False, indent=2)
+        return json.dumps(
+            {
+                "query": query,
+                "count": len(results),
+                "fields": results,
+                "hint": "Use the 'field' values in tshark_args with -e",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
 
     @classmethod
     def _load_valid_tshark_fields(cls) -> set:
@@ -235,11 +247,13 @@ class PacketAnalysisTool(BaseTool):
                 i += 1
 
         if invalid_fields:
-            return json.dumps({
-                "error": f"Invalid tshark field names: {', '.join(invalid_fields)}",
-                "hint": 'Use {"action": "search_fields", "query": "<protocol>"} to look up valid field names',
-                "invalid_fields": invalid_fields,
-            })
+            return json.dumps(
+                {
+                    "error": f"Invalid tshark field names: {', '.join(invalid_fields)}",
+                    "hint": 'Use {"action": "search_fields", "query": "<protocol>"} to look up valid field names',
+                    "invalid_fields": invalid_fields,
+                }
+            )
 
         return None
 
@@ -271,8 +285,7 @@ class PacketAnalysisTool(BaseTool):
             return self._search_fields(query or "")
 
         logger.info(
-            f"PacketAnalysisTool invoked: project_id={project_id}, "
-            f"link_id={link_id}, tshark_args={tshark_args}"
+            f"PacketAnalysisTool invoked: project_id={project_id}, link_id={link_id}, tshark_args={tshark_args}"
         )
 
         # Validate inputs
@@ -429,6 +442,7 @@ class PacketAnalysisTool(BaseTool):
         """
         # Build command: tshark -r <file> <user_args>
         import shlex
+
         cmd = ["tshark", "-r", pcap_file] + shlex.split(tshark_args)
 
         logger.info(f"Running tshark: {' '.join(cmd)}")
@@ -451,10 +465,7 @@ class PacketAnalysisTool(BaseTool):
                     f"tshark reported: {stderr_clean}",
                 ]
                 if "is not a valid protocol" in stderr.lower() or "aren't valid" in stderr.lower():
-                    hints.append(
-                        'Use {"action": "search_fields", "query": "<protocol>"} '
-                        "to find correct field names."
-                    )
+                    hints.append('Use {"action": "search_fields", "query": "<protocol>"} to find correct field names.')
                 logger.warning(f"tshark stderr: {stderr}")
                 return json.dumps({"error": "tshark argument error", "hints": hints})
 

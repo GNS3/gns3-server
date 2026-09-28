@@ -67,7 +67,9 @@ def test_convert(directory, tmpdir):
     assert work_topology
 
     if "revision" not in before_topology or before_topology["revision"] < GNS3_FILE_FORMAT_REVISION:
-        assert os.path.exists(os.path.join(work_directory, gns3_file + ".backup{}".format(before_topology.get("revision", 0))))
+        assert os.path.exists(
+            os.path.join(work_directory, gns3_file + ".backup{}".format(before_topology.get("revision", 0)))
+        )
 
     # We should have the same file in after directory and the work directory
     for root, dirs, files in os.walk(after_directory):
@@ -80,10 +82,14 @@ def test_convert(directory, tmpdir):
             if file_path.endswith(".gns3project"):
                 size = os.stat(file_path).st_size
                 other_size = os.stat(os.path.join(os.path.join(root, file))).st_size
-                assert size in range(other_size - 100, other_size + 100), "File {} is different".format(os.path.join(directory, file))
+                assert size in range(other_size - 100, other_size + 100), "File {} is different".format(
+                    os.path.join(directory, file)
+                )
             # For non .gns3 file we check if the file are the same
             elif not file_path.endswith(".gns3"):
-                assert os.stat(file_path).st_size == os.stat(os.path.join(os.path.join(root, file))).st_size, "File {} is different".format(os.path.join(directory, file))
+                assert os.stat(file_path).st_size == os.stat(os.path.join(os.path.join(root, file))).st_size, (
+                    "File {} is different".format(os.path.join(directory, file))
+                )
 
     # Check if we don't have unexpected file in work directory
     for root, dirs, files in os.walk(work_directory):
@@ -109,7 +115,13 @@ def compare_dict(path, source, reference):
     for key in sorted(reference.keys()):
         val = reference[key]
         assert key in source, "{} is missing in {}".format(key, source)
-        if isinstance(val, str) or isinstance(val, float) or isinstance(val, int) or isinstance(val, bool) or val is None:
+        if (
+            isinstance(val, str)
+            or isinstance(val, float)
+            or isinstance(val, int)
+            or isinstance(val, bool)
+            or val is None
+        ):
             if val == "ANYSTR":
                 pass
             elif val == "ANYUUID" and len(source[key]) == 36:
@@ -125,7 +137,9 @@ def compare_dict(path, source, reference):
         elif isinstance(val, dict):
             compare_dict(path + key + "/", source[key], val)
         elif isinstance(val, list):
-            assert len(val) == len(source[key]), "Not enough value in {} ({}/{}) it shoud be {} not {}".format(key, len(val), len(source[key]), val, source[key])
+            assert len(val) == len(source[key]), "Not enough value in {} ({}/{}) it shoud be {} not {}".format(
+                key, len(val), len(source[key]), val, source[key]
+            )
             for idx, element in enumerate(source[key]):
                 if isinstance(element, dict):
                     compare_dict(path + key + "/", element, val[idx])

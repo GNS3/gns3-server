@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class FrameRelaySwitch(Device):
-
     """
     Dynamips Frame Relay switch.
 

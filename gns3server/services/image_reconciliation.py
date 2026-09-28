@@ -17,13 +17,29 @@ from gns3server.config import Config
 from gns3server.db.models import Image, ImageSyncJob
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.image_inventory import (
-    ImageLock, ImageLockBusy, contained_path, fingerprint, image_lock, normalized_path,
+    ImageLock,
+    ImageLockBusy,
+    contained_path,
+    fingerprint,
+    image_lock,
+    normalized_path,
 )
 from gns3server.utils.images import inspect_image_file, InvalidImageError, ImageChangedError
 
 log = logging.getLogger(__name__)
-COUNTERS = ("scanned", "added", "updated", "unchanged", "missing", "unavailable",
-            "invalid", "deferred", "out_of_scope", "errors", "bytes_hashed")
+COUNTERS = (
+    "scanned",
+    "added",
+    "updated",
+    "unchanged",
+    "missing",
+    "unavailable",
+    "invalid",
+    "deferred",
+    "out_of_scope",
+    "errors",
+    "bytes_hashed",
+)
 RAW_EXTENSIONS = {".raw", ".img", ".iso", ".fd", ".vhd", ".vdi", ".bin"}
 
 
@@ -57,10 +73,18 @@ def enumerate_root(root):
         root_stat = os.stat(root)
         if not stat.S_ISDIR(root_stat.st_mode):
             raise NotADirectoryError(root)
-        for directory, dirs, names in os.walk(root, onerror=lambda e: errors.append(
-                {"path": str(e.filename or root), "reason": str(e)}), followlinks=False):
-            dirs[:] = [name for name in dirs if not ignored(name) and name not in ("lib", "lib64")
-                       and not os.path.islink(os.path.join(directory, name))]
+        for directory, dirs, names in os.walk(
+            root,
+            onerror=lambda e: errors.append({"path": str(e.filename or root), "reason": str(e)}),
+            followlinks=False,
+        ):
+            dirs[:] = [
+                name
+                for name in dirs
+                if not ignored(name)
+                and name not in ("lib", "lib64")
+                and not os.path.islink(os.path.join(directory, name))
+            ]
             for name in names:
                 if ignored(name):
                     continue
@@ -125,17 +149,27 @@ class ImageReconciliationService:
             async with AsyncSession(self.engine, expire_on_commit=False) as session:
                 # The OS lock proves no previous worker using this catalog is
                 # active. Recover jobs abandoned by a crash before admitting one.
-                await session.execute(update(ImageSyncJob).where(
-                    ImageSyncJob.status.in_(["queued", "running"])).values(
-                    status="interrupted", finished_at=utcnow()))
-                job = ImageSyncJob(job_id=str(uuid.uuid4()), status="queued", dry_run=dry_run,
-                                   force_checksum=force_checksum,
-                                   counts=dict.fromkeys(COUNTERS, 0), errors=[])
+                await session.execute(
+                    update(ImageSyncJob)
+                    .where(ImageSyncJob.status.in_(["queued", "running"]))
+                    .values(status="interrupted", finished_at=utcnow())
+                )
+                job = ImageSyncJob(
+                    job_id=str(uuid.uuid4()),
+                    status="queued",
+                    dry_run=dry_run,
+                    force_checksum=force_checksum,
+                    counts=dict.fromkeys(COUNTERS, 0),
+                    errors=[],
+                )
                 session.add(job)
                 # Bound history; active jobs are never removed.
-                old_jobs = select(ImageSyncJob.job_id).where(
-                    ImageSyncJob.status.notin_(["queued", "running"])).order_by(
-                    ImageSyncJob.created_at.desc()).offset(99)
+                old_jobs = (
+                    select(ImageSyncJob.job_id)
+                    .where(ImageSyncJob.status.notin_(["queued", "running"]))
+                    .order_by(ImageSyncJob.created_at.desc())
+                    .offset(99)
+                )
                 await session.execute(delete(ImageSyncJob).where(ImageSyncJob.job_id.in_(old_jobs)))
                 await session.commit()
                 await session.refresh(job)
@@ -158,9 +192,11 @@ class ImageReconciliationService:
         try:
             async with ImageLock("image-inventory", wait=False):
                 async with AsyncSession(self.engine) as session:
-                    await session.execute(update(ImageSyncJob).where(
-                        ImageSyncJob.status.in_(["queued", "running"])).values(
-                        status="interrupted", finished_at=utcnow()))
+                    await session.execute(
+                        update(ImageSyncJob)
+                        .where(ImageSyncJob.status.in_(["queued", "running"]))
+                        .values(status="interrupted", finished_at=utcnow())
+                    )
                     await session.commit()
         except ImageLockBusy:
             pass
@@ -169,14 +205,21 @@ class ImageReconciliationService:
             if job is None:
                 return None
             result = job.asdict()
-            result["errors"] = result["errors"][offset:offset + limit]
+            result["errors"] = result["errors"][offset : offset + limit]
             return result
 
     async def _persist(self, job):
         async with AsyncSession(self.engine) as session:
-            await session.execute(update(ImageSyncJob).where(ImageSyncJob.job_id == job["job_id"]).values(
-                status=job["status"], counts=dict(job["counts"]), errors=list(job["errors"]),
-                finished_at=job.get("finished_at")))
+            await session.execute(
+                update(ImageSyncJob)
+                .where(ImageSyncJob.job_id == job["job_id"])
+                .values(
+                    status=job["status"],
+                    counts=dict(job["counts"]),
+                    errors=list(job["errors"]),
+                    finished_at=job.get("finished_at"),
+                )
+            )
             await session.commit()
 
     def _error(self, job, path, reason):
@@ -186,8 +229,7 @@ class ImageReconciliationService:
             job["errors"].append({"path": path, "reason": str(reason)})
 
     async def _inspect(self, path, expected, allow_raw):
-        worker = asyncio.create_task(asyncio.to_thread(
-            inspect_image_file, path, expected, allow_raw, self.stopping))
+        worker = asyncio.create_task(asyncio.to_thread(inspect_image_file, path, expected, allow_raw, self.stopping))
         try:
             return await asyncio.shield(worker)
         except asyncio.CancelledError:
@@ -203,10 +245,16 @@ class ImageReconciliationService:
             return
         async with AsyncSession(self.engine) as session:
             # Revision guard for legacy writers not yet taking the path lock.
-            await session.execute(update(Image).where(
-                Image.image_id == row["image_id"], Image.path == row["path"],
-                Image.file_fingerprint == row["file_fingerprint"],
-                Image.checksum == row["checksum"]).values(availability=availability, last_error=str(reason)))
+            await session.execute(
+                update(Image)
+                .where(
+                    Image.image_id == row["image_id"],
+                    Image.path == row["path"],
+                    Image.file_fingerprint == row["file_fingerprint"],
+                    Image.checksum == row["checksum"],
+                )
+                .values(availability=availability, last_error=str(reason))
+            )
             await session.commit()
 
     async def _row(self, path):
@@ -215,7 +263,7 @@ class ImageReconciliationService:
             row = (await session.execute(select(Image).where(Image.path.in_([stored, path])))).scalar_one_or_none()
             return row.asdict() if row else None
 
-    async def _file(self, path, observed, job, root):
+    async def _file(self, path, observed, job, root):  # noqa: C901 - keep per-file outcomes under one path lock
         if path in self._ambiguous_paths:
             job["counts"]["deferred"] += 1
             return
@@ -229,7 +277,12 @@ class ImageReconciliationService:
                 current = await asyncio.to_thread(fingerprint, path)
                 if current != observed:
                     raise ImageChangedError("File changed during settling interval")
-                if row and row["availability"] == "available" and row["file_fingerprint"] == current and not job["force_checksum"]:
+                if (
+                    row
+                    and row["availability"] == "available"
+                    and row["file_fingerprint"] == current
+                    and not job["force_checksum"]
+                ):
                     counts["unchanged"] += 1
                     return
                 expected = row["image_type"] if row else None
@@ -238,8 +291,9 @@ class ImageReconciliationService:
                     component = os.path.relpath(path, main_root).split(os.sep)[0]
                     expected = {"QEMU": "qemu", "IOS": "ios", "IOU": "iou"}.get(component)
                 allow_raw = Config.instance().settings.Server.allow_raw_images and (
-                    expected == "qemu" or
-                    (expected in (None, "qemu") and os.path.splitext(path)[1].lower() in RAW_EXTENSIONS))
+                    expected == "qemu"
+                    or (expected in (None, "qemu") and os.path.splitext(path)[1].lower() in RAW_EXTENSIONS)
+                )
                 info = await self._inspect(path, expected, allow_raw)
                 if row:
                     # Preserve legacy path spelling as well as image identity.
@@ -274,7 +328,7 @@ class ImageReconciliationService:
                 await self._state(row, "unavailable", e, job["dry_run"])
                 self._error(job, path, e)
 
-    async def _run(self, job, lock):
+    async def _run(self, job, lock):  # noqa: C901 - one job owns root health, progress and lock lifetime
         job["status"] = "running"
         try:
             await self._persist(job)
@@ -330,7 +384,11 @@ class ImageReconciliationService:
                     if self.stopping.is_set():
                         raise asyncio.CancelledError
                     path = row["path"]
-                    if not contained_path(path, root) or normalized_path(path) in files or normalized_path(path) in self._ambiguous_paths:
+                    if (
+                        not contained_path(path, root)
+                        or normalized_path(path) in files
+                        or normalized_path(path) in self._ambiguous_paths
+                    ):
                         continue
                     async with image_lock(path):
                         row = await self._row(path)
@@ -338,7 +396,9 @@ class ImageReconciliationService:
                             continue
                         if errors:
                             job["counts"]["unavailable"] += 1
-                            await self._state(row, "unavailable", "Image root was not completely scanned", job["dry_run"])
+                            await self._state(
+                                row, "unavailable", "Image root was not completely scanned", job["dry_run"]
+                            )
                             continue
                         try:
                             if not contained_path(os.path.realpath(path), resolved_root):

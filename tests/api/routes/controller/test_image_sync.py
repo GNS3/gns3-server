@@ -61,6 +61,7 @@ class TestImageSyncRoutes:
 
     async def test_overlapping_sync_is_conflict(self, client, sync_service):
         from gns3server.utils.image_inventory import ImageLock
+
         async with ImageLock("image-inventory"):
             response = await client.post("/v3/images/sync", json={})
         assert response.status_code == 409
@@ -99,7 +100,9 @@ class TestImageSyncRoutes:
 
     async def test_sync_requires_allocate_privilege(self, client, sync_service, test_user):
         token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
-        with patch("gns3server.db.repositories.rbac.RbacRepository.check_user_has_privilege", new=AsyncMock(return_value=False)):
+        with patch(
+            "gns3server.db.repositories.rbac.RbacRepository.check_user_has_privilege", new=AsyncMock(return_value=False)
+        ):
             response = await client.post("/v3/images/sync", json={}, headers={"Authorization": f"Bearer {token}"})
             assert response.status_code == 403
             assert "Image.Allocate" in response.text
@@ -110,21 +113,26 @@ class TestImageSyncRoutes:
         assert response.status_code == 401
 
     async def test_template_can_detach_missing_image(self, app, client, sync_service, db_session):
-        uploaded = await client.post('/v3/images/upload/detach-missing.qcow2', content=QCOW)
+        uploaded = await client.post("/v3/images/upload/detach-missing.qcow2", content=QCOW)
         assert uploaded.status_code == 201
         image = uploaded.json()
-        image_id = (await ImagesRepository(db_session).get_image(image['path'])).image_id
-        created = await client.post('/v3/templates', json={
-            'name': 'Detach missing image', 'compute_id': 'local',
-            'template_type': 'qemu', 'hda_disk_image': image['filename'],
-        })
+        image_id = (await ImagesRepository(db_session).get_image(image["path"])).image_id
+        created = await client.post(
+            "/v3/templates",
+            json={
+                "name": "Detach missing image",
+                "compute_id": "local",
+                "template_type": "qemu",
+                "hda_disk_image": image["filename"],
+            },
+        )
         assert created.status_code == 201
-        template_id = created.json()['template_id']
-        os.unlink(image['path'])
-        await client.post('/v3/images/sync', json={})
+        template_id = created.json()["template_id"]
+        os.unlink(image["path"])
+        await client.post("/v3/images/sync", json={})
         await sync_service.task
-        updated = await client.put(f'/v3/templates/{template_id}', json={'hda_disk_image': ''})
+        updated = await client.put(f"/v3/templates/{template_id}", json={"hda_disk_image": ""})
         assert updated.status_code == 200
         assert not await ImagesRepository(db_session).get_image_templates(image_id)
         # Detaching a template does not silently remove the missing catalog row.
-        assert await ImagesRepository(db_session).get_image(image['path']) is not None
+        assert await ImagesRepository(db_session).get_image(image["path"]) is not None

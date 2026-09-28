@@ -60,11 +60,18 @@ class Qcow2:
         # } QCowHeader;
 
         struct_format = ">IIQiiQi"
-        with open(self._path, 'rb') as f:
+        with open(self._path, "rb") as f:
             content = f.read(struct.calcsize(struct_format))
             try:
-                (self.magic, self.version, self.backing_file_offset, self.backing_file_size,
-                    self.cluster_bits, self.size, self.crypt_method) = struct.unpack_from(struct_format, content)
+                (
+                    self.magic,
+                    self.version,
+                    self.backing_file_offset,
+                    self.backing_file_size,
+                    self.cluster_bits,
+                    self.size,
+                    self.crypt_method,
+                ) = struct.unpack_from(struct_format, content)
 
             except struct.error:
                 raise Qcow2Error(f"Invalid file header for {self._path}")
@@ -112,7 +119,7 @@ class Qcow2:
                         "filename": base_image,
                     },
                 }
-                return ("json:"+json.dumps(options, separators=(',', ':')), base_qcow2)
+                return ("json:" + json.dumps(options, separators=(",", ":")), base_qcow2)
             else:
                 return (base_image, base_qcow2)
         except Qcow2Error:

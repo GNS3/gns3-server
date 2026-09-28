@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class NIOLinuxEthernet(NIO):
-
     """
     Dynamips Linux Ethernet NIO.
 
@@ -66,7 +65,4 @@ class NIOLinuxEthernet(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_linux_ethernet",
-            "ethernet_device": self._ethernet_device
-        }
+        return {"type": "nio_linux_ethernet", "ethernet_device": self._ethernet_device}

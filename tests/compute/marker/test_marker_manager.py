@@ -26,8 +26,8 @@ from gns3server.compute.marker.marker_listener import MarkerListener
 # Registry
 # ---------------------------------------------------------------------------
 
-class TestMarkerRegistry:
 
+class TestMarkerRegistry:
     def test_register_and_lookup(self):
         MarkerManager.reset()
         mgr = MarkerManager.instance()
@@ -85,6 +85,7 @@ class TestMarkerRegistry:
 # MarkerListener parsing
 # ---------------------------------------------------------------------------
 
+
 class FakeMarkerManager:
     def __init__(self):
         self.events = []
@@ -100,13 +101,10 @@ class FakeMarkerManager:
         self.events.append((project_id, event))
 
     def register(self, project_id, node_id, filter_name, link_id, tag):
-        self._entries[(node_id, filter_name)] = {
-            "project_id": project_id, "link_id": link_id, "tag": tag
-        }
+        self._entries[(node_id, filter_name)] = {"project_id": project_id, "link_id": link_id, "tag": tag}
 
 
 class TestMarkerListener:
-
     def test_parses_valid_mark_datagram(self):
         fmgr = FakeMarkerManager()
         fmgr.register("p1", "n1", "f1", "l1", tag=7)
@@ -193,9 +191,7 @@ class TestMarkerListener:
         fmgr.register("p", "n", "f", "registry-link", tag=1)
         lis = MarkerListener(fmgr)
         lis.connection_made(None)
-        lis.datagram_received(
-            b"MARK 3.0 node=n filter=f link=signal-link tag=1 len=42\n", None
-        )
+        lis.datagram_received(b"MARK 3.0 node=n filter=f link=signal-link tag=1 len=42\n", None)
         assert fmgr.events[0][1]["link_id"] == "signal-link"
 
     def test_link_dash_falls_back_to_registry_link(self):
@@ -249,9 +245,9 @@ class TestMarkerListener:
 # UDP round-trip
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 class TestMarkerManagerUDP:
-
     async def test_listener_receives_and_dispatches(self):
         MarkerManager.reset()
         mgr = MarkerManager.instance()
@@ -273,12 +269,8 @@ class TestMarkerManagerUDP:
                 self.transport = transport
 
         sp = SendProto()
-        transport, _ = await loop.create_datagram_endpoint(
-            lambda: sp, remote_addr=("127.0.0.1", mgr.port)
-        )
-        transport.sendto(
-            b"MARK 123.456 node=node-rt filter=filt-rt tag=10 len=88\n"
-        )
+        transport, _ = await loop.create_datagram_endpoint(lambda: sp, remote_addr=("127.0.0.1", mgr.port))
+        transport.sendto(b"MARK 123.456 node=node-rt filter=filt-rt tag=10 len=88\n")
         await asyncio.sleep(0.15)
         transport.close()
 

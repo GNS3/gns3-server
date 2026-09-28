@@ -29,9 +29,11 @@ QCOW = b"QFI\xfb\x00\x00\x00"
 @pytest_asyncio.fixture
 async def inventory(tmp_path, config):
     engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'catalog.db'}")
+
     @event.listens_for(engine.sync_engine, "connect")
     def foreign_keys(connection, record):
         connection.execute("PRAGMA foreign_keys=ON")
+
     async with engine.connect() as conn:
         with patch("gns3server.services.authentication.AuthService.hash_password", return_value="test"):
             await conn.run_sync(Base.metadata.create_all)
@@ -75,7 +77,7 @@ async def test_add_change_missing_restore_preserves_identity_and_template(invent
     changed = (await rows(inventory))[0]
     assert changed["image_id"] == original["image_id"]
     assert changed["image_size"] == len(QCOW + b"changed")
-    assert changed["checksum"] == hashlib.md5(QCOW + b"changed").hexdigest()
+    assert changed["checksum"] == hashlib.md5(QCOW + b"changed", usedforsecurity=False).hexdigest()
     path.unlink()
     assert (await scan(inventory))["counts"]["missing"] == 1
     assert (await rows(inventory))[0]["availability"] == "missing"
@@ -91,7 +93,9 @@ async def test_add_change_missing_restore_preserves_identity_and_template(invent
 async def test_fingerprints_skip_hashing_and_force_bypasses_sidecars(inventory, config):
     path = image_file(config)
     await scan(inventory)
-    with patch("gns3server.services.image_reconciliation.inspect_image_file", side_effect=AssertionError("unnecessary hash")):
+    with patch(
+        "gns3server.services.image_reconciliation.inspect_image_file", side_effect=AssertionError("unnecessary hash")
+    ):
         result = await scan(inventory)
     assert result["status"] == "completed"
     assert result["counts"]["unchanged"] == 1
@@ -100,10 +104,13 @@ async def test_fingerprints_skip_hashing_and_force_bypasses_sidecars(inventory, 
     sidecar = Path(str(path) + ".md5sum")
     sidecar.write_text("0" * 32)
     assert md5sum(str(path), cache_to_md5file=False) == "0" * 32
-    assert md5sum(str(path), cache_to_md5file=False, use_cache=False) == hashlib.md5(path.read_bytes()).hexdigest()
+    assert (
+        md5sum(str(path), cache_to_md5file=False, use_cache=False)
+        == hashlib.md5(path.read_bytes(), usedforsecurity=False).hexdigest()
+    )
     result = await scan(inventory, force_checksum=True)
     assert result["counts"]["bytes_hashed"] == len(QCOW)
-    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(path.read_bytes()).hexdigest()
+    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(path.read_bytes(), usedforsecurity=False).hexdigest()
     assert not sidecar.exists()
 
 
@@ -131,11 +138,15 @@ async def test_failed_scopes_do_not_remove_rows(inventory, config, failure):
         os.rename(root, root + "-offline")
         result = await scan(inventory)
     elif failure == "partial_walk":
-        with patch("gns3server.services.image_reconciliation.enumerate_root", return_value=(
-                {}, [{"path": root, "reason": "Permission denied"}])):
+        with patch(
+            "gns3server.services.image_reconciliation.enumerate_root",
+            return_value=({}, [{"path": root, "reason": "Permission denied"}]),
+        ):
             result = await scan(inventory)
     else:
-        with patch("gns3server.services.image_reconciliation.inspect_image_file", side_effect=PermissionError("denied")):
+        with patch(
+            "gns3server.services.image_reconciliation.inspect_image_file", side_effect=PermissionError("denied")
+        ):
             result = await scan(inventory, force_checksum=True)
     assert result["status"] == "partial"
     assert result["counts"]["missing"] == 0
@@ -179,11 +190,14 @@ async def test_symlinks_hidden_files_and_libraries_are_not_imported(inventory, c
     assert outside.read_bytes() == QCOW
 
 
-@pytest.mark.parametrize("name,data,expected", [
-    ("QEMU/disk.raw", b"raw image bytes", "qemu"),
-    ("IOS/ios.bin", b"\x7fELF\x01\x02\x01", "ios"),
-    ("IOU/iou.bin", b"\x7fELF\x02\x01\x01", "iou"),
-])
+@pytest.mark.parametrize(
+    "name,data,expected",
+    [
+        ("QEMU/disk.raw", b"raw image bytes", "qemu"),
+        ("IOS/ios.bin", b"\x7fELF\x01\x02\x01", "ios"),
+        ("IOU/iou.bin", b"\x7fELF\x02\x01\x01", "iou"),
+    ],
+)
 async def test_image_types_and_raw_policy(inventory, config, name, data, expected):
     image_file(config, name, data)
     result = await scan(inventory)
@@ -198,17 +212,19 @@ async def test_invalid_replacement_not_usable(inventory, config):
     assert (await scan(inventory))["counts"]["invalid"] == 1
     async with AsyncSession(inventory.engine) as session:
         repo = ImagesRepository(session)
-        assert await repo.get_image_by_checksum(hashlib.md5(QCOW).hexdigest()) is None
-    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(QCOW).hexdigest()
+        assert await repo.get_image_by_checksum(hashlib.md5(QCOW, usedforsecurity=False).hexdigest()) is None
+    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(QCOW, usedforsecurity=False).hexdigest()
 
 
 async def test_changed_during_inspection_is_deferred(inventory, config):
     path = image_file(config)
     original = inspect_image_file
+
     def replace_after_hash(*args):
         info = original(*args)
         path.write_bytes(QCOW + b"still copying")
         return info
+
     with patch("gns3server.services.image_reconciliation.inspect_image_file", side_effect=replace_after_hash):
         result = await scan(inventory)
     assert result["counts"]["deferred"] == 1
@@ -221,6 +237,7 @@ async def test_per_file_database_failure_does_not_poison_next_file(inventory, co
     image_file(config, "QEMU/second.qcow2")
     original = ImagesRepository.save_verified_image
     calls = 0
+
     async def fail_first(repo, info):
         nonlocal calls
         calls += 1
@@ -228,6 +245,7 @@ async def test_per_file_database_failure_does_not_poison_next_file(inventory, co
             # Real failed SQL statement in the file's session.
             await repo._db_session.execute(text("INSERT INTO nonexistent_image_table VALUES (1)"))
         return await original(repo, info)
+
     with patch.object(ImagesRepository, "save_verified_image", fail_first):
         result = await scan(inventory)
     assert result["status"] == "partial"
@@ -267,10 +285,13 @@ async def test_close_immediately_releases_lock_and_finishes_job(inventory, confi
 async def test_watcher_coalesces_move_delete_modify_events():
     dirty = asyncio.Event()
     handler = InventoryEvents(asyncio.get_running_loop(), dirty)
-    for event in [FileMovedEvent("/images/upload.tmp", "/images/new.qcow2"),
-                  FileDeletedEvent("/images/deleted.qcow2"), FileModifiedEvent("/images/changed.qcow2")]:
+    for fs_event in [
+        FileMovedEvent("/images/upload.tmp", "/images/new.qcow2"),
+        FileDeletedEvent("/images/deleted.qcow2"),
+        FileModifiedEvent("/images/changed.qcow2"),
+    ]:
         dirty.clear()
-        handler.dispatch(event)
+        handler.dispatch(fs_event)
         await asyncio.sleep(0)
         assert dirty.is_set()
     dirty.clear()
@@ -281,7 +302,7 @@ async def test_watcher_coalesces_move_delete_modify_events():
 
 async def stream(data, chunk_size=1):
     for offset in range(0, len(data), chunk_size):
-        yield data[offset:offset + chunk_size]
+        yield data[offset : offset + chunk_size]
 
 
 async def test_upload_fragmented_header_and_missing_row_reuse(inventory, config):
@@ -311,13 +332,15 @@ async def test_upload_db_failure_is_recovered_by_scan(inventory, config):
 
 async def test_concurrent_uploads_never_overwrite(inventory, config):
     path = Path(config.settings.Server.images_path) / "QEMU/same.qcow2"
+
     async def upload(data):
         async with AsyncSession(inventory.engine, expire_on_commit=False) as session:
             return await write_image("QEMU/same.qcow2", str(path), stream(data), ImagesRepository(session))
+
     result = await asyncio.gather(upload(QCOW), upload(QCOW + b"different"), return_exceptions=True)
     assert sum(isinstance(item, InvalidImageError) for item in result) == 1
     assert len(await rows(inventory)) == 1
-    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(path.read_bytes()).hexdigest()
+    assert (await rows(inventory))[0]["checksum"] == hashlib.md5(path.read_bytes(), usedforsecurity=False).hexdigest()
 
 
 async def test_checksum_lookup_ignores_missing_duplicate(inventory, config):
@@ -327,7 +350,9 @@ async def test_checksum_lookup_ignores_missing_duplicate(inventory, config):
     first.unlink()
     # No sync is needed to reject a stale candidate at the point of use.
     async with AsyncSession(inventory.engine) as session:
-        image = await ImagesRepository(session).get_image_by_checksum(hashlib.md5(QCOW).hexdigest(), str(second.parent))
+        image = await ImagesRepository(session).get_image_by_checksum(
+            hashlib.md5(QCOW, usedforsecurity=False).hexdigest(), str(second.parent)
+        )
         assert image.path == str(second)
 
 
@@ -344,6 +369,7 @@ async def test_path_matching_does_not_interpret_sql_wildcards(inventory, config)
 async def test_migration_roundtrip_preserves_rows_and_relationships(inventory, config):
     from alembic import command
     from alembic.config import Config
+
     image_file(config)
     await scan(inventory)
     original = (await rows(inventory))[0]
@@ -400,10 +426,7 @@ async def test_native_watcher_covers_extra_roots_and_stops(inventory, config, tm
 @pytest.mark.skipif(os.name == "nt", reason="POSIX lock integration")
 async def test_image_lock_excludes_another_process(config, tmp_path):
     path = str(tmp_path / "image.qcow2")
-    code = (
-        "import fcntl, sys; f = open(sys.argv[1], 'a+b'); "
-        "fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)"
-    )
+    code = "import fcntl, sys; f = open(sys.argv[1], 'a+b'); fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)"
     async with image_lock(path) as lock:
         lock_path = lock._file.name
         result = await asyncio.to_thread(subprocess.run, [sys.executable, "-c", code, lock_path], capture_output=True)
@@ -417,11 +440,13 @@ async def test_shutdown_during_hash_waits_for_worker_before_releasing_lock(inven
     image_file(config)
     entered = threading.Event()
     exited = threading.Event()
+
     def slow_hash(path, expected, raw, stopped):
         entered.set()
         stopped.wait(5)
         exited.set()
         raise InterruptedError("stopped")
+
     with patch("gns3server.services.image_reconciliation.inspect_image_file", side_effect=slow_hash):
         job = await inventory.start()
         assert await asyncio.to_thread(entered.wait, 5)
@@ -434,21 +459,26 @@ async def test_shutdown_during_hash_waits_for_worker_before_releasing_lock(inven
 async def test_appliance_fallback_repairs_existing_row_and_rejects_wrong_content(inventory, config):
     from gns3server.controller.appliance_manager import ApplianceManager
     from gns3server.controller.controller_error import ControllerError
+
     path = image_file(config)
     await scan(inventory)
     old_id = (await rows(inventory))[0]["image_id"]
     data = QCOW + b"replacement"
     path.write_bytes(data)
-    appliance = SimpleNamespace(images=[{"filename": path.name, "md5sum": hashlib.md5(data).hexdigest()}])
+    appliance = SimpleNamespace(
+        images=[{"filename": path.name, "md5sum": hashlib.md5(data, usedforsecurity=False).hexdigest()}]
+    )
     async with AsyncSession(inventory.engine, expire_on_commit=False) as session:
         await ApplianceManager()._find_appliance_version_images(
-            appliance, {"images": {"hda_disk_image": path.name}}, ImagesRepository(session), str(path.parent))
+            appliance, {"images": {"hda_disk_image": path.name}}, ImagesRepository(session), str(path.parent)
+        )
     assert (await rows(inventory))[0]["image_id"] == old_id
     appliance.images[0]["md5sum"] = "0" * 32
     async with AsyncSession(inventory.engine, expire_on_commit=False) as session:
         with pytest.raises(ControllerError, match="checksum"):
             await ApplianceManager()._find_appliance_version_images(
-                appliance, {"images": {"hda_disk_image": path.name}}, ImagesRepository(session), str(path.parent))
+                appliance, {"images": {"hda_disk_image": path.name}}, ImagesRepository(session), str(path.parent)
+            )
 
 
 async def test_legacy_path_spelling_preserves_identity(inventory, config):
@@ -462,7 +492,7 @@ async def test_legacy_path_spelling_preserves_identity(inventory, config):
     assert len(images) == 1
     assert images[0]["image_id"] == original_id
     assert images[0]["path"] == legacy_path
-    assert images[0]["checksum"] == hashlib.md5(QCOW).hexdigest()
+    assert images[0]["checksum"] == hashlib.md5(QCOW, usedforsecurity=False).hexdigest()
 
 
 async def test_root_disappearing_during_scan_does_not_mark_images_missing(inventory, config):
@@ -472,9 +502,11 @@ async def test_root_disappearing_during_scan_does_not_mark_images_missing(invent
     first.unlink()
     root = config.settings.Server.images_path
     original = inventory._file
+
     async def disconnect_root(*args):
         await original(*args)
         os.rename(root, root + "-disconnected")
+
     with patch.object(inventory, "_file", side_effect=disconnect_root):
         result = await scan(inventory)
     assert result["status"] == "partial"
@@ -500,23 +532,30 @@ async def test_periodic_scan_recovers_without_watcher_events(inventory, config):
     # Use a short interval and initial wait in the service, leaving asyncio's
     # event-loop scheduling and database operations intact.
     real_sleep = asyncio.sleep
+
     async def short_sleep(seconds):
         await real_sleep(0.01)
+
     scans = []
     original_start = inventory.start
+
     async def observed_start(*args, **kwargs):
         job = await original_start(*args, **kwargs)
         scans.append(job["job_id"])
         return job
+
     async def missed_event(*args, **kwargs):
         # Consume/close the unused Event.wait coroutine, then simulate a timeout.
         args[0].close()
         await real_sleep(0.01)
         raise asyncio.TimeoutError
-    with patch.object(inventory, "_watch", new=AsyncMock()), \
-            patch.object(inventory, "start", side_effect=observed_start), \
-            patch("gns3server.services.image_reconciliation.asyncio.sleep", side_effect=short_sleep), \
-            patch("gns3server.services.image_reconciliation.asyncio.wait_for", side_effect=missed_event):
+
+    with (
+        patch.object(inventory, "_watch", new=AsyncMock()),
+        patch.object(inventory, "start", side_effect=observed_start),
+        patch("gns3server.services.image_reconciliation.asyncio.sleep", side_effect=short_sleep),
+        patch("gns3server.services.image_reconciliation.asyncio.wait_for", side_effect=missed_event),
+    ):
         inventory.start_background()
         for _ in range(500):
             if len(scans) >= 2:
@@ -529,10 +568,12 @@ async def test_periodic_scan_recovers_without_watcher_events(inventory, config):
 
 async def test_unchanged_collection_avoids_hashing_and_keeps_loop_responsive(inventory, config):
     import time
+
     for index in range(200):
         image_file(config, f"QEMU/bulk/{index}.qcow2", QCOW + b"x" * 65536)
     samples = []
     done = asyncio.Event()
+
     async def heartbeat():
         previous = time.monotonic()
         while not done.is_set():
@@ -540,6 +581,7 @@ async def test_unchanged_collection_avoids_hashing_and_keeps_loop_responsive(inv
             current = time.monotonic()
             samples.append(current - previous)
             previous = current
+
     pulse = asyncio.create_task(heartbeat())
     try:
         first = await scan(inventory)
@@ -560,6 +602,7 @@ async def test_startup_upgrades_unversioned_existing_catalog(inventory, config, 
     from alembic.config import Config
     from fastapi import FastAPI
     from gns3server.db.tasks import connect_to_db, disconnect_from_db
+
     image_file(config)
     await scan(inventory)
     original_id = (await rows(inventory))[0]["image_id"]
@@ -613,9 +656,12 @@ async def test_delete_preserves_replacement_created_while_waiting_for_lock(inven
         yield
 
     module = "gns3server.api.routes.controller.images" if operation == "delete" else "gns3server.db.repositories.images"
-    with patch(module + ".image_lock", concurrent_replacement), patch(
-        "gns3server.api.routes.controller.images.Controller.instance",
-        return_value=SimpleNamespace(find_projects_using_image=lambda filename: []),
+    with (
+        patch(module + ".image_lock", concurrent_replacement),
+        patch(
+            "gns3server.api.routes.controller.images.Controller.instance",
+            return_value=SimpleNamespace(find_projects_using_image=lambda filename: []),
+        ),
     ):
         async with AsyncSession(inventory.engine, expire_on_commit=False) as session:
             repository = ImagesRepository(session)

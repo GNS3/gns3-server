@@ -31,9 +31,11 @@ log = logging.getLogger(__name__)
 
 # ── Helper ─────────────────────────────────────────────────────────────────
 
+
 def _get_connector(gns3_ctx: dict[str, Any]):
     """Create a Gns3Connector from the GNS3 context dict."""
     from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+
     return Gns3Connector(
         url=gns3_ctx["server_url"],
         jwt_token=gns3_ctx["jwt_token"],
@@ -43,6 +45,7 @@ def _get_connector(gns3_ctx: dict[str, Any]):
 
 
 # ── Tool handlers ──────────────────────────────────────────────────────────
+
 
 def list_projects_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     conn = _get_connector(gns3_ctx)
@@ -141,7 +144,12 @@ def get_project_readme_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         return {"project_id": project_id, "file": "README.txt", "content": content}
     except Exception as e:
         if "404" in str(e):
-            return {"project_id": project_id, "file": "README.txt", "content": None, "message": "README.txt does not exist yet"}
+            return {
+                "project_id": project_id,
+                "file": "README.txt",
+                "content": None,
+                "message": "README.txt does not exist yet",
+            }
         raise
 
 
@@ -286,7 +294,10 @@ PROJECT_TOOLS = [
                 "show_grid": {"type": "boolean", "description": "Show the grid on the drawing area"},
                 "grid_size": {"type": "integer", "description": "Grid size for the drawing area for nodes"},
                 "drawing_grid_size": {"type": "integer", "description": "Grid size for the drawing area for drawings"},
-                "show_interface_labels": {"type": "boolean", "description": "Show interface labels on the drawing area"},
+                "show_interface_labels": {
+                    "type": "boolean",
+                    "description": "Show interface labels on the drawing area",
+                },
             },
             "required": ["project_id"],
         },

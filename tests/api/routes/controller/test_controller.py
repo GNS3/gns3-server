@@ -28,7 +28,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestControllerRoutes:
-
     async def test_shutdown_local(self, app: FastAPI, client: AsyncClient, config: Config, monkeypatch) -> None:
 
         # monkeypatch (not bare assignment): a global `os.kill = MagicMock()`
@@ -41,14 +40,12 @@ class TestControllerRoutes:
         response = await client.post(app.url_path_for("shutdown"))
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert kill_mock.called
-    
-    
+
     async def test_shutdown_non_local(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
-    
+
         response = await client.post(app.url_path_for("shutdown"))
         assert response.status_code == status.HTTP_403_FORBIDDEN
-    
-    
+
     # @pytest.mark.asyncio
     # async def test_debug(controller_api, config, tmpdir):
     #
@@ -68,9 +65,8 @@ class TestControllerRoutes:
     #     config.set("Server", "local", False)
     #     response = await controller_api.post('/debug')
     #     assert response.status_code == 403
-    
-    
+
     async def test_statistics_output(self, app: FastAPI, client: AsyncClient) -> None:
-    
+
         response = await client.get(app.url_path_for("statistics"))
         assert response.status_code == status.HTTP_200_OK

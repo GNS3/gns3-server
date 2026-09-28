@@ -49,74 +49,69 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestNodeRoutes:
-    
-
     @pytest.fixture
     def node(self, project: Project, compute: Compute) -> Node:
-    
+
         node = Node(project, compute, "test", node_type="vpcs")
         project._nodes[node.id] = node
         return node
-    
-    
+
     async def test_create_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
-    
+
         response = MagicMock()
         response.json = {"console": 2048}
         compute.post = AsyncioMagicMock(return_value=response)
-    
-        response = await client.post(app.url_path_for("create_node", project_id=project.id), json={
-            "name": "test",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "properties": {
-                    "startup_script": "echo test"
-            }
-        })
-    
+
+        response = await client.post(
+            app.url_path_for("create_node", project_id=project.id),
+            json={
+                "name": "test",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "properties": {"startup_script": "echo test"},
+            },
+        )
+
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "test"
         assert "name" not in response.json()["properties"]
-    
-    
+
     async def test_list_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
-    
+
         response = MagicMock()
         response.json = {"console": 2048}
         compute.post = AsyncioMagicMock(return_value=response)
-    
-        await client.post(app.url_path_for("create_node", project_id=project.id), json={
-            "name": "test",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "properties": {
-                    "startup_script": "echo test"
-            }
-        })
-    
+
+        await client.post(
+            app.url_path_for("create_node", project_id=project.id),
+            json={
+                "name": "test",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "properties": {"startup_script": "echo test"},
+            },
+        )
+
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()[0]["name"] == "test"
-    
+
         # test listing nodes from a closed project
         await project.close(ignore_notification=True)
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()[0]["name"] == "test"
+
     async def test_list_node_with_missing_image(
         self, app: FastAPI, client: AsyncClient, project: Project, node: Node
     ) -> None:
-        node._missing_images = [
-            {"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}
-        ]
+        node._missing_images = [{"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}]
 
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         data = response.json()[0]
         assert data["missing_image"] is True
-        assert data["missing_images"] == [
-            {"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}
-        ]
+        assert data["missing_images"] == [{"property": "path", "image": "i86bi-linux-l2.bin", "image_type": "iou"}]
 
     @pytest.mark.parametrize(
         "tags, expected_match",
@@ -129,37 +124,33 @@ class TestNodeRoutes:
         ),
     )
     async def test_list_nodes_with_tags(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            tags: list,
-            expected_match: bool
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, tags: list, expected_match: bool
     ) -> None:
         response = MagicMock()
         response.json = {"console": 2048}
         compute.post = AsyncioMagicMock(return_value=response)
 
-        await client.post(app.url_path_for("create_node", project_id=project.id), json={
-            "name": "test",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "tags": ["tag1", "tag2"],
-            "properties": {
-                "startup_script": "echo test"
-            }
-        })
+        await client.post(
+            app.url_path_for("create_node", project_id=project.id),
+            json={
+                "name": "test",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "tags": ["tag1", "tag2"],
+                "properties": {"startup_script": "echo test"},
+            },
+        )
 
-        await client.post(app.url_path_for("create_node", project_id=project.id), json={
-            "name": "test2",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "tags": ["tag3", "tag4"],
-            "properties": {
-                "startup_script": "echo test"
-            }
-        })
+        await client.post(
+            app.url_path_for("create_node", project_id=project.id),
+            json={
+                "name": "test2",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "tags": ["tag3", "tag4"],
+                "properties": {"startup_script": "echo test"},
+            },
+        )
 
         params = {"tags": tags}
         response = await client.get(app.url_path_for("get_nodes", project_id=project.id), params=params)
@@ -169,161 +160,106 @@ class TestNodeRoutes:
         else:
             assert len(response.json()) == 0
 
-    
-    async def test_get_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
-    ) -> None:
-    
+    async def test_get_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
+
         response = MagicMock()
         response.json = {"console": 2048}
         compute.post = AsyncioMagicMock(return_value=response)
-    
-        response = await client.post(app.url_path_for("create_node", project_id=project.id), json={
-            "name": "test",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "properties": {
-                    "startup_script": "echo test"
-            }
-        })
-    
-        response = await client.get(app.url_path_for("get_node", project_id=project.id, node_id=response.json()["node_id"]))
+
+        response = await client.post(
+            app.url_path_for("create_node", project_id=project.id),
+            json={
+                "name": "test",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "properties": {"startup_script": "echo test"},
+            },
+        )
+
+        response = await client.get(
+            app.url_path_for("get_node", project_id=project.id, node_id=response.json()["node_id"])
+        )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "test"
-    
-    
+
     async def test_update_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         response.json = {"console": 2048}
         compute.put = AsyncioMagicMock(return_value=response)
-    
-        response = await client.put(app.url_path_for("update_node", project_id=project.id, node_id=node.id), json={
-            "name": "test",
-            "node_type": "vpcs",
-            "compute_id": "example.com",
-            "tags": ["tag1", "tag2"],
-            "properties": {
-                    "startup_script": "echo test"
-            }
-        })
-    
+
+        response = await client.put(
+            app.url_path_for("update_node", project_id=project.id, node_id=node.id),
+            json={
+                "name": "test",
+                "node_type": "vpcs",
+                "compute_id": "example.com",
+                "tags": ["tag1", "tag2"],
+                "properties": {"startup_script": "echo test"},
+            },
+        )
+
         assert response.status_code == 200
         assert response.json()["name"] == "test"
         assert "name" not in response.json()["properties"]
         assert response.json()["tags"] == ["tag1", "tag2"]
 
+    async def test_start_all_nodes(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
-    async def test_start_all_nodes(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
-    ) -> None:
-    
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("start_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
-    async def test_stop_all_nodes(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
-    ) -> None:
-    
+
+    async def test_stop_all_nodes(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("stop_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_suspend_all_nodes(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("suspend_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_reload_all_nodes(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("reload_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_reset_console_all_nodes(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("reset_console_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_start_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_stop_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
+
     async def test_suspend_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
         compute.post = AsyncioMagicMock()
@@ -331,12 +267,7 @@ class TestNodeRoutes:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_suspend_node_unsupported(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
         # node types without suspend support (e.g. VPCS, IOU) must surface the
@@ -348,12 +279,7 @@ class TestNodeRoutes:
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     async def test_suspend_all_nodes_tolerates_unsupported(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
         # suspending all nodes of a mixed project stays best-effort: nodes
@@ -363,259 +289,162 @@ class TestNodeRoutes:
         )
         response = await client.post(app.url_path_for("suspend_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
-    async def test_reload_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
-    ):
-    
+
+    async def test_reload_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node):
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("reload_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_isolate_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ):
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("isolate_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_unisolate_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("unisolate_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_duplicate_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         response.json({"console": 2035})
         compute.post = AsyncioMagicMock(return_value=response)
-    
-        response = await client.post(app.url_path_for("duplicate_node", project_id=project.id, node_id=node.id),
-                                     json={"x": 10, "y": 5, "z": 0})
+
+        response = await client.post(
+            app.url_path_for("duplicate_node", project_id=project.id, node_id=node.id), json={"x": 10, "y": 5, "z": 0}
+        )
         assert response.status_code == status.HTTP_201_CREATED
-    
-    
+
     async def test_delete_node(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         compute.post = AsyncioMagicMock()
         response = await client.delete(app.url_path_for("delete_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_dynamips_idle_pc(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         response.json = {"idlepc": "0x60606f54"}
         compute.get = AsyncioMagicMock(return_value=response)
-    
+
         node._node_type = "dynamips"  # force Dynamips node type
         response = await client.get(app.url_path_for("auto_idlepc", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["idlepc"] == "0x60606f54"
-    
-    
+
     async def test_dynamips_idle_pc_wrong_node_type(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = await client.get(app.url_path_for("auto_idlepc", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    
+
     async def test_dynamips_idlepc_proposals(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         response.json = ["0x60606f54", "0x33805a22"]
         compute.get = AsyncioMagicMock(return_value=response)
-    
+
         node._node_type = "dynamips"  # force Dynamips node type
         response = await client.get(app.url_path_for("idlepc_proposals", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == ["0x60606f54", "0x33805a22"]
-    
-    
+
     async def test_dynamips_idlepc_proposals_wrong_node_type(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = await client.get(app.url_path_for("idlepc_proposals", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    
+
     async def test_qemu_disk_image_create(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         compute.post = AsyncioMagicMock(return_value=response)
-    
+
         node._node_type = "qemu"  # force Qemu node type
         response = await client.post(
             app.url_path_for("create_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
-            json={"format": "qcow2", "size": 30}
+            json={"format": "qcow2", "size": 30},
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_qemu_disk_image_create_wrong_node_type(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = await client.post(
             app.url_path_for("create_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
-            json={"format": "qcow2", "size": 30}
+            json={"format": "qcow2", "size": 30},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    
+
     async def test_qemu_disk_image_update(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         compute.put = AsyncioMagicMock(return_value=response)
-    
+
         node._node_type = "qemu"  # force Qemu node type
         response = await client.put(
             app.url_path_for("update_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
-            json={"extend": 10}
+            json={"extend": 10},
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_qemu_disk_image_update_wrong_node_type(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = await client.put(
             app.url_path_for("update_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
-            json={"extend": 10}
+            json={"extend": 10},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    
+
     async def test_qemu_disk_image_delete(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = MagicMock()
         compute.delete = AsyncioMagicMock(return_value=response)
-    
+
         node._node_type = "qemu"  # force Qemu node type
         response = await client.delete(
             app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    
+
     async def test_qemu_disk_image_delete_wrong_node_type(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         response = await client.delete(
             app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    
+
     async def test_get_file(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
         # Mock the streaming response
@@ -632,56 +461,52 @@ class TestNodeRoutes:
 
         compute.http_query = AsyncioMagicMock(return_value=mock_response)
 
-        response = await client.get(app.url_path_for("get_file", project_id=project.id, node_id=node.id, file_path="hello"))
+        response = await client.get(
+            app.url_path_for("get_file", project_id=project.id, node_id=node.id, file_path="hello")
+        )
         assert response.status_code == status.HTTP_200_OK
-        assert response.content == b'world'
+        assert response.content == b"world"
 
         compute.http_query.assert_called_with(
             "GET",
             "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
-                project_id=project.id,
-                node_id=node.id),
+                project_id=project.id, node_id=node.id
+            ),
             timeout=None,
-            stream=True)
+            stream=True,
+        )
 
-        response = await client.get(app.url_path_for(
-            "get_file",
-            project_id=project.id,
-            node_id=node.id,
-            file_path="../hello"))
+        response = await client.get(
+            app.url_path_for("get_file", project_id=project.id, node_id=node.id, file_path="../hello")
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
-    
-    
+
     async def test_post_file(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
-    
+
         compute.http_query = AsyncioMagicMock()
-        response = await client.post(app.url_path_for(
-            "post_file",
-            project_id=project.id,
-            node_id=node.id,
-            file_path="hello"), content=b"hello")
+        response = await client.post(
+            app.url_path_for("post_file", project_id=project.id, node_id=node.id, file_path="hello"), content=b"hello"
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
         # Verify http_query was called with stream parameter
         compute.http_query.assert_called_once()
         call_args = compute.http_query.call_args
         assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(project_id=project.id, node_id=node.id)
+        assert call_args[0][1] == "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
+            project_id=project.id, node_id=node.id
+        )
         assert call_args[1]["timeout"] is None
         # data should be an async generator from request.stream()
         assert hasattr(call_args[1]["data"], "__aiter__")
-    
-        response = await client.get("/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id))
+
+        response = await client.get(
+            "/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id)
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
-    
-    
+
     # @pytest.mark.asyncio
     # async def test_get_and_post_with_nested_paths_normalization(controller_api, project, node, compute):
     #
@@ -699,8 +524,6 @@ class TestNodeRoutes:
     #     assert response.status_code == 201
     #
     #     compute.http_query.assert_called_with("POST", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello/nested".format(project_id=project.id, node_id=node.id), data=b'hello', timeout=None, raw=True)
-
-
 
 
 class FakeComputeConsoleWebSocket:
@@ -823,21 +646,21 @@ class TestNodeConsoleWebSocketRoutes:
         monkeypatch.setattr(
             HTTPClient,
             "get_client",
-            classmethod(lambda cls: SimpleNamespace(ws_connect=lambda *args, **kwargs: compute_ws))
+            classmethod(lambda cls: SimpleNamespace(ws_connect=lambda *args, **kwargs: compute_ws)),
         )
         return compute_ws
 
     async def test_console_forwards_compute_output_to_client(
-            self,
-            compute_credentials,
-            node: Node,
-            monkeypatch
+        self, compute_credentials, node: Node, monkeypatch
     ) -> None:
 
-        compute_ws = self._forward_compute_ws(monkeypatch, [
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None),
-            aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x00\x01", None),
-        ])
+        compute_ws = self._forward_compute_ws(
+            monkeypatch,
+            [
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None),
+                aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x00\x01", None),
+            ],
+        )
         websocket = FakeClientWebSocket()
 
         await ws_console(websocket, current_user=MagicMock(), node=node)
@@ -846,19 +669,18 @@ class TestNodeConsoleWebSocketRoutes:
         assert compute_ws.closed
 
     async def test_console_client_disconnect_mid_stream(
-            self,
-            compute_credentials,
-            node: Node,
-            monkeypatch,
-            caplog
+        self, compute_credentials, node: Node, monkeypatch, caplog
     ) -> None:
         # regression test: the client disconnects while the compute is still
         # streaming console output, send must not leak WebSocketDisconnect
-        compute_ws = self._forward_compute_ws(monkeypatch, [
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 1", None),
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 2", None),
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 3", None),
-        ])
+        compute_ws = self._forward_compute_ws(
+            monkeypatch,
+            [
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 1", None),
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 2", None),
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "line 3", None),
+            ],
+        )
         websocket = FakeClientWebSocket(fail_after=1)
 
         with caplog.at_level(logging.INFO):
@@ -868,17 +690,15 @@ class TestNodeConsoleWebSocketRoutes:
         assert compute_ws.closed
         assert any("has disconnected from controller console WebSocket" in record.message for record in caplog.records)
 
-    async def test_vnc_console_client_disconnect_mid_stream(
-            self,
-            compute_credentials,
-            node: Node,
-            monkeypatch
-    ) -> None:
+    async def test_vnc_console_client_disconnect_mid_stream(self, compute_credentials, node: Node, monkeypatch) -> None:
         # regression test: same as above for the VNC console forwarding loop
-        compute_ws = self._forward_compute_ws(monkeypatch, [
-            aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x01\x02", None),
-            aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x03\x04", None),
-        ])
+        compute_ws = self._forward_compute_ws(
+            monkeypatch,
+            [
+                aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x01\x02", None),
+                aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"\x03\x04", None),
+            ],
+        )
         websocket = FakeClientWebSocket(fail_after=0)
 
         await vnc_console(websocket, current_user=MagicMock(), node=node)
@@ -978,10 +798,9 @@ class TestConsoleWebSocketRoutes:
         stack = contextlib.ExitStack()
         http_client = MagicMock()
         http_client.ws_connect = MagicMock(return_value=_FakeComputeWebSocketContext(fake_ws))
-        stack.enter_context(patch(
-            "gns3server.api.routes.controller.nodes.HTTPClient.get_client",
-            return_value=http_client
-        ))
+        stack.enter_context(
+            patch("gns3server.api.routes.controller.nodes.HTTPClient.get_client", return_value=http_client)
+        )
         stack.enter_context(patch.object(ASGIWebSocketAsyncNetworkStream, "send", _conforming_stream_send))
         return stack
 
@@ -1000,13 +819,7 @@ class TestConsoleWebSocketRoutes:
             await asyncio.sleep(0.05)
 
     async def test_console_ws_client_disconnect(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node,
-            caplog
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node, caplog
     ) -> None:
         """
         A client disconnecting while the compute keeps streaming console output
@@ -1033,27 +846,23 @@ class TestConsoleWebSocketRoutes:
         assert fake_ws.stream_cancelled, "the compute -> client forwarding task should have been cancelled"
         assert fake_ws.closed, "the compute console WebSocket should have been closed"
         assert any(
-            "has disconnected from controller console WebSocket" in record.getMessage()
-            for record in caplog.records
+            "has disconnected from controller console WebSocket" in record.getMessage() for record in caplog.records
         )
 
     async def test_console_ws_compute_closes_session(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
         """
         When the compute closes the console WebSocket the client should receive
         the frames sent before the close, then the close itself.
         """
 
-        fake_ws = _FakeComputeWebSocket(messages=[
-            aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"output", ""),
-            aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "done", ""),
-        ])
+        fake_ws = _FakeComputeWebSocket(
+            messages=[
+                aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, b"output", ""),
+                aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "done", ""),
+            ]
+        )
         with self._patches(fake_ws):
             async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as ws_client:
                 async with aconnect_ws(
@@ -1069,13 +878,7 @@ class TestConsoleWebSocketRoutes:
         assert fake_ws.closed
 
     async def test_vnc_console_ws_client_disconnect(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            project: Project,
-            compute: Compute,
-            node: Node,
-            caplog
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node, caplog
     ) -> None:
         """
         Same as the console test, for the VNC endpoint (binary frames only).
@@ -1097,6 +900,5 @@ class TestConsoleWebSocketRoutes:
         assert fake_ws.stream_cancelled, "the compute -> client forwarding task should have been cancelled"
         assert fake_ws.closed, "the compute VNC console WebSocket should have been closed"
         assert any(
-            "has disconnected from controller VNC console WebSocket" in record.getMessage()
-            for record in caplog.records
+            "has disconnected from controller VNC console WebSocket" in record.getMessage() for record in caplog.records
         )

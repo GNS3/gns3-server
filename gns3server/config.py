@@ -48,6 +48,10 @@ class ConfigConflictError(Exception):
 LIST_OPTION_SEPARATORS = {"additional_images_paths": ";"}
 
 
+def parser_sections(parser: configparser.ConfigParser) -> dict[str, dict[str, str]]:
+    return {section: dict(parser[section]) for section in parser.sections()}
+
+
 class Config:
     """
     Configuration file management using configparser.
@@ -110,20 +114,30 @@ class Config:
             self._files = []
 
         if self._main_config_file is None:
-
             if not os.path.exists(versioned_user_dir):
                 # Try to migrate the configuration files and database from the previous version if it exists
                 previous_version = f"{__version_info__[0]}.{int(__version_info__[1]) - 1}"
                 if self._profile:
-                    previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version, "profiles", self._profile)
+                    previous_versioned_user_dir = os.path.join(
+                        home, ".config", appname, previous_version, "profiles", self._profile
+                    )
                 else:
                     previous_versioned_user_dir = os.path.join(home, ".config", appname, previous_version)
                 if os.path.exists(previous_versioned_user_dir):
                     try:
-                        shutil.copytree(previous_versioned_user_dir, versioned_user_dir, symlinks=True, ignore_dangling_symlinks=True)
-                        log.info(f"Migrated configuration files and database from '{previous_versioned_user_dir}' to '{versioned_user_dir}'")
+                        shutil.copytree(
+                            previous_versioned_user_dir,
+                            versioned_user_dir,
+                            symlinks=True,
+                            ignore_dangling_symlinks=True,
+                        )
+                        log.info(
+                            f"Migrated configuration files and database from '{previous_versioned_user_dir}' to '{versioned_user_dir}'"
+                        )
                     except OSError as e:
-                        log.error(f"Cannot migrate old config files and database from '{previous_versioned_user_dir}: {e}")
+                        log.error(
+                            f"Cannot migrate old config files and database from '{previous_versioned_user_dir}: {e}"
+                        )
 
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:
@@ -318,7 +332,7 @@ class Config:
                 changed.append(f"{section}.{option}")
 
         # validate the merged settings before touching the file on disk
-        ServerConfig(**merged_parser._sections)
+        ServerConfig(**parser_sections(merged_parser))
 
         directory_name = os.path.dirname(main_config_file)
         if directory_name:
@@ -404,7 +418,7 @@ class Config:
             self._watched_files[file] = os.stat(file).st_mtime
 
         try:
-            self._settings = ServerConfig(**config._sections)
+            self._settings = ServerConfig(**parser_sections(config))
         except ValidationError as e:
             log.critical(f"Could not validate configuration file settings: {e}")
             raise

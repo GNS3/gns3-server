@@ -45,7 +45,6 @@ log = logging.getLogger(__name__)
 
 
 class VirtualBoxVM(BaseNode):
-
     """
     VirtualBox VM implementation.
     """
@@ -242,23 +241,23 @@ class VirtualBoxVM(BaseNode):
         try:
             tree = ET.parse(linked_vbox_file)
         except ET.ParseError:
-            raise VirtualBoxError(f"Cannot modify VirtualBox linked node file. "
-                                  "File {linked_vbox_file} is corrupted.")
+            raise VirtualBoxError(f"Cannot modify VirtualBox linked node file. File {{linked_vbox_file}} is corrupted.")
         except OSError as e:
             raise VirtualBoxError(f"Cannot modify VirtualBox linked nodes file '{self._linked_vbox_file()}': {e}")
 
         machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
         if machine is not None and machine.get("uuid") != "{" + self.id + "}":
-
             for image in tree.getroot().findall("{http://www.virtualbox.org/}Image"):
                 currentSnapshot = machine.get("currentSnapshot")
                 if currentSnapshot:
                     newSnapshot = re.sub(r"\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
                 shutil.move(
                     os.path.join(self.working_dir, self._vmname, "Snapshots", currentSnapshot) + ".vdi",
-                    os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi"
+                    os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi",
                 )
-                log.info(f"VirtualBox VM '{self.name}' [{self.id}] snapshot file moved from '{currentSnapshot}' to '{newSnapshot}'")
+                log.info(
+                    f"VirtualBox VM '{self.name}' [{self.id}] snapshot file moved from '{currentSnapshot}' to '{newSnapshot}'"
+                )
                 image.set("uuid", newSnapshot)
 
             log.info(f"VirtualBox VM '{self.name}' [{self.id}] '{linked_vbox_file}' has been patched")
@@ -346,7 +345,6 @@ class VirtualBoxVM(BaseNode):
         vm_state = await self._get_vm_state()
         log.info(f"Stopping VirtualBox VM '{self.name}' [{self.id}] (current state is {vm_state})")
         if vm_state in ("running", "paused"):
-
             if self.on_close == "save_vm_state":
                 # add a guest property to know the VM has been saved
                 await self.manager.execute("guestproperty", ["set", self._uuid, "SavedByGNS3", "yes"])

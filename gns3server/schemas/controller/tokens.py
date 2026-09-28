@@ -19,14 +19,12 @@ from pydantic import BaseModel
 
 
 class Token(BaseModel):
-
     access_token: str
     token_type: str
     refresh_token: Optional[str] = None
 
 
 class TokenData(BaseModel):
-
     username: Optional[str] = None
     token_version: int = 0
     token_use: str = "access"

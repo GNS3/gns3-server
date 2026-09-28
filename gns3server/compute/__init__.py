@@ -34,5 +34,6 @@ if (
     # IOU & Docker only runs on Linux but test suite works on UNIX platform
     from .docker import Docker
     from .iou import IOU
+
     MODULES.append(Docker)
     MODULES.append(IOU)

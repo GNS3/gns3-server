@@ -25,12 +25,11 @@ image_template_map = Table(
     "image_template_map",
     Base.metadata,
     Column("image_id", Integer, ForeignKey("images.image_id", ondelete="CASCADE")),
-    Column("template_id", GUID, ForeignKey("templates.template_id", ondelete="CASCADE"))
+    Column("template_id", GUID, ForeignKey("templates.template_id", ondelete="CASCADE")),
 )
 
 
 class Image(BaseTable):
-
     __tablename__ = "images"
 
     image_id = Column(Integer, primary_key=True, autoincrement=True)

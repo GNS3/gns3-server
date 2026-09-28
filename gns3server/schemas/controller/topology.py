@@ -33,12 +33,10 @@ from uuid import UUID
 
 
 class TopologyType(str, Enum):
-
     topology = "topology"
 
 
 class TopologyContent(BaseModel):
-
     computes: List[Compute] = Field(..., description="List of computes")
     drawings: List[Drawing] = Field(..., description="List of drawings")
     links: List[Link] = Field(..., description="List of links")
@@ -46,7 +44,6 @@ class TopologyContent(BaseModel):
 
 
 class Topology(BaseModel):
-
     project_id: UUID = Field(..., description="Project UUID")
     type: TopologyType = Field(..., description="Type of file. It's always topology")
     revision: int = Field(..., description="Version of the .gns3 specification")

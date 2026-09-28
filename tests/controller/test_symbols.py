@@ -29,16 +29,16 @@ def test_list(symbols_dir):
 
     symbols = Symbols()
     assert {
-        'symbol_id': ':/symbols/classic/firewall.svg',
-        'filename': 'firewall.svg',
-        'builtin': True,
-        'theme': 'Classic'
+        "symbol_id": ":/symbols/classic/firewall.svg",
+        "filename": "firewall.svg",
+        "builtin": True,
+        "theme": "Classic",
     } in symbols.list()
     assert {
-        'symbol_id': 'linux.svg',
-        'filename': 'linux.svg',
-        'builtin': False,
-        'theme': 'Custom symbols'
+        "symbol_id": "linux.svg",
+        "filename": "linux.svg",
+        "builtin": False,
+        "theme": "Custom symbols",
     } in symbols.list()
 
 
@@ -46,7 +46,7 @@ def test_get_path():
 
     symbols = Symbols()
     symbols.theme = "Classic"
-    assert symbols.get_path(':/symbols/classic/firewall.svg') == get_resource("symbols/classic/firewall.svg")
+    assert symbols.get_path(":/symbols/classic/firewall.svg") == get_resource("symbols/classic/firewall.svg")
 
 
 def test_get_path_with_themed_symbols():
@@ -62,4 +62,4 @@ def test_get_size():
 
     symbols = Symbols()
     symbols.theme = "Classic"
-    assert symbols.get_size(':/symbols/classic/firewall.svg') == (66, 45, 'svg')
+    assert symbols.get_size(":/symbols/classic/firewall.svg") == (66, 45, "svg")

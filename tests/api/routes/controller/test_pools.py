@@ -32,7 +32,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestPoolRoutes:
-
     async def test_resource_pool(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_group = {"name": "pool1"}
@@ -60,28 +59,23 @@ class TestPoolRoutes:
 
         update_pool = {"name": "pool42"}
         response = await client.put(
-            app.url_path_for("update_resource_pool", resource_pool_id=pool_in_db.resource_pool_id),
-            json=update_pool
+            app.url_path_for("update_resource_pool", resource_pool_id=pool_in_db.resource_pool_id), json=update_pool
         )
         assert response.status_code == status.HTTP_200_OK
         updated_pool_in_db = await pools_repo.get_resource_pool(pool_in_db.resource_pool_id)
         assert updated_pool_in_db.name == "pool42"
 
-    async def test_resource_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_resource_group(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         pools_repo = ResourcePoolsRepository(db_session)
         pool_in_db = await pools_repo.get_resource_pool_by_name("pool42")
-        response = await client.delete(app.url_path_for("delete_resource_pool", resource_pool_id=pool_in_db.resource_pool_id))
+        response = await client.delete(
+            app.url_path_for("delete_resource_pool", resource_pool_id=pool_in_db.resource_pool_id)
+        )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 class TestResourcesPoolRoutes:
-
     @pytest_asyncio.fixture
     async def project(self, app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
         project_id = str(uuid.uuid4())
@@ -90,11 +84,7 @@ class TestResourcesPoolRoutes:
         return controller.get_project(project_id)
 
     async def test_add_resource_to_pool(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            project: Project
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project
     ) -> None:
 
         pools_repo = ResourcePoolsRepository(db_session)
@@ -104,9 +94,7 @@ class TestResourcesPoolRoutes:
         pool_in_db = await pools_repo.create_resource_pool(new_resource_pool)
         response = await client.put(
             app.url_path_for(
-                "add_resource_to_pool",
-                resource_pool_id=pool_in_db.resource_pool_id,
-                resource_id=str(project.id)
+                "add_resource_to_pool", resource_pool_id=pool_in_db.resource_pool_id, resource_id=str(project.id)
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -115,11 +103,7 @@ class TestResourcesPoolRoutes:
         assert str(resources[0].resource_id) == project.id
 
     async def test_add_to_resource_already_in_resource_pool(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            project: Project
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project
     ) -> None:
 
         pools_repo = ResourcePoolsRepository(db_session)
@@ -132,34 +116,23 @@ class TestResourcesPoolRoutes:
             app.url_path_for(
                 "add_resource_to_pool",
                 resource_pool_id=pool_in_db.resource_pool_id,
-                resource_id=str(resource.resource_id)
+                resource_id=str(resource.resource_id),
             )
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_get_pool_resources(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
+    async def test_get_pool_resources(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         pools_repo = ResourcePoolsRepository(db_session)
         pool_in_db = await pools_repo.get_resource_pool_by_name("pool1")
         response = await client.get(
-            app.url_path_for(
-                "get_pool_resources",
-                resource_pool_id=pool_in_db.resource_pool_id)
+            app.url_path_for("get_pool_resources", resource_pool_id=pool_in_db.resource_pool_id)
         )
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 2
 
     async def test_remove_resource_from_pool(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession,
-            project: Project
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project
     ) -> None:
 
         pools_repo = ResourcePoolsRepository(db_session)
@@ -173,9 +146,7 @@ class TestResourcesPoolRoutes:
 
         response = await client.delete(
             app.url_path_for(
-                "remove_resource_from_pool",
-                resource_pool_id=pool_in_db.resource_pool_id,
-                resource_id=str(project.id)
+                "remove_resource_from_pool", resource_pool_id=pool_in_db.resource_pool_id, resource_id=str(project.id)
             ),
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT

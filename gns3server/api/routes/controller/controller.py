@@ -68,11 +68,7 @@ def get_version(request: Request) -> dict:
             controller_host = route.app.state.controller_host
 
     local_server = Config.instance().settings.Server.local
-    return {
-        "controller_host": controller_host,
-        "version": __version__,
-        "local": local_server
-    }
+    return {"controller_host": controller_host, "version": __version__, "local": local_server}
 
 
 @router.post(
@@ -140,11 +136,7 @@ async def shutdown() -> None:
     os.kill(os.getpid(), signal.SIGTERM)
 
 
-@router.get(
-    "/iou_license",
-    dependencies=[Depends(get_current_active_user)],
-    response_model=schemas.IOULicense
-)
+@router.get("/iou_license", dependencies=[Depends(get_current_active_user)], response_model=schemas.IOULicense)
 def get_iou_license() -> schemas.IOULicense:
     """
     Return the IOU license settings
@@ -157,7 +149,7 @@ def get_iou_license() -> schemas.IOULicense:
     "/iou_license",
     dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.IOULicense
+    response_model=schemas.IOULicense,
 )
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
     """
@@ -271,8 +263,10 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
     """
 
     from gns3server.api.server import app
-    log.info(f"New client {request.client.host}:{request.client.port} has connected to controller HTTP "
-             f"notification stream")
+
+    log.info(
+        f"New client {request.client.host}:{request.client.port} has connected to controller HTTP notification stream"
+    )
 
     async def event_stream():
         try:
@@ -281,15 +275,17 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
                     msg = await queue.get_json(5)
                     yield f"{msg}\n".encode("utf-8")
         finally:
-            log.info(f"Client {request.client.host}:{request.client.port} has disconnected from controller HTTP "
-                     f"notification stream")
+            log.info(
+                f"Client {request.client.host}:{request.client.port} has disconnected from controller HTTP "
+                f"notification stream"
+            )
+
     return StreamingResponse(event_stream(), media_type="application/json")
 
 
 @router.websocket("/notifications/ws")
 async def controller_ws_notifications(
-        websocket: WebSocket,
-        current_user: schemas.User = Depends(get_current_active_user_from_websocket)
+    websocket: WebSocket, current_user: schemas.User = Depends(get_current_active_user_from_websocket)
 ) -> None:
     """
     Receive project notifications about the controller from WebSocket.

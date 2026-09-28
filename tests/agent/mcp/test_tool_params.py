@@ -8,6 +8,7 @@ This catches issues like:
   - A tool parameter is defined but never passed to the handler
   - A handler reads a param that was never defined or passed
 """
+
 import ast
 import os
 import sys
@@ -112,7 +113,7 @@ def _get_handler_params(handler_name):
     filename = HANDLER_FILES.get(handler_name)
     if not filename:
         return None
-    filepath = (MCP_DIR if not filename.startswith('gns3server/') else REPO_ROOT) / filename
+    filepath = (MCP_DIR if not filename.startswith("gns3server/") else REPO_ROOT) / filename
     if not filepath.exists():
         return None
 
@@ -128,10 +129,13 @@ def _get_handler_params(handler_name):
         # request body from all params) accepts any key — return a wildcard and
         # let the caller skip static consistency checks for it.
         for sub in ast.walk(node):
-            if (isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute)
-                    and sub.func.attr == "items"
-                    and isinstance(sub.func.value, ast.Name)
-                    and sub.func.value.id in ("params", "params_data")):
+            if (
+                isinstance(sub, ast.Call)
+                and isinstance(sub.func, ast.Attribute)
+                and sub.func.attr == "items"
+                and isinstance(sub.func.value, ast.Name)
+                and sub.func.value.id in ("params", "params_data")
+            ):
                 return {"*"}
         # Found the handler function, search for params.get("xxx")
         for sub in ast.walk(node):
@@ -141,8 +145,10 @@ def _get_handler_params(handler_name):
                 continue
             # params.get("xxx") or params_data.get("xxx")
             func_obj = sub.func
-            if (hasattr(func_obj.value, "id") and func_obj.value.id in ("params", "params_data", "link_data", "node_data")) or \
-               (hasattr(func_obj.value, "attr") and func_obj.value.attr == "get"):
+            if (
+                hasattr(func_obj.value, "id")
+                and func_obj.value.id in ("params", "params_data", "link_data", "node_data")
+            ) or (hasattr(func_obj.value, "attr") and func_obj.value.attr == "get"):
                 if sub.args and isinstance(sub.args[0], ast.Constant) and isinstance(sub.args[0].value, str):
                     params.add(sub.args[0].value)
     return params
@@ -180,8 +186,15 @@ def _initial_params_keys(fn_node):
     """
     for stmt in ast.walk(fn_node):
         if isinstance(stmt, ast.Assign):
-            if (len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Name)
-                    and stmt.targets[0].id == "params" and isinstance(stmt.value, ast.Dict)):
+            if (
+                len(stmt.targets) == 1
+                and isinstance(stmt.targets[0], ast.Name)
+                and stmt.targets[0].id == "params"
+                and isinstance(stmt.value, ast.Dict)
+            ):
+                return _dict_literal_keys(stmt.value)
+        if isinstance(stmt, ast.AnnAssign):
+            if isinstance(stmt.target, ast.Name) and stmt.target.id == "params" and isinstance(stmt.value, ast.Dict):
                 return _dict_literal_keys(stmt.value)
     return None
 
@@ -196,8 +209,13 @@ def _dispatch_args(node):
     """
     if isinstance(node.func, ast.Name) and node.func.id == "_run_handler_sync":
         args = node.args
-    elif (isinstance(node.func, ast.Attribute) and node.func.attr == "to_thread"
-            and node.args and isinstance(node.args[0], ast.Name) and node.args[0].id == "_run_handler_sync"):
+    elif (
+        isinstance(node.func, ast.Attribute)
+        and node.func.attr == "to_thread"
+        and node.args
+        and isinstance(node.args[0], ast.Name)
+        and node.args[0].id == "_run_handler_sync"
+    ):
         args = node.args[1:]
     else:
         return None, None
@@ -238,8 +256,14 @@ def test_tool_handler_param_consistency():
             exact = True
         elif isinstance(second_arg, ast.Name) and second_arg.id == "params":
             # Tool builds 'params' as a variable — resolve its initial dict literal.
-            fn = next((n for n in ast.walk(tree)
-                       if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == tool_name), None)
+            fn = next(
+                (
+                    n
+                    for n in ast.walk(tree)
+                    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == tool_name
+                ),
+                None,
+            )
             passed_keys = _initial_params_keys(fn) if fn is not None else None
         else:
             passed_keys = None
@@ -259,9 +283,7 @@ def test_tool_handler_param_consistency():
 
         # Check: every passed key is read by the handler
         extra_passed = passed_keys - handler_params
-        assert not extra_passed, (
-            f"[{tool_name}] Params passed to handler '{handler_name}' but not read: {extra_passed}"
-        )
+        assert not extra_passed, f"[{tool_name}] Params passed to handler '{handler_name}' but not read: {extra_passed}"
 
         if not group["exact"]:
             # The initial literal underestimates what the tool passes (keys may be
@@ -271,11 +293,21 @@ def test_tool_handler_param_consistency():
         # Check: every handler param is passed (except common/optional ones)
         missing = handler_params - passed_keys
         # Filter out well-known optional params that handlers check
-        known_optional = {"fields", "template", "name", "version", "compute_id",
-                         "x", "y", "link_type", "filters", "suspend", "link_style",
-                         "show_filters_icon", "label"}
+        known_optional = {
+            "fields",
+            "template",
+            "name",
+            "version",
+            "compute_id",
+            "x",
+            "y",
+            "link_type",
+            "filters",
+            "suspend",
+            "link_style",
+            "show_filters_icon",
+            "label",
+        }
         truly_missing = missing - known_optional
         if truly_missing:
-            pytest.fail(
-                f"[{tool_name}] Handler '{handler_name}' reads params not passed: {truly_missing}"
-            )
+            pytest.fail(f"[{tool_name}] Handler '{handler_name}' reads params not passed: {truly_missing}")

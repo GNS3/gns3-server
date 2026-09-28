@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class NIOUNIX(NIO):
-
     """
     Dynamips UNIX NIO.
 
@@ -81,8 +80,4 @@ class NIOUNIX(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_unix",
-            "local_file": self._local_file,
-            "remote_file": self._remote_file
-        }
+        return {"type": "nio_unix", "local_file": self._local_file, "remote_file": self._remote_file}

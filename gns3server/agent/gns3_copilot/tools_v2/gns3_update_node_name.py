@@ -125,9 +125,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
                     return {"error": f"Node {i + 1} must be a dictionary."}
                 if "node_id" not in node_data or "new_name" not in node_data:
                     logger.error("Node %d missing node_id or new_name.", i + 1)
-                    return {
-                        "error": f"Node {i + 1} missing node_id or new_name."
-                    }
+                    return {"error": f"Node {i + 1} missing node_id or new_name."}
 
             # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
@@ -135,10 +133,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Fetch current node names in one call (old names + existence)
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -208,9 +203,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
                             "error": "Name verification failed",
                         }
                         results.append(error_info)
-                        logger.error(
-                            "Failed to update node name for %s", node_id
-                        )
+                        logger.error("Failed to update node name for %s", node_id)
 
                 except Exception as e:
                     error_info = {
@@ -223,9 +216,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
                     logger.error("Failed to update node %d: %s", i + 1, e)
 
             # Analyze results
-            successful_nodes = [
-                r for r in results if r.get("status") == "success"
-            ]
+            successful_nodes = [r for r in results if r.get("status") == "success"]
             failed_nodes = [r for r in results if r.get("status") == "failed"]
 
             # Construct final response

@@ -83,7 +83,7 @@ class DockerHTTPClient:
                 self._connected = True
 
                 # Parse API version
-                api_version = parse_version(docker_info['ApiVersion'])
+                api_version = parse_version(docker_info["ApiVersion"])
                 docker_version = docker_info["Version"]
 
                 logger.info(f"Connected to Docker {docker_version}, API {api_version}")
@@ -102,7 +102,7 @@ class DockerHTTPClient:
                     logger.info(f"Using Docker API version {self._api_version}")
                 else:
                     # Use Docker daemon's actual API version
-                    self._api_version = docker_info['ApiVersion']
+                    self._api_version = docker_info["ApiVersion"]
                     logger.info(f"Using Docker API version {self._api_version} (daemon native)")
 
             except (aiohttp.ClientError, FileNotFoundError) as e:
@@ -124,7 +124,7 @@ class DockerHTTPClient:
             Response JSON data
         """
         # Check connection and version on first request
-        check_connection = kwargs.pop('check_connection', True)
+        check_connection = kwargs.pop("check_connection", True)
         if check_connection and not self._connected:
             await self._check_connection()
 
@@ -147,22 +147,21 @@ class DockerHTTPClient:
         except RuntimeError as e:
             # Retry with lower API version if Docker daemon doesn't support current version
             error_msg = str(e)
-            if ("400" in error_msg or "not found" in error_msg.lower()) and self._api_version == DOCKER_PREFERRED_API_VERSION:
-                logger.warning(f"Docker daemon doesn't support API version {self._api_version}, falling back to {DOCKER_MINIMUM_API_VERSION}")
+            if (
+                "400" in error_msg or "not found" in error_msg.lower()
+            ) and self._api_version == DOCKER_PREFERRED_API_VERSION:
+                logger.warning(
+                    f"Docker daemon doesn't support API version {self._api_version}, falling back to {DOCKER_MINIMUM_API_VERSION}"
+                )
                 self._api_version = DOCKER_MINIMUM_API_VERSION
                 return await self._request(method, endpoint, check_connection=False, **kwargs)
             raise
 
     async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
         """Create Docker network."""
-        data = {
-            "Name": name,
-            "Driver": driver
-        }
+        data = {"Name": name, "Driver": driver}
         if subnet:
-            data["IPAM"] = {
-                "Config": [{"Subnet": subnet}]
-            }
+            data["IPAM"] = {"Config": [{"Subnet": subnet}]}
         await self._request("POST", "networks/create", json=data)
 
     async def get_network(self, name: str):
@@ -176,19 +175,12 @@ class DockerHTTPClient:
 
     async def create_container(self, name: str, image: str, **kwargs):
         """Create container."""
-        data = {
-            "Image": image,
-            "name": name,
-            "HostConfig": {},
-            "NetworkingConfig": {}
-        }
+        data = {"Image": image, "name": name, "HostConfig": {}, "NetworkingConfig": {}}
 
         # Handle network config
         if "network" in kwargs:
             network_name = kwargs.pop("network")
-            data["NetworkingConfig"]["EndpointsConfig"] = {
-                network_name: {}
-            }
+            data["NetworkingConfig"]["EndpointsConfig"] = {network_name: {}}
 
         # Handle environment variables
         if "environment" in kwargs:

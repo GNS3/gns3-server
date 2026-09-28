@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 
 class NIOUDP(NIO):
-
     """
     Dynamips UDP NIO.
 
@@ -130,9 +129,4 @@ class NIOUDP(NIO):
 
     def asdict(self):
 
-        return {
-            "type": "nio_udp",
-            "lport": self._lport,
-            "rport": self._rport,
-            "rhost": self._rhost
-        }
+        return {"type": "nio_udp", "lport": self._lport, "rport": self._rport, "rhost": self._rhost}

@@ -117,6 +117,7 @@ class ApplianceManager:
         dst_path = self.builtin_appliances_path()
         log.info(f"Installing built-in appliances in '{dst_path}'")
         from . import Controller
+
         try:
             await Controller.instance().install_resource_files(dst_path, "appliances")
         except OSError as e:
@@ -136,12 +137,7 @@ class ApplianceManager:
         return appliances
 
     async def _download_image(
-            self,
-            image_dir: str,
-            image_name: str,
-            image_type: str,
-            image_url: str,
-            images_repo: ImagesRepository
+        self, image_dir: str, image_name: str, image_type: str, image_url: str, images_repo: ImagesRepository
     ) -> None:
         """
         Download an image.
@@ -153,7 +149,9 @@ class ApplianceManager:
             async with HTTPClient.get(image_url) as response:
                 if response.status != 200:
                     raise ControllerError(f"Could not download '{image_name}' due to HTTP error code {response.status}")
-                await write_image(image_name, image_path, response.content.iter_any(), images_repo, allow_raw_image=True)
+                await write_image(
+                    image_name, image_path, response.content.iter_any(), images_repo, allow_raw_image=True
+                )
         except (OSError, InvalidImageError) as e:
             raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
         except ClientError as e:
@@ -162,11 +160,7 @@ class ApplianceManager:
             raise ControllerError(f"Timeout while downloading '{image_name}' from '{image_url}'")
 
     async def _find_appliance_version_images(
-            self,
-            appliance: Appliance,
-            version: dict,
-            images_repo: ImagesRepository,
-            image_dir: str
+        self, appliance: Appliance, version: dict, images_repo: ImagesRepository, image_dir: str
     ) -> None:
         """
         Find all the images belonging to a specific appliance version.
@@ -188,7 +182,9 @@ class ApplianceManager:
                                 async with image_lock(image_path):
                                     image_info = await read_image_info(image_path, allow_raw_image=True)
                                     if image_info["checksum"] != image_checksum:
-                                        raise ControllerError(f"Image '{image_path}' does not match the appliance checksum")
+                                        raise ControllerError(
+                                            f"Image '{image_path}' does not match the appliance checksum"
+                                        )
                                     try:
                                         await images_repo.save_verified_image(image_info)
                                     except SQLAlchemyError as e:
@@ -198,11 +194,8 @@ class ApplianceManager:
                                 direct_download_url = image.get("direct_download_url")
                                 if direct_download_url:
                                     await self._download_image(
-                                        image_dir,
-                                        appliance_file,
-                                        appliance.type,
-                                        direct_download_url,
-                                        images_repo)
+                                        image_dir, appliance_file, appliance.type, direct_download_url, images_repo
+                                    )
                                 else:
                                     raise ControllerError(f"Could not find '{appliance_file}'")
 
@@ -216,8 +209,8 @@ class ApplianceManager:
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate template data: {e}")
         template = await TemplatesService(templates_repo).create_template(template_create)
-        #template_id = template.get("template_id")
-        #await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+        # template_id = template.get("template_id")
+        # await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
         log.info(f"Template '{template.get('name')}' has been created")
         return template
 
@@ -239,14 +232,14 @@ class ApplianceManager:
         return template_data
 
     async def install_appliances_from_image(
-            self,
-            image_path: str,
-            image_checksum: str,
-            images_repo: ImagesRepository,
-            templates_repo: TemplatesRepository,
-            rbac_repo: RbacRepository,
-            current_user: schemas.User,
-            image_dir: str
+        self,
+        image_path: str,
+        image_checksum: str,
+        images_repo: ImagesRepository,
+        templates_repo: TemplatesRepository,
+        rbac_repo: RbacRepository,
+        current_user: schemas.User,
+        image_dir: str,
     ) -> List[dict]:
         """
         Install appliances using an image checksum.
@@ -264,11 +257,13 @@ class ApplianceManager:
                 ApplianceModel.model_validate(appliance.asdict())
             except ValidationError as e:
                 log.warning(f"Could not validate appliance '{appliance.id}': {e}")
-                results.append({
-                    "status": "skipped",
-                    "name": appliance.name,
-                    "reason": f"could not validate appliance '{appliance.id}': {e}",
-                })
+                results.append(
+                    {
+                        "status": "skipped",
+                        "name": appliance.name,
+                        "reason": f"could not validate appliance '{appliance.id}': {e}",
+                    }
+                )
                 continue
             if appliance.versions:
                 for version in appliance.versions:
@@ -284,37 +279,45 @@ class ApplianceManager:
                                 # duplicates when the appliance version differs, but two
                                 # templates sharing a name is never what the user asked for here
                                 log.warning(f"Template '{name}' already exists, skipping automatic template creation")
-                                results.append({
-                                    "status": "skipped",
-                                    "name": name,
-                                    "reason": f"a template named '{name}' already exists",
-                                })
+                                results.append(
+                                    {
+                                        "status": "skipped",
+                                        "name": name,
+                                        "reason": f"a template named '{name}' already exists",
+                                    }
+                                )
                                 continue
-                            template = await self._create_template(template_data, templates_repo, rbac_repo, current_user)
-                            results.append({
-                                "status": "created",
-                                "template_id": str(template.get("template_id")),
-                                "name": template.get("name"),
-                                "version": template.get("version"),
-                                "template_type": template.get("template_type"),
-                            })
+                            template = await self._create_template(
+                                template_data, templates_repo, rbac_repo, current_user
+                            )
+                            results.append(
+                                {
+                                    "status": "created",
+                                    "template_id": str(template.get("template_id")),
+                                    "name": template.get("name"),
+                                    "version": template.get("version"),
+                                    "template_type": template.get("template_type"),
+                                }
+                            )
                         except (ControllerError, InvalidImageError) as e:
                             log.warning(f"Could not automatically create template using image '{image_path}': {e}")
-                            results.append({
-                                "status": "skipped",
-                                "name": appliance.name,
-                                "reason": str(e),
-                            })
+                            results.append(
+                                {
+                                    "status": "skipped",
+                                    "name": appliance.name,
+                                    "reason": str(e),
+                                }
+                            )
         return results
 
     async def install_appliance(
-            self,
-            appliance_id: UUID,
-            version: str,
-            images_repo: ImagesRepository,
-            templates_repo: TemplatesRepository,
-            rbac_repo: RbacRepository,
-            current_user: schemas.User
+        self,
+        appliance_id: UUID,
+        version: str,
+        images_repo: ImagesRepository,
+        templates_repo: TemplatesRepository,
+        rbac_repo: RbacRepository,
+        current_user: schemas.User,
     ) -> None:
         """
         Install a new appliance
@@ -337,11 +340,15 @@ class ApplianceManager:
             for appliance_version_info in appliance.versions:
                 if appliance_version_info.get("name") == version:
                     try:
-                        template_type = ApplianceToTemplate().get_template_type(appliance.asdict(), appliance_version_info)
+                        template_type = ApplianceToTemplate().get_template_type(
+                            appliance.asdict(), appliance_version_info
+                        )
                         if template_type != "docker":
                             # docker appliances have no image files to find or download
                             image_dir = default_images_directory(template_type)
-                            await self._find_appliance_version_images(appliance, appliance_version_info, images_repo, image_dir)
+                            await self._find_appliance_version_images(
+                                appliance, appliance_version_info, images_repo, image_dir
+                            )
                     except InvalidImageError as e:
                         raise ControllerError(message=f"Image error: {e}")
                     template_data = await self._appliance_to_template(appliance, appliance_version_info)
@@ -352,8 +359,9 @@ class ApplianceManager:
         else:
             if appliance.versions:
                 # TODO: install appliance versions based on available images
-                raise ControllerBadRequestError(message=f"Selecting a version is required to install "
-                                                        f"appliance '{appliance_id}'")
+                raise ControllerBadRequestError(
+                    message=f"Selecting a version is required to install appliance '{appliance_id}'"
+                )
 
             template_data = await self._appliance_to_template(appliance)
             return await self._create_template(template_data, templates_repo, rbac_repo, current_user)
@@ -385,7 +393,9 @@ class ApplianceManager:
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
                                 # Validate using discriminated union - automatically routes to correct version
-                                log.debug(f"Validating appliance '{appliance.id}' with registry version {appliance.registry_version}")
+                                log.debug(
+                                    f"Validating appliance '{appliance.id}' with registry version {appliance.registry_version}"
+                                )
                                 ApplianceModel.model_validate(json_data)
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):

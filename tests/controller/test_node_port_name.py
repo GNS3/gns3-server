@@ -33,11 +33,15 @@ def compute():
 
 @pytest.fixture
 def node(compute, project):
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="qemu",
-                console_type="vnc",
-                properties={"startup_script": "echo test"})
+    node = Node(
+        project,
+        compute,
+        "demo",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        console_type="vnc",
+        properties={"startup_script": "echo test"},
+    )
     return node
 
 
@@ -53,7 +57,7 @@ def test_list_ports(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         }
     ]
 
@@ -71,7 +75,7 @@ def test_list_ports_vpcs(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         }
     ]
 
@@ -90,7 +94,7 @@ def test_list_ports_docker(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "eth1",
@@ -98,8 +102,8 @@ def test_list_ports_docker(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 1,
-            "link_type": "ethernet"
-        }
+            "link_type": "ethernet",
+        },
     ]
 
 
@@ -153,7 +157,7 @@ def test_list_ports_adapters(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1",
@@ -161,8 +165,8 @@ def test_list_ports_adapters(node):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 1,
-            "link_type": "ethernet"
-        }
+            "link_type": "ethernet",
+        },
     ]
 
 
@@ -171,17 +175,8 @@ def test_list_ports_adapters_cloud(project, compute):
     List port using adapters properties
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="cloud")
-    node.properties["ports_mapping"] = [
-        {
-            "interface": "eth0",
-            "name": "eth0",
-            "port_number": 0,
-            "type": "ethernet"
-        }
-    ]
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="cloud")
+    node.properties["ports_mapping"] = [{"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"}]
 
     assert node.asdict()["ports"] == [
         {
@@ -190,7 +185,7 @@ def test_list_ports_adapters_cloud(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         }
     ]
 
@@ -200,18 +195,10 @@ def test_list_ports_ethernet_hub(project, compute):
     List port for atm switch
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="ethernet_hub")
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="ethernet_hub")
     node.properties["ports_mapping"] = [
-        {
-            "name": "Ethernet0",
-            "port_number": 0
-        },
-        {
-            "name": "Ethernet1",
-            "port_number": 1
-        }
+        {"name": "Ethernet0", "port_number": 0},
+        {"name": "Ethernet1", "port_number": 1},
     ]
 
     assert node.asdict()["ports"] == [
@@ -221,7 +208,7 @@ def test_list_ports_ethernet_hub(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1",
@@ -229,8 +216,8 @@ def test_list_ports_ethernet_hub(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 0,
-            "link_type": "ethernet"
-        }
+            "link_type": "ethernet",
+        },
     ]
 
 
@@ -239,12 +226,8 @@ def test_list_ports_atm_switch(project, compute):
     List port for atm switch
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="atm_switch")
-    node.properties["mappings"] = {
-        "1:0:100": "10:0:200"
-    }
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="atm_switch")
+    node.properties["mappings"] = {"1:0:100": "10:0:200"}
 
     assert node.asdict()["ports"] == [
         {
@@ -253,7 +236,7 @@ def test_list_ports_atm_switch(project, compute):
             "data_link_types": {"ATM": "DLT_ATM_RFC1483"},
             "port_number": 1,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "10",
@@ -261,8 +244,8 @@ def test_list_ports_atm_switch(project, compute):
             "data_link_types": {"ATM": "DLT_ATM_RFC1483"},
             "port_number": 10,
             "adapter_number": 0,
-            "link_type": "serial"
-        }
+            "link_type": "serial",
+        },
     ]
 
 
@@ -271,13 +254,8 @@ def test_list_ports_frame_relay_switch(project, compute):
     List port for frame relay switch
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="frame_relay_switch")
-    node.properties["mappings"] = {
-        "1:101": "10:202",
-        "2:102": "11:203"
-    }
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="frame_relay_switch")
+    node.properties["mappings"] = {"1:101": "10:202", "2:102": "11:203"}
 
     assert node.asdict()["ports"] == [
         {
@@ -286,7 +264,7 @@ def test_list_ports_frame_relay_switch(project, compute):
             "data_link_types": {"Frame Relay": "DLT_FRELAY"},
             "port_number": 1,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "2",
@@ -294,7 +272,7 @@ def test_list_ports_frame_relay_switch(project, compute):
             "data_link_types": {"Frame Relay": "DLT_FRELAY"},
             "port_number": 2,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "10",
@@ -302,7 +280,7 @@ def test_list_ports_frame_relay_switch(project, compute):
             "data_link_types": {"Frame Relay": "DLT_FRELAY"},
             "port_number": 10,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "11",
@@ -310,8 +288,8 @@ def test_list_ports_frame_relay_switch(project, compute):
             "data_link_types": {"Frame Relay": "DLT_FRELAY"},
             "port_number": 11,
             "adapter_number": 0,
-            "link_type": "serial"
-        }
+            "link_type": "serial",
+        },
     ]
 
 
@@ -320,9 +298,7 @@ def test_list_ports_iou(compute, project):
     IOU has a special behavior 4 port by adapters
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="iou")
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="iou")
     node.properties["serial_adapters"] = 2
     node.properties["ethernet_adapters"] = 3
     assert node.asdict()["ports"] == [
@@ -332,7 +308,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet0/1",
@@ -340,7 +316,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet0/2",
@@ -348,7 +324,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet0/3",
@@ -356,7 +332,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1/0",
@@ -364,7 +340,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1/1",
@@ -372,7 +348,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1/2",
@@ -380,7 +356,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet1/3",
@@ -388,7 +364,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet2/0",
@@ -396,7 +372,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 2,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet2/1",
@@ -404,7 +380,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 2,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet2/2",
@@ -412,7 +388,7 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 2,
             "adapter_number": 2,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Ethernet2/3",
@@ -420,104 +396,72 @@ def test_list_ports_iou(compute, project):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 3,
             "adapter_number": 2,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Serial3/0",
             "short_name": "s3/0",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 0,
             "adapter_number": 3,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial3/1",
             "short_name": "s3/1",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 1,
             "adapter_number": 3,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial3/2",
             "short_name": "s3/2",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 2,
             "adapter_number": 3,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial3/3",
             "short_name": "s3/3",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 3,
             "adapter_number": 3,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial4/0",
             "short_name": "s4/0",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 0,
             "adapter_number": 4,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial4/1",
             "short_name": "s4/1",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 1,
             "adapter_number": 4,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial4/2",
             "short_name": "s4/2",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 2,
             "adapter_number": 4,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial4/3",
             "short_name": "s4/3",
-            "data_link_types": {
-                "Frame Relay": "DLT_FRELAY",
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL"
-            },
+            "data_link_types": {"Frame Relay": "DLT_FRELAY", "Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL"},
             "port_number": 3,
             "adapter_number": 4,
-            "link_type": "serial"
-        }
+            "link_type": "serial",
+        },
     ]
 
 
@@ -526,9 +470,7 @@ def test_list_ports_dynamips(project, compute):
     List port for dynamips
     """
 
-    node = Node(project, compute, "demo",
-                node_id=str(uuid.uuid4()),
-                node_type="dynamips")
+    node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="dynamips")
     node.properties["slot0"] = "C7200-IO-FE"
     node.properties["slot1"] = "GT96100-FE"
     node.properties["wic0"] = "WIC-2T"
@@ -541,7 +483,7 @@ def test_list_ports_dynamips(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 0,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "FastEthernet1/0",
@@ -549,7 +491,7 @@ def test_list_ports_dynamips(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 0,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "FastEthernet1/1",
@@ -557,52 +499,40 @@ def test_list_ports_dynamips(project, compute):
             "data_link_types": {"Ethernet": "DLT_EN10MB"},
             "port_number": 1,
             "adapter_number": 1,
-            "link_type": "ethernet"
+            "link_type": "ethernet",
         },
         {
             "name": "Serial0/0",
             "short_name": "s0/0",
-            "data_link_types": {
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL",
-                "Frame Relay": "DLT_FRELAY"},
+            "data_link_types": {"Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL", "Frame Relay": "DLT_FRELAY"},
             "port_number": 16,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial0/1",
             "short_name": "s0/1",
-            "data_link_types": {
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL",
-                "Frame Relay": "DLT_FRELAY"},
+            "data_link_types": {"Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL", "Frame Relay": "DLT_FRELAY"},
             "port_number": 17,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial0/2",
             "short_name": "s0/2",
-            "data_link_types": {
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL",
-                "Frame Relay": "DLT_FRELAY"},
+            "data_link_types": {"Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL", "Frame Relay": "DLT_FRELAY"},
             "port_number": 32,
             "adapter_number": 0,
-            "link_type": "serial"
+            "link_type": "serial",
         },
         {
             "name": "Serial0/3",
             "short_name": "s0/3",
-            "data_link_types": {
-                "Cisco HDLC": "DLT_C_HDLC",
-                "Cisco PPP": "DLT_PPP_SERIAL",
-                "Frame Relay": "DLT_FRELAY"},
+            "data_link_types": {"Cisco HDLC": "DLT_C_HDLC", "Cisco PPP": "DLT_PPP_SERIAL", "Frame Relay": "DLT_FRELAY"},
             "port_number": 33,
             "adapter_number": 0,
-            "link_type": "serial"
-        }
+            "link_type": "serial",
+        },
     ]
 
 

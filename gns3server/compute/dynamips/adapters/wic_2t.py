@@ -16,7 +16,6 @@
 
 
 class WIC_2T:
-
     """
     WIC-2T Serial
     """

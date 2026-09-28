@@ -23,7 +23,6 @@ from ..common import NodeStatus
 
 
 class HostInterfaceType(str, Enum):
-
     ethernet = "ethernet"
     tap = "tap"
 
@@ -115,7 +114,6 @@ class NATUpdate(NATBase):
 
 
 class NAT(NATBase):
-
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

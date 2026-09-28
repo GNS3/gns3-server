@@ -132,9 +132,7 @@ class GNS3LinkTool(BaseTool):
 
             if not isinstance(links_data, list) or len(links_data) == 0:
                 logger.error("Invalid links data: must be a non-empty array")
-                return [
-                    {"error": "Invalid links data: must be a non-empty array"}
-                ]
+                return [{"error": "Invalid links data: must be a non-empty array"}]
 
             # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
@@ -142,14 +140,7 @@ class GNS3LinkTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return [
-                    {
-                        "error": (
-                            "Failed to connect to GNS3 server. "
-                            "Please check your configuration."
-                        )
-                    }
-                ]
+                return [{"error": ("Failed to connect to GNS3 server. Please check your configuration.")}]
 
             # Fetch all nodes once for port resolution
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -172,9 +163,7 @@ class GNS3LinkTool(BaseTool):
 
                     # Validate link parameters
                     if not all([node_id1, port1, node_id2, port2]):
-                        error_msg = (
-                            f"Missing required fields in link definition {i}"
-                        )
+                        error_msg = f"Missing required fields in link definition {i}"
                         logger.error(error_msg)
                         created_links.append({"error": error_msg})
                         continue
@@ -218,29 +207,15 @@ class GNS3LinkTool(BaseTool):
                             "nodes": [
                                 {
                                     "node_id": node_id1,
-                                    "adapter_number": port1_info.get(
-                                        "adapter_number", 0
-                                    ),
-                                    "port_number": port1_info.get(
-                                        "port_number", 0
-                                    ),
-                                    "label": {
-                                        "text": port1_info.get("short_name")
-                                        or port1
-                                    },
+                                    "adapter_number": port1_info.get("adapter_number", 0),
+                                    "port_number": port1_info.get("port_number", 0),
+                                    "label": {"text": port1_info.get("short_name") or port1},
                                 },
                                 {
                                     "node_id": node_id2,
-                                    "adapter_number": port2_info.get(
-                                        "adapter_number", 0
-                                    ),
-                                    "port_number": port2_info.get(
-                                        "port_number", 0
-                                    ),
-                                    "label": {
-                                        "text": port2_info.get("short_name")
-                                        or port2
-                                    },
+                                    "adapter_number": port2_info.get("adapter_number", 0),
+                                    "port_number": port2_info.get("port_number", 0),
+                                    "label": {"text": port2_info.get("short_name") or port2},
                                 },
                             ],
                             "fields": ["link_id"],
@@ -266,9 +241,7 @@ class GNS3LinkTool(BaseTool):
                     created_links.append({"error": error_msg})
 
             # Log final results
-            success_count = len(
-                [link for link in created_links if "error" not in link]
-            )
+            success_count = len([link for link in created_links if "error" not in link])
             logger.info(
                 "Link creation completed: %d successful, %d failed",
                 success_count,

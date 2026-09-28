@@ -103,9 +103,7 @@ class MarkerListener(asyncio.DatagramProtocol):
 
         project_id, link_id, registered_tag = self._manager.lookup(node_id, filter_name)
         if project_id is None:
-            log.warning(
-                "MARK signal for unregistered node=%s filter=%s, dropping", node_id, filter_name
-            )
+            log.warning("MARK signal for unregistered node=%s filter=%s, dropping", node_id, filter_name)
             return
 
         # `link=` is the authoritative per-link id (opaque, set by gns3server at

@@ -18,7 +18,6 @@
 API routes for compute notifications.
 """
 
-
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from typing import Union
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -53,7 +52,6 @@ async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(w
 
 
 if __name__ == "__main__":
-
     import uvicorn
     from fastapi import FastAPI
     from starlette.responses import HTMLResponse

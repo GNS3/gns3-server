@@ -49,7 +49,6 @@ TEMPLATE_TYPE_TO_MODEL = {
 
 
 class TemplatesRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -59,17 +58,21 @@ class TemplatesRepository(BaseRepository):
 
     async def get_template(self, template_id: UUID) -> Union[None, models.Template]:
 
-        query = select(models.Template).\
-            options(selectinload(models.Template.images)).\
-            where(models.Template.template_id == template_id)
+        query = (
+            select(models.Template)
+            .options(selectinload(models.Template.images))
+            .where(models.Template.template_id == template_id)
+        )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_template_by_name_and_version(self, name: str, version: str) -> Union[None, models.Template]:
 
-        query = select(models.Template).\
-            options(selectinload(models.Template.images)).\
-            where(models.Template.name == name, models.Template.version == version)
+        query = (
+            select(models.Template)
+            .options(selectinload(models.Template.images))
+            .where(models.Template.name == name, models.Template.version == version)
+        )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
@@ -78,9 +81,9 @@ class TemplatesRepository(BaseRepository):
         Return the first template with this name, regardless of version.
         """
 
-        query = select(models.Template).\
-            options(selectinload(models.Template.images)).\
-            where(models.Template.name == name)
+        query = (
+            select(models.Template).options(selectinload(models.Template.images)).where(models.Template.name == name)
+        )
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
@@ -117,9 +120,11 @@ class TemplatesRepository(BaseRepository):
 
     async def duplicate_template(self, template_id: UUID) -> Optional[schemas.Template]:
 
-        query = select(models.Template).\
-            options(selectinload(models.Template.images)).\
-            where(models.Template.template_id == template_id)
+        query = (
+            select(models.Template)
+            .options(selectinload(models.Template.images))
+            .where(models.Template.template_id == template_id)
+        )
         db_template = (await self._db_session.execute(query)).scalars().first()
         if db_template:
             # duplicate db object with new primary key (template_id)
@@ -140,9 +145,9 @@ class TemplatesRepository(BaseRepository):
         if os.path.isabs(image_path):
             query = select(models.Image).where(models.Image.path == image_path)
         elif image_dir:
-            query = select(models.Image).\
-                where(models.Image.filename == image_name,
-                      models.Image.path.endswith(os.sep + image_path, autoescape=True))
+            query = select(models.Image).where(
+                models.Image.filename == image_name, models.Image.path.endswith(os.sep + image_path, autoescape=True)
+            )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
         if not include_unavailable:
@@ -158,23 +163,24 @@ class TemplatesRepository(BaseRepository):
             )
         return images[0] if images else None
 
-    async def add_image_to_template(
-            self,
-            template_id: UUID,
-            image: models.Image
-    ) -> Union[None, models.Template]:
+    async def add_image_to_template(self, template_id: UUID, image: models.Image) -> Union[None, models.Template]:
         """
         Add an image to template.
         """
 
         async with image_lock(image.path):
-            exists = (await self._db_session.execute(select(models.Image.image_id).where(
-                models.Image.image_id == image.image_id))).scalar_one_or_none()
+            exists = (
+                await self._db_session.execute(
+                    select(models.Image.image_id).where(models.Image.image_id == image.image_id)
+                )
+            ).scalar_one_or_none()
             if exists is None:
                 raise ControllerNotFoundError(f"Image '{image.path}' was removed while creating the template")
-            query = select(models.Template).\
-                options(selectinload(models.Template.images)).\
-                where(models.Template.template_id == template_id)
+            query = (
+                select(models.Template)
+                .options(selectinload(models.Template.images))
+                .where(models.Template.template_id == template_id)
+            )
             result = await self._db_session.execute(query)
             template_in_db = result.scalars().first()
             if not template_in_db:
@@ -185,18 +191,16 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.refresh(template_in_db)
             return template_in_db
 
-    async def remove_image_from_template(
-            self,
-            template_id: UUID,
-            image: models.Image
-    ) -> Union[None, models.Template]:
+    async def remove_image_from_template(self, template_id: UUID, image: models.Image) -> Union[None, models.Template]:
         """
         Remove an image from a template.
         """
 
-        query = select(models.Template).\
-            options(selectinload(models.Template.images)).\
-            where(models.Template.template_id == template_id)
+        query = (
+            select(models.Template)
+            .options(selectinload(models.Template.images))
+            .where(models.Template.template_id == template_id)
+        )
         result = await self._db_session.execute(query)
         template_in_db = result.scalars().first()
         if not template_in_db:
@@ -213,8 +217,6 @@ class TemplatesRepository(BaseRepository):
         Return all images attached to a template.
         """
 
-        query = select(models.Image).\
-            join(models.Image.templates).\
-            filter(models.Template.template_id == template_id)
+        query = select(models.Image).join(models.Image.templates).filter(models.Template.template_id == template_id)
         result = await self._db_session.execute(query)
         return result.scalars().all()

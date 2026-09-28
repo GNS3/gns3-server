@@ -16,7 +16,6 @@
 
 
 class WIC_1ENET:
-
     """
     WIC-1ENET Ethernet
     """

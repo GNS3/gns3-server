@@ -16,14 +16,7 @@
 
 import uuid
 
-from pydantic import (
-    ConfigDict,
-    BaseModel,
-    Field,
-    SecretStr,
-    field_validator,
-    model_validator
-)
+from pydantic import ConfigDict, BaseModel, Field, SecretStr, field_validator, model_validator
 from typing import List, Optional, Union, Any
 from enum import Enum
 
@@ -60,27 +53,22 @@ class ComputeCreate(ComputeBase):
     """
 
     compute_id: Union[str, uuid.UUID] = None
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "name": "My compute",
-            "host": "127.0.0.1",
-            "port": 3080,
-            "user": "user",
-            "password": "password"
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"name": "My compute", "host": "127.0.0.1", "port": 3080, "user": "user", "password": "password"}
         }
-    })
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def set_default_compute_id_and_name(cls, data: Any) -> Any:
 
         if "compute_id" not in data:
-            data['compute_id'] = uuid.uuid5(
-                uuid.NAMESPACE_URL,
-                f"{data.get('protocol')}://{data.get('host')}:{data.get('port')}"
+            data["compute_id"] = uuid.uuid5(
+                uuid.NAMESPACE_URL, f"{data.get('protocol')}://{data.get('host')}:{data.get('port')}"
             )
         if "name" not in data:
-            data['name'] = f"{data.get('protocol')}://{data.get('user', '')}@{data.get('host')}:{data.get('port')}"
+            data["name"] = f"{data.get('protocol')}://{data.get('user', '')}@{data.get('host')}:{data.get('port')}"
         return data
 
 
@@ -94,12 +82,14 @@ class ComputeUpdate(ComputeBase):
     port: Optional[int] = Field(None, gt=0, le=65535)
     user: Optional[str] = None
     password: Optional[SecretStr] = None
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "host": "10.0.0.1",
-            "port": 8080,
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "host": "10.0.0.1",
+                "port": 8080,
+            }
         }
-    })
+    )
 
 
 class Capabilities(BaseModel):
@@ -165,4 +155,6 @@ class AutoIdlePC(BaseModel):
     platform: str = Field(..., description="Cisco platform")
     image: str = Field(..., description="Image path")
     ram: int = Field(..., description="Amount of RAM in MB")
-    model_config = ConfigDict(json_schema_extra={"example": {"platform": "c7200", "image": "/path/to/c7200_image.bin", "ram": 256}})
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"platform": "c7200", "image": "/path/to/c7200_image.bin", "ram": 256}}
+    )

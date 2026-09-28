@@ -21,6 +21,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from gns3server.db.models.base import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -63,9 +64,10 @@ def do_run_migrations(connection):
 async def run_async_migrations():
 
     from gns3server.config import Config as GNS3Config
+
     db_path = os.path.join(GNS3Config.instance().config_dir, "gns3_controller.db")
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
-    config.set_main_option('sqlalchemy.url', db_url)
+    config.set_main_option("sqlalchemy.url", db_url)
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section),

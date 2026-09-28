@@ -227,7 +227,11 @@ class DockerVM(BaseNode):
                 return display
             display += 1
 
-    @BaseNode.name.setter
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
     def name(self, new_name):
         """
         Sets the name of this Qemu VM.
@@ -236,7 +240,9 @@ class DockerVM(BaseNode):
         """
 
         if not is_rfc1123_hostname_valid(new_name):
-            raise DockerError(f"'{new_name}' is an invalid name to rename Docker container '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen.")
+            raise DockerError(
+                f"'{new_name}' is an invalid name to rename Docker container '{self._name}'. Allowed characters: letters (a-z, A-Z), digits (0-9), and hyphens (-). The name cannot start or end with a hyphen."
+            )
         super(DockerVM, DockerVM).name.__set__(self, new_name)
 
     @property
@@ -275,10 +281,10 @@ class DockerVM(BaseNode):
         else:
             self._mac_address = mac_address
 
-        log.debug('Docker container "{name}" [{id}]: MAC address changed to {mac_addr}'.format(
-            name=self._name,
-            id=self._id,
-            mac_addr=self._mac_address)
+        log.debug(
+            'Docker container "{name}" [{id}]: MAC address changed to {mac_addr}'.format(
+                name=self._name, id=self._id, mac_addr=self._mac_address
+            )
         )
 
     @property
@@ -453,12 +459,7 @@ class DockerVM(BaseNode):
             raise DockerError(f"Cannot access resources: {e}")
 
         log.debug(f'Mount resources from "{resources_path}"')
-        binds = [{
-            "Type": "bind",
-            "Source": resources_path,
-            "Target": "/gns3",
-            "ReadOnly": True
-        }]
+        binds = [{"Type": "bind", "Source": resources_path, "Target": "/gns3", "ReadOnly": True}]
         self._image_id = image_info.get("Id") or self._image_id
 
         # We mount our own etc/network
@@ -471,11 +472,7 @@ class DockerVM(BaseNode):
         for volume in self._volumes:
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
-            binds.append({
-                "Type": "bind",
-                "Source": source,
-                "Target": "/gns3volumes{}".format(volume)
-            })
+            binds.append({"Type": "bind", "Source": source, "Target": "/gns3volumes{}".format(volume)})
 
         # Inject extra config files: write each to the node working directory and
         # bind-mount it read-only at its target path. Single-file binds are applied
@@ -485,9 +482,7 @@ class DockerVM(BaseNode):
             target = cfg["target"] if isinstance(cfg, dict) else cfg.target
             content = cfg["content"] if isinstance(cfg, dict) else cfg.content
             if not target.startswith("/") or target.endswith("/") or ".." in target.split("/"):
-                raise DockerError(
-                    f"Extra config target '{target}' must be an absolute file path and not contain '..'."
-                )
+                raise DockerError(f"Extra config target '{target}' must be an absolute file path and not contain '..'.")
             for volume in self._volumes:
                 # A single-file bind gets covered by the volume's bind mount at
                 # start (init.sh or the vendor volume bridge), so the injected
@@ -497,18 +492,22 @@ class DockerVM(BaseNode):
                     log.warning(
                         "Extra config target '%s' on container '%s' is shadowed by persisted volume '%s' "
                         "and will not take effect; pick a target outside persisted volumes.",
-                        target, self._name, volume,
+                        target,
+                        self._name,
+                        volume,
                     )
             host_path = os.path.join(self.working_dir, "configs", target.lstrip("/"))
             os.makedirs(os.path.dirname(host_path), exist_ok=True)
             with open(host_path, "w") as f:
                 f.write(content)
-            binds.append({
-                "Type": "bind",
-                "Source": host_path,
-                "Target": target,
-                "ReadOnly": True,
-            })
+            binds.append(
+                {
+                    "Type": "bind",
+                    "Source": host_path,
+                    "Target": target,
+                    "ReadOnly": True,
+                }
+            )
 
         return binds
 
@@ -554,7 +553,8 @@ class DockerVM(BaseNode):
 #auto eth{adapter}
 #iface eth{adapter} inet dhcp
 #\thostname {hostname}
-""".format(adapter=adapter, hostname=self._name))
+""".format(adapter=adapter, hostname=self._name)
+                    )
         return path
 
     def _prepare_init_and_interface_env(self, params):
@@ -573,9 +573,11 @@ class DockerVM(BaseNode):
         """
 
         if ":" in os.path.splitdrive(self.working_dir)[1]:
-            raise DockerError("Cannot create a Docker container with a project directory containing a colon character (':')")
+            raise DockerError(
+                "Cannot create a Docker container with a project directory containing a colon character (':')"
+            )
 
-        #await self.manager.install_resources()
+        # await self.manager.install_resources()
 
         try:
             image_infos = await self._get_image_information()
@@ -601,8 +603,7 @@ class DockerVM(BaseNode):
         available_cpus = psutil.cpu_count(logical=True)
         if self._cpus > available_cpus:
             raise DockerError(
-                f"You have allocated too many CPUs for the Docker container "
-                f"(max available is {available_cpus} CPUs)"
+                f"You have allocated too many CPUs for the Docker container (max available is {available_cpus} CPUs)"
             )
 
         # Prepare persistent volume content before the container and its
@@ -622,7 +623,7 @@ class DockerVM(BaseNode):
                 "Mounts": self._mount_binds(image_infos),
                 "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
                 "NanoCpus": int(self._cpus * 1e9),  # convert cpus to nano cpus
-                "UsernsMode": "host"
+                "UsernsMode": "host",
             },
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
@@ -651,8 +652,11 @@ class DockerVM(BaseNode):
                     devices = self._format_devices(line.split("=", 1)[1])
                     if devices:
                         params["HostConfig"]["Devices"] = devices
-                elif line.startswith("GNS3_MASK_UDEV=") and \
-                        line.split("=", 1)[1].strip().lower() in ("1", "true", "yes"):
+                elif line.startswith("GNS3_MASK_UDEV=") and line.split("=", 1)[1].strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                ):
                     # A privileged systemd-based NOS container (e.g. Cisco XRd)
                     # runs systemd-udevd, which coldplugs every device it can see
                     # -- and in privileged mode that includes the HOST's USB/input/
@@ -660,24 +664,28 @@ class DockerVM(BaseNode):
                     # XRd doesn't need udev (interfaces are pre-created by GNS3), so
                     # bind /dev/null over the udev units to keep it from running.
                     for target in [f"/etc/systemd/system/{u}" for u in self._UDEV_UNITS] + list(self._UDEVADM_PATHS):
-                        params["HostConfig"]["Mounts"].append({
-                            "Type": "bind",
-                            "Source": "/dev/null",
-                            "Target": target,
-                            "ReadOnly": True,
-                        })
+                        params["HostConfig"]["Mounts"].append(
+                            {
+                                "Type": "bind",
+                                "Source": "/dev/null",
+                                "Target": target,
+                                "ReadOnly": True,
+                            }
+                        )
                 elif line.startswith("GNS3_MASK_SYSTEMD="):
                     # Generic form: comma/semicolon-separated unit names to mask
                     # the same way (bind /dev/null over /etc/systemd/system/<unit>).
                     for unit in line.split("=", 1)[1].replace(";", ",").split(","):
                         unit = unit.strip()
                         if unit and "/" not in unit and ".." not in unit:
-                            params["HostConfig"]["Mounts"].append({
-                                "Type": "bind",
-                                "Source": "/dev/null",
-                                "Target": f"/etc/systemd/system/{unit}",
-                                "ReadOnly": True,
-                            })
+                            params["HostConfig"]["Mounts"].append(
+                                {
+                                    "Type": "bind",
+                                    "Source": "/dev/null",
+                                    "Target": f"/etc/systemd/system/{unit}",
+                                    "ReadOnly": True,
+                                }
+                            )
 
         # Overlapping bind targets (GNS3_MASK_UDEV together with a
         # GNS3_MASK_SYSTEMD entry for the same unit, an extra_configs target
@@ -733,13 +741,15 @@ class DockerVM(BaseNode):
             params["Env"].append("{}={}".format(var_name, formatted))
 
         if self._environment:
-            for e in self._environment.strip().split("\n"):
-                e = e.strip()
-                if e.split("=")[0] == "":
-                    self.project.emit("log.warning", {"message": f"{self.name} has invalid environment variable: {e}"})
+            for env in self._environment.strip().split("\n"):
+                env = env.strip()
+                if env.split("=")[0] == "":
+                    self.project.emit(
+                        "log.warning", {"message": f"{self.name} has invalid environment variable: {env}"}
+                    )
                     continue
-                if not e.startswith("GNS3_"):
-                    formatted = self._format_env(variables, e)
+                if not env.startswith("GNS3_"):
+                    formatted = self._format_env(variables, env)
                     vm_name = self._name.replace(",", ",,")
                     project_path = self.project.path.replace(",", ",,")
                     formatted = formatted.replace("%vm-name%", '"' + vm_name.replace('"', '\\"') + '"')
@@ -754,12 +764,14 @@ class DockerVM(BaseNode):
                 "QT_GRAPHICSSYSTEM=native"
             )  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append(f"DISPLAY=:{self._display}")
-            params["HostConfig"]["Mounts"].append({
-                "Type": "bind",
-                "Source": f"/tmp/.X11-unix/X{self._display}",
-                "Target": f"/tmp/.X11-unix/X{self._display}",
-                "ReadOnly": True
-            })
+            params["HostConfig"]["Mounts"].append(
+                {
+                    "Type": "bind",
+                    "Source": f"/tmp/.X11-unix/X{self._display}",
+                    "Target": f"/tmp/.X11-unix/X{self._display}",
+                    "ReadOnly": True,
+                }
+            )
 
         if self._extra_hosts:
             extra_hosts = self._format_extra_hosts(self._extra_hosts)
@@ -772,7 +784,9 @@ class DockerVM(BaseNode):
         except DockerHttp409Error:
             # Container name already exists. This can happen when the server crashes
             # and leaves containers behind. Try to remove the conflicting container.
-            log.warning(f"Container name '{self.docker_name}' is already in use, attempting to clean up the stale container...")
+            log.warning(
+                f"Container name '{self.docker_name}' is already in use, attempting to clean up the stale container..."
+            )
             try:
                 # Try to get and remove the conflicting container
                 try:
@@ -850,11 +864,13 @@ class DockerVM(BaseNode):
                 on_host, in_container, permissions = parts
             else:
                 continue
-            formatted.append({
-                "PathOnHost": on_host,
-                "PathInContainer": in_container,
-                "CgroupPermissions": permissions,
-            })
+            formatted.append(
+                {
+                    "PathOnHost": on_host,
+                    "PathInContainer": in_container,
+                    "CgroupPermissions": permissions,
+                }
+            )
         return formatted
 
     async def update(self):
@@ -897,7 +913,6 @@ class DockerVM(BaseNode):
             await self._start_interface_monitor()
             return
         else:
-
             if self._console_type == "vnc" and not self._vnc_process:
                 # restart the vnc process in case it had previously crashed
                 await self._start_vnc_process(restart=True)
@@ -1042,7 +1057,9 @@ class DockerVM(BaseNode):
                 stderr = (await process.stderr.read()).decode(errors="replace").strip()
                 log.error(
                     "Failed to fix permissions on '%s' for container '%s': %s",
-                    volume, self._name, stderr or f"exit code {process.returncode}"
+                    volume,
+                    self._name,
+                    stderr or f"exit code {process.returncode}",
                 )
             else:
                 self._permissions_fixed = True
@@ -1102,7 +1119,9 @@ class DockerVM(BaseNode):
             log.warning(f"Docker container '{self._name}': cannot access resources to reclaim '{directory}': {e}")
             return False
 
-        log.info(f"Docker container '{self._name}': reclaiming root-owned files under '{directory}' via a one-shot container")
+        log.info(
+            f"Docker container '{self._name}': reclaiming root-owned files under '{directory}' via a one-shot container"
+        )
         # Prefer the image's own chown over the static busybox one: busybox's
         # chown dlopens NSS modules from the image, which mismatch the static
         # glibc and abort on NOS images whose glibc differs (same reasoning
@@ -1116,12 +1135,24 @@ class DockerVM(BaseNode):
         image_ref = self._image_id or self._image
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker", "run", "--rm", "--network", "none", "--pull", "never", "--user", "0:0",
-                "--entrypoint", "/gns3/bin/busybox",
-                "-v", f"{resources_path}:/gns3:ro",
-                "-v", f"{directory}:/target",
+                "docker",
+                "run",
+                "--rm",
+                "--network",
+                "none",
+                "--pull",
+                "never",
+                "--user",
+                "0:0",
+                "--entrypoint",
+                "/gns3/bin/busybox",
+                "-v",
+                f"{resources_path}:/gns3:ro",
+                "-v",
+                f"{directory}:/target",
                 image_ref,
-                "sh", "-c",
+                "sh",
+                "-c",
                 "/gns3/bin/busybox chmod -R u+rwX /target"
                 f" && ( command -v chown >/dev/null 2>&1 && chown {uid}:{gid} -R /target"
                 f" || /gns3/bin/busybox chown {uid}:{gid} -R /target )",
@@ -1159,17 +1190,27 @@ class DockerVM(BaseNode):
 
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec(tigervnc_path,
-                                                                         "-extension", "MIT-SHM",
-                                                                         "-geometry", self._console_resolution,
-                                                                         "-depth", "16",
-                                                                         "-interface", self._manager.port_manager.console_host,
-                                                                         "-rfbport", str(self.console),
-                                                                         "-AlwaysShared",
-                                                                         "-SecurityTypes", "None",
-                                                                         "-desktop", self.name,
-                                                                         ":{}".format(self._display),
-                                                                         stdout=fd, stderr=subprocess.STDOUT)
+                self._vnc_process = await asyncio.create_subprocess_exec(
+                    tigervnc_path,
+                    "-extension",
+                    "MIT-SHM",
+                    "-geometry",
+                    self._console_resolution,
+                    "-depth",
+                    "16",
+                    "-interface",
+                    self._manager.port_manager.console_host,
+                    "-rfbport",
+                    str(self.console),
+                    "-AlwaysShared",
+                    "-SecurityTypes",
+                    "None",
+                    "-desktop",
+                    self.name,
+                    ":{}".format(self._display),
+                    stdout=fd,
+                    stderr=subprocess.STDOUT,
+                )
 
     async def _start_vnc(self):
         """
@@ -1576,8 +1617,8 @@ class DockerVM(BaseNode):
         script = (
             "while :; do "
             "for ifname do "
-            "flags=$(/gns3/bin/busybox cat \"/sys/class/net/$ifname/flags\" 2>/dev/null) || continue; "
-            "/gns3/bin/busybox printf '%s=%s\\n' \"$ifname\" \"$flags\"; "
+            'flags=$(/gns3/bin/busybox cat "/sys/class/net/$ifname/flags" 2>/dev/null) || continue; '
+            '/gns3/bin/busybox printf \'%s=%s\\n\' "$ifname" "$flags"; '
             "done; "
             "/gns3/bin/busybox sleep 1; "
             "done"
@@ -1621,7 +1662,7 @@ class DockerVM(BaseNode):
             asyncio.IncompleteReadError,
             asyncio.TimeoutError,
         ) as e:
-            if 'writer' in locals():
+            if "writer" in locals():
                 await self._close_interface_monitor_writer(writer)
             log.warning("Could not monitor interfaces for Docker container '%s': %s", self.name, e)
             return
@@ -1658,8 +1699,7 @@ class DockerVM(BaseNode):
         """Read ``ifname=flags`` records and emit changed adapter states."""
 
         interfaces = {
-            self._get_container_ifname(adapter_number): adapter_number
-            for adapter_number in range(self.adapters)
+            self._get_container_ifname(adapter_number): adapter_number for adapter_number in range(self.adapters)
         }
         try:
             while True:
@@ -1747,9 +1787,7 @@ class DockerVM(BaseNode):
         await self._ubridge_send(f"bridge create {bridge_name}")
         self._bridges.add(bridge_name)
         await self._ubridge_send(
-            "bridge add_nio_tap {bridge_name} {hostif} off".format(
-                bridge_name=bridge_name, hostif=adapter.host_ifc
-            )
+            "bridge add_nio_tap {bridge_name} {hostif} off".format(bridge_name=bridge_name, hostif=adapter.host_ifc)
         )
 
         mac_address = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
@@ -1759,17 +1797,14 @@ class DockerVM(BaseNode):
             mac_address = custom_mac_address
 
         try:
-            await self._ubridge_send('docker set_mac_addr {ifc} {mac}'.format(ifc=adapter.host_ifc, mac=mac_address))
+            await self._ubridge_send("docker set_mac_addr {ifc} {mac}".format(ifc=adapter.host_ifc, mac=mac_address))
         except UbridgeError:
             log.warning(f"Could not set MAC address {mac_address} on interface {adapter.host_ifc}")
-
 
         ifname = self._get_container_ifname(adapter_number)
         log.debug(f"Move container {self.name} adapter {adapter.host_ifc} -> {ifname} in ns {self._namespace}")
         try:
-            await self._ubridge_send(
-                f"docker move_to_ns {adapter.host_ifc} {self._namespace} {ifname}"
-            )
+            await self._ubridge_send(f"docker move_to_ns {adapter.host_ifc} {self._namespace} {ifname}")
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
         else:
@@ -2061,6 +2096,6 @@ class DockerVM(BaseNode):
             raise ComputeError(
                 f"Could not delete the node directory '{self.working_dir}': files left owned by "
                 f"another user could not be reclaimed ({e}). Reclaim them manually with: "
-                f"docker run --rm --user 0:0 -v \"{self.working_dir}\":/target --entrypoint /bin/sh "
+                f'docker run --rm --user 0:0 -v "{self.working_dir}":/target --entrypoint /bin/sh '
                 f"{self._image} -c 'chown -R {os.getuid()}:{os.getgid()} /target'"
             )

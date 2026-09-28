@@ -17,7 +17,6 @@
 
 """Provide a pretty logging on console"""
 
-
 import logging
 import sys
 import os
@@ -28,10 +27,10 @@ from logging.handlers import RotatingFileHandler
 
 
 class ColouredFormatter(logging.Formatter):
-    RESET = "\x1B[0m"
-    RED = "\x1B[31m"
-    YELLOW = "\x1B[33m"
-    GREEN = "\x1B[32m"
+    RESET = "\x1b[0m"
+    RED = "\x1b[31m"
+    YELLOW = "\x1b[33m"
+    GREEN = "\x1b[32m"
     PINK = "\x1b[35m"
 
     def format(self, record, colour=False):

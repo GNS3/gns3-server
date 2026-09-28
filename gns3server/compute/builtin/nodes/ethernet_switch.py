@@ -55,7 +55,6 @@ _QINQ_ETHERTYPE = "0x88a8"
 
 
 class EthernetSwitch(BaseNode):
-
     """
     Ethernet switch.
 
@@ -74,8 +73,8 @@ class EthernetSwitch(BaseNode):
         self._ubridge_require_privileged_access = True
 
         self._nios = {}
-        self._tap_by_port = {}          # port_number -> kernel TAP enslaved to the bridge
-        self._bridge_name = None        # kernel bridge interface name (allocated on start)
+        self._tap_by_port = {}  # port_number -> kernel TAP enslaved to the bridge
+        self._bridge_name = None  # kernel bridge interface name (allocated on start)
         self._bridge_created = False
         self._bridge_proto_set = False  # whether ``brctl setvlanproto`` has been applied
         # Idempotency flag for start(). Decoupled from ``status`` so the node can

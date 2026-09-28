@@ -28,8 +28,9 @@ def fingerprint(path):
 
 def stat_fingerprint(info):
     # Store as text: inode/device numbers need not fit a signed SQL BIGINT.
-    return ":".join(str(value) for value in (
-        info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns))
+    return ":".join(
+        str(value) for value in (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+    )
 
 
 class ImageLockBusy(Exception):
@@ -61,10 +62,12 @@ class ImageLock:
                 try:
                     if os.name == "nt":
                         import msvcrt
+
                         self._file.seek(0)
                         msvcrt.locking(self._file.fileno(), msvcrt.LK_NBLCK, 1)
                     else:
                         import fcntl
+
                         fcntl.flock(self._file, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     return self
                 except (BlockingIOError, PermissionError):

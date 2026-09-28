@@ -198,18 +198,14 @@ class GNS3PacketFilterTool(BaseTool):
             valid_actions = ["get_available", "set", "get", "clear"]
             if action not in valid_actions:
                 logger.error("Invalid action: %s. Must be one of %s", action, valid_actions)
-                return {
-                    "error": f"Invalid action: {action}. Must be one of {valid_actions}"
-                }
+                return {"error": f"Invalid action: {action}. Must be one of {valid_actions}"}
 
             # Validate filters for "set" action
             if action == "set":
                 filters = input_data.get("filters")
                 if not filters or not isinstance(filters, dict):
                     logger.error("Invalid input: 'set' action requires 'filters' dict.")
-                    return {
-                        "error": "'set' action requires 'filters' dict with filter configuration."
-                    }
+                    return {"error": "'set' action requires 'filters' dict with filter configuration."}
 
             # Build handler context (JWT + server URL from request context)
             logger.info("Connecting to GNS3 server...")
@@ -217,28 +213,19 @@ class GNS3PacketFilterTool(BaseTool):
 
             if gns3_ctx is None:
                 logger.error("Failed to create GNS3 connector")
-                return {
-                    "error": "Failed to connect to GNS3 server. "
-                    "Please check your configuration."
-                }
+                return {"error": "Failed to connect to GNS3 server. Please check your configuration."}
 
             # Execute action
-            logger.info(
-                "Processing packet filter action '%s' for link %s...", action, link_id
-            )
+            logger.info("Processing packet filter action '%s' for link %s...", action, link_id)
             if action == "get_available":
                 result = self._get_available_filters(gns3_ctx, project_id, link_id)
             elif action == "set":
                 filters = input_data.get("filters", {})
-                result = self._set_filters(
-                    gns3_ctx, project_id, link_id, filters, show_filters_icon
-                )
+                result = self._set_filters(gns3_ctx, project_id, link_id, filters, show_filters_icon)
             elif action == "get":
                 result = self._get_filters(gns3_ctx, project_id, link_id)
             elif action == "clear":
-                result = self._clear_filters(
-                    gns3_ctx, project_id, link_id, show_filters_icon
-                )
+                result = self._clear_filters(gns3_ctx, project_id, link_id, show_filters_icon)
             else:
                 result = {"error": f"Unknown action: {action}"}
 
@@ -252,18 +239,12 @@ class GNS3PacketFilterTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to process packet filter request: %s", e)
-            return {
-                "error": f"Failed to process packet filter request: {str(e)}"
-            }
+            return {"error": f"Failed to process packet filter request: {str(e)}"}
 
-    def _get_available_filters(
-        self, gns3_ctx: dict, project_id: str, link_id: str
-    ) -> dict[str, Any]:
+    def _get_available_filters(self, gns3_ctx: dict, project_id: str, link_id: str) -> dict[str, Any]:
         """Get available filter types for the link."""
         try:
-            filters = available_filters_handler(
-                {"project_id": project_id, "link_id": link_id}, gns3_ctx
-            )
+            filters = available_filters_handler({"project_id": project_id, "link_id": link_id}, gns3_ctx)
             if "error" in filters:
                 raise RuntimeError(filters["error"])
             logger.info("Retrieved %d available filter types.", len(filters))
@@ -307,13 +288,9 @@ class GNS3PacketFilterTool(BaseTool):
             if "Invalid" in result.stdout or "Invalid" in result.stderr:
                 error_lines = []
                 if "Invalid" in result.stderr:
-                    error_lines.extend(
-                        line for line in result.stderr.split("\n") if "Invalid" in line
-                    )
+                    error_lines.extend(line for line in result.stderr.split("\n") if "Invalid" in line)
                 if "Invalid" in result.stdout:
-                    error_lines.extend(
-                        line for line in result.stdout.split("\n") if "Invalid" in line
-                    )
+                    error_lines.extend(line for line in result.stdout.split("\n") if "Invalid" in line)
 
                 # Strip interface suffix (e.g., "for interface 'lo'") for cleaner error
                 error_msg_parts = []
@@ -336,10 +313,7 @@ class GNS3PacketFilterTool(BaseTool):
 
         except FileNotFoundError:
             # tshark not installed - skip validation
-            logger.warning(
-                "tshark not found, skipping BPF syntax validation. "
-                "Install tshark to enable BPF validation."
-            )
+            logger.warning("tshark not found, skipping BPF syntax validation. Install tshark to enable BPF validation.")
             return {"valid": True, "error": None}
 
         except Exception as e:
@@ -414,14 +388,10 @@ class GNS3PacketFilterTool(BaseTool):
                 "status": "failed",
             }
 
-    def _get_filters(
-        self, gns3_ctx: dict, project_id: str, link_id: str
-    ) -> dict[str, Any]:
+    def _get_filters(self, gns3_ctx: dict, project_id: str, link_id: str) -> dict[str, Any]:
         """Get current filters configured on the link."""
         try:
-            link = get_link_handler(
-                {"project_id": project_id, "link_id": link_id}, gns3_ctx
-            )
+            link = get_link_handler({"project_id": project_id, "link_id": link_id}, gns3_ctx)
             if "error" in link:
                 raise RuntimeError(link["error"])
 
