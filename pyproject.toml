@@ -383,7 +383,6 @@ module = [
   "gns3server.schemas.compute.nat_nodes",  # 1
   "gns3server.schemas.compute.qemu_nodes",  # 1
   "gns3server.schemas.compute.virtualbox_nodes",  # 2
-  "gns3server.schemas.compute.vmware_nodes",  # 3
   "gns3server.schemas.compute.vpcs_nodes",  # 1
   "gns3server.schemas.controller.appliances",  # 1
   "gns3server.schemas.controller.computes",  # 6

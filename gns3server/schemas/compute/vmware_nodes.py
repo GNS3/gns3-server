@@ -62,9 +62,9 @@ class VMwareBase(BaseModel):
     Common VMware node properties.
     """
 
-    name: str
-    vmx_path: str = Field(..., description="Path to the vmx file")
-    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
+    name: Optional[str] = None
+    vmx_path: Optional[str] = None
+    linked_clone: Optional[bool] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
@@ -83,7 +83,9 @@ class VMwareCreate(VMwareBase):
     Properties to create a VMware node.
     """
 
-    pass
+    name: str
+    vmx_path: str = Field(..., description="Path to the vmx file")
+    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
 
 
 class VMwareUpdate(VMwareBase):
@@ -91,12 +93,13 @@ class VMwareUpdate(VMwareBase):
     Properties to update a VMware node.
     """
 
-    name: Optional[str] = None
-    vmx_path: Optional[str] = None
-    linked_clone: Optional[bool] = None
+    pass
 
 
 class VMware(VMwareBase):
+    name: str
+    vmx_path: str = Field(..., description="Path to the vmx file")
+    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")
