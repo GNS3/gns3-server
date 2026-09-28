@@ -371,7 +371,6 @@ module = [
   "gns3server.compute.virtualbox.virtualbox_vm",  # 1
   "gns3server.compute.vmware.vmware_vm",  # 1
   "gns3server.compute.vpcs.vpcs_vm",  # 2
-  "gns3server.config",  # 1
   "gns3server.controller.appliance",  # 2
   "gns3server.controller.appliance_manager",  # 5
   "gns3server.controller.compute",  # 2
