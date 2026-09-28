@@ -24,12 +24,12 @@ Frames never leave the kernel.
 | Link | uBridge bridge, TAP fd ↔ UDP, userspace copy | per-link kernel bridge `gns3{link_id[:11]}`, zero-copy |
 | Relay latency | ~0.3 ms RTT | ~0.05 ms RTT (measured) |
 | Link attach at runtime | yes (relay attaches the pre-existing TAP) | yes (brctl addif / add_nio_ethernet — interface untouched) |
-| Packet filters | uBridge userspace filters | not supported yet (tc netem roadmap) → relay fallback |
+| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt); frequency_drop & bpf stay relay-only |
 | Capture / markers | relay bridge | uBridge AF_PACKET modules on the veth host end |
 
-The work landed in four stages on branch stack `feat/docker-kernel-datapath` →
+The work landed in five stages on branch stack `feat/docker-kernel-datapath` →
 `feat/docker-kernel-capture` → `feat/docker-kernel-markers` →
-`feat/docker-veth-everywhere`:
+`feat/docker-veth-everywhere` → `feat/docker-kernel-filters`:
 
 1. **Kernel datapath** — NIOBridge NIO type, per-link bridges, carrier-based
    suspend, crash-safe reconciliation.
@@ -39,6 +39,10 @@ The work landed in four stages on branch stack `feat/docker-kernel-datapath` →
 4. **veth-everywhere** — the TAP path deleted; every adapter is a veth and the
    datapath is a *runtime* decision (kernel or relay) that never touches a
    running container's interfaces.
+5. **Filters** — impairment filters (delay, packet_loss, corrupt) become one
+   tc netem qdisc per veth host end, pushed through uBridge's netlink `tc`
+   module. This also removes the relay delay filter's nanosleep bottleneck
+   (upstream #2827) from the kernel path.
 
 ## Adapter interface types
 
@@ -121,10 +125,10 @@ endpoints became eligible are upgraded to the kernel datapath automatically.
 
 | Operation | Kernel-datapath action |
 |---|---|
-| Create / attach | `brctl create` (EEXIST tolerated via `brctl show` verify) + `link set up` + `brctl addif` both ends (concurrent, race-tolerant) + carrier up |
-| Delete / detach | marker teardown → carrier off → `brctl delif` → `brctl delete` (last endpoint wins; EBUSY/ENOENT suppressed). The veth survives — unlike a relay bridge, whose death dropped its filters, an orphaned AF_PACKET marker would keep sniffing, hence the explicit teardown |
+| Create / attach | `brctl create` (EEXIST tolerated via `brctl show` verify) + `link set up` + `brctl addif` both ends (concurrent, race-tolerant) + carrier up + markers + `tc netem set` (filters) |
+| Delete / detach | marker teardown → `tc reset` (netem teardown — the veth survives the link) → carrier off → `brctl delif` → `brctl delete` (last endpoint wins; EBUSY/ENOENT suppressed). The veth survives — unlike a relay bridge, whose death dropped its filters, an orphaned AF_PACKET marker would keep sniffing, hence the explicit teardown |
 | Reset (`POST /links/{id}/reset`) | delete + create (re-evaluates eligibility) |
-| Suspend (`PUT /links/{id}` `{"suspend": true}`) | veth host end admin-state down both ends — 100 % loss, no synthetic filter needed; resume restores |
+| Suspend (`PUT /links/{id}` `{"suspend": true}`) | veth host end admin-state down both ends — 100 % loss, no synthetic filter needed; resume restores (netem qdisc survives the carrier flap) |
 
 ## Capture
 
@@ -156,11 +160,38 @@ marker enable_kernel <if> <name> <on|off>           # off = installed but silent
 
 ## Packet filters
 
-Not supported on the kernel datapath yet: a link with active filters is wired
-on the relay (where uBridge's userspace filters apply), and adding filters to
-an existing kernel link returns 409. Kernelization via `tc netem` on the veth
-is the planned next stage — it also removes the relay's `delay` filter
-nanosleep bottleneck under high packet rates.
+Impairment filters run **in the kernel** as tc netem qdiscs on the veth host
+ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
+
+| GNS3 filter | netem mapping | Notes |
+|---|---|---|
+| `delay [ms, jitter]` | `delay X jitter Y` | jitter 0 omitted |
+| `packet_loss [%]` | `loss P` | per direction (see below) |
+| `corrupt [%]` | `corrupt P` | |
+| `frequency_drop` | — no netem equivalent | 409 on kernel links; relay fallback |
+| `bpf` | — needs a tc classifier | 409 on kernel links; relay fallback |
+
+Semantics:
+
+* **Both endpoints** receive the filter dict and attach one qdisc to *their*
+  veth host end. The qdisc's egress covers traffic entering that container,
+  so every direction of the link is impaired exactly once — the same net
+  effect as the relay, where both directions cross the single filtered
+  bridge. A `delay 100` link measures ≈200 ms RTT; `packet_loss 30`
+  measures ≈51 % round-trip (1 − 0.7²).
+* **Reconcile = full re-apply.** `netem set` is an atomic replace (NLM_F_REPLACE),
+  so every NIO update just rebuilds the qdisc from the current filters; no
+  per-parameter diffing. An empty filter set detaches it (`tc reset`,
+  ENOENT-tolerated).
+* **Node restart** restores the qdisc from the NIO (like capture and markers);
+  **link deletion** detaches it explicitly — the veth survives the link and an
+  orphaned qdisc would keep impairing the next one.
+* **Suspend** keeps the qdisc (carrier-driven loss); the first packet after
+  resume takes one extra delay interval (known netem idle-baseline behaviour)
+  and steady state is exact.
+* A link carrying `frequency_drop` or `bpf` is wired on the **relay** (they
+  only exist in uBridge's userspace filters); `available_filters` hides them
+  on kernel links and setting them returns 409 with a clear message.
 
 ## uBridge command surface
 
@@ -173,8 +204,13 @@ brctl create / delete / addif / delif / show
 link set <if> up|down
 capture start_kernel / stop_kernel
 marker add_kernel / delete_kernel / enable_kernel
+tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%>] [dup <%>] [corrupt <%>] / tc reset <if>
 bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capture
 ```
+
+Note: `tc reset` currently replies 207-ENOENT when no qdisc is attached — the
+server tolerates it; making the command idempotent in uBridge is a desirable
+polish.
 
 ## Configuration
 
@@ -193,6 +229,15 @@ End-to-end on a five-container FRR topology (mixed runtime-drawn and reloaded
 links): 8/8 links on the kernel datapath, ping RTT ≈ 0.05 ms, FDB learning,
 suspend = 100 % loss / resume restores, project reopen upgrades relay links,
 runtime link creation on running containers, marker pcaps exact (tx/rx
-pairs), capture freeze on stop, server restart reconciliation. Unit tests:
+pairs), capture freeze on stop, server restart reconciliation.
+
+Filters (two-container kernel link, 27/27 checks): baseline 0.06 ms →
+`delay 100` = 200.2 ms RTT (2× per direction) → `delay 50` = 100.2 ms
+(atomic replace) → clear = baseline (qdisc detached); `packet_loss 30` =
+48 % round-trip loss (expected 51 % = 1 − 0.7²); `frequency_drop`/`bpf` =
+409; suspend with delay active = 100 % loss, resume keeps the qdisc
+(200.1 ms); node restart restores it (200.1 ms); link delete detaches it
+(`/usr/sbin/tc qdisc show` — no netem left); re-created link has no residual
+impairment. Unit tests:
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.

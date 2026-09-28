@@ -40,6 +40,7 @@ from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.hostname import is_rfc1123_hostname_valid
+from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
@@ -1856,8 +1857,10 @@ class DockerVM(BaseNode):
         self._kernel_veths[(adapter_number, port_number)] = host_ifc
         log.debug(
             "Created veth adapter {adapter_number} port {port_number} with MAC address {mac_address} in namespace {namespace}".format(
-                adapter_number=adapter_number, port_number=port_number,
-                mac_address=mac_address, namespace=self._namespace,
+                adapter_number=adapter_number,
+                port_number=port_number,
+                mac_address=mac_address,
+                namespace=self._namespace,
             )
         )
 
@@ -1931,6 +1934,9 @@ class DockerVM(BaseNode):
             # Markers carried by the NIO attach to the veth host end (AF_PACKET
             # taps) — the anchor is the interface, not a relay bridge.
             await self._ubridge_apply_markers(host_ifc, nio)
+            # Impairment filters become one tc netem qdisc on the veth host
+            # end (restored here on node restart, like the capture above).
+            await self._ubridge_apply_netem(host_ifc, nio.filters)
             return
 
         # Relay NIO. On a veth-backed adapter (the unified Docker interface)
@@ -1992,10 +1998,14 @@ class DockerVM(BaseNode):
 
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                if nio.filters:
+                # The controller keeps relay-only filters off kernel links and
+                # create_nio rejects them on the POST path; this PUT path
+                # mutates the NIO in place, so guard here too.
+                unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(nio.filters or {})
+                if unsupported:
                     raise DockerError(
-                        "Packet filters are not supported on kernel-datapath links; "
-                        "delete and recreate the link to use them"
+                        "Packet filter(s) {} cannot run on a kernel-datapath link "
+                        "(no uBridge relay in the forwarding path)".format(", ".join(sorted(unsupported)))
                     )
                 if self.status == "started":
                     host_ifc = self._kernel_veths.get((adapter_number, port_number))
@@ -2003,6 +2013,9 @@ class DockerVM(BaseNode):
                         # Incremental marker reconcile on the veth anchor —
                         # the relay-datapath equivalent of the branch below.
                         await self._ubridge_apply_markers(host_ifc, nio)
+                        # netem set is an atomic replace, so a full re-apply
+                        # IS the incremental reconcile for impairment filters.
+                        await self._ubridge_apply_netem(host_ifc, nio.filters)
                     await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
                 return
 
@@ -2085,7 +2098,14 @@ class DockerVM(BaseNode):
             await self._ubridge_send(cmd)
             return
         await super()._ubridge_add_marker_filter(
-            bridge_name, name, bpf, pcap_path, tag=tag, link_id=link_id, direction=direction, data_link_type=data_link_type
+            bridge_name,
+            name,
+            bpf,
+            pcap_path,
+            tag=tag,
+            link_id=link_id,
+            direction=direction,
+            data_link_type=data_link_type,
         )
 
     async def _ubridge_delete_marker_filter(self, bridge_name, name):
@@ -2114,6 +2134,43 @@ class DockerVM(BaseNode):
             await self._ubridge_send(f"marker enable_kernel {anchor} {name} {state}")
             return
         await super()._ubridge_enable_marker_filter(anchor, name, state)
+
+    async def _ubridge_apply_netem(self, host_ifc, filters):
+        """
+        Translate the NIO's impairment filters into one tc netem qdisc on the
+        veth host end. The supported types (delay, packet_loss, corrupt) merge
+        into a single qdisc — its egress covers the traffic entering this
+        container, and with both link endpoints applying theirs, every
+        direction of the link is impaired exactly once (the same net effect
+        as the relay, where both directions cross the single filtered bridge).
+        ``netem set`` atomically replaces whatever qdisc was attached, so a
+        full re-apply on every NIO update *is* the incremental reconcile. An
+        empty filter set detaches the qdisc (``tc reset``).
+
+        :param host_ifc: veth host-end interface name
+        :param filters: NIO filters dictionary ({"delay": [ms, jitter], ...})
+        """
+
+        parts = []
+        delay = filters.get("delay")
+        if delay:
+            parts.append(f"delay {int(delay[0])}")
+            if len(delay) > 1 and int(delay[1]):
+                parts.append(f"jitter {int(delay[1])}")
+        for filter_type, netem_kw in (("packet_loss", "loss"), ("corrupt", "corrupt")):
+            values = filters.get(filter_type)
+            if values and int(values[0]):
+                parts.append(f"{netem_kw} {int(values[0])}")
+        if parts:
+            await self._ubridge_send('tc netem set "{ifc}" {params}'.format(ifc=host_ifc, params=" ".join(parts)))
+            return
+        try:
+            await self._ubridge_send(f'tc reset "{host_ifc}"')
+        except UbridgeError as e:
+            # "No such file or directory" = no qdisc was attached: already
+            # clean. Everything else is a real failure and must surface.
+            if "No such file" not in str(e):
+                raise
 
     async def _remove_kernel_markers(self, host_ifc):
         """
@@ -2154,6 +2211,12 @@ class DockerVM(BaseNode):
         host_ifc = self._kernel_veths.get((adapter_number, port_number))
         if host_ifc is not None:
             await self._remove_kernel_markers(host_ifc)
+            # The veth survives link deletion, so an orphaned netem qdisc
+            # would keep impairing whatever attaches to the adapter next
+            # (kernel link or relay). Best-effort: ENOENT just means no
+            # qdisc was attached.
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'tc reset "{host_ifc}"')
             if self.status == "started":
                 await self._set_adapter_carrier(adapter_number, False, port_number)
             with contextlib.suppress(UbridgeError):

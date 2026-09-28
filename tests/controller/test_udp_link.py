@@ -565,7 +565,7 @@ async def test_update_ethernet_switch_nio(project):
             "markers": {},
             "filters": {},
         },
-        timeout=221,
+        timeout=120,
     )
 
 

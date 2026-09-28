@@ -116,8 +116,9 @@ class Link:
         """
         Whether this link is wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge — no uBridge relay in the
-        forwarding path, so filters and markers are unavailable; capture is
-        served by uBridge's AF_PACKET module).
+        forwarding path). Impairment filters run as tc netem on the veth
+        host end; markers and capture are served by uBridge's AF_PACKET
+        module.
         """
         return any(d.get("type") == "nio_bridge" for d in (getattr(self, "_link_data", None) or []))
 
@@ -234,11 +235,18 @@ class Link:
         except FilterValidationError as e:
             raise ControllerError(f"Invalid packet filter parameters: {e!s}")
 
-        if new_filters and self.kernel_datapath:
-            raise ControllerError(
-                "Packet filters are not supported on kernel-datapath links (no uBridge relay "
-                "in the forwarding path); delete and recreate the link to use filters"
-            )
+        if self.kernel_datapath:
+            from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
+
+            unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(new_filters or {})
+            if unsupported:
+                raise ControllerError(
+                    "Packet filter(s) {} cannot run on a kernel-datapath link (no uBridge relay "
+                    "in the forwarding path; delay, packet loss and corrupt are served by tc "
+                    "netem on the veth); delete and recreate the link to use them".format(
+                        ", ".join(sorted(unsupported))
+                    )
+                )
 
         if new_filters != self.filters:
             self._filters = new_filters
@@ -637,6 +645,13 @@ class Link:
         """
         filter_node = self._get_filter_node()
         if filter_node:
+            if self.kernel_datapath:
+                # Kernel-datapath links serve filters via tc netem on the
+                # veth host end; types without a netem equivalent (which
+                # only run in the uBridge relay) are hidden from the picker.
+                from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
+
+                return [f for f in FILTERS if f["type"] not in KERNEL_UNSUPPORTED_FILTERS]
             return FILTERS
         return []
 

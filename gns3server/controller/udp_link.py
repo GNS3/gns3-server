@@ -20,7 +20,10 @@ import asyncio
 import logging
 
 from gns3server.config import Config
-from gns3server.utils.packet_filter_validation import validate_bpf_syntax
+from gns3server.utils.packet_filter_validation import (
+    KERNEL_UNSUPPORTED_FILTERS,
+    validate_bpf_syntax,
+)
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from .link import _UNSET, Link
@@ -82,19 +85,32 @@ class UDPLink(Link):
         """Whether NIO creation is waiting for missing node images."""
         return self._deferred
 
-    def _get_node_filters(self, node1, node2):
+    def _get_node_filters(self, node1, node2, kernel=None):
         """
         Determine which node gets the active filters applied.
+
+        :param kernel: explicit datapath decision for the caller's context.
+            ``_prepare`` must pass it: it clears ``_link_data`` (the source
+            of the ``kernel_datapath`` property) before rebuilding the NIO
+            specs, so deriving the datapath there would read the previous
+            run's. Callers operating on established link data (``update``)
+            derive it from the property.
 
         :returns: Tuple of (node1_filters, node2_filters)
         """
         # Kernel-datapath links implement suspend natively (interface carrier
         # driven by the NIO suspend flag). The synthetic frequency_drop filter
         # that get_active_filters() injects for suspended links is a
-        # relay-datapath emulation mechanism — sending it would trip the
-        # compute-side kernel guard, so kernel links always push empty filters.
-        if self.kernel_datapath:
-            return {}, {}
+        # relay-datapath emulation mechanism, so kernel links push the *real*
+        # filters straight from storage. Both endpoints receive them: each
+        # end's compute attaches one tc netem qdisc to its veth host end
+        # (egress = traffic entering that container), so every direction of
+        # the link is impaired exactly once — the same net effect as the
+        # relay, where both directions cross the single filtered bridge.
+        if kernel is None:
+            kernel = self.kernel_datapath
+        if kernel:
+            return self._filters, self._filters
         filter_node = self._get_filter_node()
         return (
             self.get_active_filters() if filter_node == node1 else {},
@@ -135,9 +151,11 @@ class UDPLink(Link):
         """
         Whether this link can be wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge) instead of the uBridge UDP
-        relay. The kernel path has no userspace relay, so filters — which
-        live in the relay — disqualify it. Markers and capture are served
-        by uBridge's AF_PACKET modules on the veth host end.
+        relay. Impairment filters with a tc netem equivalent (delay,
+        packet_loss, corrupt) are served on the veth host end; the others
+        (frequency_drop, bpf) only exist in the uBridge relay and disqualify
+        the kernel path. Capture and markers are served by uBridge's
+        AF_PACKET modules on the veth host end.
 
         Docker adapters are born as veth pairs (unified interface), so the
         datapath is a runtime decision — links attach to running containers
@@ -152,7 +170,11 @@ class UDPLink(Link):
             return False
         if node1.compute.id != node2.compute.id:
             return False
-        if self.get_active_filters():
+        # Look at the *stored* filters, not get_active_filters(): a suspended
+        # link reports the synthetic frequency_drop emulation, which is
+        # relay-only mechanics and must not flip a kernel link to the relay
+        # on reopen/reset.
+        if KERNEL_UNSUPPORTED_FILTERS.intersection(self._filters or {}):
             return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
@@ -192,11 +214,27 @@ class UDPLink(Link):
             # Markers ride the NIO like on the relay datapath, routed by
             # capture node; they attach to the veth host end via uBridge's
             # AF_PACKET marker module instead of a relay `mark` filter.
+            # Filters (delay/packet_loss/corrupt — eligibility guarantees no
+            # other type is present) become one tc netem qdisc per veth host
+            # end, pushed to both endpoints.
             bridge_name = "gns3" + self._id.replace("-", "")[:11]
+            node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
             node1_markers, node2_markers = self._get_node_markers(node1, node2)
             self._link_data = [
-                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": node1_markers, "suspend": self._suspended},
-                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": node2_markers, "suspend": self._suspended},
+                {
+                    "type": "nio_bridge",
+                    "bridge": bridge_name,
+                    "filters": node1_filters,
+                    "markers": node1_markers,
+                    "suspend": self._suspended,
+                },
+                {
+                    "type": "nio_bridge",
+                    "bridge": bridge_name,
+                    "filters": node2_filters,
+                    "markers": node2_markers,
+                    "suspend": self._suspended,
+                },
             ]
             return [
                 (node1, adapter_number1, port_number1, self._link_data[0]),
@@ -223,7 +261,7 @@ class UDPLink(Link):
             _allocate_port(node1.compute), _allocate_port(node2.compute)
         )
 
-        node1_filters, node2_filters = self._get_node_filters(node1, node2)
+        node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=False)
         node1_markers, node2_markers = self._get_node_markers(node1, node2)
 
         # Build the tunnel specs for both sides. Index 0 is always node1 so
@@ -331,7 +369,7 @@ class UDPLink(Link):
         self._link_data[1]["suspend"] = self._suspended
         if node2.node_type != "ethernet_hub":
             await node2.put(
-                f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=self._link_data[1], timeout=221
+                f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=self._link_data[1], timeout=120
             )
 
     async def delete(self):

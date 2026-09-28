@@ -88,11 +88,45 @@ async def test_kernel_datapath_not_eligible_across_computes(project):
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_with_filters(project):
+async def test_kernel_datapath_eligible_with_netem_filters(project):
+    """
+    Impairment filters with a tc netem equivalent (delay, packet_loss,
+    corrupt) no longer disqualify the kernel datapath — they become one
+    netem qdisc per veth host end.
+    """
 
     link, node1, node2 = await _kernel_link(project)
-    link._filters = {"delay": [10, 0]}
+    link._filters = {"delay": [10, 0], "packet_loss": [5], "corrupt": [1]}
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_with_relay_only_filters(project):
+    """
+    frequency_drop and bpf only exist in the uBridge userspace relay — a
+    link carrying one stays on the relay.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    link._filters = {"delay": [10, 0], "frequency_drop": [7]}
     assert link._kernel_datapath_eligible(node1, node2) is False
+
+    link._filters = {"bpf": ["icmp"]}
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_when_suspended(project):
+    """
+    A suspended link reports the synthetic frequency_drop emulation through
+    get_active_filters() — that is relay-only mechanics and must not flip a
+    kernel link to the relay on reopen/reset (suspend is carrier-driven).
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    link._suspended = True
+    assert link.get_active_filters() == {"frequency_drop": [-1]}
+    assert link._kernel_datapath_eligible(node1, node2) is True
 
 
 @pytest.mark.asyncio
@@ -191,7 +225,7 @@ async def test_prepare_relay_link_allocates_udp_ports(project):
 
     compute1.get_ip_on_same_subnet.side_effect = subnet_callback
 
-    async def port_callback(path, data={}, **kwargs):
+    async def port_callback(path, data=None, **kwargs):
         response = MagicMock()
         response.json = {"udp_port": 1024}
         return response
@@ -212,13 +246,29 @@ async def test_prepare_relay_link_allocates_udp_ports(project):
 
 
 @pytest.mark.asyncio
-async def test_update_filters_rejected_on_kernel_link(project):
+async def test_update_netem_filters_accepted_on_kernel_link(project):
+
+    link, node1, node2 = await _kernel_link(project)
+    await link._prepare()
+
+    await link.update_filters({"delay": [10, 0], "packet_loss": [5]})
+    assert link.filters == {"delay": [10, 0], "packet_loss": [5]}
+    # both endpoints carry the filters (one netem qdisc per veth host end)
+    by_node = {entry[0].id: entry[3] for entry in (await link._prepare())}
+    assert by_node[node1.id]["filters"] == {"delay": [10, 0], "packet_loss": [5]}
+    assert by_node[node2.id]["filters"] == {"delay": [10, 0], "packet_loss": [5]}
+
+
+@pytest.mark.asyncio
+async def test_update_relay_only_filters_rejected_on_kernel_link(project):
 
     link, _n1, _n2 = await _kernel_link(project)
     await link._prepare()
 
     with pytest.raises(ControllerError, match="kernel-datapath"):
-        await link.update_filters({"delay": [10, 0]})
+        await link.update_filters({"frequency_drop": [10]})
+    with pytest.raises(ControllerError, match="kernel-datapath"):
+        await link.update_filters({"bpf": ["icmp"]})
 
 
 @pytest.mark.asyncio

@@ -74,15 +74,18 @@ class BridgeNIO(BaseModel):
     """
     Kernel-datapath bridge Network Input/Output properties. The NIO tells the
     node to enslave its veth host end into the named kernel bridge instead of
-    wiring a uBridge UDP relay. ``filters`` must stay empty on this datapath
-    (rejected server-side); markers and packet capture are served by uBridge's
-    AF_PACKET modules on the veth host end.
+    wiring a uBridge UDP relay. Impairment filters with a tc netem equivalent
+    (delay, packet_loss, corrupt) run on the veth host end; the relay-only
+    kinds (frequency_drop, bpf) are rejected. Markers and packet capture are
+    served by uBridge's AF_PACKET modules on the veth host end.
     """
 
     type: BridgeNIOType
     bridge: str = Field(..., description="Kernel bridge name e.g. gns3a1b2c3d4e5")
     suspend: Optional[bool] = Field(None, description="Suspend the NIO")
-    filters: Optional[dict] = Field(None, description="Packet filters (unsupported, must be empty)")
+    filters: Optional[dict] = Field(
+        None, description="Packet filters served by tc netem on the veth host end (delay/packet_loss/corrupt)"
+    )
     markers: Optional[dict] = Field(None, description="Traffic-insight markers (attached to the veth host end)")
 
 

@@ -55,7 +55,7 @@ async def vm(compute_project, manager):
 
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="none")
     vm._cid = "e90e34656842"
-    vm.mac_address = '02:42:3d:b7:93:00'
+    vm.mac_address = "02:42:3d:b7:93:00"
     vm._start_interface_monitor = AsyncioMagicMock()
     vm._stop_interface_monitor = AsyncioMagicMock()
     return vm
@@ -65,6 +65,7 @@ async def vm(compute_project, manager):
 # NIO factory
 # ---------------------------------------------------------------------------
 
+
 def test_create_nio_bridge(vm):
 
     nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
@@ -73,10 +74,25 @@ def test_create_nio_bridge(vm):
     assert nio.suspend is False
 
 
-def test_create_nio_bridge_rejects_filters(vm):
+def test_create_nio_bridge_accepts_netem_filters(vm):
+    """
+    Impairment filters with a tc netem equivalent ride the kernel NIO (they
+    become one netem qdisc on the veth host end); relay-only types are
+    rejected.
+    """
 
-    with pytest.raises(ComputeError):
-        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"loss": [10]}})
+    nio = vm.manager.create_nio(
+        {"type": "nio_bridge", "bridge": BRIDGE, "filters": {"delay": [50, 5], "packet_loss": [10]}}
+    )
+    assert isinstance(nio, NIOBridge)
+    assert nio.filters == {"delay": [50, 5], "packet_loss": [10]}
+
+
+@pytest.mark.parametrize("filters", [{"frequency_drop": [10]}, {"bpf": ["icmp"]}])
+def test_create_nio_bridge_rejects_relay_only_filters(vm, filters):
+
+    with pytest.raises(ComputeError, match="kernel-datapath"):
+        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": filters})
 
 
 def test_create_nio_bridge_accepts_markers(vm):
@@ -94,6 +110,7 @@ def test_create_nio_bridge_accepts_markers(vm):
 # Adapter wiring (start path)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_add_ubridge_kernel_connection(vm):
 
@@ -110,8 +127,8 @@ async def test_add_ubridge_kernel_connection(vm):
         call.send(f'docker delete_veth "{guest_ifc}"'),
         call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
         call.send(f'link set "{host_ifc}" down'),
-        call.send(f'docker set_mac_addr {guest_ifc} 02:42:3d:b7:93:00'),
-        call.send(f'docker move_to_ns {guest_ifc} 42 eth0'),
+        call.send(f"docker set_mac_addr {guest_ifc} 02:42:3d:b7:93:00"),
+        call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
         # link attach
         call.send(f'brctl create "{BRIDGE}"'),
         call.send(f'link set "{BRIDGE}" up'),
@@ -122,6 +139,26 @@ async def test_add_ubridge_kernel_connection(vm):
     assert vm._kernel_veths[(0, 0)] == host_ifc
     # no uBridge relay bridge on the kernel datapath
     assert "bridge0" not in vm._bridges
+
+
+@pytest.mark.asyncio
+async def test_add_ubridge_kernel_connection_applies_netem(vm):
+    """
+    Filters carried by the NIO become a tc netem qdisc at start (node
+    restart restore), exactly like capture and markers.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    nio = vm.manager.create_nio(
+        {"type": "nio_bridge", "bridge": BRIDGE, "filters": {"delay": [50, 5], "packet_loss": [10]}}
+    )
+
+    await vm._add_ubridge_connection(nio, 0)
+
+    host_ifc, _ = vm._veth_names(0, 0)
+    netem_calls = [c for c in vm._ubridge_hypervisor.method_calls if "netem set" in str(c)]
+    assert call.send(f'tc netem set "{host_ifc}" delay 50 jitter 5 loss 10') in netem_calls
 
 
 @pytest.mark.asyncio
@@ -138,11 +175,14 @@ async def test_add_ubridge_connection_none_nio_creates_veth(vm):
     await vm._add_ubridge_connection(None, 0)
 
     host_ifc, guest_ifc = vm._veth_names(0, 0)
-    vm._ubridge_hypervisor.assert_has_calls([
-        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
-        call.send(f'link set "{host_ifc}" down'),
-        call.send(f'docker move_to_ns {guest_ifc} 42 eth0'),
-    ], any_order=True)
+    vm._ubridge_hypervisor.assert_has_calls(
+        [
+            call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+            call.send(f'link set "{host_ifc}" down'),
+            call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
+        ],
+        any_order=True,
+    )
     assert vm._kernel_veths[(0, 0)] == host_ifc
     # no relay bridge and no TAP for an unconnected adapter
     assert "bridge0" not in vm._bridges
@@ -165,13 +205,16 @@ async def test_add_ubridge_connection_udp_relays_over_veth(vm):
     await vm._add_ubridge_connection(nio, 0)
 
     host_ifc, _ = vm._veth_names(0, 0)
-    vm._ubridge_hypervisor.assert_has_calls([
-        call.send(f'docker create_veth "{host_ifc}" "{vm._veth_names(0, 0)[1]}"'),
-        call.send("bridge create bridge0"),
-        call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
-        call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
-        call.send("bridge start bridge0"),
-    ], any_order=True)
+    vm._ubridge_hypervisor.assert_has_calls(
+        [
+            call.send(f'docker create_veth "{host_ifc}" "{vm._veth_names(0, 0)[1]}"'),
+            call.send("bridge create bridge0"),
+            call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
+            call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
+            call.send("bridge start bridge0"),
+        ],
+        any_order=True,
+    )
     assert "bridge0" in vm._bridges
 
 
@@ -199,13 +242,14 @@ async def test_add_ubridge_kernel_connection_cleans_up_on_failure(vm):
 # Link attach / detach
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_connect_nio_kernel_tolerates_bridge_create_race(vm):
 
     # Both endpoints create the per-link bridge concurrently; the loser must
     # verify (brctl show) instead of failing.
     async def send(command):
-        if 'brctl create' in command:
+        if "brctl create" in command:
             raise UbridgeError("Could not create bridge: File exists")
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
@@ -223,7 +267,7 @@ async def test_connect_nio_kernel_tolerates_bridge_create_race(vm):
 async def test_connect_nio_kernel_create_failure_propagates(vm):
 
     async def send(command):
-        if 'brctl create' in command or 'brctl show' in command:
+        if "brctl create" in command or "brctl show" in command:
             raise UbridgeError("Could not create bridge: No such device")
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
@@ -255,11 +299,15 @@ async def test_remove_kernel_nio(vm):
 
     await vm.adapter_remove_nio_binding(0)
 
-    vm._ubridge_send.assert_has_calls([
-        call(f'link set "{host_ifc}" down'),
-        call(f'brctl delif "{BRIDGE}" "{host_ifc}"'),
-        call(f'brctl delete "{BRIDGE}"'),
-    ], any_order=True)
+    vm._ubridge_send.assert_has_calls(
+        [
+            call(f'tc reset "{host_ifc}"'),
+            call(f'link set "{host_ifc}" down'),
+            call(f'brctl delif "{BRIDGE}" "{host_ifc}"'),
+            call(f'brctl delete "{BRIDGE}"'),
+        ],
+        any_order=True,
+    )
     assert vm._ethernet_adapters[0].get_nio(0) is None
     # the veth itself stays: it is the adapter interface, not the link
     assert vm._kernel_veths[(0, 0)] == host_ifc
@@ -273,7 +321,7 @@ async def test_remove_kernel_nio_tolerates_peer_winning_bridge_delete(vm):
     vm._ubridge_hypervisor = MagicMock()
 
     async def send(command):
-        if 'brctl delif' in command or 'brctl delete' in command:
+        if "brctl delif" in command or "brctl delete" in command:
             raise UbridgeError("busy")
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
@@ -287,6 +335,7 @@ async def test_remove_kernel_nio_tolerates_peer_winning_bridge_delete(vm):
 # Carrier / suspend
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_set_adapter_carrier_kernel(vm):
 
@@ -297,16 +346,19 @@ async def test_set_adapter_carrier_kernel(vm):
     await vm._set_adapter_carrier(0, True)
     await vm._set_adapter_carrier(0, False)
 
-    vm._ubridge_send.assert_has_calls([
-        call(f'link set "{host_ifc}" up'),
-        call(f'link set "{host_ifc}" down'),
-    ])
+    vm._ubridge_send.assert_has_calls(
+        [
+            call(f'link set "{host_ifc}" up'),
+            call(f'link set "{host_ifc}" down'),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
 # UDP fallback on a veth adapter (kernel link deleted, relay link created
 # on a running node)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_connect_nio_udp_relays_over_veth(vm):
@@ -318,12 +370,15 @@ async def test_connect_nio_udp_relays_over_veth(vm):
     nio = vm.manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
     await vm._connect_nio(0, nio)
 
-    vm._ubridge_send.assert_has_calls([
-        call("bridge create bridge0"),
-        call(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
-        call("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
-        call("bridge start bridge0"),
-    ], any_order=True)
+    vm._ubridge_send.assert_has_calls(
+        [
+            call("bridge create bridge0"),
+            call(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
+            call("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
+            call("bridge start bridge0"),
+        ],
+        any_order=True,
+    )
     assert "bridge0" in vm._bridges
 
 
@@ -348,16 +403,87 @@ async def test_connect_nio_udp_on_veth_is_idempotent(vm):
 # Guards and cleanup
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
-async def test_update_nio_kernel_rejects_filters(vm):
+async def test_update_nio_kernel_rejects_relay_only_filters(vm):
+    """
+    The PUT route mutates the NIO in place (no create_nio), so the update
+    path carries its own guard against relay-only filter types.
+    """
 
     vm._ubridge_hypervisor = MagicMock()
     nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
     vm._ethernet_adapters[0].add_nio(0, nio)
-    nio.filters = {"loss": [50]}
+    nio.filters = {"frequency_drop": [10]}
 
     with pytest.raises(DockerError, match="kernel-datapath"):
         await vm.adapter_update_nio_binding(0, nio)
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_netem(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"delay": [50, 5], "packet_loss": [10], "corrupt": [2]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc netem set "{host_ifc}" delay 50 jitter 5 loss 10 corrupt 2')
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_clears_netem(vm):
+    """
+    Filters dropped to empty must detach the qdisc (the veth survives link
+    changes); ENOENT (no qdisc was attached) is tolerated.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc reset "{host_ifc}"')
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_reset_tolerates_missing_qdisc(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    from gns3server.compute.ubridge.ubridge_error import UbridgeError
+
+    async def refuse(command):
+        raise UbridgeError("207-Could not reset qdisc on gv0: No such file or directory")
+
+    vm._ubridge_send = refuse
+    host_ifc, _ = vm._veth_names(0, 0)
+    # ENOENT means "already clean" — must not raise
+    await vm._ubridge_apply_netem(host_ifc, {})
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_reset_reraises_real_errors(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    from gns3server.compute.ubridge.ubridge_error import UbridgeError
+
+    async def refuse(command):
+        raise UbridgeError("206-Could not reset qdisc on gv0: Operation not permitted")
+
+    vm._ubridge_send = refuse
+    host_ifc, _ = vm._veth_names(0, 0)
+    with pytest.raises(UbridgeError):
+        await vm._ubridge_apply_netem(host_ifc, {})
 
 
 @pytest.mark.asyncio
@@ -451,9 +577,16 @@ async def test_connect_nio_kernel_restarts_capture(vm):
 # Markers (AF_PACKET taps on the veth host end)
 # ---------------------------------------------------------------------------
 
+
 def _marker_spec(bpf="icmp", tag=1, enabled=True, direction=None, link_id="l1"):
-    return {"bpf": bpf, "tag": tag, "enabled": enabled, "direction": direction,
-            "data_link_type": "DLT_EN10MB", "link_id": link_id}
+    return {
+        "bpf": bpf,
+        "tag": tag,
+        "enabled": enabled,
+        "direction": direction,
+        "data_link_type": "DLT_EN10MB",
+        "link_id": link_id,
+    }
 
 
 @pytest.mark.asyncio
