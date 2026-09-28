@@ -44,7 +44,7 @@ from gns3server import schemas
 router = APIRouter()
 
 # How many clients have subscribed to notifications
-_notifications_listening = {}
+_notifications_listening: dict[str, int] = {}
 
 
 def dep_project(project_id: UUID) -> Project:
@@ -74,12 +74,12 @@ def create_compute_project(project_data: schemas.ProjectCreate) -> schemas.Proje
     """
 
     pm = ProjectManager.instance()
-    project_data = jsonable_encoder(project_data, exclude_unset=True)
+    data = jsonable_encoder(project_data, exclude_unset=True)
     project = pm.create_project(
-        name=project_data.get("name"),
-        path=project_data.get("path"),
-        project_id=project_data.get("project_id"),
-        variables=project_data.get("variables", None),
+        name=data.get("name"),
+        path=data.get("path"),
+        project_id=data.get("project_id"),
+        variables=data.get("variables", None),
     )
     return project.asdict()
 
@@ -261,7 +261,7 @@ async def create_batch_nios(
     # This is what makes builtin L2 nodes (ethernet_switch/hub/cloud/nat)
     # start their uBridge concurrently during project open instead of one
     # at a time (~0.5s each for fork + socket connect).
-    per_node = {}
+    per_node: dict[str, list[schemas.BatchNIOEntry]] = {}
     for entry in batch.nios:
         per_node.setdefault(entry.node_id, []).append(entry)
 
@@ -308,7 +308,7 @@ async def update_batch_nios(
     # Group entries by node so that different nodes' uBridge processes are
     # updated in parallel (each node has its own AF_UNIX socket). Within a
     # node entries are serial to respect the per-node uBridge command lock.
-    per_node = {}
+    per_node: dict[str, list[schemas.BatchNIOEntry]] = {}
     for entry in batch.nios:
         per_node.setdefault(entry.node_id, []).append(entry)
 
