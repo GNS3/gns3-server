@@ -310,7 +310,6 @@ module = [
   "gns3server.agent.gns3_copilot.tools_v2.gns3_start_node",  # 3
   "gns3server.agent.gns3_copilot.tools_v2.gns3_stop_node",  # 3
   "gns3server.agent.gns3_copilot.tools_v2.gns3_suspend_node",  # 3
-  "gns3server.agent.gns3_copilot.tools_v2.packet_analysis_tool",  # 1
   "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko",  # 9
   "gns3server.agent.gns3_copilot.utils.custom_netmiko.scripts.list_netmiko_telnet_devices",  # 1
   "gns3server.agent.gns3_copilot.utils.message_converters",  # 2
