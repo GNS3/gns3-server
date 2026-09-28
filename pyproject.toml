@@ -412,7 +412,6 @@ module = [
   "gns3server.schemas.controller.projects",  # 2
   "gns3server.schemas.controller.settings",  # 3
   "gns3server.schemas.controller.templates.docker_templates",  # 1
-  "gns3server.schemas.controller.templates.dynamips_templates",  # 17
   "gns3server.schemas.controller.templates.iou_templates",  # 1
   "gns3server.schemas.controller.templates.virtualbox_templates",  # 1
   "gns3server.schemas.controller.templates.vmware_templates",  # 1
