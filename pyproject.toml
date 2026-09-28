@@ -378,13 +378,6 @@ module = [
   "gns3server.controller.compute",  # 2
   "gns3server.controller.project",  # 2
   "gns3server.controller.topology",  # 1
-  "gns3server.db.models.acl",  # 1
-  "gns3server.db.models.images",  # 1
-  "gns3server.db.models.pools",  # 1
-  "gns3server.db.models.privileges",  # 2
-  "gns3server.db.models.roles",  # 1
-  "gns3server.db.models.templates",  # 22
-  "gns3server.db.models.users",  # 3
   "gns3server.db.repositories.api_keys",  # 8
   "gns3server.db.repositories.computes",  # 10
   "gns3server.db.repositories.images",  # 14
@@ -394,7 +387,6 @@ module = [
   "gns3server.db.repositories.templates",  # 6
   "gns3server.db.repositories.users",  # 12
   "gns3server.db.tasks",  # 12
-  "gns3server.db_migrations.env",  # 1
   "gns3server.schemas.compute.atm_switch_nodes",  # 5
   "gns3server.schemas.compute.cloud_nodes",  # 1
   "gns3server.schemas.compute.docker_nodes",  # 2

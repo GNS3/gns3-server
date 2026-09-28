@@ -29,7 +29,7 @@ class ACE(BaseTable):
     __tablename__ = "acl"
 
     ace_id = Column(GUID, primary_key=True, default=generate_uuid)
-    ace_type: str = Column(String)
+    ace_type = Column(String)
     path = Column(String)
     propagate = Column(Boolean, default=True)
     allowed = Column(Boolean, default=True)
