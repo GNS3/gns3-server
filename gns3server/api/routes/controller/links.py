@@ -26,7 +26,7 @@ import aiohttp
 from fastapi import APIRouter, Depends, Request, status, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
-from typing import List, Union
+from typing import Any, List, Union
 from uuid import UUID, uuid4
 
 from gns3server.controller import Controller
@@ -46,7 +46,9 @@ import logging
 
 log = logging.getLogger(__name__)
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -91,7 +93,7 @@ async def get_links(project_id: UUID) -> List[schemas.Link]:
     },
     dependencies=[Depends(has_privilege("Link.Allocate"))],
 )
-async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schemas.Link:
+async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> schemas.Link:
     """
     Create a new link.
 
@@ -100,7 +102,7 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schema
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     link = await project.add_link()
-    link_data = jsonable_encoder(link_data, exclude_unset=True)
+    link_data = jsonable_encoder(link_create, exclude_unset=True)
     if "filters" in link_data:
         await link.update_filters(link_data["filters"])
     if "link_style" in link_data:
@@ -156,14 +158,14 @@ async def get_link(link: Link = Depends(dep_link)) -> schemas.Link:
     response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Link.Modify"))],
 )
-async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_link)) -> schemas.Link:
+async def update_link(link_update: schemas.LinkUpdate, link: Link = Depends(dep_link)) -> schemas.Link:
     """
     Update a link.
 
     Required privilege: Link.Modify
     """
 
-    link_data = jsonable_encoder(link_data, exclude_unset=True)
+    link_data = jsonable_encoder(link_update, exclude_unset=True)
     if "filters" in link_data:
         await link.update_filters(link_data["filters"])
     if "link_style" in link_data:
@@ -293,7 +295,7 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     pcap_streaming_url = link.pcap_streaming_url()
     headers = multidict.MultiDict(request.headers)
     headers["Host"] = compute.host
-    headers["Router-Host"] = request.client.host
+    headers["Router-Host"] = request.client.host if request.client else ""
     body = await request.body()
 
     async def compute_pcap_stream():
@@ -487,7 +489,7 @@ async def update_marker(marker_name: str, marker_data: schemas.MarkerUpdate, lin
     response_model=Union[schemas.UDPPortInfo, schemas.EthernetPortInfo],
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
-async def get_iface(link: Link = Depends(dep_link)) -> Union[schemas.UDPPortInfo, schemas.EthernetPortInfo]:
+async def get_iface(link: Link = Depends(dep_link)) -> dict:
     """
     Return iface info for links to Cloud or NAT devices.
 
