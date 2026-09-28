@@ -361,8 +361,11 @@ class BaseManager:
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_bridge":
             nio = NIOBridge(nio_settings["bridge"])
-            if nio_settings.get("filters") or nio_settings.get("markers"):
-                raise ComputeError("Packet filters and markers are not supported on kernel-datapath links")
+            if nio_settings.get("filters"):
+                raise ComputeError("Packet filters are not supported on kernel-datapath links")
+            # Markers ride the NIO and attach to the veth host interface via
+            # uBridge's AF_PACKET marker module (marker add_kernel).
+            nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]

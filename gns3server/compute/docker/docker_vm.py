@@ -1823,9 +1823,9 @@ class DockerVM(BaseNode):
         whose host end will be enslaved to the per-link kernel bridge, and
         whose guest end becomes the container interface (the role the TAP
         plays on the relay path). No uBridge relay bridge is created — frames
-        flow entirely in the kernel. Filters and markers are unavailable on
-        this datapath (they live in the uBridge relay); packet capture is
-        provided by uBridge's AF_PACKET module on the veth host end.
+        flow entirely in the kernel. Filters are unavailable on this datapath
+        (they live in the uBridge relay); packet capture and markers are
+        provided by uBridge's AF_PACKET modules on the veth host end.
         """
 
         try:
@@ -1947,6 +1947,9 @@ class DockerVM(BaseNode):
                 # Restore a capture that was active before a node restart
                 # (mirrors the relay path's start_capture in _connect_nio).
                 await self._ubridge_send(f'capture start_kernel {host_ifc} "{nio.pcap_output_file}"')
+            # Markers carried by the NIO attach to the veth host end (AF_PACKET
+            # taps) — the anchor is the interface, not a relay bridge.
+            await self._ubridge_apply_markers(host_ifc, nio)
             return
 
         bridge_name = self._bridge_name(adapter_number, port_number)
@@ -2009,12 +2012,17 @@ class DockerVM(BaseNode):
 
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                if nio.filters or nio.markers:
+                if nio.filters:
                     raise DockerError(
-                        "Packet filters and markers are not supported on kernel-datapath links; "
+                        "Packet filters are not supported on kernel-datapath links; "
                         "delete and recreate the link to use them"
                     )
                 if self.status == "started":
+                    host_ifc = self._kernel_veths.get((adapter_number, port_number))
+                    if host_ifc is not None:
+                        # Incremental marker reconcile on the veth anchor —
+                        # the relay-datapath equivalent of the branch below.
+                        await self._ubridge_apply_markers(host_ifc, nio)
                     await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
                 return
 
@@ -2060,6 +2068,100 @@ class DockerVM(BaseNode):
 
         log.debug(f"Docker VM '{self.name}' [{self.id}]: {adapter.host_ifc} removed from adapter {adapter_number}")
 
+    def _kernel_marker_anchor(self, anchor):
+        """
+        Whether *anchor* names one of this container's kernel-datapath veth
+        host ends. Marker anchors are polymorphic: a relay bridge name on the
+        relay datapath, the veth host interface on the kernel datapath. A veth
+        name can never collide with a uBridge bridge name (relay bridges are
+        ``bridge{adapter}``, veths are ``gv…e…p…``).
+        """
+
+        return anchor in self._kernel_veths.values()
+
+    async def _ubridge_add_marker_filter(
+        self, bridge_name, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None
+    ):
+        """
+        Kernel-datapath variant of the `mark` filter attach: ``marker
+        add_kernel`` binds an AF_PACKET socket to the veth host end. Keyword
+        pairs and semantics (match → MARK signal + pcap append) are identical
+        to the relay ``bridge add_packet_filter … mark`` command.
+        """
+
+        if self._kernel_marker_anchor(bridge_name):
+            self._validate_marker_name(name)
+            cmd = 'marker add_kernel {name} {ifc} "{bpf}"'.format(name=name, ifc=bridge_name, bpf=bpf)
+            if tag is not None:
+                cmd += f" tag {tag}"
+            if link_id:
+                cmd += f" link {link_id}"
+            if direction is not None:
+                cmd += f" dir {direction}"
+            linktype = self._marker_linktype(data_link_type)
+            if linktype is not None:
+                cmd += f" linktype {linktype}"
+            cmd += ' pcap "{path}"'.format(path=pcap_path)
+            await self._ubridge_send(cmd)
+            return
+        await super()._ubridge_add_marker_filter(
+            bridge_name, name, bpf, pcap_path, tag=tag, link_id=link_id, direction=direction, data_link_type=data_link_type
+        )
+
+    async def _ubridge_delete_marker_filter(self, bridge_name, name):
+        """
+        Kernel-datapath variant of the marker removal: ``marker delete_kernel``
+        (idempotent in uBridge — a no-op when the marker is already gone).
+        """
+
+        if self._kernel_marker_anchor(bridge_name):
+            if not (self._ubridge_hypervisor and self._ubridge_hypervisor.is_running()):
+                return
+            try:
+                await self._ubridge_send(f"marker delete_kernel {bridge_name} {name}")
+            except UbridgeError as e:
+                log.warning("Could not remove kernel marker '%s' from %s: %s", name, bridge_name, e)
+            return
+        await super()._ubridge_delete_marker_filter(bridge_name, name)
+
+    async def _ubridge_enable_marker_filter(self, anchor, name, state):
+        """
+        Kernel-datapath variant of the marker on/off toggle: ``marker
+        enable_kernel`` — installed but silent when off, pcap preserved.
+        """
+
+        if self._kernel_marker_anchor(anchor):
+            await self._ubridge_send(f"marker enable_kernel {anchor} {name} {state}")
+            return
+        await super()._ubridge_enable_marker_filter(anchor, name, state)
+
+    async def _remove_kernel_markers(self, host_ifc):
+        """
+        Tear down every kernel marker anchored to *host_ifc*: the veth survives
+        link deletion (it is the adapter interface, not the link), so the
+        AF_PACKET sockets must be closed explicitly — otherwise a deleted
+        link's markers would keep sniffing and signaling. Mirrors the relay
+        datapath where deleting the uBridge bridge silently drops its filters.
+        """
+
+        from gns3server.compute.marker.marker_manager import MarkerManager
+
+        manager = MarkerManager.instance()
+        markers_dir = self.project.markers_working_directory()
+        for (name, link_id), anchor in list(self._marker_filter_bridges.items()):
+            if anchor != host_ifc:
+                continue
+            self._marker_filter_bridges.pop((name, link_id))
+            self._marker_specs.pop((name, link_id), None)
+            await self._ubridge_delete_marker_filter(host_ifc, name)
+            try:
+                os.remove(os.path.join(markers_dir, f"{self._id}_{link_id}_{name}.pcap"))
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                log.warning("Could not remove marker pcap for '%s' on link %s: %s", name, link_id, e)
+            manager.unregister(self._id, name)
+
     async def _remove_kernel_nio(self, nio, adapter_number, port_number=0):
         """
         Detach a kernel-datapath adapter port from its per-link kernel bridge.
@@ -2070,9 +2172,10 @@ class DockerVM(BaseNode):
         """
 
         host_ifc = self._kernel_veths.get((adapter_number, port_number))
-        if self.status == "started" and host_ifc is not None:
-            await self._set_adapter_carrier(adapter_number, False, port_number)
         if host_ifc is not None:
+            await self._remove_kernel_markers(host_ifc)
+            if self.status == "started":
+                await self._set_adapter_carrier(adapter_number, False, port_number)
             with contextlib.suppress(UbridgeError):
                 await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
         with contextlib.suppress(UbridgeError):

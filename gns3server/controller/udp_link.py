@@ -135,9 +135,9 @@ class UDPLink(Link):
         """
         Whether this link can be wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge) instead of the uBridge UDP
-        relay. The kernel path has no userspace relay, so filters and
-        markers — which live in the relay — disqualify it (capture is
-        served separately by uBridge's AF_PACKET module).
+        relay. The kernel path has no userspace relay, so filters — which
+        live in the relay — disqualify it. Markers and capture are served
+        by uBridge's AF_PACKET modules on the veth host end.
         It is host-local (same compute) and requires the adapter interfaces
         to be created as veths at container start, hence stopped nodes only.
         """
@@ -149,12 +149,6 @@ class UDPLink(Link):
         if node1.compute.id != node2.compute.id:
             return False
         if self.get_active_filters():
-            return False
-        if self._markers:
-            return False
-        # Project-level marker definitions are inherited by every link right
-        # after creation (apply_defs_to_new_link) and need the relay datapath.
-        if getattr(self._project, "_marker_definitions", None):
             return False
         # Running nodes already have relay TAPs wired into uBridge; the
         # kernel path needs the veth variant created at container start.
@@ -195,10 +189,14 @@ class UDPLink(Link):
             # both ends compute it independently (no coordinator) and crash
             # leftovers sweep deterministically; 11 hex chars fill IFNAMSIZ
             # (15), pushing name-collision probability to irrelevance.
+            # Markers ride the NIO like on the relay datapath, routed by
+            # capture node; they attach to the veth host end via uBridge's
+            # AF_PACKET marker module instead of a relay `mark` filter.
             bridge_name = "gns3" + self._id.replace("-", "")[:11]
+            node1_markers, node2_markers = self._get_node_markers(node1, node2)
             self._link_data = [
-                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": {}, "suspend": self._suspended},
-                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": {}, "suspend": self._suspended},
+                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": node1_markers, "suspend": self._suspended},
+                {"type": "nio_bridge", "bridge": bridge_name, "filters": {}, "markers": node2_markers, "suspend": self._suspended},
             ]
             return [
                 (node1, adapter_number1, port_number1, self._link_data[0]),
@@ -541,12 +539,6 @@ class UDPLink(Link):
 
         if name in self._markers:
             raise ControllerError(f"Marker '{name}' already exists on link {self._id}")
-
-        if self.kernel_datapath:
-            raise ControllerError(
-                "Markers are not supported on kernel-datapath links (no uBridge relay in the "
-                "forwarding path); delete and recreate the link to use markers"
-            )
 
         # Validate the BPF only for private per-link markers. An inherited copy
         # (``inherited_from`` set) fans out from a definition whose BPF was

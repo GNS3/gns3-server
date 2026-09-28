@@ -20,10 +20,10 @@ Interface for kernel-datapath bridge NIOs.
 
 A NIO of this type instructs the node to enslave its adapter's veth host end
 into the named Linux kernel bridge instead of wiring a uBridge UDP relay.
-Frames then flow entirely in the kernel (veth -> bridge -> veth). Filters,
-markers and packet capture are not available on this datapath (they live in
-the uBridge relay); the controller must only emit this NIO type for links
-where those features are not in use.
+Frames then flow entirely in the kernel (veth -> bridge -> veth). Packet
+filters are not available on this datapath (they live in the uBridge relay);
+markers and packet capture are served by uBridge's AF_PACKET modules on the
+veth host end (marker add_kernel / capture start_kernel).
 """
 
 from .nio import NIO

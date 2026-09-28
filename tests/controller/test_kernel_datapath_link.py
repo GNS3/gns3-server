@@ -21,7 +21,7 @@ Docker links, NIO emission and the filters/markers guards.
 """
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from gns3server.config import Config
 from gns3server.controller.udp_link import UDPLink
@@ -96,20 +96,28 @@ async def test_kernel_datapath_not_eligible_with_filters(project):
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_with_markers(project):
+async def test_kernel_datapath_eligible_with_markers(project):
+    """
+    Markers no longer disqualify the kernel datapath: they attach to the veth
+    host end via uBridge's AF_PACKET marker module (marker add_kernel).
+    """
 
     link, node1, node2 = await _kernel_link(project)
     link._markers = {"m": {"bpf": "icmp"}}
-    assert link._kernel_datapath_eligible(node1, node2) is False
+    assert link._kernel_datapath_eligible(node1, node2) is True
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_with_project_marker_definitions(project):
+async def test_kernel_datapath_eligible_with_project_marker_definitions(project):
+    """
+    Project-level marker definitions are inherited by every new link and ride
+    the kernel datapath like private markers.
+    """
 
     link, node1, node2 = await _kernel_link(project)
     project._marker_definitions = {"global-m": {"bpf": "icmp"}}
     try:
-        assert link._kernel_datapath_eligible(node1, node2) is False
+        assert link._kernel_datapath_eligible(node1, node2) is True
     finally:
         project._marker_definitions = {}
 
@@ -209,13 +217,58 @@ async def test_update_filters_rejected_on_kernel_link(project):
 
 
 @pytest.mark.asyncio
-async def test_start_marker_rejected_on_kernel_link(project):
+async def test_prepare_kernel_link_carries_markers(project):
+    """
+    Markers on a kernel link ride the capture node's NIO (routed by
+    capture_node_id) exactly like on the relay datapath.
+    """
 
-    link, _n1, _n2 = await _kernel_link(project)
+    link, node1, node2 = await _kernel_link(project)
+    link._markers = {"icmp": {"bpf": "icmp", "tag": 1, "capture_node_id": node1.id, "direction": None}}
+
+    entries = await link._prepare()
+
+    by_node = {entry[0].id: entry[3] for entry in entries}
+    assert by_node[node1.id]["type"] == "nio_bridge"
+    assert by_node[node1.id]["markers"]["icmp"]["bpf"] == "icmp"
+    assert by_node[node1.id]["markers"]["icmp"]["tag"] == 1
+    assert by_node[node2.id]["markers"] == {}
+
+
+@pytest.mark.asyncio
+async def test_start_marker_on_kernel_link_pushes_nio(project):
+    """
+    start_marker works on kernel links: the marker is stored and pushed via
+    the NIO update like on the relay datapath (no kernel guard anymore).
+    """
+
+    link, node1, node2 = await _kernel_link(project)
     await link._prepare()
+    link._created = True
 
-    with pytest.raises(ControllerError, match="kernel-datapath"):
-        await link.start_marker("m", "icmp")
+    bodies = []
+
+    async def put1(path, data=None, **kwargs):
+        bodies.append((node1, data))
+
+    async def put2(path, data=None, **kwargs):
+        bodies.append((node2, data))
+
+    node1.put = put1
+    node2.put = put2
+
+    with patch("gns3server.controller.udp_link.validate_bpf_syntax", return_value={"valid": True, "error": None}):
+        await link.start_marker("icmp", "icmp", tag=3)
+
+    entry = link._markers["icmp"]
+    assert entry["bpf"] == "icmp"
+    assert entry["capture_node_id"] == node1.id  # auto-picked: first marker-capable node
+    n1_data = next(data for node, data in bodies if node is node1)
+    n2_data = next(data for node, data in bodies if node is node2)
+    assert n1_data["type"] == "nio_bridge"
+    assert n1_data["filters"] == {}
+    assert n1_data["markers"]["icmp"]["tag"] == 3
+    assert n2_data["markers"] == {}
 
 
 @pytest.mark.asyncio

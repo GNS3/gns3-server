@@ -21,6 +21,7 @@ creation, per-link kernel bridge enslavement, carrier semantics, relay
 fallback and cleanup.
 """
 
+import os
 import uuid
 from unittest.mock import MagicMock, call
 
@@ -78,10 +79,15 @@ def test_create_nio_bridge_rejects_filters(vm):
         vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"loss": [10]}})
 
 
-def test_create_nio_bridge_rejects_markers(vm):
+def test_create_nio_bridge_accepts_markers(vm):
+    """
+    Markers ride the kernel NIO (attached to the veth host end via uBridge's
+    AF_PACKET marker module); only filters are rejected.
+    """
 
-    with pytest.raises(ComputeError):
-        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "markers": {"m": {"bpf": "icmp"}}})
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "markers": {"m": {"bpf": "icmp"}}})
+    assert isinstance(nio, NIOBridge)
+    assert nio.markers == {"m": {"bpf": "icmp"}}
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +413,125 @@ async def test_connect_nio_kernel_restarts_capture(vm):
     await vm._connect_nio(0, nio)
 
     vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc} "/tmp/capture.pcap"')
+
+
+# ---------------------------------------------------------------------------
+# Markers (AF_PACKET taps on the veth host end)
+# ---------------------------------------------------------------------------
+
+def _marker_spec(bpf="icmp", tag=1, enabled=True, direction=None, link_id="l1"):
+    return {"bpf": bpf, "tag": tag, "enabled": enabled, "direction": direction,
+            "data_link_type": "DLT_EN10MB", "link_id": link_id}
+
+
+@pytest.mark.asyncio
+async def test_connect_nio_kernel_applies_markers(vm):
+
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "markers": {"icmp-m": _marker_spec()}})
+    await vm._connect_nio(0, nio)
+
+    pcap = os.path.join(vm.project.markers_working_directory(), f"{vm.id}_l1_icmp-m.pcap")
+    vm._ubridge_send.assert_any_call(f'marker add_kernel icmp-m {host_ifc} "icmp" tag 1 link l1 pcap "{pcap}"')
+    assert vm._marker_filter_bridges[("icmp-m", "l1")] == host_ifc
+
+
+@pytest.mark.asyncio
+async def test_connect_nio_kernel_marker_disabled_at_apply(vm):
+    """
+    A disabled marker is installed but silenced (marker enable_kernel off) so
+    the UI can flip it back on instantly — same contract as the relay path.
+    """
+
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+
+    nio = vm.manager.create_nio(
+        {"type": "nio_bridge", "bridge": BRIDGE, "markers": {"icmp-m": _marker_spec(enabled=False)}}
+    )
+    await vm._connect_nio(0, nio)
+
+    vm._ubridge_send.assert_any_call(f"marker enable_kernel {host_ifc} icmp-m off")
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_markers(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+
+    nio.markers = {"tcp-m": _marker_spec(bpf="tcp", tag=2, link_id="l2")}
+    await vm.adapter_update_nio_binding(0, nio)
+
+    pcap = os.path.join(vm.project.markers_working_directory(), f"{vm.id}_l2_tcp-m.pcap")
+    vm._ubridge_send.assert_any_call(f'marker add_kernel tcp-m {host_ifc} "tcp" tag 2 link l2 pcap "{pcap}"')
+
+
+@pytest.mark.asyncio
+async def test_marker_toggle_kernel_uses_enable_kernel(vm):
+
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    vm._marker_filter_bridges[("icmp-m", "l1")] = host_ifc
+
+    await vm._ubridge_set_marker_filter_state("icmp-m", False)
+    vm._ubridge_send.assert_any_call(f"marker enable_kernel {host_ifc} icmp-m off")
+    await vm._ubridge_set_marker_filter_state("icmp-m", True)
+    vm._ubridge_send.assert_any_call(f"marker enable_kernel {host_ifc} icmp-m on")
+
+
+@pytest.mark.asyncio
+async def test_remove_kernel_nio_deletes_markers(vm):
+    """
+    The veth survives link deletion (it is the adapter interface), so kernel
+    markers must be torn down explicitly — otherwise a deleted link's markers
+    would keep sniffing and signaling.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    vm._marker_filter_bridges[("icmp-m", "l1")] = host_ifc
+    vm._marker_specs[("icmp-m", "l1")] = _marker_spec()
+    vm._ethernet_adapters[0].add_nio(0, vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE}))
+
+    await vm.adapter_remove_nio_binding(0)
+
+    vm._ubridge_send.assert_any_call(f"marker delete_kernel {host_ifc} icmp-m")
+    assert ("icmp-m", "l1") not in vm._marker_filter_bridges
+    assert ("icmp-m", "l1") not in vm._marker_specs
+
+
+@pytest.mark.asyncio
+async def test_rebuild_marker_filter_kernel(vm):
+    """
+    The fine-grained rebuild path (bpf/tag/direction change) goes through the
+    overridden primitives: delete_kernel + add_kernel with the new expression.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    vm._marker_filter_bridges[("icmp-m", "l1")] = host_ifc
+
+    await vm.rebuild_marker_filter("icmp-m", "l1", "tcp", tag=9)
+
+    pcap = os.path.join(vm.project.markers_working_directory(), f"{vm.id}_l1_icmp-m.pcap")
+    vm._ubridge_send.assert_any_call(f"marker delete_kernel {host_ifc} icmp-m")
+    vm._ubridge_send.assert_any_call(f'marker add_kernel icmp-m {host_ifc} "tcp" tag 9 link l1 pcap "{pcap}"')
 
 
 @pytest.mark.asyncio
