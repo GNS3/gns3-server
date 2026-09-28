@@ -348,7 +348,6 @@ module = [
   "gns3server.api.routes.controller.images",  # 9
   "gns3server.api.routes.controller.llm_model_configs",  # 32
   "gns3server.api.routes.controller.pools",  # 8
-  "gns3server.api.routes.controller.privileges",  # 1
   "gns3server.api.routes.controller.projects",  # 16
   "gns3server.api.routes.controller.roles",  # 5
   "gns3server.api.routes.controller.snapshots",  # 1
