@@ -294,7 +294,6 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 # Baseline: modules with existing type errors (error count at baseline time).
 # Remove modules from this list one small PR at a time. Never add new ones.
 module = [
-  "gns3server.agent",  # 2
   "gns3server.agent.gns3_copilot.agent.context_manager",  # 5
   "gns3server.agent.gns3_copilot.agent.model_factory",  # 4
   "gns3server.agent.gns3_copilot.chat_sessions_repository",  # 8
