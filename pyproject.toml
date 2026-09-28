@@ -384,7 +384,6 @@ module = [
   "gns3server.schemas.compute.qemu_nodes",  # 1
   "gns3server.schemas.compute.virtualbox_nodes",  # 2
   "gns3server.schemas.controller.computes",  # 6
-  "gns3server.schemas.controller.templates.docker_templates",  # 1
   "gns3server.schemas.controller.templates.iou_templates",  # 1
   "gns3server.schemas.controller.templates.virtualbox_templates",  # 1
   "gns3server.schemas.controller.templates.vmware_templates",  # 1
