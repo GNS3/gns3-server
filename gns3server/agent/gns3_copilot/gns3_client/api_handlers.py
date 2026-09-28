@@ -162,14 +162,14 @@ def build_gns3_ctx(jwt_token: str | None = None, url: str | None = None) -> dict
     }
 
 
-def _filter_node_response(node: dict, fields: list[str] = None) -> dict:
+def _filter_node_response(node: dict, fields: list[str] | None = None) -> dict:
     """Filter node response to only include requested fields."""
     if not fields:
         fields = ["node_id", "name", "node_type", "status", "console"]
     return {k: node[k] for k in fields if k in node}
 
 
-def _filter_link_response(link: dict, fields: list[str] = None) -> dict:
+def _filter_link_response(link: dict, fields: list[str] | None = None) -> dict:
     """Filter link response to only include requested fields."""
     if not fields:
         fields = LINK_DEFAULT_FIELDS
@@ -332,7 +332,7 @@ def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
     return {"message": f"Node {node_id} suspended", "node_id": node_id}
 
 
-def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
 
     project_id = params.get("project_id")
     if not project_id:
@@ -401,7 +401,7 @@ def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
     return _filter_node_response(resp, fields)
 
 
-def delete_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def delete_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -706,7 +706,7 @@ def available_filters_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     return conn.http_call("get", url).json()
 
 
-def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -762,7 +762,7 @@ def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
     return _filter_link_response(resp, fields)
 
 
-def delete_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def delete_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -809,7 +809,7 @@ def update_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
 # ── Link capture / reset handlers ──────────────────────────────────────
 
 
-def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
