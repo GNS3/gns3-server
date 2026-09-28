@@ -36,7 +36,7 @@ async def root():
 @router.get("/debug", response_class=HTMLResponse, deprecated=True, include_in_schema=False)
 def debug(request: Request):
 
-    kwargs = {"gns3_version": __version__, "gns3_host": request.client.host}
+    kwargs = {"gns3_version": __version__, "gns3_host": request.client.host if request.client else None}
     return templates.TemplateResponse(request=request, name="index.html", context=kwargs)
 
 

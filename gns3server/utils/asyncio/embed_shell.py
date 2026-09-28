@@ -236,12 +236,11 @@ class ShellConnection(TelnetConnection):
     async def disconnected(self):
         pass
 
-    @asyncio.coroutine
-    def window_size_changed(self, columns, rows):
+    async def window_size_changed(self, columns, rows):
         self._size = Size(rows=rows, columns=columns)
         self._cb.terminal_size_changed()
         if self._window_size_changed_callback:
-            yield from self._window_size_changed_callback(columns, rows)
+            await self._window_size_changed_callback(columns, rows)
 
     async def feed(self, data):
         data = data.decode()
