@@ -45,7 +45,7 @@ class ProjectBase(BaseModel):
     Common properties for projects.
     """
 
-    name: str
+    name: Optional[str] = None
     project_id: Optional[UUID] = None
     path: Optional[str] = Field(None, description="Project directory")
     auto_close: Optional[bool] = Field(None, description="Close project when last client leaves")
@@ -69,7 +69,7 @@ class ProjectCreate(ProjectBase):
     Properties for project creation.
     """
 
-    pass
+    name: str
 
 
 class ProjectDuplicate(ProjectBase):
@@ -77,6 +77,7 @@ class ProjectDuplicate(ProjectBase):
     Properties for project duplication.
     """
 
+    name: str
     reset_mac_addresses: Optional[bool] = Field(False, description="Reset MAC addresses for this project")
 
 
@@ -85,12 +86,11 @@ class ProjectUpdate(ProjectBase):
     Properties for project update.
     """
 
-    name: Optional[str] = None
+    pass
 
 
 class Project(ProjectBase):
     project_id: UUID
-    name: Optional[str] = None
     status: Optional[ProjectStatus] = None
     filename: Optional[str] = None
     created_by: Optional[str] = Field(None, description="Username of the user who created the project")
