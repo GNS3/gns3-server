@@ -340,7 +340,6 @@ module = [
   "gns3server.api.routes.controller.api_keys",  # 1
   "gns3server.api.routes.controller.chat",  # 1
   "gns3server.api.routes.controller.dependencies.authentication",  # 11
-  "gns3server.api.routes.controller.dependencies.database",  # 2
   "gns3server.api.routes.controller.drawings",  # 1
   "gns3server.api.routes.controller.groups",  # 6
   "gns3server.api.routes.controller.images",  # 9
