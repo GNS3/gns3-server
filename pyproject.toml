@@ -312,7 +312,6 @@ module = [
   "gns3server.agent.gns3_copilot.tools_v2.packet_analysis_tool",  # 1
   "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko",  # 9
   "gns3server.agent.gns3_copilot.utils.custom_netmiko.scripts.list_netmiko_telnet_devices",  # 1
-  "gns3server.agent.gns3_copilot.utils.parse_tool_content",  # 1
   "gns3server.agent.mcp.appliances",  # 1
   "gns3server.agent.web_wireshark.docker_client",  # 5
   "gns3server.agent.web_wireshark.manage_wireshark",  # 1
