@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
+from pydantic import SecretStr
 import socket
 
 import logging
@@ -28,7 +29,7 @@ class HTTPClient:
     HTTP client for request to computes and external services.
     """
 
-    _aiohttp_client: aiohttp.ClientSession = None
+    _aiohttp_client: aiohttp.ClientSession | None = None
 
     @classmethod
     def get_client(cls, ssl_context=None) -> aiohttp.ClientSession:
@@ -44,15 +45,21 @@ class HTTPClient:
             cls._aiohttp_client = None
 
     @classmethod
-    def request(cls, method: str, url: str, user: str = None, password: str = None, ssl_context=None, **kwargs):
+    def request(
+        cls,
+        method: str,
+        url: str,
+        user: str | None = None,
+        password: SecretStr | None = None,
+        ssl_context=None,
+        **kwargs,
+    ):
 
         client = cls.get_client(ssl_context=ssl_context)
         basic_auth = None
         if user:
-            if not password:
-                password = ""
             try:
-                basic_auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+                basic_auth = aiohttp.BasicAuth(user, password.get_secret_value() if password else "", "utf-8")
             except ValueError as e:
                 log.error(f"Basic authentication set-up error: {e}")
 
