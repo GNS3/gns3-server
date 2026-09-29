@@ -286,7 +286,7 @@ class GNS3PacketFilterTool(BaseTool):
 
             # Check if output contains "Invalid" indicating syntax error
             if "Invalid" in result.stdout or "Invalid" in result.stderr:
-                error_lines = []
+                error_lines: list[str] = []
                 if "Invalid" in result.stderr:
                     error_lines.extend(line for line in result.stderr.split("\n") if "Invalid" in line)
                 if "Invalid" in result.stdout:

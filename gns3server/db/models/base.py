@@ -21,11 +21,10 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
 from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import as_declarative
+from sqlalchemy.orm import DeclarativeBase
 
 
-@as_declarative()
-class Base:
+class Base(DeclarativeBase):
     def asdict(self):
 
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}

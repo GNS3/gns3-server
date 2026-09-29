@@ -78,7 +78,7 @@ try:
     # so we use importlib to get the actual module
     import importlib
 
-    sd = importlib.import_module("netmiko.ssh_dispatcher")
+    sd: Any = importlib.import_module("netmiko.ssh_dispatcher")
 
     # Recalculate platforms lists to include custom device types
     sd.platforms = list(sd.CLASS_MAPPER.keys())
@@ -196,7 +196,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
+        if len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
 
         # Filter forbidden commands and store blocked commands info
