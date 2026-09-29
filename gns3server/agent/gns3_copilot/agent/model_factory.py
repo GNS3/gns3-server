@@ -110,7 +110,7 @@ def create_base_model(
 
     try:
         # Prepare parameters for init_chat_model
-        init_params = {
+        init_params: dict[str, Any] = {
             "model": config_vars["model_name"],
             "model_provider": config_vars["model_provider"],
             "api_key": config_vars["api_key"],
@@ -177,7 +177,7 @@ def create_title_model(
 
     try:
         # Prepare parameters for init_chat_model
-        init_params = {
+        init_params: dict[str, Any] = {
             "model": config_vars["model_name"],
             "model_provider": config_vars["model_provider"],
             "api_key": config_vars["api_key"],

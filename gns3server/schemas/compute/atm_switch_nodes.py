@@ -26,8 +26,8 @@ class ATMSwitchBase(BaseModel):
     Common ATM switch properties.
     """
 
-    name: str = None
-    node_id: UUID = None
+    name: Optional[str] = None
+    node_id: Optional[UUID] = None
     usage: Optional[str] = None
     mappings: Optional[dict] = None
 

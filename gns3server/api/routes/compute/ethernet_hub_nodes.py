@@ -18,6 +18,7 @@
 API routes for Ethernet hub nodes.
 """
 
+from typing import Any
 import os
 
 from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
@@ -29,7 +30,9 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.ethernet_hub import EthernetHub
 from gns3server import schemas
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet hub node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet hub node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -57,13 +60,13 @@ async def create_ethernet_hub(project_id: UUID, node_data: schemas.EthernetHubCr
 
     # Use the Dynamips Ethernet hub to simulate this node
     dynamips_manager = Dynamips.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     node = await dynamips_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
+        data.get("node_id"),
         node_type="ethernet_hub",
-        ports=node_data.get("ports_mapping"),
+        ports=data.get("ports_mapping"),
     )
     return node.asdict()
 
@@ -97,11 +100,11 @@ async def update_ethernet_hub(
     Update an Ethernet hub.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in node_data and node.name != node_data["name"]:
-        await node.set_name(node_data["name"])
-    if "ports_mapping" in node_data:
-        node.ports_mapping = node_data["ports_mapping"]
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in data and node.name != data["name"]:
+        await node.set_name(data["name"])
+    if "ports_mapping" in data:
+        node.ports_mapping = data["ports_mapping"]
     node.updated()
     return node.asdict()
 

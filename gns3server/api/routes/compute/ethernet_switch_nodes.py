@@ -22,6 +22,7 @@ through uBridge's ``brctl`` module (see
 ``gns3server.compute.builtin.nodes.ethernet_switch``).
 """
 
+from typing import Any
 import os
 
 from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
@@ -33,7 +34,9 @@ from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.ethernet_switch import EthernetSwitch
 from gns3server import schemas
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet switch node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet switch node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -60,17 +63,17 @@ async def create_ethernet_switch(project_id: UUID, node_data: schemas.EthernetSw
     """
 
     builtin_manager = Builtin.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     node = await builtin_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        console=node_data.get("console"),
-        console_type=node_data.get("console_type"),
+        data.get("node_id"),
+        console=data.get("console"),
+        console_type=data.get("console_type"),
         node_type="ethernet_switch",
-        ports=node_data.get("ports_mapping"),
+        ports=data.get("ports_mapping"),
     )
-    node.usage = node_data.get("usage", "")
+    node.usage = data.get("usage", "")
     return node.asdict()
 
 
@@ -100,16 +103,16 @@ async def update_ethernet_switch(
     Update an Ethernet switch.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in node_data and node.name != node_data["name"]:
-        node.name = node_data["name"]
-    if "usage" in node_data:
-        node.usage = node_data["usage"]
-    if "ports_mapping" in node_data:
-        node.ports_mapping = node_data["ports_mapping"]
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in data and node.name != data["name"]:
+        node.name = data["name"]
+    if "usage" in data:
+        node.usage = data["usage"]
+    if "ports_mapping" in data:
+        node.ports_mapping = data["ports_mapping"]
         await node.update_port_settings()
-    if "console_type" in node_data:
-        node.console_type = node_data["console_type"]
+    if "console_type" in data:
+        node.console_type = data["console_type"]
     node.updated()
     return node.asdict()
 

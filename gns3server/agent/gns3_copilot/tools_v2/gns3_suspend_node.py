@@ -130,7 +130,11 @@ class GNS3SuspendNodeTool(BaseTool):
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
             suspend_results = suspend_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
-            suspend_errors = {r["node_id"]: r.get("error") for r in suspend_results if r.get("status") == "error"}
+            suspend_errors = (
+                {r["node_id"]: r.get("error") for r in suspend_results if r.get("status") == "error"}
+                if isinstance(suspend_results, list)
+                else {}
+            )
 
             # Get updated status — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)

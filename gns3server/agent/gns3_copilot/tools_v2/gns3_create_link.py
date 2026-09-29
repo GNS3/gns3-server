@@ -222,6 +222,8 @@ class GNS3LinkTool(BaseTool):
                         },
                         gns3_ctx,
                     )
+                    if isinstance(link_resp, list):
+                        raise RuntimeError("Unexpected batch response when creating a single link")
                     if "error" in link_resp:
                         raise RuntimeError(link_resp["error"])
 
