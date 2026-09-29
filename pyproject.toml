@@ -305,10 +305,6 @@ module = [
   "gns3server.agent.web_wireshark.docker_client",  # 5
   "gns3server.api.routes.compute.atm_switch_nodes",  # 9
   "gns3server.api.routes.compute.cloud_nodes",  # 14
-  "gns3server.api.routes.compute.dependencies.authentication",  # 3
-  "gns3server.api.routes.compute.docker_nodes",  # 26
-  "gns3server.api.routes.compute.dynamips_nodes",  # 9
-  "gns3server.api.routes.compute.ethernet_hub_nodes",  # 9
   "gns3server.api.routes.compute.ethernet_switch_nodes",  # 16
   "gns3server.api.routes.compute.frame_relay_switch_nodes",  # 9
   "gns3server.api.routes.compute.iou_nodes",  # 15
