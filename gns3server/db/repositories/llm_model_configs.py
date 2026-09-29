@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 from sqlalchemy import select, update, delete, and_
+from sqlalchemy.engine import CursorResult
 from datetime import datetime
 
 import logging
@@ -63,7 +64,7 @@ class LLMModelConfigsRepository(BaseRepository):
             .order_by(models.LLMModelConfig.created_at)
         )
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_default_config(self, user_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a user's default LLM model configuration."""
@@ -182,7 +183,7 @@ class LLMModelConfigsRepository(BaseRepository):
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def set_user_default_config(self, user_id: UUID, config_id: UUID) -> bool:
         """Set a user's default LLM model configuration."""
@@ -202,7 +203,7 @@ class LLMModelConfigsRepository(BaseRepository):
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     # Group configuration methods
 
@@ -222,7 +223,7 @@ class LLMModelConfigsRepository(BaseRepository):
             .order_by(models.LLMModelConfig.created_at)
         )
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_group_default_config(self, group_id: UUID) -> Optional[models.LLMModelConfig]:
         """Get a group's default LLM model configuration."""
@@ -341,7 +342,7 @@ class LLMModelConfigsRepository(BaseRepository):
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def set_group_default_config(self, group_id: UUID, config_id: UUID) -> bool:
         """Set a group's default LLM model configuration."""
@@ -361,7 +362,7 @@ class LLMModelConfigsRepository(BaseRepository):
         )
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     # Inheritance methods
 
@@ -441,21 +442,21 @@ class LLMModelConfigsRepository(BaseRepository):
                 )
 
         # Select default_config with proper priority:
-        # 1. User's config marked with is_default: true
-        # 2. Group's config marked with is_default: true
-        # 3. First config in the list (user configs come first)
-        for config in configs_with_source:
-            if config["is_default"] and config["source"] == "user":
-                default_config = config
+        # 1. User's entry marked with is_default: true
+        # 2. Group's entry marked with is_default: true
+        # 3. First entry in the list (user configs come first)
+        for entry in configs_with_source:
+            if entry["is_default"] and entry["source"] == "user":
+                default_config = entry
                 break
 
         if default_config is None:
-            for config in configs_with_source:
-                if config["is_default"] and config["source"] == "group":
-                    default_config = config
+            for entry in configs_with_source:
+                if entry["is_default"] and entry["source"] == "group":
+                    default_config = entry
                     break
 
-        # Fallback to first config if no default is marked
+        # Fallback to first entry if no default is marked
         if default_config is None and configs_with_source:
             default_config = configs_with_source[0]
 

@@ -27,6 +27,7 @@ from gns3server.config import Config
 from gns3server.services import auth_service
 
 import logging
+import uuid
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ def create_default_super_admin(target, connection, **kw):
 class UserGroup(BaseTable):
     __tablename__ = "user_groups"
 
-    user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
+    user_group_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_map, back_populates="groups")

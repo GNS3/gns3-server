@@ -42,7 +42,7 @@ class LLMModelConfig(BaseTable):
     user_id = Column(GUID, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
     group_id = Column(GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"), nullable=True)
     is_default = Column(Boolean, default=False, nullable=False)
-    version = Column(Integer, default=0, nullable=False)  # Optimistic locking version
+    version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # Optimistic locking version
 
     # Relationships
     user = relationship("User", backref="llm_model_configs")

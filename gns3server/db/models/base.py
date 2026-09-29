@@ -16,12 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
+from datetime import datetime
+from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
 from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -105,7 +107,9 @@ class BaseTable(Base):
     __abstract__ = True
 
     created_at = Column(DateTime, server_default=func.current_timestamp())
-    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
 
     __mapper_args__ = {"eager_defaults": True}
 
