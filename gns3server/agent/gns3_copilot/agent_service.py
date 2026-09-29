@@ -256,17 +256,16 @@ class AgentService:
         )
 
         # Ensure checkpointer is initialized
-        if not self._checkpointer_conn:
-            await self._get_checkpointer()
+        checkpointer = await self._get_checkpointer()
 
         # Get or create chat session
-        repo = ChatSessionsRepository(self._checkpointer_conn)
+        repo = ChatSessionsRepository(checkpointer.conn)
         session = await repo.get_session_by_thread(session_id)
         is_new_session = session is None
 
         if is_new_session:
             # Create new session
-            copilot_mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
+            copilot_mode = (llm_config or {}).get("copilot_mode", "teaching_assistant").lower()
             session = await repo.create_session(
                 thread_id=session_id,
                 user_id=user_id or "",
@@ -290,7 +289,7 @@ class AgentService:
 
         # Build config - only thread-safe identifiers
         # Determine recursion_limit based on copilot_mode
-        copilot_mode = llm_config.get("copilot_mode", "teaching_assistant").lower()
+        copilot_mode = (llm_config or {}).get("copilot_mode", "teaching_assistant").lower()
         if copilot_mode == "troubleshooting_injection":
             recursion_limit = 100  # Need more recursion depth for fault injection workflow
             log.debug("Using extended recursion_limit for troubleshooting_injection mode: 100")
@@ -453,10 +452,10 @@ class AgentService:
                         yield chunk
                 else:
                     # Use stateless converter for other events
-                    chunk = self._convert_event_to_chunk(event, session_id)
-                    if chunk:
-                        log.debug("Yielding chunk: type=%s", chunk.get("type"))
-                        yield chunk
+                    converted = self._convert_event_to_chunk(event, session_id)
+                    if converted:
+                        log.debug("Yielding chunk: type=%s", converted.get("type"))
+                        yield converted
 
             # Check if stream was aborted and yield tool_end events for aborted tools
             from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
@@ -624,10 +623,9 @@ class AgentService:
         Returns:
             List of session dictionaries
         """
-        if not self._checkpointer_conn:
-            await self._get_checkpointer()
+        checkpointer = await self._get_checkpointer()
 
-        repo = ChatSessionsRepository(self._checkpointer_conn)
+        repo = ChatSessionsRepository(checkpointer.conn)
         sessions = await repo.list_sessions(user_id=user_id, copilot_mode=copilot_mode, limit=limit)
         return [s.to_dict() for s in sessions]
 
@@ -641,10 +639,9 @@ class AgentService:
         Returns:
             True if deleted, False if not found
         """
-        if not self._checkpointer_conn:
-            await self._get_checkpointer()
+        checkpointer = await self._get_checkpointer()
 
-        repo = ChatSessionsRepository(self._checkpointer_conn)
+        repo = ChatSessionsRepository(checkpointer.conn)
         return await repo.delete_session(session_id)
 
     async def rename_session(self, session_id: str, new_title: str) -> Optional[Dict[str, Any]]:
@@ -658,10 +655,9 @@ class AgentService:
         Returns:
             Updated session dictionary or None
         """
-        if not self._checkpointer_conn:
-            await self._get_checkpointer()
+        checkpointer = await self._get_checkpointer()
 
-        repo = ChatSessionsRepository(self._checkpointer_conn)
+        repo = ChatSessionsRepository(checkpointer.conn)
         session = await repo.update_session(thread_id=session_id, title=new_title)
         return session.to_dict() if session else None
 
@@ -676,10 +672,9 @@ class AgentService:
         Returns:
             Updated session dictionary or None
         """
-        if not self._checkpointer_conn:
-            await self._get_checkpointer()
+        checkpointer = await self._get_checkpointer()
 
-        repo = ChatSessionsRepository(self._checkpointer_conn)
+        repo = ChatSessionsRepository(checkpointer.conn)
         session = await repo.pin_session(thread_id=session_id, pinned=pinned)
         return session.to_dict() if session else None
 

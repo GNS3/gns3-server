@@ -193,6 +193,9 @@ def _initial_params_keys(fn_node):
                 and isinstance(stmt.value, ast.Dict)
             ):
                 return _dict_literal_keys(stmt.value)
+        if isinstance(stmt, ast.AnnAssign):
+            if isinstance(stmt.target, ast.Name) and stmt.target.id == "params" and isinstance(stmt.value, ast.Dict):
+                return _dict_literal_keys(stmt.value)
     return None
 
 

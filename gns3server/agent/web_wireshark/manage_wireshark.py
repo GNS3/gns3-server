@@ -81,10 +81,7 @@ from gns3server.utils.uuid_validator import validate_uuid
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-try:
-    from gns3server.agent.web_wireshark.manager import WebWiresharkManager
-except ImportError:
-    from manager import WebWiresharkManager
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 logger = logging.getLogger(__name__)
 

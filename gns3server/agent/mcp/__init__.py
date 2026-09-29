@@ -405,22 +405,24 @@ async def project_stats(
 @mcp.tool()
 async def project_update(
     project_id: Annotated[str, Field(description="UUID of the project to update")],
-    name: Annotated[str, Field(description="New project name")] = None,
-    auto_close: Annotated[bool, Field(description="Close project when last client leaves")] = None,
-    auto_open: Annotated[bool, Field(description="Project opens when GNS3 starts")] = None,
-    auto_start: Annotated[bool, Field(description="Project starts when opened")] = None,
-    scene_width: Annotated[int, Field(description="Width of the drawing area")] = None,
-    scene_height: Annotated[int, Field(description="Height of the drawing area")] = None,
-    zoom: Annotated[int, Field(description="Zoom of the drawing area")] = None,
-    show_layers: Annotated[bool, Field(description="Show layers on the drawing area")] = None,
-    snap_to_grid: Annotated[bool, Field(description="Snap to grid on the drawing area")] = None,
-    show_grid: Annotated[bool, Field(description="Show the grid on the drawing area")] = None,
-    grid_size: Annotated[int, Field(description="Grid size for the drawing area for nodes")] = None,
-    drawing_grid_size: Annotated[int, Field(description="Grid size for the drawing area for drawings")] = None,
-    show_interface_labels: Annotated[bool, Field(description="Show interface labels on the drawing area")] = None,
+    name: Annotated[str | None, Field(description="New project name")] = None,
+    auto_close: Annotated[bool | None, Field(description="Close project when last client leaves")] = None,
+    auto_open: Annotated[bool | None, Field(description="Project opens when GNS3 starts")] = None,
+    auto_start: Annotated[bool | None, Field(description="Project starts when opened")] = None,
+    scene_width: Annotated[int | None, Field(description="Width of the drawing area")] = None,
+    scene_height: Annotated[int | None, Field(description="Height of the drawing area")] = None,
+    zoom: Annotated[int | None, Field(description="Zoom of the drawing area")] = None,
+    show_layers: Annotated[bool | None, Field(description="Show layers on the drawing area")] = None,
+    snap_to_grid: Annotated[bool | None, Field(description="Snap to grid on the drawing area")] = None,
+    show_grid: Annotated[bool | None, Field(description="Show the grid on the drawing area")] = None,
+    grid_size: Annotated[int | None, Field(description="Grid size for the drawing area for nodes")] = None,
+    drawing_grid_size: Annotated[int | None, Field(description="Grid size for the drawing area for drawings")] = None,
+    show_interface_labels: Annotated[
+        bool | None, Field(description="Show interface labels on the drawing area")
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Update a project's properties (name, auto_close, auto_open, etc.)."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     local_vars = {
         "name": name,
         "auto_close": auto_close,
@@ -449,7 +451,7 @@ async def project_duplicate(
     reset_mac_addresses: Annotated[bool, Field(description="Reset MAC addresses for this project")] = False,
 ) -> list[dict[str, Any]]:
     """Duplicate a project."""
-    params = {"project_id": project_id, "name": name}
+    params: dict[str, Any] = {"project_id": project_id, "name": name}
     if reset_mac_addresses:
         params["reset_mac_addresses"] = reset_mac_addresses
     return await asyncio.to_thread(_run_handler_sync, duplicate_project_handler, params)
@@ -523,7 +525,7 @@ async def node_start(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Start one or more nodes. Provide node_id for single, or node_ids for batch."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if node_ids:
         params["node_ids"] = node_ids
     else:
@@ -540,7 +542,7 @@ async def node_stop(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Stop one or more nodes. Provide node_id for single, or node_ids for batch."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if node_ids:
         params["node_ids"] = node_ids
     else:
@@ -557,7 +559,7 @@ async def node_suspend(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Suspend one or more nodes. Provide node_id for single, or node_ids for batch."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if node_ids:
         params["node_ids"] = node_ids
     else:
@@ -635,7 +637,7 @@ async def node_delete(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Delete one or more nodes from a project. Provide node_id for single, or node_ids for batch."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if node_ids:
         params["node_ids"] = node_ids
     else:
@@ -756,7 +758,7 @@ async def link_create(
                 "fields": fields,
             },
         )
-    params = {"project_id": project_id, "nodes": nodes, "link_type": link_type, "fields": fields}
+    params: dict[str, Any] = {"project_id": project_id, "nodes": nodes, "link_type": link_type, "fields": fields}
     if filters:
         params["filters"] = filters
     return await asyncio.to_thread(_run_handler_sync, create_link_handler, params)
@@ -771,7 +773,7 @@ async def link_delete(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Delete one or more links from a project."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if link_ids:
         params["link_ids"] = link_ids
     else:
@@ -1201,7 +1203,7 @@ async def link_reset(
     while keeping the filter configuration intact. Filters are preserved but
     their internal application state resets.
     """
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if link_ids:
         params["link_ids"] = link_ids
     else:
@@ -1222,7 +1224,7 @@ async def link_capture_start(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Start packet capture on one or more links."""
-    params = {
+    params: dict[str, Any] = {
         "project_id": project_id,
         "data_link_type": data_link_type,
         "capture_file_name": capture_file_name,
@@ -1245,7 +1247,7 @@ async def link_capture_stop(
     ] = None,
 ) -> list[dict[str, Any]]:
     """Stop packet capture on one or more links."""
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if link_ids:
         params["link_ids"] = link_ids
     else:
@@ -1273,7 +1275,7 @@ async def link_capture_download(
       - The ticket expires after 10 minutes: call this tool again to get a
         fresh one; do not reuse an old URL.
     """
-    params = {"project_id": project_id}
+    params: dict[str, Any] = {"project_id": project_id}
     if link_ids:
         params["link_ids"] = link_ids
     else:
@@ -1555,7 +1557,7 @@ async def drawing_update(
     rotation: Annotated[int | None, Field(description="Rotation angle in degrees, -359 to 359")] = None,
 ) -> list[dict[str, Any]]:
     """Update a drawing's properties (svg, position, lock state, rotation, etc.)."""
-    params = {"project_id": project_id, "drawing_id": drawing_id}
+    params: dict[str, Any] = {"project_id": project_id, "drawing_id": drawing_id}
     local_vars = {"svg": svg, "locked": locked, "x": x, "y": y, "z": z, "rotation": rotation}
     for key, val in local_vars.items():
         if val is not None:
