@@ -124,7 +124,6 @@ class DynamipsBase(BaseModel):
     node_id: Optional[UUID] = None
     name: Optional[str] = None
     dynamips_id: Optional[int] = Field(None, description="Dynamips internal ID")
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     ram: Optional[int] = Field(None, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, gt=0, description="Amount of NVRAM in KB")
     image: Optional[str] = Field(None, description="Path to the IOS image")
@@ -185,11 +184,12 @@ class DynamipsUpdate(DynamipsBase):
     Properties to update a Dynamips node.
     """
 
-    pass
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
 
 
 class Dynamips(DynamipsBase):
     name: str
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     node_id: UUID
     project_id: UUID
     dynamips_id: int

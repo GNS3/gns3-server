@@ -24,7 +24,7 @@ import logging
 log = logging.getLogger()
 
 from fastapi import APIRouter, Depends, status
-from typing import List
+from typing import Any, List
 from uuid import UUID
 
 from gns3server.controller.project import Project
@@ -35,7 +35,9 @@ from gns3server.controller import Controller
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}
+}
 
 router = APIRouter(responses=responses)
 

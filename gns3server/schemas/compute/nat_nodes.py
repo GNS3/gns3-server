@@ -89,7 +89,7 @@ class NATBase(BaseModel):
     Common NAT node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = None
     ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(
@@ -102,7 +102,7 @@ class NATCreate(NATBase):
     Properties to create a NAT node.
     """
 
-    pass
+    name: str
 
 
 class NATUpdate(NATBase):
@@ -110,10 +110,11 @@ class NATUpdate(NATBase):
     Properties to update a NAT node.
     """
 
-    name: Optional[str] = None
+    pass
 
 
 class NAT(NATBase):
+    name: str
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

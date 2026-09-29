@@ -214,9 +214,7 @@ def parse_tool_content(
         return content
 
     # Handle unsupported types
-    error_msg = (  # type: ignore[unreachable]
-        f"Content must be str, dict, list, int, float, bool, or None, got {type(content).__name__}"
-    )
+    error_msg = f"Content must be str, dict, list, int, float, bool, or None, got {type(content).__name__}"
     logger.error(error_msg)
 
     if strict_mode:
