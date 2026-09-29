@@ -79,7 +79,7 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
 
-    async def get_image_templates(self, image_id: int) -> Optional[List[models.Template]]:
+    async def get_image_templates(self, image_id: int) -> List[models.Template]:
         """
         Get all templates that an image belongs to.
         """
