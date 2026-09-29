@@ -294,11 +294,6 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 # Baseline: modules with existing type errors (error count at baseline time).
 # Remove modules from this list one small PR at a time. Never add new ones.
 module = [
-  "gns3server.agent.gns3_copilot.utils.custom_netmiko.scripts.list_netmiko_telnet_devices",  # 1
-  "gns3server.agent.mcp.appliances",  # 1
-  "gns3server.agent.web_wireshark.docker_client",  # 5
-  "gns3server.api.routes.compute.atm_switch_nodes",  # 9
-  "gns3server.api.routes.compute.cloud_nodes",  # 14
   "gns3server.api.routes.compute.ethernet_switch_nodes",  # 16
   "gns3server.api.routes.compute.frame_relay_switch_nodes",  # 9
   "gns3server.api.routes.compute.iou_nodes",  # 15
