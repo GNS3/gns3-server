@@ -1959,6 +1959,13 @@ class DockerVM(BaseNode):
         if host_ifc is not None and bridge_name not in self._bridges:
             await self._ubridge_send(f"bridge create {bridge_name}")
             self._bridges.add(bridge_name)
+            # libpcap cannot open a packet socket on an admin-down interface
+            # (its netlink promiscuous-mode transaction returns ENOENT), and
+            # the unified veth host end is born down (carrier off until a
+            # link attaches) — bring it up for the relay attach. The carrier
+            # pass in the caller refines the state afterwards (a suspended
+            # NIO sets it back down).
+            await self._ubridge_send(f'link set "{host_ifc}" up')
             await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{host_ifc}"')
         await self._ubridge_send(
             "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(

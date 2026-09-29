@@ -222,6 +222,9 @@ async def test_add_ubridge_connection_udp_relays_over_veth(vm):
         [
             call.send(f'docker create_veth "{host_ifc}" "{vm._veth_names(0, 0)[1]}"'),
             call.send("bridge create bridge0"),
+            # the host end is born down; libpcap cannot attach to an
+            # admin-down interface, so the relay brings it up first
+            call.send(f'link set "{host_ifc}" up'),
             call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
             call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
             call.send("bridge start bridge0"),
