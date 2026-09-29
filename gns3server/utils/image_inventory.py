@@ -20,7 +20,7 @@ def contained_path(path, root):
 
 
 def fingerprint(path):
-    info = os.stat(path, follow_symlinks=False)
+    info = os.stat(path, follow_symlinks=True)
     if not stat.S_ISREG(info.st_mode):
         raise OSError(f"Not a regular image file: {path}")
     return stat_fingerprint(info)
