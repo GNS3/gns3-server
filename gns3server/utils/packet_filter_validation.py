@@ -16,18 +16,18 @@ class FilterValidationError(Exception):
     pass
 
 
-# Packet filters with no kernel-datapath equivalent yet: frequency_drop needs
-# the eBPF stateful classifier (frozen in
-# docs/design/ubridge-kernel-impairment-spec.md, part B — not delivered),
-# so it still only runs in the uBridge userspace relay. bpf is served by the
-# cBPF match-drop classifier (tc bpf_drop) when uBridge reports cbpf=1.
-KERNEL_UNSUPPORTED_FILTERS = frozenset({"frequency_drop"})
-
-# Packet filters with no uBridge *relay* equivalent: the tc netem extensions
-# (uBridge feature/tc-netem-ext) serve them on the kernel datapath only. The
-# relay's packet-filter registry only knows frequency_drop / packet_loss /
-# delay / corrupt / bpf / mark.
-KERNEL_ONLY_FILTERS = frozenset({"rate", "reorder", "gemodel", "duplicate", "seed", "limit"})
+# Every GNS3 filter type now has a kernel-datapath equivalent: delay /
+# packet_loss / corrupt / the netem extensions run as one tc netem qdisc,
+# bpf as cBPF match-drop classifiers, and frequency_drop as the eBPF
+# stateful classifier's exact every-Nth mode (tc nth_drop — needs a uBridge
+# reporting ebpf=1). No type is relay-only anymore; the controller-side
+# kernel/relay choice is purely topological (same compute, docker/docker).
+#
+# Packet filters with no uBridge *relay* equivalent: the netem extensions
+# plus the eBPF quota mode run on the kernel datapath only. The relay's
+# packet-filter registry only knows frequency_drop / packet_loss / delay /
+# corrupt / bpf / mark.
+KERNEL_ONLY_FILTERS = frozenset({"rate", "reorder", "gemodel", "duplicate", "seed", "limit", "quota"})
 
 # Jitter distributions embedded in the netem-extension uBridge (tc_netem_dist).
 NETEM_DISTRIBUTIONS = ("uniform", "normal", "pareto", "paretonormal")
@@ -220,6 +220,15 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
         },
         "seed": {"params_count": (1, 1), "ranges": [(0, 4294967295)], "names": ["Seed"], "units": [""]},
         "limit": {"params_count": (1, 1), "ranges": [(1, 1000000)], "names": ["Limit"], "units": ["packets"]},
+        "quota": {
+            # eBPF stateful classifier (uBridge tc quota_drop): after the byte
+            # quota is consumed, each further packet drops with the given
+            # chance (100 = hard cutoff). Kernel-datapath only.
+            "params_count": (2, 2),
+            "ranges": [(1, 10**15), (0, 100)],
+            "names": ["Quota", "Chance"],
+            "units": ["bytes", "%"],
+        },
         "bpf": {"params_count": (1, 1), "is_text": True, "names": ["Filters"]},
     }
 

@@ -366,3 +366,20 @@ class TestNetemExtensionFilters:
     def test_kernel_only_features_empty(self):
         assert split_kernel_only_features({}) == ({}, set())
         assert split_kernel_only_features(None) == ({}, set())
+
+    def test_quota_valid_and_invalid(self):
+        validate_filter_parameters("quota", [1000000, 100])
+        validate_filter_parameters("quota", [1, 0])
+        with pytest.raises(FilterValidationError, match="Quota"):
+            validate_filter_parameters("quota", [0, 100])
+        with pytest.raises(FilterValidationError, match="Chance"):
+            validate_filter_parameters("quota", [1000, 101])
+        with pytest.raises(FilterValidationError, match="expects 2 parameter"):
+            validate_filter_parameters("quota", [1000])
+
+    def test_quota_is_kernel_only(self):
+        clean, dropped = split_kernel_only_features({"quota": [1000, 50], "frequency_drop": [7]})
+        assert dropped == {"quota"}
+        # frequency_drop runs on both datapaths (relay userspace filter /
+        # eBPF every-Nth) and stays
+        assert clean == {"frequency_drop": [7]}

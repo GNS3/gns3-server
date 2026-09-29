@@ -375,17 +375,6 @@ class BaseManager:
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_bridge":
             nio = NIOBridge(nio_settings["bridge"])
-            # Impairment filters with a tc netem equivalent run on the veth
-            # host end; the relay-only types are rejected here (the controller
-            # already keeps them off kernel links — this is the second guard).
-            from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
-
-            unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(nio_settings.get("filters") or {})
-            if unsupported:
-                raise ComputeError(
-                    "Packet filter(s) {} cannot run on a kernel-datapath link "
-                    "(no uBridge relay in the forwarding path)".format(", ".join(sorted(unsupported)))
-                )
             nio.filters = nio_settings.get("filters", {})
             # Markers ride the NIO and attach to the veth host interface via
             # uBridge's AF_PACKET marker module (marker add_kernel).

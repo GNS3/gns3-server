@@ -1438,6 +1438,11 @@ class DockerVM(BaseNode):
             # The next start spawns a fresh uBridge process — its capabilities
             # must be re-probed (see _ubridge_tc_capabilities).
             self._ubridge_tc_caps = None
+            # The uBridge process dies with every bridge it hosted — drop the
+            # relay bridge names too, or the next start would skip
+            # "bridge create" for them (the gate checks the name's presence)
+            # and fail on "bridge add_nio_udp: bridge doesn't exist".
+            self._bridges.clear()
             # veth host ends live in the root namespace and survive container
             # death — remove them while the uBridge control channel is still up.
             await self._remove_kernel_veths()
@@ -1944,9 +1949,11 @@ class DockerVM(BaseNode):
             await self._ubridge_apply_markers(host_ifc, nio)
             # Impairment filters become one tc netem qdisc on the veth host
             # end (restored here on node restart, like the capture above);
-            # bpf expressions become cls_bpf match-drop classifiers.
+            # bpf expressions become cls_bpf match-drop classifiers and
+            # frequency_drop/quota become the eBPF stateful classifier.
             await self._ubridge_apply_netem(host_ifc, nio.filters)
             await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
+            await self._ubridge_apply_ebpf_drops(host_ifc, nio.filters)
             return
 
         # Relay NIO. On a veth-backed adapter (the unified Docker interface)
@@ -2015,28 +2022,19 @@ class DockerVM(BaseNode):
 
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                # The controller keeps frequency_drop off kernel links (no
-                # kernel equivalent until the eBPF classifier lands) and
-                # create_nio rejects it on the POST path; this PUT path
-                # mutates the NIO in place, so guard here too. bpf is fine —
-                # it becomes cls_bpf match-drop classifiers (cbpf-probed).
-                unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(nio.filters or {})
-                if unsupported:
-                    raise DockerError(
-                        "Packet filter(s) {} cannot run on a kernel-datapath link "
-                        "(no uBridge relay in the forwarding path)".format(", ".join(sorted(unsupported)))
-                    )
                 if self.status == "started":
                     host_ifc = self._kernel_veths.get((adapter_number, port_number))
                     if host_ifc is not None:
                         # Incremental marker reconcile on the veth anchor —
                         # the relay-datapath equivalent of the branch below.
                         await self._ubridge_apply_markers(host_ifc, nio)
-                        # netem set is an atomic replace, so a full re-apply
-                        # IS the incremental reconcile for impairment filters;
-                        # bpf drops reconcile as flush + re-add.
+                        # The netem apply resets the interface first (the
+                        # kernel merges optional netem attrs on replace), so
+                        # everything anchored on clsact must re-apply after
+                        # it: bpf drops flush + re-add, eBPF modes re-set.
                         await self._ubridge_apply_netem(host_ifc, nio.filters)
                         await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
+                        await self._ubridge_apply_ebpf_drops(host_ifc, nio.filters)
                     await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
                 return
 
@@ -2375,6 +2373,70 @@ class DockerVM(BaseNode):
                 message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {line}"
                 log.warning(message)
                 self.project.emit("log.warning", {"message": message})
+
+    async def _ubridge_apply_ebpf_drops(self, host_ifc, filters):
+        """
+        Translate the NIO's stateful filters into uBridge's eBPF impairment
+        classifier on the veth host end's clsact egress (prio 1, below
+        bpf_drop's 10-99): ``frequency_drop`` becomes the exact every-Nth
+        mode (``tc nth_drop``; -1 = drop everything maps to every 1st), and
+        the kernel-only ``quota`` type the byte-cap mode (``tc quota_drop``).
+
+        Reconcile is a plain re-set on every apply: the preceding netem
+        apply resets the interface (which detaches the program and drops
+        uBridge's per-interface registry entry), so a mode set re-loads the
+        program from scratch, and a mode left absent is turned off
+        explicitly (idempotent) so a removed filter stops dropping.
+
+        Semantic difference vs the relay, documented server-side: the relay
+        counts packets of BOTH directions through its single filtered
+        bridge, while each veth end's classifier counts only the traffic
+        entering that container — with both endpoints applying theirs, each
+        direction drops every Nth independently.
+
+        :param host_ifc: veth host-end interface name
+        :param filters: NIO filters dictionary
+        """
+
+        def values_of(key):
+            values = filters.get(key)
+            if isinstance(values, (list, tuple)):
+                return list(values)
+            return [values] if values else []
+
+        frequency = values_of("frequency_drop")
+        quota = values_of("quota")
+        if not frequency and not quota and self._ubridge_tc_caps is None:
+            # Nothing to set and nothing was ever installed (no probe yet) —
+            # skip touching an old uBridge entirely.
+            return
+        caps = await self._ubridge_tc_capabilities()
+        if not frequency and not quota:
+            if caps.get("ebpf") == "1":
+                # Only when the eBPF module answers can anything be
+                # installed; "off" is idempotent in uBridge.
+                await self._ubridge_send(f'tc nth_drop "{host_ifc}" off')
+                await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
+            return
+        if caps.get("ebpf") != "1":
+            raise DockerError(
+                "Packet filter(s) {} on a kernel-datapath link need a uBridge with eBPF support "
+                "(tc capabilities reports no ebpf; setcap cap_bpf,cap_net_admin,cap_net_raw=ep on "
+                "the uBridge binary); upgrade uBridge on this compute or keep the link on the "
+                "relay datapath".format(", ".join(sorted(f for f in ("frequency_drop", "quota") if f in filters)))
+            )
+        if frequency:
+            # relay semantics: -1 = drop everything, N = every Nth packet
+            nth = 1 if int(frequency[0]) == -1 else int(frequency[0])
+            await self._ubridge_send(f'tc nth_drop "{host_ifc}" {nth}')
+        else:
+            await self._ubridge_send(f'tc nth_drop "{host_ifc}" off')
+        if quota:
+            await self._ubridge_send(
+                'tc quota_drop "{ifc}" {bytes} {pct}'.format(ifc=host_ifc, bytes=int(quota[0]), pct=int(quota[1]))
+            )
+        else:
+            await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
 
     async def _remove_kernel_markers(self, host_ifc):
         """

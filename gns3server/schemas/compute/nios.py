@@ -38,7 +38,7 @@ class UDPNIO(BaseModel):
     filters: Optional[dict] = Field(
         None,
         description="Packet filters (relay-supported types only: delay/packet_loss/corrupt/frequency_drop/bpf — "
-        "the netem extensions need a kernel-datapath NIO)",
+        "the netem extensions and the quota mode need a kernel-datapath NIO)",
     )
     markers: Optional[dict] = Field(None, description="Traffic-insight markers")
 
@@ -81,9 +81,9 @@ class BridgeNIO(BaseModel):
     delay/packet_loss/corrupt and the netem extensions (rate, reorder,
     gemodel, duplicate, seed, limit, jitter distributions, loss correlation)
     as one tc netem qdisc, bpf as cls_bpf match-drop classifiers (needs a
-    uBridge reporting cbpf). frequency_drop still has no kernel equivalent
-    and is rejected. Markers and packet capture are served by uBridge's
-    AF_PACKET modules on the veth host end.
+    uBridge reporting cbpf), frequency_drop and quota as the eBPF stateful
+    classifier (needs ebpf). Markers and packet capture are served by
+    uBridge's AF_PACKET modules on the veth host end.
     """
 
     type: BridgeNIOType
@@ -91,8 +91,8 @@ class BridgeNIO(BaseModel):
     suspend: Optional[bool] = Field(None, description="Suspend the NIO")
     filters: Optional[dict] = Field(
         None,
-        description="Packet filters served on the veth host end (delay/packet_loss/corrupt and the netem extensions "
-        "via one tc netem qdisc, bpf via cls_bpf)",
+        description="Packet filters served on the veth host end (netem surface + extensions via one tc netem qdisc, "
+        "bpf via cls_bpf, frequency_drop/quota via the eBPF classifier)",
     )
     markers: Optional[dict] = Field(None, description="Traffic-insight markers (attached to the veth host end)")
 

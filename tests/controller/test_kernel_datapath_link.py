@@ -68,6 +68,21 @@ def _mock_compute_http(compute):
     compute.post.side_effect = port_callback
 
 
+async def _relay_link(project):
+    """A docker↔qemu link (mixed node types) — never kernel-eligible, so the
+    relay _prepare path runs (UDP ports reserved through the mocked compute)."""
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    _mock_compute_http(compute)
+    node1 = _node(project, compute, "docker1")
+    node2 = _node(project, compute, "qemu1", node_type="qemu")
+    link = UDPLink(project)
+    await link.add_node(node1, 0, 0, batch=True, dump=False)
+    await link.add_node(node2, 0, 0, batch=True, dump=False)
+    return link, node1, node2
+
+
 @pytest.mark.asyncio
 async def test_kernel_datapath_eligible(project):
 
@@ -117,18 +132,16 @@ async def test_kernel_datapath_eligible_with_netem_filters(project):
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_with_relay_only_filters(project):
+async def test_kernel_datapath_eligible_with_frequency_drop(project):
     """
-    frequency_drop only exists in the uBridge userspace relay (its eBPF
-    classifier is not delivered yet) — a link carrying one stays on the
-    relay. bpf is kernel-capable (cls_bpf match-drop) and eligible.
+    frequency_drop runs on the kernel datapath too (the eBPF classifier's
+    exact every-Nth mode) — no filter type forces the relay anymore; only
+    topology does (mixed node types, cross-compute, unix-socket
+    containers, config off).
     """
 
     link, node1, node2 = await _kernel_link(project)
-    link._filters = {"delay": [10, 0], "frequency_drop": [7]}
-    assert link._kernel_datapath_eligible(node1, node2) is False
-
-    link._filters = {"bpf": ["icmp"]}
+    link._filters = {"delay": [10, 0], "frequency_drop": [7], "quota": [1000000, 100]}
     assert link._kernel_datapath_eligible(node1, node2) is True
 
 
@@ -277,13 +290,20 @@ async def test_update_netem_filters_accepted_on_kernel_link(project):
 
 
 @pytest.mark.asyncio
-async def test_update_relay_only_filters_rejected_on_kernel_link(project):
+async def test_update_frequency_drop_accepted_on_kernel_link(project):
+    """
+    frequency_drop rides the kernel NIO to both endpoints like every other
+    filter type — the compute translates it to the eBPF every-Nth mode.
+    """
 
-    link, _n1, _n2 = await _kernel_link(project)
+    link, node1, node2 = await _kernel_link(project)
     await link._prepare()
 
-    with pytest.raises(ControllerError, match="kernel-datapath"):
-        await link.update_filters({"frequency_drop": [10]})
+    await link.update_filters({"frequency_drop": [10]})
+    assert link.filters == {"frequency_drop": [10]}
+    by_node = {entry[0].id: entry[3] for entry in (await link._prepare())}
+    assert by_node[node1.id]["filters"] == {"frequency_drop": [10]}
+    assert by_node[node2.id]["filters"] == {"frequency_drop": [10]}
 
 
 @pytest.mark.asyncio
@@ -449,14 +469,12 @@ async def test_update_netem_extension_filters_accepted_on_kernel_link(project):
 @pytest.mark.asyncio
 async def test_update_kernel_only_filters_rejected_on_relay_link(project):
     """
-    Netem-extension filters have no relay equivalent: setting them on a
-    created relay link is a 409. (frequency_drop in the stored filters
-    forces this link onto the relay datapath.)
+    Netem-extension / quota filters have no relay equivalent: setting them
+    on a created relay link is a 409. (The link is relay-wired because the
+    endpoints are mixed node types.)
     """
 
-    link, _n1, _n2 = await _kernel_link(project)
-    _mock_compute_http(link._nodes[0]["node"].compute)
-    link._filters = {"frequency_drop": [7]}
+    link, _n1, _n2 = await _relay_link(project)
     await link._prepare()
     assert link.kernel_datapath is False
     link._created = True  # the computes hold the UDP NIOs
@@ -464,6 +482,10 @@ async def test_update_kernel_only_filters_rejected_on_relay_link(project):
     with pytest.raises(ControllerError, match="kernel-datapath"):
         await link.update_filters({"rate": ["512kbit"]})
     # the stored filters are untouched
+    assert link.filters == {}
+
+    # frequency_drop still runs on the relay (its uBridge userspace filter)
+    await link.update_filters({"frequency_drop": [7]})
     assert link.filters == {"frequency_drop": [7]}
 
 
@@ -484,13 +506,13 @@ async def test_update_kernel_only_filters_accepted_before_creation(project):
 @pytest.mark.asyncio
 async def test_prepare_relay_link_strips_kernel_only_filters(project):
     """
-    A relay-wired link (here: frequency_drop in the stored filters) built
-    from a topology carrying extension filters drops them with a warning
-    instead of pushing an unknown filter type to uBridge.
+    A relay-wired link (mixed node types) built from a topology carrying
+    extension filters drops them with a warning instead of pushing an
+    unknown filter type to uBridge. frequency_drop stays — the relay's
+    userspace filter still serves it.
     """
 
-    link, node1, node2 = await _kernel_link(project)
-    _mock_compute_http(link._nodes[0]["node"].compute)
+    link, node1, node2 = await _relay_link(project)
     link._filters = {"frequency_drop": [7], "rate": ["512kbit"], "delay": [100, 20, "normal"], "packet_loss": [5, 25]}
     entries = await link._prepare()
     assert link.kernel_datapath is False

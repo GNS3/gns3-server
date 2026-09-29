@@ -46,7 +46,8 @@ FILTERS = [
     {
         "type": "frequency_drop",
         "name": "Frequency drop",
-        "description": "It will drop everything with a -1 frequency, drop every Nth packet with a positive frequency, or drop nothing",
+        "description": "It will drop everything with a -1 frequency, drop every Nth packet with a positive "
+        "frequency, or drop nothing. On kernel-datapath links this is exact (eBPF every-Nth counter)",
         "parameters": [{"name": "Frequency", "minimum": -1, "maximum": 32767, "type": "int", "unit": "th packet"}],
     },
     {
@@ -135,6 +136,16 @@ FILTERS = [
         "description": "Queue depth of the impairment qdisc in packets — raise it above the 1000 default when "
         "combining a low rate with a long delay (kernel-datapath links only)",
         "parameters": [{"name": "Limit", "minimum": 1, "maximum": 1000000, "type": "int", "unit": "packets"}],
+    },
+    {
+        "type": "quota",
+        "name": "Byte quota",
+        "description": "After the byte quota is consumed, each further packet drops with the given chance "
+        "(100 = hard cutoff) — a data cap, like a mobile plan (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Quota", "minimum": 1, "maximum": 1000000000000000, "type": "int", "unit": "bytes"},
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
     },
 ]
 
@@ -296,24 +307,12 @@ class Link:
         except FilterValidationError as e:
             raise ControllerError(f"Invalid packet filter parameters: {e!s}")
 
-        if self.kernel_datapath:
-            from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
-
-            unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(new_filters or {})
-            if unsupported:
-                raise ControllerError(
-                    "Packet filter(s) {} cannot run on a kernel-datapath link (no uBridge relay "
-                    "in the forwarding path; delay, packet loss and corrupt are served by tc "
-                    "netem on the veth); delete and recreate the link to use them".format(
-                        ", ".join(sorted(unsupported))
-                    )
-                )
-        elif self._created:
-            # The reverse guard: netem-extension filters have no relay
-            # equivalent. Only enforced on created links — while loading a
-            # project the datapath is not decided yet (a link that will be
-            # wired on the kernel datapath must accept them), and the relay
-            # prepare path drops what it cannot run with a warning.
+        if self._created and not self.kernel_datapath:
+            # Kernel-only filters (the netem extensions, the eBPF quota mode)
+            # have no relay equivalent. Only enforced on created links — while
+            # loading a project the datapath is not decided yet (a link that
+            # will be wired on the kernel datapath must accept them), and the
+            # relay prepare path drops what it cannot run with a warning.
             conflicts = kernel_only_features(new_filters)
             if conflicts:
                 raise ControllerError(
@@ -722,13 +721,11 @@ class Link:
         filter_node = self._get_filter_node()
         if filter_node:
             if self.kernel_datapath:
-                # Kernel-datapath links serve filters via tc netem on the
-                # veth host end; types without a netem equivalent (which
-                # only run in the uBridge relay) are hidden from the picker.
-                from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
-
-                return [f for f in FILTERS if f["type"] not in KERNEL_UNSUPPORTED_FILTERS]
-            # Relay links: hide the netem-extension types the relay cannot run
+                # Kernel-datapath links serve every filter type: netem for
+                # delay/loss/corrupt and the netem extensions, cls_bpf for
+                # bpf, the eBPF classifier for frequency_drop and quota.
+                return FILTERS
+            # Relay links: hide the kernel-only types the relay cannot run
             # (they would be rejected with 409 on update).
             from gns3server.utils.packet_filter_validation import KERNEL_ONLY_FILTERS
 

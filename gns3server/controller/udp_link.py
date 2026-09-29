@@ -165,11 +165,10 @@ class UDPLink(Link):
         """
         Whether this link can be wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge) instead of the uBridge UDP
-        relay. Impairment filters with a tc netem equivalent (delay,
-        packet_loss, corrupt, bpf via cls_bpf, and the netem extensions
-        rate/reorder/gemodel/duplicate/seed/limit) are served on the veth
-        host end; frequency_drop only exists in the uBridge relay and
-        disqualifies the kernel path. Capture and markers are served by
+        relay. Every GNS3 filter type has a kernel equivalent — netem for
+        delay/packet_loss/corrupt and the netem extensions, cls_bpf for bpf,
+        the eBPF stateful classifier for frequency_drop — so filters no
+        longer disqualify the kernel path. Capture and markers are served by
         uBridge's AF_PACKET modules on the veth host end.
 
         Docker adapters are born as veth pairs (unified interface), so the
@@ -184,12 +183,6 @@ class UDPLink(Link):
         if node1.node_type != "docker" or node2.node_type != "docker":
             return False
         if node1.compute.id != node2.compute.id:
-            return False
-        # Look at the *stored* filters, not get_active_filters(): a suspended
-        # link reports the synthetic frequency_drop emulation, which is
-        # relay-only mechanics and must not flip a kernel link to the relay
-        # on reopen/reset.
-        if KERNEL_UNSUPPORTED_FILTERS.intersection(self._filters or {}):
             return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
@@ -229,10 +222,10 @@ class UDPLink(Link):
             # Markers ride the NIO like on the relay datapath, routed by
             # capture node; they attach to the veth host end via uBridge's
             # AF_PACKET marker module instead of a relay `mark` filter.
-            # Filters (delay/packet_loss/corrupt plus the netem extensions
-            # rate/reorder/gemodel/duplicate/seed/limit — eligibility
-            # guarantees frequency_drop is absent) become one tc netem qdisc
-            # per veth host end, pushed to both endpoints.
+            # Filters become one tc netem qdisc per veth host end (the netem
+            # surface and its extensions), plus cls_bpf match-drop (bpf) and
+            # the eBPF stateful classifier (frequency_drop, quota) — every
+            # GNS3 filter type has a kernel equivalent now.
             bridge_name = "gns3" + self._id.replace("-", "")[:11]
             node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
             node1_markers, node2_markers = self._get_node_markers(node1, node2)

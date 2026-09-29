@@ -24,13 +24,14 @@ Frames never leave the kernel.
 | Link | uBridge bridge, TAP fd ↔ UDP, userspace copy | per-link kernel bridge `gns3{link_id[:11]}`, zero-copy |
 | Relay latency | ~0.3 ms RTT | ~0.05 ms RTT (measured) |
 | Link attach at runtime | yes (relay attaches the pre-existing TAP) | yes (brctl addif / add_nio_ethernet — interface untouched) |
-| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt / duplicate + the netem extensions rate, reorder, gemodel, seed, limit, jitter distributions, loss correlation); bpf as cls_bpf match-drop classifiers; frequency_drop stays relay-only (eBPF classifier pending) |
+| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt / duplicate + the netem extensions rate, reorder, gemodel, seed, limit, jitter distributions, loss correlation); bpf as cls_bpf match-drop classifiers; frequency_drop and quota as the eBPF stateful classifier — every filter type has a kernel equivalent |
 | Capture / markers | relay bridge | uBridge AF_PACKET modules on the veth host end |
 
-The work landed in seven stages on branch stack `feat/docker-kernel-datapath` →
+The work landed in eight stages on branch stack `feat/docker-kernel-datapath` →
 `feat/docker-kernel-capture` → `feat/docker-kernel-markers` →
 `feat/docker-veth-everywhere` → `feat/docker-kernel-filters` →
-`feat/docker-kernel-bpf-drop` → `feat/docker-kernel-netem-ext`:
+`feat/docker-kernel-bpf-drop` → `feat/docker-kernel-netem-ext` →
+`feat/docker-kernel-ebpf-drops`:
 
 1. **Kernel datapath** — NIOBridge NIO type, per-link bridges, carrier-based
    suspend, crash-safe reconciliation.
@@ -57,6 +58,14 @@ The work landed in seven stages on branch stack `feat/docker-kernel-datapath` �
    process. Reconcile became reset-before-set: the kernel's netem replace
    merges optional attributes, so removing a parameter needs the explicit
    reset.
+8. **eBPF stateful drops** — `frequency_drop` becomes the eBPF classifier's
+   exact every-Nth mode (`tc nth_drop`, uBridge `feature/tc-precision`;
+   -1 = drop everything → every 1st) and the new kernel-only `quota` type
+   the byte-cap mode (`tc quota_drop`). Needs a uBridge reporting `ebpf=1`
+   (setcap cap_bpf,cap_net_admin,cap_net_raw=ep — verified working for a
+   non-root server process, the production credential shape). With this,
+   no filter type forces the relay anymore: kernel/relay is a purely
+   topological choice.
 
 ## Adapter interface types
 
@@ -89,8 +98,8 @@ Kernel link between two containers on the same compute:
                                └───────────────────┘
 ```
 
-Relay link on the same unified veth (fallback for filtered links or when
-`enable_kernel_datapath` is off — e.g. to reach another compute):
+Relay link on the same unified veth (fallback for mixed node types, cross-
+compute wiring or when `enable_kernel_datapath` is off):
 
 ```
  ┌────────────┐              ┌────────────────────────────┐              ┌────────────┐
@@ -110,9 +119,10 @@ time; the compute side only reacts to the NIO type:
 
 * both endpoints Docker (any class except unix-socket containers), same
   compute
-* no active packet filters (filters live in the relay; kernelization via tc
-  netem is planned)
 * `Server.enable_kernel_datapath` enabled (default)
+
+Filters never disqualify the kernel path anymore — every type has a kernel
+equivalent (netem / cls_bpf / eBPF classifier).
 
 There is **no stopped-node requirement**. Since every adapter is a veth, links
 attach to running containers: `brctl addif` (kernel) or
@@ -189,7 +199,8 @@ ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 | `seed [u32]` | netem `seed N` | reproducible random draws; kernel-only type |
 | `limit [pkts]` | netem `limit N` | queue depth above the 1000 default (rate+delay BDP); kernel-only type |
 | `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
-| `frequency_drop` | — not yet (eBPF stateful classifier spec'd: [ubridge-kernel-impairment-spec](../design/ubridge-kernel-impairment-spec.md), part B pending) | 409 on kernel links; relay fallback |
+| `frequency_drop [N]` | `tc nth_drop <if> N` — the eBPF stateful classifier's exact every-Nth mode (clsact egress prio 1) | needs uBridge `ebpf=1`; -1 = drop everything → every 1st; per-direction counters (see below) |
+| `quota [bytes, %]` | `tc quota_drop <if> <bytes> <pct>` — after the byte quota is consumed, each further packet drops with the given chance (100 = hard cutoff) | kernel-only type; needs `ebpf=1`; per-direction byte counters |
 
 Semantics:
 
@@ -213,12 +224,24 @@ Semantics:
   `tc capabilities` once per uBridge process and require the tokens;
   a plain delay/loss/corrupt/dup filter never probes — an old uBridge
   serves the original surface untouched.
-* **kernel-only vs relay-only.** The extension types have no uBridge relay
-  equivalent: `available_filters` hides them on relay links, setting one on
-  a created relay link returns 409, and a project loaded with such filters
-  on a link that cannot be kernel-wired drops them with a warning (invalid
-  filters are dropped the same way at load). Symmetrically,
-  `frequency_drop` stays relay-only.
+* **kernel-only vs relay-available.** The extension types and `quota` have
+  no uBridge relay equivalent: `available_filters` hides them on relay
+  links, setting one on a created relay link returns 409, and a project
+  loaded with such filters on a link that cannot be kernel-wired drops them
+  with a warning (invalid filters are dropped the same way at load).
+  `frequency_drop` runs on both datapaths (relay userspace filter / eBPF
+  every-Nth).
+* **frequency_drop counting semantics differ per datapath.** The relay's
+  single filtered bridge counts packets of BOTH directions through one
+  counter; the kernel attaches one classifier per veth end, so each
+  direction drops every Nth independently. For a round-trip measurement
+  with every-Nth N: relay ≈ 1/N of frames (phase-locked), kernel = 1 −
+  ((N−1)/N)² (e.g. N=3 → 55.6 % round-trip loss, measured 57 %). The
+  kernel count is exact (atomic counter), unlike netem's stochastic loss.
+* **Classifier order** on clsact egress: the eBPF stateful filter runs at
+  prio 1, `bpf_drop` expressions at 10–99 — a packet dropped by the
+  stateful modes never reaches the expression drops, and dropped packets
+  never reach netem.
 * **Validation** mirrors the tc grammar: `reorder` requires `delay`,
   `gemodel` and `packet_loss` are mutually exclusive (both map to the netem
   loss keyword), `distribution` requires jitter > 0, rate must be integer +
@@ -253,7 +276,9 @@ tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%> [correl <%>] | loss gemod
                                   [dup <%> [correl <%>]] [corrupt <%>] [reorder <%> [correl <%>] [gap <n>]]
                                   [rate <bw>] [limit <pkts>] [distribution uniform|normal|pareto|paretonormal] [seed <u32>]
 tc bpf_drop add <if> <prio 10-99> "<expr>" / tc bpf_drop flush <if>
-tc reset <if>                     # full restore: filters -> clsact -> root qdisc, idempotent
+tc nth_drop <if> <n | off>        # eBPF exact every-Nth (frequency_drop)
+tc quota_drop <if> <bytes> <pct> | off   # eBPF byte cap (quota)
+tc reset <if>                     # full restore: eBPF filter -> bpf_drops -> clsact -> root qdisc, idempotent
 tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1", probed once per process
 bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capture
 ```
@@ -280,7 +305,8 @@ pairs), capture freeze on stop, server restart reconciliation.
 Filters (two-container kernel link, 27/27 checks): baseline 0.06 ms →
 `delay 100` = 200.2 ms RTT (2× per direction) → `delay 50` = 100.2 ms
 (atomic replace) → clear = baseline (qdisc detached); `packet_loss 30` =
-48 % round-trip loss (expected 51 % = 1 − 0.7²); `frequency_drop` = 409;
+48 % round-trip loss (expected 51 % = 1 − 0.7²); `frequency_drop` = 409 (at that
+stage — superseded by the eBPF stage below);
 suspend with delay active = 100 % loss, resume keeps the qdisc
 (200.1 ms); node restart restores it (200.1 ms); link delete detaches it
 (`/usr/sbin/tc qdisc show` — no netem left); re-created link has no residual
@@ -291,8 +317,9 @@ ends' clsact; size-discriminating expression (`greater 150`) = small pings
 pass / 300-byte pings dropped (real byte-level BPF match); two-line OR;
 coexistence with netem (delay 50 → small pings 100.2 ms while big dropped);
 clear removes clsact entirely; suspend/resume keeps the drops; link delete +
-recreate leaves no residual filters; `frequency_drop` still 409;
-`available_filters` shows `bpf` and hides `frequency_drop`. Unit tests:
+recreate leaves no residual filters; `frequency_drop` still 409 and hidden
+(at that stage — superseded by the eBPF stage below); `available_filters` shows
+`bpf`. Unit tests:
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.
 
@@ -307,11 +334,27 @@ cleared; `duplicate 50` link alive; `packet_loss 30 correl 50` shows
 exactly 2×50 ms; suspend/resume and node restart keep the filters; a
 docker↔ethernet-switch relay link rejects `rate` with 409 and its
 `available_filters` hides the kernel-only types while the kernel link shows
-them all (minus frequency_drop); `reorder` without `delay` and
+them all (frequency_drop included since the eBPF stage); `reorder` without `delay` and
 `gemodel`+`packet_loss` are 409s; teardown leaves no netem on either veth.
 Also verified live: a relay attach (`bridge add_nio_ethernet`) on the
 admin-down veth host end fails in libpcap — the relay path now brings the
-interface up before attaching. Unit tests:
+interface up before attaching.
+
+eBPF stateful drops (same setup, 13/13 checks): `frequency_drop 3` installs
+the tc_impair classifier on both veths (clsact egress pref 1, visible in
+`tc filter show`); round-trip loss 57 % against the per-direction theory 1 −
+(2/3)² = 55.6 % (each direction drops every 3rd independently — the relay's
+single shared counter would give ≈ 1/3); `frequency_drop -1` = exactly
+100 % loss; `quota 3000B/100 %` = pings pass until the byte cap then hard
+cutoff; coexistence with `delay 50` (RTT 100.3 ms with every-4th drops);
+clearing filters leaves no residual bpf filter; suspend = 100 % while down
+with drops persisting after resume; node restart restores every-Nth on the
+fresh veth; `available_filters` shows frequency_drop + quota on kernel
+links and hides quota on relay links; a two-leg relay path through an
+Ethernet switch still serves frequency_drop from the userspace filter
+(56 % round-trip for N=3). The e2e also exposed and fixed a pre-existing
+restart bug: the relay bridge-name registry was not cleared on stop, so a
+node restart with a relay link skipped `bridge create` and failed. Unit tests:
 `tests/utils/test_packet_filter_validation.py` (P6a class),
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.

@@ -4,17 +4,16 @@ See LICENSE file for licensing information.
 -->
 
 > Frozen requirements spec for the **uBridge** project. Delivery status:
-> parts **A** (netem keyword extensions, uBridge `feature/tc-netem-ext`), **C**
-> (cBPF match-drop) and **D + E** (full-restore idempotent `tc reset`,
-> `tc capabilities` — uBridge `feature/tc-bpf-drop`) are **delivered and
-> integrated** on gns3-server branches `feat/docker-kernel-bpf-drop` (C/D/E)
-> and `feat/docker-kernel-netem-ext` (A: rate/reorder/gemodel/duplicate/
-> seed/limit/distributions/correlation exposed as GNS3 filter types).
-> Part **B** (eBPF stateful classifier) is delivered in the uBridge
-> `feature/tc-precision` branch but **not yet consumed** by gns3-server.
-> The originally shipped netem surface (delay/jitter/loss/dup/corrupt)
-> exists in uBridge 1.2.3+ and is verified against gns3-server branch
-> `feat/docker-kernel-filters`.
+> **all parts delivered and integrated.** A (netem keyword extensions,
+> uBridge `feature/tc-netem-ext`), C + D + E (cBPF match-drop, full-restore
+> idempotent `tc reset`, `tc capabilities` — uBridge `feature/tc-bpf-drop`)
+> and **B (eBPF stateful classifier — uBridge `feature/tc-precision`
+> 59e2b38, including the non-root setcap load fix)** are consumed by
+> gns3-server on the branch stack ending at `feat/docker-kernel-ebpf-drops`
+> (B: `frequency_drop` → `tc nth_drop`, the new kernel-only `quota` type →
+> `tc quota_drop`). The originally shipped netem surface (delay/jitter/
+> loss/dup/corrupt) exists in uBridge 1.2.3+ and is verified against
+> gns3-server branch `feat/docker-kernel-filters`.
 >
 > **Deviation found during integration (part A/D):** the delivered
 > `tc netem set` uses NLM_F_REPLACE, but the *kernel's* netem change merges
@@ -27,6 +26,20 @@ See LICENSE file for licensing information.
 > invisible). If uBridge later emits explicit zero/absent clears for every
 > optional attribute, the server-side reset-before-set can be dropped; the
 > two behaviours are compatible either way.
+>
+> **Deviation found during B integration:** `window_drop`'s implementation
+> advances the window start by one length on expiry with no gap, making the
+> windows back-to-back — after the first `start_ms` the "outside the window
+> packets pass" behaviour described in B.2 is unreachable (inside ≡ always).
+> gns3-server therefore does **not** expose window_drop yet; it needs either
+> a second length field (outage vs period) or a next-start semantics fix on
+> the uBridge side. `flow_drop` is delivered and functional but not yet
+> exposed as a GNS3 filter type (its mask/target parameter shape needs a
+> UX decision). Additionally, the delivered B.1 program had to fold the
+> flow-hash L4 port reads to constant offsets (IHL==20 only) because the
+> verifier prohibits variable packet-pointer arithmetic for non-root —
+> even with CAP_BPF (Spectre-mitigation gating by uid); documented in
+> uBridge's doc/tc.md.
 
 # uBridge kernel impairment: tc netem extensions + eBPF classifiers
 
@@ -293,11 +306,14 @@ corresponding filter types per capability.
   in `DockerVM._ubridge_apply_netem`; extension keywords are gated on the
   `tc capabilities` netem token list (old uBridge builds are never probed
   for the original surface).
-* **Done** (`feat/docker-kernel-bpf-drop`): `bpf` runs as cBPF match-drop
-  (`KERNEL_UNSUPPORTED_FILTERS` shrank to `frequency_drop`).
-* `frequency_drop` moves out of `KERNEL_UNSUPPORTED_FILTERS` once the eBPF
-  classifier (part B, uBridge `feature/tc-precision`) is consumed on the
-  server side, keyed on `ebpf=1` per compute.
+* **Done** (`feat/docker-kernel-bpf-drop`): `bpf` runs as cBPF match-drop.
+* **Done** (`feat/docker-kernel-ebpf-drops`): the eBPF classifier (part B)
+  is consumed — `frequency_drop` → `tc nth_drop` (-1 → every 1st), the new
+  kernel-only `quota` type → `tc quota_drop`, both keyed on `ebpf=1` from
+  the per-process `tc capabilities` probe. `KERNEL_UNSUPPORTED_FILTERS` is
+  gone entirely: kernel/relay eligibility is purely topological now.
+  Not yet exposed: `window_drop` (implementation deviation above),
+  `flow_drop` (parameter-shape UX decision).
 * Every veth end owns one qdisc + its filters: per-direction impairment is
   an architectural freebie to expose later (API `direction` field), aligned
   with marker `dir` semantics.

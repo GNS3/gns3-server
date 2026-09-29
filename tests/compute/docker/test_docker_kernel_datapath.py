@@ -34,7 +34,7 @@ from tests.utils import AsyncioMagicMock
 
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.nios.nio_udp import NIOUDP
 from gns3server.compute.nios.nio_bridge import NIOBridge
@@ -102,16 +102,28 @@ def test_create_nio_bridge_accepts_bpf_filters(vm):
     assert nio.filters == {"bpf": ["icmp"]}
 
 
-def test_create_nio_bridge_rejects_relay_only_filters(vm):
+def test_create_nio_bridge_accepts_frequency_drop(vm):
+    """
+    frequency_drop runs on the kernel datapath as the eBPF classifier's
+    exact every-Nth mode — every filter type is accepted on a kernel NIO.
+    """
 
-    with pytest.raises(ComputeError, match="kernel-datapath"):
-        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"frequency_drop": [10]}})
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"frequency_drop": [10]}})
+    assert isinstance(nio, NIOBridge)
+    assert nio.filters == {"frequency_drop": [10]}
+
+
+def test_create_nio_bridge_accepts_quota(vm):
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"quota": [1000000, 100]}})
+    assert isinstance(nio, NIOBridge)
+    assert nio.filters == {"quota": [1000000, 100]}
 
 
 def test_create_nio_bridge_accepts_markers(vm):
     """
     Markers ride the kernel NIO (attached to the veth host end via uBridge's
-    AF_PACKET marker module); only filters are rejected.
+    AF_PACKET marker module).
     """
 
     nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "markers": {"m": {"bpf": "icmp"}}})
@@ -421,26 +433,134 @@ async def test_connect_nio_udp_on_veth_is_idempotent(vm):
 
 
 @pytest.mark.asyncio
-async def test_update_nio_kernel_rejects_relay_only_filters(vm):
+async def test_update_nio_kernel_applies_ebpf_drops(vm):
     """
-    The PUT route mutates the NIO in place (no create_nio), so the update
-    path carries its own guard against relay-only filter types.
+    frequency_drop becomes the eBPF every-Nth mode and quota the byte-cap
+    mode, applied after the netem/bpf pass on the same NIO update.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1")
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"frequency_drop": [3], "quota": [1000000, 50]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" 3')
+    vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" 1000000 50')
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_ebpf_drop_everything(vm):
+    """
+    frequency_drop -1 (drop everything) maps to every 1st packet.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1")
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"frequency_drop": [-1]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" 1')
+    # the quota mode is explicitly off (not left to chance)
+    vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" off')
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_turns_ebpf_modes_off(vm):
+    """
+    A re-apply with the stateful filters removed must turn both modes off
+    (the netem reset already detached the program; the offs are idempotent).
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1")
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"frequency_drop": [3]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.reset_mock()
+    nio.filters = {"delay": [50]}
+    await vm.adapter_update_nio_binding(0, nio)
+
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" off')
+    vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" off')
+    for c in vm._ubridge_send.call_args_list:
+        assert "nth_drop" not in c.args[0] or "off" in c.args[0]
+
+
+@pytest.mark.asyncio
+async def test_apply_ebpf_drops_requires_ebpf_capability(vm):
+    """
+    An old or non-capped uBridge (ebpf=0) gets a clear upgrade error naming
+    the setcap fix.
+    """
+
+    hyp = MagicMock()
+    hyp.is_running.return_value = True
+    hyp.send = AsyncioMagicMock(return_value=["netem=delay;ebpf=0;cbpf=1"])
+    vm._ubridge_hypervisor = hyp
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="setcap cap_bpf"):
+        await vm._ubridge_apply_ebpf_drops(host_ifc, {"frequency_drop": [3]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_apply_ebpf_drops_skips_old_ubridge_without_filters(vm):
+    """
+    No stateful filters and no capability probe yet: nothing was ever
+    installed on an old uBridge, so it must not be touched at all.
     """
 
     vm._ubridge_hypervisor = MagicMock()
-    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
-    vm._ethernet_adapters[0].add_nio(0, nio)
-    nio.filters = {"frequency_drop": [10]}
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
 
-    with pytest.raises(DockerError, match="kernel-datapath"):
-        await vm.adapter_update_nio_binding(0, nio)
+    await vm._ubridge_apply_ebpf_drops(host_ifc, {})
+    vm._ubridge_send.assert_not_called()
+    vm._ubridge_hypervisor.send.assert_not_called()
 
 
-def _caps_hypervisor(cbpf="1"):
+@pytest.mark.asyncio
+async def test_apply_ebpf_drops_cleanup_only_probes_with_ebpf(vm):
+    """
+    The filter-removal path (modes off) only talks to the eBPF commands
+    when the capability probe reported them — a netem-ext uBridge without
+    the eBPF module must not see an unknown command.
+    """
+
+    hyp = MagicMock()
+    hyp.is_running.return_value = True
+    hyp.send = AsyncioMagicMock(return_value=["netem=delay,rate;ebpf=0;cbpf=1"])
+    vm._ubridge_hypervisor = hyp
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._ubridge_tc_caps = None  # force the probe (something was set before)
+
+    await vm._ubridge_apply_ebpf_drops(host_ifc, {})
+    vm._ubridge_send.assert_not_called()
+
+
+def _caps_hypervisor(cbpf="1", ebpf="0"):
     """A hypervisor mock whose direct send() answers `tc capabilities`."""
     hyp = MagicMock()
     hyp.is_running.return_value = True
-    hyp.send = AsyncioMagicMock(return_value=[f"netem=delay;ebpf=0;cbpf={cbpf}"])
+    hyp.send = AsyncioMagicMock(return_value=[f"netem=delay;ebpf={ebpf};cbpf={cbpf}"])
     return hyp
 
 
@@ -1027,3 +1147,25 @@ def test_create_nio_udp_rejects_kernel_only_filters(vm):
         vm.manager.create_nio(
             {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1", "filters": {"gemodel": [100, 0, 30]}}
         )
+
+
+@pytest.mark.asyncio
+async def test_stop_clears_relay_bridge_registry(vm):
+    """
+    The uBridge process dies with every bridge it hosted — stop() must drop
+    the relay bridge names, or the next start skips "bridge create" (the
+    gate checks the name's presence) and fails on add_nio_udp.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm._bridges.add("bridge1")
+    vm._ubridge_tc_caps = {"netem": "delay"}
+
+    async def query(method, path, *args, **kwargs):
+        raise DockerHttp404Error("no such container")
+
+    vm.manager.query = AsyncioMagicMock(side_effect=query)
+    await vm.stop()
+    assert vm._bridges == set()
+    assert vm._ubridge_tc_caps is None
