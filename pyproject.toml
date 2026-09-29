@@ -294,8 +294,6 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 # Baseline: modules with existing type errors (error count at baseline time).
 # Remove modules from this list one small PR at a time. Never add new ones.
 module = [
-  "gns3server.api.routes.compute.ethernet_switch_nodes",  # 16
-  "gns3server.api.routes.compute.frame_relay_switch_nodes",  # 9
   "gns3server.api.routes.compute.iou_nodes",  # 15
   "gns3server.api.routes.compute.nat_nodes",  # 10
   "gns3server.api.routes.compute.projects",  # 7
