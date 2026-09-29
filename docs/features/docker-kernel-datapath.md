@@ -24,12 +24,13 @@ Frames never leave the kernel.
 | Link | uBridge bridge, TAP fd ↔ UDP, userspace copy | per-link kernel bridge `gns3{link_id[:11]}`, zero-copy |
 | Relay latency | ~0.3 ms RTT | ~0.05 ms RTT (measured) |
 | Link attach at runtime | yes (relay attaches the pre-existing TAP) | yes (brctl addif / add_nio_ethernet — interface untouched) |
-| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt); frequency_drop & bpf stay relay-only |
+| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt); bpf as cls_bpf match-drop classifiers; frequency_drop stays relay-only (eBPF classifier pending) |
 | Capture / markers | relay bridge | uBridge AF_PACKET modules on the veth host end |
 
-The work landed in five stages on branch stack `feat/docker-kernel-datapath` →
+The work landed in six stages on branch stack `feat/docker-kernel-datapath` →
 `feat/docker-kernel-capture` → `feat/docker-kernel-markers` →
-`feat/docker-veth-everywhere` → `feat/docker-kernel-filters`:
+`feat/docker-veth-everywhere` → `feat/docker-kernel-filters` →
+`feat/docker-kernel-bpf-drop`:
 
 1. **Kernel datapath** — NIOBridge NIO type, per-link bridges, carrier-based
    suspend, crash-safe reconciliation.
@@ -43,6 +44,11 @@ The work landed in five stages on branch stack `feat/docker-kernel-datapath` →
    tc netem qdisc per veth host end, pushed through uBridge's netlink `tc`
    module. This also removes the relay delay filter's nanosleep bottleneck
    (upstream #2827) from the kernel path.
+6. **bpf match-drop** — the `bpf` filter (any line matching drops) runs as
+   cls_bpf classifiers on the veth host end's clsact egress (`tc bpf_drop`:
+   uBridge pcap-compiles the line to classic BPF, the kernel migrates it to
+   eBPF internally — no CAP_BPF needed). Requires a uBridge reporting
+   `cbpf=1` via `tc capabilities`; older builds get a clear upgrade error.
 
 ## Adapter interface types
 
@@ -163,13 +169,13 @@ marker enable_kernel <if> <name> <on|off>           # off = installed but silent
 Impairment filters run **in the kernel** as tc netem qdiscs on the veth host
 ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 
-| GNS3 filter | netem mapping | Notes |
+| GNS3 filter | kernel implementation | Notes |
 |---|---|---|
-| `delay [ms, jitter]` | `delay X jitter Y` | jitter 0 omitted |
-| `packet_loss [%]` | `loss P` | per direction (see below) |
-| `corrupt [%]` | `corrupt P` | |
-| `frequency_drop` | — no netem equivalent | 409 on kernel links; relay fallback (eBPF classifier spec'd: [ubridge-kernel-impairment-spec](../design/ubridge-kernel-impairment-spec.md)) |
-| `bpf` | — needs a tc classifier | 409 on kernel links; relay fallback (cBPF match-drop spec'd, same doc) |
+| `delay [ms, jitter]` | netem `delay X jitter Y` | jitter 0 omitted |
+| `packet_loss [%]` | netem `loss P` | per direction (see below) |
+| `corrupt [%]` | netem `corrupt P` | |
+| `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
+| `frequency_drop` | — not yet (eBPF stateful classifier spec'd: [ubridge-kernel-impairment-spec](../design/ubridge-kernel-impairment-spec.md), part B pending) | 409 on kernel links; relay fallback |
 
 Semantics:
 
@@ -189,14 +195,21 @@ Semantics:
 * **Suspend** keeps the qdisc (carrier-driven loss); the first packet after
   resume takes one extra delay interval (known netem idle-baseline behaviour)
   and steady state is exact.
-* A link carrying `frequency_drop` or `bpf` is wired on the **relay** (they
-  only exist in uBridge's userspace filters); `available_filters` hides them
-  on kernel links and setting them returns 409 with a clear message.
-  Kernel-side implementations are frozen in
+* A link carrying `frequency_drop` is wired on the **relay** (its eBPF
+  stateful classifier is not delivered yet); `available_filters` hides it on
+  kernel links and setting it returns 409 with a clear message. The remaining
+  kernel-side roadmap is frozen in
   [docs/design/ubridge-kernel-impairment-spec.md](../design/ubridge-kernel-impairment-spec.md)
   (eBPF stateful classifier for `frequency_drop` + quota/window/flow modes,
-  classic-BPF match-drop for `bpf`, plus netem keyword extensions: rate,
-  reorder, gemodel loss, jitter distributions).
+  plus netem keyword extensions: rate, reorder, gemodel loss, jitter
+  distributions — parts C and D of that spec are delivered).
+* **bpf reconcile = flush + re-add** (`tc bpf_drop flush`, then one add per
+  line at priorities 10, 11, …). `tc reset` (link delete / filter clear) is
+  the full restore in uBridge: filters → clsact → root qdisc, idempotent.
+* **Observability caveat:** clsact drops happen before the AF_PACKET tap
+  points — markers/captures on the same veth do not observe cls_bpf-dropped
+  frames (on the relay, filter-vs-mark ordering determined visibility
+  instead).
 
 ## uBridge command surface
 
@@ -209,13 +222,12 @@ brctl create / delete / addif / delif / show
 link set <if> up|down
 capture start_kernel / stop_kernel
 marker add_kernel / delete_kernel / enable_kernel
-tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%>] [dup <%>] [corrupt <%>] / tc reset <if>
+tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%>] [dup <%>] [corrupt <%>]
+tc bpf_drop add <if> <prio 10-99> "<expr>" / tc bpf_drop flush <if>
+tc reset <if>                     # full restore: filters -> clsact -> root qdisc, idempotent
+tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1", probed once per process
 bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capture
 ```
-
-Note: `tc reset` currently replies 207-ENOENT when no qdisc is attached — the
-server tolerates it; making the command idempotent in uBridge is a desirable
-polish.
 
 ## Configuration
 
@@ -239,10 +251,18 @@ pairs), capture freeze on stop, server restart reconciliation.
 Filters (two-container kernel link, 27/27 checks): baseline 0.06 ms →
 `delay 100` = 200.2 ms RTT (2× per direction) → `delay 50` = 100.2 ms
 (atomic replace) → clear = baseline (qdisc detached); `packet_loss 30` =
-48 % round-trip loss (expected 51 % = 1 − 0.7²); `frequency_drop`/`bpf` =
-409; suspend with delay active = 100 % loss, resume keeps the qdisc
+48 % round-trip loss (expected 51 % = 1 − 0.7²); `frequency_drop` = 409;
+suspend with delay active = 100 % loss, resume keeps the qdisc
 (200.1 ms); node restart restores it (200.1 ms); link delete detaches it
 (`/usr/sbin/tc qdisc show` — no netem left); re-created link has no residual
-impairment. Unit tests:
+impairment.
+
+bpf match-drop (same setup, 22/22 checks): `bpf "icmp"` = 100 % loss on both
+ends' clsact; size-discriminating expression (`greater 150`) = small pings
+pass / 300-byte pings dropped (real byte-level BPF match); two-line OR;
+coexistence with netem (delay 50 → small pings 100.2 ms while big dropped);
+clear removes clsact entirely; suspend/resume keeps the drops; link delete +
+recreate leaves no residual filters; `frequency_drop` still 409;
+`available_filters` shows `bpf` and hides `frequency_drop`. Unit tests:
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.

@@ -28,6 +28,8 @@ from unittest.mock import MagicMock, call
 import pytest
 import pytest_asyncio
 
+from unittest.mock import patch
+
 from tests.utils import AsyncioMagicMock
 
 from gns3server.compute.docker import Docker
@@ -88,11 +90,22 @@ def test_create_nio_bridge_accepts_netem_filters(vm):
     assert nio.filters == {"delay": [50, 5], "packet_loss": [10]}
 
 
-@pytest.mark.parametrize("filters", [{"frequency_drop": [10]}, {"bpf": ["icmp"]}])
-def test_create_nio_bridge_rejects_relay_only_filters(vm, filters):
+def test_create_nio_bridge_accepts_bpf_filters(vm):
+    """
+    bpf expressions run on the kernel datapath as cls_bpf match-drop
+    classifiers (uBridge tc bpf_drop); only frequency_drop has no kernel
+    equivalent yet.
+    """
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"bpf": ["icmp"]}})
+    assert isinstance(nio, NIOBridge)
+    assert nio.filters == {"bpf": ["icmp"]}
+
+
+def test_create_nio_bridge_rejects_relay_only_filters(vm):
 
     with pytest.raises(ComputeError, match="kernel-datapath"):
-        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": filters})
+        vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "filters": {"frequency_drop": [10]}})
 
 
 def test_create_nio_bridge_accepts_markers(vm):
@@ -418,6 +431,114 @@ async def test_update_nio_kernel_rejects_relay_only_filters(vm):
 
     with pytest.raises(DockerError, match="kernel-datapath"):
         await vm.adapter_update_nio_binding(0, nio)
+
+
+def _caps_hypervisor(cbpf="1"):
+    """A hypervisor mock whose direct send() answers `tc capabilities`."""
+    hyp = MagicMock()
+    hyp.is_running.return_value = True
+    hyp.send = AsyncioMagicMock(return_value=[f"netem=delay;ebpf=0;cbpf={cbpf}"])
+    return hyp
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_bpf_drops(vm):
+    """
+    bpf lines reconcile as flush + one bpf_drop add per line at successive
+    priorities (any line matching drops — OR semantics like the relay).
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"bpf": ["icmp\nudp port 53"]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc bpf_drop flush "{host_ifc}"')
+    vm._ubridge_send.assert_any_call(f'tc bpf_drop add "{host_ifc}" 10 "icmp"')
+    vm._ubridge_send.assert_any_call(f'tc bpf_drop add "{host_ifc}" 11 "udp port 53"')
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_flushes_bpf_drops_when_removed(vm):
+
+    vm._ubridge_hypervisor = _caps_hypervisor()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"bpf": ["icmp"]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.reset_mock()
+    nio.filters = {}
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc bpf_drop flush "{host_ifc}"')
+    for c in vm._ubridge_send.call_args_list:
+        assert "bpf_drop add" not in c.args[0]
+
+
+@pytest.mark.asyncio
+async def test_apply_bpf_drops_requires_cbpf_capability(vm):
+
+    vm._ubridge_hypervisor = _caps_hypervisor(cbpf="0")
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="upgrade uBridge"):
+        await vm._ubridge_apply_bpf_drops(host_ifc, {"bpf": ["icmp"]})
+
+
+@pytest.mark.asyncio
+async def test_apply_bpf_drops_compile_failure_warns(vm):
+    """
+    A line that compiles for the controller's tcpdump but not for this
+    uBridge's libpcap is skipped with a warning — mirrors the relay path.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    async def send(command):
+        if "bpf_drop add" in command:
+            raise UbridgeError("209-Cannot compile filter 'icmp': can't parse filter expression: syntax error")
+
+    vm._ubridge_send = AsyncioMagicMock(side_effect=send)
+    with patch("gns3server.compute.docker.docker_vm.log.warning") as mock_log:
+        await vm._ubridge_apply_bpf_drops(host_ifc, {"bpf": ["icmp"]})  # must not raise
+    assert mock_log.called
+
+
+@pytest.mark.asyncio
+async def test_apply_bpf_drops_skips_old_ubridge_without_lines(vm):
+    """
+    No bpf lines and no capability probe yet: nothing was ever installed on
+    an old uBridge, so it must not be touched at all (no unknown-module error).
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    await vm._ubridge_apply_bpf_drops(host_ifc, {})
+    vm._ubridge_send.assert_not_called()
+    vm._ubridge_hypervisor.send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_ubridge_tc_capabilities_probed_once(vm):
+
+    vm._ubridge_hypervisor = _caps_hypervisor()
+    caps = await vm._ubridge_tc_capabilities()
+    assert caps == {"netem": "delay", "ebpf": "0", "cbpf": "1"}
+    await vm._ubridge_tc_capabilities()
+    assert vm._ubridge_hypervisor.send.call_count == 1
 
 
 @pytest.mark.asyncio

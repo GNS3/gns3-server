@@ -177,6 +177,11 @@ class DockerVM(BaseNode):
         # container death. Kernel links enslave it into a Linux bridge,
         # relay links attach it to the uBridge relay via AF_PACKET.
         self._kernel_veths = {}
+        # uBridge tc-module capability report, probed lazily once per uBridge
+        # process (None = not probed yet, {} = no tc support, else the parsed
+        # "tc capabilities" reply). Invalidated on stop: the next start runs a
+        # fresh uBridge process which may differ (upgrade/downgrade).
+        self._ubridge_tc_caps = None
 
         if adapters is None:
             self.adapters = 1
@@ -1430,6 +1435,9 @@ class DockerVM(BaseNode):
                 self._console_websocket = None
             self._cleanup_console_resources()
             await self._clean_servers()
+            # The next start spawns a fresh uBridge process — its capabilities
+            # must be re-probed (see _ubridge_tc_capabilities).
+            self._ubridge_tc_caps = None
             # veth host ends live in the root namespace and survive container
             # death — remove them while the uBridge control channel is still up.
             await self._remove_kernel_veths()
@@ -1935,8 +1943,10 @@ class DockerVM(BaseNode):
             # taps) — the anchor is the interface, not a relay bridge.
             await self._ubridge_apply_markers(host_ifc, nio)
             # Impairment filters become one tc netem qdisc on the veth host
-            # end (restored here on node restart, like the capture above).
+            # end (restored here on node restart, like the capture above);
+            # bpf expressions become cls_bpf match-drop classifiers.
             await self._ubridge_apply_netem(host_ifc, nio.filters)
+            await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
             return
 
         # Relay NIO. On a veth-backed adapter (the unified Docker interface)
@@ -1998,9 +2008,11 @@ class DockerVM(BaseNode):
 
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                # The controller keeps relay-only filters off kernel links and
-                # create_nio rejects them on the POST path; this PUT path
-                # mutates the NIO in place, so guard here too.
+                # The controller keeps frequency_drop off kernel links (no
+                # kernel equivalent until the eBPF classifier lands) and
+                # create_nio rejects it on the POST path; this PUT path
+                # mutates the NIO in place, so guard here too. bpf is fine —
+                # it becomes cls_bpf match-drop classifiers (cbpf-probed).
                 unsupported = KERNEL_UNSUPPORTED_FILTERS.intersection(nio.filters or {})
                 if unsupported:
                     raise DockerError(
@@ -2014,8 +2026,10 @@ class DockerVM(BaseNode):
                         # the relay-datapath equivalent of the branch below.
                         await self._ubridge_apply_markers(host_ifc, nio)
                         # netem set is an atomic replace, so a full re-apply
-                        # IS the incremental reconcile for impairment filters.
+                        # IS the incremental reconcile for impairment filters;
+                        # bpf drops reconcile as flush + re-add.
                         await self._ubridge_apply_netem(host_ifc, nio.filters)
+                        await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
                     await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
                 return
 
@@ -2171,6 +2185,78 @@ class DockerVM(BaseNode):
             # clean. Everything else is a real failure and must surface.
             if "No such file" not in str(e):
                 raise
+
+    async def _ubridge_tc_capabilities(self):
+        """
+        uBridge's tc-module feature report (``tc capabilities``), probed once
+        per uBridge process and cached — the reply shape is
+        ``netem=<kw,...>;ebpf=0|1;cbpf=0|1``. uBridge builds without the tc
+        module answer "Unknown module" and old builds without the command
+        answer "Unknown command": both mean no kernel filter support, cached
+        as an empty dict.
+        """
+
+        if self._ubridge_tc_caps is None:
+            caps = {}
+            if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+                try:
+                    reply = await self._ubridge_hypervisor.send("tc capabilities")
+                except UbridgeError:
+                    reply = []
+                for entry in (reply[0] if reply else "").split(";"):
+                    key, _, value = entry.partition("=")
+                    if key:
+                        caps[key.strip()] = value.strip()
+            self._ubridge_tc_caps = caps
+        return self._ubridge_tc_caps
+
+    async def _ubridge_apply_bpf_drops(self, host_ifc, filters):
+        """
+        Translate the NIO's ``bpf`` filter (one expression per line, any line
+        matching drops the packet) into cls_bpf classifiers on the veth host
+        end's clsact egress: ``tc bpf_drop`` compiles each line with libpcap
+        (same compiler as the relay's bpf filter) and drops matches with a
+        gact TC_ACT_SHOT. Reconcile is always flush + re-add — same-prio
+        resend replaces the filter node in uBridge, and the flush drops
+        lines the user removed.
+
+        :param host_ifc: veth host-end interface name
+        :param filters: NIO filters dictionary
+        """
+
+        bpf = filters.get("bpf")
+        lines = [line.strip() for line in (bpf[0].split("\n") if bpf else []) if line.strip()]
+        if not lines and self._ubridge_tc_caps is None:
+            # Nothing to add and nothing was ever installed (no tc module
+            # probed yet) — skip touching an old uBridge entirely.
+            return
+        caps = await self._ubridge_tc_capabilities()
+        if not lines:
+            if caps:
+                await self._ubridge_send(f'tc bpf_drop flush "{host_ifc}"')
+            return
+        if caps.get("cbpf") != "1":
+            raise DockerError(
+                "Packet filter 'bpf' on a kernel-datapath link needs a uBridge with cBPF support "
+                "(tc capabilities reports no cbpf); upgrade uBridge on this compute or keep the "
+                "link on the relay datapath"
+            )
+        await self._ubridge_send(f'tc bpf_drop flush "{host_ifc}"')
+        for offset, line in enumerate(lines):
+            try:
+                await self._ubridge_send(
+                    'tc bpf_drop add "{ifc}" {prio} "{expr}"'.format(ifc=host_ifc, prio=10 + offset, expr=line)
+                )
+            except UbridgeError as e:
+                if "Cannot compile filter" not in str(e):
+                    raise
+                # Mirror the relay path: a line that no longer compiles on
+                # this uBridge's libpcap is skipped with a warning instead
+                # of breaking the link (the controller already validated
+                # the syntax with tcpdump at create/update time).
+                message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {line}"
+                log.warning(message)
+                self.project.emit("log.warning", {"message": message})
 
     async def _remove_kernel_markers(self, host_ifc):
         """

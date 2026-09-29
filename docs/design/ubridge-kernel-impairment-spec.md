@@ -3,10 +3,15 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 See LICENSE file for licensing information.
 -->
 
-> Frozen requirements spec for the **uBridge** project. The gns3-server side is
-> NOT implemented yet — it lands once uBridge delivers this surface. Everything
-> marked *shipped* already exists in uBridge 1.2.3+ and is verified against
-> gns3-server branch `feat/docker-kernel-filters`.
+> Frozen requirements spec for the **uBridge** project. Delivery status:
+> parts **A** (netem keyword extensions, uBridge `feature/tc-netem-ext`) and
+> **C + D** (cBPF match-drop, full-restore idempotent `tc reset`,
+> `tc capabilities` with `cbpf` probe — uBridge `feature/tc-bpf-drop`) are
+> **delivered and integrated** on gns3-server branch
+> `feat/docker-kernel-bpf-drop`. Part **B** (eBPF stateful classifier) is
+> still pending. The originally shipped netem surface (delay/jitter/loss/
+> dup/corrupt) exists in uBridge 1.2.3+ and is verified against gns3-server
+> branch `feat/docker-kernel-filters`.
 
 # uBridge kernel impairment: tc netem extensions + eBPF classifiers
 

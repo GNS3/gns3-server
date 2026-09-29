@@ -103,8 +103,9 @@ async def test_kernel_datapath_eligible_with_netem_filters(project):
 @pytest.mark.asyncio
 async def test_kernel_datapath_not_eligible_with_relay_only_filters(project):
     """
-    frequency_drop and bpf only exist in the uBridge userspace relay — a
-    link carrying one stays on the relay.
+    frequency_drop only exists in the uBridge userspace relay (its eBPF
+    classifier is not delivered yet) — a link carrying one stays on the
+    relay. bpf is kernel-capable (cls_bpf match-drop) and eligible.
     """
 
     link, node1, node2 = await _kernel_link(project)
@@ -112,7 +113,7 @@ async def test_kernel_datapath_not_eligible_with_relay_only_filters(project):
     assert link._kernel_datapath_eligible(node1, node2) is False
 
     link._filters = {"bpf": ["icmp"]}
-    assert link._kernel_datapath_eligible(node1, node2) is False
+    assert link._kernel_datapath_eligible(node1, node2) is True
 
 
 @pytest.mark.asyncio
@@ -267,8 +268,25 @@ async def test_update_relay_only_filters_rejected_on_kernel_link(project):
 
     with pytest.raises(ControllerError, match="kernel-datapath"):
         await link.update_filters({"frequency_drop": [10]})
-    with pytest.raises(ControllerError, match="kernel-datapath"):
-        await link.update_filters({"bpf": ["icmp"]})
+
+
+@pytest.mark.asyncio
+async def test_update_bpf_filters_accepted_on_kernel_link(project):
+    """
+    bpf expressions ride the kernel NIO to BOTH endpoints (each end's
+    cls_bpf classifiers cover the traffic entering that container — the
+    same both-directions-once net effect as the relay's single filtered
+    bridge).
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    await link._prepare()
+
+    await link.update_filters({"bpf": ["icmp\nudp port 53"]})
+    assert link.filters == {"bpf": ["icmp\nudp port 53"]}
+    by_node = {entry[0].id: entry[3] for entry in (await link._prepare())}
+    assert by_node[node1.id]["filters"] == {"bpf": ["icmp\nudp port 53"]}
+    assert by_node[node2.id]["filters"] == {"bpf": ["icmp\nudp port 53"]}
 
 
 @pytest.mark.asyncio
