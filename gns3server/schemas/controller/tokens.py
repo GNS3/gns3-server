@@ -25,7 +25,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str
     token_version: int = 0
     token_use: str = "access"
 

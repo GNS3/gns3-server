@@ -16,19 +16,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import uuid
+from typing import Optional
+
 from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import BaseTable, generate_uuid, GUID
 from .images import image_template_map
 
 
+def template_id_column() -> Mapped[uuid.UUID]:
+    return mapped_column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+
+
 class Template(BaseTable):
     __tablename__ = "templates"
 
-    template_id = Column(GUID, primary_key=True, default=generate_uuid)
+    template_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, index=True)
-    version = Column(String)
+    version: Mapped[Optional[str]] = mapped_column(String)
     category = Column(String)
     default_name_format = Column(String)
     symbol = Column(String)
@@ -36,7 +43,7 @@ class Template(BaseTable):
     usage = Column(String)
     netmiko_device_type = Column(String)
     appliance_metadata = Column(JSON)
-    template_type = Column(String)
+    template_type: Mapped[str] = mapped_column(String, nullable=True)
     tags = Column(JSON)
     compute_id = Column(String)
     images = relationship("Image", secondary=image_template_map, back_populates="templates")
@@ -50,7 +57,7 @@ class Template(BaseTable):
 class CloudTemplate(Template):
     __tablename__ = "cloud_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     ports_mapping = Column(JSON)
     remote_console_host = Column(String)
     remote_console_port = Column(Integer)
@@ -63,7 +70,7 @@ class CloudTemplate(Template):
 class DockerTemplate(Template):
     __tablename__ = "docker_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     image = Column(String)
     adapters = Column(Integer)
     mac_address = Column(String)
@@ -88,10 +95,10 @@ class DockerTemplate(Template):
 class DynamipsTemplate(Template):
     __tablename__ = "dynamips_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
-    platform = Column(String)
+    template_id: Mapped[uuid.UUID] = template_id_column()
+    platform: Mapped[str] = mapped_column(String, nullable=True)
     chassis = Column(String)
-    image = Column(String)
+    image: Mapped[str] = mapped_column(String, nullable=True)
     exec_area = Column(Integer)
     mmap = Column(Boolean)
     mac_addr = Column(String)
@@ -130,7 +137,7 @@ class DynamipsTemplate(Template):
 class EthernetHubTemplate(Template):
     __tablename__ = "ethernet_hub_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     ports_mapping = Column(JSON)
 
     __mapper_args__ = {"polymorphic_identity": "ethernet_hub", "polymorphic_load": "selectin"}
@@ -139,7 +146,7 @@ class EthernetHubTemplate(Template):
 class EthernetSwitchTemplate(Template):
     __tablename__ = "ethernet_switch_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     ports_mapping = Column(JSON)
     console_type = Column(String)
 
@@ -149,8 +156,8 @@ class EthernetSwitchTemplate(Template):
 class IOUTemplate(Template):
     __tablename__ = "iou_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
-    path = Column(String)
+    template_id: Mapped[uuid.UUID] = template_id_column()
+    path: Mapped[str] = mapped_column(String, nullable=True)
     ethernet_adapters = Column(Integer)
     serial_adapters = Column(Integer)
     ram = Column(Integer)
@@ -168,7 +175,7 @@ class IOUTemplate(Template):
 class QemuTemplate(Template):
     __tablename__ = "qemu_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     qemu_path = Column(String)
     platform = Column(String)
     linked_clone = Column(Boolean)
@@ -214,7 +221,7 @@ class QemuTemplate(Template):
 class VirtualBoxTemplate(Template):
     __tablename__ = "virtualbox_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     vmname = Column(String)
     ram = Column(Integer)
     linked_clone = Column(Boolean)
@@ -236,7 +243,7 @@ class VirtualBoxTemplate(Template):
 class VMwareTemplate(Template):
     __tablename__ = "vmware_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     vmx_path = Column(String)
     linked_clone = Column(Boolean)
     first_port_name = Column(String)
@@ -257,7 +264,7 @@ class VMwareTemplate(Template):
 class VPCSTemplate(Template):
     __tablename__ = "vpcs_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
+    template_id: Mapped[uuid.UUID] = template_id_column()
     base_script_file = Column(String)
     console_type = Column(String)
     console_auto_start = Column(Boolean, default=False)
