@@ -37,8 +37,10 @@ from typing import Optional, Dict, Any
 
 try:
     import git
+
+    GIT_AVAILABLE = True
 except ImportError:
-    git = None
+    GIT_AVAILABLE = False
 
 from gns3server.config import Config
 from .loader import SkillsLoader
@@ -66,7 +68,7 @@ class SkillsManager:
     - Version tracking
     """
 
-    def __init__(self, repo_url: str = None, branch: str = "main", auto_update: bool = False):
+    def __init__(self, repo_url: Optional[str] = None, branch: str = "main", auto_update: bool = False):
         """
         Initialize the skills manager.
 
@@ -90,7 +92,7 @@ class SkillsManager:
         self._repo: Optional["git.Repo"] = None
         self._prompt_count = 0
 
-        if git is None:
+        if not GIT_AVAILABLE:
             logger.warning("GitPython is not installed. Skills management features will be limited.")
 
     def initialize(self) -> bool:
@@ -134,7 +136,7 @@ class SkillsManager:
         - Up to date → nothing
         - Network error → use existing files, log warning
         """
-        if git is None or self._repo is None:
+        if not GIT_AVAILABLE or self._repo is None:
             return
 
         # Check for uncommitted changes
@@ -173,7 +175,7 @@ class SkillsManager:
         Returns:
             True if successful, False otherwise
         """
-        if git is None:
+        if not GIT_AVAILABLE:
             logger.error("GitPython is not installed. Cannot clone repository.")
             return False
 
@@ -347,7 +349,7 @@ class SkillsManager:
         Returns:
             Commit hash as string, or empty string if not available
         """
-        if git is None or self._repo is None:
+        if not GIT_AVAILABLE or self._repo is None:
             try:
                 self._repo = git.Repo(self.local_path)
             except Exception:
@@ -409,7 +411,7 @@ class SkillsManager:
         Returns:
             True if successful, False otherwise
         """
-        if git is None:
+        if not GIT_AVAILABLE:
             logger.error("GitPython is not installed. Cannot rollback.")
             return False
 
@@ -436,7 +438,7 @@ class SkillsManager:
         Returns:
             List of commit information dictionaries
         """
-        if git is None:
+        if not GIT_AVAILABLE:
             return []
 
         try:

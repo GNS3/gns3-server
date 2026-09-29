@@ -20,7 +20,7 @@ API routes for drawings.
 
 from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
-from typing import List
+from typing import Any, List
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -30,7 +30,9 @@ from gns3server import schemas
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Project or drawing not found"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Project or drawing not found"}
+}
 
 router = APIRouter(responses=responses)
 
