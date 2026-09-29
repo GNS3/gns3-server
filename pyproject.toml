@@ -295,8 +295,6 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 # Remove modules from this list one small PR at a time. Never add new ones.
 module = [
   "gns3server.agent",  # 2
-  "gns3server.agent.gns3_copilot.agent.context_manager",  # 5
-  "gns3server.agent.gns3_copilot.agent.model_factory",  # 4
   "gns3server.agent.gns3_copilot.chat_sessions_repository",  # 8
   "gns3server.agent.gns3_copilot.gns3_client.api_handlers",  # 10
   "gns3server.agent.gns3_copilot.gns3_client.connector_factory",  # 1
