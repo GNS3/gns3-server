@@ -248,7 +248,7 @@ class SkillsLoader:
                     continue
                 # Use device_type from YAML content as the key
                 # Fallback to filename stem if device_type not present
-                skill_key = skill_data.get("device_type") if isinstance(skill_data, dict) else None
+                skill_key = skill_data.get("device_type")
                 if not skill_key:
                     skill_key = yaml_file.stem
                     logger.warning(f"No device_type in {yaml_file}, using filename '{skill_key}' as key")

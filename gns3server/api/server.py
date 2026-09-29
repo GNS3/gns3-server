@@ -19,6 +19,8 @@
 FastAPI app
 """
 
+from typing import cast
+
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -118,7 +120,7 @@ def handle_exit(*args, **kwargs):
     unicorn_exit_handler(*args, **kwargs)
 
 
-UvicornServer.handle_exit = handle_exit
+UvicornServer.handle_exit = handle_exit  # type: ignore[method-assign]
 
 
 # Configure self-hosting JavaScript and CSS for docs
@@ -134,7 +136,7 @@ async def custom_swagger_ui_html():
     )
 
 
-@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+@app.get(cast(str, app.swagger_ui_oauth2_redirect_url), include_in_schema=False)
 async def swagger_ui_redirect():
     return get_swagger_ui_oauth2_redirect_html()
 

@@ -32,16 +32,14 @@ import asyncio
 import aiofiles
 from concurrent import futures
 
-from zipfile import (
-    structCentralDir,
-    structEndArchive64,
-    structEndArchive,
-    structEndArchive64Locator,
-    stringCentralDir,
-    stringEndArchive64,
-    stringEndArchive,
-    stringEndArchive64Locator,
-)
+structCentralDir = "<4s4B4HL2L5H2L"
+structEndArchive64 = "<4sQ2H2L4Q"
+structEndArchive = b"<4s4H2LH"
+structEndArchive64Locator = "<4sLQL"
+stringCentralDir = b"PK\x01\x02"
+stringEndArchive64 = b"PK\x06\x06"
+stringEndArchive = b"PK\x05\x06"
+stringEndArchive64Locator = b"PK\x06\x07"
 
 
 ZIP_ZSTANDARD = 93  # zstandard is supported by WinZIP v24 and later, PowerArchiver 2021 and 7-Zip-zstd

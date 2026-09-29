@@ -230,6 +230,8 @@ class GNS3CreateNodeTool(BaseTool):
                         },
                         gns3_ctx,
                     )
+                    if isinstance(created, list):
+                        raise RuntimeError("Unexpected batch response when creating a single node")
                     if "error" in created:
                         raise RuntimeError(created["error"])
                     node_info = {

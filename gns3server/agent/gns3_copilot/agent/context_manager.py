@@ -140,7 +140,7 @@ def estimate_tool_tokens(tools: list[Any]) -> int:
     for tool in tools:
         try:
             # Build tool schema in OpenAI format
-            tool_schema = {
+            tool_schema: dict[str, Any] = {
                 "type": "function",
                 "function": {
                     "name": tool.name,

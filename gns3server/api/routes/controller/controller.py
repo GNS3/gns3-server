@@ -20,7 +20,7 @@ import os
 import time
 import psutil
 
-from fastapi import APIRouter, Request, Depends, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, FastAPI, Request, Depends, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.routing import Mount
@@ -64,7 +64,7 @@ def get_version(request: Request) -> dict:
     # compute subapp
     controller_host = None
     for route in request.app.routes:
-        if isinstance(route, Mount) and route.name == "compute":
+        if isinstance(route, Mount) and route.name == "compute" and isinstance(route.app, FastAPI):
             controller_host = route.app.state.controller_host
 
     local_server = Config.instance().settings.Server.local
@@ -129,7 +129,7 @@ async def shutdown() -> None:
             try:
                 future.result()
             except Exception as e:
-                log.error(f"Could not close project: {e}", exc_info=1)
+                log.error(f"Could not close project: {e}", exc_info=True)
                 continue
 
     # then shutdown the server itself
@@ -191,8 +191,8 @@ async def statistics() -> dict:
     # Node statistics - distinguish open vs closed project nodes
     open_project_nodes = []
     closed_project_nodes = []
-    node_by_type = {}
-    node_by_status = {}
+    node_by_type: Dict[str, int] = {}
+    node_by_status: Dict[str, int] = {}
 
     for project in projects:
         nodes = project.nodes.values()
@@ -264,9 +264,8 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
 
     from gns3server.api.server import app
 
-    log.info(
-        f"New client {request.client.host}:{request.client.port} has connected to controller HTTP notification stream"
-    )
+    client = f"{request.client.host}:{request.client.port}" if request.client else "unknown"
+    log.info(f"New client {client} has connected to controller HTTP notification stream")
 
     async def event_stream():
         try:
@@ -275,10 +274,7 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
                     msg = await queue.get_json(5)
                     yield f"{msg}\n".encode("utf-8")
         finally:
-            log.info(
-                f"Client {request.client.host}:{request.client.port} has disconnected from controller HTTP "
-                f"notification stream"
-            )
+            log.info(f"Client {client} has disconnected from controller HTTP notification stream")
 
     return StreamingResponse(event_stream(), media_type="application/json")
 
@@ -294,14 +290,15 @@ async def controller_ws_notifications(
     if current_user is None:
         return
 
-    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller WebSocket")
     try:
         with Controller.instance().notification.controller_queue() as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):
-        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket")
+        log.info(f"Client {client} has disconnected from controller WebSocket")
     except WebSocketException as e:
         log.warning(f"Error while sending to controller event to WebSocket client: {e}")
 

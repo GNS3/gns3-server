@@ -155,7 +155,7 @@ class QemuBase(BaseModel):
     Common Qemu node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
@@ -219,6 +219,7 @@ class QemuCreate(QemuBase):
     Properties to create a Qemu node.
     """
 
+    name: str
     disk_images_to_reset: Optional[List[str]] = Field(
         None,
         description="Disk image properties whose stale linked-clone overlays must be recreated",
@@ -230,10 +231,11 @@ class QemuUpdate(QemuBase):
     Properties to update a Qemu node.
     """
 
-    name: Optional[str] = None
+    pass
 
 
 class Qemu(QemuBase):
+    name: str
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")

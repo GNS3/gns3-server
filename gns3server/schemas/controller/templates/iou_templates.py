@@ -22,11 +22,11 @@ from pydantic import Field
 from typing import Optional
 
 
-class IOUTemplate(TemplateBase):
+class IOUTemplateBase(TemplateBase):
     category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
-    path: str = Field(..., description="Path of IOU executable")
+    path: Optional[str] = Field(None, description="Path of IOU executable")
     ethernet_adapters: Optional[int] = Field(2, ge=0, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, ge=0, description="Number of serial adapters")
     ram: Optional[int] = Field(1024, gt=0, description="Amount of RAM in MB")
@@ -44,5 +44,9 @@ class IOUTemplate(TemplateBase):
     )
 
 
-class IOUTemplateUpdate(IOUTemplate):
-    path: Optional[str] = Field(None, description="Path of IOU executable")
+class IOUTemplate(IOUTemplateBase):
+    path: str = Field(..., description="Path of IOU executable")
+
+
+class IOUTemplateUpdate(IOUTemplateBase):
+    pass

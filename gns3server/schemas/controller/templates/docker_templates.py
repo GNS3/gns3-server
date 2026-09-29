@@ -22,11 +22,11 @@ from pydantic import Field
 from typing import Optional, List
 
 
-class DockerTemplate(TemplateBase):
+class DockerTemplateBase(TemplateBase):
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "docker_guest"
-    image: str = Field(..., description="Docker image name")
+    image: Optional[str] = Field(None, description="Docker image name")
     adapters: Optional[int] = Field(1, ge=0, le=100, description="Number of adapters")
     mac_address: Optional[str] = Field(
         "", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
@@ -58,5 +58,9 @@ class DockerTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class DockerTemplateUpdate(DockerTemplate):
-    image: Optional[str] = Field(None, description="Docker image name")
+class DockerTemplate(DockerTemplateBase):
+    image: str = Field(..., description="Docker image name")
+
+
+class DockerTemplateUpdate(DockerTemplateBase):
+    pass
