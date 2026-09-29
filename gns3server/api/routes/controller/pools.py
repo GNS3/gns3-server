@@ -21,12 +21,13 @@ API routes for resource pools.
 
 from fastapi import APIRouter, Depends, status
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from gns3server import schemas
 from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
 
 from gns3server.controller import Controller
+import gns3server.db.models as models
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.pools import ResourcePoolsRepository
 
@@ -43,7 +44,7 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.ResourcePool], dependencies=[Depends(has_privilege("Pool.Audit"))])
 async def get_resource_pools(
     pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
-) -> List[schemas.ResourcePool]:
+) -> List[models.ResourcePool]:
     """
     Get all resource pools.
 
@@ -62,7 +63,7 @@ async def get_resource_pools(
 async def create_resource_pool(
     resource_pool_create: schemas.ResourcePoolCreate,
     pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
-) -> schemas.ResourcePool:
+) -> models.ResourcePool:
     """
     Create a new resource pool
 
@@ -80,7 +81,7 @@ async def create_resource_pool(
 )
 async def get_resource_pool(
     resource_pool_id: UUID, pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
-) -> schemas.ResourcePool:
+) -> models.ResourcePool:
     """
     Get a resource pool.
 
@@ -100,7 +101,7 @@ async def update_resource_pool(
     resource_pool_id: UUID,
     resource_pool_update: schemas.ResourcePoolUpdate,
     pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
-) -> schemas.ResourcePool:
+) -> Optional[models.ResourcePool]:
     """
     Update a resource pool.
 
@@ -176,7 +177,7 @@ async def delete_resource_pool(
 async def get_pool_resources(
     resource_pool_id: UUID,
     pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
-) -> List[schemas.Resource]:
+) -> List[models.Resource]:
     """
     Get all resource in a pool.
 
@@ -215,13 +216,13 @@ async def add_resource_to_pool(
     # we only support projects in resource pools for now
     project = Controller.instance().get_project(str(resource_id))
 
-    resource = await pools_repo.get_resource(resource_id)
-    if not resource:
+    db_resource = await pools_repo.get_resource(resource_id)
+    if not db_resource:
         # the resource is not in the database yet, create it
         resource_create = schemas.ResourceCreate(resource_id=resource_id, resource_type="project", name=project.name)
-        resource = await pools_repo.create_resource(resource_create)
+        db_resource = await pools_repo.create_resource(resource_create)
 
-    await pools_repo.add_resource_to_pool(resource_pool_id, resource)
+    await pools_repo.add_resource_to_pool(resource_pool_id, db_resource)
 
 
 @router.delete(
