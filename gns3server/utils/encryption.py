@@ -48,7 +48,7 @@ def init_encryption(secrets_dir: str) -> None:
             os.makedirs(secrets_dir, exist_ok=True)
             with open(encryption_key_path, "w", encoding="utf-8") as f:
                 # Use Fernet's base64-encoded key format
-                f.write(key.decode() if isinstance(key, bytes) else key)
+                f.write(key.decode())
             # Set restrictive permissions (owner read/write only)
             os.chmod(encryption_key_path, 0o600)
         except OSError as e:
@@ -58,7 +58,7 @@ def init_encryption(secrets_dir: str) -> None:
     try:
         with open(encryption_key_path, encoding="utf-8") as f:
             key_content = f.read().strip()
-        key_bytes = key_content.encode() if isinstance(key_content, str) else key_content
+        key_bytes = key_content.encode()
         _fernet = Fernet(key_bytes)
         log.debug("Encryption initialized successfully")
     except OSError as e:

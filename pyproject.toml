@@ -294,63 +294,22 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 # Baseline: modules with existing type errors (error count at baseline time).
 # Remove modules from this list one small PR at a time. Never add new ones.
 module = [
-  "gns3server.agent",  # 2
-  "gns3server.agent.gns3_copilot.agent.context_manager",  # 5
-  "gns3server.agent.gns3_copilot.agent.model_factory",  # 4
-  "gns3server.agent.gns3_copilot.chat_sessions_repository",  # 8
-  "gns3server.agent.gns3_copilot.gns3_client.api_handlers",  # 10
-  "gns3server.agent.gns3_copilot.gns3_client.connector_factory",  # 1
-  "gns3server.agent.gns3_copilot.gns3_client.project_inventory",  # 2
-  "gns3server.agent.gns3_copilot.skills.loader",  # 1
-  "gns3server.agent.gns3_copilot.skills.manager",  # 4
-  "gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir",  # 6
-  "gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir",  # 6
-  "gns3server.agent.gns3_copilot.tools_v2.gns3_packet_filter",  # 1
-  "gns3server.agent.gns3_copilot.tools_v2.gns3_start_node",  # 3
-  "gns3server.agent.gns3_copilot.tools_v2.gns3_stop_node",  # 3
-  "gns3server.agent.gns3_copilot.tools_v2.gns3_suspend_node",  # 3
-  "gns3server.agent.gns3_copilot.tools_v2.packet_analysis_tool",  # 1
-  "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko",  # 9
-  "gns3server.agent.gns3_copilot.utils.custom_netmiko.scripts.list_netmiko_telnet_devices",  # 1
-  "gns3server.agent.gns3_copilot.utils.message_converters",  # 2
-  "gns3server.agent.gns3_copilot.utils.parse_tool_content",  # 1
-  "gns3server.agent.mcp.appliances",  # 1
-  "gns3server.agent.web_wireshark.docker_client",  # 5
-  "gns3server.agent.web_wireshark.manage_wireshark",  # 1
-  "gns3server.agent.web_wireshark.manager",  # 9
-  "gns3server.agent.web_wireshark.stats",  # 4
-  "gns3server.api.routes.compute.atm_switch_nodes",  # 9
-  "gns3server.api.routes.compute.capabilities",  # 1
-  "gns3server.api.routes.compute.cloud_nodes",  # 14
-  "gns3server.api.routes.compute.compute",  # 1
-  "gns3server.api.routes.compute.dependencies.authentication",  # 3
-  "gns3server.api.routes.compute.docker_nodes",  # 26
-  "gns3server.api.routes.compute.dynamips_nodes",  # 9
-  "gns3server.api.routes.compute.ethernet_hub_nodes",  # 9
   "gns3server.api.routes.compute.iou_nodes",  # 15
   "gns3server.api.routes.compute.nat_nodes",  # 10
-  "gns3server.api.routes.compute.notifications",  # 4
   "gns3server.api.routes.compute.projects",  # 7
   "gns3server.api.routes.compute.virtualbox_nodes",  # 20
   "gns3server.api.routes.compute.vmware_nodes",  # 10
   "gns3server.api.routes.compute.vpcs_nodes",  # 9
   "gns3server.api.routes.controller.acl",  # 5
-  "gns3server.api.routes.controller.api_keys",  # 1
-  "gns3server.api.routes.controller.chat",  # 1
   "gns3server.api.routes.controller.computes",  # 6
   "gns3server.api.routes.controller.controller",  # 10
   "gns3server.api.routes.controller.dependencies.authentication",  # 11
   "gns3server.api.routes.controller.dependencies.database",  # 2
-  "gns3server.api.routes.controller.drawings",  # 1
   "gns3server.api.routes.controller.groups",  # 6
   "gns3server.api.routes.controller.images",  # 9
   "gns3server.api.routes.controller.llm_model_configs",  # 32
-  "gns3server.api.routes.controller.nodes",  # 13
   "gns3server.api.routes.controller.pools",  # 8
-  "gns3server.api.routes.controller.privileges",  # 1
   "gns3server.api.routes.controller.projects",  # 16
-  "gns3server.api.routes.controller.roles",  # 5
-  "gns3server.api.routes.controller.snapshots",  # 1
   "gns3server.api.routes.controller.templates",  # 10
   "gns3server.api.routes.controller.users",  # 14
   "gns3server.api.server",  # 2
@@ -362,7 +321,6 @@ module = [
   "gns3server.controller.appliance",  # 2
   "gns3server.controller.appliance_manager",  # 5
   "gns3server.controller.project",  # 2
-  "gns3server.controller.topology",  # 1
   "gns3server.db.repositories.api_keys",  # 8
   "gns3server.db.repositories.computes",  # 10
   "gns3server.db.repositories.images",  # 14
@@ -372,13 +330,10 @@ module = [
   "gns3server.db.repositories.templates",  # 6
   "gns3server.db.repositories.users",  # 12
   "gns3server.db.tasks",  # 12
-  "gns3server.schemas.compute.atm_switch_nodes",  # 5
   "gns3server.schemas.compute.cloud_nodes",  # 1
   "gns3server.schemas.compute.docker_nodes",  # 2
-  "gns3server.schemas.compute.dynamips_nodes",  # 1
   "gns3server.schemas.compute.frame_relay_switch_nodes",  # 5
   "gns3server.schemas.compute.iou_nodes",  # 3
-  "gns3server.schemas.compute.nat_nodes",  # 1
   "gns3server.schemas.compute.qemu_nodes",  # 1
   "gns3server.schemas.compute.virtualbox_nodes",  # 2
   "gns3server.schemas.compute.vmware_nodes",  # 3
@@ -396,10 +351,7 @@ module = [
   "gns3server.services.computes",  # 4
   "gns3server.services.templates",  # 18
   "gns3server.utils.asyncio.aiozipstream",  # 8
-  "gns3server.utils.encryption",  # 2
   "gns3server.utils.http_client",  # 4
-  "gns3server.utils.images",  # 4
-  "gns3server.utils.packet_filter_validation",  # 16
   "gns3server.utils.websocket_to_websocket",  # 12
   "gns3server.utils.zipfile_zstd._patcher",  # 1
 ]
