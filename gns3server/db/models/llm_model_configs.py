@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from sqlalchemy import Column, Boolean, ForeignKey, CheckConstraint, Index, Integer, String, text, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import BaseTable, generate_uuid, GUID
 
@@ -36,7 +36,9 @@ class LLMModelConfig(BaseTable):
     config_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String(100), nullable=False)  # Configuration name (table-level for indexing)
     model_type = Column(String(50), nullable=False)  # Model type: text, vision, stt, tts, multimodal, etc.
-    config = Column(JSON, nullable=False)  # Config fields: provider, base_url, model, temperature, api_key, etc.
+    config: Mapped[dict] = mapped_column(
+        JSON, nullable=False
+    )  # Config fields: provider, base_url, model, temperature, api_key, etc.
     user_id = Column(GUID, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
     group_id = Column(GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"), nullable=True)
     is_default = Column(Boolean, default=False, nullable=False)
