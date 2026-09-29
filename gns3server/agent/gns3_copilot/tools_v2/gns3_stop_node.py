@@ -124,7 +124,11 @@ class GNS3StopNodeTool(BaseTool):
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
             stop_results = stop_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
-            stop_errors = {r["node_id"]: r.get("error") for r in stop_results if r.get("status") == "error"}
+            stop_errors = (
+                {r["node_id"]: r.get("error") for r in stop_results if r.get("status") == "error"}
+                if isinstance(stop_results, list)
+                else {}
+            )
 
             # Get updated status — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)

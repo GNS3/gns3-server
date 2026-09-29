@@ -57,7 +57,7 @@ except ImportError as e:
     AI_COPILOT_AVAILABLE = False
 
     # Provide stub functions that raise helpful errors
-    async def get_project_agent_manager():
+    async def get_project_agent_manager() -> "ProjectAgentManager":
         """
         Get the global ProjectAgentManager singleton instance.
 
@@ -68,7 +68,7 @@ except ImportError as e:
             "AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
         )
 
-    class ProjectAgentManager:
+    class ProjectAgentManager:  # type: ignore[no-redef]
         """
         Stub class for ProjectAgentManager when AI dependencies are not installed.
         """

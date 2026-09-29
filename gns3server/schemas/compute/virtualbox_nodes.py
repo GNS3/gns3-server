@@ -56,8 +56,8 @@ class VirtualBoxBase(BaseModel):
     Common VirtualBox node properties.
     """
 
-    name: str
-    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+    name: Optional[str] = None
+    vmname: Optional[str] = None
     node_id: Optional[UUID] = None
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
     usage: Optional[str] = Field(None, description="How to use the node")
@@ -78,7 +78,8 @@ class VirtualBoxCreate(VirtualBoxBase):
     Properties to create a VirtualBox node.
     """
 
-    pass
+    name: str
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
 
 
 class VirtualBoxUpdate(VirtualBoxBase):
@@ -86,11 +87,12 @@ class VirtualBoxUpdate(VirtualBoxBase):
     Properties to update a VirtualBox node.
     """
 
-    name: Optional[str] = None
-    vmname: Optional[str] = None
+    pass
 
 
 class VirtualBox(VirtualBoxBase):
+    name: str
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

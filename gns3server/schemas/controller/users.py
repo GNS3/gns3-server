@@ -80,7 +80,7 @@ class UserGroupCreate(UserGroupBase):
     Properties to create a user group.
     """
 
-    name: Optional[str] = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
+    name: str = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
 
 
 class UserGroupUpdate(UserGroupBase):

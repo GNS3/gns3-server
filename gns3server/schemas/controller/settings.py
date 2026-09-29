@@ -25,6 +25,7 @@ says, so exposing or writing it via the API would be useless at best and
 a secret leak at worst.
 """
 
+from pathlib import Path
 from typing import List, Optional
 
 from pydantic import ConfigDict, BaseModel, Field
@@ -49,9 +50,11 @@ SECRET_MASK = "**********"
 class ServerSettingsResponse(ServerSettings):
     # plain strings instead of FilePath/DirectoryPath: paths are validated when
     # the settings are loaded or updated, not when echoed back to the client
-    secrets_dir: Optional[str] = Field(None, description="Directory where secrets are stored (e.g. the JWT secret key)")
-    certfile: Optional[str] = Field(None, description="SSL certificate file, requires enable_ssl")
-    certkey: Optional[str] = Field(None, description="SSL key file, requires enable_ssl")
+    secrets_dir: Optional[Path] = Field(
+        None, description="Directory where secrets are stored (e.g. the JWT secret key)"
+    )
+    certfile: Optional[Path] = Field(None, description="SSL certificate file, requires enable_ssl")
+    certkey: Optional[Path] = Field(None, description="SSL key file, requires enable_ssl")
     # Optional overrides: typed as plain "str = None" in the config schema,
     # which fails re-validation when the value actually is None
     resources_path: Optional[str] = Field(

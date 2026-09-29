@@ -126,7 +126,7 @@ class CloudBase(BaseModel):
     Common cloud node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = None
     remote_console_host: Optional[str] = Field(None, description="Remote console host or IP")
@@ -144,7 +144,7 @@ class CloudCreate(CloudBase):
     Properties to create a cloud node.
     """
 
-    pass
+    name: str
 
 
 class CloudUpdate(CloudBase):
@@ -152,10 +152,11 @@ class CloudUpdate(CloudBase):
     Properties to update a cloud node.
     """
 
-    name: Optional[str] = None
+    pass
 
 
 class Cloud(CloudBase):
+    name: str
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

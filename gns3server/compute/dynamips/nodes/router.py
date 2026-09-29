@@ -1645,7 +1645,7 @@ class Router(BaseNode):
         await nio.start_packet_capture(output_file, data_link_type)
         log.debug(
             'Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(
-                name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
+                name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
             )
         )
 
@@ -1685,7 +1685,7 @@ class Router(BaseNode):
 
         log.debug(
             'Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(
-                name=self._name, id=self._id, nio_name=nio.name, slot_number=slot_number, port_number=port_number
+                name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
             )
         )
 

@@ -91,9 +91,9 @@ async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSock
         if not separator:
             raise invalid_user_credentials_exc
 
-        username = secrets.compare_digest(username, server_settings.compute_username)
-        password = secrets.compare_digest(password, server_settings.compute_password.get_secret_value())
-        if not (username and password):
+        username_valid = secrets.compare_digest(username, server_settings.compute_username)
+        password_valid = secrets.compare_digest(password, server_settings.compute_password.get_secret_value())
+        if not (username_valid and password_valid):
             raise invalid_user_credentials_exc
 
     except HTTPException as e:
@@ -101,5 +101,6 @@ async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSock
         websocket_error = {"action": "log.error", "event": {"message": err_msg}}
         await websocket.send_json(websocket_error)
         log.error(err_msg)
-        return await websocket.close(code=1008)
+        await websocket.close(code=1008)
+        return None
     return websocket

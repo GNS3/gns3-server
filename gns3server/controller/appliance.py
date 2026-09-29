@@ -51,6 +51,10 @@ class Appliance:
     def symbol(self):
         return self._data.get("symbol")
 
+    @symbol.setter
+    def symbol(self, new_symbol):
+        self._data["symbol"] = new_symbol
+
     @property
     def name(self):
         return self._data.get("name")
@@ -62,10 +66,6 @@ class Appliance:
     @property
     def versions(self):
         return self._data.get("versions")
-
-    @symbol.setter
-    def symbol(self, new_symbol):
-        self._data["symbol"] = new_symbol
 
     @property
     def type(self):
