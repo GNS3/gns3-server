@@ -7,6 +7,7 @@ import pytest
 from gns3server.utils.packet_filter_validation import (
     FilterValidationError,
     filter_inactive_filters,
+    split_kernel_only_features,
     validate_all_filters,
     validate_filter_parameters,
 )
@@ -131,9 +132,11 @@ class TestPacketFilterValidation:
         with pytest.raises(FilterValidationError, match="expects 1 parameter"):
             validate_filter_parameters("frequency_drop", [1, 2])
 
-        # delay expects 2 parameters
-        with pytest.raises(FilterValidationError, match="expects 2 parameter"):
-            validate_filter_parameters("delay", [100])
+        # delay takes 1 to 3 parameters (latency, optional jitter,
+        # optional distribution) — latency alone is valid, a 4th is not
+        validate_filter_parameters("delay", [100])
+        with pytest.raises(FilterValidationError, match="expects 1 to 3 parameter"):
+            validate_filter_parameters("delay", [100, 50, "normal", "extra"])
 
     def test_string_to_int_conversion(self):
         """Test string to integer conversion."""
@@ -258,3 +261,108 @@ class TestFilterInactiveFilters:
         """Test None filters."""
         result = filter_inactive_filters(None)
         assert result == {}
+
+
+class TestNetemExtensionFilters:
+    """P6a: the netem-extension filter types (rate, reorder, gemodel,
+    duplicate, seed, limit) and the kernel-only parameter extensions."""
+
+    def test_rate_valid(self):
+        for value in ("512kbit", "10mbit", "1gbit", "64000bps", "8000kbps", "100mbps", "1544bit"):
+            validate_filter_parameters("rate", [value])
+
+    def test_rate_invalid(self):
+        # bare number, unknown unit, float, over 100gbit
+        for value in ("512", "512kbits", "0.5mbit", "101gbit", "", "mbit"):
+            with pytest.raises(FilterValidationError, match="Rate"):
+                validate_filter_parameters("rate", [value])
+
+    def test_rate_rejects_non_string(self):
+        with pytest.raises(FilterValidationError, match="must be a string"):
+            validate_filter_parameters("rate", [512000])
+
+    def test_reorder_valid(self):
+        validate_filter_parameters("reorder", [25])
+        validate_filter_parameters("reorder", [25, 50])
+        validate_filter_parameters("reorder", [25, 50, 5])
+
+    def test_reorder_invalid_ranges(self):
+        with pytest.raises(FilterValidationError, match="Reorder"):
+            validate_filter_parameters("reorder", [101])
+        with pytest.raises(FilterValidationError, match="Gap"):
+            validate_filter_parameters("reorder", [25, 0, 0])  # gap < 1
+        with pytest.raises(FilterValidationError, match="Gap"):
+            validate_filter_parameters("reorder", [25, 0, 1001])
+
+    def test_reorder_requires_delay(self):
+        with pytest.raises(FilterValidationError, match="reorder requires delay"):
+            validate_all_filters({"reorder": [25]})
+        # with delay present it passes
+        validate_all_filters({"reorder": [25, 0, 5], "delay": [100, 10]})
+
+    def test_gemodel_valid_and_exclusive(self):
+        validate_filter_parameters("gemodel", [100])
+        validate_filter_parameters("gemodel", [100, 0])
+        validate_filter_parameters("gemodel", [100, 0, 30])
+        with pytest.raises(FilterValidationError, match="mutually exclusive"):
+            validate_all_filters({"gemodel": [100, 0, 30], "packet_loss": [10]})
+
+    def test_gemodel_invalid_range(self):
+        with pytest.raises(FilterValidationError, match="bad-state"):
+            validate_filter_parameters("gemodel", [101, 0, 30])
+
+    def test_duplicate_valid(self):
+        validate_filter_parameters("duplicate", [10])
+        validate_filter_parameters("duplicate", [10, 25])
+
+    def test_seed_and_limit(self):
+        validate_filter_parameters("seed", [42])
+        validate_filter_parameters("seed", [4294967295])
+        with pytest.raises(FilterValidationError, match="Seed"):
+            validate_filter_parameters("seed", [4294967296])
+        validate_filter_parameters("limit", [5000])
+        with pytest.raises(FilterValidationError, match="Limit"):
+            validate_filter_parameters("limit", [0])
+        with pytest.raises(FilterValidationError, match="Limit"):
+            validate_filter_parameters("limit", [1000001])
+
+    def test_delay_distribution(self):
+        for dist in ("uniform", "normal", "pareto", "paretonormal"):
+            validate_filter_parameters("delay", [100, 20, dist])
+        with pytest.raises(FilterValidationError, match="Distribution"):
+            validate_filter_parameters("delay", [100, 20, "poisson"])
+        # distribution without jitter does nothing -> rejected
+        with pytest.raises(FilterValidationError, match="requires a Jitter"):
+            validate_filter_parameters("delay", [100, 0, "normal"])
+        # empty distribution = not set
+        validate_filter_parameters("delay", [100, 20, ""])
+
+    def test_packet_loss_correlation(self):
+        validate_filter_parameters("packet_loss", [10])
+        validate_filter_parameters("packet_loss", [10, 25])
+        with pytest.raises(FilterValidationError, match="Correlation"):
+            validate_filter_parameters("packet_loss", [10, 101])
+
+    def test_kernel_only_features(self):
+        clean, dropped = split_kernel_only_features(
+            {
+                "delay": [100, 20, "normal"],
+                "packet_loss": [10, 25],
+                "rate": ["512kbit"],
+                "corrupt": [2],
+            }
+        )
+        assert dropped == {"rate", "delay distribution", "packet_loss correlation"}
+        assert clean == {"delay": [100, 20], "packet_loss": [10], "corrupt": [2]}
+
+    def test_kernel_only_features_all_relay_safe(self):
+        clean, dropped = split_kernel_only_features(
+            {"delay": [100, 20, ""], "packet_loss": [10, 0], "corrupt": [2], "bpf": ["icmp"]}
+        )
+        assert dropped == set()
+        # zero correlation and empty distribution are kept as-is (no-ops)
+        assert clean == {"delay": [100, 20, ""], "packet_loss": [10, 0], "corrupt": [2], "bpf": ["icmp"]}
+
+    def test_kernel_only_features_empty(self):
+        assert split_kernel_only_features({}) == ({}, set())
+        assert split_kernel_only_features(None) == ({}, set())

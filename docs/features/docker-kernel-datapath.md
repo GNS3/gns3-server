@@ -24,13 +24,13 @@ Frames never leave the kernel.
 | Link | uBridge bridge, TAP fd ↔ UDP, userspace copy | per-link kernel bridge `gns3{link_id[:11]}`, zero-copy |
 | Relay latency | ~0.3 ms RTT | ~0.05 ms RTT (measured) |
 | Link attach at runtime | yes (relay attaches the pre-existing TAP) | yes (brctl addif / add_nio_ethernet — interface untouched) |
-| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt); bpf as cls_bpf match-drop classifiers; frequency_drop stays relay-only (eBPF classifier pending) |
+| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt / duplicate + the netem extensions rate, reorder, gemodel, seed, limit, jitter distributions, loss correlation); bpf as cls_bpf match-drop classifiers; frequency_drop stays relay-only (eBPF classifier pending) |
 | Capture / markers | relay bridge | uBridge AF_PACKET modules on the veth host end |
 
-The work landed in six stages on branch stack `feat/docker-kernel-datapath` →
+The work landed in seven stages on branch stack `feat/docker-kernel-datapath` →
 `feat/docker-kernel-capture` → `feat/docker-kernel-markers` →
 `feat/docker-veth-everywhere` → `feat/docker-kernel-filters` →
-`feat/docker-kernel-bpf-drop`:
+`feat/docker-kernel-bpf-drop` → `feat/docker-kernel-netem-ext`:
 
 1. **Kernel datapath** — NIOBridge NIO type, per-link bridges, carrier-based
    suspend, crash-safe reconciliation.
@@ -49,6 +49,14 @@ The work landed in six stages on branch stack `feat/docker-kernel-datapath` →
    uBridge pcap-compiles the line to classic BPF, the kernel migrates it to
    eBPF internally — no CAP_BPF needed). Requires a uBridge reporting
    `cbpf=1` via `tc capabilities`; older builds get a clear upgrade error.
+7. **netem extensions** — the netem-extension surface delivered in uBridge
+   `feature/tc-netem-ext` is exposed as GNS3 filter types: `rate`,
+   `reorder`, `gemodel`, `duplicate`, `seed`, `limit`, plus the delay
+   `distribution` and loss/dup `correlation` parameters. Kernel-datapath
+   links only (the relay has no equivalent); capability-gated per uBridge
+   process. Reconcile became reset-before-set: the kernel's netem replace
+   merges optional attributes, so removing a parameter needs the explicit
+   reset.
 
 ## Adapter interface types
 
@@ -171,9 +179,15 @@ ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 
 | GNS3 filter | kernel implementation | Notes |
 |---|---|---|
-| `delay [ms, jitter]` | netem `delay X jitter Y` | jitter 0 omitted |
-| `packet_loss [%]` | netem `loss P` | per direction (see below) |
+| `delay [ms, jitter, dist]` | netem `delay X jitter Y [distribution D]` | jitter 0 omitted; dist ∈ uniform/normal/pareto/paretonormal (kernel-only parameter) |
+| `packet_loss [%, correl]` | netem `loss P [correl C]` | per direction (see below); correlation is a kernel-only parameter |
 | `corrupt [%]` | netem `corrupt P` | |
+| `duplicate [%, correl]` | netem `dup P [correl C]` | kernel-only type |
+| `rate ["512kbit"]` | netem `rate B` | tc-style integer+unit (bit/kbit/mbit/gbit/bps/kbps/mbps, ≤100gbit); kernel-only type |
+| `reorder [%, correl, gap]` | netem `reorder P [correl C] [gap G]` | requires `delay`; kernel-only type |
+| `gemodel [p, r, 1-h]` | netem `loss gemodel P R H` | Gilbert-Elliot bursty loss; mutually exclusive with `packet_loss`; kernel-only type |
+| `seed [u32]` | netem `seed N` | reproducible random draws; kernel-only type |
+| `limit [pkts]` | netem `limit N` | queue depth above the 1000 default (rate+delay BDP); kernel-only type |
 | `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
 | `frequency_drop` | — not yet (eBPF stateful classifier spec'd: [ubridge-kernel-impairment-spec](../design/ubridge-kernel-impairment-spec.md), part B pending) | 409 on kernel links; relay fallback |
 
@@ -184,32 +198,45 @@ Semantics:
   so every direction of the link is impaired exactly once — the same net
   effect as the relay, where both directions cross the single filtered
   bridge. A `delay 100` link measures ≈200 ms RTT; `packet_loss 30`
-  measures ≈51 % round-trip (1 − 0.7²).
-* **Reconcile = full re-apply.** `netem set` is an atomic replace (NLM_F_REPLACE),
-  so every NIO update just rebuilds the qdisc from the current filters; no
-  per-parameter diffing. An empty filter set detaches it (`tc reset`,
-  ENOENT-tolerated).
+  measures ≈51 % round-trip (1 − 0.7²); `rate 512kbit` adds ≈2× the
+  per-packet serialization time to the RTT.
+* **Reconcile = reset + full re-apply.** The kernel's netem replace MERGES
+  optional attributes (rate, correlation, reorder, corrupt, gemodel,
+  distribution: an absent attr keeps its previous value), so re-applying a
+  filter set with a parameter *removed* would silently keep the old value.
+  Every apply therefore starts with `tc reset` (also drops clsact and its
+  bpf_drop filters — re-added right after in the same flow) followed by one
+  `netem set` built from the current filters; no per-parameter diffing. An
+  empty filter set is the reset alone (ENOENT-tolerated).
+* **Extension gating.** The netem-extension keywords (rate, reorder,
+  gemodel, dist, seed, limit, and the correl suffixes) probe
+  `tc capabilities` once per uBridge process and require the tokens;
+  a plain delay/loss/corrupt/dup filter never probes — an old uBridge
+  serves the original surface untouched.
+* **kernel-only vs relay-only.** The extension types have no uBridge relay
+  equivalent: `available_filters` hides them on relay links, setting one on
+  a created relay link returns 409, and a project loaded with such filters
+  on a link that cannot be kernel-wired drops them with a warning (invalid
+  filters are dropped the same way at load). Symmetrically,
+  `frequency_drop` stays relay-only.
+* **Validation** mirrors the tc grammar: `reorder` requires `delay`,
+  `gemodel` and `packet_loss` are mutually exclusive (both map to the netem
+  loss keyword), `distribution` requires jitter > 0, rate must be integer +
+  unit ≤ 100gbit.
 * **Node restart** restores the qdisc from the NIO (like capture and markers);
   **link deletion** detaches it explicitly — the veth survives the link and an
   orphaned qdisc would keep impairing the next one.
 * **Suspend** keeps the qdisc (carrier-driven loss); the first packet after
   resume takes one extra delay interval (known netem idle-baseline behaviour)
   and steady state is exact.
-* A link carrying `frequency_drop` is wired on the **relay** (its eBPF
-  stateful classifier is not delivered yet); `available_filters` hides it on
-  kernel links and setting it returns 409 with a clear message. The remaining
-  kernel-side roadmap is frozen in
-  [docs/design/ubridge-kernel-impairment-spec.md](../design/ubridge-kernel-impairment-spec.md)
-  (eBPF stateful classifier for `frequency_drop` + quota/window/flow modes,
-  plus netem keyword extensions: rate, reorder, gemodel loss, jitter
-  distributions — parts C and D of that spec are delivered).
 * **bpf reconcile = flush + re-add** (`tc bpf_drop flush`, then one add per
   line at priorities 10, 11, …). `tc reset` (link delete / filter clear) is
   the full restore in uBridge: filters → clsact → root qdisc, idempotent.
 * **Observability caveat:** clsact drops happen before the AF_PACKET tap
   points — markers/captures on the same veth do not observe cls_bpf-dropped
   frames (on the relay, filter-vs-mark ordering determined visibility
-  instead).
+  instead). Also note `tc qdisc show` cannot print a distribution's name
+  (the kernel stores only the sampled table).
 
 ## uBridge command surface
 
@@ -222,7 +249,9 @@ brctl create / delete / addif / delif / show
 link set <if> up|down
 capture start_kernel / stop_kernel
 marker add_kernel / delete_kernel / enable_kernel
-tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%>] [dup <%>] [corrupt <%>]
+tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%> [correl <%>] | loss gemodel <p> <r> <1-h>]
+                                  [dup <%> [correl <%>]] [corrupt <%>] [reorder <%> [correl <%>] [gap <n>]]
+                                  [rate <bw>] [limit <pkts>] [distribution uniform|normal|pareto|paretonormal] [seed <u32>]
 tc bpf_drop add <if> <prio 10-99> "<expr>" / tc bpf_drop flush <if>
 tc reset <if>                     # full restore: filters -> clsact -> root qdisc, idempotent
 tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1", probed once per process
@@ -264,5 +293,25 @@ coexistence with netem (delay 50 → small pings 100.2 ms while big dropped);
 clear removes clsact entirely; suspend/resume keeps the drops; link delete +
 recreate leaves no residual filters; `frequency_drop` still 409;
 `available_filters` shows `bpf` and hides `frequency_drop`. Unit tests:
+`tests/compute/docker/test_docker_kernel_datapath.py`,
+`tests/controller/test_kernel_datapath_link.py`.
+
+netem extensions (same setup, 24/24 checks): `rate 512kbit` on both veths,
+1400-byte pings measure 45.5 ms RTT = baseline + 2× the 22.2 ms
+serialization (exact); `delay 100 20 paretonormal` applies delay+jitter and
+clears the previous rate (leak detector for the kernel's merge-on-replace);
+`reorder 25 gap 5` visible in the qdisc dump and traffic passes;
+`gemodel 100/0/30` = 50 % bursty round-trip loss with the previous reorder
+cleared; `duplicate 50` link alive; `packet_loss 30 correl 50` shows
+`loss 30% 50%`; `seed 42` + `limit 5000` both visible in the dump, RTT
+exactly 2×50 ms; suspend/resume and node restart keep the filters; a
+docker↔ethernet-switch relay link rejects `rate` with 409 and its
+`available_filters` hides the kernel-only types while the kernel link shows
+them all (minus frequency_drop); `reorder` without `delay` and
+`gemodel`+`packet_loss` are 409s; teardown leaves no netem on either veth.
+Also verified live: a relay attach (`bridge add_nio_ethernet`) on the
+admin-down veth host end fails in libpcap — the relay path now brings the
+interface up before attaching. Unit tests:
+`tests/utils/test_packet_filter_validation.py` (P6a class),
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.

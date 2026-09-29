@@ -22,6 +22,7 @@ import logging
 from gns3server.config import Config
 from gns3server.utils.packet_filter_validation import (
     KERNEL_UNSUPPORTED_FILTERS,
+    split_kernel_only_features,
     validate_bpf_syntax,
 )
 
@@ -111,10 +112,23 @@ class UDPLink(Link):
             kernel = self.kernel_datapath
         if kernel:
             return self._filters, self._filters
+        # Relay datapath: the netem-extension filters (rate, reorder, gemodel…)
+        # have no relay equivalent. update_filters rejects them on created
+        # relay links, but a project loaded with such filters on a link that
+        # cannot be kernel-wired (cross-compute, non-docker node, relay-only
+        # filter mix…) reaches this point — drop what cannot run with a
+        # warning, exactly like invalid filters are dropped at load time.
+        relay_filters, dropped = split_kernel_only_features(self.get_active_filters())
+        if dropped:
+            log.warning(
+                "Link %s: dropping packet filter(s) %s — no kernel datapath available on this link (uBridge relay wiring)",
+                self._id,
+                ", ".join(sorted(dropped)),
+            )
         filter_node = self._get_filter_node()
         return (
-            self.get_active_filters() if filter_node == node1 else {},
-            self.get_active_filters() if filter_node == node2 else {},
+            relay_filters if filter_node == node1 else {},
+            relay_filters if filter_node == node2 else {},
         )
 
     def _markers_for_node(self, node):
@@ -152,10 +166,11 @@ class UDPLink(Link):
         Whether this link can be wired on the kernel datapath (veth pairs
         enslaved into a per-link Linux bridge) instead of the uBridge UDP
         relay. Impairment filters with a tc netem equivalent (delay,
-        packet_loss, corrupt) are served on the veth host end; the others
-        (frequency_drop, bpf) only exist in the uBridge relay and disqualify
-        the kernel path. Capture and markers are served by uBridge's
-        AF_PACKET modules on the veth host end.
+        packet_loss, corrupt, bpf via cls_bpf, and the netem extensions
+        rate/reorder/gemodel/duplicate/seed/limit) are served on the veth
+        host end; frequency_drop only exists in the uBridge relay and
+        disqualifies the kernel path. Capture and markers are served by
+        uBridge's AF_PACKET modules on the veth host end.
 
         Docker adapters are born as veth pairs (unified interface), so the
         datapath is a runtime decision — links attach to running containers
@@ -214,9 +229,10 @@ class UDPLink(Link):
             # Markers ride the NIO like on the relay datapath, routed by
             # capture node; they attach to the veth host end via uBridge's
             # AF_PACKET marker module instead of a relay `mark` filter.
-            # Filters (delay/packet_loss/corrupt — eligibility guarantees no
-            # other type is present) become one tc netem qdisc per veth host
-            # end, pushed to both endpoints.
+            # Filters (delay/packet_loss/corrupt plus the netem extensions
+            # rate/reorder/gemodel/duplicate/seed/limit — eligibility
+            # guarantees frequency_drop is absent) become one tc netem qdisc
+            # per veth host end, pushed to both endpoints.
             bridge_name = "gns3" + self._id.replace("-", "")[:11]
             node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
             node1_markers, node2_markers = self._get_node_markers(node1, node2)

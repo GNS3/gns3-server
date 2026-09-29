@@ -2156,35 +2156,143 @@ class DockerVM(BaseNode):
             return
         await super()._ubridge_enable_marker_filter(anchor, name, state)
 
+    @staticmethod
+    def _netem_command_parts(filters):
+        """
+        Build the ``tc netem set`` keyword sequence (in the frozen grammar
+        order: delay/jitter, loss|gemodel, dup, corrupt, reorder, rate,
+        limit, distribution, seed) plus the set of capability tokens the
+        sequence needs beyond the original netem surface. Original-surface
+        keywords (delay, jitter, loss, corrupt, dup) need no probe; the
+        extension tokens (rate, reorder, gemodel, dist, seed, limit) are
+        checked against ``tc capabilities`` by the caller. ``correl`` has no
+        token of its own in the capabilities list, so it gates on "rate" as
+        the netem-extension build marker.
+
+        :param filters: NIO filters dictionary ({"delay": [ms, jitter, dist], ...})
+
+        :returns: (keyword sequence, required extension tokens)
+        """
+
+        def values_of(key):
+            # tolerate the legacy bare-value shape ({"packet_loss": 10})
+            values = filters.get(key)
+            if isinstance(values, (list, tuple)):
+                return list(values)
+            return [values] if values else []
+
+        parts = []
+        ext_tokens = set()
+
+        delay = values_of("delay")
+        if delay:
+            parts.append(f"delay {int(delay[0])}")
+            if len(delay) > 1 and int(delay[1]):
+                parts.append(f"jitter {int(delay[1])}")
+
+        gemodel = values_of("gemodel")
+        if gemodel:
+            segment = f"loss gemodel {int(gemodel[0])}"
+            if len(gemodel) > 1:
+                segment += f" {int(gemodel[1])}"
+                if len(gemodel) > 2:
+                    segment += f" {int(gemodel[2])}"
+            parts.append(segment)
+            ext_tokens.add("gemodel")
+        else:
+            loss = values_of("packet_loss")
+            if loss and int(loss[0]):
+                parts.append(f"loss {int(loss[0])}")
+                if len(loss) > 1 and int(loss[1]):
+                    parts.append(f"correl {int(loss[1])}")
+                    ext_tokens.add("rate")  # correl: extension build marker
+
+        duplicate = values_of("duplicate")
+        if duplicate and int(duplicate[0]):
+            parts.append(f"dup {int(duplicate[0])}")
+            if len(duplicate) > 1 and int(duplicate[1]):
+                parts.append(f"correl {int(duplicate[1])}")
+                ext_tokens.add("rate")  # correl: extension build marker
+
+        corrupt = values_of("corrupt")
+        if corrupt and int(corrupt[0]):
+            parts.append(f"corrupt {int(corrupt[0])}")
+
+        reorder = values_of("reorder")
+        if reorder:
+            segment = f"reorder {int(reorder[0])}"
+            if len(reorder) > 1 and int(reorder[1]):
+                segment += f" correl {int(reorder[1])}"
+            if len(reorder) > 2 and int(reorder[2]):
+                segment += f" gap {int(reorder[2])}"
+            parts.append(segment)
+            ext_tokens.add("reorder")
+
+        rate = values_of("rate")
+        if rate and str(rate[0]).strip():
+            parts.append(f"rate {str(rate[0]).strip()}")
+            ext_tokens.add("rate")
+
+        limit = values_of("limit")
+        if limit and int(limit[0]):
+            parts.append(f"limit {int(limit[0])}")
+            ext_tokens.add("limit")
+
+        if delay and len(delay) > 2 and str(delay[2]).strip().lower() not in ("", "uniform"):
+            # "uniform" is the kernel default — emitting nothing keeps the
+            # command compatible with the original netem surface.
+            parts.append(f"distribution {str(delay[2]).strip().lower()}")
+            ext_tokens.add("dist")
+
+        seed = values_of("seed")
+        if seed and int(seed[0]):
+            # 0 is the "disabled" convention everywhere else — treat it so
+            # here too (the controller's inactive-filter pass drops it).
+            parts.append(f"seed {int(seed[0])}")
+            ext_tokens.add("seed")
+
+        return parts, ext_tokens
+
     async def _ubridge_apply_netem(self, host_ifc, filters):
         """
         Translate the NIO's impairment filters into one tc netem qdisc on the
-        veth host end. The supported types (delay, packet_loss, corrupt) merge
-        into a single qdisc — its egress covers the traffic entering this
-        container, and with both link endpoints applying theirs, every
-        direction of the link is impaired exactly once (the same net effect
-        as the relay, where both directions cross the single filtered bridge).
-        ``netem set`` atomically replaces whatever qdisc was attached, so a
-        full re-apply on every NIO update *is* the incremental reconcile. An
-        empty filter set detaches the qdisc (``tc reset``).
+        veth host end. The netem-expressible types (delay, packet_loss,
+        corrupt and the netem extensions rate/reorder/gemodel/duplicate/
+        seed/limit) merge into a single qdisc — its egress covers the traffic
+        entering this container, and with both link endpoints applying
+        theirs, every direction of the link is impaired exactly once (the
+        same net effect as the relay, where both directions cross the single
+        filtered bridge).
+
+        The kernel's netem replace MERGES optional attributes (rate,
+        correlation, reorder, corrupt, gemodel, distribution: absent attr =
+        previous value kept), so re-applying a filter set with a parameter
+        *removed* would silently keep the old value. A ``tc reset`` before
+        every ``netem set`` makes the re-apply a true reconcile (reset also
+        drops clsact and its bpf_drop filters — the caller re-applies them
+        right after in the same flow). An empty filter set is the reset
+        alone.
 
         :param host_ifc: veth host-end interface name
         :param filters: NIO filters dictionary ({"delay": [ms, jitter], ...})
         """
 
-        parts = []
-        delay = filters.get("delay")
-        if delay:
-            parts.append(f"delay {int(delay[0])}")
-            if len(delay) > 1 and int(delay[1]):
-                parts.append(f"jitter {int(delay[1])}")
-        for filter_type, netem_kw in (("packet_loss", "loss"), ("corrupt", "corrupt")):
-            values = filters.get(filter_type)
-            if values and int(values[0]):
-                parts.append(f"{netem_kw} {int(values[0])}")
-        if parts:
-            await self._ubridge_send('tc netem set "{ifc}" {params}'.format(ifc=host_ifc, params=" ".join(parts)))
-            return
+        parts, ext_tokens = self._netem_command_parts(filters)
+        if parts and ext_tokens:
+            # Extension keywords need the netem-extension uBridge. Plain
+            # delay/loss/corrupt/dup never probes — an old uBridge serves
+            # the original surface untouched (mirrors bpf_drop's guard).
+            # Checked before the reset so a failed update leaves the
+            # previously applied qdisc in place.
+            caps = await self._ubridge_tc_capabilities()
+            missing = ext_tokens - set(caps.get("netem", "").split(","))
+            if missing:
+                raise DockerError(
+                    "Packet filter(s) using {} need a uBridge with the netem extensions "
+                    "(tc capabilities reports '{}'); upgrade uBridge on this compute".format(
+                        ", ".join(sorted(missing)), caps.get("netem") or "no tc support"
+                    )
+                )
         try:
             await self._ubridge_send(f'tc reset "{host_ifc}"')
         except UbridgeError as e:
@@ -2192,6 +2300,9 @@ class DockerVM(BaseNode):
             # clean. Everything else is a real failure and must surface.
             if "No such file" not in str(e):
                 raise
+        if not parts:
+            return
+        await self._ubridge_send('tc netem set "{ifc}" {params}'.format(ifc=host_ifc, params=" ".join(parts)))
 
     async def _ubridge_tc_capabilities(self):
         """

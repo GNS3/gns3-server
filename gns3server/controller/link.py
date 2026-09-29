@@ -26,6 +26,7 @@ from gns3server.config import Config
 from gns3server.utils.packet_filter_validation import (
     FilterValidationError,
     filter_inactive_filters,
+    kernel_only_features,
     validate_all_filters,
 )
 
@@ -51,16 +52,22 @@ FILTERS = [
     {
         "type": "packet_loss",
         "name": "Packet loss",
-        "description": "The percentage represents the chance for a packet to be lost",
-        "parameters": [{"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"}],
+        "description": "The percentage represents the chance for a packet to be lost. The optional correlation "
+        "(kernel-datapath links only) makes consecutive losses dependent, like a bursty real network",
+        "parameters": [
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
     },
     {
         "type": "delay",
         "name": "Delay",
-        "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
+        "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay, and "
+        "(kernel-datapath links only) shape the jitter with a distribution",
         "parameters": [
             {"name": "Latency", "minimum": 1, "maximum": 32767, "unit": "ms", "type": "int"},
             {"name": "Jitter (-/+)", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
+            {"name": "Distribution", "type": "str", "unit": "uniform|normal|pareto|paretonormal"},
         ],
     },
     {
@@ -74,6 +81,60 @@ FILTERS = [
         "name": "Berkeley Packet Filter (BPF)",
         "description": "This filter will drop any packet matching a BPF expression. Put one expression per line",
         "parameters": [{"name": "Filters", "type": "text"}],
+    },
+    # Everything below runs on kernel-datapath links only (tc netem on the
+    # veth host end; the uBridge relay has no equivalent).
+    {
+        "type": "rate",
+        "name": "Bandwidth limit",
+        "description": "Shape the link to a maximum bandwidth, tc-style value (kernel-datapath links only)",
+        "parameters": [{"name": "Rate", "type": "str", "unit": "e.g. 512kbit, 10mbit"}],
+    },
+    {
+        "type": "reorder",
+        "name": "Reorder",
+        "description": "The percentage represents the chance for a packet to be reordered (held until a later "
+        "packet passes it). Requires the delay filter; kernel-datapath links only",
+        "parameters": [
+            {"name": "Reorder", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Gap", "minimum": 1, "maximum": 1000, "type": "int", "unit": "packets"},
+        ],
+    },
+    {
+        "type": "gemodel",
+        "name": "Gilbert-Elliot loss",
+        "description": "Bursty loss model: p is the loss chance in the bad state, r in the good state, 1-h the "
+        "chance of moving from good to bad. Mutually exclusive with packet loss; kernel-datapath links only",
+        "parameters": [
+            {"name": "p (bad-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "r (good-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "1-h (good-to-bad)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
+    },
+    {
+        "type": "duplicate",
+        "name": "Duplicate",
+        "description": "The percentage represents the chance for a packet to be duplicated; the optional "
+        "correlation makes consecutive duplicates dependent (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
+    },
+    {
+        "type": "seed",
+        "name": "Random seed",
+        "description": "Make the netem random draws (loss, duplication, jitter) reproducible for repeated "
+        "experiments (kernel-datapath links only)",
+        "parameters": [{"name": "Seed", "minimum": 0, "maximum": 4294967295, "type": "int", "unit": ""}],
+    },
+    {
+        "type": "limit",
+        "name": "Queue limit",
+        "description": "Queue depth of the impairment qdisc in packets — raise it above the 1000 default when "
+        "combining a low rate with a long delay (kernel-datapath links only)",
+        "parameters": [{"name": "Limit", "minimum": 1, "maximum": 1000000, "type": "int", "unit": "packets"}],
     },
 ]
 
@@ -245,6 +306,21 @@ class Link:
                     "in the forwarding path; delay, packet loss and corrupt are served by tc "
                     "netem on the veth); delete and recreate the link to use them".format(
                         ", ".join(sorted(unsupported))
+                    )
+                )
+        elif self._created:
+            # The reverse guard: netem-extension filters have no relay
+            # equivalent. Only enforced on created links — while loading a
+            # project the datapath is not decided yet (a link that will be
+            # wired on the kernel datapath must accept them), and the relay
+            # prepare path drops what it cannot run with a warning.
+            conflicts = kernel_only_features(new_filters)
+            if conflicts:
+                raise ControllerError(
+                    "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
+                    "veth host end); this link is wired on the uBridge relay — delete and "
+                    "recreate the link to switch it to the kernel datapath".format(
+                        ", ".join(sorted(conflicts))
                     )
                 )
 
@@ -652,7 +728,11 @@ class Link:
                 from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
 
                 return [f for f in FILTERS if f["type"] not in KERNEL_UNSUPPORTED_FILTERS]
-            return FILTERS
+            # Relay links: hide the netem-extension types the relay cannot run
+            # (they would be rejected with 409 on update).
+            from gns3server.utils.packet_filter_validation import KERNEL_ONLY_FILTERS
+
+            return [f for f in FILTERS if f["type"] not in KERNEL_ONLY_FILTERS]
         return []
 
     def _get_filter_node(self):

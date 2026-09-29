@@ -4,14 +4,29 @@ See LICENSE file for licensing information.
 -->
 
 > Frozen requirements spec for the **uBridge** project. Delivery status:
-> parts **A** (netem keyword extensions, uBridge `feature/tc-netem-ext`) and
-> **C + D** (cBPF match-drop, full-restore idempotent `tc reset`,
-> `tc capabilities` with `cbpf` probe — uBridge `feature/tc-bpf-drop`) are
-> **delivered and integrated** on gns3-server branch
-> `feat/docker-kernel-bpf-drop`. Part **B** (eBPF stateful classifier) is
-> still pending. The originally shipped netem surface (delay/jitter/loss/
-> dup/corrupt) exists in uBridge 1.2.3+ and is verified against gns3-server
-> branch `feat/docker-kernel-filters`.
+> parts **A** (netem keyword extensions, uBridge `feature/tc-netem-ext`), **C**
+> (cBPF match-drop) and **D + E** (full-restore idempotent `tc reset`,
+> `tc capabilities` — uBridge `feature/tc-bpf-drop`) are **delivered and
+> integrated** on gns3-server branches `feat/docker-kernel-bpf-drop` (C/D/E)
+> and `feat/docker-kernel-netem-ext` (A: rate/reorder/gemodel/duplicate/
+> seed/limit/distributions/correlation exposed as GNS3 filter types).
+> Part **B** (eBPF stateful classifier) is delivered in the uBridge
+> `feature/tc-precision` branch but **not yet consumed** by gns3-server.
+> The originally shipped netem surface (delay/jitter/loss/dup/corrupt)
+> exists in uBridge 1.2.3+ and is verified against gns3-server branch
+> `feat/docker-kernel-filters`.
+>
+> **Deviation found during integration (part A/D):** the delivered
+> `tc netem set` uses NLM_F_REPLACE, but the *kernel's* netem change merges
+> optional attributes — rate, correlation, reorder, corrupt, gemodel,
+> distribution and seed keep their previous value when the new message
+> omits them, so "netem set atomically replaces" (D's reconcile
+> assumption) does not hold for parameter *removals*. gns3-server works
+> around it by sending `tc reset` before every `netem set` (the bpf_drop
+> filters are re-added right after in the same flow, so clsact churn is
+> invisible). If uBridge later emits explicit zero/absent clears for every
+> optional attribute, the server-side reset-before-set can be dropped; the
+> two behaviours are compatible either way.
 
 # uBridge kernel impairment: tc netem extensions + eBPF classifiers
 
@@ -272,11 +287,17 @@ corresponding filter types per capability.
 
 ## gns3-server alignment (informational — not uBridge scope)
 
-* P6a types map 1:1 onto new GNS3 filter entries (rate, reorder, gemodel…),
-  translated in `DockerVM._ubridge_apply_netem`.
-* `frequency_drop` / `bpf` move out of `KERNEL_UNSUPPORTED_FILTERS` once
-  `tc capabilities` reports `ebpf=1` / `cbpf=1` (per-compute probe, cached);
-  without the capability the link stays relay-wired exactly as today.
+* **Done** (`feat/docker-kernel-netem-ext`): the P6a types map 1:1 onto new
+  GNS3 filter entries (rate, reorder, gemodel, duplicate, seed, limit, plus
+  the delay `distribution` and loss/dup `correlation` parameters), translated
+  in `DockerVM._ubridge_apply_netem`; extension keywords are gated on the
+  `tc capabilities` netem token list (old uBridge builds are never probed
+  for the original surface).
+* **Done** (`feat/docker-kernel-bpf-drop`): `bpf` runs as cBPF match-drop
+  (`KERNEL_UNSUPPORTED_FILTERS` shrank to `frequency_drop`).
+* `frequency_drop` moves out of `KERNEL_UNSUPPORTED_FILTERS` once the eBPF
+  classifier (part B, uBridge `feature/tc-precision`) is consumed on the
+  server side, keyed on `ebpf=1` per compute.
 * Every veth end owns one qdisc + its filters: per-direction impairment is
   an architectural freebie to expose later (API `direction` field), aligned
   with marker `dir` semantics.

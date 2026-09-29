@@ -1116,6 +1116,17 @@ class BaseNode:
         :param filters: Array of filter dictionary
         """
 
+        # The netem-extension filters (rate, reorder, gemodel…) only exist on
+        # the kernel datapath. The controller keeps them off relay links;
+        # this is the second guard for direct compute API use.
+        from gns3server.utils.packet_filter_validation import kernel_only_features
+
+        kernel_only = kernel_only_features(filters)
+        if kernel_only:
+            raise NodeError(
+                "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
+                "veth host end); the uBridge relay has no equivalent".format(", ".join(sorted(kernel_only)))
+            )
         await self._ubridge_send("bridge reset_packet_filters " + bridge_name)
         for packet_filter in self._build_filter_list(filters):
             cmd = f"bridge add_packet_filter {bridge_name} {packet_filter}"

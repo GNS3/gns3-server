@@ -356,6 +356,20 @@ class BaseManager:
             except OSError as e:
                 raise ComputeError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(lport, rhost, rport)
+            # The netem-extension filters (rate, reorder, gemodel…) have no
+            # uBridge relay equivalent — reject them here (the controller
+            # already keeps them off relay links; this is the second guard
+            # for direct compute API use, mirroring the kernel-NIO guard).
+            from gns3server.utils.packet_filter_validation import kernel_only_features
+
+            kernel_only = kernel_only_features(nio_settings.get("filters") or {})
+            if kernel_only:
+                raise ComputeError(
+                    "Packet filter(s) {} only run on a kernel-datapath link "
+                    "(tc netem on the veth host end); the uBridge relay has no equivalent".format(
+                        ", ".join(sorted(kernel_only))
+                    )
+                )
             nio.filters = nio_settings.get("filters", {})
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)

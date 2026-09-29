@@ -52,6 +52,22 @@ async def _kernel_link(project, **kwargs):
     return link, node1, node2
 
 
+def _mock_compute_http(compute):
+    """Wire the async compute HTTP callbacks the relay _prepare path needs."""
+
+    async def subnet_callback(other):
+        return ("192.168.1.1", "192.168.1.2")
+
+    compute.get_ip_on_same_subnet.side_effect = subnet_callback
+
+    async def port_callback(path, data=None, **kwargs):
+        response = MagicMock()
+        response.json = {"udp_port": 1024}
+        return response
+
+    compute.post.side_effect = port_callback
+
+
 @pytest.mark.asyncio
 async def test_kernel_datapath_eligible(project):
 
@@ -380,3 +396,108 @@ async def test_update_suspend_kernel_link_sends_no_synthetic_filter(project):
     for body in bodies:
         assert body["filters"] == {}
         assert body["suspend"] is True
+
+
+# ---------------------------------------------------------------------------
+# P6a: netem-extension filters (rate / reorder / gemodel / duplicate / seed /
+# limit / distribution / correlation)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_with_netem_extension_filters(project):
+    """
+    All netem-extension types have a tc netem equivalent — they keep the
+    link kernel-eligible (only frequency_drop still forces the relay).
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    link._filters = {
+        "delay": [100, 20, "normal"],
+        "packet_loss": [5, 25],
+        "duplicate": [10],
+        "reorder": [25, 0, 5],
+        "rate": ["512kbit"],
+        "gemodel": [100, 0, 30],
+        "seed": [42],
+        "limit": [5000],
+    }
+    # gemodel/packet_loss are mutually exclusive — drop packet_loss for the
+    # eligibility check (validation rejects the mix elsewhere)
+    link._filters.pop("packet_loss")
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
+async def test_update_netem_extension_filters_accepted_on_kernel_link(project):
+    """
+    The extension filters ride the kernel NIO to both endpoints like the
+    base netem surface.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    await link._prepare()
+
+    filters = {"delay": [100, 20, "normal"], "rate": ["512kbit"], "reorder": [25, 0, 5]}
+    await link.update_filters(filters)
+    assert link.filters == filters
+    by_node = {entry[0].id: entry[3] for entry in (await link._prepare())}
+    assert by_node[node1.id]["filters"] == filters
+    assert by_node[node2.id]["filters"] == filters
+
+
+@pytest.mark.asyncio
+async def test_update_kernel_only_filters_rejected_on_relay_link(project):
+    """
+    Netem-extension filters have no relay equivalent: setting them on a
+    created relay link is a 409. (frequency_drop in the stored filters
+    forces this link onto the relay datapath.)
+    """
+
+    link, _n1, _n2 = await _kernel_link(project)
+    _mock_compute_http(link._nodes[0]["node"].compute)
+    link._filters = {"frequency_drop": [7]}
+    await link._prepare()
+    assert link.kernel_datapath is False
+    link._created = True  # the computes hold the UDP NIOs
+
+    with pytest.raises(ControllerError, match="kernel-datapath"):
+        await link.update_filters({"rate": ["512kbit"]})
+    # the stored filters are untouched
+    assert link.filters == {"frequency_drop": [7]}
+
+
+@pytest.mark.asyncio
+async def test_update_kernel_only_filters_accepted_before_creation(project):
+    """
+    While loading a project the datapath is not decided yet (update_filters
+    runs before _prepare) — a link that will be kernel-wired must accept the
+    extension filters. Only _prepare decides, dropping what the relay cannot
+    run.
+    """
+
+    link, _n1, _n2 = await _kernel_link(project)
+    await link.update_filters({"rate": ["512kbit"], "reorder": [25, 0, 5], "delay": [100, 10]})
+    assert link.filters["rate"] == ["512kbit"]
+
+
+@pytest.mark.asyncio
+async def test_prepare_relay_link_strips_kernel_only_filters(project):
+    """
+    A relay-wired link (here: frequency_drop in the stored filters) built
+    from a topology carrying extension filters drops them with a warning
+    instead of pushing an unknown filter type to uBridge.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    _mock_compute_http(link._nodes[0]["node"].compute)
+    link._filters = {"frequency_drop": [7], "rate": ["512kbit"], "delay": [100, 20, "normal"], "packet_loss": [5, 25]}
+    entries = await link._prepare()
+    assert link.kernel_datapath is False
+    by_node = {entry[0].id: entry[3] for entry in entries}
+    assert by_node[node1.id]["type"] == "nio_udp"
+    # the relay's filter node keeps what it can run; rate, the distribution
+    # and the loss correlation are kernel-only and stripped (the far side
+    # carries no filters — the relay filters one bridge)
+    assert by_node[node1.id]["filters"] == {"frequency_drop": [7], "delay": [100, 20], "packet_loss": [5]}
+    assert by_node[node2.id]["filters"] == {}

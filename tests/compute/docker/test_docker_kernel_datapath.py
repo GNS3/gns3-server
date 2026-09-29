@@ -846,3 +846,184 @@ def test_veth_names_deterministic_and_bounded(vm):
     # multi-port adapters can reach two-digit adapter/port numbers
     long_host, long_guest = vm._veth_names(12, 8)
     assert len(long_host) <= 15 and len(long_guest) <= 15
+
+
+# ---------------------------------------------------------------------------
+# P6a: netem extensions (rate / reorder / gemodel / duplicate / seed / limit /
+# distribution / correlation) — translation and capability gating
+# ---------------------------------------------------------------------------
+
+
+def _caps_hypervisor_netem(tokens="delay,jitter,loss,dup,corrupt,rate,reorder,gemodel,dist,seed,limit"):
+    """A hypervisor mock whose direct send() answers `tc capabilities` with
+    the full netem-extension surface."""
+    hyp = MagicMock()
+    hyp.is_running.return_value = True
+    hyp.send = AsyncioMagicMock(return_value=[f"netem={tokens};ebpf=1;cbpf=1"])
+    return hyp
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_netem_extensions(vm):
+    """
+    The netem-extension filters merge into the single netem qdisc command,
+    in the frozen grammar order.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor_netem()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {
+        "delay": [100, 20, "normal"],
+        "packet_loss": [5, 25],
+        "duplicate": [10, 50],
+        "corrupt": [2],
+        "reorder": [25, 50, 5],
+        "rate": ["512kbit"],
+        "limit": [5000],
+        "seed": [42],
+    }
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(
+        f'tc netem set "{host_ifc}" delay 100 jitter 20 loss 5 correl 25 dup 10 correl 50 corrupt 2 '
+        "reorder 25 correl 50 gap 5 rate 512kbit limit 5000 distribution normal seed 42"
+    )
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_gemodel(vm):
+    """
+    gemodel replaces the plain loss keyword and is mutually exclusive with
+    packet_loss (the controller validates; the translation just prefers
+    gemodel when both somehow arrive).
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor_netem()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    nio.filters = {"delay": [50, 5], "gemodel": [100, 0, 30]}
+
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc netem set "{host_ifc}" delay 50 jitter 5 loss gemodel 100 0 30')
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_extension_needs_capability(vm):
+    """
+    Extension keywords on an old uBridge (no tc capabilities / no netem-ext
+    tokens) raise a clear upgrade error instead of a raw parse failure.
+    """
+
+    # old uBridge: no tc module at all -> empty capabilities
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_hypervisor.is_running.return_value = True
+    vm._ubridge_hypervisor.send = AsyncioMagicMock(side_effect=UbridgeError("201-Unknown command"))
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="netem extensions"):
+        await vm._ubridge_apply_netem(host_ifc, {"rate": ["512kbit"]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_extension_partial_capability(vm):
+    """
+    A uBridge that reports some but not all needed tokens fails on the
+    missing ones (per-token check, not just build detection).
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor_netem(tokens="delay,jitter,loss,dup,corrupt")
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="rate, reorder"):
+        await vm._ubridge_apply_netem(host_ifc, {"delay": [50], "reorder": [25], "rate": ["1mbit"]})
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_plain_surface_never_probes(vm):
+    """
+    Original-surface filters (delay/loss/corrupt, and plain dup) must not
+    touch the capability probe at all — an old uBridge serves them as-is.
+    The reset-before-set is unconditional (kernel netem replace merges
+    optional attrs, so a removed parameter would otherwise leak).
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    await vm._ubridge_apply_netem(host_ifc, {"delay": [50, 5], "packet_loss": [10], "duplicate": [10], "corrupt": [2]})
+    assert vm._ubridge_send.call_args_list == [
+        call(f'tc reset "{host_ifc}"'),
+        call(f'tc netem set "{host_ifc}" delay 50 jitter 5 loss 10 dup 10 corrupt 2'),
+    ]
+    vm._ubridge_hypervisor.send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_reset_leak_on_removal(vm):
+    """
+    A re-apply with a parameter REMOVED (rate gone, delay kept) must reset
+    first: the kernel's netem change merges optional attributes, so a bare
+    replace would keep the old rate shaping forever.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor_netem()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    await vm._ubridge_apply_netem(host_ifc, {"delay": [50], "rate": ["1mbit"]})
+    vm._ubridge_send.reset_mock()
+    await vm._ubridge_apply_netem(host_ifc, {"delay": [50]})
+
+    assert vm._ubridge_send.call_args_list == [
+        call(f'tc reset "{host_ifc}"'),
+        call(f'tc netem set "{host_ifc}" delay 50'),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_apply_netem_correl_gates_on_extension_build(vm):
+    """
+    Loss/dup correlation is an extension (the capabilities string has no
+    correl token) — it gates on the netem-extension build marker "rate".
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor_netem(tokens="delay,jitter,loss,dup,corrupt")
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="netem extensions"):
+        await vm._ubridge_apply_netem(host_ifc, {"packet_loss": [5, 25]})
+
+
+def test_create_nio_bridge_accepts_netem_extension_filters(vm):
+
+    nio = vm.manager.create_nio(
+        {"type": "nio_bridge", "bridge": BRIDGE, "filters": {"rate": ["512kbit"], "reorder": [25, 0, 5]}}
+    )
+    assert isinstance(nio, NIOBridge)
+    assert nio.filters == {"rate": ["512kbit"], "reorder": [25, 0, 5]}
+
+
+def test_create_nio_udp_rejects_kernel_only_filters(vm):
+    """
+    The relay NIO rejects netem-extension filter types (second guard behind
+    the controller).
+    """
+
+    with pytest.raises(ComputeError, match="kernel-datapath"):
+        vm.manager.create_nio(
+            {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1", "filters": {"gemodel": [100, 0, 30]}}
+        )
