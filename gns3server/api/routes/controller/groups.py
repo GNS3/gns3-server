@@ -21,7 +21,7 @@ API routes for user groups.
 
 from fastapi import APIRouter, Depends, status
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
@@ -31,6 +31,7 @@ from gns3server.controller.controller_error import (
     ControllerForbiddenError,
 )
 
+import gns3server.db.models as models
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
 
@@ -47,7 +48,7 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.UserGroup], dependencies=[Depends(has_privilege("Group.Audit"))])
 async def get_user_groups(
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> List[schemas.UserGroup]:
+) -> List[models.UserGroup]:
     """
     Get all user groups.
 
@@ -65,7 +66,7 @@ async def get_user_groups(
 )
 async def create_user_group(
     user_group_create: schemas.UserGroupCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> schemas.UserGroup:
+) -> models.UserGroup:
     """
     Create a new user group.
 
@@ -82,7 +83,7 @@ async def create_user_group(
 async def get_user_group(
     user_group_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> schemas.UserGroup:
+) -> models.UserGroup:
     """
     Get a user group.
 
@@ -100,7 +101,7 @@ async def update_user_group(
     user_group_id: UUID,
     user_group_update: schemas.UserGroupUpdate,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> schemas.UserGroup:
+) -> Optional[models.UserGroup]:
     """
     Update a user group.
 
@@ -148,7 +149,7 @@ async def delete_user_group(
 )
 async def get_user_group_members(
     user_group_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> List[schemas.User]:
+) -> List[models.User]:
     """
     Get all user group members.
 

@@ -53,7 +53,7 @@ GNS3_FILE_FORMAT_REVISION = 10
 
 
 class DynamipsNodeValidation(DynamipsCreate):
-    name: Optional[str] = None
+    name: Optional[str] = None  # type: ignore[assignment]
 
 
 def _check_topology_schema(topo, path):

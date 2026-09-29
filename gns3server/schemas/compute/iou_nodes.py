@@ -26,9 +26,9 @@ class IOUBase(BaseModel):
     Common IOU node properties.
     """
 
-    name: str
-    path: str = Field(..., description="IOU executable path")
-    application_id: int = Field(..., description="Application ID for running IOU executable")
+    name: Optional[str] = None
+    path: Optional[str] = Field(None, description="IOU executable path")
+    application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
@@ -52,7 +52,9 @@ class IOUCreate(IOUBase):
     Properties to create an IOU node.
     """
 
-    pass
+    name: str
+    path: str = Field(..., description="IOU executable path")
+    application_id: int = Field(..., description="Application ID for running IOU executable")
 
 
 class IOUUpdate(IOUBase):
@@ -60,12 +62,13 @@ class IOUUpdate(IOUBase):
     Properties to update an IOU node.
     """
 
-    name: Optional[str] = None
-    path: Optional[str] = Field(None, description="IOU executable path")
-    application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
+    pass
 
 
 class IOU(IOUBase):
+    name: str
+    path: str = Field(..., description="IOU executable path")
+    application_id: int = Field(..., description="Application ID for running IOU executable")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")

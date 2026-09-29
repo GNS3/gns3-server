@@ -24,7 +24,7 @@ from fastapi import APIRouter, WebSocket, Depends, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
-from typing import Union
+from typing import Any, Union
 
 from gns3server import schemas
 from gns3server.compute.virtualbox import VirtualBox
@@ -33,7 +33,9 @@ from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VirtualBox node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VirtualBox node"}
+}
 
 router = APIRouter(responses=responses, deprecated=True)
 
@@ -61,24 +63,24 @@ async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBox
     """
 
     vbox_manager = VirtualBox.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await vbox_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        node_data.pop("vmname"),
-        linked_clone=node_data.pop("linked_clone", False),
-        console=node_data.get("console", None),
-        console_type=node_data.get("console_type", "telnet"),
-        adapters=node_data.get("adapters", 0),
+        data.get("node_id"),
+        data.pop("vmname"),
+        linked_clone=data.pop("linked_clone", False),
+        console=data.get("console", None),
+        console_type=data.get("console_type", "telnet"),
+        adapters=data.get("adapters", 0),
     )
 
-    if "ram" in node_data:
-        ram = node_data.pop("ram")
+    if "ram" in data:
+        ram = data.pop("ram")
         if ram != vm.ram:
             await vm.set_ram(ram)
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if name != "node_id":
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
@@ -103,10 +105,10 @@ async def update_virtualbox_node(
     Update a VirtualBox node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in node_data:
-        name = node_data.pop("name")
-        vmname = node_data.pop("vmname", None)
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in data:
+        name = data.pop("name")
+        vmname = data.pop("vmname", None)
         if name != node.name:
             oldname = node.name
             node.name = name
@@ -118,20 +120,20 @@ async def update_virtualbox_node(
                     node.updated()
                     raise e
 
-    if "adapters" in node_data:
-        adapters = node_data.pop("adapters")
+    if "adapters" in data:
+        adapters = data.pop("adapters")
         if adapters != node.adapters:
             await node.set_adapters(adapters)
 
-    if "ram" in node_data:
-        ram = node_data.pop("ram")
+    if "ram" in data:
+        ram = data.pop("ram")
         if ram != node.ram:
             await node.set_ram(ram)
 
     # update the console first to avoid issue if updating console type
-    node.console = node_data.pop("console", node.console)
+    node.console = data.pop("console", node.console)
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
 

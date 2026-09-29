@@ -68,7 +68,7 @@ try:
     # CRITICAL: Update netmiko.ssh_dispatcher platforms lists
     import importlib
 
-    sd = importlib.import_module("netmiko.ssh_dispatcher")
+    sd: Any = importlib.import_module("netmiko.ssh_dispatcher")
 
     # Recalculate platforms lists to include custom device types
     sd.platforms = list(sd.CLASS_MAPPER.keys())
@@ -179,7 +179,7 @@ class VPCSCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
+        if len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
 
         # Create a mapping of device names to their commands
@@ -386,7 +386,7 @@ class VPCSCommands(BaseTool):
     def _prepare_device_hosts_data(
         self,
         device_configs_list: list[dict[str, Any]],
-        project_id: str,
+        project_id: str | None,
         jwt_token: str | None = None,
         url: str | None = None,
     ) -> dict[str, dict[str, Any]]:
@@ -415,7 +415,7 @@ class VPCSCommands(BaseTool):
         device_ports = get_device_ports_from_topology(device_names, project_id=project_id, jwt_token=jwt_token, url=url)
 
         # Build Nornir inventory hosts data
-        hosts_data = {}
+        hosts_data: dict[str, Any] = {}
         for device_name in device_names:
             if device_name not in device_ports:
                 logger.error("Device '%s' not found in topology", device_name)

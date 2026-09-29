@@ -163,7 +163,7 @@ def compute_statistics() -> dict:
 
 @router.get("/qemu/capabilities")
 async def get_qemu_capabilities() -> dict:
-    capabilities = {"kvm": []}
+    capabilities: dict[str, list] = {"kvm": []}
     kvms = await Qemu.get_kvm_archs()
     if kvms:
         capabilities["kvm"] = kvms

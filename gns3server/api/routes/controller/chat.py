@@ -23,7 +23,7 @@ Nested under projects: /v3/projects/{project_id}/chat/...
 import json
 import logging
 import uuid
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
@@ -40,7 +40,7 @@ from .dependencies.authentication import get_current_active_user
 
 log = logging.getLogger(__name__)
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Resource not found"}}
+responses: dict[int | str, dict[str, Any]] = {404: {"model": schemas.ErrorMessage, "description": "Resource not found"}}
 
 router = APIRouter(responses=responses)
 

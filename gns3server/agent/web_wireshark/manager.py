@@ -84,7 +84,7 @@ class WebWiresharkManager:
             logger.warning(f"Container {container_id[:12]} health check failed: {e}")
             return False
 
-    async def _exec_in_container(self, container_id: str, command: str, timeout: int = None) -> tuple:
+    async def _exec_in_container(self, container_id: str, command: str, timeout: Optional[int] = None) -> tuple:
         """Execute command in container with timeout.
 
         Args:
@@ -197,7 +197,7 @@ class WebWiresharkManager:
             stdout, _ = await proc.communicate()
 
             # Build parent->children mapping
-            children_map = {}
+            children_map: dict[int, list[int]] = {}
             for line in stdout.decode().strip().split("\n"):
                 parts = line.split(None, 2)
                 if len(parts) < 3:
@@ -326,7 +326,7 @@ class WebWiresharkManager:
                 return
 
             # Build parent->children mapping and collect process info
-            children_map = {}  # ppid -> [pid]
+            children_map: dict[int, list[int]] = {}  # ppid -> [pid]
             process_info = {}  # pid -> (ppid, command)
 
             for line in stdout.decode().strip().split("\n"):
@@ -480,7 +480,7 @@ class WebWiresharkManager:
             logger.debug(f"Cannot get URL from Config: {e}")
         return None
 
-    async def _get_container_gateway_ip(self, container_id: str = None) -> Optional[str]:
+    async def _get_container_gateway_ip(self, container_id: Optional[str] = None) -> Optional[str]:
         """Get the Docker bridge gateway IP for container to access host.
 
         Args:
@@ -519,7 +519,7 @@ class WebWiresharkManager:
 
         return None
 
-    async def get_container_ip(self, container_name: str, container_id: str = None) -> Optional[str]:
+    async def get_container_ip(self, container_name: str, container_id: Optional[str] = None) -> Optional[str]:
         """Get the container IP address in the wireshark network.
 
         Args:
@@ -626,7 +626,7 @@ class WebWiresharkManager:
         project_id: str,
         image: str = "gns3/web-wireshark:latest",
         memory: str = "2g",
-        memory_swap: str = None,
+        memory_swap: Optional[str] = None,
         cpus: float = 1.0,
         pids_limit: int = 1000,
     ) -> str:
@@ -935,10 +935,10 @@ class WebWiresharkManager:
         project_id: str,
         link_id: str,
         jwt_token: str,
-        capture_stream_url: str = None,
+        capture_stream_url: Optional[str] = None,
         image: str = "gns3/web-wireshark:latest",
         memory: str = "2g",
-        memory_swap: str = None,
+        memory_swap: Optional[str] = None,
         cpus: float = 1.0,
         pids_limit: int = 1000,
     ):
