@@ -312,14 +312,7 @@ module = [
   "gns3server.db.repositories.templates",  # 6
   "gns3server.db.repositories.users",  # 12
   "gns3server.db.tasks",  # 12
-  "gns3server.schemas.compute.vmware_nodes",  # 3
-  "gns3server.schemas.compute.vpcs_nodes",  # 1
-  "gns3server.schemas.controller.appliances",  # 1
   "gns3server.schemas.controller.computes",  # 6
-  "gns3server.schemas.controller.nodes",  # 3
-  "gns3server.schemas.controller.projects",  # 2
-  "gns3server.schemas.controller.settings",  # 3
-  "gns3server.schemas.controller.templates.docker_templates",  # 1
   "gns3server.schemas.controller.templates.iou_templates",  # 1
   "gns3server.schemas.controller.templates.virtualbox_templates",  # 1
   "gns3server.schemas.controller.templates.vmware_templates",  # 1
