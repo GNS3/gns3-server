@@ -39,14 +39,15 @@ async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(w
     """
 
     if websocket:
-        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
+        client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+        log.info(f"New client {client} has connected to compute WebSocket")
         try:
             with NotificationManager.instance().queue() as queue:
                 while True:
                     notification = await queue.get_json(5)
                     await websocket.send_text(notification)
         except (ConnectionClosed, WebSocketDisconnect):
-            log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
+            log.info(f"Client {client} has disconnected from compute WebSocket")
         except WebSocketException as e:
             log.warning(f"Error while sending to controller event to WebSocket client: {e}")
 

@@ -39,7 +39,7 @@ API_KEY_PREFIX = "gns3_"
 API_KEY_BYTES = 32
 
 
-def _generate_api_key(api_key_id: UUID = None) -> tuple[str, str, str, UUID]:
+def _generate_api_key(api_key_id: UUID | None = None) -> tuple[str, str, str, UUID]:
     if api_key_id is None:
         api_key_id = uuid4()
     random_bytes = secrets.token_hex(API_KEY_BYTES)

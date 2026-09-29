@@ -24,7 +24,7 @@ from fastapi import APIRouter, WebSocket, Depends, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
-from typing import Union
+from typing import Any, Union
 
 from gns3server import schemas
 from gns3server.compute.vmware import VMware
@@ -32,7 +32,9 @@ from gns3server.compute.vmware.vmware_vm import VMwareVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}
+}
 
 router = APIRouter(responses=responses, deprecated=True)
 
@@ -60,18 +62,18 @@ async def create_vmware_node(project_id: UUID, node_data: schemas.VMwareCreate) 
     """
 
     vmware_manager = VMware.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await vmware_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        node_data.pop("vmx_path"),
-        linked_clone=node_data.pop("linked_clone"),
-        console=node_data.get("console", None),
-        console_type=node_data.get("console_type", "telnet"),
+        data.get("node_id"),
+        data.pop("vmx_path"),
+        linked_clone=data.pop("linked_clone"),
+        console=data.get("console", None),
+        console_type=data.get("console_type", "telnet"),
     )
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if name != "node_id":
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
@@ -94,10 +96,10 @@ async def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = D
     Update a VMware node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     # update the console first to avoid issue if updating console type
-    node.console = node_data.pop("console", node.console)
-    for name, value in node_data.items():
+    node.console = data.pop("console", node.console)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
 

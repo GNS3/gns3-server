@@ -347,7 +347,7 @@ def get_gns3_server_host() -> str:
         host = get_gns3_server_host()
         print(f"GNS3 server host: {host}")
     """
-    url = _detect_url_for_api()
+    url = _detect_url_for_api() or DEFAULT_GNS3_URL
 
     # Extract host from URL
     # URL format: protocol://host:port

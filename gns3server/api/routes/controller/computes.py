@@ -23,6 +23,7 @@ from typing import Any, List, Union, Optional
 from uuid import UUID
 
 from gns3server.controller import Controller
+import gns3server.db.models as models
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services.computes import ComputesService
@@ -31,7 +32,7 @@ from gns3server import schemas
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Compute not found"}}
+responses: dict[int | str, dict[str, Any]] = {404: {"model": schemas.ErrorMessage, "description": "Compute not found"}}
 
 router = APIRouter(responses=responses)
 
@@ -51,14 +52,14 @@ async def create_compute(
     compute_create: schemas.ComputeCreate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
     connect: Optional[bool] = False,
-) -> schemas.Compute:
+) -> models.Compute:
     """
     Create a new compute on the controller.
 
     Required privilege: Compute.Allocate
     """
 
-    return await ComputesService(computes_repo).create_compute(compute_create, connect)
+    return await ComputesService(computes_repo).create_compute(compute_create, bool(connect))
 
 
 @router.post(
@@ -86,7 +87,7 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
 )
 async def get_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
-) -> schemas.Compute:
+) -> Union[models.Compute, dict]:
     """
     Return a compute from the controller.
 
@@ -104,7 +105,7 @@ async def get_compute(
 )
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-) -> List[schemas.Compute]:
+) -> List[models.Compute]:
     """
     Return all computes known by the controller.
 
@@ -124,7 +125,7 @@ async def update_compute(
     compute_id: Union[str, UUID],
     compute_update: schemas.ComputeUpdate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-) -> schemas.Compute:
+) -> models.Compute:
     """
     Update a compute on the controller.
 

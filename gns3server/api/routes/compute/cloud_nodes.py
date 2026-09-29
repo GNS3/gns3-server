@@ -23,14 +23,16 @@ import os
 from fastapi import APIRouter, Depends, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
+from typing import Any, Union
 from uuid import UUID
 
 from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.cloud import Cloud
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or cloud node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or cloud node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -57,21 +59,21 @@ async def create_cloud(project_id: UUID, node_data: schemas.CloudCreate) -> sche
     """
 
     builtin_manager = Builtin.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     node = await builtin_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
+        data.get("node_id"),
         node_type="cloud",
-        ports=node_data.get("ports_mapping"),
+        ports=data.get("ports_mapping"),
     )
 
     # add the remote console settings
-    node.remote_console_host = node_data.get("remote_console_host", node.remote_console_host)
-    node.remote_console_port = node_data.get("remote_console_port", node.remote_console_port)
-    node.remote_console_type = node_data.get("remote_console_type", node.remote_console_type)
-    node.remote_console_http_path = node_data.get("remote_console_http_path", node.remote_console_http_path)
-    node.usage = node_data.get("usage", "")
+    node.remote_console_host = data.get("remote_console_host", node.remote_console_host)
+    node.remote_console_port = data.get("remote_console_port", node.remote_console_port)
+    node.remote_console_type = data.get("remote_console_type", node.remote_console_type)
+    node.remote_console_http_path = data.get("remote_console_http_path", node.remote_console_http_path)
+    node.usage = data.get("usage", "")
     return node.asdict()
 
 
@@ -90,8 +92,8 @@ async def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep
     Update a cloud node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    for name, value in node_data.items():
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
     node.updated()
@@ -178,7 +180,7 @@ async def update_cloud_nio(
 
     nio = node.get_nio(port_number)
     nio.filters.clear()
-    if nio_data.filters:
+    if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
         nio.filters = nio_data.filters
     # NIO type is a Union (Ethernet/TAP/UDP); only UDPNIO carries markers.
     nio.markers = getattr(nio_data, "markers", None) or {}

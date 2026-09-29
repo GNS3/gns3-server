@@ -23,7 +23,7 @@ import os
 from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
+from typing import Any, Union
 from uuid import UUID
 
 from gns3server import schemas
@@ -32,7 +32,9 @@ from gns3server.compute.iou.iou_vm import IOUVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -60,18 +62,18 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate) -> sch
     """
 
     iou = IOU.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await iou.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        application_id=node_data.get("application_id"),
-        path=node_data.get("path"),
-        console=node_data.get("console"),
-        console_type=node_data.get("console_type", "telnet"),
+        data.get("node_id"),
+        application_id=data.get("application_id"),
+        path=data.get("path"),
+        console=data.get("console"),
+        console_type=data.get("console_type", "telnet"),
     )
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
             if name == "application_id":
                 continue  # we must ignore this to avoid overwriting the application_id allocated by the controller
@@ -79,7 +81,7 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate) -> sch
                 continue
             if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
                 continue
-            if node_data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
+            if data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                 continue
             setattr(vm, name, value)
     return vm.asdict()
@@ -100,8 +102,8 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
     Update an IOU node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    for name, value in node_data.items():
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             if name == "application_id":
                 continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
@@ -147,8 +149,8 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
     Start an IOU node.
     """
 
-    start_data = jsonable_encoder(start_data, exclude_unset=True)
-    for name, value in start_data.items():
+    start_values = jsonable_encoder(start_data, exclude_unset=True)
+    for name, value in start_values.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
 
@@ -223,7 +225,7 @@ async def update_iou_node_nio(
 
     nio = node.get_nio(adapter_number, port_number)
     nio.filters.clear()
-    if nio_data.filters:
+    if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
         nio.filters = nio_data.filters
     # NIO type is a Union (Ethernet/TAP/UDP); only UDPNIO carries markers.
     nio.markers = getattr(nio_data, "markers", None) or {}
