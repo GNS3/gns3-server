@@ -1883,12 +1883,25 @@ class DockerVM(BaseNode):
         with the container network namespace) the host end outlives the
         container and must be removed explicitly. Deleting an enslaved veth
         detaches it from its bridge automatically.
+
+        The per-link kernel bridges go too: deleting a node (or closing a
+        project) never runs the link-teardown path, so a bridge whose ports
+        just disappeared would stay behind as an empty orphan. Both link
+        endpoints run this — the peer's port still enslaved makes the delete
+        fail with EBUSY (suppressed) and the last one wins, the same
+        contract as _remove_kernel_nio. A node restart re-creates the bridge
+        from the NIO in _connect_nio, so nothing is lost by deleting it.
         """
 
         if self.ubridge:
             for host_ifc in self._kernel_veths.values():
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'docker delete_veth "{host_ifc}"')
+            for adapter in self._ethernet_adapters:
+                for nio in adapter.ports.values():
+                    if isinstance(nio, NIOBridge):
+                        with contextlib.suppress(UbridgeError):
+                            await self._ubridge_send(f'brctl delete "{nio.bridge}"')
         self._kernel_veths.clear()
 
     async def _get_namespace(self):

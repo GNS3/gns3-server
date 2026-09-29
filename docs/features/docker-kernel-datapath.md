@@ -151,7 +151,13 @@ endpoints became eligible are upgraded to the kernel datapath automatically.
   attached to the host end*.
 * **Death (container stop)** — `_remove_kernel_veths` deletes the host ends
   explicitly: unlike a TAP (which died with the container netns), a veth host
-  end outlives the container. Deleting either end destroys the pair.
+  end outlives the container. Deleting either end destroys the pair. The
+  node's per-link kernel bridges go with them — deleting a node or closing a
+  project never runs the link-teardown path (no per-link delete is issued),
+  so a bridge whose ports just disappeared would stay behind as an empty
+  orphan. Both endpoints do this and the peer's still-enslaved port makes
+  the delete fail with EBUSY (suppressed, last one wins), the same contract
+  as link deletion; a node restart rebuilds the bridge from the NIO.
 
 ## Link operations
 

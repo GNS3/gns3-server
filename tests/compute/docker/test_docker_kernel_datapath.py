@@ -1006,6 +1006,34 @@ async def test_remove_kernel_veths(vm):
     assert vm._kernel_veths == {}
 
 
+@pytest.mark.asyncio
+async def test_remove_kernel_veths_deletes_per_link_bridge(vm):
+    """
+    The per-link kernel bridge dies with the node too: deleting a project
+    never runs the link-teardown path, so without this the bridge stays
+    behind as an empty orphan (EBUSY from the peer's port is suppressed —
+    the last endpoint wins).
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+    # a relay NIO's bridge is not this node's to delete (uBridge dies with it)
+    relay = vm.manager.create_nio({"type": "nio_udp", "lport": 10000, "rhost": "127.0.0.1", "rport": 10001})
+    vm._ethernet_adapters[0].add_nio(1, relay)
+
+    await vm._remove_kernel_veths()
+
+    vm._ubridge_send.assert_any_call(f'docker delete_veth "{host_ifc}"')
+    # exactly the kernel bridge — the relay NIO's uBridge bridge dies with
+    # the uBridge process and must not be touched here
+    deletes = [call.args[0] for call in vm._ubridge_send.call_args_list if "brctl delete" in call.args[0]]
+    assert deletes == [f'brctl delete "{BRIDGE}"']
+
+
 def test_veth_names_deterministic_and_bounded(vm):
 
     host_ifc, guest_ifc = vm._veth_names(3, 2)
