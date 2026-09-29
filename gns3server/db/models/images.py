@@ -32,7 +32,7 @@ image_template_map = Table(
 class Image(BaseTable):
     __tablename__ = "images"
 
-    image_id = Column(Integer, primary_key=True, autoincrement=True)
+    image_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String, index=True)
     path: Mapped[str] = mapped_column(String, unique=True, nullable=True)
     image_type = Column(String)

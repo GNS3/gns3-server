@@ -38,6 +38,7 @@ from gns3server.utils.images import (
     default_images_directory,
     get_builtin_disks,
 )
+import gns3server.db.models as models
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -68,7 +69,7 @@ async def create_qemu_image(
     image_path: str,
     image_data: schemas.QemuDiskImageCreate,
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> schemas.Image:
+) -> models.Image:
     """
     Create a new blank Qemu image.
 
@@ -115,7 +116,7 @@ async def create_qemu_image(
 async def get_images(
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     image_type: Optional[schemas.ImageType] = None,
-) -> List[schemas.Image]:
+) -> List[models.Image]:
     """
     Return all images.
 
@@ -139,7 +140,7 @@ async def upload_image(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     install_appliances: Optional[bool] = False,
-) -> schemas.Image:
+) -> models.Image:
     """
     Upload an image.
 
@@ -256,7 +257,7 @@ async def install_images(
 async def get_image(
     image_path: str,
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> schemas.Image:
+) -> models.Image:
     """
     Return an image.
 
@@ -299,7 +300,7 @@ async def delete_image(
 
     templates = await images_repo.get_image_templates(image.image_id)
     if templates:
-        template_names = ", ".join([template.name for template in templates])
+        template_names = ", ".join([str(template.name) for template in templates])
         raise ControllerError(f"Image '{image_path}' is used by one or more templates: {template_names}")
 
     project_names = Controller.instance().find_projects_using_image(image.filename)
