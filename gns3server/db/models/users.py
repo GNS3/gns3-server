@@ -15,8 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
+from typing import Optional
+
 from sqlalchemy import Table, Boolean, Column, Integer, String, DateTime, ForeignKey, event
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
 
@@ -43,7 +46,7 @@ class User(BaseTable):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
-    last_login = Column(DateTime)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime)
     token_version = Column(Integer, default=0, nullable=False, server_default="0")
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
