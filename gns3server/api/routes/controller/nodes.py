@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request,
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
-from typing import List, Callable, Optional
+from typing import Any, List, Callable, Optional
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -47,7 +47,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-node_locks = {}
+node_locks: dict[str, dict[str, Any]] = {}
 
 
 class NodeConcurrency(APIRoute):
@@ -84,7 +84,9 @@ class NodeConcurrency(APIRoute):
         return custom_route_handler
 
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}
+}
 
 router = APIRouter(route_class=NodeConcurrency, responses=responses)
 
@@ -127,7 +129,7 @@ def _check_node_type(node: Node, *required_types: str) -> None:
     },
     dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
-async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
+async def create_node(node_create: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
     """
     Create a new node.
 
@@ -135,8 +137,8 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
     """
 
     controller = Controller.instance()
-    compute = controller.get_compute(str(node_data.compute_id))
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    compute = controller.get_compute(str(node_create.compute_id))
+    node_data = jsonable_encoder(node_create, exclude_unset=True)
     node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
     return node.asdict()
 
@@ -274,14 +276,14 @@ async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
     response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Node.Modify"))],
 )
-async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
+async def update_node(node_update: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Update a node.
 
     Required privilege: Node.Modify
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    node_data = jsonable_encoder(node_update, exclude_unset=True)
 
     # Ignore these because we only use them when creating a node
     node_data.pop("node_id", None)
@@ -654,9 +656,8 @@ async def ws_console(
         return
 
     compute = node.compute
-    log.info(
-        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket"
-    )
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller console WebSocket")
 
     compute_host = compute.host
     try:
@@ -690,9 +691,7 @@ async def ws_console(
                     await ws_console_compute.send_bytes(msg["bytes"])
         except WebSocketDisconnect:
             pass
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller console WebSocket"
-        )
+        log.info(f"Client {client} has disconnected from controller console WebSocket")
 
     async def ws_send(ws_console_compute):
         """
@@ -709,10 +708,7 @@ async def ws_console(
                     break
         except WebSocketDisconnect:
             # the client disconnected while the compute was still streaming console output
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" console WebSocket"
-            )
+            log.info(f"Client {client} has disconnected from controller console WebSocket")
 
     try:
         # forward WebSocket data in both directions between the client and the compute console WebSocket
@@ -763,9 +759,8 @@ async def vnc_console(
         return
 
     compute = node.compute
-    log.info(
-        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller VNC console WebSocket"
-    )
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller VNC console WebSocket")
 
     compute_host = compute.host
     try:
@@ -796,10 +791,7 @@ async def vnc_console(
                     await vnc_console_compute.send_bytes(data)
         except WebSocketDisconnect:
             pass
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-            f" VNC console WebSocket"
-        )
+        log.info(f"Client {client} has disconnected from controller VNC console WebSocket")
 
     async def vnc_send(vnc_console_compute):
         """
@@ -814,10 +806,7 @@ async def vnc_console(
                     break
         except WebSocketDisconnect:
             # the client disconnected while the compute was still streaming VNC console output
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" VNC console WebSocket"
-            )
+            log.info(f"Client {client} has disconnected from controller VNC console WebSocket")
 
     try:
         # forward WebSocket data in both directions between the client and the compute VNC console WebSocket

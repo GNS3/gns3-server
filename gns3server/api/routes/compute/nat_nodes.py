@@ -23,14 +23,16 @@ import os
 from fastapi import APIRouter, Depends, Path, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
+from typing import Any, Union
 from uuid import UUID
 
 from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.nat import Nat
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or NAT node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or NAT node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -57,16 +59,16 @@ async def create_nat_node(project_id: UUID, node_data: schemas.NATCreate) -> sch
     """
 
     builtin_manager = Builtin.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     node = await builtin_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
+        data.get("node_id"),
         node_type="nat",
-        ports=node_data.get("ports_mapping"),
+        ports=data.get("ports_mapping"),
     )
 
-    node.usage = node_data.get("usage", "")
+    node.usage = data.get("usage", "")
     return node.asdict()
 
 
@@ -85,8 +87,8 @@ async def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_
     Update a NAT node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    for name, value in node_data.items():
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
     node.updated()
@@ -170,7 +172,7 @@ async def update_nat_node_nio(
 
     nio = node.get_nio(port_number)
     nio.filters.clear()
-    if nio_data.filters:
+    if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
         nio.filters = nio_data.filters
     await node.update_nio(port_number, nio)
     return nio.asdict()
