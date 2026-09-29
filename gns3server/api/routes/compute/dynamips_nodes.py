@@ -23,7 +23,7 @@ import os
 from fastapi import APIRouter, WebSocket, Body, Depends, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import List, Union
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
 from gns3server.compute.dynamips import Dynamips
@@ -32,7 +32,9 @@ from gns3server import schemas
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -64,25 +66,26 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate) -> 
 
     dynamips_manager = Dynamips.instance()
     platform = node_data.platform
+    chassis: Optional[str]
     if not node_data.chassis and platform in DEFAULT_CHASSIS:
         chassis = DEFAULT_CHASSIS[platform]
     else:
         chassis = node_data.chassis
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await dynamips_manager.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        dynamips_id=node_data.get("dynamips_id"),
+        data.get("node_id"),
+        dynamips_id=data.get("dynamips_id"),
         platform=platform,
-        console=node_data.get("console"),
-        console_type=node_data.get("console_type", "telnet"),
-        aux=node_data.get("aux"),
-        aux_type=node_data.pop("aux_type", "none"),
+        console=data.get("console"),
+        console_type=data.get("console_type", "telnet"),
+        aux=data.get("aux"),
+        aux_type=data.pop("aux_type", "none"),
         chassis=chassis,
         node_type="dynamips",
     )
-    await dynamips_manager.update_vm_settings(vm, node_data)
+    await dynamips_manager.update_vm_settings(vm, data)
     return vm.asdict()
 
 

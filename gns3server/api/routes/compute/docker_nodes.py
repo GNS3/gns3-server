@@ -24,14 +24,16 @@ from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
-from typing import Union
+from typing import Any, Union
 
 from gns3server import schemas
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -53,13 +55,13 @@ def dep_node(project_id: UUID, node_id: UUID) -> DockerVM:
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Docker node"}},
     dependencies=[Depends(compute_authentication)],
 )
-async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) -> schemas.Docker:
+async def create_docker_node(project_id: UUID, node_create: schemas.DockerCreate) -> schemas.Docker:
     """
     Create a new Docker node.
     """
 
     docker_manager = Docker.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    node_data = jsonable_encoder(node_create, exclude_unset=True)
     container = await docker_manager.create_node(
         node_data.pop("name"),
         str(project_id),
@@ -124,7 +126,7 @@ def get_docker_node(node: DockerVM = Depends(dep_node)) -> schemas.Docker:
 
 
 @router.put("/{node_id}", response_model=schemas.Docker, dependencies=[Depends(compute_authentication)])
-async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)) -> schemas.Docker:
+async def update_docker_node(node_update: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)) -> schemas.Docker:
     """
     Update a Docker node.
     """
@@ -152,7 +154,7 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
     ]
 
     changed = False
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    node_data = jsonable_encoder(node_update, exclude_unset=True)
     for prop in props:
         # hasattr: startup_config_content only exists on IOLDockerVM
         if prop in node_data and hasattr(node, prop) and node_data[prop] != getattr(node, prop):

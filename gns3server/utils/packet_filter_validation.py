@@ -15,7 +15,7 @@ class FilterValidationError(Exception):
     pass
 
 
-def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Optional[str]]:
+def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Any]:
     """
     Validate BPF filter expression syntax using tcpdump.
 
@@ -78,7 +78,7 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
     """
 
     # Define validation rules based on ubridge implementation
-    VALIDATION_RULES = {
+    VALIDATION_RULES: Dict[str, Dict[str, Any]] = {
         "frequency_drop": {
             "params_count": 1,
             "ranges": [(-1, 32767)],  # min, max
@@ -173,11 +173,11 @@ def filter_inactive_filters(filters: Dict[str, List[Any]]) -> Dict[str, List[Any
 
     active_filters = {}
     for filter_type, values in filters.items():
-        if not values or (isinstance(values, list) and len(values) == 0):
+        if not values:
             continue
 
         # Normalize values (strip strings, convert to int)
-        normalized_values = []
+        normalized_values: List[Any] = []
         for value in values:
             if isinstance(value, str):
                 normalized_values.append(value.strip("\n "))
@@ -228,7 +228,7 @@ def validate_all_filters(filters: Dict[str, List[Any]]) -> None:
         return
 
     for filter_type, values in filters.items():
-        if not values or (isinstance(values, list) and len(values) == 0):
+        if not values:
             continue
 
         validate_filter_parameters(filter_type, values)

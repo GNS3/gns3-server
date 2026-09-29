@@ -21,7 +21,7 @@ API routes for roles.
 
 from fastapi import APIRouter, Depends, status
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
@@ -31,6 +31,7 @@ from gns3server.controller.controller_error import (
     ControllerForbiddenError,
 )
 
+import gns3server.db.models as models
 from gns3server.db.repositories.rbac import RbacRepository
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
@@ -43,7 +44,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=List[schemas.Role], dependencies=[Depends(has_privilege("Role.Audit"))])
-async def get_roles(rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))) -> List[schemas.Role]:
+async def get_roles(rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))) -> List[models.Role]:
     """
     Get all roles.
 
@@ -61,7 +62,7 @@ async def get_roles(rbac_repo: RbacRepository = Depends(get_repository(RbacRepos
 )
 async def create_role(
     role_create: schemas.RoleCreate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> schemas.Role:
+) -> Optional[models.Role]:
     """
     Create a new role.
 
@@ -78,7 +79,7 @@ async def create_role(
 async def get_role(
     role_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> schemas.Role:
+) -> models.Role:
     """
     Get a role.
 
@@ -94,7 +95,7 @@ async def get_role(
 @router.put("/{role_id}", response_model=schemas.Role, dependencies=[Depends(has_privilege("Role.Modify"))])
 async def update_role(
     role_id: UUID, role_update: schemas.RoleUpdate, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> schemas.Role:
+) -> Optional[models.Role]:
     """
     Update a role.
 
@@ -142,7 +143,7 @@ async def delete_role(
 )
 async def get_role_privileges(
     role_id: UUID, rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> List[schemas.Privilege]:
+) -> List[models.Privilege]:
     """
     Get all role privileges.
 
