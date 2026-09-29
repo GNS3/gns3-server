@@ -43,7 +43,7 @@ class ComputesService:
 
     async def create_compute(self, compute_create: schemas.ComputeCreate, connect: bool = False) -> models.Compute:
 
-        if await self._computes_repo.get_compute(compute_create.compute_id):
+        if compute_create.compute_id and await self._computes_repo.get_compute(compute_create.compute_id):
             raise ControllerBadRequestError(f"Compute '{compute_create.compute_id}' is already registered")
         db_compute = await self._computes_repo.create_compute(compute_create)
         compute = await self._controller.add_compute(
