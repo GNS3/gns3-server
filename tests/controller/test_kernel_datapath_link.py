@@ -428,7 +428,7 @@ async def test_update_suspend_kernel_link_sends_no_synthetic_filter(project):
 async def test_kernel_datapath_eligible_with_netem_extension_filters(project):
     """
     All netem-extension types have a tc netem equivalent — they keep the
-    link kernel-eligible (only frequency_drop still forces the relay).
+    link kernel-eligible (kernel/relay is a purely topological choice).
     """
 
     link, node1, node2 = await _kernel_link(project)
@@ -441,6 +441,8 @@ async def test_kernel_datapath_eligible_with_netem_extension_filters(project):
         "gemodel": [100, 0, 30],
         "seed": [42],
         "limit": [5000],
+        "quota": [1000000, 100],
+        "window_drop": [0, 800, 100, 2400, 200],
     }
     # gemodel/packet_loss are mutually exclusive — drop packet_loss for the
     # eligibility check (validation rejects the mix elsewhere)
@@ -469,9 +471,9 @@ async def test_update_netem_extension_filters_accepted_on_kernel_link(project):
 @pytest.mark.asyncio
 async def test_update_kernel_only_filters_rejected_on_relay_link(project):
     """
-    Netem-extension / quota filters have no relay equivalent: setting them
-    on a created relay link is a 409. (The link is relay-wired because the
-    endpoints are mixed node types.)
+    Netem-extension / quota / window_drop filters have no relay equivalent:
+    setting them on a created relay link is a 409. (The link is relay-wired
+    because the endpoints are mixed node types.)
     """
 
     link, _n1, _n2 = await _relay_link(project)
@@ -481,12 +483,35 @@ async def test_update_kernel_only_filters_rejected_on_relay_link(project):
 
     with pytest.raises(ControllerError, match="kernel-datapath"):
         await link.update_filters({"rate": ["512kbit"]})
+    with pytest.raises(ControllerError, match="kernel-datapath"):
+        await link.update_filters({"window_drop": [0, 800, 100, 2400]})
+    with pytest.raises(ControllerError, match="period must be greater than or equal"):
+        # cross-parameter rule mirrors the tc window grammar
+        await link.update_filters({"window_drop": [0, 2000, 100, 1000]})
     # the stored filters are untouched
     assert link.filters == {}
 
     # frequency_drop still runs on the relay (its uBridge userspace filter)
     await link.update_filters({"frequency_drop": [7]})
     assert link.filters == {"frequency_drop": [7]}
+
+
+@pytest.mark.asyncio
+async def test_update_window_drop_accepted_on_kernel_link(project):
+    """
+    window_drop rides the kernel NIO to both endpoints — including the
+    start=0 form (an immediate outage is NOT an "inactive" filter).
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    await link._prepare()
+
+    filters = {"window_drop": [0, 800, 100, 2400, 200]}
+    await link.update_filters(filters)
+    assert link.filters == filters
+    by_node = {entry[0].id: entry[3] for entry in (await link._prepare())}
+    assert by_node[node1.id]["filters"] == filters
+    assert by_node[node2.id]["filters"] == filters
 
 
 @pytest.mark.asyncio

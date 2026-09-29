@@ -24,10 +24,10 @@ class FilterValidationError(Exception):
 # kernel/relay choice is purely topological (same compute, docker/docker).
 #
 # Packet filters with no uBridge *relay* equivalent: the netem extensions
-# plus the eBPF quota mode run on the kernel datapath only. The relay's
-# packet-filter registry only knows frequency_drop / packet_loss / delay /
-# corrupt / bpf / mark.
-KERNEL_ONLY_FILTERS = frozenset({"rate", "reorder", "gemodel", "duplicate", "seed", "limit", "quota"})
+# plus the eBPF quota/window modes run on the kernel datapath only. The
+# relay's packet-filter registry only knows frequency_drop / packet_loss /
+# delay / corrupt / bpf / mark.
+KERNEL_ONLY_FILTERS = frozenset({"rate", "reorder", "gemodel", "duplicate", "seed", "limit", "quota", "window_drop"})
 
 # Jitter distributions embedded in the netem-extension uBridge (tc_netem_dist).
 NETEM_DISTRIBUTIONS = ("uniform", "normal", "pareto", "paretonormal")
@@ -229,6 +229,19 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
             "names": ["Quota", "Chance"],
             "units": ["bytes", "%"],
         },
+        "window_drop": {
+            # eBPF stateful classifier (uBridge tc window_drop): packets drop
+            # with the given chance inside [start, start+outage) measured from
+            # the moment the filter is applied — a single outage, traffic
+            # passes before AND after. A period makes the outage recur every
+            # cycle (period >= outage); a jitter re-draws each cycle's outage
+            # and period uniformly in nominal ± jitter (0 = the fixed
+            # schedule). Kernel-datapath only.
+            "params_count": (3, 5),
+            "ranges": [(0, 10**12), (1, 10**12), (0, 100), (1, 10**12), (0, 10**9)],
+            "names": ["Start", "Outage", "Chance", "Period", "Jitter"],
+            "units": ["ms", "ms", "%", "ms", "ms"],
+        },
         "bpf": {"params_count": (1, 1), "is_text": True, "names": ["Filters"]},
     }
 
@@ -335,6 +348,12 @@ def filter_inactive_filters(filters: Dict[str, List[Any]]) -> Dict[str, List[Any
             else:
                 # latency>0, normal configuration
                 active_filters[filter_type] = values
+        # window_drop's first parameter is a start offset: 0 means "the
+        # outage starts now", not "disabled" — the filter is active whenever
+        # present (an outage of 0 is rejected by validation, so there is no
+        # natural zero-value encoding for "off").
+        elif filter_type == "window_drop":
+            active_filters[filter_type] = values
         # For other filters, skip if first value is 0 or empty string (means "disabled")
         elif values[0] != 0 and values[0] != "":
             active_filters[filter_type] = values
@@ -398,7 +417,7 @@ def validate_all_filters(filters: Dict[str, List[Any]]) -> None:
     Validate all packet filters, including cross-filter dependencies that
     mirror the tc netem grammar (reorder requires delay; gemodel and
     packet_loss both translate to the netem loss keyword and are mutually
-    exclusive).
+    exclusive) and the eBPF window grammar (period >= outage).
 
     Args:
         filters: Dictionary mapping filter types to their values
@@ -420,3 +439,6 @@ def validate_all_filters(filters: Dict[str, List[Any]]) -> None:
         raise FilterValidationError("reorder requires delay")
     if "gemodel" in filters and "packet_loss" in filters:
         raise FilterValidationError("gemodel and packet_loss are mutually exclusive (both map to the netem loss keyword)")
+    window = filters.get("window_drop")
+    if window and len(window) >= 4 and int(window[3]) < int(window[1]):
+        raise FilterValidationError("window_drop period must be greater than or equal to the outage length")

@@ -24,14 +24,14 @@ Frames never leave the kernel.
 | Link | uBridge bridge, TAP fd ↔ UDP, userspace copy | per-link kernel bridge `gns3{link_id[:11]}`, zero-copy |
 | Relay latency | ~0.3 ms RTT | ~0.05 ms RTT (measured) |
 | Link attach at runtime | yes (relay attaches the pre-existing TAP) | yes (brctl addif / add_nio_ethernet — interface untouched) |
-| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt / duplicate + the netem extensions rate, reorder, gemodel, seed, limit, jitter distributions, loss correlation); bpf as cls_bpf match-drop classifiers; frequency_drop and quota as the eBPF stateful classifier — every filter type has a kernel equivalent |
+| Packet filters | uBridge userspace filters | tc netem on the veth host end (delay / packet_loss / corrupt / duplicate + the netem extensions rate, reorder, gemodel, seed, limit, jitter distributions, loss correlation); bpf as cls_bpf match-drop classifiers; frequency_drop, quota and window_drop as the eBPF stateful classifier — every filter type has a kernel equivalent |
 | Capture / markers | relay bridge | uBridge AF_PACKET modules on the veth host end |
 
-The work landed in eight stages on branch stack `feat/docker-kernel-datapath` →
+The work landed in nine stages on branch stack `feat/docker-kernel-datapath` →
 `feat/docker-kernel-capture` → `feat/docker-kernel-markers` →
 `feat/docker-veth-everywhere` → `feat/docker-kernel-filters` →
 `feat/docker-kernel-bpf-drop` → `feat/docker-kernel-netem-ext` →
-`feat/docker-kernel-ebpf-drops`:
+`feat/docker-kernel-ebpf-drops` → `feat/docker-kernel-window-drop`:
 
 1. **Kernel datapath** — NIOBridge NIO type, per-link bridges, carrier-based
    suspend, crash-safe reconciliation.
@@ -66,6 +66,14 @@ The work landed in eight stages on branch stack `feat/docker-kernel-datapath` �
    non-root server process, the production credential shape). With this,
    no filter type forces the relay anymore: kernel/relay is a purely
    topological choice.
+9. **window_drop flaps** — the eBPF classifier's time-window mode
+   (`tc window_drop`, uBridge `feature/tc-window`): a single outage that
+   passes traffic before and after, a recurring flap with `period ≥ outage`,
+   and an optional per-cycle jitter that randomizes each beat's outage and
+   period. The originally delivered back-to-back window implementation
+   (which made "outside the window packets pass" unreachable) was fixed
+   uBridge-side; this stage exposes the corrected semantics as the
+   kernel-only `window_drop` filter type.
 
 ## Adapter interface types
 
@@ -201,6 +209,7 @@ ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 | `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
 | `frequency_drop [N]` | `tc nth_drop <if> N` — the eBPF stateful classifier's exact every-Nth mode (clsact egress prio 1) | needs uBridge `ebpf=1`; -1 = drop everything → every 1st; per-direction counters (see below) |
 | `quota [bytes, %]` | `tc quota_drop <if> <bytes> <pct>` — after the byte quota is consumed, each further packet drops with the given chance (100 = hard cutoff) | kernel-only type; needs `ebpf=1`; per-direction byte counters |
+| `window_drop [start, outage, %, period?, jitter?]` | `tc window_drop <if> <start> <outage> <pct> [<period> [<jitter>]]` — packets drop with the given chance inside `[start, start+outage)` | kernel-only type; needs `ebpf=1`; see the window semantics below |
 
 Semantics:
 
@@ -241,7 +250,25 @@ Semantics:
 * **Classifier order** on clsact egress: the eBPF stateful filter runs at
   prio 1, `bpf_drop` expressions at 10–99 — a packet dropped by the
   stateful modes never reaches the expression drops, and dropped packets
-  never reach netem.
+  never reach netem. Within the stateful program the modes evaluate in the
+  fixed order nth → quota → window.
+* **window_drop semantics.** `start` is relative to the moment the filter
+  is applied — and because reconcile re-sets the classifier on every apply
+  (any filter change, node restart, link reset reloads the program after
+  the netem reset), every such event **restarts the schedule**. 3
+  parameters = one single outage (`[start, start+outage)`), traffic passes
+  before and after — the classic "link dies at T, comes back at T+outage".
+  4 parameters = recurring flap: `period ≥ outage` (validated), so the
+  outage occupies `outage/period` of each cycle. 5 parameters = randomized
+  flap: each cycle's outage and period are re-drawn uniformly in nominal
+  ± `jitter` (integer-ms grid; jitter 0 draws nothing and equals the fixed
+  schedule). Inside a window each packet drops with the given chance (100
+  = full outage, lower = degraded service during the window). Both
+  endpoints run their own schedule, started ~simultaneously by the
+  controller — a round trip survives only when **both** directions are
+  outside their windows. Note `start = 0` (outage begins immediately) is a
+  valid, active configuration — unlike other filters, a zero first
+  parameter does not mean "disabled".
 * **Validation** mirrors the tc grammar: `reorder` requires `delay`,
   `gemodel` and `packet_loss` are mutually exclusive (both map to the netem
   loss keyword), `distribution` requires jitter > 0, rate must be integer +
@@ -278,6 +305,7 @@ tc netem set <if> [delay <ms>] [jitter <ms>] [loss <%> [correl <%>] | loss gemod
 tc bpf_drop add <if> <prio 10-99> "<expr>" / tc bpf_drop flush <if>
 tc nth_drop <if> <n | off>        # eBPF exact every-Nth (frequency_drop)
 tc quota_drop <if> <bytes> <pct> | off   # eBPF byte cap (quota)
+tc window_drop <if> <start_ms> <outage_ms> <pct> [<period_ms> [<jitter_ms>]] | off  # eBPF time window (window_drop)
 tc reset <if>                     # full restore: eBPF filter -> bpf_drops -> clsact -> root qdisc, idempotent
 tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1", probed once per process
 bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capture
@@ -358,3 +386,38 @@ node restart with a relay link skipped `bridge create` and failed. Unit tests:
 `tests/utils/test_packet_filter_validation.py` (P6a class),
 `tests/compute/docker/test_docker_kernel_datapath.py`,
 `tests/controller/test_kernel_datapath_link.py`.
+
+window_drop (same setup, 15/15 checks, against uBridge `feature/tc-window`):
+a single outage `[1000, 1500, 100]` delivers **per-seq evidence** of the B.2
+semantics — one ping per 200 ms arrives as `[0,1,2,3,4, 13…19]`: passing
+before the window, dropped inside it, passing again after; a recurring flap
+`[300, 1000, 100, 2000]` measures 52 % round-trip loss (the 1000/2000 duty
+cycle); `period == outage` is a permanent outage (100 %); `period < outage`
+is a 409 before uBridge sees it; a jittered flap
+`[0, 1000, 100, 2000, 400]` keeps the ~50 % duty cycle (62 % sampled over
+4 cycles — the per-cycle re-draw widens the variance by design); a 30 %
+chance on a permanent window measures 53 % round trip against the
+per-direction theory 1 − 0.7² = 51 % (the same arithmetic as
+`packet_loss 30`); `start = 0` is stored as an *active* filter; the window
+coexists with netem (`delay 50` + a permanent window = 100 % inside the
+outage); clearing removes the classifier; a node restart restores the
+schedule on the fresh veth; `available_filters` shows window_drop on kernel
+links and a relay link both hides it and 409s it; teardown leaves no filter
+or qdisc behind. The P6b e2e was re-run as a regression on the same uBridge
+build (13/13 — nth/quota unaffected by the de-looping below).
+
+The uBridge-side window work took two fixes that are worth recording, both
+found by *this* integration rather than by unit tests: the delivered
+catch-up loop tripped the verifier's 8192 **jump-sequence** budget — on the
+non-root path the verifier drops the loop counter's bound
+(`R4=scalar(smax=umax32=0xfffff086)`), treats the loop as unbounded and
+unrolls it until the pending-state limit, so the program was rejected
+wholesale (`E2BIG`, `The sequence of 8193 jumps is too complex`) and
+`tc capabilities` reported `ebpf=0` — taking `frequency_drop` and `quota`
+down with it, since the classifier loads as one program; lowering the trip
+cap did not help (128 trips failed identically), removing the loop did
+(572ca0c: 16-step unroll + outer guard, zero back edges). A latent Makefile
+header-dependency gap (53e34bb) had been shipping the *old* truncated
+program object — the kernel answered `jump out of range from insn 9 to
+421` with `processed 0 insns`. Both matter to anyone rebuilding uBridge:
+`ebpf=1` from a direct probe is the only trustworthy signal.

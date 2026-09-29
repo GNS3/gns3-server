@@ -147,6 +147,20 @@ FILTERS = [
             {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
         ],
     },
+    {
+        "type": "window_drop",
+        "name": "Time window drop",
+        "description": "Drop packets with the given chance inside a time window starting Start ms from the "
+        "moment the filter is applied — a single outage (traffic passes before and after), or with a "
+        "period recurring flaps whose per-cycle timing a jitter randomizes (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Start", "minimum": 0, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Outage", "minimum": 1, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Period", "minimum": 1, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Jitter", "minimum": 0, "maximum": 1000000000, "type": "int", "unit": "ms"},
+        ],
+    },
 ]
 
 
@@ -308,7 +322,8 @@ class Link:
             raise ControllerError(f"Invalid packet filter parameters: {e!s}")
 
         if self._created and not self.kernel_datapath:
-            # Kernel-only filters (the netem extensions, the eBPF quota mode)
+            # Kernel-only filters (the netem extensions, the eBPF quota and
+            # window modes)
             # have no relay equivalent. Only enforced on created links — while
             # loading a project the datapath is not decided yet (a link that
             # will be wired on the kernel datapath must accept them), and the
@@ -723,7 +738,8 @@ class Link:
             if self.kernel_datapath:
                 # Kernel-datapath links serve every filter type: netem for
                 # delay/loss/corrupt and the netem extensions, cls_bpf for
-                # bpf, the eBPF classifier for frequency_drop and quota.
+                # bpf, the eBPF classifier for frequency_drop, quota and
+                # window_drop.
                 return FILTERS
             # Relay links: hide the kernel-only types the relay cannot run
             # (they would be rejected with 409 on update).

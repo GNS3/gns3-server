@@ -497,6 +497,7 @@ async def test_update_nio_kernel_turns_ebpf_modes_off(vm):
 
     vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" off')
     vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" off')
+    vm._ubridge_send.assert_any_call(f'tc window_drop "{host_ifc}" off')
     for c in vm._ubridge_send.call_args_list:
         assert "nth_drop" not in c.args[0] or "off" in c.args[0]
 
@@ -517,6 +518,54 @@ async def test_apply_ebpf_drops_requires_ebpf_capability(vm):
 
     with pytest.raises(DockerError, match="setcap cap_bpf"):
         await vm._ubridge_apply_ebpf_drops(host_ifc, {"frequency_drop": [3]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_applies_window_drop(vm):
+    """
+    window_drop becomes the eBPF time-window mode: the positional
+    [start, outage, chance, period, jitter] maps 1:1 onto the tc command
+    (trailing optionals omitted), and an absent window is turned off.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1")
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+
+    nio.filters = {"window_drop": [0, 2000, 100]}
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc window_drop "{host_ifc}" 0 2000 100')
+
+    vm._ubridge_send.reset_mock()
+    nio.filters = {"window_drop": [500, 800, 100, 2400, 300]}
+    await vm.adapter_update_nio_binding(0, nio)
+    vm._ubridge_send.assert_any_call(f'tc window_drop "{host_ifc}" 500 800 100 2400 300')
+
+    # only the window mode present: nth/quota are explicitly off
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" off')
+    vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" off')
+
+
+@pytest.mark.asyncio
+async def test_apply_window_drop_requires_ebpf_capability(vm):
+    """
+    The window mode shares the eBPF capability gate (error names setcap).
+    """
+
+    hyp = MagicMock()
+    hyp.is_running.return_value = True
+    hyp.send = AsyncioMagicMock(return_value=["netem=delay;ebpf=0;cbpf=1"])
+    vm._ubridge_hypervisor = hyp
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="setcap cap_bpf"):
+        await vm._ubridge_apply_ebpf_drops(host_ifc, {"window_drop": [0, 2000, 100]})
     vm._ubridge_send.assert_not_called()
 
 

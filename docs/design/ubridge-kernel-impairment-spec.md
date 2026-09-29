@@ -9,11 +9,12 @@ See LICENSE file for licensing information.
 > idempotent `tc reset`, `tc capabilities` — uBridge `feature/tc-bpf-drop`)
 > and **B (eBPF stateful classifier — uBridge `feature/tc-precision`
 > 59e2b38, including the non-root setcap load fix)** are consumed by
-> gns3-server on the branch stack ending at `feat/docker-kernel-ebpf-drops`
-> (B: `frequency_drop` → `tc nth_drop`, the new kernel-only `quota` type →
-> `tc quota_drop`). The originally shipped netem surface (delay/jitter/
-> loss/dup/corrupt) exists in uBridge 1.2.3+ and is verified against
-> gns3-server branch `feat/docker-kernel-filters`.
+> gns3-server on the branch stack ending at `feat/docker-kernel-window-drop`
+> (B: `frequency_drop` → `tc nth_drop`, the kernel-only `quota` type →
+> `tc quota_drop`, and the kernel-only `window_drop` type → `tc window_drop`
+> against uBridge `feature/tc-window`). The originally shipped netem surface
+> (delay/jitter/loss/dup/corrupt) exists in uBridge 1.2.3+ and is verified
+> against gns3-server branch `feat/docker-kernel-filters`.
 >
 > **Deviation found during integration (part A/D):** the delivered
 > `tc netem set` uses NLM_F_REPLACE, but the *kernel's* netem change merges
@@ -27,19 +28,32 @@ See LICENSE file for licensing information.
 > optional attribute, the server-side reset-before-set can be dropped; the
 > two behaviours are compatible either way.
 >
-> **Deviation found during B integration:** `window_drop`'s implementation
-> advances the window start by one length on expiry with no gap, making the
-> windows back-to-back — after the first `start_ms` the "outside the window
-> packets pass" behaviour described in B.2 is unreachable (inside ≡ always).
-> gns3-server therefore does **not** expose window_drop yet; it needs either
-> a second length field (outage vs period) or a next-start semantics fix on
-> the uBridge side. `flow_drop` is delivered and functional but not yet
-> exposed as a GNS3 filter type (its mask/target parameter shape needs a
-> UX decision). Additionally, the delivered B.1 program had to fold the
-> flow-hash L4 port reads to constant offsets (IHL==20 only) because the
-> verifier prohibits variable packet-pointer arithmetic for non-root —
-> even with CAP_BPF (Spectre-mitigation gating by uid); documented in
-> uBridge's doc/tc.md.
+> **Deviation found during B integration, resolved uBridge-side
+> (2026-09-29):** `window_drop` as first delivered advanced the window
+> start by one length on expiry with no gap, making the windows
+> back-to-back — after the first `start_ms` the "outside the window
+> packets pass" behaviour described in B.2 was unreachable (inside ≡
+> always), so gns3-server did not expose it. uBridge now takes
+> `tc window_drop <if> <start_ms> <outage_ms> <pct> [<period_ms>
+> [<jitter_ms>]]`: 4-arg = single window (pass before *and after*),
+> 5-arg = recurring outage with `period ≥ outage`, 6-arg adds a uniform
+> ±jitter re-drawn per cycle (0 = exactly the fixed schedule) for
+> randomized flap. The program advances whole cycles in a handful of
+> straight-line steps — **no loop at all**, because the verifier's
+> non-root path (the one production ubridge runs under: `CAP_BPF`, never
+> uid 0) cannot keep a loop counter's bound and rejects the *whole*
+> program with `E2BIG` past its jump-sequence budget, which took all four
+> modes down on the gns3-server host while the same binary verified fine
+> as root; uBridge's `doc/tc.md` has the trace. The steps are resumable by
+> each further packet, so the
+> B.2 semantics are now reachable; no caller ever depended on the old
+> back-to-back form (it was never exposed). `flow_drop` is delivered and
+> functional but not yet exposed as a GNS3 filter type (its mask/target
+> parameter shape needs a UX decision). Additionally, the delivered B.1
+> program had to fold the flow-hash L4 port reads to constant offsets
+> (IHL==20 only) because the verifier prohibits variable packet-pointer
+> arithmetic for non-root — even with CAP_BPF (Spectre-mitigation gating
+> by uid); documented in uBridge's doc/tc.md.
 
 # uBridge kernel impairment: tc netem extensions + eBPF classifiers
 
@@ -176,7 +190,7 @@ no program reload on parameter changes.
 ```
 tc nth_drop   <if> <n | off>
 tc quota_drop <if> <bytes> <pct> | off
-tc window_drop <if> <start_ms> <len_ms> <pct> | off
+tc window_drop <if> <start_ms> <outage_ms> <pct> [<period_ms> [<jitter_ms>]] | off
 tc flow_drop  <if> <mask> <target> | off
 ```
 
@@ -189,10 +203,15 @@ tc flow_drop  <if> <mask> <target> | off
   hash = Jenkins/equal-fold over the selected header fields modulo
   `flow_target` == remainder 0 → drop. Server documents: per-flow drop only
   (a filter cannot delay; delay stays netem's job).
-* Window semantics: `win_start_ns`/`win_len_ns` define a recurring window on
-  the monotonic clock — inside the window drop with `win_pct`; outside pass.
-  The server computes the first start; the program advances by `len` when
-  `now >= start + len` (single writer — the CFG update — so this is safe).
+* Window semantics: `win_start_ns`/`win_len_ns` define a window on the
+  monotonic clock — inside the window drop with `win_pct`; outside pass.
+  The program computes the first start (command time + `start_ms`) and then
+  advances whole cycles, catching up in a bounded loop when it fell behind
+  (single writer — the CFG update — so this is safe). Omitting `period`
+  makes it a **single** window: after `start + outage` nothing drops. With
+  `period ≥ outage` the outage recurs; `jitter` re-draws each cycle's
+  outage and period uniformly in nominal ± jitter (0 = fixed schedule), on
+  the integer-ms grid so the multiply-shift draw cannot overflow.
 
 ### B.3 Capability requirement
 
@@ -312,8 +331,13 @@ corresponding filter types per capability.
   kernel-only `quota` type → `tc quota_drop`, both keyed on `ebpf=1` from
   the per-process `tc capabilities` probe. `KERNEL_UNSUPPORTED_FILTERS` is
   gone entirely: kernel/relay eligibility is purely topological now.
-  Not yet exposed: `window_drop` (implementation deviation above),
-  `flow_drop` (parameter-shape UX decision).
+* **Done** (`feat/docker-kernel-window-drop`): `window_drop` is exposed
+  with the corrected semantics (uBridge `feature/tc-window`) as the
+  kernel-only `window_drop` filter type
+  `[start, outage, pct, period?, jitter?]` → `tc window_drop`; the server
+  mirrors the grammar's `period ≥ outage` rule and treats `start = 0` as
+  active (an immediate outage).
+  Not yet exposed: `flow_drop` (parameter-shape UX decision).
 * Every veth end owns one qdisc + its filters: per-direction impairment is
   an architectural freebie to expose later (API `direction` field), aligned
   with marker `dir` semantics.

@@ -383,3 +383,36 @@ class TestNetemExtensionFilters:
         # frequency_drop runs on both datapaths (relay userspace filter /
         # eBPF every-Nth) and stays
         assert clean == {"frequency_drop": [7]}
+
+    def test_window_drop_valid_and_invalid(self):
+        # the three delivered forms: single outage, recurring, jittered
+        validate_filter_parameters("window_drop", [0, 2000, 100])
+        validate_filter_parameters("window_drop", [500, 800, 100, 2400])
+        validate_filter_parameters("window_drop", [500, 800, 100, 2400, 300])
+        with pytest.raises(FilterValidationError, match="expects 3 to 5"):
+            validate_filter_parameters("window_drop", [500, 800])
+        with pytest.raises(FilterValidationError, match="expects 3 to 5"):
+            validate_filter_parameters("window_drop", [500, 800, 100, 2400, 300, 1])
+        with pytest.raises(FilterValidationError, match="Outage"):
+            validate_filter_parameters("window_drop", [0, 0, 100])
+        with pytest.raises(FilterValidationError, match="Chance"):
+            validate_filter_parameters("window_drop", [0, 2000, 101])
+        with pytest.raises(FilterValidationError, match="Jitter"):
+            validate_filter_parameters("window_drop", [0, 2000, 100, 2400, 10**10])
+
+    def test_window_drop_is_kernel_only(self):
+        clean, dropped = split_kernel_only_features({"window_drop": [0, 800, 100, 2400], "delay": [10, 0]})
+        assert dropped == {"window_drop"}
+        assert clean == {"delay": [10, 0]}
+
+    def test_window_drop_period_must_cover_outage(self):
+        with pytest.raises(FilterValidationError, match="period must be greater than or equal"):
+            validate_all_filters({"window_drop": [0, 2000, 100, 1000]})
+        # period == outage is accepted (uBridge allows it); shorter is not
+        validate_all_filters({"window_drop": [0, 2000, 100, 2000]})
+
+    def test_window_drop_start_zero_is_active(self):
+        # start=0 means "the outage starts now" — unlike other filters a
+        # zero first parameter must NOT be treated as "disabled"
+        active = filter_inactive_filters({"window_drop": [0, 2000, 100]})
+        assert active == {"window_drop": [0, 2000, 100]}

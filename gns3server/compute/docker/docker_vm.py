@@ -1950,7 +1950,8 @@ class DockerVM(BaseNode):
             # Impairment filters become one tc netem qdisc on the veth host
             # end (restored here on node restart, like the capture above);
             # bpf expressions become cls_bpf match-drop classifiers and
-            # frequency_drop/quota become the eBPF stateful classifier.
+            # frequency_drop/quota/window_drop become the eBPF stateful
+            # classifier.
             await self._ubridge_apply_netem(host_ifc, nio.filters)
             await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
             await self._ubridge_apply_ebpf_drops(host_ifc, nio.filters)
@@ -2379,20 +2380,28 @@ class DockerVM(BaseNode):
         Translate the NIO's stateful filters into uBridge's eBPF impairment
         classifier on the veth host end's clsact egress (prio 1, below
         bpf_drop's 10-99): ``frequency_drop`` becomes the exact every-Nth
-        mode (``tc nth_drop``; -1 = drop everything maps to every 1st), and
-        the kernel-only ``quota`` type the byte-cap mode (``tc quota_drop``).
+        mode (``tc nth_drop``; -1 = drop everything maps to every 1st), the
+        kernel-only ``quota`` type the byte-cap mode (``tc quota_drop``),
+        and the kernel-only ``window_drop`` type the time-window mode
+        (``tc window_drop``: single outage, or recurring flaps with an
+        optional per-cycle jitter). The program evaluates the modes in the
+        fixed order nth → quota → window.
 
         Reconcile is a plain re-set on every apply: the preceding netem
         apply resets the interface (which detaches the program and drops
         uBridge's per-interface registry entry), so a mode set re-loads the
         program from scratch, and a mode left absent is turned off
-        explicitly (idempotent) so a removed filter stops dropping.
+        explicitly (idempotent) so a removed filter stops dropping. For
+        window_drop this also means the schedule restarts on every apply:
+        the first window opens Start-ms from the moment of this call.
 
         Semantic difference vs the relay, documented server-side: the relay
         counts packets of BOTH directions through its single filtered
         bridge, while each veth end's classifier counts only the traffic
         entering that container — with both endpoints applying theirs, each
-        direction drops every Nth independently.
+        direction drops every Nth independently (their window schedules
+        start ~simultaneously, so a round trip survives only when both
+        directions are outside their windows).
 
         :param host_ifc: veth host-end interface name
         :param filters: NIO filters dictionary
@@ -2406,24 +2415,28 @@ class DockerVM(BaseNode):
 
         frequency = values_of("frequency_drop")
         quota = values_of("quota")
-        if not frequency and not quota and self._ubridge_tc_caps is None:
+        window = values_of("window_drop")
+        if not frequency and not quota and not window and self._ubridge_tc_caps is None:
             # Nothing to set and nothing was ever installed (no probe yet) —
             # skip touching an old uBridge entirely.
             return
         caps = await self._ubridge_tc_capabilities()
-        if not frequency and not quota:
+        if not frequency and not quota and not window:
             if caps.get("ebpf") == "1":
                 # Only when the eBPF module answers can anything be
                 # installed; "off" is idempotent in uBridge.
                 await self._ubridge_send(f'tc nth_drop "{host_ifc}" off')
                 await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
+                await self._ubridge_send(f'tc window_drop "{host_ifc}" off')
             return
         if caps.get("ebpf") != "1":
             raise DockerError(
                 "Packet filter(s) {} on a kernel-datapath link need a uBridge with eBPF support "
                 "(tc capabilities reports no ebpf; setcap cap_bpf,cap_net_admin,cap_net_raw=ep on "
                 "the uBridge binary); upgrade uBridge on this compute or keep the link on the "
-                "relay datapath".format(", ".join(sorted(f for f in ("frequency_drop", "quota") if f in filters)))
+                "relay datapath".format(
+                    ", ".join(sorted(f for f in ("frequency_drop", "quota", "window_drop") if f in filters))
+                )
             )
         if frequency:
             # relay semantics: -1 = drop everything, N = every Nth packet
@@ -2437,6 +2450,13 @@ class DockerVM(BaseNode):
             )
         else:
             await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
+        if window:
+            # [start, outage, chance, period?, jitter?] — start is relative
+            # to this apply (the schedule restarts on every reconcile).
+            params = " ".join(str(int(v)) for v in window)
+            await self._ubridge_send(f'tc window_drop "{host_ifc}" {params}')
+        else:
+            await self._ubridge_send(f'tc window_drop "{host_ifc}" off')
 
     async def _remove_kernel_markers(self, host_ifc):
         """
