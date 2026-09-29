@@ -26,11 +26,11 @@ from pydantic import Field
 from typing import Optional, List
 
 
-class VirtualBoxTemplate(TemplateBase):
+class VirtualBoxTemplateBase(TemplateBase):
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vbox_guest"
-    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+    vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")
     adapters: Optional[int] = Field(
@@ -59,5 +59,9 @@ class VirtualBoxTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VirtualBoxTemplateUpdate(VirtualBoxTemplate):
-    vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")
+class VirtualBoxTemplate(VirtualBoxTemplateBase):
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+
+
+class VirtualBoxTemplateUpdate(VirtualBoxTemplateBase):
+    pass

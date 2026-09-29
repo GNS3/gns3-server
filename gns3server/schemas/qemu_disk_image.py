@@ -78,8 +78,8 @@ class QemuDiskImageAdapterType(str, Enum):
 
 
 class QemuDiskImageBase(BaseModel):
-    format: QemuDiskImageFormat = Field(..., description="Image format type")
-    size: int = Field(..., description="Image size in Megabytes")
+    format: Optional[QemuDiskImageFormat] = Field(None, description="Image format type")
+    size: Optional[int] = Field(None, description="Image size in Megabytes")
     preallocation: Optional[QemuDiskImagePreallocation] = None
     cluster_size: Optional[int] = None
     refcount_bits: Optional[int] = None
@@ -91,10 +91,9 @@ class QemuDiskImageBase(BaseModel):
 
 
 class QemuDiskImageCreate(QemuDiskImageBase):
-    pass
+    format: QemuDiskImageFormat = Field(..., description="Image format type")
+    size: int = Field(..., description="Image size in Megabytes")
 
 
 class QemuDiskImageUpdate(QemuDiskImageBase):
-    format: Optional[QemuDiskImageFormat] = Field(None, description="Image format type")
-    size: Optional[int] = Field(None, description="Image size in Megabytes")
     extend: Optional[int] = Field(None, description="Number of Megabytes to extend the image")
