@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List, Union
+from typing import Optional, List, Union, cast
 from sqlalchemy import select, update, delete
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -52,7 +53,7 @@ class ResourcePoolsRepository(BaseRepository):
 
         query = select(models.Resource)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_resource(self, resource: schemas.ResourceCreate) -> models.Resource:
         """
@@ -75,7 +76,7 @@ class ResourcePoolsRepository(BaseRepository):
         query = delete(models.Resource).where(models.Resource.resource_id == resource_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def get_resource_memberships(self, resource_id: UUID) -> List[models.ResourcePool]:
         """
@@ -89,7 +90,7 @@ class ResourcePoolsRepository(BaseRepository):
         )
 
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_resource_pool(self, resource_pool_id: UUID) -> Optional[models.ResourcePool]:
         """
@@ -116,7 +117,7 @@ class ResourcePoolsRepository(BaseRepository):
 
         query = select(models.ResourcePool)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_resource_pool(self, resource_pool: schemas.ResourcePoolCreate) -> models.ResourcePool:
         """
@@ -166,7 +167,7 @@ class ResourcePoolsRepository(BaseRepository):
         query = delete(models.ResourcePool).where(models.ResourcePool.resource_pool_id == resource_pool_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def add_resource_to_pool(
         self, resource_pool_id: UUID, resource: models.Resource
@@ -225,4 +226,4 @@ class ResourcePoolsRepository(BaseRepository):
         )
 
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())

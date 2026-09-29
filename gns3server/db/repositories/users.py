@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List, Union
+from typing import Optional, List, Union, cast
 from sqlalchemy import select, update, delete, func
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -72,7 +73,7 @@ class UsersRepository(BaseRepository):
 
         query = select(models.User)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
         """
@@ -88,7 +89,9 @@ class UsersRepository(BaseRepository):
         await self._db_session.refresh(db_user)
         return db_user
 
-    async def update_user(self, user_id: UUID, user_update: schemas.UserUpdate) -> Optional[models.User]:
+    async def update_user(
+        self, user_id: UUID, user_update: Union[schemas.UserUpdate, schemas.LoggedInUserUpdate]
+    ) -> Optional[models.User]:
         """
         Update a user.
         """
@@ -129,7 +132,7 @@ class UsersRepository(BaseRepository):
         query = delete(models.User).where(models.User.user_id == user_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
         """
@@ -168,7 +171,7 @@ class UsersRepository(BaseRepository):
         query = select(models.UserGroup).join(models.UserGroup.users).filter(models.User.user_id == user_id)
 
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_group(self, user_group_id: UUID) -> Optional[models.UserGroup]:
         """
@@ -195,7 +198,7 @@ class UsersRepository(BaseRepository):
 
         query = select(models.UserGroup)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_user_group(self, user_group: schemas.UserGroupCreate) -> models.UserGroup:
         """
@@ -233,7 +236,7 @@ class UsersRepository(BaseRepository):
         query = delete(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def add_member_to_user_group(self, user_group_id: UUID, user: models.User) -> Union[None, models.UserGroup]:
         """
@@ -285,4 +288,4 @@ class UsersRepository(BaseRepository):
         query = select(models.User).join(models.User.groups).filter(models.UserGroup.user_group_id == user_group_id)
 
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())

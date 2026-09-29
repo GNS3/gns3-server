@@ -15,8 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
+from typing import Optional
+
 from sqlalchemy import Table, Boolean, Column, Integer, String, DateTime, ForeignKey, event
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
 
@@ -24,6 +27,7 @@ from gns3server.config import Config
 from gns3server.services import auth_service
 
 import logging
+import uuid
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +47,8 @@ class User(BaseTable):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
-    last_login = Column(DateTime)
-    token_version = Column(Integer, default=0, nullable=False, server_default="0")
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
@@ -72,7 +76,7 @@ def create_default_super_admin(target, connection, **kw):
 class UserGroup(BaseTable):
     __tablename__ = "user_groups"
 
-    user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
+    user_group_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_map, back_populates="groups")

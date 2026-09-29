@@ -34,7 +34,7 @@ from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, We
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, FileResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from gns3server import schemas
@@ -57,7 +57,9 @@ from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -636,8 +638,8 @@ async def export_project(
     include_images: bool = False,
     reset_mac_addresses: bool = False,
     keep_compute_ids: bool = False,
-    compression: schemas.ProjectCompression = "zstd",
-    compression_level: int = None,
+    compression: schemas.ProjectCompression = schemas.ProjectCompression.zstd,
+    compression_level: Optional[int] = None,
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
@@ -650,19 +652,19 @@ async def export_project(
 
     compression_query = compression.lower()
     if compression_query == "zip":
-        compression = zipfile.ZIP_DEFLATED
+        zip_compression = zipfile.ZIP_DEFLATED
         if compression_level is not None and (compression_level < 0 or compression_level > 9):
             raise ControllerBadRequestError("Compression level must be between 0 and 9 for ZIP compression")
     elif compression_query == "none":
-        compression = zipfile.ZIP_STORED
+        zip_compression = zipfile.ZIP_STORED
     elif compression_query == "bzip2":
-        compression = zipfile.ZIP_BZIP2
+        zip_compression = zipfile.ZIP_BZIP2
         if compression_level is not None and (compression_level < 1 or compression_level > 9):
             raise ControllerBadRequestError("Compression level must be between 1 and 9 for BZIP2 compression")
     elif compression_query == "lzma":
-        compression = zipfile.ZIP_LZMA
+        zip_compression = zipfile.ZIP_LZMA
     elif compression_query == "zstd":
-        compression = zipfile.ZIP_ZSTANDARD
+        zip_compression = zipfile.ZIP_ZSTANDARD
         if compression_level is not None and (compression_level < 1 or compression_level > 22):
             raise ControllerBadRequestError("Compression level must be between 1 and 22 for Zstandard compression")
 
@@ -681,7 +683,7 @@ async def export_project(
                 f"Exporting project '{project.name}' with '{compression_query}' compression (level {compression_level})"
             )
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
-                with aiozipstream.ZipFile(compression=compression, compresslevel=compression_level) as zstream:
+                with aiozipstream.ZipFile(compression=zip_compression, compresslevel=compression_level) as zstream:
                     await export_controller_project(
                         zstream,
                         project,

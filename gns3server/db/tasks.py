@@ -171,7 +171,7 @@ async def disconnect_from_db(app: FastAPI) -> None:
         log.info(f"Disconnected from database")
 
 
-async def get_computes(app: FastAPI) -> List[dict]:
+async def get_computes(app: FastAPI) -> List[schemas.Compute]:
 
     computes = []
     async with AsyncSession(app.state._db_engine) as db_session:
@@ -201,12 +201,12 @@ async def discover_images_on_filesystem(app: FastAPI) -> None:
                 continue
         for image_type in ("qemu", "ios", "iou"):
             discovered_images = await discover_images(image_type, existing_image_paths)
-            for image in discovered_images:
-                log.info(f"Adding discovered image '{image['path']}' to the database")
+            for image_info in discovered_images:
+                log.info(f"Adding discovered image '{image_info['path']}' to the database")
                 try:
-                    await images_repository.add_image(**image)
+                    await images_repository.add_image(**image_info)
                 except SQLAlchemyError as e:
-                    log.warning(f"Error while adding image '{image['path']}' to the database: {e}")
+                    log.warning(f"Error while adding image '{image_info['path']}' to the database: {e}")
 
     # monitor if images have been manually added
     asyncio.create_task(monitor_images_on_filesystem(app))
@@ -237,7 +237,7 @@ class EventHandler(PatternMatchingEventHandler):
     Watchdog event handler.
     """
 
-    def __init__(self, queue: asyncio.Queue, loop: asyncio.BaseEventLoop, **kwargs):
+    def __init__(self, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop, **kwargs):
 
         self._loop = loop
         self._queue = queue
@@ -274,7 +274,7 @@ class EventIterator(object):
 async def monitor_images_on_filesystem(app: FastAPI):
 
     def watchdog(
-        path: str, queue: asyncio.Queue, loop: asyncio.BaseEventLoop, app: FastAPI, recursive: bool = False
+        path: str, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop, app: FastAPI, recursive: bool = False
     ) -> None:
         """
         Thread to monitor a directory for new images.
@@ -295,7 +295,7 @@ async def monitor_images_on_filesystem(app: FastAPI):
                 loop.call_soon_threadsafe(queue.put_nowait, None)
                 break
 
-    queue = asyncio.Queue()
+    queue: asyncio.Queue = asyncio.Queue()
     loop = asyncio.get_event_loop()
     server_config = Config.instance().settings.Server
     image_dir = os.path.expanduser(server_config.images_path)
@@ -348,7 +348,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
     from gns3server.utils.encryption import decrypt, is_encrypted
 
     try:
-        user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+        user_uuid = UUID(user_id)
 
         async with AsyncSession(app.state._db_engine, expire_on_commit=False) as session:
             repo = LLMModelConfigsRepository(session)

@@ -27,7 +27,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Response, status, Query
-from typing import List, Optional
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
 from gns3server import schemas
@@ -43,7 +43,9 @@ from .dependencies.authentication import get_current_active_user
 from .dependencies.rbac import has_privilege
 from .dependencies.database import get_repository
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find template"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find template"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -57,7 +59,7 @@ router = APIRouter(responses=responses)
 async def create_template(
     template_create: schemas.TemplateCreate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> dict:
     """
     Create a new template.
 
@@ -80,7 +82,7 @@ async def get_template(
     request: Request,
     response: Response,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> Union[dict, Response]:
     """
     Return a template.
 
@@ -108,7 +110,7 @@ async def update_template(
     template_id: UUID,
     template_update: schemas.TemplateUpdate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> dict:
     """
     Update a template.
 
@@ -125,7 +127,7 @@ async def delete_template(
     template_id: UUID,
     prune_images: Optional[bool] = False,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-    images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
@@ -155,7 +157,7 @@ async def delete_template(
                 if str(template.template_id) != str(template_id)
             ]
             if other_templates:
-                template_names = ", ".join([template.name for template in other_templates])
+                template_names = ", ".join([str(template.name) for template in other_templates])
                 raise ControllerError(f"Image '{image.path}' is used by one or more templates: {template_names}")
 
             if referenced_filenames is None:
@@ -193,7 +195,7 @@ async def get_templates(
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
     current_user: schemas.User = Depends(get_current_active_user),
     tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
-) -> List[schemas.Template]:
+) -> List[dict]:
     """
     Return all templates.
 
@@ -244,7 +246,7 @@ async def get_templates(
 )
 async def duplicate_template(
     template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
-) -> schemas.Template:
+) -> dict:
     """
     Duplicate a template.
 

@@ -21,7 +21,7 @@ import asyncio
 import platformdirs
 
 
-from typing import Tuple, List
+from typing import List, Optional, Tuple
 from aiohttp.client_exceptions import ClientError
 
 from uuid import UUID
@@ -210,7 +210,7 @@ class ApplianceManager:
         log.info(f"Template '{template.get('name')}' has been created")
         return template
 
-    async def _appliance_to_template(self, appliance: Appliance, version: str = None) -> dict:
+    async def _appliance_to_template(self, appliance: Appliance, version: Optional[dict] = None) -> dict:
         """
         Get template data from appliance
         """
@@ -314,7 +314,7 @@ class ApplianceManager:
         templates_repo: TemplatesRepository,
         rbac_repo: RbacRepository,
         current_user: schemas.User,
-    ) -> None:
+    ) -> dict:
         """
         Install a new appliance
         """
@@ -362,7 +362,7 @@ class ApplianceManager:
             template_data = await self._appliance_to_template(appliance)
             return await self._create_template(template_data, templates_repo, rbac_repo, current_user)
 
-    def load_appliances(self, symbol_theme: str = None) -> None:
+    def load_appliances(self, symbol_theme: Optional[str] = None) -> None:
         """
         Loads appliance files from disk.
         """
@@ -403,7 +403,7 @@ class ApplianceManager:
                         print(f"Cannot load appliance file '{path}': {e}")
                         continue
 
-    def _get_default_symbol(self, appliance: dict, symbol_theme: str) -> str:
+    def _get_default_symbol(self, appliance: dict, symbol_theme: Optional[str]) -> str:
         """
         Returns the default symbol for a given appliance.
         """

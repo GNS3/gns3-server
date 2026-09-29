@@ -38,10 +38,10 @@ class ComputeBase(BaseModel):
     Data to create a compute.
     """
 
-    protocol: Protocol
-    host: str
-    port: int = Field(..., gt=0, le=65535)
-    user: str = None
+    protocol: Optional[Protocol] = None
+    host: Optional[str] = None
+    port: Optional[int] = Field(None, gt=0, le=65535)
+    user: Optional[str] = None
     password: Optional[SecretStr] = None
     name: Optional[str] = None
     model_config = ConfigDict(use_enum_values=True)
@@ -52,7 +52,10 @@ class ComputeCreate(ComputeBase):
     Data to create a compute.
     """
 
-    compute_id: Union[str, uuid.UUID] = None
+    protocol: Protocol
+    host: str
+    port: int = Field(..., gt=0, le=65535)
+    compute_id: Optional[Union[str, uuid.UUID]] = None
     model_config = ConfigDict(
         json_schema_extra={
             "example": {"name": "My compute", "host": "127.0.0.1", "port": 3080, "user": "user", "password": "password"}
@@ -77,9 +80,6 @@ class ComputeUpdate(ComputeBase):
     Data to update a compute.
     """
 
-    protocol: Optional[Protocol] = None
-    host: Optional[str] = None
-    port: Optional[int] = Field(None, gt=0, le=65535)
     user: Optional[str] = None
     password: Optional[SecretStr] = None
     model_config = ConfigDict(
@@ -110,6 +110,9 @@ class Compute(DateTimeModelMixin, ComputeBase):
     Data returned for a compute.
     """
 
+    protocol: Protocol
+    host: str
+    port: int = Field(..., gt=0, le=65535)
     compute_id: Union[str, uuid.UUID]
     name: str
     connected: Optional[bool] = Field(None, description="Whether the controller is connected to the compute or not")
