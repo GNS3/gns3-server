@@ -15,9 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, cast
 from datetime import datetime, timezone
 from sqlalchemy import select, update, delete, func
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -67,13 +68,13 @@ class ApiKeysRepository(BaseRepository):
         query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(revoked=True)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def restore_api_key(self, api_key_id: UUID) -> bool:
         query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(revoked=False)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def update_last_used(self, api_key_id: UUID) -> None:
         query = update(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id).values(last_used_at=func.now())
@@ -84,4 +85,4 @@ class ApiKeysRepository(BaseRepository):
         query = delete(models.ApiKey).where(models.ApiKey.api_key_id == api_key_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
