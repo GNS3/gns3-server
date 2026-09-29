@@ -47,6 +47,6 @@ class Resource(BaseTable):
 class ResourcePool(BaseTable):
     __tablename__ = "resource_pools"
 
-    resource_pool_id = Column(GUID, primary_key=True, default=generate_uuid)
+    resource_pool_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     resources = relationship("Resource", secondary=resource_pool_map, back_populates="resource_pools")
