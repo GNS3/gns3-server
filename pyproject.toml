@@ -357,7 +357,6 @@ module = [
   "gns3server.controller.appliance",  # 2
   "gns3server.controller.appliance_manager",  # 5
   "gns3server.controller.project",  # 2
-  "gns3server.controller.topology",  # 1
   "gns3server.db.repositories.api_keys",  # 8
   "gns3server.db.repositories.computes",  # 10
   "gns3server.db.repositories.images",  # 14
