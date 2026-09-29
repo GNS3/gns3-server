@@ -290,28 +290,3 @@ warn_unused_ignores = true
 strict_equality = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
-[[tool.mypy.overrides]]
-# Baseline: modules with existing type errors (error count at baseline time).
-# Remove modules from this list one small PR at a time. Never add new ones.
-module = [
-  "gns3server.api.routes.controller.images",  # 9
-  "gns3server.api.routes.controller.llm_model_configs",  # 32
-  "gns3server.api.routes.controller.pools",  # 8
-  "gns3server.api.routes.controller.projects",  # 16
-  "gns3server.api.routes.controller.templates",  # 10
-  "gns3server.api.routes.controller.users",  # 14
-  "gns3server.compute.virtualbox.virtualbox_vm",  # 1
-  "gns3server.controller.appliance_manager",  # 5
-  "gns3server.controller.project",  # 2
-  "gns3server.db.repositories.api_keys",  # 8
-  "gns3server.db.repositories.computes",  # 10
-  "gns3server.db.repositories.images",  # 14
-  "gns3server.db.repositories.llm_model_configs",  # 32
-  "gns3server.db.repositories.pools",  # 11
-  "gns3server.db.repositories.rbac",  # 14
-  "gns3server.db.repositories.templates",  # 6
-  "gns3server.db.repositories.users",  # 12
-  "gns3server.db.tasks",  # 12
-  "gns3server.schemas.controller.computes",  # 6
-]
-ignore_errors = true
