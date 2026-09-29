@@ -143,7 +143,8 @@ class PacketAnalysisTool(BaseTool):
                 stderr=subprocess.DEVNULL,
                 text=True,
             )
-            tshark.stdout.close()
+            if tshark.stdout is not None:
+                tshark.stdout.close()
             stdout, _ = grep.communicate(timeout=30)
             tshark.wait(timeout=5)
         except Exception as e:

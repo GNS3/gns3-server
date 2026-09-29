@@ -169,7 +169,7 @@ def group_devices_by_brand(device_types: List[str]) -> Dict[str, List[str]]:
     Returns:
         Dictionary mapping brand names to device type lists
     """
-    brands = {}
+    brands: dict[str, list[str]] = {}
 
     for device_type in device_types:
         brand = extract_brand_name(device_type)

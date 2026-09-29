@@ -125,7 +125,7 @@ class ChatSessionsRepository:
         project_id: str,
         title: str = "New Conversation",
         copilot_mode: Optional[str] = None,
-    ) -> ChatSession:
+    ) -> Optional[ChatSession]:
         """
         Create a new chat session.
 
@@ -158,6 +158,8 @@ class ChatSessionsRepository:
         session_id = cursor.lastrowid
         log.info("Created chat session: id=%s, thread_id=%s, copilot_mode=%s", session_id, thread_id, copilot_mode)
 
+        if session_id is None:
+            return None
         return await self.get_session_by_id(session_id)
 
     async def get_session_by_id(self, session_id: int) -> Optional[ChatSession]:
@@ -214,7 +216,7 @@ class ChatSessionsRepository:
             List of ChatSession
         """
         query = "SELECT * FROM chat_sessions"
-        params = []
+        params: List[Any] = []
 
         conditions = []
         if user_id:
@@ -268,7 +270,7 @@ class ChatSessionsRepository:
             Updated ChatSession or None
         """
         updates = []
-        params = []
+        params: List[Any] = []
 
         now = datetime.utcnow().isoformat()
 

@@ -39,7 +39,8 @@ def get_capabilities(request: Request) -> dict:
         node_types.extend(module.node_types())
 
     # record the controller hostname or IP address
-    request.app.state.controller_host = request.client.host
+    if request.client:
+        request.app.state.controller_host = request.client.host
 
     return {
         "version": __version__,
