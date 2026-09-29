@@ -372,10 +372,7 @@ module = [
   "gns3server.services.computes",  # 4
   "gns3server.services.templates",  # 18
   "gns3server.utils.asyncio.aiozipstream",  # 8
-  "gns3server.utils.encryption",  # 2
   "gns3server.utils.http_client",  # 4
-  "gns3server.utils.images",  # 4
-  "gns3server.utils.packet_filter_validation",  # 16
   "gns3server.utils.websocket_to_websocket",  # 12
   "gns3server.utils.zipfile_zstd._patcher",  # 1
 ]
