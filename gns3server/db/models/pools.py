@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
+
 from sqlalchemy import Table, Column, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
 
@@ -36,7 +38,7 @@ resource_pool_map = Table(
 class Resource(BaseTable):
     __tablename__ = "resources"
 
-    resource_id = Column(GUID, primary_key=True)
+    resource_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True)
     name = Column(String, unique=True, index=True)
     resource_type = Column(String)
     resource_pools = relationship("ResourcePool", secondary=resource_pool_map, back_populates="resources")
