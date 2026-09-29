@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
+
 from sqlalchemy import Column, String, Boolean, event
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import BaseTable, generate_uuid, GUID
 from .privileges import privilege_role_map
@@ -29,7 +31,7 @@ log = logging.getLogger(__name__)
 class Role(BaseTable):
     __tablename__ = "roles"
 
-    role_id = Column(GUID, primary_key=True, default=generate_uuid)
+    role_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     description = Column(String)
     is_builtin = Column(Boolean, default=False)
