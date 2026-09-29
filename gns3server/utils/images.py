@@ -126,7 +126,7 @@ def get_builtin_disks() -> List[str]:
     return builtin_disks
 
 
-async def read_image_info(path: str, expected_image_type: str = None) -> dict:
+async def read_image_info(path: str, expected_image_type: str | None = None) -> dict:
 
     header_magic_len = 7
     try:
@@ -155,7 +155,7 @@ async def read_image_info(path: str, expected_image_type: str = None) -> dict:
     return image_info
 
 
-async def discover_images(image_type: str, skip_image_paths: list = None) -> List[dict]:
+async def discover_images(image_type: str, skip_image_paths: list | None = None) -> List[dict]:
     """
     Scan directories for available images
     """
@@ -378,9 +378,9 @@ async def write_image(
                 f"File '{image_path}' already exists, please choose a different name or remove the existing image"
             )
 
-        checksum = checksum.hexdigest()
+        checksum_hex = checksum.hexdigest()
         image_dir = os.path.dirname(image_path)
-        duplicate_image = await images_repo.get_image_by_checksum(checksum, image_dir)
+        duplicate_image = await images_repo.get_image_by_checksum(checksum_hex, image_dir)
         if duplicate_image:
             raise InvalidImageError(
                 f"Image '{duplicate_image.filename}' with the same checksum already exists in '{image_dir}'"
@@ -396,5 +396,5 @@ async def write_image(
             log.warning(f"Could not remove '{tmp_path}'")
 
     return await images_repo.add_image(
-        image_name, image_type, image_size, image_path, checksum, checksum_algorithm="md5"
+        image_name, image_type, image_size, image_path, checksum_hex, checksum_algorithm="md5"
     )

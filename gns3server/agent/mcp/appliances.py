@@ -108,7 +108,7 @@ def install_appliance_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     if version:
         request_params["version"] = version
     response = conn.http_call("post", url, params=request_params)
-    result = {"message": f"Appliance {appliance_id} installed"}
+    result: dict[str, Any] = {"message": f"Appliance {appliance_id} installed"}
     if response.content:
         # the install endpoint returns the created template (201); tolerate an
         # empty body in case an older server still replies with 204
