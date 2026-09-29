@@ -132,7 +132,7 @@ def get_builtin_disks() -> List[str]:
 def inspect_image_file(path, expected_image_type=None, allow_raw_image=False, stopped_event=None):
     """Read a stable regular file once, never trusting checksum sidecars."""
     before = fingerprint(path)
-    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     with os.fdopen(os.open(path, flags), "rb") as f:
         info = os.fstat(f.fileno())
         if not stat.S_ISREG(info.st_mode) or stat_fingerprint(info) != before:

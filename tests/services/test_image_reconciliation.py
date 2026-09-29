@@ -176,7 +176,39 @@ async def test_rename_retains_old_reference(inventory, config):
     assert next(row for row in await rows(inventory) if row["image_id"] == old["image_id"])["availability"] == "missing"
 
 
-async def test_symlinks_hidden_files_and_libraries_are_not_imported(inventory, config, tmp_path):
+async def test_symlink_images_are_imported_and_target_changes_detected(inventory, config):
+    target = image_file(config, ".storage/target.qcow2")
+    path = image_file(config)
+    path.unlink()
+    path.symlink_to(target)
+    assert fingerprint(path) == fingerprint(target)
+    result = await scan(inventory)
+    assert result["status"] == "completed", result
+    assert result["counts"]["added"] == 1
+    original = (await rows(inventory))[0]
+    assert original["path"] == str(path)
+    assert original["checksum"] == hashlib.md5(QCOW).hexdigest()
+    target.write_bytes(QCOW + b"changed")
+    result = await scan(inventory)
+    assert result["counts"]["updated"] == 1
+    updated = (await rows(inventory))[0]
+    assert updated["image_id"] == original["image_id"]
+    assert updated["checksum"] == hashlib.md5(target.read_bytes()).hexdigest()
+    assert path.is_symlink()
+
+
+@pytest.mark.parametrize("target_kind", ["directory", "missing"])
+async def test_fingerprint_rejects_symlinks_without_regular_file_targets(tmp_path, target_kind):
+    target = tmp_path / "target"
+    if target_kind == "directory":
+        target.mkdir()
+    link = tmp_path / "image.qcow2"
+    link.symlink_to(target, target_is_directory=target_kind == "directory")
+    with pytest.raises(OSError):
+        fingerprint(link)
+
+
+async def test_external_symlinks_hidden_files_and_libraries_are_not_imported(inventory, config, tmp_path):
     outside = tmp_path / "outside.qcow2"
     outside.write_bytes(QCOW)
     path = image_file(config)
