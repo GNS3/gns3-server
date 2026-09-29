@@ -89,7 +89,9 @@ class UsersRepository(BaseRepository):
         await self._db_session.refresh(db_user)
         return db_user
 
-    async def update_user(self, user_id: UUID, user_update: schemas.UserUpdate) -> Optional[models.User]:
+    async def update_user(
+        self, user_id: UUID, user_update: Union[schemas.UserUpdate, schemas.LoggedInUserUpdate]
+    ) -> Optional[models.User]:
         """
         Update a user.
         """

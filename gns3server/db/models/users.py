@@ -47,7 +47,7 @@ class User(BaseTable):
     full_name = Column(String)
     hashed_password = Column(String)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    token_version = Column(Integer, default=0, nullable=False, server_default="0")
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")

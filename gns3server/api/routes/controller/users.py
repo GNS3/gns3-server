@@ -22,7 +22,7 @@ API routes for users.
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
@@ -32,6 +32,7 @@ from gns3server.controller.controller_error import (
     ControllerForbiddenError,
 )
 
+import gns3server.db.models as models
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
@@ -168,7 +169,7 @@ async def update_logged_in_user(
     user_update: schemas.LoggedInUserUpdate,
     current_user: schemas.User = Depends(get_current_active_user),
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> schemas.User:
+) -> Optional[models.User]:
     """
     Update the current active user.
     """
@@ -180,7 +181,7 @@ async def update_logged_in_user(
 
 
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(has_privilege("User.Audit"))])
-async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
+async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[models.User]:
     """
     Get all users.
 
@@ -198,7 +199,7 @@ async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRe
 )
 async def create_user(
     user_create: schemas.UserCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> schemas.User:
+) -> models.User:
     """
     Create a new user.
 
@@ -218,7 +219,7 @@ async def create_user(
 async def get_user(
     user_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> schemas.User:
+) -> models.User:
     """
     Get a user.
 
@@ -236,7 +237,7 @@ async def update_user(
     user_id: UUID,
     user_update: schemas.UserUpdate,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> schemas.User:
+) -> Optional[models.User]:
     """
     Update a user.
 
@@ -287,7 +288,7 @@ async def delete_user(
 )
 async def get_user_memberships(
     user_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> List[schemas.UserGroup]:
+) -> List[models.UserGroup]:
     """
     Get user memberships.
 
