@@ -52,4 +52,4 @@ def unpack_zip(filename, extract_dir=None):
         for fname, date_time in reversed(dirs):
             os.utime(fname, (date_time, date_time))
     except zipfile.BadZipFile:
-        raise shutil.ReadError("{} is not a zip file".format(filename))
+        raise shutil.ReadError(f"{filename} is not a zip file")
