@@ -21,8 +21,11 @@ from typing import Any, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from .base import DateTimeModelMixin
-from .capabilities import UbridgeTcCapabilities
-from .nodes import NodeType
+# The capabilities payload has one definition (controller.capabilities): a
+# second, private copy here silently stripped every field it did not know
+# about from GET /computes/{id} — which is how ubridge_tap and
+# ubridge_iol_tap went missing while the compute returned them.
+from .capabilities import Capabilities
 
 
 class Protocol(str, Enum):
@@ -90,22 +93,6 @@ class ComputeUpdate(ComputeBase):
                 "port": 8080,
             }
         }
-    )
-
-
-class Capabilities(BaseModel):
-    """
-    Capabilities supported by a compute.
-    """
-
-    version: str = Field(..., description="Compute version number")
-    node_types: List[NodeType] = Field(..., description="Node types supported by the compute")
-    platform: str = Field(..., description="Platform where the compute is running (Linux, Windows or macOS)")
-    cpus: int = Field(..., description="Number of CPUs on this compute")
-    memory: int = Field(..., description="Amount of memory on this compute")
-    disk_size: int = Field(..., description="Disk size on this compute")
-    ubridge_tc: Optional[UbridgeTcCapabilities] = Field(
-        None, description="uBridge tc-module capabilities; absent when the probe failed or uBridge has no tc module"
     )
 
 

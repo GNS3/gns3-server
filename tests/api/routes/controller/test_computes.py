@@ -74,6 +74,40 @@ class TestComputeRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["compute_id"] == str(test_compute.compute_id)
 
+    async def test_compute_get_reports_every_capability(self, app: FastAPI, client: AsyncClient, controller) -> None:
+        """
+        The capabilities payload the compute reports must survive the
+        response model intact. The local compute is the interesting one: it
+        is the controller object serialized straight through, and a second,
+        private Capabilities definition in the response schema silently
+        stripped the kernel-datapath fields (ubridge_tap, ubridge_iol_tap)
+        there — links were then built on a datapath clients could not see.
+        """
+
+        await controller.add_compute(
+            compute_id="local", name="local", host="127.0.0.1", port=3080, force=True, connect=False
+        )
+        controller.get_compute("local")._capabilities.update(
+            {
+                "version": "3.1.0",
+                "node_types": ["docker"],
+                "platform": "linux",
+                "cpus": 4,
+                "memory": 1024,
+                "disk_size": 2048,
+                "ubridge_tc": {"netem": ["delay"], "ebpf": True, "ebpf_modes": ["nth"], "cbpf": True},
+                "ubridge_tap": True,
+                "ubridge_iol_tap": False,
+            }
+        )
+
+        response = await client.get(app.url_path_for("get_compute", compute_id="local"))
+        assert response.status_code == status.HTTP_200_OK
+        capabilities = response.json()["capabilities"]
+        assert capabilities["ubridge_tap"] is True
+        assert capabilities["ubridge_iol_tap"] is False
+        assert capabilities["ubridge_tc"]["netem"] == ["delay"]
+
     async def test_compute_get_local(self, app: FastAPI, client: AsyncClient, controller) -> None:
 
         await controller.add_compute(
