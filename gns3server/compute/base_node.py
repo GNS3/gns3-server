@@ -1449,7 +1449,8 @@ class BaseNode:
         The anchor is resolved from the (name, link_id)→bridge map populated at
         apply time; entries are iterated so a node that hosts the same marker name
         on several links (e.g. IOU with one IOL-BRIDGE per node) toggles every
-        copy. IOU overrides this for its ``iol_bridge`` command shape.
+        copy. IOU's ``iol_bridge`` command shape lives in its
+        ``_ubridge_enable_marker_filter`` override.
 
         :param name: marker filter name
         :param enabled: True = on (signal+pcap), False = off (paused tap)
