@@ -1483,7 +1483,7 @@ class Project:
                     try:
                         snapshot = Snapshot(self, filename=snap)
                     except ValueError:
-                        log.error("Invalid snapshot file: {}".format(snap))
+                        log.error(f"Invalid snapshot file: {snap}")
                         continue
                     self._snapshots[snapshot.id] = snapshot
         else:
@@ -1492,13 +1492,13 @@ class Project:
                 try:
                     path = os.path.join(snapshot_dir, snapshot_entry["filename"])
                     if not os.path.isfile(path):
-                        log.warning("Snapshot file '{}' does not exist".format(path))
+                        log.warning(f"Snapshot file '{path}' does not exist")
                         continue
                     snapshot_entry.pop("project_id")
                     snapshot = Snapshot(self, **snapshot_entry)
                     self._snapshots[snapshot.id] = snapshot
                 except KeyError:
-                    log.error("Invalid entry in snapshot config file: {}".format(snapshot_entry))
+                    log.error(f"Invalid entry in snapshot config file: {snapshot_entry}")
                     continue
 
         self._save_snapshot_config()
@@ -1515,7 +1515,7 @@ class Project:
             with open(self._snapshot_conf_path, "w+") as f:
                 json.dump(self._snapshot_conf, f, indent=4)
         except OSError as e:
-            log.error("Cannot write snapshot config '{}': {}".format(self._snapshot_conf_path, e))
+            log.error(f"Cannot write snapshot config '{self._snapshot_conf_path}': {e}")
 
     @open_required
     async def snapshot(self, name):
@@ -2142,7 +2142,7 @@ class Project:
         # remote replication is not supported with remote computes
         for compute in self.computes:
             if compute.id != "local":
-                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
+                log.warning(f"Fast duplication is not supported with remote compute: '{compute.id}'")
                 return None
         # work dir
         p_work = pathlib.Path(location or self.path).parent.absolute()
@@ -2156,9 +2156,7 @@ class Project:
         await wait_run_in_executor(
             shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True
         )
-        log.info(
-            "Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0)
-        )
+        log.info(f"Project content copied from '{self.path}' to '{new_project_path}' in {time.time() - t0}s")
 
         # Read the topology file using the actual filename (self._filename), not self.name
         # This handles the case where a project has been renamed but we need to read the actual file
@@ -2177,7 +2175,7 @@ class Project:
         regenerate_topology_ids(topology, new_project_path, reset_mac_addresses)
 
         # dump the updated .gns3 project file
-        dot_gns3_path = new_project_path.joinpath("{}.gns3".format(project_name))
+        dot_gns3_path = new_project_path.joinpath(f"{project_name}.gns3")
         topology["project_id"] = new_project_id
         with open(dot_gns3_path, "w+") as f:
             json.dump(topology, f, indent=4, sort_keys=True)
@@ -2190,7 +2188,7 @@ class Project:
         # Remove the old .gns3 file (which has the original project name)
         os.remove(old_gns3_file)
         project = await self.controller.load_project(dot_gns3_path, load=False)
-        log.info("Project '{}': fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
+        log.info(f"Project '{project.name}': fast duplicated in {time.time() - t0:.4f} seconds")
         return project
 
     def is_running(self):

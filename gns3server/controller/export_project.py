@@ -175,7 +175,7 @@ def _is_exportable(path, include_snapshots=False):
         return False
 
     # do not export directories of snapshots
-    if include_snapshots is False and "{sep}snapshots{sep}".format(sep=os.path.sep) in path:
+    if include_snapshots is False and f"{os.path.sep}snapshots{os.path.sep}" in path:
         return False
 
     try:

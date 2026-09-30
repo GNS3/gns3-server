@@ -138,7 +138,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         for info in result.splitlines():
             if "=" in info:
                 name, value = info.split("=", 1)
-                if name == "{}{}".format(backend_type, interface_number):
+                if name == f"{backend_type}{interface_number}":
                     return value.strip('"')
         return None
 
@@ -179,7 +179,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             ip_address = match.group(1)
             netmask = match.group(2)
         else:
-            raise GNS3VMError("Could not find IP address and netmask for vboxnet {}".format(vboxnet))
+            raise GNS3VMError(f"Could not find IP address and netmask for vboxnet {vboxnet}")
 
         try:
             interface = ipaddress.IPv4Interface(f"{ip_address}/{netmask}")
@@ -189,17 +189,15 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             lower_ip = str(interface.ip + 2)
             upper_ip = str(subnet.network_address + subnet.num_addresses - 2)
         except ValueError:
-            raise GNS3VMError(
-                "Invalid IP address and netmask for vboxnet {}: {}/{}".format(vboxnet, ip_address, netmask)
-            )
+            raise GNS3VMError(f"Invalid IP address and netmask for vboxnet {vboxnet}: {ip_address}/{netmask}")
 
         dhcp_server_args = [
             "add",
-            "--network=HostInterfaceNetworking-{}".format(vboxnet),
-            "--server-ip={}".format(dhcp_server_ip),
-            "--netmask={}".format(netmask),
-            "--lower-ip={}".format(lower_ip),
-            "--upper-ip={}".format(upper_ip),
+            f"--network=HostInterfaceNetworking-{vboxnet}",
+            f"--server-ip={dhcp_server_ip}",
+            f"--netmask={netmask}",
+            f"--lower-ip={lower_ip}",
+            f"--upper-ip={upper_ip}",
             "--enable",
         ]
         await self._execute("dhcpserver", dhcp_server_args)
@@ -212,7 +210,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         :returns: boolean
         """
 
-        properties = await self._execute("list", ["{}".format(vboxnet_type)])
+        properties = await self._execute("list", [f"{vboxnet_type}"])
         for prop in properties.splitlines():
             try:
                 name, value = prop.split(":", 1)
@@ -287,9 +285,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             interface_number = await self._look_for_interface("hostonlynetwork")
             if interface_number < 0:
                 raise GNS3VMError(
-                    'VM "{}" must have a network adapter attached to a host-only network in order to start'.format(
-                        self.vmname
-                    )
+                    f'VM "{self.vmname}" must have a network adapter attached to a host-only network in order to start'
                 )
         else:
             backend_type = "hostonlyadapter"
@@ -299,17 +295,13 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
 
         if interface_number < 0:
             raise GNS3VMError(
-                'VM "{}" must have a network adapter attached to a {} in order to start'.format(
-                    self.vmname, backend_description
-                )
+                f'VM "{self.vmname}" must have a network adapter attached to a {backend_description} in order to start'
             )
 
         vboxnet = await self._look_for_vboxnet(backend_type, interface_number)
         if vboxnet is None:
             raise GNS3VMError(
-                'A VirtualBox host-only network could not be found on network adapter {} for "{}"'.format(
-                    interface_number, self._vmname
-                )
+                f'A VirtualBox host-only network could not be found on network adapter {interface_number} for "{self._vmname}"'
             )
 
         if not (await self._check_vboxnet_exists(vboxnet, vboxnet_type)):
@@ -319,9 +311,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 first_available_vboxnet = await self._find_first_available_vboxnet()
                 if first_available_vboxnet is None:
                     raise GNS3VMError(
-                        'Please add a VirtualBox host-only network with DHCP enabled and attached it to network adapter {} for "{}"'.format(
-                            interface_number, self._vmname
-                        )
+                        f'Please add a VirtualBox host-only network with DHCP enabled and attached it to network adapter {interface_number} for "{self._vmname}"'
                     )
                 await self.set_hostonly_network(interface_number, first_available_vboxnet)
                 vboxnet = first_available_vboxnet
@@ -330,18 +320,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     await self._execute("hostonlyif", ["create"])
                 except GNS3VMError:
                     raise GNS3VMError(
-                        'VirtualBox host-only network "{}" does not exist and could not be automatically created, please make the sure the network adapter {} configuration is valid for "{}"'.format(
-                            vboxnet, interface_number, self._vmname
-                        )
+                        f'VirtualBox host-only network "{vboxnet}" does not exist and could not be automatically created, please make the sure the network adapter {interface_number} configuration is valid for "{self._vmname}"'
                     )
 
         if backend_type == "hostonlyadapter" and not (await self._check_dhcp_server(vboxnet)):
             try:
                 await self._add_dhcp_server(vboxnet)
             except GNS3VMError as e:
-                raise GNS3VMError(
-                    "Could not add DHCP server for vboxnet {}: {}, please configure manually".format(vboxnet, e)
-                )
+                raise GNS3VMError(f"Could not add DHCP server for vboxnet {vboxnet}: {e}, please configure manually")
 
         vm_state = await self._get_state()
         log.info(f'"{self._vmname}" state is {vm_state}')
@@ -372,7 +358,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         else:
             # if we can't get the IP address from the guest property, we try to get it from the GNS3 server (a NAT interface is required)
             if nat_interface_number < 0:
-                raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
+                raise GNS3VMError(f"Could not find guest IP address for {self.vmname}")
             log.warning("Could not find IP address from guest property, trying to get it from GNS3 server")
             ip_address = "127.0.0.1"
             try:
@@ -382,33 +368,27 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     s.bind((ip_address, 0))
                     api_port = s.getsockname()[1]
             except OSError as e:
-                raise GNS3VMError("Error while getting random port: {}".format(e))
+                raise GNS3VMError(f"Error while getting random port: {e}")
 
             if await self._check_vbox_port_forwarding():
                 # delete the GNS3VM NAT port forwarding rule if it exists
-                log.info("Removing GNS3VM NAT port forwarding rule from interface {}".format(nat_interface_number))
-                await self._execute(
-                    "controlvm", [self._vmname, "natpf{}".format(nat_interface_number), "delete", "GNS3VM"]
-                )
+                log.info(f"Removing GNS3VM NAT port forwarding rule from interface {nat_interface_number}")
+                await self._execute("controlvm", [self._vmname, f"natpf{nat_interface_number}", "delete", "GNS3VM"])
 
             # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to the port in the VM
-            log.info(
-                "Adding GNS3VM NAT port forwarding rule with port {} to interface {}".format(
-                    api_port, nat_interface_number
-                )
-            )
+            log.info(f"Adding GNS3VM NAT port forwarding rule with port {api_port} to interface {nat_interface_number}")
             await self._execute(
                 "controlvm",
                 [
                     self._vmname,
-                    "natpf{}".format(nat_interface_number),
-                    "GNS3VM,tcp,{},{},,{}".format(ip_address, api_port, self.port),
+                    f"natpf{nat_interface_number}",
+                    f"GNS3VM,tcp,{ip_address},{api_port},,{self.port}",
                 ],
             )
 
             self.ip_address = await self._get_ip_from_server(interface_number, api_port)
 
-        log.info("GNS3 VM has been started with IP '{}'".format(self.ip_address))
+        log.info(f"GNS3 VM has been started with IP '{self.ip_address}'")
         self.running = True
 
     async def _get_ip_from_guest_property(self):
@@ -446,8 +426,9 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                             json_data = await resp.json()
                             if json_data:
                                 for interface in json_data:
-                                    if "name" in interface and interface["name"] == "eth{}".format(
-                                        hostonly_interface_number - 1
+                                    if (
+                                        "name" in interface
+                                        and interface["name"] == f"eth{hostonly_interface_number - 1}"
                                     ):
                                         if "ip_address" in interface and len(interface["ip_address"]) > 0:
                                             return interface["ip_address"]
@@ -537,7 +518,5 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             "modifyvm", [self._vmname, f"--hostonlyadapter{adapter_number}", hostonly_network_name], timeout=3
         )
         log.info(
-            'VirtualBox host-only network "{}" set on network adapter {} for "{}"'.format(
-                hostonly_network_name, adapter_number, self._vmname
-            )
+            f'VirtualBox host-only network "{hostonly_network_name}" set on network adapter {adapter_number} for "{self._vmname}"'
         )

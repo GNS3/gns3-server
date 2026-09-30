@@ -388,7 +388,7 @@ async def update_snapshots(snapshots_dir, project_path, project_name, project_id
                     async with aiofiles.open(snapshot_path, "wb+") as f:
                         async for chunk in zstream:
                             await f.write(chunk)
-                log.info("Project '{}': updated and repacked snapshot file '{}'".format(project_name, snapshot))
+                log.info(f"Project '{project_name}': updated and repacked snapshot file '{snapshot}'")
             except OSError as e:
                 raise ControllerError(
                     f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}"
