@@ -115,6 +115,14 @@ tc netem set <if>
 
 Max token count for the command table rises accordingly (recommend 32).
 
+`loss gemodel` semantics (mirrors the kernel, verified against a veth link
+with per-direction qdisc counters): `p` is the good→bad state transition
+probability (PGAP), `r` the bad→good transition (PGBP), and `1-h` the loss
+probability **inside the bad state** (the good state loses nothing). The
+steady-state mean loss is `p/(p+r) * (1-h)` per direction — e.g.
+`loss gemodel 10 30 100` drops 25 % of the offered packets in each
+direction, `loss gemodel 5 45 100` drops 10 %.
+
 ### A.2 Netlink encoding notes
 
 * Correlation: loss/dup/reorder use their existing nested structs with the
@@ -317,7 +325,11 @@ treatment; an incompatible mode revision renames its token
 * **Unit**: per keyword → expected netlink attrs (assert message bytes);
   every 204 table row; `bpf_drop` compile-fail path; capabilities string.
 * **Functional** (root, veth pair + netns + nsenter ping):
-  delay+reorder observable (mdev), gemodel loss within ±5% of target,
+  delay+reorder observable (mdev), gemodel loss within ±5% of
+  `p/(p+r) * (1-h)` measured **per direction** — a round-trip ping figure
+  reads `1-(1-L)²` instead, and with `1-h=100` the ARP cache must be
+  pre-warmed or the neighbour-resolution blackhole during a long burst
+  inflates the observed loss,
   rate within ±10% (measured byte throughput), nth_drop **exact** pattern
   (ICMP seq survives 1,2,…,N-1, Nth dropped), quota/window/flow with
   crafted senders, `tc reset` idempotent on a clean interface, P5 surface
