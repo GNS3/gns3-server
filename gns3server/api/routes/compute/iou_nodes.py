@@ -228,8 +228,11 @@ async def update_iou_node_nio(
     if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
         nio.filters = nio_data.filters
     # NIO type is a Union (Ethernet/TAP/UDP/bridge); only UDPNIO and
-    # BridgeNIO carry markers.
+    # BridgeNIO carry markers and suspend. Suspend is what the compute turns
+    # into an admin-down anchor on a kernel link (native carrier), so it must
+    # reach the NIO like it does on the Docker/QEMU routes.
     nio.markers = getattr(nio_data, "markers", None) or {}
+    nio.suspend = getattr(nio_data, "suspend", None) or False
     await node.adapter_update_nio_binding(adapter_number, port_number, nio)
     return nio.asdict()
 
