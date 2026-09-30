@@ -19,7 +19,6 @@ Interface for Dynamips virtual Cisco 1700 instances module ("c1700")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L428
 """
 
-import asyncio
 import logging
 
 from ..adapters.c1700_mb_1fe import C1700_MB_1FE

@@ -19,7 +19,6 @@ Interface for Dynamips virtual Ethernet switch module ("ethsw").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
-import asyncio
 import logging
 
 from gns3server.utils import parse_version

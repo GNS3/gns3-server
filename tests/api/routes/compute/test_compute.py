@@ -21,8 +21,6 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from gns3server.compute.project import Project
-from gns3server.config import Config
-from gns3server.schemas.config import ServerSettings
 from gns3server.version import __version__
 
 pytestmark = pytest.mark.asyncio

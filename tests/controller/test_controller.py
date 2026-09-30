@@ -20,7 +20,7 @@ import json
 import os
 import socket
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from watchdog.events import DirCreatedEvent, FileCreatedEvent

@@ -19,7 +19,7 @@ import logging
 import os
 import signal
 import time
-from typing import Dict, List
+from typing import Dict
 
 import psutil
 from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status

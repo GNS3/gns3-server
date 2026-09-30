@@ -18,7 +18,6 @@
 import os
 import stat
 import tempfile
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio

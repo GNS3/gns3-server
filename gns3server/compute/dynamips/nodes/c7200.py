@@ -19,7 +19,6 @@ Interface for Dynamips virtual Cisco 7200 instances module ("c7200")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 """
 
-import asyncio
 import logging
 
 from ..adapters.c7200_io_fe import C7200_IO_FE

@@ -16,7 +16,6 @@
 
 import os
 import uuid
-from unittest.mock import patch
 
 import pytest
 from fastapi import FastAPI, status
@@ -241,7 +240,6 @@ class TestBatchNIOEdgeCases:
         Dynamips.create_nio is async (returns a coroutine) unlike the sync
         base version.  The batch handler must await it.
         """
-        import asyncio as _asyncio
         import inspect
 
         class _FakeDynamips:

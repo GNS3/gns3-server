@@ -6,7 +6,6 @@ Parser for VT100 input stream.
 
 import re
 
-import six
 from prompt_toolkit.key_binding.input_processor import KeyPress
 from prompt_toolkit.keys import Keys
 

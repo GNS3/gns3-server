@@ -19,7 +19,7 @@
 import asyncio
 import logging
 
-from gns3server.utils.packet_filter_validation import FilterValidationError, validate_bpf_syntax
+from gns3server.utils.packet_filter_validation import validate_bpf_syntax
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from .link import _UNSET, Link

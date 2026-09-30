@@ -22,7 +22,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from gns3server.compute.project import Project
-from tests.utils import AsyncioMagicMock, asyncio_patch
+from tests.utils import asyncio_patch
 
 # The builtin Ethernet switch talks to uBridge (brctl/bridge modules) instead of
 # the Dynamips hypervisor. These are the seams we stub so the routes can be

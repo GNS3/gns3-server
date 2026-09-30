@@ -27,7 +27,6 @@ import logging
 import os
 import re
 import shutil
-import sys
 import time
 
 log = logging.getLogger(__name__)

@@ -18,7 +18,7 @@ import uuid
 from enum import Enum
 from typing import Any, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from .base import DateTimeModelMixin
 from .nodes import NodeType

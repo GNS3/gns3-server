@@ -18,7 +18,6 @@
 Interface for dummy NIOs (mostly for tests).
 """
 
-import asyncio
 import logging
 import uuid
 

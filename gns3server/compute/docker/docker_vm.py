@@ -39,14 +39,13 @@ from gns3server.utils.asyncio import monitor_process, wait_for_file_creation, wa
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.get_resource import get_resource
 from gns3server.utils.hostname import is_rfc1123_hostname_valid
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 from ..error import ImageMissingError
 from ..nios.nio_udp import NIOUDP
-from .docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
+from .docker_error import DockerError, DockerHttp404Error, DockerHttp409Error
 
 log = logging.getLogger(__name__)
 

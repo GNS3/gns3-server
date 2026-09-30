@@ -21,8 +21,6 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from gns3server.controller import Controller
-from gns3server.utils.get_resource import get_resource
 from gns3server.version import __version__
 
 pytestmark = pytest.mark.asyncio

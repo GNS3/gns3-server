@@ -18,12 +18,11 @@ import os
 import platform
 import stat
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from gns3server.compute.qemu import Qemu
-from gns3server.compute.qemu.qemu_error import QemuError
 from tests.utils import asyncio_patch
 
 

@@ -25,7 +25,7 @@ import time
 import urllib.request
 from json import loads as convert
 
-from dialog import Dialog, PythonDialogBug
+from dialog import Dialog
 
 
 class Welcome_dialog:

@@ -20,9 +20,7 @@ import os
 
 import pytest
 
-from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
-from tests.utils import asyncio_patch
 
 
 @pytest.fixture

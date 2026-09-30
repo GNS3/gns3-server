@@ -27,7 +27,6 @@ from alembic.util.exc import CommandError
 from fastapi import FastAPI
 from pydantic import ValidationError
 from sqlalchemy import event
-from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 

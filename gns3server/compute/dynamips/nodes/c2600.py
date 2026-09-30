@@ -19,7 +19,6 @@ Interface for Dynamips virtual Cisco 2600 instances module ("c2600")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L404
 """
 
-import asyncio
 import logging
 
 from ..adapters.c2600_mb_1e import C2600_MB_1E

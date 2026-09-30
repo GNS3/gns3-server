@@ -18,7 +18,6 @@
 Interface for generic Ethernet NIOs (PCAP library).
 """
 
-import asyncio
 import logging
 import uuid
 

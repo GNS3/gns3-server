@@ -30,12 +30,11 @@ log = logging.getLogger()
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 
 from gns3server import schemas
-from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.project import Project
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.utils.path import is_safe_path

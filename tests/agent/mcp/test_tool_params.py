@@ -10,8 +10,6 @@ This catches issues like:
 """
 
 import ast
-import os
-import sys
 from pathlib import Path
 
 import pytest

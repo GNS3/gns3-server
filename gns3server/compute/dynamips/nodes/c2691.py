@@ -19,7 +19,6 @@ Interface for Dynamips virtual Cisco 2691 instances module ("c2691")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L387
 """
 
-import asyncio
 import logging
 
 from ..adapters.gt96100_fe import GT96100_FE

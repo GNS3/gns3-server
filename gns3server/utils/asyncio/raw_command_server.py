@@ -16,9 +16,7 @@
 
 import asyncio
 import asyncio.subprocess
-import copy
 import logging
-import re
 
 log = logging.getLogger(__name__)
 

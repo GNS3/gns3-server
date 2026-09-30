@@ -17,7 +17,6 @@
 
 import json
 import os
-import shutil
 import unittest.mock
 import uuid
 from pathlib import Path

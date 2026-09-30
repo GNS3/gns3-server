@@ -19,7 +19,6 @@ Base interface for Dynamips Network Input/Output (NIO) module ("nio").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L451
 """
 
-import asyncio
 import logging
 
 from ..dynamips_error import DynamipsError

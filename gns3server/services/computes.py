@@ -23,7 +23,6 @@ from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
-    ControllerForbiddenError,
     ControllerNotFoundError,
 )
 from gns3server.db.repositories.computes import ComputesRepository

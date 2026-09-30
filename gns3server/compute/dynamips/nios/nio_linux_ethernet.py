@@ -18,7 +18,6 @@
 Interface for Linux Ethernet NIOs (Linux only).
 """
 
-import asyncio
 import logging
 import uuid
 
