@@ -292,6 +292,37 @@ async def test_connect_nio_kernel_tolerates_bridge_create_race(vm):
 
 
 @pytest.mark.asyncio
+async def test_connect_nio_kernel_eexist_still_reapplies_everything(vm):
+    """
+    EEXIST is a *common* path now: a bridge survives a single-sided node
+    restart (the peer's still-enslaved port makes brctl delete answer EBUSY,
+    which is suppressed), so the restarted side finds its bridge already
+    there. The create-or-verify step must not short-circuit the rest of the
+    attach — the restarted side has a brand-new anchor and needs its capture,
+    markers and filters re-applied on it.
+    """
+
+    async def send(command):
+        if "brctl create" in command:
+            raise UbridgeError("Could not create bridge gns3a1b2c3d4e5f: File exists (EEXIST)")
+
+    vm._ubridge_send = AsyncioMagicMock(side_effect=send)
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    nio.filters = {"delay": [10]}
+
+    await vm._connect_nio(0, nio)
+
+    vm._ubridge_send.assert_any_call(f'brctl show "{BRIDGE}"')
+    vm._ubridge_send.assert_any_call(f'brctl addif "{BRIDGE}" "{host_ifc}"')
+    # ... and the port-level configuration of the fresh anchor goes on top of
+    # it, unconditionally (never inside a "the bridge was created" branch).
+    vm._ubridge_send.assert_any_call(f'tc reset "{host_ifc}"')
+    vm._ubridge_send.assert_any_call(f'tc netem set "{host_ifc}" delay 10')
+
+
+@pytest.mark.asyncio
 async def test_connect_nio_kernel_create_failure_propagates(vm):
 
     async def send(command):

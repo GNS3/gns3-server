@@ -148,8 +148,16 @@ enable_kernel_datapath = True
 Anchors are host-side netdevs, so the kernel gives them an IPv6 link-local
 address and emits MLD/DAD from them; those frames flood into the emulated
 segment. The hardening requirement (anchors must be pure L2, no L3 identity)
-is specified for uBridge in `docs/design/ubridge-l2-anchor-spec.md` — it
-applies to QEMU TAPs and Docker veths alike.
+is specified for uBridge in `docs/design/ubridge-l2-anchor-spec.md` and is
+**delivered**: anchors and per-link bridges come up with `addrgenmode none`,
+no addresses, and an idle anchor is silent (asserted in the e2e after a 2.5 s
+settle).
+
+One residual is accepted and documented there: enslaving a port makes the
+*kernel* announce the bridge's multicast memberships once — an IGMPv3 plus one
+or two MLDv2 reports in the first second — which floods into the segment like
+any L2 control frame. It stops; it is outside the L2-only command's reach (no
+addresses involved, IPv4 has no per-device IGMP switch).
 
 ## Roadmap
 
