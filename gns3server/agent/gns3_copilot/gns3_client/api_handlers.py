@@ -105,6 +105,10 @@ VALID_LINK_FIELDS = {
     "link_id",
     "project_id",
     "link_type",
+    # Runtime datapath fact (kernel bridge vs uBridge relay): the MCP tool
+    # descriptions have always advertised it, but it was missing here, so
+    # link_list could not return it at all.
+    "kernel_datapath",
     "nodes",
     "suspend",
     "link_style",

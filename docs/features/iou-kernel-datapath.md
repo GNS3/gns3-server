@@ -152,6 +152,12 @@ Harmless on the relay, where suspend is emulated by the synthetic
 frequency_drop filter, but fatal for a kernel link, whose suspend *is* the
 anchor's admin state — a "suspended" link kept forwarding.
 
+**Measuring seeded impairments on IOU**: IOL emits CDP/keepalive frames of
+its own, and they draw from the netem RNG stream — a `seed`-reproducible run
+never matches while they are on (measured: three rounds of mismatches, then
+bit-identical pcaps after `no cdp run`). Turn the platform chatter off before
+comparing seeded runs; the extra frames are visible in the capture.
+
 ## Configuration
 
 ```ini
