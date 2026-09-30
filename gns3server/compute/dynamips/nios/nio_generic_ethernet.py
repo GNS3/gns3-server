@@ -43,15 +43,9 @@ class NIOGenericEthernet(NIO):
 
     async def create(self):
 
-        await self._hypervisor.send(
-            "nio create_gen_eth {name} {eth_device}".format(name=self._name, eth_device=self._ethernet_device)
-        )
+        await self._hypervisor.send(f"nio create_gen_eth {self._name} {self._ethernet_device}")
 
-        log.info(
-            "NIO Generic Ethernet {name} created with device {device}".format(
-                name=self._name, device=self._ethernet_device
-            )
-        )
+        log.info(f"NIO Generic Ethernet {self._name} created with device {self._ethernet_device}")
 
     @property
     def ethernet_device(self):

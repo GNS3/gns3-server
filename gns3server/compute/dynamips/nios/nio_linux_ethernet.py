@@ -42,15 +42,9 @@ class NIOLinuxEthernet(NIO):
 
     async def create(self):
 
-        await self._hypervisor.send(
-            "nio create_linux_eth {name} {eth_device}".format(name=self._name, eth_device=self._ethernet_device)
-        )
+        await self._hypervisor.send(f"nio create_linux_eth {self._name} {self._ethernet_device}")
 
-        log.info(
-            "NIO Linux Ethernet {name} created with device {device}".format(
-                name=self._name, device=self._ethernet_device
-            )
-        )
+        log.info(f"NIO Linux Ethernet {self._name} created with device {self._ethernet_device}")
 
     @property
     def ethernet_device(self):
