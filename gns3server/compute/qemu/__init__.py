@@ -238,9 +238,9 @@ class Qemu(BaseManager):
                 version = match.group(1)
                 return version
             else:
-                raise QemuError("Could not determine the swtpm version for '{}'".format(swtpm_path))
+                raise QemuError(f"Could not determine the swtpm version for '{swtpm_path}'")
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Error while looking for the swtpm version: {}".format(e))
+            raise QemuError(f"Error while looking for the swtpm version: {e}")
 
     @staticmethod
     def get_haxm_windows_version():
@@ -260,7 +260,7 @@ class Qemu(BaseManager):
         for index in range(winreg.QueryInfoKey(hkey)[0]):
             product_id = winreg.EnumKey(hkey, index)
             try:
-                product_key = winreg.OpenKey(hkey, r"{}\InstallProperties".format(product_id))
+                product_key = winreg.OpenKey(hkey, rf"{product_id}\InstallProperties")
                 try:
                     if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith(
                         "Hardware Accelerated Execution Manager"
