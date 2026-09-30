@@ -234,7 +234,7 @@ class VirtualBoxVM(BaseNode):
 
         linked_vbox_file = self._linked_vbox_file()
         if not os.path.exists(linked_vbox_file):
-            raise VirtualBoxError("Cannot find VirtualBox linked node file: {}".format(linked_vbox_file))
+            raise VirtualBoxError(f"Cannot find VirtualBox linked node file: {linked_vbox_file}")
 
         try:
             tree = ET.parse(linked_vbox_file)
@@ -402,11 +402,7 @@ class VirtualBoxVM(BaseNode):
             self.status = "suspended"
             log.info(f"VirtualBox VM '{self.name}' [{self.id}] suspended")
         else:
-            log.warning(
-                "VirtualBox VM '{name}' [{id}] cannot be suspended, current state: {state}".format(
-                    name=self.name, id=self.id, state=vm_state
-                )
-            )
+            log.warning(f"VirtualBox VM '{self.name}' [{self.id}] cannot be suspended, current state: {vm_state}")
 
     async def resume(self):
         """
@@ -511,9 +507,7 @@ class VirtualBoxVM(BaseNode):
                             os.path.join(self.working_dir, self._vmname, "Snapshots", os.path.basename(value))
                         ):
                             log.info(
-                                "VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(
-                                    name=self.name, id=self.id, controller=controller, port=port, device=device
-                                )
+                                f"VirtualBox VM '{self.name}' [{self.id}] detaching HDD {controller} {port} {device}"
                             )
                             hdd_table.append(
                                 {
@@ -530,11 +524,7 @@ class VirtualBoxVM(BaseNode):
                     with open(hdd_info_file, "w", encoding="utf-8") as f:
                         json.dump(hdd_table, f, indent=4)
                 except OSError as e:
-                    log.warning(
-                        "VirtualBox VM '{name}' [{id}] could not write HHD info file: {error}".format(
-                            name=self.name, id=self.id, error=e.strerror
-                        )
-                    )
+                    log.warning(f"VirtualBox VM '{self.name}' [{self.id}] could not write HHD info file: {e.strerror}")
 
         return hdd_table
 
@@ -739,15 +729,11 @@ class VirtualBoxVM(BaseNode):
                 log.warning(f"Could not find system property '{max_adapter_string}' for chipset {chipset}")
 
         log.info(
-            "VirtualBox VM '{name}' [{id}] can have a maximum of {max} network adapters for chipset {chipset}".format(
-                name=self.name, id=self.id, max=self._maximum_adapters, chipset=chipset.upper()
-            )
+            f"VirtualBox VM '{self.name}' [{self.id}] can have a maximum of {self._maximum_adapters} network adapters for chipset {chipset.upper()}"
         )
         if adapters > self._maximum_adapters:
             raise VirtualBoxError(
-                "The configured {} chipset limits the VM to {} network adapters. The chipset can be changed outside GNS3 in the VirtualBox VM settings.".format(
-                    chipset.upper(), self._maximum_adapters
-                )
+                f"The configured {chipset.upper()} chipset limits the VM to {self._maximum_adapters} network adapters. The chipset can be changed outside GNS3 in the VirtualBox VM settings."
             )
 
         self._ethernet_adapters.clear()
@@ -755,11 +741,7 @@ class VirtualBoxVM(BaseNode):
             self._ethernet_adapters[adapter_number] = EthernetAdapter()
 
         self._adapters = len(self._ethernet_adapters)
-        log.info(
-            "VirtualBox VM '{name}' [{id}] has changed the number of Ethernet adapters to {adapters}".format(
-                name=self.name, id=self.id, adapters=adapters
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}] has changed the number of Ethernet adapters to {adapters}")
 
     @property
     def use_any_adapter(self):
@@ -804,11 +786,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         self._adapter_type = adapter_type
-        log.info(
-            "VirtualBox VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(
-                name=self.name, id=self.id, adapter_type=adapter_type
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}]: adapter type changed to {adapter_type}")
 
     async def _get_vm_info(self):
         """
@@ -1076,11 +1054,7 @@ class VirtualBoxVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except KeyError:
-            raise VirtualBoxError(
-                "Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VirtualBoxError(f"Adapter {adapter_number} doesn't exist on VirtualBox VM '{self.name}'")
 
         # check if trying to connect to a nat, bridged, host-only or any other special adapter
         nic_attachments = await self._get_nic_attachements(self._maximum_adapters)
@@ -1088,10 +1062,8 @@ class VirtualBoxVM(BaseNode):
         if attachment in ("nat", "bridged", "intnet", "hostonly", "natnetwork"):
             if not self._use_any_adapter:
                 raise VirtualBoxError(
-                    "Attachment '{attachment}' is already configured on adapter {adapter_number}. "
-                    "Please remove it or allow VirtualBox VM '{name}' to use any adapter.".format(
-                        attachment=attachment, adapter_number=adapter_number, name=self.name
-                    )
+                    f"Attachment '{attachment}' is already configured on adapter {adapter_number}. "
+                    f"Please remove it or allow VirtualBox VM '{self.name}' to use any adapter."
                 )
             elif self.is_running():
                 # dynamically configure an UDP tunnel attachment if the VM is already running
@@ -1109,19 +1081,11 @@ class VirtualBoxVM(BaseNode):
                     f"VBOX-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
                 )
             except KeyError:
-                raise VirtualBoxError(
-                    "Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
-                        name=self.name, adapter_number=adapter_number
-                    )
-                )
+                raise VirtualBoxError(f"Adapter {adapter_number} doesn't exist on VirtualBox VM '{self.name}'")
             await self._control_vm(f"setlinkstate{adapter_number + 1} on")
 
         adapter.add_nio(0, nio)
-        log.info(
-            "VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
-                name=self.name, id=self.id, nio=nio, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}]: {nio} added to adapter {adapter_number}")
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
@@ -1141,11 +1105,7 @@ class VirtualBoxVM(BaseNode):
                 else:
                     await self._control_vm(f"setlinkstate{adapter_number + 1} on")
             except IndexError:
-                raise VirtualBoxError(
-                    'Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(
-                        name=self._name, adapter_number=adapter_number
-                    )
-                )
+                raise VirtualBoxError(f'Adapter {adapter_number} does not exist on VirtualBox VM "{self._name}"')
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -1159,11 +1119,7 @@ class VirtualBoxVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except KeyError:
-            raise VirtualBoxError(
-                "Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VirtualBoxError(f"Adapter {adapter_number} doesn't exist on VirtualBox VM '{self.name}'")
 
         await self.stop_capture(adapter_number)
         if self.is_running():
@@ -1177,11 +1133,7 @@ class VirtualBoxVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
 
-        log.info(
-            "VirtualBox VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
-                name=self.name, id=self.id, nio=nio, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}]: {nio} removed from adapter {adapter_number}")
         return nio
 
     def get_nio(self, adapter_number):
@@ -1196,11 +1148,7 @@ class VirtualBoxVM(BaseNode):
         try:
             adapter = self.ethernet_adapters[adapter_number]
         except KeyError:
-            raise VirtualBoxError(
-                "Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VirtualBoxError(f"Adapter {adapter_number} doesn't exist on VirtualBox VM '{self.name}'")
 
         nio = adapter.get_nio(0)
 
@@ -1235,11 +1183,7 @@ class VirtualBoxVM(BaseNode):
                 )
             )
 
-        log.info(
-            "VirtualBox VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(
-                name=self.name, id=self.id, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}]: starting packet capture on adapter {adapter_number}")
 
     async def stop_capture(self, adapter_number):
         """
@@ -1256,8 +1200,4 @@ class VirtualBoxVM(BaseNode):
         if self.ubridge:
             await self._ubridge_send("bridge stop_capture {name}".format(name=f"VBOX-{self._id}-{adapter_number}"))
 
-        log.info(
-            "VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(
-                name=self.name, id=self.id, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VirtualBox VM '{self.name}' [{self.id}]: stopping packet capture on adapter {adapter_number}")
