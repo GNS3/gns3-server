@@ -101,6 +101,7 @@ class Compute:
             "node_types": [],
             "ubridge_tc": None,
             "ubridge_tap": None,
+            "ubridge_iol_tap": None,
         }
         self.name = name
         # Cache of interfaces on remote host

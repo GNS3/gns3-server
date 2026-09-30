@@ -51,6 +51,8 @@ log = logging.getLogger(__name__)
 _cache = {}
 # binary identity -> whether the tap module works (None = unknown)
 _tap_cache = {}
+# binary identity -> whether iol_bridge can bind a port to a TAP (None = unknown)
+_iol_tap_cache = {}
 _lock = asyncio.Lock()
 
 
@@ -178,6 +180,95 @@ async def _probe_tap(path, config, timeout):
         except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
             # Missing module, old build, or no CAP_NET_ADMIN: unknown.
             log.debug("uBridge tap-module probe failed: %s", e)
+            return None
+    finally:
+        with contextlib.suppress(Exception):
+            await hypervisor.stop()
+        shutil.rmtree(working_dir, ignore_errors=True)
+
+
+# Above the per-node IOL bridge ids: a real node's application id is 1..512,
+# so its bridge locks /tmp/netio<uid>/513..1024. 1050 cannot collide with a
+# node — only with another probe process, whose failure then answers "unknown"
+# (the safe answer: IOU stays on the relay datapath).
+_IOL_PROBE_BRIDGE_ID = 1050
+
+
+async def probe_iol_tap_support(timeout: float = 15.0):
+    """
+    Whether this host's uBridge can terminate an IOL port on a persistent
+    TAP (``iol_bridge add_nio_tap``) — the anchor IOU's Ethernet ports need
+    for the kernel datapath. Probed on a scratch IOL bridge with a scratch
+    TAP (both cleaned up), cached by binary identity like the tap probe;
+    any failure (missing binary, old build answering "Unknown command",
+    lock contention with another server process) means unknown, reported as
+    None and cached as such.
+    """
+
+    config = Config.instance()
+    path = shutil.which(config.settings.Server.ubridge_path)
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+        key = (path, stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return None
+
+    async with _lock:
+        if key in _iol_tap_cache:
+            return _iol_tap_cache[key]
+        supported = await _probe_iol_tap(path, config, timeout)
+        _iol_tap_cache[key] = supported
+        return supported
+
+
+async def _probe_iol_tap(path, config, timeout):
+    """
+    Spawn a throwaway uBridge and run one add_nio_tap/delete_nio_tap cycle on
+    a scratch bridge and scratch TAP — attaching works on a stopped bridge,
+    so no iol_bridge start is needed. The scratch resources are cleaned up
+    best-effort even when the probe itself fails.
+    """
+
+    working_dir = tempfile.mkdtemp(prefix="gns3-iol-probe-")
+    hypervisor = Hypervisor(
+        None,
+        path,
+        working_dir,
+        config.settings.Server.ubridge_control_transport,
+        config.settings.Server.host,
+        str(uuid.uuid4()),
+    )
+    bridge = f"gns3iolprobe{uuid.uuid4().hex[:4]}"
+    tap = f"gns3ita{uuid.uuid4().hex[:6]}"
+    try:
+
+        async def ask():
+            await hypervisor.start()
+            await hypervisor.connect()
+            await hypervisor.send(f"iol_bridge create {bridge} {_IOL_PROBE_BRIDGE_ID}")
+            try:
+                await hypervisor.send(f"tap create {tap}")
+                await hypervisor.send(
+                    f"iol_bridge add_nio_tap {bridge} {_IOL_PROBE_BRIDGE_ID - 1} 0 0 {tap}"
+                )
+                await hypervisor.send(f"iol_bridge delete_nio_tap {bridge} 0 0")
+            finally:
+                # iol_bridge delete releases every port NIO (the TAP fd),
+                # so the subsequent tap delete cannot hit EBADFD.
+                with contextlib.suppress(UbridgeError):
+                    await hypervisor.send(f"iol_bridge delete {bridge}")
+                with contextlib.suppress(UbridgeError):
+                    await hypervisor.send(f"tap delete {tap}")
+            return True
+
+        try:
+            return await asyncio.wait_for(ask(), timeout=timeout)
+        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+            # Old build ("Unknown command"), missing module, or no
+            # CAP_NET_ADMIN: unknown.
+            log.debug("uBridge iol-tap probe failed: %s", e)
             return None
     finally:
         with contextlib.suppress(Exception):

@@ -22,7 +22,7 @@ payload: spawn a throwaway uBridge, ask once, cache by binary identity.
 import pytest
 
 from gns3server.compute.ubridge import tc_probe
-from gns3server.compute.ubridge.tc_probe import probe_tc_capabilities, probe_tap_support
+from gns3server.compute.ubridge.tc_probe import probe_iol_tap_support, probe_tc_capabilities, probe_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 pytestmark = pytest.mark.asyncio
@@ -35,6 +35,7 @@ class FakeHypervisor:
 
     reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     error = None
+    error_prefix = None  # fail only commands starting with this (a build missing one command)
     spawned = 0
 
     def __init__(self, project, path, working_dir, transport, host, node_id):
@@ -54,6 +55,8 @@ class FakeHypervisor:
         self.commands.append(command)
         if self.error:
             raise UbridgeError(self.error)
+        if self.error_prefix and command.startswith(self.error_prefix):
+            raise UbridgeError(f"202-Unknown command")
         if command == "tc capabilities":
             return FakeHypervisor.reply
         return ["OK"]
@@ -67,9 +70,11 @@ def probe_env(monkeypatch, tmp_path):
 
     FakeHypervisor.spawned = 0
     FakeHypervisor.error = None
+    FakeHypervisor.error_prefix = None
     FakeHypervisor.reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     tc_probe._cache.clear()
     tc_probe._tap_cache.clear()
+    tc_probe._iol_tap_cache.clear()
     FakeHypervisor.last = None
     # a real file on disk: the cache is keyed on its (path, mtime, size)
     binary = tmp_path / "ubridge"
@@ -142,4 +147,49 @@ async def test_probe_tap_support_missing_binary(monkeypatch):
 
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
     assert await probe_tap_support() is None
+    assert FakeHypervisor.spawned == 0
+
+
+async def test_probe_iol_tap_support_runs_one_cycle_on_a_scratch_bridge():
+    """
+    The probe walks the exact add_nio_tap/delete_nio_tap cycle a kernel link
+    uses, on a scratch bridge whose id sits above the per-node id space, and
+    cleans up both scratch resources even when the cycle itself fails.
+    """
+
+    assert await probe_iol_tap_support() is True
+    assert FakeHypervisor.spawned == 1
+    commands = FakeHypervisor.last.commands
+    assert commands[0].startswith("iol_bridge create gns3iolprobe")
+    assert commands[0].endswith(" 1050")
+    assert commands[1].startswith("tap create gns3ita")
+    assert commands[2].startswith("iol_bridge add_nio_tap ")
+    assert commands[2].split()[-1].startswith("gns3ita")
+    assert commands[3].startswith("iol_bridge delete_nio_tap ")
+    # cleanup: bridge first (it releases the TAP fd), then the device
+    assert commands[4].startswith("iol_bridge delete ")
+    assert commands[5].startswith("tap delete ")
+
+
+async def test_probe_iol_tap_support_unknown_on_an_old_build():
+    """
+    A uBridge without iol_bridge add_nio_tap answers "Unknown command": the
+    probe reports unknown (IOU stays on the relay datapath), cleans up its
+    scratch bridge and tap, and caches the failure.
+    """
+
+    FakeHypervisor.error_prefix = "iol_bridge add_nio_tap"
+    assert await probe_iol_tap_support() is None
+    commands = FakeHypervisor.last.commands
+    assert any(c.startswith("iol_bridge delete ") for c in commands)
+    assert any(c.startswith("tap delete ") for c in commands)
+    # cached like the other probes: no respawn on every /capabilities hit
+    assert await probe_iol_tap_support() is None
+    assert FakeHypervisor.spawned == 1
+
+
+async def test_probe_iol_tap_support_missing_binary(monkeypatch):
+
+    monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
+    assert await probe_iol_tap_support() is None
     assert FakeHypervisor.spawned == 0

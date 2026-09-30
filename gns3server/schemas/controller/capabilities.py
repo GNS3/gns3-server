@@ -55,3 +55,9 @@ class Capabilities(BaseModel):
         description="Whether uBridge can create the persistent TAPs a QEMU adapter anchors on "
         "(needed to wire QEMU links on the kernel datapath); absent when the probe failed",
     )
+    ubridge_iol_tap: Optional[bool] = Field(
+        None,
+        description="Whether uBridge can bind an IOL port to a persistent TAP (iol_bridge add_nio_tap, "
+        "the anchor IOU Ethernet ports need to wire IOU links on the kernel datapath); absent when the "
+        "probe failed",
+    )
