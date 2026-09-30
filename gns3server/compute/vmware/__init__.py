@@ -237,7 +237,7 @@ class VMware(BaseManager):
                         vmnet = f"vmnet{match.group(1)}"
                         if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
                             vmnet_interfaces[vmnet] = {}
-            with open(vmware_networking_file, "r", encoding="utf-8") as f:
+            with open(vmware_networking_file, encoding="utf-8") as f:
                 for line in f.read().splitlines():
                     match = re.search(r"VNET_([0-9]+)_HOSTONLY_SUBNET\s+(.*)", line)
                     if match:

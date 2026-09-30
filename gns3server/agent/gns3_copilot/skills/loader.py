@@ -278,7 +278,7 @@ class SkillsLoader:
             return ""
 
         try:
-            with open(prompt_file, "r", encoding="utf-8") as f:
+            with open(prompt_file, encoding="utf-8") as f:
                 content = f.read()
             logger.debug(f"Loaded prompt: {prompt_name} from {prompt_file}")
             return content
@@ -302,7 +302,7 @@ class SkillsLoader:
 
         try:
             commands = []
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -364,7 +364,7 @@ class SkillsLoader:
         Returns:
             Parsed YAML content as dictionary, or empty dict if file is empty
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
             logger.warning(f"YAML file {file_path} is empty or has invalid format")
