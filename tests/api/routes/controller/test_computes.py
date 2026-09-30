@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
@@ -26,7 +26,7 @@ from gns3server.schemas.controller.computes import Compute
 
 pytestmark = pytest.mark.asyncio
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 class TestComputeRoutes:

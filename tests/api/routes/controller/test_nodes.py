@@ -18,31 +18,28 @@
 import asyncio
 import contextlib
 import logging
+from types import SimpleNamespace
+from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
 import aiohttp
 import pytest
-
-from types import SimpleNamespace
-from typing import List, Optional
-
 from fastapi import FastAPI, HTTPException, WebSocketDisconnect, status
 from httpx import AsyncClient
-from pydantic import SecretStr
-from httpx_ws import aconnect_ws
 from httpx_ws import WebSocketDisconnect as HttpxWebSocketDisconnect
-from httpx_ws.transport import ASGIWebSocketTransport, ASGIWebSocketAsyncNetworkStream
+from httpx_ws import aconnect_ws
+from httpx_ws.transport import ASGIWebSocketAsyncNetworkStream, ASGIWebSocketTransport
+from pydantic import SecretStr
 
-from unittest.mock import MagicMock, patch
-from tests.utils import AsyncioMagicMock
-
+from gns3server.api.routes.controller.nodes import vnc_console, ws_console
 from gns3server.config import Config
+from gns3server.controller.compute import Compute
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute
-from gns3server.utils.http_client import HTTPClient
-from gns3server.api.routes.controller.nodes import ws_console, vnc_console
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
+from gns3server.utils.http_client import HTTPClient
+from tests.utils import AsyncioMagicMock
 
 pytestmark = pytest.mark.asyncio
 

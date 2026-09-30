@@ -16,12 +16,11 @@
 
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import asyncio_patch
 
 from gns3server.compute.project import Project
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

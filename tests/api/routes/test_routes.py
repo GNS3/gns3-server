@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Iterator, Sequence, Tuple
+
 import pytest
 from fastapi import FastAPI, status
 from fastapi.routing import APIRoute, APIWebSocketRoute, _IncludedRouter
-from starlette.routing import BaseRoute, Mount
 from httpx import AsyncClient
 from httpx_ws import aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
-from typing import Iterator, Sequence, Tuple
-
+from starlette.routing import BaseRoute, Mount
 
 pytestmark = pytest.mark.asyncio
 

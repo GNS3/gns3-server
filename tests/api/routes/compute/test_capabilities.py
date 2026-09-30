@@ -16,14 +16,14 @@
 
 
 import sys
-import pytest
-import psutil
 
+import psutil
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from gns3server.version import __version__
 from gns3server.utils.path import get_default_project_directory
+from gns3server.version import __version__
 
 pytestmark = pytest.mark.asyncio
 

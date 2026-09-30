@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import MagicMock, call
+
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from unittest.mock import call, MagicMock
 
 from gns3server.compute.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 # The builtin Ethernet switch talks to uBridge (brctl/bridge modules) instead of
 # the Dynamips hypervisor. These are the seams we stub so the routes can be

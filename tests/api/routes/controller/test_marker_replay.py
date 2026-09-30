@@ -32,11 +32,10 @@ import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
+from gns3server.controller import marker_replay
 from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
-from gns3server.controller import marker_replay
-
-from tests.controller.test_marker_replay import _write_pcap, _icmp_frame, _tcp_syn_frame, _cols
+from tests.controller.test_marker_replay import _cols, _icmp_frame, _tcp_syn_frame, _write_pcap
 
 pytestmark = pytest.mark.asyncio
 

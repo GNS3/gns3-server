@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import json
-import uuid
-import pytest
 import hashlib
+import json
+import os
+import uuid
 
-from tests.utils import asyncio_patch
-from sqlalchemy.ext.asyncio import AsyncSession
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import AsyncioMagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from gns3server.compute.qemu import Qemu
 from gns3server.controller import Controller
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.compute.qemu import Qemu
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

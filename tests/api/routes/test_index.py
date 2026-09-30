@@ -14,16 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import os
-
-from fastapi import FastAPI, status
-from httpx import AsyncClient
 from unittest.mock import patch
 
-from gns3server.version import __version__
+import pytest
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.controller import Controller
 from gns3server.utils.get_resource import get_resource
+from gns3server.version import __version__
 
 pytestmark = pytest.mark.asyncio
 

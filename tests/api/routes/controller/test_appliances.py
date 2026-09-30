@@ -16,11 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytest
 import shutil
 
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+
 from gns3server.controller import Controller
 
 pytestmark = pytest.mark.asyncio

@@ -15,27 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
+import os
 import shutil
+import unittest.mock
+import uuid
+from pathlib import Path
 
 import pytest
-import uuid
-import unittest.mock
-
-from pathlib import Path
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.utils import asyncio_patch
+from gns3server import schemas
+from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
+from gns3server.controller import Config, Controller
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.controller import Controller
-from gns3server.controller import Config
 from gns3server.services.templates import BUILTIN_TEMPLATES
-from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
-from gns3server import schemas
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

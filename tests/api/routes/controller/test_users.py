@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-
 from typing import Optional
+
+import pytest
 from fastapi import FastAPI, HTTPException, status
-from sqlalchemy import update
 from httpx import AsyncClient
 from joserfc import jwt
 from joserfc.jwk import OctKey
-
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.db.repositories.users import UsersRepository
-from gns3server.services import auth_service
-from gns3server.config import Config
-from gns3server.schemas.controller.users import User
+
 import gns3server.db.models as models
+from gns3server.config import Config
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.schemas.controller.users import User
+from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio
 
