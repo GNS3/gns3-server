@@ -14,11 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter, ConsoleType, AuxType, ExtraConfig
+from pydantic import BaseModel, Field, field_validator
+
+from ..common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, NodeStatus
 
 
 class DockerBase(BaseModel):

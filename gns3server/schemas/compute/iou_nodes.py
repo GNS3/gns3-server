@@ -14,11 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import UUID
 
-from ..common import NodeStatus, ConsoleType
+from pydantic import BaseModel, Field
+
+from ..common import ConsoleType, NodeStatus
 
 
 class IOUBase(BaseModel):

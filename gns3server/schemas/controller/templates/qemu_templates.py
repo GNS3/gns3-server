@@ -15,20 +15,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.qemu_nodes import (
-    QemuConsoleType,
-    QemuPlatform,
-    QemuAdapterType,
-    QemuOnCloseAction,
-    QemuBootPriority,
-    QemuDiskInterfaceType,
-    QemuProcessPriority,
-    CustomAdapter,
-)
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from gns3server.schemas.compute.qemu_nodes import (
+    CustomAdapter,
+    QemuAdapterType,
+    QemuBootPriority,
+    QemuConsoleType,
+    QemuDiskInterfaceType,
+    QemuOnCloseAction,
+    QemuPlatform,
+    QemuProcessPriority,
+)
+
+from . import Category, TemplateBase
 
 
 class QemuTemplate(TemplateBase):

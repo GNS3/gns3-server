@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import ConfigDict, BaseModel, Field
 from enum import Enum
 from datetime import datetime
 from typing import Optional, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DateTimeModelMixin
 

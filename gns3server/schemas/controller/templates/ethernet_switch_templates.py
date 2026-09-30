@@ -15,12 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.ethernet_switch_nodes import EthernetSwitchPort
+from enum import Enum
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
-from enum import Enum
+
+from gns3server.schemas.compute.ethernet_switch_nodes import EthernetSwitchPort
+
+from . import Category, TemplateBase
 
 DEFAULT_PORTS = [
     EthernetSwitchPort(port_number=0, name="Ethernet0", vlan=1, type="access", ethertype="0x8100"),

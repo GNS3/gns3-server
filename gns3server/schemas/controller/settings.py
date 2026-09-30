@@ -28,7 +28,7 @@ a secret leak at worst.
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..config import (
     BuiltinSymbolTheme,

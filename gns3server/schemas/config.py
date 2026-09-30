@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-
 from enum import Enum
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, FilePath, DirectoryPath, field_validator, model_validator
 from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, DirectoryPath, Field, FilePath, SecretStr, field_validator, model_validator
 
 
 class ControllerSettings(BaseModel):

@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import List, Optional, Union
 from enum import Enum
+from typing import List, Optional, Union
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field
+
+from ..common import ConsoleType, CustomAdapter, NodeStatus
 from .labels import Label
-from ..common import ConsoleType, NodeStatus, CustomAdapter
 
 
 class NodeType(str, Enum):

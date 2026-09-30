@@ -19,9 +19,10 @@
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
-from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag, model_validator
-from ..common import ExtraConfig
 
+from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag, model_validator
+
+from ..common import ExtraConfig
 
 # ============================================================================
 # Shared Enums

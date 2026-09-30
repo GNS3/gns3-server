@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List
-from uuid import UUID
 from enum import Enum
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, model_validator
 
 from ..common import NodeStatus
 
