@@ -178,9 +178,9 @@ class Docker(BaseManager):
             else:
                 # use the Min API version supported by the daemon
                 self._api_version = docker_info["MinAPIVersion"]
-                log.warning("Using Docker client with the minimum API version {}".format(self._api_version))
+                log.warning(f"Using Docker client with the minimum API version {self._api_version}")
 
-            log.info("Connected to Docker daemon version {} using API version {}".format(version, self._api_version))
+            log.info(f"Connected to Docker daemon version {version} using API version {self._api_version}")
             self._check_host_readiness()
 
     def _check_host_readiness(self):
