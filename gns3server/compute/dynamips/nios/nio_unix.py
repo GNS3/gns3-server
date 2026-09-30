@@ -45,16 +45,10 @@ class NIOUNIX(NIO):
 
     async def create(self):
 
-        await self._hypervisor.send(
-            "nio create_unix {name} {local} {remote}".format(
-                name=self._name, local=self._local_file, remote=self._remote_file
-            )
-        )
+        await self._hypervisor.send(f"nio create_unix {self._name} {self._local_file} {self._remote_file}")
 
         log.info(
-            "NIO UNIX {name} created with local file {local} and remote file {remote}".format(
-                name=self._name, local=self._local_file, remote=self._remote_file
-            )
+            f"NIO UNIX {self._name} created with local file {self._local_file} and remote file {self._remote_file}"
         )
 
     @property
