@@ -89,7 +89,7 @@ class SkillsManager:
         self.branch = branch
         self.auto_update = auto_update
         self.loader = SkillsLoader(str(local_path))
-        self._repo: Optional["git.Repo"] = None
+        self._repo: Optional[git.Repo] = None
         self._prompt_count = 0
 
         if not GIT_AVAILABLE:
