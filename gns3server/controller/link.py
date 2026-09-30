@@ -847,6 +847,11 @@ class Link:
             "capture_file_path": self.capture_file_path,
             "capture_compute_id": self.capture_compute_id,
             "link_type": self._link_type,
+            # runtime fact, not persisted: recomputed from the NIO wiring on
+            # every load (tells clients which datapath impairs this link —
+            # kernel-only filter types absent from available_filters are
+            # then distinguishable from capability gaps)
+            "kernel_datapath": self.kernel_datapath,
             "filters": self._filters,
             "markers": self._markers,
             "suspend": self._suspended,
