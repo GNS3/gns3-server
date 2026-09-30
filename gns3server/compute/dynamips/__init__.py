@@ -284,9 +284,9 @@ class Dynamips(BaseManager):
                 version = match.group(1)
                 return version
             else:
-                raise DynamipsError("Could not determine the Dynamips version for {}".format(dynamips_path))
+                raise DynamipsError(f"Could not determine the Dynamips version for {dynamips_path}")
         except (OSError, subprocess.SubprocessError) as e:
-            raise DynamipsError("Error while looking for the Dynamips version: {}".format(e))
+            raise DynamipsError(f"Error while looking for the Dynamips version: {e}")
 
     async def start_new_hypervisor(self, working_dir=None):
         """
@@ -308,7 +308,7 @@ class Dynamips(BaseManager):
 
         dynamips_version = await self.dynamips_version(self.dynamips_path)
         if parse_version(dynamips_version) < parse_version("0.2.11"):
-            raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(dynamips_version))
+            raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {dynamips_version}")
 
         if not sys.platform.startswith("win"):
             # Hypervisor should always listen to 127.0.0.1

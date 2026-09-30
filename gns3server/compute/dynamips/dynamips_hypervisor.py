@@ -96,7 +96,7 @@ class DynamipsHypervisor:
         try:
             version = await self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
-            log.debug("Dynamips version {} detected".format(self._version))
+            log.debug(f"Dynamips version {self._version} detected")
         except IndexError:
             log.warning("Dynamips version could not be detected")
             self._version = "Unknown"
@@ -253,9 +253,7 @@ class DynamipsHypervisor:
                 await self._writer.drain()
             except OSError as e:
                 raise DynamipsError(
-                    "Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}".format(
-                        command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
-                    )
+                    f"Could not send Dynamips command '{command.strip()}' to {self._host}:{self._port}: {e}, process running: {self.is_running()}"
                 )
 
             # Now retrieve the result
@@ -281,9 +279,7 @@ class DynamipsHypervisor:
                     if not chunk:
                         if retries > max_retries:
                             raise DynamipsError(
-                                "No data returned from {host}:{port}, Dynamips process running: {run}".format(
-                                    host=self._host, port=self._port, run=self.is_running()
-                                )
+                                f"No data returned from {self._host}:{self._port}, Dynamips process running: {self.is_running()}"
                             )
                         else:
                             retries += 1
@@ -293,9 +289,7 @@ class DynamipsHypervisor:
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
                     raise DynamipsError(
-                        "Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}".format(
-                            command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
-                        )
+                        f"Could not read response for '{command.strip()}' from {self._host}:{self._port}: {e}, process running: {self.is_running()}"
                     )
 
                 # If the buffer doesn't end in '\n' then we can't be done
@@ -304,9 +298,7 @@ class DynamipsHypervisor:
                         continue
                 except IndexError:
                     raise DynamipsError(
-                        "Could not communicate with {host}:{port}, Dynamips process running: {run}".format(
-                            host=self._host, port=self._port, run=self.is_running()
-                        )
+                        f"Could not communicate with {self._host}:{self._port}, Dynamips process running: {self.is_running()}"
                     )
 
                 data += buf.split("\r\n")
