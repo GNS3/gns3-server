@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import sys
-
-from .cloud import Cloud
-from ...error import NodeError
 
 import gns3server.utils.interfaces
 from gns3server.config import Config
 
-import logging
+from ...error import NodeError
+from .cloud import Cloud
 
 log = logging.getLogger(__name__)
 

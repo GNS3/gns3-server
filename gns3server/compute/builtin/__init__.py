@@ -18,10 +18,10 @@
 Builtin nodes server module.
 """
 
-from ..base_manager import BaseManager
-from .builtin_node_factory import BuiltinNodeFactory, BUILTIN_NODES
-
 import logging
+
+from ..base_manager import BaseManager
+from .builtin_node_factory import BUILTIN_NODES, BuiltinNodeFactory
 
 log = logging.getLogger(__name__)
 

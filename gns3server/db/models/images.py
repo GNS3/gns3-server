@@ -15,11 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Column, String, ForeignKey, BigInteger, Integer, DateTime, JSON, Boolean
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, BaseTable, GUID
-
+from .base import GUID, Base, BaseTable
 
 image_template_map = Table(
     "image_template_map",

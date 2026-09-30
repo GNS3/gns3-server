@@ -18,25 +18,24 @@
 VMware VM instance.
 """
 
-import sys
-import os
 import asyncio
-import tempfile
+import logging
+import os
 import platform
+import sys
+import tempfile
+from collections import OrderedDict
 
-from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.asyncio.serial import asyncio_open_serial
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
-from collections import OrderedDict
-from .vmware_error import VMwareError
-from ..nios.nio_udp import NIOUDP
+from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
-
-
-import logging
+from ..nios.nio_udp import NIOUDP
+from .vmware_error import VMwareError
 
 log = logging.getLogger(__name__)
 

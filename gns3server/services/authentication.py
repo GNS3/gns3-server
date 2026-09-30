@@ -14,22 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from joserfc import jwt
-from joserfc.jwk import OctKey
-from joserfc.errors import JoseError, BadSignatureError
 import base64
 import json
+import logging
 import time
 from datetime import datetime, timedelta, timezone
-import bcrypt
-
 from typing import Optional
+
+import bcrypt
 from fastapi import HTTPException, status
-from gns3server.schemas.controller.tokens import TokenData
-from gns3server.config import Config
+from joserfc import jwt
+from joserfc.errors import BadSignatureError, JoseError
+from joserfc.jwk import OctKey
 from pydantic import ValidationError
 
-import logging
+from gns3server.config import Config
+from gns3server.schemas.controller.tokens import TokenData
 
 log = logging.getLogger(__name__)
 

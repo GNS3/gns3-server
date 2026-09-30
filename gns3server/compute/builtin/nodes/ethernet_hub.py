@@ -15,10 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 
 from ...base_node import BaseNode
-
-import logging
 
 log = logging.getLogger(__name__)
 

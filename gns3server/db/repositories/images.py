@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import asyncio
+import logging
+import os
 from datetime import datetime, timezone
+from typing import Callable, List, Optional, cast
 
-from typing import Optional, List, Callable, cast
-from sqlalchemy import select, delete, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.engine import CursorResult
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+import gns3server.db.models as models
 from gns3server.utils.image_inventory import fingerprint, image_lock, normalized_path
 
 from .base import BaseRepository
-
-import gns3server.db.models as models
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class ImagesRepository(BaseRepository):
 
     async def is_usable(self, image: models.Image) -> bool:
         """Validate a checksum candidate without trusting stale catalog/sidecar data."""
-        from gns3server.utils.images import inspect_image_file, InvalidImageError
+        from gns3server.utils.images import InvalidImageError, inspect_image_file
 
         try:
             current = await asyncio.to_thread(fingerprint, image.path)

@@ -15,24 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import uuid
-import logging
-
+from typing import List, Optional, Union, cast
 from uuid import UUID
-from typing import List, Union, Optional, cast
-from sqlalchemy import select, delete
+
+from sqlalchemy import delete, select
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.session import make_transient
 
-from .base import BaseRepository
-
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.utils.image_inventory import image_lock
 from gns3server.controller.controller_error import ControllerNotFoundError
+
+from .base import BaseRepository
 
 log = logging.getLogger(__name__)
 

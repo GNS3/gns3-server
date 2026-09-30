@@ -16,10 +16,10 @@
 
 import uuid
 
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import BaseTable, GUID
+from .base import GUID, BaseTable
 
 
 class ApiKey(BaseTable):

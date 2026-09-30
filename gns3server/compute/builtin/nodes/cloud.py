@@ -14,18 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import logging
 import subprocess
+import sys
 
-from ...error import NodeError
-from ...base_node import BaseNode
-from ...nios.nio_udp import NIOUDP
+import gns3server.utils.asyncio
+import gns3server.utils.interfaces
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
-import gns3server.utils.interfaces
-import gns3server.utils.asyncio
-
-import logging
+from ...base_node import BaseNode
+from ...error import NodeError
+from ...nios.nio_udp import NIOUDP
 
 log = logging.getLogger(__name__)
 

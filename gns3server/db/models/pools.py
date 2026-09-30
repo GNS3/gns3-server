@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import uuid
 
-from sqlalchemy import Table, Column, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, BaseTable, generate_uuid, GUID
-
-import logging
+from .base import GUID, Base, BaseTable, generate_uuid
 
 log = logging.getLogger(__name__)
 

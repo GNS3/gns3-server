@@ -14,33 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-import stat
-import shutil
 import asyncio
 import contextlib
 import json
-import struct
-import tempfile
-import psutil
+import logging
+import os
 import platform
 import re
-import asyncssh
+import shutil
+import stat
+import struct
+import sys
+import tempfile
 
+import asyncssh
+import psutil
 from fastapi import WebSocketDisconnect
-from gns3server.utils.interfaces import interfaces
+
 from gns3server.compute.compute_error import ComputeError
-from ..compute.port_manager import PortManager
-from ..utils.asyncio import wait_run_in_executor, locking
-from ..utils.asyncio.ssh_server import AsyncioSSHServer
-from ..utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.compute.ubridge.hypervisor import Hypervisor
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-from .nios.nio_udp import NIOUDP
-from .error import NodeError
+from gns3server.utils.interfaces import interfaces
 
-import logging
+from ..compute.port_manager import PortManager
+from ..utils.asyncio import locking, wait_run_in_executor
+from ..utils.asyncio.ssh_server import AsyncioSSHServer
+from ..utils.asyncio.telnet_server import AsyncioTelnetServer
+from .error import NodeError
+from .nios.nio_udp import NIOUDP
 
 log = logging.getLogger(__name__)
 

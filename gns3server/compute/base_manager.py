@@ -14,37 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-import struct
-import stat
 import asyncio
-import aiofiles
-import socket
-import shutil
-import re
-import logging
 import inspect
+import logging
+import os
+import re
+import shutil
+import socket
+import stat
+import struct
+import sys
+
+import aiofiles
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.asyncio import cancellable_wait_run_in_executor
+from typing import Type
+from uuid import UUID, uuid4
+
 from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
+from gns3server.utils.asyncio import cancellable_wait_run_in_executor
 from gns3server.utils.interfaces import is_interface_up
 
-from uuid import UUID, uuid4
-from typing import Type
 from ..config import Config
 from ..utils import force_unix_path
-from .project_manager import ProjectManager
-from .port_manager import PortManager
+from ..utils.images import default_images_directory, images_directories, list_images, md5sum, remove_checksum
 from .base_node import BaseNode
-
-from .nios.nio_udp import NIOUDP
-from .nios.nio_tap import NIOTAP
+from .error import ImageMissingError, NodeError
 from .nios.nio_ethernet import NIOEthernet
-from ..utils.images import md5sum, remove_checksum, images_directories, default_images_directory, list_images
-from .error import NodeError, ImageMissingError
+from .nios.nio_tap import NIOTAP
+from .nios.nio_udp import NIOUDP
+from .port_manager import PortManager
+from .project_manager import ProjectManager
 
 CHUNK_SIZE = 1024 * 8  # 8KB
 

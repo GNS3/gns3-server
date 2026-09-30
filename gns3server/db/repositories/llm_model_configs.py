@@ -15,16 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from uuid import UUID
-from typing import Optional, List, Dict, Any, cast
-from sqlalchemy import select, update, delete, and_
-from sqlalchemy.engine import CursorResult
-from datetime import datetime
-
 import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional, cast
+from uuid import UUID
+
+from sqlalchemy import and_, delete, select, update
+from sqlalchemy.engine import CursorResult
+
+import gns3server.db.models as models
 
 from .base import BaseRepository
-import gns3server.db.models as models
 
 log = logging.getLogger(__name__)
 
