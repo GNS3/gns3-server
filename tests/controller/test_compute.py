@@ -400,7 +400,7 @@ async def test_downloadFile(project, compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         await compute.download_file(project, "test/titi")
     mock.assert_called_with(
-        "GET", "https://example.com:84/v3/compute/projects/{}/files/test/titi".format(project.id), auth=None
+        "GET", f"https://example.com:84/v3/compute/projects/{project.id}/files/test/titi", auth=None
     )
     await compute.close()
 
@@ -492,7 +492,7 @@ async def test_list_files(project, compute):
         assert await compute.list_files(project) == res
         mock.assert_any_call(
             "GET",
-            "https://example.com:84/v3/compute/projects/{}/files".format(project.id),
+            f"https://example.com:84/v3/compute/projects/{project.id}/files",
             headers={"content-type": "application/json"},
             data=None,
             auth=None,

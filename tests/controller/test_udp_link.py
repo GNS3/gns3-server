@@ -74,7 +74,7 @@ async def test_create(project):
     await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.2",
@@ -88,7 +88,7 @@ async def test_create(project):
     )
 
     compute2.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        f"/projects/{project.id}/vpcs/nodes/{node2.id}/adapters/3/ports/1/nio",
         data={
             "lport": 2048,
             "rhost": "192.168.1.1",
@@ -152,7 +152,7 @@ async def test_create_one_side_failure(project):
         await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.2",
@@ -166,7 +166,7 @@ async def test_create_one_side_failure(project):
     )
 
     compute2.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        f"/projects/{project.id}/vpcs/nodes/{node2.id}/adapters/3/ports/1/nio",
         data={
             "lport": 2048,
             "rhost": "192.168.1.1",
@@ -179,9 +179,7 @@ async def test_create_one_side_failure(project):
         timeout=120,
     )
     # The link creation has failed we rollback the nio
-    compute1.delete.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120
-    )
+    compute1.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio", timeout=120)
 
 
 @pytest.mark.asyncio
@@ -202,12 +200,8 @@ async def test_delete(project):
 
     await link.delete()
 
-    compute1.delete.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120
-    )
-    compute2.delete.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120
-    )
+    compute1.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio", timeout=120)
+    compute2.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node2.id}/adapters/3/ports/1/nio", timeout=120)
 
 
 @pytest.mark.asyncio
@@ -310,7 +304,7 @@ async def test_reset(project):
     assert link.debug_link_data[1]["lport"] != link.debug_link_data[1]["rport"]
     # the committed NIO carries the fresh pair, not the released one
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 4096,
             "rhost": "192.168.1.2",
@@ -401,16 +395,14 @@ async def test_capture(project):
     assert link.capturing
 
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/start".format(project.id, node_vpcs.id),
+        f"/projects/{project.id}/vpcs/nodes/{node_vpcs.id}/adapters/0/ports/4/capture/start",
         data={"capture_file_name": link.default_capture_file_name(), "data_link_type": "DLT_EN10MB"},
     )
 
     await link.stop_capture()
     assert link.capturing is False
 
-    compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/stop".format(project.id, node_vpcs.id)
-    )
+    compute1.post.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node_vpcs.id}/adapters/0/ports/4/capture/stop")
 
 
 @pytest.mark.asyncio
@@ -483,7 +475,7 @@ async def test_update(project):
     await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.2",
@@ -497,7 +489,7 @@ async def test_update(project):
     )
 
     compute2.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        f"/projects/{project.id}/vpcs/nodes/{node2.id}/adapters/3/ports/1/nio",
         data={
             "lport": 2048,
             "rhost": "192.168.1.1",
@@ -513,7 +505,7 @@ async def test_update(project):
     assert link.created
     await link.update_filters({"frequency_drop": [5], "bpf": ["icmp[icmptype] == 8"]})
     compute1.put.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.2",
@@ -563,7 +555,7 @@ async def test_update_ethernet_switch_nio(project):
 
     await link.update_filters({"delay": [10, 0]})
     compute1.put.assert_any_call(
-        "/projects/{}/ethernet_switch/nodes/{}/adapters/3/ports/1/nio".format(project.id, node_switch.id),
+        f"/projects/{project.id}/ethernet_switch/nodes/{node_switch.id}/adapters/3/ports/1/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.1",
@@ -625,7 +617,7 @@ async def test_update_suspend(project):
     await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id),
+        f"/projects/{project.id}/vpcs/nodes/{node1.id}/adapters/0/ports/4/nio",
         data={
             "lport": 1024,
             "rhost": "192.168.1.2",
@@ -639,7 +631,7 @@ async def test_update_suspend(project):
     )
 
     compute2.post.assert_any_call(
-        "/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id),
+        f"/projects/{project.id}/vpcs/nodes/{node2.id}/adapters/3/ports/1/nio",
         data={
             "lport": 2048,
             "rhost": "192.168.1.1",
