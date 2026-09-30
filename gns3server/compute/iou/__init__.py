@@ -23,7 +23,7 @@ import logging
 import os
 
 from ..base_manager import BaseManager
-from .iou_error import IOUError
+from .iou_error import IOUError as IOUError
 from .iou_vm import IOUVM
 
 log = logging.getLogger(__name__)

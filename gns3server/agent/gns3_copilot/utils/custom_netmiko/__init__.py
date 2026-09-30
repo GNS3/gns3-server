@@ -66,7 +66,7 @@ except Exception as e:
     logger.warning(f"Failed to import Huawei CE driver: {e}", exc_info=True)
 
 try:
-    from .ruijie_telnet import RuijieTelnetEnhanced
+    from .ruijie_telnet import RuijieTelnetEnhanced as RuijieTelnetEnhanced
 except Exception as e:
     logger.warning(f"Failed to import Ruijie driver: {e}", exc_info=True)
 

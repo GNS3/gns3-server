@@ -66,6 +66,7 @@ __all__ = [
     "get_skill",
     "get_skills_manager",
     "get_skills_repository_info",
+    "reload_forbidden_commands",
     "reload_injection_skills",
     "reload_skills_repository",
     "set_skills_manager",
