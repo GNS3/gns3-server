@@ -19,10 +19,11 @@
 import asyncio
 import logging
 
+from gns3server.utils.packet_filter_validation import FilterValidationError, validate_bpf_syntax
+
 from .controller_error import ControllerError, ControllerNotFoundError
-from .link import Link, _UNSET
+from .link import _UNSET, Link
 from .node_types import BUILTIN_NODE_TYPES
-from gns3server.utils.packet_filter_validation import validate_bpf_syntax, FilterValidationError
 
 # Node types that can host a marker (have a uBridge bridge to attach the
 # `mark` filter to).  Mirrors _get_filter_node in link.py, minus "nat"

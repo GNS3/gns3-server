@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import logging
 import asyncio
+import logging
+import os
+
 import psutil
 
 from gns3server.compute.vmware import VMware, VMwareError

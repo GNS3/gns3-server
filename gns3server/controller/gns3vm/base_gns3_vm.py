@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import psutil
-
 import logging
+
+import psutil
 
 log = logging.getLogger(__name__)
 

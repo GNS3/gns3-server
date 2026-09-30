@@ -15,23 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
-import json
-import uuid
-import shutil
-import aiofiles
 import itertools
-import tempfile
+import json
+import logging
+import os
+import shutil
 import stat
+import sys
+import tempfile
+import uuid
+
+import aiofiles
+
 import gns3server.utils.zipfile_zstd as zipfile_zstd
 
+from ..utils.asyncio import aiozipstream, wait_run_in_executor
 from .controller_error import ControllerError
 from .topology import load_topology
-from ..utils.asyncio import wait_run_in_executor
-from ..utils.asyncio import aiozipstream
-
-import logging
 
 log = logging.getLogger(__name__)
 

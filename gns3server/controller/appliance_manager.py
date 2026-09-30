@@ -15,37 +15,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import json
 import asyncio
-import platformdirs
-
-
+import json
+import logging
+import os
 from typing import List, Optional, Tuple
-from aiohttp.client_exceptions import ClientError
-
 from uuid import UUID
+
+import platformdirs
+from aiohttp.client_exceptions import ClientError
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
-from .appliance import Appliance
+from gns3server import schemas
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.schemas.controller.appliances import ApplianceModel
+from gns3server.services.templates import TemplatesService
+from gns3server.utils.images import default_images_directory
+
 from ..config import Config
 from ..utils.asyncio import locking
 from ..utils.http_client import HTTPClient
-from .controller_error import ControllerBadRequestError, ControllerNotFoundError, ControllerError
-from .appliance_to_template import ApplianceToTemplate
-from ..utils.images import InvalidImageError, write_image, read_image_info
 from ..utils.image_inventory import image_lock
-
-from gns3server import schemas
-from gns3server.schemas.controller.appliances import ApplianceModel
-from gns3server.utils.images import default_images_directory
-from gns3server.db.repositories.images import ImagesRepository
-from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.services.templates import TemplatesService
-from gns3server.db.repositories.rbac import RbacRepository
-
-import logging
+from ..utils.images import InvalidImageError, read_image_info, write_image
+from .appliance import Appliance
+from .appliance_to_template import ApplianceToTemplate
+from .controller_error import ControllerBadRequestError, ControllerError, ControllerNotFoundError
 
 log = logging.getLogger(__name__)
 

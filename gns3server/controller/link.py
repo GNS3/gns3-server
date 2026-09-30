@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import html
+import logging
 import os
 import re
 import uuid
-import html
 
-from .controller_error import ControllerError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.config import Config
 from gns3server.utils.packet_filter_validation import (
-    validate_all_filters,
-    filter_inactive_filters,
     FilterValidationError,
+    filter_inactive_filters,
+    validate_all_filters,
 )
 
-import logging
+from .controller_error import ControllerError, ControllerNotFoundError
 
 log = logging.getLogger(__name__)
 

@@ -15,36 +15,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import glob
 import html
 import json
-import uuid
-import glob
+import logging
+import os
 import shutil
+import uuid
 import zipfile
-import pydantic
-
 from typing import Optional
 
-from ..version import __version__
-from ..utils.qt import qt_font_to_style
-from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
-from .controller_error import ControllerError
-from .compute import Compute
-from .drawing import Drawing
-from .node import Node
-from .link import Link
+import pydantic
 
+from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
+from gns3server.schemas.controller.topology import Topology
 from gns3server.utils.hostname import (
     is_ios_hostname_valid,
     is_rfc1123_hostname_valid,
-    to_rfc1123_hostname,
     to_ios_hostname,
+    to_rfc1123_hostname,
 )
-from gns3server.schemas.controller.topology import Topology
-from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
 
-import logging
+from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
+from ..utils.qt import qt_font_to_style
+from ..version import __version__
+from .compute import Compute
+from .controller_error import ControllerError
+from .drawing import Drawing
+from .link import Link
+from .node import Node
 
 log = logging.getLogger(__name__)
 

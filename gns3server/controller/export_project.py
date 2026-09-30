@@ -15,19 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import json
+import logging
 import os
 import sys
-import json
-import asyncio
-import aiofiles
-import zipfile
 import tempfile
-
-from .controller_error import ControllerError, ControllerNotFoundError, ControllerTimeoutError
-
+import zipfile
 from datetime import datetime
 
-import logging
+import aiofiles
+
+from .controller_error import ControllerError, ControllerNotFoundError, ControllerTimeoutError
 
 log = logging.getLogger(__name__)
 

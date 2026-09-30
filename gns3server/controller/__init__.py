@@ -15,43 +15,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
-import uuid
-import shutil
 import asyncio
-import random
 import json
+import os
+import random
+import shutil
+import sys
 import threading
+import uuid
 
 try:
     import importlib_resources
 except ImportError:
     from importlib import resources as importlib_resources
 
-from watchdog.events import FileSystemEventHandler, DirDeletedEvent, FileDeletedEvent
+import logging
+
+from watchdog.events import DirDeletedEvent, FileDeletedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from ..config import Config
-from ..utils import parse_version, md5sum
-from ..utils.images import default_images_directory
+from ..db.tasks import update_disk_checksums
+from ..utils import md5sum, parse_version
 from ..utils.asyncio import wait_run_in_executor
-
-from .project import Project
-from .node import Node
+from ..utils.images import default_images_directory
+from ..version import __version__
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
-from .notification import Notification
-from .symbols import Symbols
-from .topology import load_topology
+from .controller_error import ControllerError, ControllerNotFoundError
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
-from .controller_error import ControllerError, ControllerNotFoundError
-from ..db.tasks import update_disk_checksums
-from ..version import __version__
-
-import logging
+from .node import Node
+from .notification import Notification
+from .project import Project
+from .symbols import Symbols
+from .topology import load_topology
 
 log = logging.getLogger(__name__)
 

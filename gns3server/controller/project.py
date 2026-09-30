@@ -15,43 +15,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-import os
-import json
-import uuid
-import copy
-import shutil
-import time
 import asyncio
-import aiofiles
-import tempfile
-import zipfile
+import copy
+import json
+import logging
+import os
 import pathlib
-
+import re
+import shutil
+import tempfile
+import time
+import uuid
+import zipfile
 from uuid import UUID, uuid4
+
+import aiofiles
 from fastapi import HTTPException, status
 
-from .node import Node
-from .compute import ComputeError
-from .snapshot import Snapshot
-from .drawing import Drawing
-from .topology import project_to_topology, load_topology
-from .udp_link import UDPLink
-from .link import _UNSET
-from ..config import Config
-from ..utils.path import check_path_allowed, get_default_project_directory
-from ..utils.application_id import get_next_application_id, is_iol_runner_environment
-from ..utils.asyncio.pool import Pool
-from ..utils.packet_filter_validation import validate_bpf_syntax
-from ..utils.asyncio import locking
-from ..utils.asyncio import aiozipstream
-from ..utils.asyncio import wait_run_in_executor
-from .export_project import export_project
-from .import_project import import_project, update_snapshots, regenerate_topology_ids
-from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
-import logging
+from ..config import Config
+from ..utils.application_id import get_next_application_id, is_iol_runner_environment
+from ..utils.asyncio import aiozipstream, locking, wait_run_in_executor
+from ..utils.asyncio.pool import Pool
+from ..utils.packet_filter_validation import validate_bpf_syntax
+from ..utils.path import check_path_allowed, get_default_project_directory
+from .compute import ComputeError
+from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
+from .drawing import Drawing
+from .export_project import export_project
+from .import_project import import_project, regenerate_topology_ids, update_snapshots
+from .link import _UNSET
+from .node import Node
+from .snapshot import Snapshot
+from .topology import load_topology, project_to_topology
+from .udp_link import UDPLink
 
 log = logging.getLogger(__name__)
 

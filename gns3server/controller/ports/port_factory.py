@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from gns3server.controller.controller_error import ControllerError
-from gns3server.utils import macaddress_to_int, int_to_macaddress
+from gns3server.utils import int_to_macaddress, macaddress_to_int
+
 from .atm_port import ATMPort
+from .ethernet_port import EthernetPort
+from .fastethernet_port import FastEthernetPort
 from .frame_relay_port import FrameRelayPort
 from .gigabitethernet_port import GigabitEthernetPort
-from .fastethernet_port import FastEthernetPort
-from .ethernet_port import EthernetPort
-from .serial_port import SerialPort
 from .pos_port import POSPort
-
-
-import logging
+from .serial_port import SerialPort
 
 log = logging.getLogger(__name__)
 
