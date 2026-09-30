@@ -130,7 +130,8 @@ class GNS3PacketFilterTool(BaseTool):
     - "rate": Bandwidth cap, tc-style string like "512kbit" (kernel links only)
     - "reorder": Packet reordering (parameters: percentage, correlation, gap; needs delay;
       kernel links only)
-    - "gemodel": Gilbert-Elliot bursty loss (parameters: p, r, 1-h; kernel links only)
+    - "gemodel": Gilbert-Elliot bursty loss (parameters: p good-to-bad transition, r bad-to-good
+      transition, 1-h loss in the bad state; mean loss = p/(p+r)*(1-h); kernel links only)
     - "duplicate": Packet duplication percentage (kernel links only)
     - "seed": Reproducible netem random draws (kernel links only)
     - "limit": Impairment queue depth in packets (kernel links only)

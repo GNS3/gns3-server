@@ -308,7 +308,7 @@ class TestNetemExtensionFilters:
             validate_all_filters({"gemodel": [100, 0, 30], "packet_loss": [10]})
 
     def test_gemodel_invalid_range(self):
-        with pytest.raises(FilterValidationError, match="bad-state"):
+        with pytest.raises(FilterValidationError, match="good-to-bad"):
             validate_filter_parameters("gemodel", [101, 0, 30])
 
     def test_duplicate_valid(self):

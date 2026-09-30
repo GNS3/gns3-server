@@ -817,7 +817,10 @@ async def link_update(
       * rate (K): ["512kbit"] - Bandwidth cap, tc-style int+unit (bit/kbit/
         mbit/gbit/bps/kbps/mbps, max 100gbit)
       * reorder (K): [pct, correl?, gap?] - Requires delay to also be set
-      * gemodel (K): [p, r, 1-h] - Gilbert-Elliot bursty loss; mutually
+      * gemodel (K): [p, r, 1-h] - Gilbert-Elliot bursty loss; p = chance
+        of moving from the good to the bad state, r = chance of moving back,
+        1-h = loss chance in the bad state (the good state loses nothing);
+        steady-state mean loss = p/(p+r)*(1-h) per direction; mutually
         exclusive with packet_loss
       * duplicate (K): [pct, correl?] - Duplication percentage
       * seed (K): [u32] - Makes netem random draws reproducible
@@ -830,7 +833,10 @@ async def link_update(
         outage (traffic passes before and after), 4 args = recurring flap
         (period >= outage), 5 args = per-cycle timing randomized within +/-
         jitter. start is measured from the moment this filter is applied and
-        ANY filter update / node restart restarts the schedule; start 0 =
+        ANY filter update (including re-sending the same values) or node
+        restart restarts the schedule — a one-shot window that already
+        passed will not fire again until re-applied, so arm the filter
+        immediately before generating traffic (or use a period); start 0 =
         outage begins immediately (active, not disabled)
 
     Example filters:

@@ -139,9 +139,36 @@ class TestLinkRoutes:
         assert mock.called
         link_id = response.json()["link_id"]
         assert response.json()["nodes"][0]["label"]["x"] == 42
+        # the runtime datapath fact survives the response model on both POST and GET
+        assert response.json()["kernel_datapath"] is False
         response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["nodes"][0]["label"]["x"] == 42
+        assert response.json()["kernel_datapath"] is False
+
+    async def test_get_link_kernel_datapath(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+        """A kernel-wired link reports kernel_datapath true (was dropped by the schema)."""
+
+        node1, node2 = nodes
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+
+        link_id = response.json()["link_id"]
+        link = project.get_link(link_id)
+        link._link_data = [{"type": "nio_bridge"}]
+        response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["kernel_datapath"] is True
 
     async def test_update_link_suspend(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]

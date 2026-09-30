@@ -138,6 +138,11 @@ attach to running containers: `brctl addif` (kernel) or
 On project (re)open every link re-runs `_prepare`, so relay links whose
 endpoints became eligible are upgraded to the kernel datapath automatically.
 
+Which datapath a link ended up on is visible in its REST payload (and the
+`link_list` / `link_get` MCP tools) as the read-only boolean
+`kernel_datapath`, recomputed from the NIO wiring — a relay link upgraded on
+reopen flips the field. It is not persisted and never sent on create/update.
+
 ## Adapter lifecycle
 
 * **Birth (container start)** — `_create_veth`: stale sweep of any leftover
@@ -209,7 +214,7 @@ ends (uBridge `tc netem set`, raw netlink — no `tc` binary needed):
 | `duplicate [%, correl]` | netem `dup P [correl C]` | kernel-only type |
 | `rate ["512kbit"]` | netem `rate B` | tc-style integer+unit (bit/kbit/mbit/gbit/bps/kbps/mbps, ≤100gbit); kernel-only type |
 | `reorder [%, correl, gap]` | netem `reorder P [correl C] [gap G]` | requires `delay`; kernel-only type |
-| `gemodel [p, r, 1-h]` | netem `loss gemodel P R H` | Gilbert-Elliot bursty loss; mutually exclusive with `packet_loss`; kernel-only type |
+| `gemodel [p, r, 1-h]` | netem `loss gemodel P R H` | Gilbert-Elliot bursty loss: p = good→bad transition, r = bad→good transition, 1-h = loss chance in the bad state (good loses nothing) — mean one-way loss p/(p+r)×(1-h); mutually exclusive with `packet_loss`; kernel-only type |
 | `seed [u32]` | netem `seed N` | reproducible random draws; kernel-only type |
 | `limit [pkts]` | netem `limit N` | queue depth above the 1000 default (rate+delay BDP); kernel-only type |
 | `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
@@ -274,7 +279,11 @@ Semantics:
   controller — a round trip survives only when **both** directions are
   outside their windows. Note `start = 0` (outage begins immediately) is a
   valid, active configuration — unlike other filters, a zero first
-  parameter does not mean "disabled".
+  parameter does not mean "disabled". A PUT re-sending an unchanged filters
+  dict is normally a controller no-op, but one still carrying `window_drop`
+  is reconciled anyway, so re-applying the same window re-arms a one-shot
+  outage that has already passed (arm the filter immediately before
+  generating traffic, or use a period for a repeatable event).
 * **Validation** mirrors the tc grammar: `reorder` requires `delay`,
   `gemodel` and `packet_loss` are mutually exclusive (both map to the netem
   loss keyword), `distribution` requires jitter > 0, rate must be integer +

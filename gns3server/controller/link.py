@@ -105,12 +105,14 @@ FILTERS = [
     {
         "type": "gemodel",
         "name": "Gilbert-Elliot loss",
-        "description": "Bursty loss model: p is the loss chance in the bad state, r in the good state, 1-h the "
-        "chance of moving from good to bad. Mutually exclusive with packet loss; kernel-datapath links only",
+        "description": "Bursty loss model: p is the chance of moving from the good to the bad state, r the chance "
+        "of moving back, and 1-h the loss chance while in the bad state (the good state loses nothing) — the "
+        "steady-state mean loss is p/(p+r) x (1-h). Mutually exclusive with packet loss; kernel-datapath links "
+        "only",
         "parameters": [
-            {"name": "p (bad-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
-            {"name": "r (good-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
-            {"name": "1-h (good-to-bad)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "p (good-to-bad)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "r (bad-to-good)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "1-h (bad-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
         ],
     },
     {
@@ -338,7 +340,12 @@ class Link:
                     )
                 )
 
-        if new_filters != self.filters:
+        # An unchanged filters dict is normally a no-op skip, but a PUT that
+        # still carries window_drop must reconcile: the outage schedule is
+        # measured from the apply, so re-sending the same window has to
+        # re-arm the one-shot outage (the documented contract is that any
+        # filter update restarts the schedule).
+        if new_filters != self.filters or "window_drop" in new_filters:
             self._filters = new_filters
             if self._created:
                 await self.update()

@@ -210,12 +210,15 @@ def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:
             "units": ["%", "%", "packets"],
         },
         "gemodel": {
-            # Gilbert-Elliot loss model, tc semantics: p = loss probability in
-            # the bad state, r = loss probability in the good state, 1-h =
-            # probability of moving from the good to the bad state.
+            # Gilbert-Elliot loss model, tc semantics (verified against the
+            # kernel on kernel-datapath links): p = probability of moving
+            # from the good to the bad state (PGAP), r = probability of
+            # moving back (PGBP), 1-h = loss probability in the bad state
+            # (the good state loses nothing). Steady-state mean loss is
+            # p/(p+r) * (1-h) per direction.
             "params_count": (1, 3),
             "ranges": [(0, 100), (0, 100), (0, 100)],
-            "names": ["p (bad-state loss)", "r (good-state loss)", "1-h (good-to-bad transition)"],
+            "names": ["p (good-to-bad transition)", "r (bad-to-good transition)", "1-h (bad-state loss)"],
             "units": ["%", "%", "%"],
         },
         "seed": {"params_count": (1, 1), "ranges": [(0, 4294967295)], "names": ["Seed"], "units": [""]},

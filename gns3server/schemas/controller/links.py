@@ -81,6 +81,11 @@ class Link(LinkBase):
     link_id: UUID
     project_id: Optional[UUID] = None
     link_type: Optional[LinkType] = None
+    kernel_datapath: Optional[bool] = Field(
+        None,
+        description="Read only property. True when this link is wired through kernel veth/bridge interfaces "
+        "(currently Docker-to-Docker on one compute) instead of the uBridge UDP relay",
+    )
     capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
     capture_file_name: Optional[str] = Field(
         None, description="Read only property. The name of the capture file if a capture is running"

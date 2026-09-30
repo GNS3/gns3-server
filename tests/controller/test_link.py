@@ -362,6 +362,58 @@ async def test_update_filters(project, compute):
 
 
 @pytest.mark.asyncio
+async def test_update_filters_unchanged_is_noop(project, compute):
+    """Re-sending an identical filters dict skips the datapath reconcile."""
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    project.dump = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 0, 4)
+
+    link.update = AsyncioMagicMock()
+    await link.update_filters({"packet_loss": [10]})
+    assert link.update.call_count == 1
+    await link.update_filters({"packet_loss": [10]})
+    assert link.update.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_filters_unchanged_window_drop_still_reconciles(project, compute):
+    """
+    window_drop's outage schedule is measured from the apply, so an
+    unchanged re-send must re-arm it instead of being skipped as a no-op.
+    """
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    project.dump = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 0, 4)
+    # window_drop is kernel-only: this synthetic link has no real wiring,
+    # so declare the kernel datapath the way _link_data does at runtime
+    link._link_data = [{"type": "nio_bridge"}]
+
+    link.update = AsyncioMagicMock()
+    await link.update_filters({"window_drop": [3000, 5000, 100]})
+    assert link.update.call_count == 1
+    await link.update_filters({"window_drop": [3000, 5000, 100]})
+    assert link.update.call_count == 2
+
+
+@pytest.mark.asyncio
 async def test_available_filters(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="ethernet_switch")
