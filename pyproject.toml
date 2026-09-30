@@ -96,7 +96,6 @@ ignore = [
   "BLE001",    #  214  blind-except
   "E402",      #  129  module-import-not-at-top-of-file
   "E501",      #  655  line-too-long
-  "F401",      #  300  unused-import
   "F841",      #   32  unused-variable
   "PLW0603",   #   21  global-statement
   "PLW2901",   #   30  redefined-loop-name
