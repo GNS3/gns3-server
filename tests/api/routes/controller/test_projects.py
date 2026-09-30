@@ -244,10 +244,9 @@ class TestControllerProjectRoutes:
             )
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-        assert response.headers[
-            "CONTENT-DISPOSITION"
-        ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-            name=project.name
+        assert (
+            response.headers["CONTENT-DISPOSITION"]
+            == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
         )
 
         with open(str(tmpdir / "project.zip"), "wb+") as f:
@@ -283,10 +282,9 @@ class TestControllerProjectRoutes:
             )
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-        assert response.headers[
-            "CONTENT-DISPOSITION"
-        ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-            name=project.name
+        assert (
+            response.headers["CONTENT-DISPOSITION"]
+            == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
         )
         with open(str(tmpdir / "project.zip"), "wb+") as f:
             f.write(response.content)
@@ -343,10 +341,9 @@ class TestControllerProjectRoutes:
 
         if response.status_code == status.HTTP_200_OK:
             assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-            assert response.headers[
-                "CONTENT-DISPOSITION"
-            ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-                name=project.name
+            assert (
+                response.headers["CONTENT-DISPOSITION"]
+                == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
             )
             with open(str(tmpdir / "project.zip"), "wb+") as f:
                 f.write(response.content)

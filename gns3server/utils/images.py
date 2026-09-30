@@ -70,7 +70,7 @@ async def list_images(image_type):
         for root, _, filenames in _os_walk(directory, recurse=recurse):
             for filename in filenames:
                 if filename in files:
-                    log.debug("File {} has already been found, skipping...".format(filename))
+                    log.debug(f"File {filename} has already been found, skipping...")
                     continue
                 if filename.endswith(".md5sum") or filename.startswith("."):
                     continue
