@@ -98,7 +98,6 @@ ignore = [
   "E501",      #  655  line-too-long
   "F401",      #  300  unused-import
   "F841",      #   32  unused-variable
-  "I001",      #  441  unsorted-imports
   "PLW0603",   #   21  global-statement
   "PLW2901",   #   30  redefined-loop-name
   "RUF012",    #   23  mutable-class-default
