@@ -57,7 +57,7 @@ from gns3server.agent.gns3_copilot.utils.command_filter import (
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_huawei_telnet_ce and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+from gns3server.agent.gns3_copilot.utils import custom_netmiko
 
 # Explicitly register custom device types to ensure they are available
 # This is a safety measure in case the auto-registration on import doesn't work

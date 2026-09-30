@@ -391,10 +391,10 @@ def create_pre_model_hook(
         max_tokens_for_trim = max_input_tokens - tool_tokens
 
         # Validate budget and provide actionable warnings
-        if system_tokens + tool_tokens > max_input_tokens:  # noqa: E501
+        if system_tokens + tool_tokens > max_input_tokens:
             logger.error(
                 "System prompt (%d tokens) + tools (%d tokens) EXCEED input "
-                "budget (%d tokens). This will likely cause LLM call failures. "  # noqa: E501
+                "budget (%d tokens). This will likely cause LLM call failures. "
                 "Recommendations: 1) Reduce system prompt length, 2) Reduce "
                 "number of tools, 3) Use a model with larger context window, "
                 "or 4) Switch to 'conservative' strategy.",

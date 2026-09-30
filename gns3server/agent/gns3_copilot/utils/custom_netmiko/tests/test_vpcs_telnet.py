@@ -116,7 +116,7 @@ class TestVPCSTelnetInit(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -165,7 +165,7 @@ class TestVPCSTelnetMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -208,7 +208,7 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -273,7 +273,7 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -353,7 +353,7 @@ class TestVPCSTelnetAnsiStripping(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 

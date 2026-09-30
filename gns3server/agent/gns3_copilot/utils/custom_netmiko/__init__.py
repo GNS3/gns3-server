@@ -61,17 +61,17 @@ logger = logging.getLogger(__name__)
 
 # Import all custom drivers (auto-registers them with Netmiko)
 try:
-    from . import huawei_ce  # noqa: F401
+    from . import huawei_ce
 except Exception as e:
     logger.warning(f"Failed to import Huawei CE driver: {e}", exc_info=True)
 
 try:
-    from .ruijie_telnet import RuijieTelnetEnhanced  # noqa: F401
+    from .ruijie_telnet import RuijieTelnetEnhanced
 except Exception as e:
     logger.warning(f"Failed to import Ruijie driver: {e}", exc_info=True)
 
 try:
-    from . import vpcs_telnet  # noqa: F401
+    from . import vpcs_telnet
 except Exception as e:
     logger.warning(f"Failed to import VPCS driver: {e}", exc_info=True)
 
