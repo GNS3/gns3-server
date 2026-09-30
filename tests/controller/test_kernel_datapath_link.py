@@ -107,8 +107,8 @@ async def _link(project, node1, node2):
 @pytest.mark.asyncio
 async def test_kernel_datapath_not_eligible_for_other_node_types(project):
     """
-    A node type with no anchor of its own (IOU, VPCS, cloud, ...) keeps the
-    relay however capable the compute is — and a QEMU node on a compute whose
+    A node type with no anchor of its own (VPCS, cloud, ...) keeps the relay
+    however capable the compute is — and a QEMU node on a compute whose
     uBridge cannot create persistent TAPs does too, because it runs on the
     legacy relay datapath there.
     """
@@ -120,8 +120,73 @@ async def test_kernel_datapath_not_eligible_for_other_node_types(project):
     assert link._kernel_datapath_eligible(node1, node2) is False
 
     compute = _tap_capable_compute()
+    node1 = _node(project, compute, "vpcs1", node_type="vpcs")
+    node2 = _node(project, compute, "docker1")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_for_iou_with_iol_tap_support(project):
+    """
+    IOU's Ethernet bays anchor on persistent TAPs bound to the IOL fabric
+    (iol_bridge add_nio_tap) — its own capability, asked per compute like
+    QEMU's, and mixable with docker/qemu endpoints on the same compute.
+    """
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
+    node1 = _node(project, compute, "iou1", node_type="iou")
+    node2 = _node(project, compute, "iou2", node_type="iou")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+    for peer in (_node(project, compute, "docker1"), _node(project, compute, "qemu1", node_type="qemu")):
+        link = await _link(project, node1, peer)
+        assert link._kernel_datapath_eligible(node1, peer) is True
+
+
+@pytest.mark.asyncio
+async def test_iou_eligibility_is_its_own_capability(project):
+    """
+    The tap module and the IOL-port TAP command land independently: a
+    compute reporting only one of them keeps IOU on the relay (an old
+    uBridge without add_nio_tap), and an unreported/failed probe does too.
+    """
+
+    compute = _tap_capable_compute()  # ubridge_tap only, no ubridge_iol_tap
     node1 = _node(project, compute, "iou1", node_type="iou")
     node2 = _node(project, compute, "docker1")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": None}
+    node1 = _node(project, compute, "iou1", node_type="iou")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_for_serial_ports(project):
+    """
+    A kernel link is an Ethernet segment: an IOU serial port stays on the
+    relay whatever the compute's capabilities — dispatching it to the
+    kernel path would fail at the compute (no anchor on a serial bay).
+    """
+
+    from gns3server.controller.ports.serial_port import SerialPort
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
+
+    node1 = _node(project, compute, "iou1", node_type="iou")
+    node1._ports = [SerialPort("Serial0/0", 0, 0, 0)]
+    node2 = _node(project, compute, "iou2", node_type="iou")
+    node2._ports = [SerialPort("Serial0/0", 0, 0, 0)]
     link = await _link(project, node1, node2)
     assert link._kernel_datapath_eligible(node1, node2) is False
 

@@ -189,15 +189,15 @@ async def reload_iou_node(node: IOUVM = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_iou_node_nio(
     adapter_number: int,
     port_number: int,
-    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     node: IOUVM = Depends(dep_node),
-) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
+) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     """
@@ -210,15 +210,15 @@ async def create_iou_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_iou_node_nio(
     adapter_number: int,
     port_number: int,
-    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     node: IOUVM = Depends(dep_node),
-) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
+) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     """
@@ -227,7 +227,8 @@ async def update_iou_node_nio(
     nio.filters.clear()
     if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
         nio.filters = nio_data.filters
-    # NIO type is a Union (Ethernet/TAP/UDP); only UDPNIO carries markers.
+    # NIO type is a Union (Ethernet/TAP/UDP/bridge); only UDPNIO and
+    # BridgeNIO carry markers.
     nio.markers = getattr(nio_data, "markers", None) or {}
     await node.adapter_update_nio_binding(adapter_number, port_number, nio)
     return nio.asdict()

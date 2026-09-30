@@ -179,7 +179,12 @@ class UDPLink(Link):
         must be able to anchor: Docker adapters are born as veth pairs,
         QEMU adapters as persistent TAPs, which need uBridge's tap module —
         asked of that compute, since an old uBridge leaves QEMU on the relay
-        datapath and cannot carry a kernel link at all.
+        datapath and cannot carry a kernel link at all. IOU's Ethernet
+        bays anchor on persistent TAPs too, bound to its IOL fabric
+        (``iol_bridge add_nio_tap``) — a separate capability, since it can
+        be present or absent independently of the tap module. A kernel link
+        is an Ethernet segment, so non-Ethernet ports (IOU serial) stay on
+        the relay whatever the node's capabilities.
         """
 
         if not Config.instance().settings.Server.enable_kernel_datapath:
@@ -188,6 +193,10 @@ class UDPLink(Link):
             return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
+        for side in self._nodes:
+            port = side.get("port")
+            if port is not None and port.link_type != "ethernet":
+                return False
         return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
 
     @staticmethod
@@ -198,12 +207,14 @@ class UDPLink(Link):
 
         if node.node_type == "docker":
             return True
-        if node.node_type != "qemu":
-            return False
         capabilities = node.compute.capabilities or {}
-        # Strict True: an unreported capability (old uBridge, failed probe)
-        # keeps the link on the relay, where it always works.
-        return capabilities.get("ubridge_tap") is True
+        if node.node_type == "qemu":
+            # Strict True: an unreported capability (old uBridge, failed
+            # probe) keeps the link on the relay, where it always works.
+            return capabilities.get("ubridge_tap") is True
+        if node.node_type == "iou":
+            return capabilities.get("ubridge_iol_tap") is True
+        return False
 
     async def _prepare(self):
         """
