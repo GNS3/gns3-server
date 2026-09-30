@@ -18,18 +18,18 @@
 API routes for API key management.
 """
 
+import logging
 import secrets
-import bcrypt
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, status, HTTPException
+import bcrypt
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from gns3server import schemas
 from gns3server.db.repositories.api_keys import ApiKeysRepository
-from .dependencies.database import get_repository
-from .dependencies.authentication import get_current_active_user
 
-import logging
+from .dependencies.authentication import get_current_active_user
+from .dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
 

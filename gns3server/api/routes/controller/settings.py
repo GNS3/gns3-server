@@ -19,8 +19,9 @@
 API routes for managing the server settings (gns3_server.conf).
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+import logging
 
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 
 from gns3server import schemas
@@ -30,8 +31,6 @@ from gns3server.controller.controller_error import ControllerBadRequestError, Co
 from gns3server.schemas.controller.settings import SECRET_MASK
 
 from .dependencies.rbac import has_privilege
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -19,20 +19,19 @@
 API routes for symbols.
 """
 
+import logging
 import os
-
-from fastapi import APIRouter, Request, Depends, Response, status
-from fastapi.responses import FileResponse
 from typing import List
 
-from gns3server.controller import Controller
+from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi.responses import FileResponse
+
 from gns3server import schemas
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ControllerForbiddenError
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 from gns3server.utils.get_resource import get_resource
 
 from .dependencies.rbac import has_privilege
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -19,23 +19,22 @@
 API routes for LLM model configurations.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from uuid import UUID
+import logging
 from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
 )
-
 from gns3server.db.repositories.llm_model_configs import LLMModelConfigsRepository
 from gns3server.db.repositories.users import UsersRepository
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
-
-import logging
 
 log = logging.getLogger(__name__)
 

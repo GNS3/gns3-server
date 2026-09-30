@@ -19,6 +19,7 @@
 API routes for Netmiko metadata.
 """
 
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,8 +27,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from gns3server import schemas
 
 from .dependencies.authentication import get_current_active_user
-
-import logging
 
 log = logging.getLogger(__name__)
 

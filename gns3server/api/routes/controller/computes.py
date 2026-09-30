@@ -18,16 +18,17 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, Body, Depends, status
-from typing import Any, List, Union, Optional
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from gns3server.controller import Controller
+from fastapi import APIRouter, Body, Depends, status
+
 import gns3server.db.models as models
+from gns3server import schemas
+from gns3server.controller import Controller
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services.computes import ComputesService
-from gns3server import schemas
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege

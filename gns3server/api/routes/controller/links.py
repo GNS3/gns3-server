@@ -19,30 +19,29 @@ API routes for links.
 """
 
 import asyncio
+import logging
 import os
-import multidict
-import aiohttp
-
-from fastapi import APIRouter, Depends, Request, status, WebSocket
-from fastapi.responses import FileResponse, StreamingResponse
-from fastapi.encoders import jsonable_encoder
 from typing import Any, List, Union
 from uuid import UUID, uuid4
 
+import aiohttp
+import multidict
+from fastapi import APIRouter, Depends, Request, WebSocket, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, StreamingResponse
+
+from gns3server import schemas
+from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.link import _UNSET, Link
 from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.controller.link import Link, _UNSET
 from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
 from gns3server.utils.websocket_to_websocket import websocket_proxy
-from gns3server import schemas
-from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
-
-import logging
 
 log = logging.getLogger(__name__)
 

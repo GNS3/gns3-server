@@ -17,21 +17,22 @@
 import asyncio
 import hashlib
 import logging
-import bcrypt
-
-from fastapi import Request, Query, Depends, HTTPException, WebSocket, status
-from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 from uuid import UUID
 
-from gns3server import schemas
+import bcrypt
+from fastapi import Depends, HTTPException, Query, Request, WebSocket, status
+from fastapi.security import OAuth2PasswordBearer
+
 import gns3server.db.models as models
+from gns3server import schemas
 from gns3server.db.repositories.api_keys import ApiKeysRepository
-from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.tokens import TokenData
-from gns3server.services import auth_service, access_ticket_service
+from gns3server.services import access_ticket_service, auth_service
 from gns3server.services.access_tickets import TICKET_PREFIX
+
 from .database import get_repository
 
 log = logging.getLogger(__name__)

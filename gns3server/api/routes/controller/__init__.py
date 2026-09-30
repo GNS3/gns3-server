@@ -21,9 +21,7 @@ from gns3server.agent import AI_COPILOT_AVAILABLE
 
 # Conditionally import AI-dependent routes
 if AI_COPILOT_AVAILABLE:
-    from . import chat
-    from . import copilot
-    from . import llm_model_configs
+    from . import chat, copilot, llm_model_configs
 
     _chat_router = chat.router
     _copilot_router = copilot.router
@@ -44,28 +42,29 @@ else:
         )
 
 
-from . import controller
-from . import appliances
-from . import computes
-from . import drawings
-from . import gns3vm
-from . import links
-from . import nodes
-from . import projects
-from . import snapshots
-from . import symbols
-from . import templates
-from . import images
-from . import users
-from . import groups
-from . import roles
-from . import acl
-from . import pools
-from . import privileges
-from . import api_keys
-from . import netmiko
-from . import settings
-
+from . import (
+    acl,
+    api_keys,
+    appliances,
+    computes,
+    controller,
+    drawings,
+    gns3vm,
+    groups,
+    images,
+    links,
+    netmiko,
+    nodes,
+    pools,
+    privileges,
+    projects,
+    roles,
+    settings,
+    snapshots,
+    symbols,
+    templates,
+    users,
+)
 from .dependencies.authentication import get_current_active_user
 
 router = APIRouter()

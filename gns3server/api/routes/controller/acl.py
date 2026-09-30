@@ -19,28 +19,26 @@
 API routes for ACL.
 """
 
+import logging
 import re
+from typing import Iterator, List, Optional, Sequence
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.routing import APIRoute, _IncludedRouter
 from starlette.routing import BaseRoute, Mount
-from uuid import UUID
-from typing import Iterator, List, Optional, Sequence
 
-
-from gns3server import schemas
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerNotFoundError
-
-from gns3server.controller import Controller
 import gns3server.db.models as models
-from gns3server.db.repositories.users import UsersRepository
-from gns3server.db.repositories.rbac import RbacRepository
+from gns3server import schemas
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerNotFoundError
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.db.repositories.users import UsersRepository
+
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
-
-import logging
 
 log = logging.getLogger(__name__)
 
