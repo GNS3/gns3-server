@@ -367,8 +367,12 @@ enable_kernel_datapath = True
 Intended to grow into the global datapath switch as IOU / Dynamips migrate to
 kernel bridges. **QEMU has landed** on the same pattern (persistent TAP anchor
 enslaved into the per-link bridge, zero relay) — see
-`docs/features/qemu-kernel-datapath.md`; the shared half of this document's
-compute machinery now lives in `gns3server/compute/kernel_datapath.py`.
+`docs/features/qemu-kernel-datapath.md` — and **IOU after it**
+(`docs/features/iou-kernel-datapath.md`; the fabric terminator in uBridge
+gained a TAP-terminated port, `iol_bridge add_nio_tap`, specified in
+`docs/design/ubridge-iol-tap-anchor-spec.md`). The shared half of this
+document's compute machinery now lives in
+`gns3server/compute/kernel_datapath.py`.
 
 ## Verification
 

@@ -161,8 +161,15 @@ addresses involved, IPv4 has no per-device IGMP switch).
 
 ## Roadmap
 
-IOU (its fabric would need a kernel-side port in `iol_bridge`), Dynamips
+IOU (its fabric terminator in uBridge needs a TAP-terminated port —
+`iol_bridge add_nio_tap`, frozen in
+`docs/design/ubridge-iol-tap-anchor-spec.md`; unlike QEMU, one userspace hop
+on the IOU leg is irreducible, the fabric is Unix sockets), Dynamips
 (hypervisor-created taps, enslavable as they are), and the Ethernet switch /
 cloud paths (their anchors are ubridge-owned by design) are still on the
 relay; cross-compute kernel links need VXLAN/GENEVE encapsulation, which is
 a separate project (it would serve Docker links the same way).
+
+Update: **IOU has landed** on the same mixin — see
+`docs/features/iou-kernel-datapath.md` (Ethernet bays anchor on persistent
+TAPs bound to the IOL fabric; serial links stay relay).
