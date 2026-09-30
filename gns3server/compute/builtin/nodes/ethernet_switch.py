@@ -310,17 +310,13 @@ class EthernetSwitch(BaseNode):
         if not isinstance(nio, NIOUDP):
             raise NodeError("Ethernet switch ports only support UDP NIOs")
 
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
-                name=self._name, id=self._id, nio=nio, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self._name}" [{self._id}]: NIO {nio} bound to port {port_number}')
         try:
             await self.start()
             await self._add_ubridge_connection(nio, port_number)
             self._nios[port_number] = nio
         except (NodeError, UbridgeError) as e:
-            log.error('Cannot add NIO on Ethernet switch "{name}": {error}'.format(name=self._name, error=e))
+            log.error(f'Cannot add NIO on Ethernet switch "{self._name}": {e}')
             await self._stop_ubridge()
             self.status = "stopped"
             self._nios[port_number] = nio
@@ -347,19 +343,11 @@ class EthernetSwitch(BaseNode):
         # VLAN membership for this port's access/trunk/qinq mode
         await self._apply_port_vlan(port_settings, tap)
         # GNS3 link endpoint
-        await self._ubridge_send(
-            "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
-                name=ubridge_bridge, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
-            )
-        )
+        await self._ubridge_send(f"bridge add_nio_udp {ubridge_bridge} {nio.lport} {nio.rhost} {nio.rport}")
         await self._ubridge_apply_filters(ubridge_bridge, nio.filters)
         await self._ubridge_apply_markers(ubridge_bridge, nio)
         if nio.capturing:
-            await self._ubridge_send(
-                'bridge start_capture {name} "{output_file}"'.format(
-                    name=ubridge_bridge, output_file=nio.pcap_output_file
-                )
-            )
+            await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{nio.pcap_output_file}"')
         await self._ubridge_send(f"bridge start {ubridge_bridge}")
         self._tap_by_port[port_number] = tap
 
@@ -397,11 +385,7 @@ class EthernetSwitch(BaseNode):
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
-                name=self._name, id=self._id, nio=nio, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self._name}" [{self._id}]: NIO {nio} removed from port {port_number}')
         del self._nios[port_number]
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             await self._delete_ubridge_connection(port_number)
@@ -512,11 +496,7 @@ class EthernetSwitch(BaseNode):
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             ubridge_bridge = self._ubridge_bridge_name(port_number)
             await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{output_file}"')
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(
-                name=self.name, id=self.id, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: starting packet capture on port {port_number}')
 
     async def stop_capture(self, port_number):
         """
@@ -532,8 +512,4 @@ class EthernetSwitch(BaseNode):
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             ubridge_bridge = self._ubridge_bridge_name(port_number)
             await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
-                name=self.name, id=self.id, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: stopping packet capture on port {port_number}')

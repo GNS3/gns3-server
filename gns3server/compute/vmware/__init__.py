@@ -241,12 +241,12 @@ class VMware(BaseManager):
                 for line in f.read().splitlines():
                     match = re.search(r"VNET_([0-9]+)_HOSTONLY_SUBNET\s+(.*)", line)
                     if match:
-                        vmnet = "vmnet{}".format(match.group(1))
+                        vmnet = f"vmnet{match.group(1)}"
                         if vmnet in vmnet_interfaces.keys():
                             vmnet_interfaces[vmnet]["subnet"] = match.group(2)
                     match = re.search(r"VNET_([0-9]+)_HOSTONLY_NETMASK\s+(.*)", line)
                     if match:
-                        vmnet = "vmnet{}".format(match.group(1))
+                        vmnet = f"vmnet{match.group(1)}"
                         if vmnet in vmnet_interfaces.keys():
                             vmnet_interfaces[vmnet]["netmask"] = match.group(2)
 
@@ -305,7 +305,7 @@ class VMware(BaseManager):
 
     def refresh_vmnet_list(self, ubridge=True):
 
-        log.debug("Refreshing VMnet list with uBridge={}".format(ubridge))
+        log.debug(f"Refreshing VMnet list with uBridge={ubridge}")
 
         if ubridge:
             # VMnet host adapters must be present when uBridge is used
@@ -315,7 +315,7 @@ class VMware(BaseManager):
             self._vmnets_info = vmnet_interfaces.copy()
             vmnet_interfaces = list(vmnet_interfaces.keys())
 
-        log.debug("Found {} VMnet interfaces".format(len(vmnet_interfaces)))
+        log.debug(f"Found {len(vmnet_interfaces)} VMnet interfaces")
         # remove vmnets already in use
         for vmware_vm in self._nodes.values():
             for used_vmnet in vmware_vm.vmnets:
@@ -326,7 +326,7 @@ class VMware(BaseManager):
         # remove vmnets that are not managed
         for vmnet in vmnet_interfaces.copy():
             if vmnet in vmnet_interfaces and self.is_managed_vmnet(vmnet) is False:
-                log.debug("{} is not managed by GNS3".format(vmnet))
+                log.debug(f"{vmnet} is not managed by GNS3")
                 vmnet_interfaces.remove(vmnet)
 
         self._vmnets = vmnet_interfaces
@@ -677,9 +677,7 @@ class VMware(BaseManager):
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
                     if not os.path.isdir(default_vm_path):
                         raise VMwareError(
-                            'Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'.format(
-                                default_vm_path=default_vm_path, vmware_preferences_path=vmware_preferences_path
-                            )
+                            f'Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'
                         )
                     vmware_vms = self._get_vms_from_directory(default_vm_path)
 

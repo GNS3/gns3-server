@@ -166,11 +166,7 @@ class BaseNode:
         if self._wrap_aux:
             self._internal_aux_port = self._manager.port_manager.get_free_tcp_port(self._project)
 
-        log.debug(
-            "{module}: {name} [{id}] initialized. Console port {console}".format(
-                module=self.manager.module_name, name=self.name, id=self.id, console=self._console
-            )
-        )
+        log.debug(f"{self.manager.module_name}: {self.name} [{self.id}] initialized. Console port {self._console}")
 
     def __del__(self):
 
@@ -255,11 +251,7 @@ class BaseNode:
         :param new_name: name
         """
 
-        log.info(
-            "{module}: {name} [{id}] renamed to {new_name}".format(
-                module=self.manager.module_name, name=self.name, id=self.id, new_name=new_name
-            )
-        )
+        log.info(f"{self.manager.module_name}: {self.name} [{self.id}] renamed to {new_name}")
         self._name = new_name
 
     @property
@@ -332,7 +324,7 @@ class BaseNode:
         Creates the node.
         """
 
-        log.debug("{module}: {name} [{id}] created".format(module=self.manager.module_name, name=self.name, id=self.id))
+        log.debug(f"{self.manager.module_name}: {self.name} [{self.id}] created")
 
     async def delete(self):
         """
@@ -410,9 +402,7 @@ class BaseNode:
         if self._closed:
             return False
 
-        log.debug(
-            "{module}: '{name}' [{id}]: is closing".format(module=self.manager.module_name, name=self.name, id=self.id)
-        )
+        log.debug(f"{self.manager.module_name}: '{self.name}' [{self.id}]: is closing")
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)
@@ -823,11 +813,7 @@ class BaseNode:
             else:
                 self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
 
-            log.info(
-                "{module}: '{name}' [{id}]: auxiliary console port set to {port}".format(
-                    module=self.manager.module_name, name=self.name, id=self.id, port=aux
-                )
-            )
+            log.info(f"{self.manager.module_name}: '{self.name}' [{self.id}]: auxiliary console port set to {aux}")
 
     @property
     def console(self):
@@ -868,11 +854,7 @@ class BaseNode:
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
 
-            log.info(
-                "{module}: '{name}' [{id}]: console port set to {port}".format(
-                    module=self.manager.module_name, name=self.name, id=self.id, port=console
-                )
-            )
+            log.info(f"{self.manager.module_name}: '{self.name}' [{self.id}]: console port set to {console}")
 
     @property
     def console_type(self):
@@ -909,13 +891,7 @@ class BaseNode:
 
         self._console_type = console_type
         log.info(
-            "{module}: '{name}' [{id}]: console type set to {console_type} (console port is {console})".format(
-                module=self.manager.module_name,
-                name=self.name,
-                id=self.id,
-                console_type=console_type,
-                console=self.console,
-            )
+            f"{self.manager.module_name}: '{self.name}' [{self.id}]: console type set to {console_type} (console port is {self.console})"
         )
 
     @property
@@ -951,9 +927,7 @@ class BaseNode:
 
         self._aux_type = aux_type
         log.info(
-            "{module}: '{name}' [{id}]: console type set to {aux_type} (auxiliary console port is {aux})".format(
-                module=self.manager.module_name, name=self.name, id=self.id, aux_type=aux_type, aux=self.aux
-            )
+            f"{self.manager.module_name}: '{self.name}' [{self.id}]: console type set to {aux_type} (auxiliary console port is {self.aux})"
         )
 
     @property
@@ -1107,23 +1081,15 @@ class BaseNode:
             raise NodeError("Destination NIO is not UDP")
 
         await self._ubridge_send(
-            "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
-                name=bridge_name, lport=source_nio.lport, rhost=source_nio.rhost, rport=source_nio.rport
-            )
+            f"bridge add_nio_udp {bridge_name} {source_nio.lport} {source_nio.rhost} {source_nio.rport}"
         )
 
         await self._ubridge_send(
-            "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
-                name=bridge_name, lport=destination_nio.lport, rhost=destination_nio.rhost, rport=destination_nio.rport
-            )
+            f"bridge add_nio_udp {bridge_name} {destination_nio.lport} {destination_nio.rhost} {destination_nio.rport}"
         )
 
         if destination_nio.capturing:
-            await self._ubridge_send(
-                'bridge start_capture {name} "{pcap_file}"'.format(
-                    name=bridge_name, pcap_file=destination_nio.pcap_output_file
-                )
-            )
+            await self._ubridge_send(f'bridge start_capture {bridge_name} "{destination_nio.pcap_output_file}"')
 
         await self._ubridge_send(f"bridge start {bridge_name}")
         await self._ubridge_apply_filters(bridge_name, destination_nio.filters)
@@ -1237,7 +1203,7 @@ class BaseNode:
         # so allow up to 48 here.
         if not _MARKER_NAME_RE.match(name) or len(name) > 48:
             raise UbridgeError(f"Invalid marker name: {name!r}")
-        cmd = 'bridge add_packet_filter {bridge} {name} mark "{bpf}"'.format(bridge=bridge_name, name=name, bpf=bpf)
+        cmd = f'bridge add_packet_filter {bridge_name} {name} mark "{bpf}"'
         if tag is not None:
             cmd += f" tag {tag}"
         # Per-link attribution (contract §3.2): when one ubridge bridge serves
@@ -1250,7 +1216,7 @@ class BaseNode:
         linktype = self._marker_linktype(data_link_type)
         if linktype is not None:
             cmd += f" linktype {linktype}"
-        cmd += ' pcap "{path}"'.format(path=pcap_path)
+        cmd += f' pcap "{pcap_path}"'
         # Let BPF compile errors propagate — the marker is the user's intent, so a
         # bad expression must surface instead of being silently dropped.
         await self._ubridge_send(cmd)
@@ -1483,22 +1449,16 @@ class BaseNode:
 
         if sys.platform.startswith("linux") and block_host_traffic is False:
             # on Linux we use RAW sockets by default excepting if host traffic must be blocked
-            await self._ubridge_send(
-                'bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface)
-            )
+            await self._ubridge_send(f'bridge add_nio_linux_raw {bridge_name} "{ethernet_interface}"')
         else:
             # on other platforms we just rely on the pcap library
-            await self._ubridge_send(
-                'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface)
-            )
+            await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{ethernet_interface}"')
             source_mac = None
             for interface in interfaces():
                 if interface["name"] == ethernet_interface:
                     source_mac = interface["mac_address"]
             if source_mac:
-                await self._ubridge_send(
-                    'bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac)
-                )
+                await self._ubridge_send(f'bridge set_pcap_filter {bridge_name} "not ether src {source_mac}"')
                 log.info(f"PCAP filter applied on '{ethernet_interface}' for source MAC {source_mac}")
 
     def _create_local_udp_tunnel(self):
@@ -1516,9 +1476,7 @@ class BaseNode:
         source_nio = self.manager.create_nio(source_nio_settings)
         destination_nio = self.manager.create_nio(destination_nio_settings)
         log.info(
-            "{module}: '{name}' [{id}]:local UDP tunnel created between port {port1} and {port2}".format(
-                module=self.manager.module_name, name=self.name, id=self.id, port1=lport, port2=rport
-            )
+            f"{self.manager.module_name}: '{self.name}' [{self.id}]:local UDP tunnel created between port {lport} and {rport}"
         )
         return source_nio, destination_nio
 
@@ -1542,9 +1500,7 @@ class BaseNode:
         available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
         percentage_left = 100 - psutil.virtual_memory().percent
         if requested_ram > available_ram:
-            message = '"{}" requires {}MB of RAM to run but there is only {}MB - {}% of RAM left on "{}"'.format(
-                self.name, requested_ram, available_ram, percentage_left, platform.node()
-            )
+            message = f'"{self.name}" requires {requested_ram}MB of RAM to run but there is only {available_ram}MB - {percentage_left}% of RAM left on "{platform.node()}"'
             self.project.emit("log.warning", {"message": message})
 
     def _get_custom_adapter_settings(self, adapter_number):
