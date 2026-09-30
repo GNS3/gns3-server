@@ -79,7 +79,7 @@ class Snapshot:
                 .replace(tzinfo=None)
                 .strftime(DESCRIPTION_DATETIME_FORMAT)
             )
-            description = "Snapshot '{}' taken on {}".format(self._name, date)
+            description = f"Snapshot '{self._name}' taken on {date}"
 
         self._description = description
         self._filename = filename
@@ -157,7 +157,7 @@ class Snapshot:
                     auto_open=self._project.auto_open,
                     auto_close=self._project.auto_close,
                 )
-            log.info("Snapshot '{}' restored in {:.4f} seconds".format(self.name, time.time() - begin))
+            log.info(f"Snapshot '{self.name}' restored in {time.time() - begin:.4f} seconds")
         except (OSError, PermissionError) as e:
             raise ControllerError(str(e))
         await project.open()

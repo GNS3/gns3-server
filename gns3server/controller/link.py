@@ -552,14 +552,8 @@ class Link:
         adapter_number = self.capture_node["adapter_number"]
         port_number = self.capture_node["port_number"]
         url = (
-            "/projects/{project_id}/{node_type}/nodes/{node_id}/adapters/{adapter_number}/"
-            "ports/{port_number}/capture/stream".format(
-                project_id=self.project.id,
-                node_type=node_type,
-                node_id=node_id,
-                adapter_number=adapter_number,
-                port_number=port_number,
-            )
+            f"/projects/{self.project.id}/{node_type}/nodes/{node_id}/adapters/{adapter_number}/"
+            f"ports/{port_number}/capture/stream"
         )
 
         return compute._getUrl(url)
