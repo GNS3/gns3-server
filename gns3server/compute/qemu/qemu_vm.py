@@ -19,40 +19,40 @@ QEMU VM management (creates command line, processes, files etc.) in
 order to run a QEMU VM.
 """
 
-import sys
+import asyncio
+import json
+import logging
+import math
 import os
 import re
-import math
-import shutil
-import struct
-import asyncio
-import socket
-import gns3server
-import subprocess
-import time
-import json
 import shlex
+import shutil
+import socket
+import struct
+import subprocess
+import sys
+import time
+from pathlib import Path
+
 import psutil
 
-from pathlib import Path
+import gns3server
+from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
+from gns3server.utils.asyncio import cancellable_wait_run_in_executor, subprocess_check_output
+
+from ...utils import int_to_macaddress, is_ipv6_enabled, macaddress_to_int
+from ...utils.asyncio import monitor_process
+from ...utils.hostname import is_rfc1123_hostname_valid
+from ...utils.images import md5sum
+from ..adapters.ethernet_adapter import EthernetAdapter
+from ..base_node import BaseNode
+from ..error import ImageMissingError, NodeError
+from ..nios.nio_tap import NIOTAP
+from ..nios.nio_udp import NIOUDP
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
 from .utils.ziputils import pack_zip, unpack_zip
-from ..adapters.ethernet_adapter import EthernetAdapter
-from ..error import NodeError, ImageMissingError
-from ..nios.nio_udp import NIOUDP
-from ..nios.nio_tap import NIOTAP
-from ..base_node import BaseNode
-from ...utils.asyncio import monitor_process
-from ...utils.images import md5sum
-from ...utils import macaddress_to_int, int_to_macaddress, is_ipv6_enabled
-from ...utils.hostname import is_rfc1123_hostname_valid
-
-from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
-
-import logging
 
 log = logging.getLogger(__name__)
 

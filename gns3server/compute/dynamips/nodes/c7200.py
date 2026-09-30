@@ -20,13 +20,12 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L294
 """
 
 import asyncio
+import logging
 
-from .router import Router
 from ..adapters.c7200_io_fe import C7200_IO_FE
 from ..adapters.c7200_io_ge_e import C7200_IO_GE_E
 from ..dynamips_error import DynamipsError
-
-import logging
+from .router import Router
 
 log = logging.getLogger(__name__)
 

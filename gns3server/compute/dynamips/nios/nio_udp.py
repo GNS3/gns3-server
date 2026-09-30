@@ -19,13 +19,12 @@ Interface for UDP NIOs.
 """
 
 import asyncio
+import logging
 import uuid
 
 from gns3server.compute.nios import nio_udp
+
 from .nio import NIO
-
-
-import logging
 
 log = logging.getLogger(__name__)
 

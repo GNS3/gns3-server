@@ -18,28 +18,29 @@
 Docker server module.
 """
 
-import os
-import sys
-import json
 import asyncio
+import json
 import logging
-import aiohttp
+import os
 import shutil
+import sys
+
+import aiohttp
 import platformdirs
 
-from gns3server.utils import parse_version
-from gns3server.config import Config
-from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
-from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.docker.docker_error import (
     DockerError,
     DockerHttp304Error,
     DockerHttp404Error,
     DockerHttp409Error,
 )
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
+from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
+from gns3server.config import Config
+from gns3server.utils import parse_version
+from gns3server.utils.asyncio import locking
 
 log = logging.getLogger(__name__)
 

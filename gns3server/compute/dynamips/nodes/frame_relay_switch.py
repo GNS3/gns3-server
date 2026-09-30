@@ -20,12 +20,11 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 """
 
 import asyncio
-
-from .device import Device
-from ..nios.nio_udp import NIOUDP
-from ..dynamips_error import DynamipsError
-
 import logging
+
+from ..dynamips_error import DynamipsError
+from ..nios.nio_udp import NIOUDP
+from .device import Device
 
 log = logging.getLogger(__name__)
 

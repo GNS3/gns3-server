@@ -20,11 +20,11 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L428
 """
 
 import asyncio
-from .router import Router
+import logging
+
 from ..adapters.c1700_mb_1fe import C1700_MB_1FE
 from ..adapters.c1700_mb_wic1 import C1700_MB_WIC1
-
-import logging
+from .router import Router
 
 log = logging.getLogger(__name__)
 

@@ -20,25 +20,25 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 """
 
 import asyncio
-import time
-import sys
+import base64
+import binascii
+import glob
+import logging
 import os
 import re
-import glob
-import base64
 import shutil
-import binascii
-import logging
+import sys
+import time
 
 log = logging.getLogger(__name__)
 
-from ...base_node import BaseNode
-from ..dynamips_error import DynamipsError
-
+from gns3server.utils.asyncio import monitor_process, wait_run_in_executor
 from gns3server.utils.file_watcher import FileWatcher
-from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
 from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.images import md5sum
+
+from ...base_node import BaseNode
+from ..dynamips_error import DynamipsError
 
 
 class Router(BaseNode):

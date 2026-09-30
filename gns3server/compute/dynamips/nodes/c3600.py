@@ -20,10 +20,10 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L366
 """
 
 import asyncio
-from .router import Router
-from ..adapters.leopard_2fe import Leopard_2FE
-
 import logging
+
+from ..adapters.leopard_2fe import Leopard_2FE
+from .router import Router
 
 log = logging.getLogger(__name__)
 

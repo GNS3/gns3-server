@@ -18,16 +18,16 @@
 Represents a Dynamips hypervisor and starts/stops the associated Dynamips process.
 """
 
-import sys
+import asyncio
+import logging
 import os
 import subprocess
-import asyncio
+import sys
 
 from gns3server.utils.asyncio import wait_for_process_termination
-from .dynamips_hypervisor import DynamipsHypervisor
-from .dynamips_error import DynamipsError
 
-import logging
+from .dynamips_error import DynamipsError
+from .dynamips_hypervisor import DynamipsHypervisor
 
 log = logging.getLogger(__name__)
 

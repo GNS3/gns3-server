@@ -19,10 +19,10 @@ Interface for Dynamips hypervisor management module ("hypervisor")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
+import asyncio
+import logging
 import re
 import time
-import logging
-import asyncio
 
 from .dynamips_error import DynamipsError
 

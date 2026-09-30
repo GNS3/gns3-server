@@ -18,14 +18,13 @@
 IOU server module.
 """
 
-import os
 import asyncio
+import logging
+import os
 
 from ..base_manager import BaseManager
 from .iou_error import IOUError
 from .iou_vm import IOUVM
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -19,37 +19,37 @@ IOU VM management (creates command line, processes, files etc.) in
 order to run an IOU VM.
 """
 
-import os
-import socket
-import re
 import asyncio
-import subprocess
-import shutil
-import configparser
-import struct
-import hashlib
-import glob
 import binascii
+import configparser
 import functools
+import glob
+import hashlib
+import logging
+import os
+import re
+import shutil
+import socket
+import struct
+import subprocess
+import sys
 
-from .iou_error import IOUError
-from ..adapters.ethernet_adapter import EthernetAdapter
-from ..adapters.serial_adapter import SerialAdapter
-from ..nios.nio_udp import NIOUDP
-from ..base_node import BaseNode
-from .utils.iou_import import nvram_import
-from .utils.iou_export import nvram_export
-from gns3server.compute.ubridge.ubridge_error import UbridgeError
-from gns3server.utils.file_watcher import FileWatcher
-from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.hostname import is_ios_hostname_valid
-from gns3server.utils.asyncio import locking
 import gns3server.utils.asyncio
 import gns3server.utils.images
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.utils.asyncio import locking
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.file_watcher import FileWatcher
+from gns3server.utils.hostname import is_ios_hostname_valid
 
-import logging
-import sys
+from ..adapters.ethernet_adapter import EthernetAdapter
+from ..adapters.serial_adapter import SerialAdapter
+from ..base_node import BaseNode
+from ..nios.nio_udp import NIOUDP
+from .iou_error import IOUError
+from .utils.iou_export import nvram_export
+from .utils.iou_import import nvram_import
 
 log = logging.getLogger(__name__)
 

@@ -20,17 +20,16 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
 import asyncio
+import logging
+
 from gns3server.utils import parse_version
 
-# from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
-
-
-from .device import Device
-from ..nios.nio_udp import NIOUDP
-from ..dynamips_error import DynamipsError
 from ...error import NodeError
+from ..dynamips_error import DynamipsError
+from ..nios.nio_udp import NIOUDP
 
-import logging
+# from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
+from .device import Device
 
 log = logging.getLogger(__name__)
 

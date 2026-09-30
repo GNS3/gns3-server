@@ -19,24 +19,23 @@ Qemu server module.
 """
 
 import asyncio
+import logging
 import os
 import platform
-import shutil
-import shlex
-import sys
 import re
+import shlex
+import shutil
 import subprocess
+import sys
 
 from ...utils.asyncio import subprocess_check_output
 from ...utils.get_resource import get_resource
 from ..base_manager import BaseManager
-from ..error import NodeError, ImageMissingError
+from ..error import ImageMissingError, NodeError
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
 from .utils.guest_cid import get_next_guest_cid
 from .utils.ziputils import unpack_zip
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -19,10 +19,10 @@ Interface for Linux Ethernet NIOs (Linux only).
 """
 
 import asyncio
-import uuid
-from .nio import NIO
-
 import logging
+import uuid
+
+from .nio import NIO
 
 log = logging.getLogger(__name__)
 
