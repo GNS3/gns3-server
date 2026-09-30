@@ -66,7 +66,7 @@ def _get_windows_interfaces_from_registry():
                 if ip_address:
                     # get the first IPv4 address only
                     ip_address = ip_address[0]
-            npf_interface = "\\Device\\NPF_{guid}".format(guid=guid)
+            npf_interface = f"\\Device\\NPF_{guid}"
             interfaces.append(
                 {
                     "id": npf_interface,
@@ -116,7 +116,7 @@ def get_windows_interfaces():
                             ip_address = network_config.IPAddress[0]
                             netmask = network_config.IPSubnet[0]
                         break
-                npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
+                npf_interface = f"\\Device\\NPF_{adapter.GUID}"
                 interfaces.append(
                     {
                         "id": npf_interface,

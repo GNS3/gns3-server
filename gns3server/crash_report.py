@@ -77,14 +77,14 @@ class CrashReport:
                     dsn=CrashReport.DSN, release=__version__, default_integrations=False, integrations=[sentry_logging]
                 )
             except Exception as e:
-                log.error("Crash report could not be sent: {}".format(e))
+                log.error(f"Crash report could not be sent: {e}")
                 return
 
             tags = {
                 "os:name": platform.system(),
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
-                "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
+                "os:mac": f"{platform.mac_ver()[0]} {platform.mac_ver()[2]}",
                 "os:linux": distro.name(pretty=True),
             }
 
@@ -93,7 +93,7 @@ class CrashReport:
                     scope.set_tag(key, value)
 
             extra_context = {
-                "python:version": "{}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]),
+                "python:version": f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}",
                 "python:bit": struct.calcsize("P") * 8,
                 "python:encoding": sys.getdefaultencoding(),
                 "python:frozen": "{}".format(hasattr(sys, "frozen")),

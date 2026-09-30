@@ -465,9 +465,7 @@ class TestNodeRoutes:
 
         compute.http_query.assert_called_with(
             "GET",
-            "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
-                project_id=project.id, node_id=node.id
-            ),
+            f"/projects/{project.id}/files/project-files/vpcs/{node.id}/hello",
             timeout=None,
             stream=True,
         )
@@ -491,16 +489,12 @@ class TestNodeRoutes:
         compute.http_query.assert_called_once()
         call_args = compute.http_query.call_args
         assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
-            project_id=project.id, node_id=node.id
-        )
+        assert call_args[0][1] == f"/projects/{project.id}/files/project-files/vpcs/{node.id}/hello"
         assert call_args[1]["timeout"] is None
         # data should be an async generator from request.stream()
         assert hasattr(call_args[1]["data"], "__aiter__")
 
-        response = await client.get(
-            "/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id)
-        )
+        response = await client.get(f"/projects/{project.id}/nodes/{node.id}/files/../hello")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     # @pytest.mark.asyncio
