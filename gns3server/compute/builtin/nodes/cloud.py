@@ -323,7 +323,7 @@ class Cloud(BaseNode):
 
             if port_info["type"] == "ethernet":
                 network_interfaces = [interface["name"] for interface in self._interfaces()]
-                if not port_info["interface"] in network_interfaces:
+                if port_info["interface"] not in network_interfaces:
                     raise NodeError(
                         f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
                     )
