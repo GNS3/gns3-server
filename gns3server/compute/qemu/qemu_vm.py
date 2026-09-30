@@ -2102,7 +2102,7 @@ class QemuVM(BaseNode):
                 raise OSError(f"mcopy failure: return code {retcode}")
 
     async def _export_config(self):
-        disk_name = getattr(self, "config_disk_name")
+        disk_name = self.config_disk_name
         if not disk_name:
             return
         disk = os.path.join(self.working_dir, disk_name)
@@ -2122,7 +2122,7 @@ class QemuVM(BaseNode):
         shutil.rmtree(config_dir, ignore_errors=True)
 
     async def _import_config(self):
-        disk_name = getattr(self, "config_disk_name")
+        disk_name = self.config_disk_name
         zip_file = os.path.join(self.working_dir, "config.zip")
         if not disk_name or not os.path.exists(zip_file):
             return
@@ -2131,7 +2131,7 @@ class QemuVM(BaseNode):
         disk_tmp = disk + ".tmp"
         try:
             os.mkdir(config_dir)
-            shutil.copyfile(getattr(self, "config_disk_image"), disk_tmp)
+            shutil.copyfile(self.config_disk_image, disk_tmp)
             unpack_zip(zip_file, config_dir)
             config_files = [os.path.join(config_dir, fname) for fname in os.listdir(config_dir)]
             if config_files:
@@ -2279,9 +2279,9 @@ class QemuVM(BaseNode):
             options.extend(await self._disk_interface_options(disk, disk_index, interface))
 
         # config disk
-        disk_image = getattr(self, "config_disk_image")
+        disk_image = self.config_disk_image
         if disk_image and self._create_config_disk:
-            disk_name = getattr(self, "config_disk_name")
+            disk_name = self.config_disk_name
             disk = os.path.join(self.working_dir, disk_name)
             if self.hdd_disk_interface == "none":
                 # use the HDA interface type if none has been configured for HDD
