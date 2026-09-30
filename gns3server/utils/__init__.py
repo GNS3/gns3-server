@@ -72,7 +72,7 @@ def parse_version(version):
             info = int(info)
             # We pad with zero to compare only on string
             # This avoid issue when comparing version with different length
-            version.append("%06d" % (info,))
+            version.append(f"{info:06d}")
         except ValueError:
             # Force to a version with three number
             if len(version) == 1:

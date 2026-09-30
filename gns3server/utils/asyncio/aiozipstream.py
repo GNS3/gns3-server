@@ -187,7 +187,7 @@ class ZipFile(zipfile.ZipFile):
         # check for valid comment length
         if len(comment) >= zipfile.ZIP_MAX_COMMENT:
             if self.debug:
-                print("Archive comment is too long; truncating to %d bytes" % zipfile.ZIP_MAX_COMMENT)
+                print(f"Archive comment is too long; truncating to {zipfile.ZIP_MAX_COMMENT} bytes")
             comment = comment[: zipfile.ZIP_MAX_COMMENT]
         self._comment = comment
         self._didModify = True
