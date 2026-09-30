@@ -1731,7 +1731,7 @@ class Project:
                 )
             shutil.rmtree(self.path)
         except OSError as e:
-            raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
+            raise ControllerError(f"Cannot delete project directory {self.path}: {e!s}")
         self.emit_controller_notification("project.deleted", self.asdict())
 
     def _get_disconnected_computes(self):
@@ -2081,7 +2081,7 @@ class Project:
             else:
                 log.info("Fast duplication failed, fallback to normal duplication")
         except Exception as e:
-            raise ControllerError(f"Cannot duplicate project: {str(e)}")
+            raise ControllerError(f"Cannot duplicate project: {e!s}")
 
         try:
             begin = time.time()
@@ -2119,7 +2119,7 @@ class Project:
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, UnicodeEncodeError) as e:
-            raise ControllerError(f"Cannot duplicate project: {str(e)}")
+            raise ControllerError(f"Cannot duplicate project: {e!s}")
 
         if previous_status == "closed":
             await self.close()

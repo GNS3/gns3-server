@@ -496,7 +496,7 @@ def _test_parse_tool_content() -> None:
     for i, (input_data, expected) in enumerate(test_cases):
         result = parse_tool_content(input_data)
         status = "✓" if result == expected else "✗"
-        print(f"Test {i + 1}: {status} Input: {repr(input_data)} -> {result}")
+        print(f"Test {i + 1}: {status} Input: {input_data!r} -> {result}")
 
     print("\nTesting format_tool_response function:")
     format_tests = [
@@ -518,7 +518,7 @@ def _test_parse_tool_content() -> None:
             valid = "✓"
         except Exception:
             valid = "✗"
-        print(f"Format Test {i + 1}: {valid} Input: {repr(input_data)} -> {result}")
+        print(f"Format Test {i + 1}: {valid} Input: {input_data!r} -> {result}")
 
 
 if __name__ == "__main__":

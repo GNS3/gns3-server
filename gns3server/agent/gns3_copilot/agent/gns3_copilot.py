@@ -527,7 +527,7 @@ def tool_node(state: dict, config: RunnableConfig | None = None):
             )
         except Exception as e:
             logger.error("Tool %s failed: %s", tool_name, e, exc_info=True)
-            observation = f"Error: {str(e)}"
+            observation = f"Error: {e!s}"
 
         # Serialize observation to JSON string if it's not already a string
         # This ensures ToolMessage.content is always JSON format, not Python

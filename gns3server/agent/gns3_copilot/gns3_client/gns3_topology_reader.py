@@ -145,7 +145,7 @@ class GNS3TopologyTool(BaseTool):
 
         except Exception as e:
             logger.error("Error retrieving GNS3 topology: %s", str(e))
-            return {"error": f"Failed to retrieve topology: {str(e)}"}
+            return {"error": f"Failed to retrieve topology: {e!s}"}
 
     def _clean_nodes_ports(self, data: dict) -> dict:
         """

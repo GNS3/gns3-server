@@ -255,7 +255,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing configurations on all devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.info(
             "Multiple device configuration execution completed. Results: %s",
@@ -285,7 +285,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (ReadTimeout): {str(e)}",
+                result=f"Configuration failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -305,7 +305,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (Unhandled Exception): {str(e)}",
+                result=f"Configuration failed (Unhandled Exception): {e!s}",
                 failed=True,
             )
 

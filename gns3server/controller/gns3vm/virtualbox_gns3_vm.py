@@ -260,7 +260,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             await self._check_requirements()
             return await self._virtualbox_manager.list_vms()
         except VirtualBoxError as e:
-            raise GNS3VMError(f"Could not list VirtualBox VMs: {str(e)}")
+            raise GNS3VMError(f"Could not list VirtualBox VMs: {e!s}")
 
     async def start(self):
         """

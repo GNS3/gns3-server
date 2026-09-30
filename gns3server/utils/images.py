@@ -114,7 +114,7 @@ async def list_images(image_type):
                         }
                     )
                 except OSError as e:
-                    log.warning(f"Can't add image {path}: {str(e)}")
+                    log.warning(f"Can't add image {path}: {e!s}")
     return images
 
 

@@ -97,7 +97,7 @@ class Router(BaseNode):
         try:
             os.makedirs(os.path.join(self._working_directory, "configs"), exist_ok=True)
         except OSError as e:
-            raise DynamipsError(f"Can't create the dynamips config directory: {str(e)}")
+            raise DynamipsError(f"Can't create the dynamips config directory: {e!s}")
         if dynamips_id:
             self._convert_before_2_0_0_b3(dynamips_id)
 
@@ -153,7 +153,7 @@ class Router(BaseNode):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    log.error(f"Can't move {path}: {str(e)}")
+                    log.error(f"Can't move {path}: {e!s}")
                     continue
         for path in glob.glob(os.path.join(glob.escape(dynamips_dir), f"*_i{dynamips_id}_*")):
             dst = os.path.join(self._working_directory, os.path.basename(path))
@@ -161,7 +161,7 @@ class Router(BaseNode):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    log.error(f"Can't move {path}: {str(e)}")
+                    log.error(f"Can't move {path}: {e!s}")
                     continue
 
     def asdict(self):
@@ -1608,7 +1608,7 @@ class Router(BaseNode):
         try:
             open(output_file, "w+").close()
         except OSError as e:
-            raise DynamipsError(f'Can not write capture to "{output_file}": {str(e)}')
+            raise DynamipsError(f'Can not write capture to "{output_file}": {e!s}')
 
         try:
             adapter = self._slots[slot_number]

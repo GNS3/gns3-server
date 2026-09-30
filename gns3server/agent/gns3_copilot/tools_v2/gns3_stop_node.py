@@ -198,7 +198,7 @@ class GNS3StopNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to stop nodes: %s", e)
-            return {"error": f"Failed to stop nodes: {str(e)}"}
+            return {"error": f"Failed to stop nodes: {e!s}"}
 
 
 if __name__ == "__main__":

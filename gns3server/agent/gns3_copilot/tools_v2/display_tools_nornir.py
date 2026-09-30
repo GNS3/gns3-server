@@ -253,7 +253,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing display on all devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.debug(
             "Multiple device display execution completed. Results: %s",
@@ -288,7 +288,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"diagnostic command failed (ReadTimeout): {str(e)}",
+                result=f"diagnostic command failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -313,7 +313,7 @@ class ExecuteMultipleDeviceCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"diagnostic command failed (Unhandled): {str(e)}",
+                result=f"diagnostic command failed (Unhandled): {e!s}",
                 failed=True,
             )
 

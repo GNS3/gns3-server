@@ -244,7 +244,7 @@ class GNS3CreateNodeTool(BaseTool):
 
                 except Exception as e:
                     error_info = {
-                        "error": f"Node {i + 1} creation failed: {str(e)}",
+                        "error": f"Node {i + 1} creation failed: {e!s}",
                         "status": "failed",
                     }
                     results.append(error_info)
@@ -280,7 +280,7 @@ class GNS3CreateNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to process node creation request: %s", e)
-            return {"error": f"Failed to process node creation request: {str(e)}"}
+            return {"error": f"Failed to process node creation request: {e!s}"}
 
 
 if __name__ == "__main__":

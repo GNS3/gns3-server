@@ -1468,7 +1468,7 @@ class DockerVM(BaseNode):
                     pass
         # Ignore runtime error because when closing the server
         except RuntimeError as e:
-            log.debug(f"Docker runtime error when closing: {str(e)}")
+            log.debug(f"Docker runtime error when closing: {e!s}")
             return
         self.status = "stopped"
 
@@ -1571,7 +1571,7 @@ class DockerVM(BaseNode):
                                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
         # Ignore runtime error because when closing the server
         except (DockerHttp404Error, RuntimeError) as e:
-            log.debug(f"Docker error when closing: {str(e)}")
+            log.debug(f"Docker error when closing: {e!s}")
             return
 
     def _get_container_ifname(self, adapter_number):
@@ -1775,7 +1775,7 @@ class DockerVM(BaseNode):
 
         for index in range(4096):
             if f"tap-gns3-e{index}" not in psutil.net_if_addrs():
-                adapter.host_ifc = f"tap-gns3-e{str(index)}"
+                adapter.host_ifc = f"tap-gns3-e{index!s}"
                 break
         if adapter.host_ifc is None:
             raise DockerError(

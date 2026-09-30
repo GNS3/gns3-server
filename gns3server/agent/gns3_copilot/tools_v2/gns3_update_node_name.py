@@ -241,7 +241,7 @@ class GNS3UpdateNodeNameTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to update node names: %s", e)
-            return {"error": f"Failed to update node names: {str(e)}"}
+            return {"error": f"Failed to update node names: {e!s}"}
 
 
 if __name__ == "__main__":

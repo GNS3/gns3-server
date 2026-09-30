@@ -220,7 +220,7 @@ class GNS3StartNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to start nodes: %s", e)
-            return {"error": f"Failed to start nodes: {str(e)}"}
+            return {"error": f"Failed to start nodes: {e!s}"}
 
 
 # Backward-compat alias: the waiting variant was removed; both names now

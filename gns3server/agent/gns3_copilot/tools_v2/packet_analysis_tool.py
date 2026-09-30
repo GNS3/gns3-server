@@ -325,7 +325,7 @@ class PacketAnalysisTool(BaseTool):
 
         except Exception as e:
             logger.error(f"PacketAnalysisTool error: {e}", exc_info=True)
-            return f'{{"error": "Analysis failed: {str(e)}"}}'
+            return f'{{"error": "Analysis failed: {e!s}"}}'
 
         finally:
             # Clean up temp file
@@ -497,7 +497,7 @@ class PacketAnalysisTool(BaseTool):
             return '{"error": "tshark not installed. Please install tshark: apt install tshark"}'
         except Exception as e:
             logger.error(f"tshark execution error: {e}", exc_info=True)
-            return f'{{"error": "tshark failed: {str(e)}"}}'
+            return f'{{"error": "tshark failed: {e!s}"}}'
 
 
 if __name__ == "__main__":

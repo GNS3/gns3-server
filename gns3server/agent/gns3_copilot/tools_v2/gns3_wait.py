@@ -104,4 +104,4 @@ class GNS3WaitTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Wait tool failed: %s", e)
-            return {"error": f"Wait tool failed: {str(e)}"}
+            return {"error": f"Wait tool failed: {e!s}"}

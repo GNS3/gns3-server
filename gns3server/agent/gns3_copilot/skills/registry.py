@@ -239,7 +239,7 @@ def reload_injection_skills() -> dict[str, Any]:
         logger.error(f"Error during skills reload: {e}")
         return {
             "success": False,
-            "message": f"Error: {str(e)}",
+            "message": f"Error: {e!s}",
             "skill_count": len(INJECTION_SKILLS_REGISTRY),
             "version": "",
         }
@@ -278,7 +278,7 @@ def reload_prompts() -> dict[str, Any]:
         manager = get_skills_manager()
         return {
             "success": False,
-            "message": f"Error: {str(e)}",
+            "message": f"Error: {e!s}",
             "prompt_count": manager.get_prompt_count() if manager else 0,
             "version": "",
         }
@@ -314,7 +314,7 @@ def reload_forbidden_commands() -> dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error during forbidden commands reload: {e}")
-        return {"success": False, "message": f"Error: {str(e)}", "command_count": 0, "version": ""}
+        return {"success": False, "message": f"Error: {e!s}", "command_count": 0, "version": ""}
 
 
 def get_prompt(prompt_name: str) -> str:
