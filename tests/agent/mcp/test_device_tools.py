@@ -8,7 +8,6 @@ device_config_send / device_show_run / vpcs_config_set.
 import json
 from unittest.mock import MagicMock, patch
 
-
 VPCS_MOD = "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko"
 
 
