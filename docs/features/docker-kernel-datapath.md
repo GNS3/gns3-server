@@ -163,6 +163,15 @@ reopen flips the field. It is not persisted and never sent on create/update.
   orphan. Both endpoints do this and the peer's still-enslaved port makes
   the delete fail with EBUSY (suppressed, last one wins), the same contract
   as link deletion; a node restart rebuilds the bridge from the NIO.
+* **Host L3 noise (known, hardening specified).** An anchor is a host-side
+  netdev like any other, so the kernel gives it an IPv6 link-local address and
+  emits its own MLD/DAD from it (measured ≈6 frames / 2 s on an idle TAP; the
+  production anchors and per-link bridges carry `fe80::…` today). On a kernel
+  link the bridge floods those frames into the emulated segment — and the host
+  answers neighbor solicitations for its own address, which looks like a phantom
+  IPv6 neighbor to the emulated nodes. The fix is to make anchors pure L2 at
+  creation time on the uBridge side:
+  `docs/design/ubridge-l2-anchor-spec.md`.
 
 ## Link operations
 

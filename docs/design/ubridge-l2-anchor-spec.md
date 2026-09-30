@@ -1,0 +1,181 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+See LICENSE file for licensing information.
+-->
+
+> Frozen requirements spec for the **uBridge** project. Status: **not yet
+> delivered.** Requested by gns3-server branch `feat/qemu-kernel-datapath`
+> (QEMU persistent-TAP anchors) and, retroactively, by the shipped Docker
+> kernel-datapath stack: today every host-side anchor device carries an IPv6
+> identity, so emulated links carry the *host's* IPv6 chatter.
+>
+> Scope guard: no wire format, no command grammar change to existing
+> commands — this adds one command and one internal step in four creators.
+
+# L2-only host anchor devices (`link l2only`)
+
+## 0. Background & scope
+
+### What an anchor is
+
+The host-side device that carries a node's adapter in the root namespace:
+the veth host end of a Docker adapter (`gv…`, created by `docker create_veth`),
+the persistent TAP of a QEMU adapter (`gq…`, created by `tap create`), and the
+per-link kernel bridge those anchors are enslaved to (`brctl create`). Links
+attach *to* these devices (kernel bridge port or uBridge relay endpoint); the
+devices themselves are the only thing uBridge creates on the host's behalf.
+
+### The problem (measured)
+
+A host-side anchor that is UP gets an IPv6 link-local address from the kernel
+automatically — no user-space actor involved — and with it the kernel emits its
+own traffic on that device:
+
+- a freshly created persistent TAP, brought UP: **6 frames in 2 s** of MLD
+  reports (`33:33:00:00:00:16`, `33:33:00:00:00:fb`) and DAD neighbor
+  solicitations (`33:33:ff:…`, ICMPv6 next-header 0/17/58), all sourced from the
+  device's own link-local address;
+- production: the Docker veth host end `gv6ee8d537e1p0` carries
+  `fe80::5c30:e8ff:fe00:5d8d/64` (`disable_ipv6=0`), and the per-link bridge
+  `gns30dbb78c5718` carries `fe80::f0d9:94ff:feac:e42b/64`.
+
+Consequences inside an emulated topology:
+
+- on a **kernel-datapath** link the bridge floods those frames into the emulated
+  segment; on a **relay** link uBridge relays them to the peer compute;
+- they land in captures and marker pcaps, so "idle link" is not quiet;
+- the host **answers** neighbor solicitations for its own link-local address, so
+  an emulated IPv6 router can form a real adjacency with the host — a phantom
+  neighbour inside the emulated network.
+
+IPv4 needs no equivalent knob: nothing self-provisions an IPv4 address, and the
+invariant we keep is *no addresses at all* (measured: `ip -4 addr` is empty on
+every anchor and per-link bridge on the deployment above, with NetworkManager
+reporting them `unmanaged`). IPv6 is the only protocol that lights itself up.
+
+### Goal
+
+Every host-side device uBridge creates for the data plane is **pure L2**: no
+IPv4 address, no IPv6 address, and no IPv6 stack activity on that device.
+
+Explicitly **not** in scope:
+
+- the guest/container side (the peer veth end inside a container netns keeps its
+  normal IPv6 behaviour);
+- global sysctls and any change outside the named interface;
+- `brctl addip`-style L3 use of a bridge (cloud / Ethernet-switch paths) — those
+  devices are meant to have addresses and are not data-plane anchors.
+
+## A. New command: `link l2only <iface> [on|off]`
+
+Belongs to the `link` module (per-interface operations: `link set`, `link veth`,
+`link addr`, `link delete`).
+
+| Arg | Description |
+|-----|-------------|
+| `<iface>` | An **existing** device. A missing name must fail (`208/ENODEV`), never create a transient device — mirror the `tap` module's `tap_require_existing` reasoning. |
+| `on` / `off` | Default `on`. `on` = suppress IPv6 address generation and stack activity on the device; `off` = restore the kernel default. |
+
+Semantics of `on`: after the call the kernel has assigned **no** IPv6
+link-local address to the device, and the device's `addrgenmode` reports `none`
+(`IFLA_INET6_ADDR_GEN_MODE = IN6_ADDR_GEN_MODE_NONE`), so no DAD, MLD or RS is
+generated from it. If an address already exists it is removed as part of the
+call (an anchor that was created and brought up before this command must end up
+clean, not just "no new addresses from now on").
+
+Replies:
+
+```
+link l2only gq1234abcd e0
+100-L2-only set on gq1234abcd e0
+link l2only gq1234abcd e0 on
+100-L2-only set on gq1234abcd e0          # idempotent, same reply
+link l2only gq1234abcd e0 off
+100-L2-only cleared on gq1234abcd e0
+```
+
+The success reply is emitted only after a read-back (`RTM_GETLINK` +
+`IFLA_AF_SPEC` → `IFLA_INET6_ADDR_GEN_MODE`) confirms the device state, so a
+caller may treat `100` as verified rather than requested.
+
+## B. Where it must be applied
+
+The creators apply it themselves — gns3-server never issues `link l2only`
+directly, and a caller cannot forget it:
+
+| Creator | Device hardened | Notes |
+|---|---|---|
+| `tap create <name>` | the persistent TAP | before the success reply; the device already exists (TUNSETPERSIST) |
+| `docker create_veth <host> <guest>` | the **host** end only | the guest end moves into a container netns and is deliberately untouched |
+| `link veth <name> <peer>` | both ends | both ends are host-side |
+| `brctl create <bridge>` | the bridge device itself | the fabric the anchors are enslaved to; the bridge's own link-local floods to every port |
+
+Rule for future creators: any command that creates a host-side device for the
+data plane hardens it, and the acceptance checks in §E apply to it.
+
+## C. Implementation notes (netlink, not `/proc`)
+
+- Use `RTM_SETLINK` with `IFLA_AF_SPEC{ AF_INET6, IFLA_INET6_ADDR_GEN_MODE =
+  IN6_ADDR_GEN_MODE_NONE }` — this is what `ip link set dev X addrgenmode none`
+  does. Removing an already-assigned link-local is `RTM_DELADDR` on that
+  address (or letting the kernel drop it once generation is off; verify the end
+  state either way).
+- Optionally also set the nested `IFLA_INET6_CONF` attributes
+  (`DEVCONF_DISABLE_IPV6 = 1`, `DEVCONF_ACCEPT_RA = 0`) when the running kernel
+  accepts writes for them. The addr-gen-mode attribute alone already removes the
+  address, and without an address there is no DAD/MLD/RS.
+- Do **not** write `/proc/sys/net/ipv6/conf/<if>/disable_ipv6`. The sysctl files
+  are root-owned mode 0644, so a setcap'd, non-root uBridge can be refused by
+  the DAC check despite holding `CAP_NET_ADMIN`. The netlink route has no such
+  problem.
+- Failure handling: `EOPNOTSUPP` / `EINVAL` from an old kernel without the
+  attribute must be **non-fatal** (log, continue) so device creation never fails
+  because of this hardening; `ENODEV` and any other error are real and reported.
+
+## D. Reply contract & error codes
+
+| Code | Meaning |
+|------|---------|
+| `100` | OK — device verified L2-only (or verified restored for `off`) |
+| `203` | Bad number of parameters |
+| `204` | Invalid parameter (`on`/`off` expected) |
+| `208` | Object not found (`ENODEV`): no such device |
+| `206` | Unable to set (netlink error other than EOPNOTSUPP/EINVAL) |
+
+## E. Test requirements
+
+1. **No addresses.** After each creator: `ip -6 addr show dev <dev>` is empty
+   (in particular no `fe80::`) and `ip -4 addr show dev <dev>` is empty; the
+   same for the bridge created by `brctl create`.
+2. **Idle silence.** With the device UP and in its normal role (TAP with an open
+   fd / veth with its peer up / bridge with two attached ports), nothing appears
+   on it for 5 s — measured from the peer end, or via
+   `capture start_kernel <dev> <pcap>` while idle and by asserting the pcap has
+   zero packets. Baseline today: 6 frames / 2 s.
+3. **Idempotency & revert.** `on` twice → `100` both times, state unchanged;
+   `off` restores the kernel default (link-local returns after the device is
+   cycled down/up).
+4. **No transient device.** `link l2only nosuchif0` → `208`, and no interface is
+   created (check `ip -o link`).
+5. **Far side untouched.** Inside the container / VM the normal IPv6 link-local
+   still exists — nothing in this change reaches the peer.
+6. **Non-fatal on old kernels.** Simulated by testing on a kernel without the
+   attribute: the creators still succeed, and §E.1 is then expected to fail with
+   the device left in the default state.
+
+## gns3-server alignment (informational — not uBridge scope)
+
+- **Call sites unchanged**: the four creators harden the devices; the server does
+  not issue `link l2only`, and no NIO/JSON schema, filter or MCP tool description
+  changes. This is host-side hygiene only.
+- **e2e assertions to add** (kernel-datapath suites, alongside the existing
+  capture/marker/filter checks):
+  - anchors and per-link bridges have no IPv4/IPv6 addresses (§E.1);
+  - an idle anchor captures zero frames in 5 s (§E.2);
+  - a silent-failure guard found while validating this spec: after attach, every
+    bridge port reports `brport/state == 3` (forwarding). A bridge device left
+    DOWN keeps its ports `DISABLED` (`state == 0`) and forwards nothing — with
+    no error anywhere, so the assertion is the only signal.
+- **Rollout**: with a uBridge that lacks the command the anchors keep today's
+  behaviour (noise present). The e2e assertions skip when `link l2only` answers
+  `202-Unknown command`, mirroring the existing tc-capability degradation.
