@@ -19,12 +19,12 @@ API routes for IOU nodes.
 """
 
 import os
-
-from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from typing import Any, Union
 from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute.iou import IOU

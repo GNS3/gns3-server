@@ -18,17 +18,17 @@
 API routes for Ethernet hub nodes.
 """
 
-from typing import Any
 import os
-
-from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
+from typing import Any
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+
+from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.ethernet_hub import EthernetHub
-from gns3server import schemas
 
 responses: dict[int | str, dict[str, Any]] = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet hub node"}

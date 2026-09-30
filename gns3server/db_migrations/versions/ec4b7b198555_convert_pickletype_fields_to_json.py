@@ -6,8 +6,8 @@ Create Date: 2026-04-03 19:51:06.173013
 
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "ec4b7b198555"
@@ -21,8 +21,8 @@ def convert_pickle_to_json(conn, table_name: str, column_name: str) -> None:
     Convert a PickleType column to JSON for all rows in a table.
     """
 
-    import pickle
     import json
+    import pickle
 
     result = conn.execute(sa.text(f"SELECT template_id, {column_name} FROM {table_name}"))
     for row in result:
@@ -49,8 +49,8 @@ def convert_json_to_pickle(conn, table_name: str, column_name: str) -> None:
     Convert a JSON column to PickleType for all rows in a table.
     """
 
-    import pickle
     import json
+    import pickle
 
     result = conn.execute(sa.text(f"SELECT template_id, {column_name} FROM {table_name}"))
     for row in result:

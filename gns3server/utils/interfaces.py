@@ -16,9 +16,10 @@
 
 
 import os
-import sys
 import socket
 import struct
+import sys
+
 import psutil
 
 from gns3server.compute.compute_error import ComputeError
@@ -94,8 +95,8 @@ def get_windows_interfaces():
     :returns: list of windows interfaces
     """
 
-    import win32com.client
     import pywintypes
+    import win32com.client
 
     interfaces = []
     try:

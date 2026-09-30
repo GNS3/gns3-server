@@ -19,14 +19,14 @@ API routes for capabilities
 """
 
 import sys
-import psutil
 
+import psutil
 from fastapi import APIRouter, Request
 
-from gns3server.version import __version__
+from gns3server import schemas
 from gns3server.compute import MODULES
 from gns3server.utils.path import get_default_project_directory
-from gns3server import schemas
+from gns3server.version import __version__
 
 router = APIRouter()
 

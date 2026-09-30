@@ -25,14 +25,14 @@ Entry point of the server. It's support daemonize the process
 # if is not writetable the application crash. It's the user fault
 # because one day the user as used sudo to run an egg and break his
 # filesystem permissions, but it's a common mistake.
-import gns3server.utils.get_resource
-
-import os
-import sys
-import asyncio
 import argparse
+import asyncio
 import logging
+import os
 import resource
+import sys
+
+import gns3server.utils.get_resource
 
 
 def daemonize():

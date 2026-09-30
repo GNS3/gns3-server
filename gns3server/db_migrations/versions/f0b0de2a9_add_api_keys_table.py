@@ -6,8 +6,9 @@ Create Date: 2026-06-11 10:00:00.000000
 
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
+
 import gns3server.db.models.base as models
 
 # revision identifiers, used by Alembic.

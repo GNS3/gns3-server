@@ -16,12 +16,12 @@
 
 import os
 
-from fastapi import APIRouter, Request, HTTPException, status
-from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from gns3server.version import __version__
 from gns3server.utils.get_resource import get_resource
+from gns3server.version import __version__
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join("gns3server", "templates"))

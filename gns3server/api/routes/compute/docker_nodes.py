@@ -19,16 +19,17 @@ API routes for Docker nodes.
 """
 
 import os
+from typing import Any, Union
+from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from uuid import UUID
-from typing import Any, Union
 
 from gns3server import schemas
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
+
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses: dict[int | str, dict[str, Any]] = {

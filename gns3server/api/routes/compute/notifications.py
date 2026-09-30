@@ -18,14 +18,15 @@
 API routes for compute notifications.
 """
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+import logging
 from typing import Union
+
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server.compute.notification_manager import NotificationManager
-from .dependencies.authentication import ws_compute_authentication
 
-import logging
+from .dependencies.authentication import ws_compute_authentication
 
 log = logging.getLogger(__name__)
 

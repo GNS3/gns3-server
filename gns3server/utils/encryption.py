@@ -19,9 +19,10 @@ Encryption utilities for sensitive data like API keys.
 Uses Fernet symmetric encryption.
 """
 
-import os
 import logging
+import os
 from typing import Optional
+
 from cryptography.fernet import Fernet
 
 log = logging.getLogger(__name__)

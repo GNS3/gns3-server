@@ -15,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import functools
 import asyncio
-import sys
-import os
-import threading
+import functools
 import inspect
+import os
+import sys
+import threading
 
 
 async def wait_run_in_executor(func, *args, **kwargs):

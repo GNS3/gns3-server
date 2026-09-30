@@ -20,25 +20,25 @@
 Start the program. Use main.py to load it.
 """
 
-import os
-import datetime
-import locale
-import psutil
-import sys
 import asyncio
-import signal
+import datetime
 import functools
-import uvicorn
+import locale
+import logging
+import os
 import secrets
+import signal
 import string
+import sys
 
-from gns3server.logger import init_logger
-from gns3server.version import __version__
+import psutil
+import uvicorn
+from pydantic import SecretStr, ValidationError
+
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
-from pydantic import ValidationError, SecretStr
-
-import logging
+from gns3server.logger import init_logger
+from gns3server.version import __version__
 
 log = logging.getLogger(__name__)
 

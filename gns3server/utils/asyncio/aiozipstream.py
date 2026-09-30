@@ -22,15 +22,16 @@ Derived directly from zipfile.py and the zipstream project
 https://github.com/allanlei/python-zipstream
 """
 
+import asyncio
 import os
-import sys
 import stat
 import struct
+import sys
 import time
 import zipfile
-import asyncio
-import aiofiles
 from concurrent import futures
+
+import aiofiles
 
 structCentralDir = "<4s4B4HL2L5H2L"
 structEndArchive64 = "<4sQ2H2L4Q"

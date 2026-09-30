@@ -4,7 +4,7 @@ Packet filter parameter validation utilities.
 
 import logging
 import subprocess
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 log = logging.getLogger(__name__)
 

@@ -17,13 +17,13 @@
 
 import asyncio
 import json
+import logging
 import time
+
 import psutil
 
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.utils.path import get_default_project_directory
-
-import logging
 
 log = logging.getLogger(__name__)
 

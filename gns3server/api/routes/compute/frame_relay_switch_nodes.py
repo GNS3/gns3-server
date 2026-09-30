@@ -18,13 +18,13 @@
 API routes for Frame Relay switch nodes.
 """
 
-from typing import Any
 import os
+from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
