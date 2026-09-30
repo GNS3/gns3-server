@@ -170,7 +170,7 @@ async def discover_images(image_type: str, skip_image_paths: list | None = None)
                 if filename.endswith(".tmp") or filename.endswith(".md5sum") or filename.startswith("."):
                     continue
                 path = os.path.join(root, filename)
-                if not os.path.isfile(path) or skip_image_paths and path in skip_image_paths or path in files:
+                if not os.path.isfile(path) or (skip_image_paths and path in skip_image_paths) or path in files:
                     continue
                 if "/lib/" in path or "/lib64/" in path:
                     # ignore custom IOU libraries
