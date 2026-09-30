@@ -56,7 +56,7 @@ def iourc_file(tmpdir):
     path = str(tmpdir / "iourc")
     with open(path, "w+") as f:
         hostname = socket.gethostname()
-        f.write("[license]\n{} = aaaaaaaaaaaaaaaa;".format(hostname))
+        f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaaaa;")
     return path
 
 
@@ -182,15 +182,15 @@ async def test_rename_nvram_file(vm):
     It should rename the nvram file to the correct name before launching the VM
     """
 
-    with open(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id + 1)), "w+") as f:
+    with open(os.path.join(vm.working_dir, f"nvram_0000{vm.application_id + 1}"), "w+") as f:
         f.write("1")
 
-    with open(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id + 1)), "w+") as f:
+    with open(os.path.join(vm.working_dir, f"vlan.dat-0000{vm.application_id + 1}"), "w+") as f:
         f.write("1")
 
     vm._rename_nvram_file()
-    assert os.path.exists(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id)))
-    assert os.path.exists(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id)))
+    assert os.path.exists(os.path.join(vm.working_dir, f"nvram_0000{vm.application_id}"))
+    assert os.path.exists(os.path.join(vm.working_dir, f"vlan.dat-0000{vm.application_id}"))
 
 
 @pytest.mark.asyncio
@@ -589,13 +589,13 @@ async def test_invalid_iou_file(vm, iourc_file):
     # Missing ;
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
-            f.write("[license]\n{} = aaaaaaaaaaaaaaaa".format(hostname))
+            f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaaaa")
         await vm._check_iou_license()
 
     # Key too short
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
-            f.write("[license]\n{} = aaaaaaaaaaaaaa;".format(hostname))
+            f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaa;")
         await vm._check_iou_license()
 
     # Invalid hostname

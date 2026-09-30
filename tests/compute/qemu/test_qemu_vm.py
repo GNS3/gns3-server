@@ -384,7 +384,7 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
                 fake_qemu_img_binary,
                 "create",
                 "-o",
-                "backing_file={}".format(vm._hda_disk_image),
+                f"backing_file={vm._hda_disk_image}",
                 "-F",
                 "qcow2",
                 "-f",
@@ -394,7 +394,7 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
                 fake_qemu_img_binary,
                 "create",
                 "-o",
-                "backing_file={}".format(vm._hdb_disk_image),
+                f"backing_file={vm._hdb_disk_image}",
                 "-F",
                 "qcow2",
                 "-f",
@@ -449,7 +449,7 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write("1")
 
     options = await vm._build_command()
-    assert " ".join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in " ".join(options)
+    assert " ".join(["-drive", f"if=pflash,format=raw,readonly,file={ovmf_code_path}"]) in " ".join(options)
     assert " ".join(
         ["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]
     ) in " ".join(options)
@@ -490,7 +490,7 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
     tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
     with patch("os.path.exists", return_value=True) as os_path:
         options = await vm._build_command()
-    assert "-chardev socket,id=chrtpm,path={}".format(tpm_sock) in " ".join(options)
+    assert f"-chardev socket,id=chrtpm,path={tpm_sock}" in " ".join(options)
     assert "-tpmdev emulator,id=tpm0,chardev=chrtpm" in " ".join(options)
     assert "-device tpm-tis,tpmdev=tpm0" in " ".join(options)
 
@@ -608,7 +608,7 @@ async def test_build_command(vm, fake_qemu_binary):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -616,9 +616,9 @@ async def test_build_command(vm, fake_qemu_binary):
             "-device",
             "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
+            f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            f"socket,id=gns3-0,udp=127.0.0.1:{nio.rport},localaddr=127.0.0.1:{nio.lport}",
             "-display",
             "none",
         ]
@@ -679,7 +679,7 @@ async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
                 "-uuid",
                 vm.id,
                 "-serial",
-                "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+                f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
                 "-net",
                 "none",
                 "-device",
@@ -687,9 +687,9 @@ async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
                 "-device",
                 "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
                 "-device",
-                "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
+                f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
                 "-netdev",
-                "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+                f"socket,id=gns3-0,udp=127.0.0.1:{nio.rport},localaddr=127.0.0.1:{nio.lport}",
                 "-nographic",
             ]
 
@@ -727,7 +727,7 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -735,15 +735,13 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-device",
             "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
+            f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio1.rport, nio1.lport),
+            f"socket,id=gns3-0,udp=127.0.0.1:{nio1.rport},localaddr=127.0.0.1:{nio1.lport}",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(
-                int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
-            ),
+            f"e1000,mac={int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)},bus=pci-bridge1,addr=0x01,netdev=gns3-1",
             "-netdev",
-            "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport),
+            f"socket,id=gns3-1,udp=127.0.0.1:{nio2.rport},localaddr=127.0.0.1:{nio2.lport}",
             "-nographic",
         ]
 
@@ -761,8 +759,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+        assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+        assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
 
     vm.mac_address = "00:42:ab:0e:0f:0a"
     mac_0 = vm._mac_address
@@ -770,8 +768,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     assert mac_0[:8] == "00:42:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+        assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+        assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
 
 
 @pytest.mark.asyncio
@@ -793,19 +791,19 @@ async def test_build_command_large_number_of_adapters(vm):
     assert len([l for l in cmd if "e1000" in l]) == 100
     assert len(vm._ethernet_adapters) == 100
 
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+    assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+    assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
     assert "pci-bridge,id=pci-bridge0,bus=dmi_pci_bridge0,chassis_nr=0x1,addr=0x0,shpc=off" not in cmd
     assert "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off" in cmd
     assert "pci-bridge,id=pci-bridge2,bus=dmi_pci_bridge2,chassis_nr=0x1,addr=0x2,shpc=off" in cmd
     assert "i82801b11-bridge,id=dmi_pci_bridge1" in cmd
 
     mac_29 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 29)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x1d,netdev=gns3-29".format(mac_29) in cmd
+    assert f"e1000,mac={mac_29},bus=pci-bridge1,addr=0x1d,netdev=gns3-29" in cmd
     mac_30 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 30)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x1e,netdev=gns3-30".format(mac_30) in cmd
+    assert f"e1000,mac={mac_30},bus=pci-bridge1,addr=0x1e,netdev=gns3-30" in cmd
     mac_74 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 74)
-    assert "e1000,mac={},bus=pci-bridge3,addr=0x0a,netdev=gns3-74".format(mac_74) in cmd
+    assert f"e1000,mac={mac_74},bus=pci-bridge3,addr=0x0a,netdev=gns3-74" in cmd
 
 
 @pytest.mark.asyncio
