@@ -17,15 +17,16 @@
 
 import json
 import uuid
-import pytest
 from unittest.mock import MagicMock, patch
-from tests.utils import asyncio_patch
 
-from gns3server.controller.project import Project
+import pytest
+
 from gns3server.controller.compute import Compute
-from gns3server.controller.topology import project_to_topology, load_topology, GNS3_FILE_FORMAT_REVISION
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.project import Project
+from gns3server.controller.topology import GNS3_FILE_FORMAT_REVISION, load_topology, project_to_topology
 from gns3server.version import __version__
+from tests.utils import asyncio_patch
 
 
 @pytest.mark.asyncio

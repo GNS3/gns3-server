@@ -16,13 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock, patch
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from gns3server.compute.docker import Docker, DOCKER_PREFERRED_API_VERSION, DOCKER_MINIMUM_API_VERSION
+import pytest
+import pytest_asyncio
+
+from gns3server.compute.docker import DOCKER_MINIMUM_API_VERSION, DOCKER_PREFERRED_API_VERSION, Docker
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

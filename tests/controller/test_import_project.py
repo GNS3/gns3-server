@@ -15,23 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+import json
 import os
 import uuid
-import json
 import zipfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from pathlib import Path
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from unittest.mock import patch, MagicMock
-
-from gns3server.utils.asyncio import aiozipstream
-from gns3server.controller.project import Project
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.export_project import export_project
-from gns3server.controller.import_project import import_project, _move_files_to_compute
+from gns3server.controller.import_project import _move_files_to_compute, import_project
+from gns3server.controller.project import Project
+from gns3server.utils.asyncio import aiozipstream
 from gns3server.version import __version__
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest.mark.asyncio

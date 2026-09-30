@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import sys
-from tests.utils import asyncio_patch, AsyncioMagicMock
+
+import pytest
+from pydantic import SecretStr
 
 from gns3server.controller.gns3vm import GNS3VM
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
-from pydantic import SecretStr
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest.fixture

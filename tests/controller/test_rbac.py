@@ -15,22 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import uuid
 
+import pytest
+import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from httpx_ws.transport import ASGIWebSocketTransport
-
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from gns3server.controller import Controller
+from gns3server.db.models import User
+from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
-from gns3server.schemas.controller.rbac import ACECreate
 from gns3server.schemas.controller.pools import ResourceCreate, ResourcePoolCreate
-from gns3server.db.models import User
+from gns3server.schemas.controller.rbac import ACECreate
 from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio

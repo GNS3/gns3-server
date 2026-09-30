@@ -22,7 +22,6 @@ from gns3server.controller.appliance import Appliance
 from gns3server.controller.appliance_to_template import ApplianceToTemplate
 from gns3server.schemas.controller.appliances import ApplianceModel
 
-
 # v8 mirror of the XRd Control Plane appliance shape (docker, custom_adapters, no versions)
 XRD_V8 = {
     "registry_version": 8,

@@ -14,23 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import asyncio
 import os
 import stat
 import sys
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
-
 from unittest import mock
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from gns3server.compute.qemu.qemu_vm import QemuVM
-from gns3server.compute.qemu.qemu_error import QemuError
-from gns3server.compute.qemu import Qemu
-from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddress
+import pytest
+import pytest_asyncio
+
 from gns3server.compute.notification_manager import NotificationManager
+from gns3server.compute.qemu import Qemu
+from gns3server.compute.qemu.qemu_error import QemuError
+from gns3server.compute.qemu.qemu_vm import QemuVM
+from gns3server.utils import force_unix_path, int_to_macaddress, macaddress_to_int
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

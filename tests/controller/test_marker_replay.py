@@ -43,25 +43,25 @@ from unittest.mock import patch
 
 import pytest
 
+from gns3server.controller import marker_replay
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerError,
     ControllerNotFoundError,
 )
-from gns3server.controller import marker_replay
 from gns3server.controller.marker_replay import (
     FilterError,
     SharkdError,
     SharkdMissingError,
+    _count_tree_nodes,
+    _format_ts,
+    _parse_ts,
+    _rename_value,
     build_timeline,
     decode_frame,
     query_frames,
     read_frame_bytes,
     scan_pcap_frames,
-    _count_tree_nodes,
-    _format_ts,
-    _parse_ts,
-    _rename_value,
 )
 
 pytestmark = pytest.mark.asyncio

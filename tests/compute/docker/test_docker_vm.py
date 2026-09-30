@@ -14,27 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import asyncio
-import pytest
-import pytest_asyncio
-import uuid
 import os
 import shutil
-
+import uuid
 from types import SimpleNamespace
-from unittest.mock import patch
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
-from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+import aiohttp
+import pytest
+import pytest_asyncio
+
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
-from gns3server.compute.error import ImageMissingError
 from gns3server.compute.docker import Docker
-
-
-from unittest.mock import AsyncMock, patch, MagicMock, call
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.error import ImageMissingError
+from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -2246,6 +2243,7 @@ def test_extra_config_schema_rejects_bad_targets():
     """
 
     from pydantic import ValidationError
+
     from gns3server.schemas.common import ExtraConfig
 
     for bad in ("relative/path", "/has/../dots", "/", "/etc/", "no-leading-slash"):

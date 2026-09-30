@@ -16,14 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
+from unittest.mock import MagicMock, call, patch
+
 import pytest
 import pytest_asyncio
-from unittest.mock import MagicMock, patch, call
 
 from gns3server.compute.builtin.nodes.cloud import Cloud
 from gns3server.compute.nios.nio_udp import NIOUDP
 from tests.utils import asyncio_patch
-
 
 pytestmark = pytest.mark.asyncio
 

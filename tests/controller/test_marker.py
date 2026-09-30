@@ -25,18 +25,17 @@ Controller-layer tests for the traffic-insight marker feature:
 """
 
 import uuid
+from contextlib import ExitStack
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
-from contextlib import ExitStack
 
-from tests.utils import AsyncioMagicMock
-
-from gns3server.controller.udp_link import UDPLink
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.ports.serial_port import SerialPort
-from gns3server.controller.node import Node
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller.udp_link import UDPLink
+from tests.utils import AsyncioMagicMock
 
 
 def _valid_bpf():

@@ -15,15 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock
 
+import pytest
+import pytest_asyncio
+
+from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.link import Link
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.ports.serial_port import SerialPort
-from gns3server.controller.controller_error import ControllerError
 from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 

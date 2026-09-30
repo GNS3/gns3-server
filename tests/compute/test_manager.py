@@ -14,19 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import uuid
 import os
+import uuid
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
-from unittest.mock import patch, MagicMock
-from tests.utils import asyncio_patch
 
-from gns3server.compute.vpcs import VPCS
-from gns3server.compute.dynamips import Dynamips
-from gns3server.compute.qemu import Qemu
-from gns3server.compute.error import NodeError, ImageMissingError
 from gns3server.compute.compute_error import ComputeError
+from gns3server.compute.dynamips import Dynamips
+from gns3server.compute.error import ImageMissingError, NodeError
+from gns3server.compute.qemu import Qemu
+from gns3server.compute.vpcs import VPCS
 from gns3server.utils import force_unix_path
+from tests.utils import asyncio_patch
 
 
 @pytest_asyncio.fixture(scope="function")

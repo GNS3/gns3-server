@@ -22,13 +22,13 @@ transport (AF_UNIX ``-U`` vs TCP ``-H``), command building, the human-readable
 immediately-exiting uBridge process (e.g. an old build that rejects ``-U``).
 """
 
+import logging
 import os
 import re
 import stat
-import logging
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from gns3server.compute.ubridge.hypervisor import Hypervisor
 from gns3server.compute.ubridge.ubridge_error import UbridgeError

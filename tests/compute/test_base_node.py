@@ -17,19 +17,18 @@
 import os
 import shutil
 from collections import OrderedDict
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from unittest.mock import patch, MagicMock
-
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.error import NodeError
-from gns3server.compute.vpcs import VPCS
 from gns3server.compute.nios.nio_udp import NIOUDP
+from gns3server.compute.vpcs import VPCS
+from gns3server.compute.vpcs.vpcs_vm import VPCSVM
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture(scope="function")

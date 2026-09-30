@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import asyncio
 import os
+from unittest.mock import ANY, MagicMock, patch
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from gns3server.utils import parse_version
-from unittest.mock import patch, MagicMock, ANY
+import pytest
+import pytest_asyncio
 
-from gns3server.compute.vpcs.vpcs_vm import VPCSVM
-from gns3server.compute.vpcs.vpcs_error import VPCSError
-from gns3server.compute.vpcs import VPCS
 from gns3server.compute.notification_manager import NotificationManager
+from gns3server.compute.vpcs import VPCS
+from gns3server.compute.vpcs.vpcs_error import VPCSError
+from gns3server.compute.vpcs.vpcs_vm import VPCSVM
+from gns3server.utils import parse_version
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

@@ -30,21 +30,18 @@ These tests cover:
   * the container-side _fix_permissions passes.
 """
 
-import uuid
 import os
+import uuid
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import patch, MagicMock, call
-
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM, _LazyExecTelnetServer
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
-
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

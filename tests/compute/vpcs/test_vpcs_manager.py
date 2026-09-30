@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import uuid
 
+import pytest
 
+from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.vpcs.vpcs_error import VPCSError
-from gns3server.compute.project_manager import ProjectManager
 
 
 @pytest.mark.asyncio

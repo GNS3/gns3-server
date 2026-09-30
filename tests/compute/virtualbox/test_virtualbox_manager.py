@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
-import pytest_asyncio
-import tempfile
 import os
 import stat
-
+import tempfile
 from unittest.mock import patch
+
+import pytest
+import pytest_asyncio
 
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
