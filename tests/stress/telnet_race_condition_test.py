@@ -288,7 +288,7 @@ async def run_stress_test(
     log.info(f"Device Type: {device_type}")
     log.info(f"Rapid clients: {rapid_clients} (each {iterations_per_client} iterations)")
     log.info(f"Long-lived clients: {long_lived_clients} (duration: {test_duration}s)")
-    log.info(f"Expected behavior: Rapid clients disconnect, long-lived clients unaffected")
+    log.info("Expected behavior: Rapid clients disconnect, long-lived clients unaffected")
     log.info("=" * 70)
 
     tasks: List[asyncio.Task] = []

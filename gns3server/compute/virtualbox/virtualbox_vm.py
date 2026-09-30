@@ -241,7 +241,7 @@ class VirtualBoxVM(BaseNode):
         try:
             tree = ET.parse(linked_vbox_file)
         except ET.ParseError:
-            raise VirtualBoxError(f"Cannot modify VirtualBox linked node file. File {{linked_vbox_file}} is corrupted.")
+            raise VirtualBoxError("Cannot modify VirtualBox linked node file. File {linked_vbox_file} is corrupted.")
         except OSError as e:
             raise VirtualBoxError(f"Cannot modify VirtualBox linked nodes file '{self._linked_vbox_file()}': {e}")
 

@@ -214,7 +214,7 @@ def default_images_directory(image_type):
     elif image_type == "dynamips" or image_type == "ios":
         return os.path.join(img_dir, "IOS")
     else:
-        raise NotImplementedError(f"%s node type is not supported", image_type)
+        raise NotImplementedError("%s node type is not supported", image_type)
 
 
 def images_directories(image_type, include_parent_directory=True):

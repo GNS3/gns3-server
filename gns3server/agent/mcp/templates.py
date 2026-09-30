@@ -173,7 +173,7 @@ def delete_template_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
         template_id = matches[0]["template_id"]
 
     conn.http_call("delete", f"{conn.base_url}/templates/{template_id}")
-    return {"message": f"Template deleted"}
+    return {"message": "Template deleted"}
 
 
 # ── Tool definitions ───────────────────────────────────────────────────────

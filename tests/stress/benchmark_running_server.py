@@ -89,7 +89,7 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
     """Benchmark GET /projects endpoint"""
 
     print(f"\n{'=' * 60}")
-    print(f"GET /projects Performance Benchmark")
+    print("GET /projects Performance Benchmark")
     print(f"{'=' * 60}")
     print(f"Server: {base_url}")
     print(f"{'=' * 60}\n")
