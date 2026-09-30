@@ -338,7 +338,7 @@ def save_markdown(content: str, filename: str = "netmiko_devices.md") -> None:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"Markdown document saved to: {output_path}")
-    except IOError as e:
+    except OSError as e:
         print(f"Error: Failed to save Markdown file: {e}", file=sys.stderr)
         sys.exit(1)
 
