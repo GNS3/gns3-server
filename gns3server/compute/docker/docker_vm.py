@@ -1896,16 +1896,9 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                 if self.status == "started":
                     host_ifc = self._kernel_veths.get((adapter_number, port_number))
                     if host_ifc is not None:
-                        # Incremental marker reconcile on the veth anchor —
-                        # the relay-datapath equivalent of the branch below.
-                        await self._ubridge_apply_markers(host_ifc, nio)
-                        # The netem apply resets the interface first (the
-                        # kernel merges optional netem attrs on replace), so
-                        # everything anchored on clsact must re-apply after
-                        # it: bpf drops flush + re-add, eBPF modes re-set.
-                        await self._ubridge_apply_netem(host_ifc, nio.filters)
-                        await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
-                        await self._ubridge_apply_ebpf_drops(host_ifc, nio.filters)
+                        # Incremental marker + filter reconcile on the anchor
+                        # — the relay-datapath equivalent of the branch below.
+                        await self._kernel_update(host_ifc, nio)
                     await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
                 return
 

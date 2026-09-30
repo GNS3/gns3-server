@@ -171,6 +171,64 @@ class KernelDatapathMixin:
         await self._ubridge_apply_bpf_drops(anchor, nio.filters)
         await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
 
+    async def _relay_attach(self, anchor, bridge_name, nio):
+        """
+        Attach an anchor to a uBridge relay bridge (NIOUDP): the bridge turns
+        the anchor into an AF_PACKET endpoint and relays it to the link's UDP
+        peer. Called on link creation and on node start, and after a link was
+        re-created — the relay analogue of _kernel_attach.
+        """
+
+        await self._ubridge_send(f"bridge create {bridge_name}")
+        # libpcap cannot open a packet socket on an admin-down interface (its
+        # netlink promiscuous-mode transaction returns ENOENT), and an anchor
+        # is born down (carrier off until a link attaches) — bring it up for
+        # the relay attach. The carrier pass in the caller refines the state
+        # afterwards (a suspended NIO sets it back down).
+        await self._ubridge_send(f'link set "{anchor}" up')
+        await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{anchor}"')
+        await self._ubridge_send(
+            "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
+                bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+            )
+        )
+        if nio.capturing:
+            await self._ubridge_send(
+                'bridge start_capture {bridge_name} "{pcap_file}"'.format(
+                    bridge_name=bridge_name, pcap_file=nio.pcap_output_file
+                )
+            )
+        await self._ubridge_send(f"bridge start {bridge_name}")
+        await self._ubridge_apply_filters(bridge_name, nio.filters)
+        await self._ubridge_apply_markers(bridge_name, nio)
+
+    async def _relay_detach(self, bridge_name):
+        """
+        Drop a relay bridge: its AF_PACKET endpoint on the anchor goes with
+        it, which is what makes switching an adapter from the relay datapath
+        to a kernel link safe (otherwise the anchor would both be a bridge
+        port and a relay endpoint, duplicating one direction).
+        """
+
+        if self.ubridge:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f"bridge delete {bridge_name}")
+
+    async def _kernel_update(self, anchor, nio):
+        """
+        Re-apply everything a kernel link carries on an already-attached
+        anchor (filters and markers changed): no re-enslaving, no bridge
+        create.
+        """
+
+        await self._ubridge_apply_markers(anchor, nio)
+        # The netem apply resets the interface first (the kernel merges
+        # optional netem attrs on replace), so everything anchored on clsact
+        # must re-apply after it: bpf drops flush + re-add, eBPF modes re-set.
+        await self._ubridge_apply_netem(anchor, nio.filters)
+        await self._ubridge_apply_bpf_drops(anchor, nio.filters)
+        await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
+
     async def _remove_kernel_nio(self, nio, adapter_number, port_number=0):
         """
         Detach an anchor from its per-link kernel bridge. Both endpoints run
