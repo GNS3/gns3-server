@@ -277,7 +277,7 @@ class DockerVM(BaseNode):
 
         if not mac_address:
             # use the node UUID to generate a random MAC address
-            self._mac_address = "02:42:%s:%s:%s:00" % (self.id[2:4], self.id[4:6], self.id[6:8])
+            self._mac_address = "02:42:{}:{}:{}:00".format(self.id[2:4], self.id[4:6], self.id[6:8])
         else:
             self._mac_address = mac_address
 

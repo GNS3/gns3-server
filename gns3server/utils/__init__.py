@@ -50,7 +50,7 @@ def int_to_macaddress(integer):
     """
     Convert an integer to a mac address
     """
-    return ":".join(textwrap.wrap("%012x" % (integer), width=2))
+    return ":".join(textwrap.wrap("{:012x}".format(integer), width=2))
 
 
 def parse_version(version):
