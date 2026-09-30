@@ -381,7 +381,7 @@ async def test_json(compute):
         "disk_usage_percent": 0,
         "connected": True,
         "last_error": None,
-        "capabilities": {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": [], "ubridge_tc": None},
+        "capabilities": {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": [], "ubridge_tc": None, "ubridge_tap": None},
     }
     assert compute.asdict(topology_dump=True) == {
         "compute_id": "my_compute_id",

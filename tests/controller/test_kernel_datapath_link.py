@@ -90,17 +90,100 @@ async def test_kernel_datapath_eligible(project):
     assert link._kernel_datapath_eligible(node1, node2) is True
 
 
-@pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_for_other_node_types(project):
-
+def _tap_capable_compute(tap_support=True, compute_id="compute-1"):
     compute = MagicMock()
-    compute.id = "compute-1"
-    node1 = _node(project, compute, "docker1")
-    node2 = _node(project, compute, "qemu1", node_type="qemu")
+    compute.id = compute_id
+    compute.capabilities = {"ubridge_tap": tap_support}
+    return compute
+
+
+async def _link(project, node1, node2):
     link = UDPLink(project)
     await link.add_node(node1, 0, 0, batch=True, dump=False)
     await link.add_node(node2, 0, 0, batch=True, dump=False)
+    return link
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_for_other_node_types(project):
+    """
+    A node type with no anchor of its own (IOU, VPCS, cloud, ...) keeps the
+    relay however capable the compute is — and a QEMU node on a compute whose
+    uBridge cannot create persistent TAPs does too, because it runs on the
+    legacy relay datapath there.
+    """
+
+    compute = _tap_capable_compute(tap_support=None)
+    node1 = _node(project, compute, "docker1")
+    node2 = _node(project, compute, "qemu1", node_type="qemu")
+    link = await _link(project, node1, node2)
     assert link._kernel_datapath_eligible(node1, node2) is False
+
+    compute = _tap_capable_compute()
+    node1 = _node(project, compute, "iou1", node_type="iou")
+    node2 = _node(project, compute, "docker1")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_for_qemu_with_tap_support(project):
+    """
+    QEMU adapters anchor on a persistent TAP, so a compute whose uBridge has
+    the tap module gets kernel links too — including the mixed docker-to-qemu
+    case (both anchors end up in the same per-link kernel bridge).
+    """
+
+    compute = _tap_capable_compute()
+    node1 = _node(project, compute, "qemu1", node_type="qemu")
+    node2 = _node(project, compute, "qemu2", node_type="qemu")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+    node2 = _node(project, compute, "docker1")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_capability_is_asked_per_compute(project):
+    """
+    A QEMU node on a compute without the tap module keeps the link on the
+    relay even when its peer sits on a capable compute — the link needs both
+    endpoints anchored, so the capability is a two-end AND.
+    """
+
+    capable = _tap_capable_compute(compute_id="compute-1")
+    plain = _tap_capable_compute(tap_support=None, compute_id="compute-2")
+    node1 = _node(project, capable, "qemu1", node_type="qemu")
+    node2 = _node(project, plain, "qemu2", node_type="qemu")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+    # same compute, but the compute cannot anchor: still the relay
+    node2 = _node(project, _tap_capable_compute(tap_support=None), "qemu2", node_type="qemu")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_prepare_qemu_kernel_link_emits_bridge_nios(project):
+    """
+    The prepared link data is the same NIOBridge spec Docker links use — no
+    UDP ports, no peer resolution — so nothing else in the controller has to
+    know which node type the endpoint is.
+    """
+
+    compute = _tap_capable_compute()
+    node1 = _node(project, compute, "qemu1", node_type="qemu")
+    node2 = _node(project, compute, "qemu2", node_type="qemu")
+    link = await _link(project, node1, node2)
+
+    await link._prepare()
+
+    assert link.kernel_datapath is True
+    assert [d["type"] for d in link._link_data] == ["nio_bridge", "nio_bridge"]
+    assert link._link_data[0]["bridge"] == link._link_data[1]["bridge"]
 
 
 @pytest.mark.asyncio

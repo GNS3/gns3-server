@@ -49,6 +49,8 @@ log = logging.getLogger(__name__)
 
 # binary identity -> parsed report (None = probed and unusable)
 _cache = {}
+# binary identity -> whether the tap module works (None = unknown)
+_tap_cache = {}
 _lock = asyncio.Lock()
 
 
@@ -108,6 +110,75 @@ async def _probe(path, config, timeout):
             log.debug("uBridge tc capabilities probe failed: %s", e)
             return None
         return caps if caps else None
+    finally:
+        with contextlib.suppress(Exception):
+            await hypervisor.stop()
+        shutil.rmtree(working_dir, ignore_errors=True)
+
+
+async def probe_tap_support(timeout: float = 15.0):
+    """
+    Whether this host's uBridge can create persistent TAPs (the ``tap``
+    module), probed the same way as the tc report — a throwaway uBridge, the
+    answer cached by binary identity. QEMU adapters anchor on such a TAP, so
+    this is what makes a QEMU node kernel-datapath eligible; an old build
+    answers "Unknown command", reported as None (unknown) and cached as such.
+    """
+
+    config = Config.instance()
+    path = shutil.which(config.settings.Server.ubridge_path)
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+        key = (path, stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return None
+
+    async with _lock:
+        if key in _tap_cache:
+            return _tap_cache[key]
+        supported = await _probe_tap(path, config, timeout)
+        _tap_cache[key] = supported
+        return supported
+
+
+async def _probe_tap(path, config, timeout):
+    """
+    Spawn a throwaway uBridge and try to create (then delete) one persistent
+    TAP. The probe device is named after a uuid so a concurrent probe on the
+    same host cannot collide; a delete that fails leaves it behind, which is
+    worth a warning but not a failure of the probe.
+    """
+
+    working_dir = tempfile.mkdtemp(prefix="gns3-tap-probe-")
+    hypervisor = Hypervisor(
+        None,
+        path,
+        working_dir,
+        config.settings.Server.ubridge_control_transport,
+        config.settings.Server.host,
+        str(uuid.uuid4()),
+    )
+    name = f"gns3tap{uuid.uuid4().hex[:6]}"
+    try:
+
+        async def ask():
+            await hypervisor.start()
+            await hypervisor.connect()
+            await hypervisor.send(f"tap create {name}")
+            try:
+                await hypervisor.send(f"tap delete {name}")
+            except UbridgeError as e:
+                log.warning("Probe TAP %s could not be deleted: %s", name, e)
+            return True
+
+        try:
+            return await asyncio.wait_for(ask(), timeout=timeout)
+        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+            # Missing module, old build, or no CAP_NET_ADMIN: unknown.
+            log.debug("uBridge tap-module probe failed: %s", e)
+            return None
     finally:
         with contextlib.suppress(Exception):
             await hypervisor.stop()

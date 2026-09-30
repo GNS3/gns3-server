@@ -185,8 +185,9 @@ class ServerSettings(BaseModel):
     allow_raw_images: bool = Field(True, description="Allow raw images to be uploaded to the server")
     enable_kernel_datapath: bool = Field(
         True,
-        description="Wire eligible Docker-to-Docker links (same compute, no filters/markers) through "
-        "kernel veth/bridge interfaces instead of the uBridge UDP relay",
+        description="Wire eligible links (both endpoints on one compute, both able to anchor: Docker veth, "
+        "or QEMU when the compute's uBridge supports persistent TAPs) through kernel interfaces instead "
+        "of the uBridge UDP relay",
     )
     auto_discover_images: bool = Field(True, description="Automatically discover images in the images directory")
     image_sync_interval: int = Field(900, ge=10, description="Seconds between automatic image inventory scans")

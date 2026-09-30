@@ -22,7 +22,7 @@ payload: spawn a throwaway uBridge, ask once, cache by binary identity.
 import pytest
 
 from gns3server.compute.ubridge import tc_probe
-from gns3server.compute.ubridge.tc_probe import probe_tc_capabilities
+from gns3server.compute.ubridge.tc_probe import probe_tc_capabilities, probe_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 pytestmark = pytest.mark.asyncio
@@ -31,6 +31,8 @@ pytestmark = pytest.mark.asyncio
 class FakeHypervisor:
     """Records spawns; answers `tc capabilities` with a canned reply."""
 
+    last = None
+
     reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     error = None
     spawned = 0
@@ -38,6 +40,7 @@ class FakeHypervisor:
     def __init__(self, project, path, working_dir, transport, host, node_id):
 
         self.commands = []
+        FakeHypervisor.last = self
         FakeHypervisor.spawned += 1
 
     async def start(self):
@@ -66,6 +69,8 @@ def probe_env(monkeypatch, tmp_path):
     FakeHypervisor.error = None
     FakeHypervisor.reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     tc_probe._cache.clear()
+    tc_probe._tap_cache.clear()
+    FakeHypervisor.last = None
     # a real file on disk: the cache is keyed on its (path, mtime, size)
     binary = tmp_path / "ubridge"
     binary.write_bytes(b"")
@@ -113,3 +118,28 @@ async def test_probe_empty_reply_means_unknown():
 
     FakeHypervisor.reply = []
     assert await probe_tc_capabilities() is None
+
+
+async def test_probe_tap_support_creates_and_deletes_a_probe_tap():
+
+    assert await probe_tap_support() is True
+    assert FakeHypervisor.spawned == 1
+    commands = FakeHypervisor.last.commands
+    assert commands[0].startswith("tap create ")
+    assert commands[1].startswith("tap delete ")
+
+
+async def test_probe_tap_support_unknown_on_an_old_build():
+
+    FakeHypervisor.error = "202-Unknown command 'create'"
+    assert await probe_tap_support() is None
+    # cached like the tc report: no respawn on every /capabilities hit
+    assert await probe_tap_support() is None
+    assert FakeHypervisor.spawned == 1
+
+
+async def test_probe_tap_support_missing_binary(monkeypatch):
+
+    monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
+    assert await probe_tap_support() is None
+    assert FakeHypervisor.spawned == 0

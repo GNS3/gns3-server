@@ -50,3 +50,8 @@ class Capabilities(BaseModel):
     ubridge_tc: Optional[UbridgeTcCapabilities] = Field(
         None, description="uBridge tc-module capabilities; absent when the probe failed or uBridge has no tc module"
     )
+    ubridge_tap: Optional[bool] = Field(
+        None,
+        description="Whether uBridge can create the persistent TAPs a QEMU adapter anchors on "
+        "(needed to wire QEMU links on the kernel datapath); absent when the probe failed",
+    )

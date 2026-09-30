@@ -364,8 +364,11 @@ bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capt
 enable_kernel_datapath = True
 ```
 
-Intended to grow into the global datapath switch as QEMU / IOU / Dynamips
-migrate to kernel bridges (QEMU: tap enslaved per-link bridge, zero relay).
+Intended to grow into the global datapath switch as IOU / Dynamips migrate to
+kernel bridges. **QEMU has landed** on the same pattern (persistent TAP anchor
+enslaved into the per-link bridge, zero relay) — see
+`docs/features/qemu-kernel-datapath.md`; the shared half of this document's
+compute machinery now lives in `gns3server/compute/kernel_datapath.py`.
 
 ## Verification
 

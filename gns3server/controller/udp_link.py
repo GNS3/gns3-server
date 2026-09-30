@@ -163,30 +163,47 @@ class UDPLink(Link):
 
     def _kernel_datapath_eligible(self, node1, node2):
         """
-        Whether this link can be wired on the kernel datapath (veth pairs
-        enslaved into a per-link Linux bridge) instead of the uBridge UDP
-        relay. Every GNS3 filter type has a kernel equivalent — netem for
-        delay/packet_loss/corrupt and the netem extensions, cls_bpf for bpf,
-        the eBPF stateful classifier for frequency_drop — so filters no
-        longer disqualify the kernel path. Capture and markers are served by
-        uBridge's AF_PACKET modules on the veth host end.
+        Whether this link can be wired on the kernel datapath (the adapters'
+        host-side anchors enslaved into a per-link Linux bridge) instead of
+        the uBridge UDP relay. Every GNS3 filter type has a kernel equivalent
+        — netem for delay/packet_loss/corrupt and the netem extensions,
+        cls_bpf for bpf, the eBPF stateful classifier for frequency_drop — so
+        filters no longer disqualify the kernel path. Capture and markers are
+        served by uBridge's AF_PACKET modules on the anchor.
 
-        Docker adapters are born as veth pairs (unified interface), so the
-        datapath is a runtime decision — links attach to running containers
-        too: the compute side enslaves the veth host end (brctl) or attaches
-        the relay to it (add_nio_ethernet) without touching the container's
-        interfaces.
+        Every adapter owns an anchor, so the datapath is a runtime decision —
+        links attach to running nodes too: the compute side enslaves the
+        anchor (brctl) or attaches the relay to it (add_nio_ethernet) without
+        touching the interfaces the node itself uses. Both endpoints must be
+        on the same compute (there is no kernel link across hosts) and both
+        must be able to anchor: Docker adapters are born as veth pairs,
+        QEMU adapters as persistent TAPs, which need uBridge's tap module —
+        asked of that compute, since an old uBridge leaves QEMU on the relay
+        datapath and cannot carry a kernel link at all.
         """
 
         if not Config.instance().settings.Server.enable_kernel_datapath:
-            return False
-        if node1.node_type != "docker" or node2.node_type != "docker":
             return False
         if node1.compute.id != node2.compute.id:
             return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
-        return True
+        return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
+
+    @staticmethod
+    def _kernel_endpoint_ready(node):
+        """
+        Whether a node can anchor a kernel link on its compute.
+        """
+
+        if node.node_type == "docker":
+            return True
+        if node.node_type != "qemu":
+            return False
+        capabilities = node.compute.capabilities or {}
+        # Strict True: an unreported capability (old uBridge, failed probe)
+        # keeps the link on the relay, where it always works.
+        return capabilities.get("ubridge_tap") is True
 
     async def _prepare(self):
         """

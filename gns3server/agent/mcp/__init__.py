@@ -801,9 +801,10 @@ async def link_update(
     Supported kwargs:
     - suspend: boolean - Suspend or resume the link
     - filters: dict - Packet filters (values MUST be positional arrays). Types
-      marked (K) run on kernel-datapath links only (Docker-to-Docker on one
-      compute) and are rejected with 409 on relay links; which types a given
-      link accepts is authoritatively answered by link_available_filters:
+      marked (K) run on kernel-datapath links only (both endpoints on one
+      compute with an anchor of their own) and are rejected with 409 on relay
+      links; which types a given link accepts is authoritatively answered by
+      link_available_filters:
       * frequency_drop: [N] - Drop every Nth packet (N: -1 to 32767; -1 = drop
         everything). Exact on kernel links (eBPF counter)
       * packet_loss: [chance, correl?] - Loss percentage (0-100); correl (K)
