@@ -2042,6 +2042,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             return self._spice_with_agent_options(self.console)
         elif self._console_type != "none":
             raise QemuError(f"Console type {self._console_type} is unknown")
+        return []
 
     def _aux_options(self):
 
