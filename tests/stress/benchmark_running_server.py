@@ -6,10 +6,10 @@ This test connects to an already running GNS3 server and measures
 the response time of the GET /projects endpoint.
 """
 
-import asyncio
-import time
 import argparse
+import asyncio
 import sys
+import time
 import uuid
 from pathlib import Path
 

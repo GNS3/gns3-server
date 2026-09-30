@@ -27,7 +27,6 @@ Tests for the shared GNS3 REST client layer (gns3_copilot.gns3_client):
 
 import pytest
 
-
 # ── project_inventory ────────────────────────────────────────────────────
 
 
@@ -131,8 +130,8 @@ def test_device_ports_prefer_netmiko_field_over_tag(monkeypatch):
     the tag stays as fallback when the field is missing.
     """
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):
@@ -164,8 +163,8 @@ def test_device_ports_prefer_netmiko_field_over_tag(monkeypatch):
 
 def test_device_ports_error_without_any_device_type(monkeypatch):
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):
@@ -193,8 +192,8 @@ def test_device_ports_inject_default_credentials(monkeypatch):
     keep inheriting from the group.
     """
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):

@@ -5,9 +5,9 @@ Tests that handlers correctly transform tool parameters into HTTP calls.
 """
 
 import json
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 def _mock_conn(json_result=None):
@@ -222,6 +222,7 @@ class TestNode:
 
     def test_create_batch_preserves_submission_order(self, ctx):
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_node_handler
 
         with patch(f"{AH}._get_connector") as m:
@@ -249,6 +250,7 @@ class TestNode:
     def test_create_batch_default_names_created_sequentially(self, ctx):
         import threading
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_node_handler
 
         def _run(nodes_param):
@@ -502,6 +504,7 @@ class TestLink:
 
     def test_create_batch_preserves_submission_order(self, ctx):
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_link_handler
 
         with patch(f"{AH}._get_connector") as m:

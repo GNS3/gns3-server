@@ -21,13 +21,13 @@
 #
 # Read tests/topologies/README.rst for documentation
 
-import os
 import json
-import pytest
+import os
 import shutil
 
+import pytest
 
-from gns3server.controller.topology import load_topology, GNS3_FILE_FORMAT_REVISION
+from gns3server.controller.topology import GNS3_FILE_FORMAT_REVISION, load_topology
 from gns3server.version import __version__
 
 topologies_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "topologies")

@@ -14,15 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import socket
 import collections
+import socket
+import sys
 from unittest.mock import patch
 
 import psutil
 
-from gns3server.utils.interfaces import interfaces, is_interface_up, has_netmask
-
+from gns3server.utils.interfaces import has_netmask, interfaces, is_interface_up
 
 # psutil returns snicaddr namedtuples; mirror that shape for the mocks below.
 snicaddr = collections.namedtuple("snicaddr", ["family", "address", "netmask", "broadcast", "ptp"])

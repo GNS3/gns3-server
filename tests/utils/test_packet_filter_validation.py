@@ -3,11 +3,12 @@ Unit tests for packet filter validation.
 """
 
 import pytest
+
 from gns3server.utils.packet_filter_validation import (
-    validate_filter_parameters,
-    validate_all_filters,
-    filter_inactive_filters,
     FilterValidationError,
+    filter_inactive_filters,
+    validate_all_filters,
+    validate_filter_parameters,
 )
 
 

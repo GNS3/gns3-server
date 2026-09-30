@@ -1,35 +1,35 @@
+import base64
+import configparser
+import os
+import platform
+import resource
+import shutil
+import stat
+import sys
+import tempfile
+import uuid
+from pathlib import Path
+from typing import Any, AsyncGenerator
+from unittest.mock import MagicMock, patch
+
 import pytest
 import asyncio
 import pytest_asyncio
-import tempfile
-import shutil
-import sys
-import os
-import uuid
-import configparser
-import base64
-import stat
-import resource
-import platform
-
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from httpx import AsyncClient
 from httpx_ws.transport import ASGIWebSocketTransport
-from unittest.mock import MagicMock, patch
-from pathlib import Path
-from typing import AsyncGenerator, Any
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from gns3server.controller import Controller
-from gns3server.config import Config
+from gns3server import schemas
+from gns3server.api.routes.controller.dependencies.database import get_db_session
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.db.models import Base, User, Compute
-from gns3server.db.repositories.users import UsersRepository
+from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.db.models import Base, Compute, User
 from gns3server.db.repositories.computes import ComputesRepository
-from gns3server.api.routes.controller.dependencies.database import get_db_session
-from gns3server import schemas
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.computes import Protocol
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY

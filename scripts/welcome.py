@@ -15,15 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import configparser
 import locale
-import re
 import os
+import re
+import subprocess
 import sys
 import time
-import subprocess
-import configparser
-from json import loads as convert
 import urllib.request
+from json import loads as convert
+
 from dialog import Dialog, PythonDialogBug
 
 

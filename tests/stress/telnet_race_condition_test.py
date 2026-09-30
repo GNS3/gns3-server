@@ -10,12 +10,12 @@ Usage:
     python telnet_race_condition_test.py --host 127.0.0.1 --port 2000 --connections 10
 """
 
-import asyncio
 import argparse
+import asyncio
 import logging
+import sys
 import time
 from typing import List, Optional
-import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
