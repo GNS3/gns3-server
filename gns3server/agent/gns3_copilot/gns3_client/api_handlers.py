@@ -692,8 +692,8 @@ def available_filters_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     """
     List the packet filter types available for a link (GNS3 API v3 only).
 
-    Returns a list of filter descriptors (frequency_drop, packet_loss,
-    delay, corrupt, bpf) with their parameters.
+    Returns a list of filter descriptors with their parameters — the
+    authoritative, per-link answer (topology and compute-capability gated).
     """
     project_id = params.get("project_id")
     link_id = params.get("link_id")

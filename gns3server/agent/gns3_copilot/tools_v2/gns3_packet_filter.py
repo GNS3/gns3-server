@@ -122,10 +122,26 @@ class GNS3PacketFilterTool(BaseTool):
 
     Common filter types for fault injection:
     - "frequency_drop": Drop every Nth packet (parameter: frequency, -1 to 32767)
-    - "packet_loss": Packet loss percentage (parameter: chance, 0-100)
-    - "delay": Delay in ms with optional jitter (parameters: latency 0-32767, jitter 0-32767)
+    - "packet_loss": Packet loss percentage (parameters: chance 0-100, optional correlation)
+    - "delay": Delay in ms with optional jitter and distribution (parameters: latency 0-32767,
+      jitter 0-32767, distribution uniform|normal|pareto|paretonormal)
     - "corrupt": Packet corruption percentage (parameter: chance, 0-100)
     - "bpf": Berkeley Packet Filter (parameter: filter expression text)
+    - "rate": Bandwidth cap, tc-style string like "512kbit" (kernel links only)
+    - "reorder": Packet reordering (parameters: percentage, correlation, gap; needs delay;
+      kernel links only)
+    - "gemodel": Gilbert-Elliot bursty loss (parameters: p, r, 1-h; kernel links only)
+    - "duplicate": Packet duplication percentage (kernel links only)
+    - "seed": Reproducible netem random draws (kernel links only)
+    - "limit": Impairment queue depth in packets (kernel links only)
+    - "quota": Byte cap — after the quota, drop with a chance (parameters: bytes, chance;
+      kernel links only)
+    - "window_drop": Time-window outage (parameters: start_ms, outage_ms, chance, optional
+      period_ms, jitter_ms; start is relative to when the filter is applied — any filter
+      update restarts the schedule; kernel links only)
+
+    Filter availability depends on the link (kernel-only types need kernel-datapath links
+    and compute support): always check with action "get_available" before setting.
 
     Input is a JSON object with:
     - project_id (str): GNS3 project UUID

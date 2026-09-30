@@ -697,7 +697,7 @@ async def link_list(
     fields: Annotated[
         list[str] | None,
         Field(
-            description='Optional: return only these fields. e.g. ["link_id","nodes"]. Available: link_id, project_id, link_type, nodes, suspend, filters, capturing, capture_file_name, link_style'
+            description='Optional: return only these fields. e.g. ["link_id","nodes"]. Available: link_id, project_id, link_type, kernel_datapath, nodes, suspend, filters, capturing, capture_file_name, link_style'
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
@@ -733,7 +733,7 @@ async def link_create(
         list[str] | None,
         Field(
             description="Response fields to include (default: [link_id, link_type, nodes]). "
-            "Available: link_id, project_id, link_type, nodes, suspend, "
+            "Available: link_id, project_id, link_type, kernel_datapath, nodes, suspend, "
             "link_style, filters, show_filters_icon, capturing, "
             "capture_file_name, capture_file_path, capture_compute_id, wireshark"
         ),
@@ -787,24 +787,51 @@ async def link_update(
 
     Supported kwargs:
     - suspend: boolean - Suspend or resume the link
-    - filters: dict - Packet filters (must use array format):
-      * frequency_drop: [N] - Drop every Nth packet (N: -1 to 32767)
-      * packet_loss: [rate] - Packet loss percentage (rate: 0 to 100)
-      * delay: [ms, jitter] - Latency and jitter in milliseconds
-      * corrupt: [rate] - Packet corruption percentage (rate: 0 to 100)
-      * bpf: [expression] - Berkeley Packet Filter expression
+    - filters: dict - Packet filters (values MUST be positional arrays). Types
+      marked (K) run on kernel-datapath links only (Docker-to-Docker on one
+      compute) and are rejected with 409 on relay links; which types a given
+      link accepts is authoritatively answered by link_available_filters:
+      * frequency_drop: [N] - Drop every Nth packet (N: -1 to 32767; -1 = drop
+        everything). Exact on kernel links (eBPF counter)
+      * packet_loss: [chance, correl?] - Loss percentage (0-100); correl (K)
+        makes consecutive losses dependent (bursty)
+      * delay: [ms, jitter?, distribution?] - Latency 1-32767 ms, jitter 0-32767
+        ms; distribution (K) one of uniform|normal|pareto|paretonormal, needs
+        jitter > 0
+      * corrupt: [chance] - Corruption percentage (0-100)
+      * bpf: [expression] - Berkeley Packet Filter expression, one per line,
+        any match drops
+      * rate (K): ["512kbit"] - Bandwidth cap, tc-style int+unit (bit/kbit/
+        mbit/gbit/bps/kbps/mbps, max 100gbit)
+      * reorder (K): [pct, correl?, gap?] - Requires delay to also be set
+      * gemodel (K): [p, r, 1-h] - Gilbert-Elliot bursty loss; mutually
+        exclusive with packet_loss
+      * duplicate (K): [pct, correl?] - Duplication percentage
+      * seed (K): [u32] - Makes netem random draws reproducible
+      * limit (K): [pkts] - Impairment queue depth (default 1000; raise for
+        low rate + long delay)
+      * quota (K): [bytes, pct] - After the byte quota is consumed, each
+        further packet drops with the chance (100 = hard cutoff)
+      * window_drop (K): [start_ms, outage_ms, pct, period_ms?, jitter_ms?] -
+        Drop with chance pct inside [start, start+outage): 3 args = single
+        outage (traffic passes before and after), 4 args = recurring flap
+        (period >= outage), 5 args = per-cycle timing randomized within +/-
+        jitter. start is measured from the moment this filter is applied and
+        ANY filter update / node restart restarts the schedule; start 0 =
+        outage begins immediately (active, not disabled)
 
     Example filters:
       {"filters": {"frequency_drop": [10]}}
       {"filters": {"delay": [100, 10]}}
-      {"filters": {"packet_loss": [5]}}
+      {"filters": {"window_drop": [0, 2000, 100]}}
       {"filters": {"delay": [50, 5], "packet_loss": [2]}}
 
     To clear all filters: {"filters": {}}
 
     Filters are applied **bidirectionally** — a packet crossing the link twice
     (e.g. ping round-trip) is filtered in both directions independently.
-    For example, packet_loss: [50] gives ~75% observed loss (1 - 0.5²), not 50%.
+    For example, packet_loss: [50] gives ~75% observed loss (1 - 0.5²), not 50%;
+    window_drop pct likewise applies per direction.
     ARP frames also pass through filters; at high loss/corrupt rates, pre-set
     static ARP entries to avoid false "Destination Host Unreachable" errors.
     """
@@ -817,8 +844,11 @@ async def link_available_filters(
     project_id: Annotated[str, Field(description="UUID of the project")],
     link_id: Annotated[str, Field(description="UUID of the link")],
 ) -> list[dict[str, Any]]:
-    """List the packet filter types available for a link (frequency_drop, packet_loss, delay, corrupt, bpf)
-    with their parameters. Use before setting filters with link_update."""
+    """List the packet filter types available for a link with their parameters
+    and ranges — the authoritative answer for what link_update accepts on THIS
+    link (topology and compute-capability gated: kernel-only types appear only
+    on kernel-datapath links whose compute reports support). Call this before
+    setting filters; a type absent here will be rejected with 409."""
     return await asyncio.to_thread(
         _run_handler_sync,
         available_filters_handler,
