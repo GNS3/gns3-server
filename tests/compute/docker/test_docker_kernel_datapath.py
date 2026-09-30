@@ -570,6 +570,66 @@ async def test_apply_window_drop_requires_ebpf_capability(vm):
 
 
 @pytest.mark.asyncio
+async def test_apply_window_drop_requires_mode_token(vm):
+    """
+    ebpf=1 is not enough: a build that does not declare the window mode
+    token (pre-correction feature/tc-precision semantics) must get a clear
+    upgrade error instead of silently installing back-to-back windows.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1", modes="nth,quota")
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    with pytest.raises(DockerError, match="ebpf_modes=nth,quota"):
+        await vm._ubridge_apply_ebpf_drops(host_ifc, {"window_drop": [0, 2000, 100]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_apply_ebpf_drops_legacy_build_keeps_shipped_modes(vm):
+    """
+    A build predating the ebpf_modes field (feature/tc-precision) keeps the
+    modes that shipped with it: nth/quota still apply, window does not.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1", modes=None)
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    await vm._ubridge_apply_ebpf_drops(host_ifc, {"frequency_drop": [3]})
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" 3')
+    vm._ubridge_send.assert_any_call(f'tc quota_drop "{host_ifc}" off')
+
+    vm._ubridge_send.reset_mock()
+    with pytest.raises(DockerError, match="newer uBridge"):
+        await vm._ubridge_apply_ebpf_drops(host_ifc, {"window_drop": [0, 2000, 100]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_mode_off_skips_undeclared_modes(vm):
+    """
+    The cleanup path only sends "off" for modes this build declares — an
+    undeclared mode's command would be an unknown command on that build.
+    """
+
+    vm._ubridge_hypervisor = _caps_hypervisor(ebpf="1", modes="nth")
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+
+    # A first apply with a filter forces the capability probe; the second
+    # (filters removed) takes the cached caps down the off path.
+    await vm._ubridge_apply_ebpf_drops(host_ifc, {"frequency_drop": [3]})
+    vm._ubridge_send.reset_mock()
+    await vm._ubridge_apply_ebpf_drops(host_ifc, {})
+
+    vm._ubridge_send.assert_any_call(f'tc nth_drop "{host_ifc}" off')
+    sent = [call.args[0] for call in vm._ubridge_send.call_args_list]
+    assert not any("quota_drop" in command or "window_drop" in command for command in sent)
+
+
+@pytest.mark.asyncio
 async def test_apply_ebpf_drops_skips_old_ubridge_without_filters(vm):
     """
     No stateful filters and no capability probe yet: nothing was ever
@@ -605,11 +665,18 @@ async def test_apply_ebpf_drops_cleanup_only_probes_with_ebpf(vm):
     vm._ubridge_send.assert_not_called()
 
 
-def _caps_hypervisor(cbpf="1", ebpf="0"):
-    """A hypervisor mock whose direct send() answers `tc capabilities`."""
+def _caps_hypervisor(cbpf="1", ebpf="0", modes="nth,quota,window"):
+    """
+    A hypervisor mock whose direct send() answers `tc capabilities`.
+    modes=None emulates a build predating the ebpf_modes field.
+    """
+
+    reply = f"netem=delay;ebpf={ebpf};cbpf={cbpf}"
+    if modes is not None:
+        reply += f";ebpf_modes={modes}"
     hyp = MagicMock()
     hyp.is_running.return_value = True
-    hyp.send = AsyncioMagicMock(return_value=[f"netem=delay;ebpf={ebpf};cbpf={cbpf}"])
+    hyp.send = AsyncioMagicMock(return_value=[reply])
     return hyp
 
 
@@ -682,7 +749,7 @@ async def test_apply_bpf_drops_compile_failure_warns(vm):
             raise UbridgeError("209-Cannot compile filter 'icmp': can't parse filter expression: syntax error")
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
-    with patch("gns3server.compute.docker.docker_vm.log.warning") as mock_log:
+    with patch("gns3server.compute.docker.docker_kernel_datapath.log.warning") as mock_log:
         await vm._ubridge_apply_bpf_drops(host_ifc, {"bpf": ["icmp"]})  # must not raise
     assert mock_log.called
 
@@ -708,7 +775,7 @@ async def test_ubridge_tc_capabilities_probed_once(vm):
 
     vm._ubridge_hypervisor = _caps_hypervisor()
     caps = await vm._ubridge_tc_capabilities()
-    assert caps == {"netem": "delay", "ebpf": "0", "cbpf": "1"}
+    assert caps == {"netem": "delay", "ebpf": "0", "cbpf": "1", "ebpf_modes": "nth,quota,window"}
     await vm._ubridge_tc_capabilities()
     assert vm._ubridge_hypervisor.send.call_count == 1
 

@@ -736,17 +736,52 @@ class Link:
         filter_node = self._get_filter_node()
         if filter_node:
             if self.kernel_datapath:
-                # Kernel-datapath links serve every filter type: netem for
-                # delay/loss/corrupt and the netem extensions, cls_bpf for
-                # bpf, the eBPF classifier for frequency_drop, quota and
-                # window_drop.
-                return FILTERS
+                # Kernel-datapath links serve every filter type in principle:
+                # netem for delay/loss/corrupt and the netem extensions,
+                # cls_bpf for bpf, the eBPF classifier for frequency_drop,
+                # quota and window_drop. What is offered is gated on the
+                # endpoints' computes reporting a uBridge that can run each
+                # type; computes that report nothing (older servers, failed
+                # probe) keep the full list — update_filters still rejects
+                # with 409 on apply.
+                return [f for f in FILTERS if self._filter_supported_by_computes(f["type"])]
             # Relay links: hide the kernel-only types the relay cannot run
             # (they would be rejected with 409 on update).
             from gns3server.utils.packet_filter_validation import KERNEL_ONLY_FILTERS
 
             return [f for f in FILTERS if f["type"] not in KERNEL_ONLY_FILTERS]
         return []
+
+    def _filter_supported_by_computes(self, filter_type):
+        """
+        Whether every endpoint's compute reports a uBridge able to run
+        *filter_type* on a kernel-datapath link (both ends apply their own
+        filters, so one incapable compute is enough to hide the type).
+        Computes without a uBridge tc report impose no constraint.
+        """
+
+        from gns3server.utils.tc_capabilities import FILTER_EBPF_MODES, FILTER_NETEM_KEYWORDS
+
+        reported = []
+        for side in self._nodes:
+            capabilities = side["node"].compute.capabilities
+            if isinstance(capabilities, dict) and capabilities.get("ubridge_tc"):
+                reported.append(capabilities["ubridge_tc"])
+        if not reported:
+            return True
+        for caps in reported:
+            if filter_type in FILTER_EBPF_MODES:
+                if FILTER_EBPF_MODES[filter_type] not in caps["ebpf_modes"]:
+                    return False
+            elif filter_type == "bpf":
+                if not caps["cbpf"]:
+                    return False
+            elif filter_type in FILTER_NETEM_KEYWORDS:
+                if FILTER_NETEM_KEYWORDS[filter_type] not in caps["netem"]:
+                    return False
+            # the remaining types (delay, packet_loss, corrupt) run on any
+            # build that reports tc capabilities at all
+        return True
 
     def _get_filter_node(self):
         """

@@ -548,3 +548,45 @@ async def test_prepare_relay_link_strips_kernel_only_filters(project):
     # carries no filters — the relay filters one bridge)
     assert by_node[node1.id]["filters"] == {"frequency_drop": [7], "delay": [100, 20], "packet_loss": [5]}
     assert by_node[node2.id]["filters"] == {}
+
+
+@pytest.mark.asyncio
+async def test_available_filters_gated_by_compute_capabilities(project):
+    """
+    Kernel links only offer the filter types the endpoints' computes report
+    a uBridge able to run (ebpf_modes tokens, cbpf, netem keywords).
+    """
+
+    link, node1, _node2 = await _kernel_link(project)
+    link._link_data = [{"type": "nio_bridge"}]
+    node1.compute.capabilities = {
+        "ubridge_tc": {
+            "netem": ["delay", "jitter", "loss", "rate"],
+            "ebpf": True,
+            "ebpf_modes": ["nth", "quota"],
+            "cbpf": False,
+        }
+    }
+    types = [f["type"] for f in link.available_filters()]
+    assert "frequency_drop" in types  # nth declared
+    assert "quota" in types  # quota declared
+    assert "window_drop" not in types  # token missing
+    assert "bpf" not in types  # cbpf off
+    assert "rate" in types  # netem keyword present
+    assert "gemodel" not in types  # netem keyword missing
+    assert "delay" in types  # core netem runs on any tc-module build
+
+
+@pytest.mark.asyncio
+async def test_available_filters_unconstrained_without_report(project):
+    """
+    Computes that report no uBridge tc capabilities (older servers, failed
+    probe) impose no constraint: the full list stays offered and apply-time
+    validation is the guard.
+    """
+
+    from gns3server.controller.link import FILTERS
+
+    link, _node1, _node2 = await _kernel_link(project)
+    link._link_data = [{"type": "nio_bridge"}]
+    assert [f["type"] for f in link.available_filters()] == [f["type"] for f in FILTERS]

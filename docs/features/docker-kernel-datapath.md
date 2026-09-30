@@ -293,6 +293,27 @@ Semantics:
   frames (on the relay, filter-vs-mark ordering determined visibility
   instead). Also note `tc qdisc show` cannot print a distribution's name
   (the kernel stores only the sampled table).
+* **eBPF mode tokens.** A stateful mode is usable iff `tc capabilities`
+  reports `ebpf=1` **and** lists the mode's token in `ebpf_modes`
+  (uBridge `feature/tc-window`+). Builds predating the field keep the modes
+  that shipped with it — everything but `window`, whose semantics were
+  corrected exactly when the field was added: gating on `ebpf=1` alone
+  would silently install the broken back-to-back-window behaviour on a
+  pre-correction build. Requesting an unusable mode fails the apply with an
+  upgrade error; the cleanup ("off") path only touches modes the build
+  declares.
+* **Capability reporting.** The compute exposes the probe through
+  `GET /v3/compute/capabilities` as `ubridge_tc` (netem keyword list,
+  `ebpf`/`cbpf` flags, and the usable `ebpf_modes` — legacy fallback
+  applied), answered by a throwaway uBridge spawned as the server's own
+  user and cached by binary identity — the runtime `ebpf` flag flips
+  between users and kernels for the same binary, so a root-run probe would
+  lie for a non-root server. The controller forwards it through
+  `GET /v3/computes` and `available_filters` hides kernel-datapath filter
+  types an endpoint compute reports it cannot run (both ends apply their
+  own filters, so one incapable compute is enough). Computes that report
+  nothing — older servers, failed probe — keep the full list;
+  apply-time validation (409) stays the guard.
 
 ## uBridge command surface
 
@@ -313,7 +334,7 @@ tc nth_drop <if> <n | off>        # eBPF exact every-Nth (frequency_drop)
 tc quota_drop <if> <bytes> <pct> | off   # eBPF byte cap (quota)
 tc window_drop <if> <start_ms> <outage_ms> <pct> [<period_ms> [<jitter_ms>]] | off  # eBPF time window (window_drop)
 tc reset <if>                     # full restore: eBPF filter -> bpf_drops -> clsact -> root qdisc, idempotent
-tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1", probed once per process
+tc capabilities                   # "netem=<kw,...>;ebpf=0|1;cbpf=0|1[;ebpf_modes=<modes>]", probed once per process
 bridge add_nio_ethernet / add_nio_udp / start / stop / start_capture / stop_capture
 ```
 

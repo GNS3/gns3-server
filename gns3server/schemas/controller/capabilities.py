@@ -15,11 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from .nodes import NodeType
+
+
+class UbridgeTcCapabilities(BaseModel):
+    """
+    uBridge tc-module capabilities (kernel-datapath packet filters), probed
+    by the compute as its own user.
+    """
+
+    netem: List[str] = Field(..., description="netem keywords supported by this uBridge's tc module")
+    ebpf: bool = Field(..., description="Whether the eBPF stateful classifier loads on this host")
+    ebpf_modes: List[str] = Field(
+        ..., description="eBPF classifier modes usable on this host (ebpf is on and the mode token is declared)"
+    )
+    cbpf: bool = Field(..., description="Whether classic-BPF match-drop classifiers are available")
 
 
 class Capabilities(BaseModel):
@@ -33,3 +47,6 @@ class Capabilities(BaseModel):
     cpus: int = Field(..., description="Number of CPUs on this compute")
     memory: int = Field(..., description="Amount of memory on this compute")
     disk_size: int = Field(..., description="Disk size on this compute")
+    ubridge_tc: Optional[UbridgeTcCapabilities] = Field(
+        None, description="uBridge tc-module capabilities; absent when the probe failed or uBridge has no tc module"
+    )

@@ -29,8 +29,12 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestCapabilitiesRoutes:
-    async def test_get(self, app: FastAPI, compute_client: AsyncClient, windows_platform) -> None:
+    async def test_get(self, app: FastAPI, compute_client: AsyncClient, windows_platform, monkeypatch) -> None:
 
+        async def no_probe():
+            return None
+
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tc_capabilities", no_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
@@ -54,10 +58,15 @@ class TestCapabilitiesRoutes:
             "cpus": psutil.cpu_count(logical=True),
             "memory": psutil.virtual_memory().total,
             "disk_size": psutil.disk_usage(get_default_project_directory()).total,
+            "ubridge_tc": None,
         }
 
-    async def test_get_on_gns3vm(self, app: FastAPI, compute_client: AsyncClient, on_gns3vm) -> None:
+    async def test_get_on_gns3vm(self, app: FastAPI, compute_client: AsyncClient, on_gns3vm, monkeypatch) -> None:
 
+        async def no_probe():
+            return None
+
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tc_capabilities", no_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
@@ -81,4 +90,20 @@ class TestCapabilitiesRoutes:
             "cpus": psutil.cpu_count(logical=True),
             "memory": psutil.virtual_memory().total,
             "disk_size": psutil.disk_usage(get_default_project_directory()).total,
+            "ubridge_tc": None,
+        }
+
+    async def test_get_reports_ubridge_tc(self, app: FastAPI, compute_client: AsyncClient, monkeypatch) -> None:
+
+        async def fake_probe():
+            return {"netem": "delay,rate", "ebpf": "1", "cbpf": "0", "ebpf_modes": "nth,quota,window,flow"}
+
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tc_capabilities", fake_probe)
+        response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["ubridge_tc"] == {
+            "netem": ["delay", "rate"],
+            "ebpf": True,
+            "ebpf_modes": ["nth", "quota", "window", "flow"],
+            "cbpf": False,
         }

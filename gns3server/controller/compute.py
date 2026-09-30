@@ -92,7 +92,15 @@ class Compute:
         self._disk_usage_percent = 0
         self._last_error = None
         self._ssl_context = ssl_context
-        self._capabilities = {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": []}
+        self._capabilities = {
+            "version": "",
+            "platform": "",
+            "cpus": 0,
+            "memory": 0,
+            "disk_size": 0,
+            "node_types": [],
+            "ubridge_tc": None,
+        }
         self.name = name
         # Cache of interfaces on remote host
         self._interfaces_cache = None
@@ -287,6 +295,15 @@ class Compute:
     @property
     def disk_usage_percent(self):
         return self._disk_usage_percent
+
+    @property
+    def capabilities(self) -> dict:
+        """
+        Capabilities reported by this compute (fetched from GET /capabilities
+        at connect time).
+        """
+
+        return self._capabilities
 
     def asdict(self, topology_dump=False):
         """

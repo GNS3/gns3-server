@@ -293,12 +293,22 @@ old uBridge without these commands simply stays on the relay datapath):
 
 ```
 tc capabilities
-100-netem=delay,jitter,loss,dup,corrupt,rate,reorder,gemodel,dist,seed,limit;ebpf=1;cbpf=1
+100-netem=delay,jitter,loss,dup,corrupt,rate,reorder,gemodel,dist,seed,limit;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow
 ```
 
 `ebpf=0` when the load probe fails at startup (kernel < 5.1 or no CAP_BPF);
 `cbpf=0` when RTM_NEWTFILTER/cls_bpf is unavailable. gns3-server hides the
 corresponding filter types per capability.
+
+`ebpf_modes` (added on uBridge `feature/tc-window`, commit 40c36ae) is a
+build fact, orthogonal to the runtime probes: the same binary flips `ebpf`
+between users and kernels while the mode set changes only with the binary.
+A mode is usable iff `ebpf=1` **and** its token is listed — gating
+`window_drop` on `ebpf=1` alone silently accepts the 4-arg form on a
+pre-correction build (`feature/tc-precision`: back-to-back windows, no
+gap). Builds that do not emit the field at all predate it and get legacy
+treatment; an incompatible mode revision renames its token
+(`window` → `window2`) rather than versioning in place.
 
 ---
 
@@ -338,6 +348,14 @@ corresponding filter types per capability.
   mirrors the grammar's `period ≥ outage` rule and treats `start = 0` as
   active (an immediate outage).
   Not yet exposed: `flow_drop` (parameter-shape UX decision).
+* **Done** (capability reporting): the `ebpf_modes` contract is consumed
+  end to end — the compute applies it per mode (window requires its token;
+  pre-field builds keep their shipped modes), the compute
+  `GET /capabilities` payload reports `ubridge_tc` through a standalone
+  spawn-as-own-user probe cached by binary identity, and the controller's
+  `available_filters` hides kernel-datapath filter types an endpoint
+  compute reports it cannot run (computes without a report keep the full
+  list; apply-time 409 stays the guard).
 * Every veth end owns one qdisc + its filters: per-direction impairment is
   an architectural freebie to expose later (API `direction` field), aligned
   with marker `dir` semantics.

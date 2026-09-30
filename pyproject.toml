@@ -159,6 +159,7 @@ extend-immutable-calls = [
 "gns3server/api/routes/controller/users.py" = ["S105", "S106"]
 "gns3server/compute/base_node.py" = ["C901", "RUF019"]
 "gns3server/compute/docker/__init__.py" = ["B006", "C901"]
+"gns3server/compute/docker/docker_kernel_datapath.py" = ["C901"]
 "gns3server/compute/docker/docker_vm.py" = ["B006", "C901", "E731", "RUF003", "RUF006", "S108"]
 "gns3server/compute/docker/iol_docker_vm.py" = ["RUF002", "S108"]
 "gns3server/compute/docker/vendor_docker_vm.py" = ["RUF002", "S108"]
