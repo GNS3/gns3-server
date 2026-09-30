@@ -1821,31 +1821,10 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                         adapter_number=adapter_number, port_number=port_number, name=self.name
                     )
                 )
-            # Both endpoints run this concurrently and either may create the
-            # bridge first: treat an existing bridge as success instead of a
-            # create race failure.
-            try:
-                await self._ubridge_send(f'brctl create "{nio.bridge}"')
-            except UbridgeError:
-                # Raises again if the bridge genuinely does not exist.
-                await self._ubridge_send(f'brctl show "{nio.bridge}"')
-            await self._ubridge_send(f'link set "{nio.bridge}" up')
-            await self._ubridge_send(f'brctl addif "{nio.bridge}" "{host_ifc}"')
-            if nio.capturing:
-                # Restore a capture that was active before a node restart
-                # (mirrors the relay path's start_capture in _connect_nio).
-                await self._ubridge_send(f'capture start_kernel {host_ifc} "{nio.pcap_output_file}"')
-            # Markers carried by the NIO attach to the veth host end (AF_PACKET
-            # taps) — the anchor is the interface, not a relay bridge.
-            await self._ubridge_apply_markers(host_ifc, nio)
-            # Impairment filters become one tc netem qdisc on the veth host
-            # end (restored here on node restart, like the capture above);
-            # bpf expressions become cls_bpf match-drop classifiers and
-            # frequency_drop/quota/window_drop become the eBPF stateful
-            # classifier.
-            await self._ubridge_apply_netem(host_ifc, nio.filters)
-            await self._ubridge_apply_bpf_drops(host_ifc, nio.filters)
-            await self._ubridge_apply_ebpf_drops(host_ifc, nio.filters)
+            # The mechanics (bridge create/addif, capture, markers, filters)
+            # live in KernelDatapathMixin, shared with every other node type
+            # whose adapters own a host-side anchor.
+            await self._kernel_attach(host_ifc, nio)
             return
 
         # Relay NIO. On a veth-backed adapter (the unified Docker interface)

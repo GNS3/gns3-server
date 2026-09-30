@@ -749,7 +749,7 @@ async def test_apply_bpf_drops_compile_failure_warns(vm):
             raise UbridgeError("209-Cannot compile filter 'icmp': can't parse filter expression: syntax error")
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
-    with patch("gns3server.compute.docker.docker_kernel_datapath.log.warning") as mock_log:
+    with patch("gns3server.compute.kernel_datapath.log.warning") as mock_log:
         await vm._ubridge_apply_bpf_drops(host_ifc, {"bpf": ["icmp"]})  # must not raise
     assert mock_log.called
 
