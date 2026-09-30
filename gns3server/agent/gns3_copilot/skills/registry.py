@@ -183,8 +183,8 @@ def reload_skills_repository() -> dict[str, Any]:
     protocols_ok = manager.reload_packet_analysis_protocols()
 
     # Reload forbidden commands (local import to avoid circular dependency)
-    from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload_fc
     from gns3server.agent.gns3_copilot.utils.command_filter import get_forbidden_commands
+    from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload_fc
 
     _reload_fc()
     forbidden_commands = get_forbidden_commands()
@@ -300,8 +300,8 @@ def reload_forbidden_commands() -> dict[str, Any]:
         }
     """
     try:
-        from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload
         from gns3server.agent.gns3_copilot.utils.command_filter import get_forbidden_commands
+        from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload
 
         _reload()
         commands = get_forbidden_commands()

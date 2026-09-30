@@ -33,7 +33,8 @@ import json
 import logging
 from typing import Any
 
-from jinja2 import Template as JinjaTemplate, TemplateError as JinjaError
+from jinja2 import Template as JinjaTemplate
+from jinja2 import TemplateError as JinjaError
 
 log = logging.getLogger(__name__)
 

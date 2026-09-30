@@ -31,14 +31,9 @@ Converts between LangChain messages and OpenAI-compatible format.
 
 import json
 import uuid
-from typing import Any
-from typing import Dict
+from typing import Any, Dict
 
-from langchain_core.messages import AIMessage
-from langchain_core.messages import HumanMessage
-from langchain_core.messages import SystemMessage
-from langchain_core.messages import ToolCall
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolCall, ToolMessage
 
 
 def _ensure_string(content: Any) -> str:

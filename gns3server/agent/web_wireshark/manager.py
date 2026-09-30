@@ -30,6 +30,7 @@ from urllib.parse import urlparse
 
 from gns3server.config import Config
 from gns3server.utils.port_allocator import link_id_to_display, link_id_to_port
+
 from .docker_client import DockerHTTPClient
 
 logger = logging.getLogger(__name__)

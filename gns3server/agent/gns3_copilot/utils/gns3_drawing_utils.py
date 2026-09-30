@@ -31,8 +31,7 @@ Supports ellipse and rectangle shapes for two-node annotations.
 """
 
 import math
-from typing import Any
-from typing import Literal
+from typing import Any, Literal
 
 # Default parameters
 DEFAULT_DEVICE_WIDTH = 50

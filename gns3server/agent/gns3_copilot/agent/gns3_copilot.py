@@ -50,17 +50,12 @@ import json
 import logging
 import operator
 from datetime import datetime
-from typing import Annotated
-from typing import Literal
+from typing import Annotated, Literal
 
 # Third-party imports
-from langchain.messages import AnyMessage
-from langchain.messages import SystemMessage
-from langchain.messages import ToolMessage
+from langchain.messages import AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import END
-from langgraph.graph import START
-from langgraph.graph import StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.managed.is_last_step import RemainingSteps
 from typing_extensions import TypedDict
 
@@ -70,8 +65,6 @@ from gns3server.agent.gns3_copilot.agent.context_manager import (
 )
 from gns3server.agent.gns3_copilot.agent.model_factory import (
     create_base_model_with_tools,
-)
-from gns3server.agent.gns3_copilot.agent.model_factory import (
     create_title_model,
 )
 from gns3server.agent.gns3_copilot.gns3_client import GNS3TopologyTool
@@ -79,27 +72,23 @@ from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     get_current_llm_config,
 )
 from gns3server.agent.gns3_copilot.prompts import load_system_prompt
+from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool, InjectionSkillsTool, PacketAnalysisSkillsTool
 from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 from gns3server.agent.gns3_copilot.tools_v2 import (
     ExecuteMultipleDeviceCommands,
-)
-from gns3server.agent.gns3_copilot.tools_v2 import (
     ExecuteMultipleDeviceConfigCommands,
+    GNS3CreateNodeTool,
+    GNS3LinkTool,
+    GNS3PacketFilterTool,
+    GNS3StartNodeTool,
+    GNS3StopNodeTool,
+    GNS3SuspendNodeTool,
+    GNS3TemplateTool,
+    GNS3UpdateNodeNameTool,
+    GNS3WaitTool,
+    PacketAnalysisTool,
 )
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3CreateNodeTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3LinkTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3PacketFilterTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3StartNodeTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3StopNodeTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3TemplateTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3WaitTool
 from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
-from gns3server.agent.gns3_copilot.tools_v2 import PacketAnalysisTool
-from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool
-from gns3server.agent.gns3_copilot.skills import InjectionSkillsTool
-from gns3server.agent.gns3_copilot.skills import PacketAnalysisSkillsTool
 
 # Set up logger for GNS3-Copilot
 logger = logging.getLogger(__name__)

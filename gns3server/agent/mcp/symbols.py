@@ -19,9 +19,8 @@
 MCP tool handlers for GNS3 symbol management.
 """
 
-from typing import Any
-
 import logging
+from typing import Any
 
 from gns3server.services import access_ticket_service
 

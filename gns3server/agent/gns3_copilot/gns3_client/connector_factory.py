@@ -49,13 +49,12 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
-    get_current_jwt_token,
-)
-
 # Local imports
 from gns3server.agent.gns3_copilot.gns3_client.connector import (
     Gns3Connector,
+)
+from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
+    get_current_jwt_token,
 )
 
 logger = logging.getLogger(__name__)

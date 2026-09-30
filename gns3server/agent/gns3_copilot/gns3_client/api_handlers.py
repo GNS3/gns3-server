@@ -47,16 +47,14 @@ Copilot-side callers build the context with :func:`build_gns3_ctx`, which
 pulls the request-scoped user JWT from the context variables.
 """
 
-from typing import Any
-from concurrent.futures import ThreadPoolExecutor
-
 import hashlib
 import logging
-
-from gns3server.services import access_ticket_service
-from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+from gns3server.services import access_ticket_service
+from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
 
 log = logging.getLogger(__name__)
 

@@ -47,7 +47,6 @@ import time
 
 from netmiko.base_connection import BaseConnection
 
-
 logger = logging.getLogger(__name__)
 
 # ANSI escape code pattern for stripping terminal formatting codes
