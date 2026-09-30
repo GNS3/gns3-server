@@ -524,7 +524,7 @@ def _inject_topology_into_system(
     if filtered_count > 0:
         logger.debug("Filtered out %d existing SystemMessage(s)", filtered_count)
 
-    return [SystemMessage(content=formatted_prompt)] + non_system_messages
+    return [SystemMessage(content=formatted_prompt), *non_system_messages]
 
 
 # ============================================================================
@@ -556,7 +556,7 @@ def prepare_context_messages(
     else:
         formatted_prompt = system_prompt.replace("{{topology_info}}", "(No topology information available)")
 
-    return [SystemMessage(content=formatted_prompt)] + state_messages
+    return [SystemMessage(content=formatted_prompt), *state_messages]
 
 
 # ============================================================================

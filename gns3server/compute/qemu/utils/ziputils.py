@@ -40,7 +40,7 @@ def unpack_zip(filename, extract_dir=None):
         with zipfile.ZipFile(filename, "r") as zfile:
             for zinfo in zfile.infolist():
                 fname = os.path.join(extract_dir, zinfo.filename)
-                date_time = time.mktime(zinfo.date_time + (0, 0, -1))
+                date_time = time.mktime((*zinfo.date_time, 0, 0, -1))
                 zfile.extract(zinfo, extract_dir)
 
                 # update timestamp

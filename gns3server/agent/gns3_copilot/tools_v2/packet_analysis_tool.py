@@ -444,7 +444,7 @@ class PacketAnalysisTool(BaseTool):
         # Build command: tshark -r <file> <user_args>
         import shlex
 
-        cmd = ["tshark", "-r", pcap_file] + shlex.split(tshark_args)
+        cmd = ["tshark", "-r", pcap_file, *shlex.split(tshark_args)]
 
         logger.info(f"Running tshark: {' '.join(cmd)}")
 
