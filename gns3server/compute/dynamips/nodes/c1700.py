@@ -124,9 +124,7 @@ class C1700(Router):
 
         await self._hypervisor.send(f'c1700 set_chassis "{self._name}" {chassis}')
 
-        log.info(
-            'Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name, id=self._id, chassis=chassis)
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: chassis set to {chassis}')
 
         self._chassis = chassis
         self._setup_chassis()
@@ -150,9 +148,5 @@ class C1700(Router):
 
         await self._hypervisor.send(f'c1700 set_iomem "{self._name}" {iomem}')
 
-        log.info(
-            'Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(
-                name=self._name, id=self._id, old_iomem=self._iomem, new_iomem=iomem
-            )
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: I/O memory updated from {self._iomem}% to {iomem}%')
         self._iomem = iomem
