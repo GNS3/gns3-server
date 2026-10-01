@@ -171,7 +171,7 @@ async def read_image_info(path: str, expected_image_type: str = None, allow_raw_
         raise InvalidImageError(f"Cannot read image '{path}': {e}") from e
 
 
-async def discover_images(image_type: str, skip_image_paths: list = None) -> List[dict]:
+async def discover_images(image_type: str, skip_image_paths: list | None = None) -> List[dict]:
     """
     Scan directories for available images
     """

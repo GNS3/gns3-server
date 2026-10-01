@@ -55,7 +55,7 @@ async def get_user_from_token(
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
     token: Optional[str] = Query(None, include_in_schema=False),
-) -> schemas.User:
+) -> models.User:
 
     if bearer_token:
         # bearer token is used first, then any token passed as a URL parameter
@@ -169,7 +169,7 @@ async def get_current_active_user_from_websocket(
     websocket: WebSocket,
     token: str = Query(...),
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> Optional[schemas.User]:
+) -> Optional[models.User]:
 
     # Extract requested subprotocols from headers for proper WebSocket negotiation
     # This is critical for protocols like xpra that require specific subprotocols
@@ -238,4 +238,5 @@ async def get_current_active_user_from_websocket(
         websocket_error = {"action": "log.error", "event": {"message": err_msg}}
         await websocket.send_json(websocket_error)
         log.error(err_msg)
-        return await websocket.close(code=1008)
+        await websocket.close(code=1008)
+        return None

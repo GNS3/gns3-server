@@ -27,11 +27,11 @@ from pydantic import Field
 from typing import Optional, List
 
 
-class VMwareTemplate(TemplateBase):
+class VMwareTemplateBase(TemplateBase):
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vmware_guest"
-    vmx_path: str = Field(..., description="Path to the vmx file")
+    vmx_path: Optional[str] = Field(None, description="Path to the vmx file")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field(
@@ -57,5 +57,9 @@ class VMwareTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VMwareTemplateUpdate(VMwareTemplate):
-    vmx_path: Optional[str] = Field(None, description="Path to the vmx file")
+class VMwareTemplate(VMwareTemplateBase):
+    vmx_path: str = Field(..., description="Path to the vmx file")
+
+
+class VMwareTemplateUpdate(VMwareTemplateBase):
+    pass

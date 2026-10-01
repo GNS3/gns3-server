@@ -782,7 +782,7 @@ Appliance = ApplianceUnion
 # Create a validator wrapper for convenience
 from pydantic import TypeAdapter
 
-_appliance_validator = TypeAdapter(ApplianceUnion)
+_appliance_validator: TypeAdapter[Union[ApplianceV1_6, ApplianceV8]] = TypeAdapter(ApplianceUnion)
 
 
 class ApplianceModel:

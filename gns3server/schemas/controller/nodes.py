@@ -114,9 +114,9 @@ class NodeBase(BaseModel):
     Node data.
     """
 
-    compute_id: Union[UUID, str]
-    name: str
-    node_type: NodeType
+    compute_id: Optional[Union[UUID, str]] = None
+    name: Optional[str] = None
+    node_type: Optional[NodeType] = None
 
     node_id: Optional[UUID] = None
 
@@ -162,6 +162,9 @@ class NodeBase(BaseModel):
 
 
 class NodeCreate(NodeBase):
+    compute_id: Union[UUID, str]
+    name: str
+    node_type: NodeType
     node_id: UUID = Field(default_factory=uuid4)
 
 
@@ -170,12 +173,13 @@ class NodeUpdate(NodeBase):
     Data to update a node.
     """
 
-    compute_id: Optional[Union[UUID, str]] = None
-    name: Optional[str] = None
-    node_type: Optional[NodeType] = None
+    pass
 
 
 class Node(NodeBase):
+    compute_id: Union[UUID, str]
+    name: str
+    node_type: NodeType
     template_id: Optional[UUID] = Field(
         None, description="Template UUID from which the node has been created. Read only"
     )

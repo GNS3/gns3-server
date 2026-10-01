@@ -23,8 +23,15 @@ This module handles Docker API operations via aiohttp Unix socket.
 
 import asyncio
 import logging
+import sys
+from typing import Any
 
 import aiohttp
+
+if sys.version_info >= (3, 11):
+    from asyncio import timeout as async_timeout
+else:
+    from async_timeout import timeout as async_timeout
 
 from gns3server.utils import parse_version
 
@@ -132,7 +139,7 @@ class DockerHTTPClient:
         url = f"http://docker/v{self._api_version}/{endpoint}"
 
         try:
-            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+            async with async_timeout(self.REQUEST_TIMEOUT):
                 async with session.request(method, url, **kwargs) as response:
                     if response.status >= 300:
                         error_text = await response.text()
@@ -157,9 +164,9 @@ class DockerHTTPClient:
                 return await self._request(method, endpoint, check_connection=False, **kwargs)
             raise
 
-    async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
+    async def create_network(self, name: str, driver: str = "bridge", subnet: str | None = None):
         """Create Docker network."""
-        data = {"Name": name, "Driver": driver}
+        data: dict[str, Any] = {"Name": name, "Driver": driver}
         if subnet:
             data["IPAM"] = {"Config": [{"Subnet": subnet}]}
         await self._request("POST", "networks/create", json=data)
@@ -175,7 +182,7 @@ class DockerHTTPClient:
 
     async def create_container(self, name: str, image: str, **kwargs):
         """Create container."""
-        data = {"Image": image, "name": name, "HostConfig": {}, "NetworkingConfig": {}}
+        data: dict[str, Any] = {"Image": image, "name": name, "HostConfig": {}, "NetworkingConfig": {}}
 
         # Handle network config
         if "network" in kwargs:
@@ -248,7 +255,7 @@ class DockerHTTPClient:
         url = f"http://docker/v{self._api_version}/containers/{container_name}/top?ps_args=aux"
 
         try:
-            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+            async with async_timeout(self.REQUEST_TIMEOUT):
                 async with session.get(url) as response:
                     if response.status >= 300:
                         error_text = await response.text()

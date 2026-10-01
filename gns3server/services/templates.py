@@ -20,7 +20,7 @@ import pydantic
 
 from uuid import UUID
 from fastapi.encoders import jsonable_encoder
-from typing import List
+from typing import List, Optional
 
 from gns3server import schemas
 from gns3server.config import Config
@@ -34,7 +34,7 @@ from gns3server.controller.controller_error import (
 )
 
 
-TEMPLATE_TYPE_TO_SCHEMA = {
+TEMPLATE_TYPE_TO_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "cloud": schemas.CloudTemplate,
     "ethernet_hub": schemas.EthernetHubTemplate,
     "ethernet_switch": schemas.EthernetSwitchTemplate,
@@ -47,7 +47,7 @@ TEMPLATE_TYPE_TO_SCHEMA = {
     "qemu": schemas.QemuTemplate,
 }
 
-TEMPLATE_TYPE_TO_UPDATE_SCHEMA = {
+TEMPLATE_TYPE_TO_UPDATE_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "cloud": schemas.CloudTemplateUpdate,
     "ethernet_hub": schemas.EthernetHubTemplateUpdate,
     "ethernet_switch": schemas.EthernetSwitchTemplateUpdate,
@@ -59,7 +59,7 @@ TEMPLATE_TYPE_TO_UPDATE_SCHEMA = {
     "qemu": schemas.QemuTemplateUpdate,
 }
 
-DYNAMIPS_PLATFORM_TO_SCHEMA = {
+DYNAMIPS_PLATFORM_TO_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "c7200": schemas.C7200DynamipsTemplate,
     "c3745": schemas.C3745DynamipsTemplate,
     "c3725": schemas.C3725DynamipsTemplate,
@@ -69,7 +69,7 @@ DYNAMIPS_PLATFORM_TO_SCHEMA = {
     "c1700": schemas.C1700DynamipsTemplate,
 }
 
-DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA = {
+DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "c7200": schemas.C7200DynamipsTemplateUpdate,
     "c3745": schemas.C3745DynamipsTemplateUpdate,
     "c3725": schemas.C3725DynamipsTemplateUpdate,
@@ -169,11 +169,12 @@ class TemplatesService:
         for builtin_template in BUILTIN_TEMPLATES:
             builtin_template["symbol"] = self._controller.symbols.resolve_symbol(builtin_template["symbol"])
 
-    def get_builtin_template(self, template_id: UUID) -> dict:
+    def get_builtin_template(self, template_id: UUID) -> Optional[dict]:
 
         for builtin_template in BUILTIN_TEMPLATES:
             if builtin_template["template_id"] == template_id:
                 return jsonable_encoder(builtin_template)
+        return None
 
     def _base_path(self):
         return self._templates_repo.configs_path()
@@ -304,7 +305,7 @@ class TemplatesService:
         try:
             # validate the update settings
             update_settings = jsonable_encoder(template_update, exclude_unset=True)
-            if db_template.template_type == "dynamips":
+            if isinstance(db_template, models.DynamipsTemplate):
                 template_schema = DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA[db_template.platform]
             else:
                 template_schema = TEMPLATE_TYPE_TO_UPDATE_SCHEMA[db_template.template_type]
@@ -313,9 +314,9 @@ class TemplatesService:
             raise ControllerBadRequestError(f"JSON schema error received while updating template: {e}")
 
         images_to_add_to_template = await self._find_images(db_template.template_type, template_settings)
-        if db_template.template_type == "dynamips" and "image" in template_settings:
+        if isinstance(db_template, models.DynamipsTemplate) and "image" in template_settings:
             await self._remove_image(db_template.template_id, db_template.image)
-        elif db_template.template_type == "iou" and "path" in template_settings:
+        elif isinstance(db_template, models.IOUTemplate) and "path" in template_settings:
             await self._remove_image(db_template.template_id, db_template.path)
         elif db_template.template_type == "qemu":
             for key in template_update.model_dump().keys():

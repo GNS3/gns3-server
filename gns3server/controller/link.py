@@ -365,7 +365,21 @@ class Link:
 
         raise NotImplementedError
 
-    async def start_marker(self, name, bpf, tag=None, direction=None, capture_node_id=None, enabled=True):
+    async def start_marker(
+        self,
+        name,
+        bpf,
+        tag=None,
+        direction=None,
+        data_link_type="DLT_EN10MB",
+        capture_node_id=None,
+        color=None,
+        highlight_duration=None,
+        enabled=True,
+        inherited_from=None,
+        dump=True,
+        memory_only=False,
+    ):
         """
         Attach a traffic-insight marker to this link (base — UDPLink overrides).
         """
@@ -377,7 +391,19 @@ class Link:
         """
         raise NotImplementedError
 
-    async def update_marker(self, name, bpf=None, tag=None, enabled=None, direction=_UNSET):
+    async def update_marker(
+        self,
+        name,
+        bpf=None,
+        tag=None,
+        enabled=None,
+        direction=_UNSET,
+        color=None,
+        highlight_duration=None,
+        inherited=False,
+        dump=True,
+        memory_only=False,
+    ):
         """
         Update an existing marker's BPF, tag, or enabled flag.
 

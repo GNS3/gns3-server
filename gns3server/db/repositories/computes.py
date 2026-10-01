@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, Union
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine import CursorResult
+from typing import cast
 
 from .base import BaseRepository
 
@@ -31,7 +33,7 @@ class ComputesRepository(BaseRepository):
 
         super().__init__(db_session)
 
-    async def get_compute(self, compute_id: UUID) -> Optional[models.Compute]:
+    async def get_compute(self, compute_id: Union[str, UUID]) -> Optional[models.Compute]:
 
         query = select(models.Compute).where(models.Compute.compute_id == compute_id)
         result = await self._db_session.execute(query)
@@ -47,7 +49,7 @@ class ComputesRepository(BaseRepository):
 
         query = select(models.Compute)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_compute(self, compute_create: schemas.ComputeCreate) -> models.Compute:
 
@@ -58,14 +60,16 @@ class ComputesRepository(BaseRepository):
             host=compute_create.host,
             port=compute_create.port,
             user=compute_create.user,
-            password=compute_create.password.get_secret_value(),
+            password=compute_create.password.get_secret_value() if compute_create.password else None,
         )
         self._db_session.add(db_compute)
         await self._db_session.commit()
         await self._db_session.refresh(db_compute)
         return db_compute
 
-    async def update_compute(self, compute_id: UUID, compute_update: schemas.ComputeUpdate) -> Optional[models.Compute]:
+    async def update_compute(
+        self, compute_id: Union[str, UUID], compute_update: schemas.ComputeUpdate
+    ) -> Optional[models.Compute]:
 
         update_values = compute_update.model_dump(exclude_unset=True)
         if compute_update.password is not None:
@@ -80,9 +84,9 @@ class ComputesRepository(BaseRepository):
             await self._db_session.refresh(compute_db)  # force refresh of updated_at value
         return compute_db
 
-    async def delete_compute(self, compute_id: UUID) -> bool:
+    async def delete_compute(self, compute_id: Union[str, UUID]) -> bool:
 
         query = delete(models.Compute).where(models.Compute.compute_id == compute_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0

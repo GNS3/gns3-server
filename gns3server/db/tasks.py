@@ -177,7 +177,7 @@ async def disconnect_from_db(app: FastAPI) -> None:
         log.info(f"Disconnected from database")
 
 
-async def get_computes(app: FastAPI) -> List[dict]:
+async def get_computes(app: FastAPI) -> List[schemas.Compute]:
 
     computes = []
     async with AsyncSession(app.state._db_engine) as db_session:
@@ -199,8 +199,8 @@ async def update_disk_checksums(updated_disks: List[str]) -> None:
 
     for path in updated_disks:
         async with image_lock(path):
-            async with AsyncSession(app.state._db_engine, expire_on_commit=False) as session:
-                repository = ImagesRepository(session)
+            async with AsyncSession(app.state._db_engine, expire_on_commit=False) as db_session:
+                repository = ImagesRepository(db_session)
                 image = await repository.get_image(path)
                 if image:
                     info = await read_image_info(path, image.image_type, allow_raw_image=True)
@@ -234,7 +234,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
     from gns3server.utils.encryption import decrypt, is_encrypted
 
     try:
-        user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+        user_uuid = UUID(user_id)
 
         async with AsyncSession(app.state._db_engine, expire_on_commit=False) as session:
             repo = LLMModelConfigsRepository(session)

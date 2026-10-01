@@ -206,7 +206,11 @@ async def create_user_llm_model_config(
         # Extract config fields (excluding table-level fields)
         config_fields = config_create.model_dump(exclude={"name", "model_type", "is_default"})
         new_config = await llm_repo.create_user_config(
-            user_id, config_create.name, config_create.model_type, config_fields, is_default=config_create.is_default
+            user_id,
+            config_create.name,
+            config_create.model_type,
+            config_fields,
+            is_default=bool(config_create.is_default),
         )
 
         return schemas.LLMModelConfigResponse(
@@ -346,6 +350,10 @@ async def set_user_default_llm_model_config(
 
         # Get the updated config
         config = await llm_repo.get_user_config(config_id)
+        if config is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
+            )
         return schemas.LLMModelConfigResponse(
             config_id=config.config_id,
             name=config.name,
@@ -506,7 +514,11 @@ async def create_group_llm_model_config(
         # Extract config fields (excluding table-level fields)
         config_fields = config_create.model_dump(exclude={"name", "model_type", "is_default"})
         new_config = await llm_repo.create_group_config(
-            group_id, config_create.name, config_create.model_type, config_fields, is_default=config_create.is_default
+            group_id,
+            config_create.name,
+            config_create.model_type,
+            config_fields,
+            is_default=bool(config_create.is_default),
         )
 
         return schemas.LLMModelConfigResponse(
@@ -646,6 +658,10 @@ async def set_group_default_llm_model_config(
 
         # Get the updated config
         config = await llm_repo.get_group_config(config_id)
+        if config is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"LLM model configuration '{config_id}' not found"
+            )
         return schemas.LLMModelConfigResponse(
             config_id=config.config_id,
             name=config.name,

@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import uuid
 import logging
 
 from uuid import UUID
-from typing import List, Union, Optional
+from typing import List, Union, Optional, cast
 from sqlalchemy import select, delete
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.session import make_transient
@@ -66,7 +68,7 @@ class TemplatesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def get_template_by_name_and_version(self, name: str, version: str) -> Union[None, models.Template]:
+    async def get_template_by_name_and_version(self, name: str, version: Optional[str]) -> Union[None, models.Template]:
 
         query = (
             select(models.Template)
@@ -91,7 +93,7 @@ class TemplatesRepository(BaseRepository):
 
         query = select(models.Template).options(selectinload(models.Template.images))
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_template(self, template_type: str, template_settings: dict) -> models.Template:
 
@@ -102,7 +104,7 @@ class TemplatesRepository(BaseRepository):
         await self._db_session.refresh(db_template)
         return db_template
 
-    async def update_template(self, db_template: models.Template, template_settings: dict) -> schemas.Template:
+    async def update_template(self, db_template: models.Template, template_settings: dict) -> models.Template:
 
         # update the fields directly because update() query couldn't work
         for key, value in template_settings.items():
@@ -116,9 +118,9 @@ class TemplatesRepository(BaseRepository):
         query = delete(models.Template).where(models.Template.template_id == template_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
-    async def duplicate_template(self, template_id: UUID) -> Optional[schemas.Template]:
+    async def duplicate_template(self, template_id: UUID) -> Optional[models.Template]:
 
         query = (
             select(models.Template)
@@ -130,7 +132,7 @@ class TemplatesRepository(BaseRepository):
             # duplicate db object with new primary key (template_id)
             self._db_session.expunge(db_template)
             make_transient(db_template)
-            db_template.template_id = None
+            db_template.template_id = uuid.uuid4()
             self._db_session.add(db_template)
             await self._db_session.commit()
             await self._db_session.refresh(db_template)
@@ -219,4 +221,4 @@ class TemplatesRepository(BaseRepository):
 
         query = select(models.Image).join(models.Image.templates).filter(models.Template.template_id == template_id)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())

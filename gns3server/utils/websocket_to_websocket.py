@@ -25,7 +25,6 @@ Similar pattern to VNC console implementation in base_node.py:
 
 import asyncio
 import logging
-import sys
 from typing import Optional
 
 import aiohttp
@@ -39,7 +38,7 @@ log = logging.getLogger(__name__)
 async def websocket_proxy(
     client_ws: WebSocket,
     target_url: str,
-    requested_protocols: list = None,
+    requested_protocols: Optional[list] = None,
     buffer_size: int = 65536,
     timeout: Optional[float] = None,
 ) -> None:
@@ -59,7 +58,7 @@ async def websocket_proxy(
     Raises:
         aiohttp.ClientError: If connection to target fails
     """
-    client_info = f"{client_ws.client.host}:{client_ws.client.port}"
+    client_info = f"{client_ws.client.host}:{client_ws.client.port}" if client_ws.client else "unknown"
 
     async def forward_client_to_target(target_ws):
         """Client → Target: Forward binary WebSocket data."""
@@ -101,25 +100,20 @@ async def websocket_proxy(
         subprotocols = requested_protocols or ["binary"]
         log.info(f"Client requested subprotocols: {subprotocols}")
 
-        timeout_config = {}
-        if timeout:
-            timeout_config = {"timeout": aiohttp.ClientTimeout(total=timeout)}
+        session_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else None
 
-        async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(target_url, protocols=subprotocols, **timeout_config) as target_ws:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
+            async with session.ws_connect(target_url, protocols=subprotocols) as target_ws:
                 negotiated_protocol = target_ws.protocol
                 log.info(f"Target WebSocket negotiated protocol: {negotiated_protocol}")
                 log.info(f"WebSocket proxy established: {client_info} → {target_url}")
 
                 # Run both forwarding tasks in parallel
                 # Similar pattern to base_node.py VNC implementation
-                if sys.version_info >= (3, 11, 0):
-                    aws = [
-                        asyncio.create_task(forward_client_to_target(target_ws)),
-                        asyncio.create_task(forward_target_to_client(target_ws)),
-                    ]
-                else:
-                    aws = [forward_client_to_target(target_ws), forward_target_to_client(target_ws)]
+                aws = [
+                    asyncio.create_task(forward_client_to_target(target_ws)),
+                    asyncio.create_task(forward_target_to_client(target_ws)),
+                ]
 
                 try:
                     done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
@@ -146,7 +140,7 @@ async def websocket_proxy(
 async def websocket_proxy_with_manual_accept(
     client_ws: StarletteWebSocket,
     target_url: str,
-    requested_protocols: list = None,
+    requested_protocols: Optional[list] = None,
     buffer_size: int = 65536,
     timeout: Optional[float] = None,
 ) -> None:
@@ -167,7 +161,7 @@ async def websocket_proxy_with_manual_accept(
     Raises:
         aiohttp.ClientError: If connection to target fails
     """
-    client_info = f"{client_ws.client.host}:{client_ws.client.port}" if hasattr(client_ws, "client") else "unknown"
+    client_info = f"{client_ws.client.host}:{client_ws.client.port}" if client_ws.client else "unknown"
 
     async def forward_client_to_target(target_ws):
         """Client → Target: Forward binary WebSocket data."""
@@ -213,13 +207,11 @@ async def websocket_proxy_with_manual_accept(
         subprotocols = requested_protocols or ["binary"]
         log.info(f"Client requested subprotocols: {subprotocols}")
 
-        timeout_config = {}
-        if timeout:
-            timeout_config = {"timeout": aiohttp.ClientTimeout(total=timeout)}
+        session_timeout = aiohttp.ClientTimeout(total=timeout) if timeout else None
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=session_timeout) as session:
             log.info(f"About to ws_connect to {target_url}")
-            ws_conn = session.ws_connect(target_url, protocols=subprotocols, **timeout_config)
+            ws_conn = session.ws_connect(target_url, protocols=subprotocols)
             log.info("ws_connect coroutine created, about to enter")
             async with ws_conn as target_ws:
                 negotiated_protocol = target_ws.protocol
@@ -235,13 +227,10 @@ async def websocket_proxy_with_manual_accept(
                 log.info(f"WebSocket proxy established: {client_info} → {target_url}")
 
                 # Run both forwarding tasks in parallel
-                if sys.version_info >= (3, 11, 0):
-                    aws = [
-                        asyncio.create_task(forward_client_to_target(target_ws)),
-                        asyncio.create_task(forward_target_to_client(target_ws)),
-                    ]
-                else:
-                    aws = [forward_client_to_target(target_ws), forward_target_to_client(target_ws)]
+                aws = [
+                    asyncio.create_task(forward_client_to_target(target_ws)),
+                    asyncio.create_task(forward_target_to_client(target_ws)),
+                ]
 
                 log.info(f"About to call asyncio.wait with {len(aws)} tasks")
                 try:

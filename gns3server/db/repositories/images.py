@@ -19,8 +19,9 @@ import os
 import asyncio
 from datetime import datetime, timezone
 
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, cast
 from sqlalchemy import select, delete, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from gns3server.utils.image_inventory import fingerprint, image_lock, normalized_path
@@ -56,7 +57,7 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query.execution_options(populate_existing=refresh))
         return result.scalars().one_or_none()
 
-    async def get_image_by_checksum(self, checksum: str, image_dir: str = None) -> Optional[models.Image]:
+    async def get_image_by_checksum(self, checksum: str, image_dir: Optional[str] = None) -> Optional[models.Image]:
         """
         Get an image by its checksum.
         """
@@ -95,9 +96,9 @@ class ImagesRepository(BaseRepository):
         if availability:
             query = query.where(models.Image.availability == availability)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def get_image_templates(self, image_id: int) -> Optional[List[models.Template]]:
+    async def get_image_templates(self, image_id: int) -> List[models.Template]:
         """
         Get all templates that an image belongs to.
         """
@@ -105,7 +106,7 @@ class ImagesRepository(BaseRepository):
         query = select(models.Template).join(models.Template.images).filter(models.Image.image_id == image_id)
 
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def add_image(
         self, image_name, image_type, image_size, path, checksum, checksum_algorithm, file_fingerprint=None
@@ -135,7 +136,7 @@ class ImagesRepository(BaseRepository):
         await self._db_session.refresh(db_image)
         return db_image
 
-    async def update_image(self, image_path: str, checksum: str, checksum_algorithm: str) -> models.Image:
+    async def update_image(self, image_path: str, checksum: str, checksum_algorithm: str) -> Optional[models.Image]:
         """
         Update an image.
         """
@@ -243,9 +244,9 @@ class ImagesRepository(BaseRepository):
             query = delete(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
-    async def prune_images(self, skip_images: list[str] = None, is_in_use: Optional[Callable] = None) -> int:
+    async def prune_images(self, skip_images: Optional[list[str]] = None,  is_in_use: Optional[Callable] = None) -> int:
         """
         Prune images not attached to any template.
         """

@@ -14,7 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
+
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import BaseTable, GUID
 
@@ -22,8 +25,10 @@ from .base import BaseTable, GUID
 class ApiKey(BaseTable):
     __tablename__ = "api_keys"
 
-    api_key_id = Column(GUID, primary_key=True)
-    user_id = Column(GUID, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    api_key_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(128), nullable=False)
     key_hash = Column(String(128), nullable=False)
     key_prefix = Column(String(8), nullable=False)
