@@ -16,11 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import asyncio
+from datetime import datetime, timezone
 
-from typing import Optional, List, cast
+from typing import Optional, List, Callable, cast
 from sqlalchemy import select, delete, update
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from gns3server.utils.image_inventory import fingerprint, image_lock, normalized_path
 
 from .base import BaseRepository
 
@@ -36,19 +40,21 @@ class ImagesRepository(BaseRepository):
 
         super().__init__(db_session)
 
-    async def get_image(self, image_path: str) -> Optional[models.Image]:
+    async def get_image(self, image_path: str, *, refresh: bool = False) -> Optional[models.Image]:
         """
         Get an image by its path.
         """
 
         image_dir, image_name = os.path.split(image_path)
-        if image_dir:
+        if os.path.isabs(image_path):
+            query = select(models.Image).where(models.Image.path == image_path)
+        elif image_dir:
             query = select(models.Image).where(
-                models.Image.filename == image_name, models.Image.path.endswith(image_path)
+                models.Image.filename == image_name, models.Image.path.endswith(os.sep + image_path, autoescape=True)
             )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
-        result = await self._db_session.execute(query)
+        result = await self._db_session.execute(query.execution_options(populate_existing=refresh))
         return result.scalars().one_or_none()
 
     async def get_image_by_checksum(self, checksum: str, image_dir: Optional[str] = None) -> Optional[models.Image]:
@@ -56,18 +62,29 @@ class ImagesRepository(BaseRepository):
         Get an image by its checksum.
         """
 
-        if image_dir:
-            query = select(models.Image).where(
-                models.Image.checksum == checksum, models.Image.path.startswith(image_dir)
-            )
-            result = await self._db_session.execute(query)
-            return result.scalars().one_or_none()
-        else:
-            query = select(models.Image).where(models.Image.checksum == checksum)
-            result = await self._db_session.execute(query)
-            return result.scalars().first()
+        query = select(models.Image).where(models.Image.checksum == checksum).order_by(models.Image.image_id)
+        result = await self._db_session.execute(query)
+        for image in result.scalars().all():
+            if image_dir and normalized_path(os.path.dirname(image.path)) != normalized_path(image_dir):
+                continue
+            if await self.is_usable(image):
+                return image
+        return None
 
-    async def get_images(self, image_type=None) -> List[models.Image]:
+    async def is_usable(self, image: models.Image) -> bool:
+        """Validate a checksum candidate without trusting stale catalog/sidecar data."""
+        from gns3server.utils.images import inspect_image_file, InvalidImageError
+
+        try:
+            current = await asyncio.to_thread(fingerprint, image.path)
+            if image.availability == "available" and image.file_fingerprint == current:
+                return True
+            info = await asyncio.to_thread(inspect_image_file, image.path, image.image_type, True)
+            return info["checksum"] == image.checksum and info["image_size"] == image.image_size
+        except (OSError, InvalidImageError):
+            return False
+
+    async def get_images(self, image_type=None, availability=None) -> List[models.Image]:
         """
         Get all images.
         """
@@ -76,6 +93,8 @@ class ImagesRepository(BaseRepository):
             query = select(models.Image).where(models.Image.image_type == image_type)
         else:
             query = select(models.Image)
+        if availability:
+            query = query.where(models.Image.availability == availability)
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
 
@@ -89,7 +108,9 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
 
-    async def add_image(self, image_name, image_type, image_size, path, checksum, checksum_algorithm) -> models.Image:
+    async def add_image(
+        self, image_name, image_type, image_size, path, checksum, checksum_algorithm, file_fingerprint=None
+    ) -> models.Image:
         """
         Create a new image.
         """
@@ -102,10 +123,16 @@ class ImagesRepository(BaseRepository):
             path=path,
             checksum=checksum,
             checksum_algorithm=checksum_algorithm,
+            file_fingerprint=file_fingerprint,
+            availability="available" if file_fingerprint else "unknown",
         )
 
         self._db_session.add(db_image)
-        await self._db_session.commit()
+        try:
+            await self._db_session.commit()
+        except Exception:
+            await self._db_session.rollback()
+            raise
         await self._db_session.refresh(db_image)
         return db_image
 
@@ -127,16 +154,91 @@ class ImagesRepository(BaseRepository):
             await self._db_session.refresh(image_db)  # force refresh of updated_at value
         return image_db
 
+    async def save_verified_image(self, info: dict) -> Optional[models.Image]:
+        """Upsert an exact path, preserving template associations and the image ID.
+
+        Callers coordinate publication/inspection with image_lock(). Each commit
+        is short, and a concurrent insert from a legacy caller is retried safely.
+        """
+        values = dict(info)
+        values["filename"] = values.pop("image_name")
+        values.update(
+            availability="available",
+            last_error=None,
+            last_seen_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            last_verified_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        for attempt in range(2):
+            try:
+                image = (
+                    await self._db_session.execute(
+                        select(models.Image)
+                        .where(models.Image.path == info["path"])
+                        .execution_options(populate_existing=True)
+                    )
+                ).scalar_one_or_none()
+                if image is None:
+                    # A legacy spelling (e.g. /images/QEMU/./disk.qcow2) can
+                    # refer to the same destination restored by an API upload.
+                    candidates = (
+                        (
+                            await self._db_session.execute(
+                                select(models.Image).where(models.Image.filename == values["filename"])
+                            )
+                        )
+                        .scalars()
+                        .all()
+                    )
+                    aliases = [
+                        candidate
+                        for candidate in candidates
+                        if normalized_path(candidate.path) == normalized_path(info["path"])
+                    ]
+                    if len(aliases) > 1:
+                        from sqlalchemy.exc import MultipleResultsFound
+
+                        raise MultipleResultsFound("Ambiguous image path aliases; manual review required")
+                    if aliases:
+                        image = aliases[0]
+                        values["path"] = image.path
+                if image is None:
+                    image = models.Image(**values)
+                    self._db_session.add(image)
+                else:
+                    for key, value in values.items():
+                        setattr(image, key, value)
+                await self._db_session.commit()
+                await self._db_session.refresh(image)
+                return image
+            except IntegrityError:
+                await self._db_session.rollback()
+                if attempt:
+                    raise
+            except Exception:
+                await self._db_session.rollback()
+                raise
+        return None
+
+    async def delete_image_exact(self, image_id: int) -> bool:
+        result = await self._db_session.execute(delete(models.Image).where(models.Image.image_id == image_id))
+        await self._db_session.commit()
+        return cast(CursorResult, result).rowcount > 0
+
     async def delete_image(self, image_path: str) -> bool:
         """
         Delete an image.
         """
 
         image_dir, image_name = os.path.split(image_path)
-        if image_dir:
+        if os.path.isabs(image_path):
+            query = delete(models.Image).where(models.Image.path == image_path)
+        elif image_dir:
             query = (
                 delete(models.Image)
-                .where(models.Image.filename == image_name, models.Image.path.endswith(image_path))
+                .where(
+                    models.Image.filename == image_name,
+                    models.Image.path.endswith(os.sep + image_path, autoescape=True),
+                )
                 .execution_options(synchronize_session=False)
             )
         else:
@@ -145,25 +247,45 @@ class ImagesRepository(BaseRepository):
         await self._db_session.commit()
         return cast(CursorResult, result).rowcount > 0
 
-    async def prune_images(self, skip_images: Optional[list[str]] = None) -> int:
+    async def prune_images(self, skip_images: Optional[list[str]] = None, is_in_use: Optional[Callable] = None) -> int:
         """
         Prune images not attached to any template.
         """
 
         query = select(models.Image).filter(~models.Image.templates.any())
         result = await self._db_session.execute(query)
-        images = result.scalars().all()
+        # Snapshot scalar values; commits can expire ORM instances.
+        images = [
+            (image.image_id, image.filename, image.path, image.checksum, image.file_fingerprint)
+            for image in result.scalars().all()
+        ]
         images_deleted = 0
-        for image in images:
-            if skip_images and image.filename in skip_images:
-                log.debug(f"Skipping image '{image.path}' for pruning")
+        errors = []
+        for image_id, filename, path, checksum, file_fingerprint in images:
+            if skip_images and filename in skip_images:
                 continue
-            try:
-                log.debug(f"Deleting image '{image.path}'")
-                os.remove(image.path)
-            except OSError:
-                log.warning(f"Could not delete image file {image.path}")
-            if await self.delete_image(image.path):
-                images_deleted += 1
+            async with image_lock(path):
+                current = await self.get_image(path, refresh=True)
+                if current is None or (current.image_id, current.checksum, current.file_fingerprint) != (
+                    image_id,
+                    checksum,
+                    file_fingerprint,
+                ):
+                    continue  # A concurrent request removed or replaced this image.
+                if await self.get_image_templates(image_id) or (is_in_use and is_in_use(filename)):
+                    continue
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError as e:
+                    errors.append(f"{path}: {e}")
+                    continue
+                if await self.delete_image_exact(image_id):
+                    images_deleted += 1
         log.info(f"{images_deleted} image(s) have been deleted")
+        if errors:
+            from gns3server.controller.controller_error import ControllerError
+
+            raise ControllerError("Could not delete image files: " + "; ".join(errors))
         return images_deleted

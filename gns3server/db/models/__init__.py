@@ -21,7 +21,7 @@ from .users import User, UserGroup
 from .roles import Role
 from .privileges import Privilege
 from .computes import Compute
-from .images import Image
+from .images import Image, ImageSyncJob
 from .pools import Resource, ResourcePool
 from .llm_model_configs import LLMModelConfig
 from .api_keys import ApiKey

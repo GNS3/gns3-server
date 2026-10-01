@@ -120,6 +120,7 @@ class ServerSettingsUpdate(BaseModel):
     default_symbol_theme: Optional[BuiltinSymbolTheme] = None
     allow_raw_images: Optional[bool] = None
     auto_discover_images: Optional[bool] = None
+    image_sync_interval: Optional[int] = Field(None, ge=10)
     report_errors: Optional[bool] = None
     additional_images_paths: Optional[List[str]] = None
     console_start_port_range: Optional[int] = Field(None, gt=0, le=65535)

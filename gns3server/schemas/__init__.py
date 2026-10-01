@@ -41,7 +41,7 @@ from .controller.computes import (
     Compute,
 )
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
-from .controller.images import Image, ImageType
+from .controller.images import Image, ImageType, ImageSyncRequest, ImageSyncJob
 from .controller.appliances import ApplianceVersion, ApplianceVersionV8, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM

@@ -59,6 +59,16 @@ docs/
 
 ## Features
 
+### Image inventory synchronization
+Image Manager's **Sync Images** action reconciles the catalog with the configured
+image directories. Automatic synchronization uses filesystem events and periodic
+scans (`auto_discover_images`, `image_sync_interval`, default 900 seconds).
+New and changed images are checksummed; missing records retain their IDs and
+template associations and become available again when restored at the same path.
+The `/v3/images/sync` API supports dry-run and forced checksum verification.
+Database migration `d9e8a2b7c401` is required when upgrading an existing catalog.
+Atomic image publication requires filesystem hard-link support.
+
 ### Controller + Compute Setup (`features/compute-controller-setup.md`)
 Architecture and minimum configuration for setting up GNS3 Controller with remote Compute nodes. Covers compute node config, controller registration, and multi-compute deployment.
 
