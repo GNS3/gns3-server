@@ -22,6 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L77
 import asyncio
 import base64
 import binascii
+import contextlib
 import glob
 import logging
 import os
@@ -37,10 +38,16 @@ from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.images import md5sum
 
 from ...base_node import BaseNode
+from ...error import NodeError
+from ...kernel_datapath import KernelDatapathMixin
+from ...nios.nio_bridge import NIOBridge
+from ...nios.nio_tap import NIOTAP
+from ...ubridge.ubridge_error import UbridgeError
+from ..adapters.adapter import ETHERNET_ADAPTERS, ETHERNET_WICS
 from ..dynamips_error import DynamipsError
 
 
-class Router(BaseNode):
+class Router(KernelDatapathMixin, BaseNode):
     """
     Dynamips router implementation.
 
@@ -123,6 +130,13 @@ class Router(BaseNode):
         self._slots = []
         self._ghost_flag = ghost_flag
         self._memory_watcher = None
+        # Kernel datapath: the persistent anchor TAP per Ethernet slot/port
+        # (in _kernel_taps) and the hypervisor TAP NIO holding each anchor
+        # open while a kernel link binds the port (in _tap_nios).
+        self._kernel_taps = {}
+        self._tap_nios = {}
+        self._tap_datapath = False
+        self._ubridge_tc_caps = None
 
         if not ghost_flag:
             if not dynamips_id:
@@ -320,7 +334,16 @@ class Router(BaseNode):
                 # an empty private-config can prevent a router to boot.
                 private_config_path = ""
 
-            await self._hypervisor.send(f'vm set_config "{self._name}" "{startup_config_path}" "{private_config_path}"')
+            # uBridge owns the kernel datapath's anchor TAPs; start it and
+            # create them before the VM boots, so kernel links bound while
+            # the node was stopped wire themselves as IOS comes up.
+            await self._prepare_tap_datapath()
+
+            await self._hypervisor.send(
+                'vm set_config "{name}" "{startup}" "{private}"'.format(
+                    name=self._name, startup=startup_config_path, private=private_config_path
+                )
+            )
             await self._hypervisor.send(f'vm start "{self._name}"')
             self.status = "started"
             log.debug(f'router "{self._name}" [{self._id}] has been started')
@@ -421,7 +444,9 @@ class Router(BaseNode):
         for adapter in self._slots:
             if adapter is not None:
                 for nio in adapter.ports.values():
-                    if nio:
+                    # NIOBridge has no hypervisor side to close here — its
+                    # release runs in _stop_ubridge below.
+                    if nio and not isinstance(nio, NIOBridge):
                         await nio.close()
 
         await self._stop_ubridge()
@@ -1143,6 +1168,11 @@ class Router(BaseNode):
 
             log.debug(f'Router "{self._name}" [{self._id}]: OIR start event sent to slot {slot_number}')
 
+            if self._tap_datapath:
+                # The new adapter's Ethernet ports need their anchor TAPs now
+                # (not at next start) for kernel links to attach at once.
+                await self._create_taps()
+
     async def slot_remove_binding(self, slot_number):
         """
         Removes a slot binding (a module from a slot).
@@ -1281,6 +1311,19 @@ class Router(BaseNode):
         if not adapter.port_exists(port_number):
             raise DynamipsError(f"Port {port_number} does not exist on adapter {adapter}")
 
+        if isinstance(nio, NIOBridge):
+            # Kernel datapath: the port's anchor TAP is opened in the
+            # hypervisor and enslaved into the NIO's per-link bridge (the
+            # wiring is deferred to the node's start when no anchors exist).
+            adapter.add_nio(port_number, nio)
+            await self._attach_kernel_nio(slot_number, port_number, nio)
+            log.debug(
+                'Router "{name}" [{id}]: {nio} bound to port {slot_number}/{port_number}'.format(
+                    name=self._name, id=self._id, nio=nio, slot_number=slot_number, port_number=port_number
+                )
+            )
+            return
+
         try:
             await self._hypervisor.send(f'vm slot_add_nio_binding "{self._name}" {slot_number} {port_number} {nio}')
         except DynamipsError:
@@ -1302,6 +1345,15 @@ class Router(BaseNode):
         :param nio: NIO instance to add to the slot/port
         """
 
+        if isinstance(nio, NIOBridge):
+            # Filters, markers or suspend changed on a kernel link: re-apply
+            # on the anchor, no re-binding and no re-enslaving. A NIO bound
+            # while the node was stopped carries its state; start applies it.
+            anchor = self._kernel_host_ifc(slot_number, port_number)
+            if anchor is not None and self.ubridge:
+                await self._kernel_update(anchor, nio)
+                await self._set_adapter_carrier(slot_number, not nio.suspend, port_number)
+            return
         await nio.update()
 
     async def slot_remove_nio_binding(self, slot_number, port_number):
@@ -1326,12 +1378,27 @@ class Router(BaseNode):
             raise DynamipsError(f"Port {port_number} does not exist on adapter {adapter}")
 
         await self.stop_capture(slot_number, port_number)
-        await self.slot_disable_nio(slot_number, port_number)
-        await self._hypervisor.send(f'vm slot_remove_nio_binding "{self._name}" {slot_number} {port_number}')
 
         nio = adapter.get_nio(port_number)
         if nio is None:
             return
+
+        if isinstance(nio, NIOBridge):
+            await self._remove_kernel_nio_binding(slot_number, port_number, nio)
+            adapter.remove_nio(port_number)
+            log.debug(
+                'Router "{name}" [{id}]: {nio} removed from port {slot_number}/{port_number}'.format(
+                    name=self._name, id=self._id, nio=nio, slot_number=slot_number, port_number=port_number
+                )
+            )
+            return nio
+
+        await self.slot_disable_nio(slot_number, port_number)
+        await self._hypervisor.send(
+            'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
+                name=self._name, slot_number=slot_number, port_number=port_number
+            )
+        )
         await nio.close()
         adapter.remove_nio(port_number)
 
@@ -1421,6 +1488,21 @@ class Router(BaseNode):
         if not nio:
             raise DynamipsError(f"Port {slot_number}/{port_number} is not connected")
 
+        if isinstance(nio, NIOBridge):
+            # Kernel link: capture on the port's TAP anchor (AF_PACKET),
+            # not in the Dynamips NIO (this link has no Dynamips NIO).
+            nio.start_packet_capture(output_file, data_link_type)
+            if self.ubridge:
+                anchor = self._kernel_host_ifc(slot_number, port_number)
+                if anchor is not None:
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+            log.debug(
+                'Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(
+                    name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
+                )
+            )
+            return
+
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError(f"Port {port_number} has already a filter applied on {adapter}")
         await nio.start_packet_capture(output_file, data_link_type)
@@ -1448,9 +1530,264 @@ class Router(BaseNode):
 
         if not nio.capturing:
             return
+
+        if isinstance(nio, NIOBridge):
+            nio.stop_packet_capture()
+            if self.ubridge and self._kernel_host_ifc(slot_number, port_number) is not None:
+                await self._ubridge_send("capture stop_kernel")
+            return
         await nio.stop_packet_capture()
 
         log.debug(f'Router "{self._name}" [{self._id}]: stopping packet capture on port {slot_number}/{port_number}')
+
+    # ------------------------------------------------------------------
+    # Kernel datapath: the port anchor is a persistent TAP held by the
+    # Dynamips hypervisor (nio create_tap) — QEMU's shape, not IOU's
+    # ------------------------------------------------------------------
+
+    def _tap_name(self, slot_number, port_number):
+        """
+        Deterministic anchor TAP name for a slot/port. The ``gd`` prefix
+        keeps it out of the ``gns3`` bridge/TAP name space (and apart from
+        Docker's ``gv``/``gc``, QEMU's ``gq`` and IOU's ``gi``); 8 hex chars
+        of the node id plus slot/port keep it unique and within IFNAMSIZ
+        (15), even for WIC port numbers (16, 32, 48).
+        """
+
+        return f"gd{self._id.replace('-', '')[:8]}e{slot_number}p{port_number}"
+
+    def _kernel_host_ifc(self, slot_number, port_number=0):
+        """
+        The persistent TAP this Ethernet slot/port owns, or None for serial,
+        ATM or POS ports (never anchored) and before the router started.
+        """
+
+        return self._kernel_taps.get((slot_number, port_number))
+
+    def _kernel_anchors(self):
+        """
+        Every anchor TAP this router currently owns.
+        """
+
+        return set(self._kernel_taps.values())
+
+    def _kernel_error(self, message):
+        return DynamipsError(message)
+
+    def _ethernet_slot_ports(self):
+        """
+        Every (slot, port) that can carry Ethernet frames: slot adapters
+        whose model is Ethernet, plus WIC-1ENET ports (numbered from 16 per
+        WIC slot, the Dynamips convention) in any motherboard.
+        """
+
+        ports = []
+        for slot_number, adapter in enumerate(self._slots):
+            if adapter is None:
+                continue
+            if str(adapter) in ETHERNET_ADAPTERS:
+                ports.extend((slot_number, port_number) for port_number in adapter.ports)
+            for wic_slot_number, wic in enumerate(adapter.wics or []):
+                if wic is not None and str(wic) in ETHERNET_WICS:
+                    ports.append((slot_number, 16 * (wic_slot_number + 1)))
+        return ports
+
+    @property
+    def _ethernet_adapters(self):
+        """
+        Slot adapters owning at least one anchor — the mixin's per-link
+        bridge sweep walks them. Dynamips ports live in slot adapters (WIC
+        ports included), so this derives from the anchor map rather than
+        the slot list.
+        """
+
+        adapters = []
+        for slot_number, _port_number in self._kernel_taps:
+            if slot_number < len(self._slots):
+                adapter = self._slots[slot_number]
+                if adapter is not None and adapter not in adapters:
+                    adapters.append(adapter)
+        return adapters
+
+    async def _prepare_tap_datapath(self):
+        """
+        Start uBridge and create the persistent TAP every Ethernet slot/port
+        owns — the anchor role QEMU's TAPs and Docker's veth host ends play.
+        The Dynamips hypervisor opens the device (ownership handed to this
+        user by _create_taps), so it needs no privileges of its own to hold
+        the fd. A uBridge without the tap module keeps this router on the
+        relay datapath: every link rides the NIOUDP tunnel, exactly as
+        before.
+
+        Nothing here is undone at node stop — the hypervisor, its NIO
+        bindings and the per-link kernel bridges all outlive ``vm stop``,
+        which is what makes a stopped router's links self-heal on the next
+        start. The anchors are only retired when the node closes.
+        """
+
+        if self._ghost_flag:
+            # Ghost IOS images share RAM with a real router and never link.
+            return
+
+        try:
+            await self._start_ubridge()
+        except NodeError as e:
+            # A Dynamips router without links never needed uBridge; keep the
+            # node bootable and let the relay raise at link time (as before).
+            log.warning("Router '%s': %s", self._name, e)
+            return
+
+        # uBridge (re)started: the tc capabilities must be probed again.
+        self._ubridge_tc_caps = None
+        if not self._tap_datapath:
+            probe = f"gd{self._id.replace('-', '')[:8]}prob"
+            try:
+                await self._ubridge_send(f'tap create "{probe}"')
+            except UbridgeError as e:
+                message = (
+                    f"Router '{self._name}': uBridge cannot create persistent TAPs ({e}); "
+                    "this node runs on the relay datapath and cannot carry kernel links"
+                )
+                log.warning(message)
+                self.project.emit("log.warning", {"message": message})
+                return
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'tap delete "{probe}"')
+            self._tap_datapath = True
+
+        await self._create_taps()
+        # Kernel links bound while the router was stopped could not wire (no
+        # anchors existed); wire them now, before IOS comes up.
+        for slot_number, adapter in enumerate(self._slots):
+            if adapter is None:
+                continue
+            for port_number, nio in list(adapter.ports.items()):
+                if isinstance(nio, NIOBridge):
+                    await self._attach_kernel_nio(slot_number, port_number, nio)
+
+    async def _create_taps(self):
+        """
+        Create the persistent TAP every Ethernet slot/port owns. Each TAP
+        starts DOWN (carrier off until a kernel link attaches); uBridge
+        creates the device and hands ownership to this user, so the
+        unprivileged Dynamips hypervisor can open it. A port whose anchor
+        already exists (a restart, or an adapter hot-added to a running
+        router) keeps it — an anchor is never recreated under a live link.
+        A persistent TAP outlives its creator, so a leftover from a previous
+        run (crash, kill) is swept first.
+        """
+
+        for slot_number, port_number in self._ethernet_slot_ports():
+            if (slot_number, port_number) in self._kernel_taps:
+                continue
+            tap = self._tap_name(slot_number, port_number)
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'tap delete "{tap}"')
+            await self._ubridge_send(f'tap create "{tap}"')
+            try:
+                await self._ubridge_send(f"tap set_owner {tap} {os.getuid()}")
+            except UbridgeError as e:
+                # Only root could open the TAP now: the hypervisor would fail
+                # to bind its NIO, which is worth surfacing at that point.
+                log.warning("Router '%s': could not hand TAP %s to uid %s: %s", self._name, tap, os.getuid(), e)
+            await self._ubridge_send(f'link set "{tap}" down')
+            self._kernel_taps[(slot_number, port_number)] = tap
+
+    async def _attach_kernel_nio(self, slot_number, port_number, nio):
+        """
+        Wire a kernel link's NIO (NIOBridge) on a port: open the port's
+        anchor TAP in the Dynamips hypervisor (``nio create_tap`` — the
+        hypervisor, not uBridge, holds the fd, the same shape as QEMU), bind
+        it to the slot/port, then enslave the anchor into the per-link
+        kernel bridge — the shared mixin flow. On a router that is not
+        running the wiring is deferred to its start (no anchors exist yet).
+        A port whose wiring survived a stop (nothing is torn down there) is
+        left alone: re-binding would collide on both hypervisor and bridge.
+        """
+
+        if (slot_number, port_number) in self._tap_nios:
+            return
+        anchor = self._kernel_host_ifc(slot_number, port_number)
+        if anchor is None:
+            if self.status != "started":
+                return
+            raise self._kernel_error(
+                "Port {slot}/{port} of router '{name}' runs on the relay datapath "
+                "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link".format(
+                    slot=slot_number, port=port_number, name=self._name
+                )
+            )
+
+        tap_nio = NIOTAP(self._hypervisor, anchor)
+        await tap_nio.create()
+        try:
+            await self._hypervisor.send(
+                'vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(
+                    name=self._name, slot_number=slot_number, port_number=port_number, nio=tap_nio.name
+                )
+            )
+        except DynamipsError:
+            with contextlib.suppress(DynamipsError):
+                await tap_nio.delete()
+            raise
+        await self.slot_enable_nio(slot_number, port_number)
+        self._tap_nios[(slot_number, port_number)] = tap_nio
+        await self._kernel_attach(anchor, nio)
+        await self._set_adapter_carrier(slot_number, not nio.suspend, port_number)
+
+    async def _remove_kernel_nio_binding(self, slot_number, port_number, nio):
+        """
+        Release a kernel link's NIO: tear the anchor out of the per-link
+        kernel bridge (markers, tc, delif — the shared mixin flow), then
+        unbind the port and delete the hypervisor's TAP NIO, releasing the
+        anchor fd. The anchor device itself survives for the next link.
+        """
+
+        if self.ubridge and self._kernel_host_ifc(slot_number, port_number) is not None:
+            await self._remove_kernel_nio(nio, slot_number, port_number)
+        tap_nio = self._tap_nios.pop((slot_number, port_number), None)
+        if tap_nio is not None:
+            with contextlib.suppress(DynamipsError, OSError):
+                await self.slot_disable_nio(slot_number, port_number)
+            with contextlib.suppress(DynamipsError, OSError):
+                await self._hypervisor.send(
+                    'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
+                        name=self._name, slot_number=slot_number, port_number=port_number
+                    )
+                )
+            with contextlib.suppress(DynamipsError, OSError):
+                await tap_nio.delete()
+
+    async def _stop_ubridge(self):
+        """
+        Stops uBridge, retiring the kernel datapath's host state first — in
+        the QEMU order, since here it is the Dynamips hypervisor (not
+        uBridge) that holds the anchor fds: the per-link kernel bridges need
+        the control channel, and the anchor TAPs (persistent devices) must
+        be deleted through it after the hypervisor's TAP NIOs are gone, or a
+        device Dynamips still holds open would outlive its retirement. The
+        next start spawns a fresh uBridge, so the tc capabilities must be
+        probed again.
+        """
+
+        if self.ubridge:
+            for (slot_number, port_number), tap_nio in list(self._tap_nios.items()):
+                with contextlib.suppress(DynamipsError, OSError):
+                    await self._hypervisor.send(
+                        'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
+                            name=self._name, slot_number=slot_number, port_number=port_number
+                        )
+                    )
+                with contextlib.suppress(DynamipsError, OSError):
+                    await tap_nio.delete()
+            self._tap_nios.clear()
+            for tap in self._kernel_taps.values():
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'tap delete "{tap}"')
+            await self._remove_kernel_bridges()
+        self._kernel_taps.clear()
+        self._ubridge_tc_caps = None
+        await super()._stop_ubridge()
 
     def _create_slots(self, numslots):
         """
