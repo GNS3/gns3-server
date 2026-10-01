@@ -413,4 +413,4 @@ async def test_export_with_ignoring_snapshots(tmpdir, project):
         await write_file(str(tmpdir / "zipfile.zip"), z)
 
     with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
-        assert not os.path.join("snapshots", "snap.gns3project") in [f.filename for f in myzip.filelist]
+        assert os.path.join("snapshots", "snap.gns3project") not in [f.filename for f in myzip.filelist]

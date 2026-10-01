@@ -54,7 +54,7 @@ from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_vpcs_telnet and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+from gns3server.agent.gns3_copilot.utils import custom_netmiko
 
 # Explicitly register VPCS device type to ensure it is available
 try:
@@ -227,7 +227,7 @@ class VPCSCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing commands on all VPCS devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.debug(
             "VPCS command execution completed. Results: %s",
@@ -262,7 +262,7 @@ class VPCSCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Command failed (ReadTimeout): {str(e)}",
+                result=f"Command failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -289,7 +289,7 @@ class VPCSCommands(BaseTool):
                 )
                 return Result(
                     host=task.host,
-                    result=f"Command failed: {str(retry_e)}",
+                    result=f"Command failed: {retry_e!s}",
                     failed=True,
                 )
 

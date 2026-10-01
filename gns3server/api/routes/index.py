@@ -62,7 +62,7 @@ async def web_ui(file_path: str):
     # which results with warnings in Firefox 66 on Windows
     # Ref. gns3-server#1559
     _, ext = os.path.splitext(static)
-    mimetype = ext == ".js" and "application/javascript" or None
+    mimetype = (ext == ".js" and "application/javascript") or None
     return FileResponse(static, media_type=mimetype)
 
 

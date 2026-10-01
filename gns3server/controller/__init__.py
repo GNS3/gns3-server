@@ -176,7 +176,7 @@ class Controller:
 
         protocol = server_config.protocol.value
         if self._ssl_context and protocol != "https":
-            log.warning(f"Protocol changed to 'https' for local compute because SSL is enabled")
+            log.warning("Protocol changed to 'https' for local compute because SSL is enabled")
             protocol = "https"
         try:
             self._local_server = await self.add_compute(

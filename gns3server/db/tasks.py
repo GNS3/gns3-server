@@ -172,9 +172,9 @@ async def connect_to_db(app: FastAPI) -> None:
 async def disconnect_from_db(app: FastAPI) -> None:
 
     # dispose of the connection pool used by the database engine
-    if getattr(app.state, "_db_engine"):
+    if app.state._db_engine:
         await app.state._db_engine.dispose()
-        log.info(f"Disconnected from database")
+        log.info("Disconnected from database")
 
 
 async def get_computes(app: FastAPI) -> List[schemas.Compute]:

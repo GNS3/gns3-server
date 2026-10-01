@@ -88,7 +88,7 @@ class StandardPortFactory:
                             **cls._generate_replacement(interface_number, segment_number),
                         )
                     except (IndexError, ValueError, KeyError) as e:
-                        raise ControllerError(f"Invalid port name format {port_name_format}: {str(e)}")
+                        raise ControllerError(f"Invalid port name format {port_name_format}: {e!s}")
 
                     port_name = custom_adapter_settings.get("port_name", port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")

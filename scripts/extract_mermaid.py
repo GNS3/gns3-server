@@ -337,7 +337,7 @@ def main():
                     versions = os.listdir(item_path)
                     print(f"    {item}: {', '.join(versions)}")
         else:
-            print(f"  Puppeteer cache: NOT FOUND")
+            print("  Puppeteer cache: NOT FOUND")
 
         print(f"\n  Result: {'✓ ALL CHECKS PASSED' if ok else '✗ SOME CHECKS FAILED'}")
         sys.exit(0 if ok else 1)

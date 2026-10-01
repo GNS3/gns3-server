@@ -57,7 +57,7 @@ from gns3server.agent.gns3_copilot.utils.command_filter import (
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_huawei_telnet_ce and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+from gns3server.agent.gns3_copilot.utils import custom_netmiko
 
 # Explicitly register custom device types to ensure they are available
 # This is a safety measure in case the auto-registration on import doesn't work
@@ -255,7 +255,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing configurations on all devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.info(
             "Multiple device configuration execution completed. Results: %s",
@@ -285,7 +285,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (ReadTimeout): {str(e)}",
+                result=f"Configuration failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -305,7 +305,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (Unhandled Exception): {str(e)}",
+                result=f"Configuration failed (Unhandled Exception): {e!s}",
                 failed=True,
             )
 

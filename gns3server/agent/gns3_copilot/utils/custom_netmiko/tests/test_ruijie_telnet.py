@@ -178,7 +178,7 @@ class TestRuijieTelnetEnhancedIntegration(unittest.TestCase):
 
     def test_send_config_set_calls_preprocess(self):
         """Test that send_config_set calls preprocessing."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.ruijie_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.ruijie_telnet import (
             RuijieTelnetEnhanced,
         )
 
@@ -205,7 +205,7 @@ class TestRuijieTelnetEnhancedIntegration(unittest.TestCase):
 
     def test_multiple_interactive_patterns(self):
         """Test that multiple interactive commands are detected."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.ruijie_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.ruijie_telnet import (
             RuijieTelnetEnhanced,
         )
 

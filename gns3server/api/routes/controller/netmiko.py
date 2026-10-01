@@ -64,7 +64,7 @@ def _load_netmiko_device_types() -> schemas.NetmikoDeviceTypeList:
     # imported them yet); failures are logged by the package itself, do not
     # fail the whole endpoint.
     try:
-        from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+        from gns3server.agent.gns3_copilot.utils import custom_netmiko
     except Exception as e:
         log.warning(f"Could not register GNS3-copilot custom Netmiko drivers: {e}")
 

@@ -272,7 +272,7 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
             with Controller.instance().notification.controller_queue() as queue:
                 while not app.state.exiting:
                     msg = await queue.get_json(5)
-                    yield f"{msg}\n".encode("utf-8")
+                    yield f"{msg}\n".encode()
         finally:
             log.info(f"Client {client} has disconnected from controller HTTP notification stream")
 

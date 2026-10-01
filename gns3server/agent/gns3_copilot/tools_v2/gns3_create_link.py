@@ -238,7 +238,7 @@ class GNS3LinkTool(BaseTool):
                     created_links.append(link_info)
 
                 except Exception as e:
-                    error_msg = f"Failed to create link {i}: {str(e)}"
+                    error_msg = f"Failed to create link {i}: {e!s}"
                     logger.error(error_msg)
                     created_links.append({"error": error_msg})
 
@@ -257,7 +257,7 @@ class GNS3LinkTool(BaseTool):
             return [{"error": f"Invalid JSON input: {e}"}]
         except Exception as e:
             logger.error("Failed to process link creation: %s", e)
-            return [{"error": f"Failed to process link creation: {str(e)}"}]
+            return [{"error": f"Failed to process link creation: {e!s}"}]
 
 
 if __name__ == "__main__":

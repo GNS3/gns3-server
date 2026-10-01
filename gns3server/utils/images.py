@@ -117,7 +117,7 @@ async def list_images(image_type):
                         }
                     )
                 except OSError as e:
-                    log.warning(f"Can't add image {path}: {str(e)}")
+                    log.warning(f"Can't add image {path}: {e!s}")
     return images
 
 
@@ -186,7 +186,7 @@ async def discover_images(image_type: str, skip_image_paths: list | None = None)
                 if filename.endswith(".tmp") or filename.endswith(".md5sum") or filename.startswith("."):
                     continue
                 path = os.path.join(root, filename)
-                if not os.path.isfile(path) or skip_image_paths and path in skip_image_paths or path in files:
+                if not os.path.isfile(path) or (skip_image_paths and path in skip_image_paths) or path in files:
                     continue
                 if "/lib/" in path or "/lib64/" in path:
                     # ignore custom IOU libraries
@@ -230,7 +230,7 @@ def default_images_directory(image_type):
     elif image_type == "dynamips" or image_type == "ios":
         return os.path.join(img_dir, "IOS")
     else:
-        raise NotImplementedError(f"%s node type is not supported", image_type)
+        raise NotImplementedError("%s node type is not supported", image_type)
 
 
 def images_directories(image_type, include_parent_directory=True):

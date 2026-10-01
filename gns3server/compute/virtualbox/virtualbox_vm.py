@@ -146,7 +146,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        result = await self.manager.execute("controlvm", [self._uuid] + args)
+        result = await self.manager.execute("controlvm", [self._uuid, *args])
         return result
 
     async def _modify_vm(self, params):
@@ -157,7 +157,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        await self.manager.execute("modifyvm", [self._uuid] + args)
+        await self.manager.execute("modifyvm", [self._uuid, *args])
 
     async def _check_duplicate_linked_clone(self):
         """
@@ -241,7 +241,7 @@ class VirtualBoxVM(BaseNode):
         try:
             tree = ET.parse(linked_vbox_file)
         except ET.ParseError:
-            raise VirtualBoxError(f"Cannot modify VirtualBox linked node file. File {{linked_vbox_file}} is corrupted.")
+            raise VirtualBoxError("Cannot modify VirtualBox linked node file. File {linked_vbox_file} is corrupted.")
         except OSError as e:
             raise VirtualBoxError(f"Cannot modify VirtualBox linked nodes file '{self._linked_vbox_file()}': {e}")
 
@@ -866,7 +866,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        await self.manager.execute("storageattach", [self._uuid] + args)
+        await self.manager.execute("storageattach", [self._uuid, *args])
 
     async def _get_nic_attachements(self, maximum_adapters):
         """

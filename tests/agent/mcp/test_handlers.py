@@ -553,7 +553,7 @@ class TestLink:
         # a short path-bound ticket replaces the long Bearer JWT in the URL
         assert "?token=gns3t_" in result["download_url"]
         assert "Bearer" not in result["curl_command"]
-        path = f"/v3/projects/p1/links/l1/capture/file"
+        path = "/v3/projects/p1/links/l1/capture/file"
         ticket = result["download_url"].split("token=")[1]
         assert result["curl_command"] == f"curl -L -o capture.pcap '{result['download_url']}'"
         redeemed = access_ticket_service.redeem_for_path(ticket, path)

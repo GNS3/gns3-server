@@ -25,7 +25,7 @@ def _read_requirements(filename):
     base_dir = _find_base_dir()
     filepath = os.path.join(base_dir, filename)
     packages = []
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):

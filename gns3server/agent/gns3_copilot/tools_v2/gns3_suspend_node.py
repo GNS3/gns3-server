@@ -209,7 +209,7 @@ class GNS3SuspendNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to suspend nodes: %s", e)
-            return {"error": f"Failed to suspend nodes: {str(e)}"}
+            return {"error": f"Failed to suspend nodes: {e!s}"}
 
 
 if __name__ == "__main__":

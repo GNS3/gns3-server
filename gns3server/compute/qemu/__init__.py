@@ -178,7 +178,7 @@ class Qemu(BaseManager):
 
         qemu_img_path = shutil.which("qemu-img")
         if not qemu_img_path:
-            raise QemuError(f"Could not find qemu-img binary")
+            raise QemuError("Could not find qemu-img binary")
 
         try:
             if os.path.exists(disk_image_path):

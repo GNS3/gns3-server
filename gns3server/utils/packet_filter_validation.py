@@ -62,7 +62,7 @@ def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Any]:
 
     except Exception as e:
         log.error("Unexpected error during BPF validation: %s", e)
-        return {"valid": False, "error": f"BPF validation error: {str(e)}"}
+        return {"valid": False, "error": f"BPF validation error: {e!s}"}
 
 
 def validate_filter_parameters(filter_type: str, values: List[Any]) -> None:

@@ -239,7 +239,7 @@ class GNS3PacketFilterTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to process packet filter request: %s", e)
-            return {"error": f"Failed to process packet filter request: {str(e)}"}
+            return {"error": f"Failed to process packet filter request: {e!s}"}
 
     def _get_available_filters(self, gns3_ctx: dict, project_id: str, link_id: str) -> dict[str, Any]:
         """Get available filter types for the link."""
@@ -260,7 +260,7 @@ class GNS3PacketFilterTool(BaseTool):
             return {
                 "action": "get_available",
                 "link_id": link_id,
-                "error": f"Failed to get available filters: {str(e)}",
+                "error": f"Failed to get available filters: {e!s}",
                 "status": "failed",
             }
 
@@ -318,7 +318,7 @@ class GNS3PacketFilterTool(BaseTool):
 
         except Exception as e:
             logger.error("Unexpected error during BPF validation: %s", e)
-            return {"valid": False, "error": f"BPF validation error: {str(e)}"}
+            return {"valid": False, "error": f"BPF validation error: {e!s}"}
 
     def _set_filters(
         self,
@@ -384,7 +384,7 @@ class GNS3PacketFilterTool(BaseTool):
             return {
                 "action": "set",
                 "link_id": link_id,
-                "error": f"Failed to set filters: {str(e)}",
+                "error": f"Failed to set filters: {e!s}",
                 "status": "failed",
             }
 
@@ -407,7 +407,7 @@ class GNS3PacketFilterTool(BaseTool):
             return {
                 "action": "get",
                 "link_id": link_id,
-                "error": f"Failed to get filters: {str(e)}",
+                "error": f"Failed to get filters: {e!s}",
                 "status": "failed",
             }
 
@@ -449,7 +449,7 @@ class GNS3PacketFilterTool(BaseTool):
             return {
                 "action": "clear",
                 "link_id": link_id,
-                "error": f"Failed to clear filters: {str(e)}",
+                "error": f"Failed to clear filters: {e!s}",
                 "status": "failed",
             }
 

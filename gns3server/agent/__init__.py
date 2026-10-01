@@ -103,6 +103,6 @@ except ImportError:
 __all__ = [
     "AI_COPILOT_AVAILABLE",
     "MCP_AVAILABLE",
-    "get_project_agent_manager",
     "ProjectAgentManager",
+    "get_project_agent_manager",
 ]

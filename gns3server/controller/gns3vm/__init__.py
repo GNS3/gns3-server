@@ -334,7 +334,7 @@ class GNS3VM:
                 await engine.start()
             except Exception as e:
                 await self._controller.delete_compute("vm")
-                log.error(f"Cannot start the GNS3 VM: {str(e)}")
+                log.error(f"Cannot start the GNS3 VM: {e!s}")
                 await compute.update(name=f"GNS3 VM ({engine.vmname})")
                 compute.set_last_error(str(e))
                 raise e

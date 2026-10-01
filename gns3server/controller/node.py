@@ -1050,7 +1050,7 @@ class Node:
             with open(image, "rb") as f:
                 await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
         except OSError as e:
-            raise ControllerError(f"Can't upload {image}: {str(e)}")
+            raise ControllerError(f"Can't upload {image}: {e!s}")
         self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
         return True
 

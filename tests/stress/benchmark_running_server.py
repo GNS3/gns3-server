@@ -89,7 +89,7 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
     """Benchmark GET /projects endpoint"""
 
     print(f"\n{'=' * 60}")
-    print(f"GET /projects Performance Benchmark")
+    print("GET /projects Performance Benchmark")
     print(f"{'=' * 60}")
     print(f"Server: {base_url}")
     print(f"{'=' * 60}\n")
@@ -134,7 +134,7 @@ async def benchmark_get_projects(base_url, headers, project_count, iterations=10
                 else:
                     print(f"  Iteration {i + 1}: ERROR {response.status_code}")
             except Exception as e:
-                print(f"  Iteration {i + 1}: Exception - {type(e).__name__}: {str(e)}")
+                print(f"  Iteration {i + 1}: Exception - {type(e).__name__}: {e!s}")
 
     # Cleanup test projects
     if project_count > 0:

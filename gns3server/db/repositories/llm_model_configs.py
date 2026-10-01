@@ -163,7 +163,7 @@ class LLMModelConfigsRepository(BaseRepository):
 
         # Handle extra config fields
         for key, value in updates.items():
-            if key not in ["name", "model_type", "is_default", "expected_version"] + config_fields:
+            if key not in ["name", "model_type", "is_default", "expected_version", *config_fields]:
                 if value is not None:
                     current_config[key] = value
 
@@ -322,7 +322,7 @@ class LLMModelConfigsRepository(BaseRepository):
 
         # Handle extra config fields
         for key, value in updates.items():
-            if key not in ["name", "model_type", "is_default", "expected_version"] + config_fields:
+            if key not in ["name", "model_type", "is_default", "expected_version", *config_fields]:
                 if value is not None:
                     current_config[key] = value
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -2052,7 +2051,7 @@ async def test_delete_reports_root_files_when_reclaim_fails(vm):
 @pytest.mark.asyncio
 async def test_read_console_output_with_binary_mode(vm):
 
-    class InputStreamMock(object):
+    class InputStreamMock:
         def __init__(self):
             self.sent = False
 

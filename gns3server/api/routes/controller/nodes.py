@@ -577,7 +577,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
         try:
             async for chunk in compute_resp.content.iter_chunked(65536):
                 yield chunk
-        except (IOError, OSError, asyncio.TimeoutError) as e:
+        except (OSError, asyncio.TimeoutError) as e:
             log.error(f"Error streaming file '{path}' from compute: {e}")
             raise
         finally:

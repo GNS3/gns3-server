@@ -391,10 +391,10 @@ def create_pre_model_hook(
         max_tokens_for_trim = max_input_tokens - tool_tokens
 
         # Validate budget and provide actionable warnings
-        if system_tokens + tool_tokens > max_input_tokens:  # noqa: E501
+        if system_tokens + tool_tokens > max_input_tokens:
             logger.error(
                 "System prompt (%d tokens) + tools (%d tokens) EXCEED input "
-                "budget (%d tokens). This will likely cause LLM call failures. "  # noqa: E501
+                "budget (%d tokens). This will likely cause LLM call failures. "
                 "Recommendations: 1) Reduce system prompt length, 2) Reduce "
                 "number of tools, 3) Use a model with larger context window, "
                 "or 4) Switch to 'conservative' strategy.",
@@ -524,7 +524,7 @@ def _inject_topology_into_system(
     if filtered_count > 0:
         logger.debug("Filtered out %d existing SystemMessage(s)", filtered_count)
 
-    return [SystemMessage(content=formatted_prompt)] + non_system_messages
+    return [SystemMessage(content=formatted_prompt), *non_system_messages]
 
 
 # ============================================================================
@@ -556,7 +556,7 @@ def prepare_context_messages(
     else:
         formatted_prompt = system_prompt.replace("{{topology_info}}", "(No topology information available)")
 
-    return [SystemMessage(content=formatted_prompt)] + state_messages
+    return [SystemMessage(content=formatted_prompt), *state_messages]
 
 
 # ============================================================================
