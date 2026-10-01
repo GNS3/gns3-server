@@ -57,6 +57,23 @@ gns3server-uninstall-ai-features = "gns3server.utils.uninstall_ai_features:main"
 packages = ["gns3server"]
 
 
+[tool.pytest.ini_options]
+# The configuration a root-level, argument-less `pytest` (what CI runs via
+# `just test` -> `just unit`) resolves to. It must match tests/pytest.ini's
+# e2e policy: live end-to-end tests are excluded by marker, not left to the
+# harness's images-directory skip. Without this, the root run collected the
+# e2e tests and only stayed green because CI machines happen to have no
+# images directory. testpaths also keeps the package-internal tests under
+# gns3server/ collected (an argument-less run picks up everything; a
+# `pytest tests` run never did).
+testpaths = ["tests", "gns3server"]
+addopts = ["-m", "not e2e"]
+markers = [
+    "e2e: live end-to-end tests (real server, kernel interfaces, emulators)",
+]
+asyncio_default_fixture_loop_scope = "function"
+
+
 [tool.ruff]
 target-version = "py310"
 line-length = 120
