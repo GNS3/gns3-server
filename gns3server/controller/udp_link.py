@@ -20,6 +20,7 @@ import asyncio
 import logging
 
 from gns3server.config import Config
+from gns3server.utils.application_id import is_iol_runner_environment
 from gns3server.utils.kernel_anchor import kernel_anchor_name
 from gns3server.utils.packet_filter_validation import (
     KERNEL_UNSUPPORTED_FILTERS,
@@ -56,14 +57,18 @@ log = logging.getLogger(__name__)
 def _is_unix_socket_docker(node):
     """
     Best-effort detection of vendor containers bridged through AF_UNIX
-    socket pairs (GNS3_UNIX_SOCKET_NIO in their environment): they have no
-    host-side interface to enslave into a kernel bridge. The compute side
+    socket pairs: they have no host-side interface to enslave into a kernel
+    bridge. Two ways in — the generic GNS3_UNIX_SOCKET_NIO knob, or the IOL
+    runner marker, whose class (IOLDockerVM, selected on GNS3_IOL_RUNNER)
+    forces the unix-socket wiring whatever the knob says. The compute side
     independently rejects kernel-datapath NIOs on these containers, so a
-    missed detection here only surfaces as a clearer-late error.
+    missed detection surfaces as a clearer-late error — except on the switch
+    fast path, where an absent anchor is deferred forever by design (a link
+    to a stopped node must not fail), making the miss a silently dead cable.
     """
 
     environment = (node.properties or {}).get("environment") or ""
-    return "GNS3_UNIX_SOCKET_NIO" in environment
+    return "GNS3_UNIX_SOCKET_NIO" in environment or is_iol_runner_environment(environment)
 
 
 class UDPLink(Link):

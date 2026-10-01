@@ -420,6 +420,47 @@ async def test_kernel_datapath_not_eligible_for_unix_socket_containers(project):
 
 
 @pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_for_iol_runner_containers(project):
+    """
+    The IOL runner marker is the other way into the unix-socket datapath: the
+    compute selects IOLDockerVM on GNS3_IOL_RUNNER and that class wires the
+    adapters through AF_UNIX socket pairs whatever the generic
+    GNS3_UNIX_SOCKET_NIO knob says — and the documented environment for
+    those nodes carries only the marker. Matching the knob alone let them
+    through to a kernel link their compute cannot serve.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    node2._properties = {"environment": "GNS3_IOL_RUNNER=1"}
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+    # the marker travels in a multi-line environment like any other knob
+    node2._properties = {"environment": "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=cfg.txt"}
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_for_an_iol_runner_container_on_a_switch(project):
+    """
+    The switch fast path absorbs the peer's anchor, and a container bridged
+    through unix sockets has none — nor will it ever. The switch defers a
+    join against a stopped peer by design (it must not fail the link), so
+    such a cable would be silently dead instead of merely slow: the gate has
+    to run before the switch branch, keeping the link on the relay the
+    switch's own port TAP serves.
+    """
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
+    switch = _node(project, compute, "sw1", node_type="ethernet_switch")
+    peer = _node(project, compute, "iol1", environment="GNS3_IOL_RUNNER=1")
+    link = await _link(project, switch, peer)
+
+    assert link._kernel_datapath_eligible(switch, peer) is False
+
+
+@pytest.mark.asyncio
 async def test_kernel_datapath_disabled_by_config(project):
 
     settings = Config.instance().settings.Server
@@ -915,9 +956,7 @@ async def test_switch_link_repushes_the_switch_nio_on_node_start(project):
     switch.put = AsyncioMagicMock()
 
     await link.node_started(peer)
-    switch.put.assert_called_once_with(
-        "/adapters/0/ports/0/nio", data=entries[0][3], timeout=120
-    )
+    switch.put.assert_called_once_with("/adapters/0/ports/0/nio", data=entries[0][3], timeout=120)
 
     # a relay link never re-pushes anything
     switch.put.reset_mock()
