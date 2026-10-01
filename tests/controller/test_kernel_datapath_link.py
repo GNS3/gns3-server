@@ -170,6 +170,70 @@ async def test_iou_eligibility_is_its_own_capability(project):
 
 
 @pytest.mark.asyncio
+async def test_kernel_datapath_eligible_for_dynamips_with_tap_support(project):
+    """
+    Dynamips Ethernet slot ports anchor on persistent TAPs the hypervisor
+    opens (nio create_tap on a uBridge-created device), so they gate on the
+    tap module like QEMU — no Dynamips-specific capability — and mix with
+    docker/qemu/iou endpoints on the same compute.
+    """
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
+    node1 = _node(project, compute, "r1", node_type="dynamips")
+    node2 = _node(project, compute, "r2", node_type="dynamips")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+    for peer in (
+        _node(project, compute, "docker1"),
+        _node(project, compute, "qemu1", node_type="qemu"),
+        _node(project, compute, "iou1", node_type="iou"),
+    ):
+        link = await _link(project, node1, peer)
+        assert link._kernel_datapath_eligible(node1, peer) is True
+
+
+@pytest.mark.asyncio
+async def test_dynamips_eligibility_follows_the_tap_capability(project):
+    """
+    A compute whose uBridge cannot create persistent TAPs keeps Dynamips on
+    the relay (the hypervisor would have nothing to open), and so does an
+    unreported/failed probe.
+    """
+
+    node2 = _node(project, _tap_capable_compute(), "docker1")
+    for tap_support in (None, False):
+        compute = _tap_capable_compute(tap_support=tap_support)
+        node1 = _node(project, compute, "r1", node_type="dynamips")
+        link = await _link(project, node1, node2)
+        assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_not_eligible_for_dynamips_serial_ports(project):
+    """
+    A Dynamips serial port (NM-4T, WIC-2T, ...) stays on the relay whatever
+    the compute's capabilities — the same per-port exclusion as IOU serial,
+    decided by the controller's port matrix.
+    """
+
+    from gns3server.controller.ports.serial_port import SerialPort
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True}
+
+    node1 = _node(project, compute, "r1", node_type="dynamips")
+    node1._ports = [SerialPort("Serial0/0", 0, 0, 0)]
+    node2 = _node(project, compute, "r2", node_type="dynamips")
+    node2._ports = [SerialPort("Serial0/0", 0, 0, 0)]
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
 async def test_kernel_datapath_not_eligible_for_serial_ports(project):
     """
     A kernel link is an Ethernet segment: an IOU serial port stays on the

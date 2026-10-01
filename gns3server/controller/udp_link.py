@@ -182,9 +182,12 @@ class UDPLink(Link):
         datapath and cannot carry a kernel link at all. IOU's Ethernet
         bays anchor on persistent TAPs too, bound to its IOL fabric
         (``iol_bridge add_nio_tap``) — a separate capability, since it can
-        be present or absent independently of the tap module. A kernel link
-        is an Ethernet segment, so non-Ethernet ports (IOU serial) stay on
-        the relay whatever the node's capabilities.
+        be present or absent independently of the tap module. Dynamips
+        Ethernet slot ports anchor on persistent TAPs the hypervisor opens
+        (the tap module again — the Dynamips binary itself creates nothing),
+        so it gates like QEMU. A kernel link is an Ethernet segment, so
+        non-Ethernet ports (IOU serial, Dynamips serial/ATM/POS adapters)
+        stay on the relay whatever the node's capabilities.
         """
 
         if not Config.instance().settings.Server.enable_kernel_datapath:
@@ -214,6 +217,11 @@ class UDPLink(Link):
             return capabilities.get("ubridge_tap") is True
         if node.node_type == "iou":
             return capabilities.get("ubridge_iol_tap") is True
+        if node.node_type == "dynamips":
+            # The anchors are uBridge-created TAPs the Dynamips hypervisor
+            # merely opens (nio create_tap) — the same tap-module capability
+            # QEMU needs, not a Dynamips-specific one.
+            return capabilities.get("ubridge_tap") is True
         return False
 
     async def _prepare(self):
