@@ -43,6 +43,7 @@ from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.hostname import is_ios_hostname_valid
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..adapters.serial_adapter import SerialAdapter
@@ -862,13 +863,12 @@ class IOUVM(KernelDatapathMixin, BaseNode):
 
     def _tap_name(self, adapter_number, port_number):
         """
-        Deterministic anchor TAP name for an Ethernet bay/unit. The ``gi``
-        prefix keeps it out of the ``gns3`` bridge/TAP name space (and apart
-        from Docker's ``gv``/``gc`` and QEMU's ``gq``); 8 hex chars of the
-        node id plus bay/unit keep it unique and within IFNAMSIZ (15).
+        Deterministic anchor TAP name for an Ethernet bay/unit (the shared
+        utils.kernel_anchor naming contract — the controller names a peer's
+        anchor with the same function when an Ethernet switch absorbs it).
         """
 
-        return f"gi{self._id.replace('-', '')[:8]}e{adapter_number}p{port_number}"
+        return kernel_anchor_name("iou", self._id, adapter_number, port_number)
 
     def _kernel_host_ifc(self, adapter_number, port_number=0):
         """

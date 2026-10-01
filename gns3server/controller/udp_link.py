@@ -20,12 +20,14 @@ import asyncio
 import logging
 
 from gns3server.config import Config
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 from gns3server.utils.packet_filter_validation import (
     KERNEL_UNSUPPORTED_FILTERS,
     split_kernel_only_features,
     validate_bpf_syntax,
 )
 
+from .compute import ComputeError
 from .controller_error import ControllerError, ControllerNotFoundError
 from .link import _UNSET, Link
 from .node_types import BUILTIN_NODE_TYPES
@@ -111,6 +113,13 @@ class UDPLink(Link):
         if kernel is None:
             kernel = self.kernel_datapath
         if kernel:
+            # Ethernet switch fast path: the link's tc impairments apply on
+            # the absorbed anchor, which is a single interface — exactly one
+            # end may own them, and that end is the switch (it owns the
+            # anchor's bridge membership and port VLANs).
+            switch = self._switch_endpoint()
+            if switch is not None:
+                return (self._filters, {}) if switch[0] == 0 else ({}, self._filters)
             return self._filters, self._filters
         # Relay datapath: the netem-extension filters (rate, reorder, gemodel…)
         # have no relay equivalent. update_filters rejects them on created
@@ -200,7 +209,31 @@ class UDPLink(Link):
             port = side.get("port")
             if port is not None and port.link_type != "ethernet":
                 return False
+        # Ethernet switch fast path: the switch absorbs the peer's anchor
+        # into its own kernel bridge, so the switch side needs no anchoring
+        # capability of its own (its bridge and brctl already exist) — only
+        # the peer must be able to anchor. Two switches never qualify: a
+        # kernel interface belongs to exactly one bridge, so a cascaded
+        # link would need a veth pair between the two bridges and stays on
+        # the relay for now.
+        switch = self._switch_endpoint()
+        if switch is not None:
+            if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
+                return False
+            peer = node2 if switch[0] == 0 else node1
+            return self._kernel_endpoint_ready(peer)
         return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
+
+    def _switch_endpoint(self):
+        """
+        The Ethernet switch endpoint of this link as ``(index, node)``, or
+        None — the fast path where the switch owns the kernel bridge.
+        """
+
+        for index, side in enumerate(self._nodes):
+            if side["node"].node_type == "ethernet_switch":
+                return index, side["node"]
+        return None
 
     @staticmethod
     def _kernel_endpoint_ready(node):
@@ -250,6 +283,49 @@ class UDPLink(Link):
         port_number2 = self._nodes[1]["port_number"]
 
         if self._kernel_datapath_eligible(node1, node2):
+            node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
+            node1_markers, node2_markers = self._get_node_markers(node1, node2)
+            switch = self._switch_endpoint()
+            if switch is not None:
+                # Ethernet switch fast path: the switch absorbs the peer's
+                # anchor into its own kernel bridge — no per-link bridge at
+                # all, so the peer end carries no bridge name (its anchor is
+                # bridged by the switch; it only keeps its own interface,
+                # markers it hosts and its carrier). The switch end gets the
+                # anchor's name to join: the name is the shared naming
+                # contract (utils.kernel_anchor), a pure function of the
+                # peer's node type/id/adapter/port — valid whether or not
+                # the peer is currently running, which is what makes links
+                # to stopped nodes wireable (the switch joins once the
+                # anchor exists, re-pushed by node_started).
+                index = switch[0]
+                peer_index = 1 - index
+                peer = self._nodes[peer_index]["node"]
+                peer_anchor = kernel_anchor_name(
+                    peer.node_type,
+                    peer.id,
+                    self._nodes[peer_index]["adapter_number"],
+                    self._nodes[peer_index]["port_number"],
+                )
+                peer_data = {
+                    "type": "nio_bridge",
+                    "bridge": None,
+                    "filters": node1_filters if peer_index == 0 else node2_filters,
+                    "markers": node1_markers if peer_index == 0 else node2_markers,
+                    "suspend": self._suspended,
+                }
+                switch_data = {
+                    "type": "nio_anchor",
+                    "anchor": peer_anchor,
+                    "filters": node1_filters if index == 0 else node2_filters,
+                    "markers": node1_markers if index == 0 else node2_markers,
+                    "suspend": self._suspended,
+                }
+                self._link_data = [switch_data, peer_data] if index == 0 else [peer_data, switch_data]
+                return [
+                    (node1, adapter_number1, port_number1, self._link_data[0]),
+                    (node2, adapter_number2, port_number2, self._link_data[1]),
+                ]
             # Kernel datapath: each endpoint enslaves its veth host end into
             # a per-link Linux bridge. The name derives from the link id so
             # both ends compute it independently (no coordinator) and crash
@@ -263,8 +339,6 @@ class UDPLink(Link):
             # the eBPF stateful classifier (frequency_drop, quota) — every
             # GNS3 filter type has a kernel equivalent now.
             bridge_name = "gns3" + self._id.replace("-", "")[:11]
-            node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
-            node1_markers, node2_markers = self._get_node_markers(node1, node2)
             self._link_data = [
                 {
                     "type": "nio_bridge",
@@ -579,6 +653,38 @@ class UDPLink(Link):
         # _ubridge_apply_markers in add_ubridge_udp_connection).  The user
         # explicitly deletes a marker via the REST API, and a marker is torn
         # down automatically only when its link is deleted.
+
+    async def node_started(self, node):
+        """
+        Called after a node of this link reached the started state.
+
+        The Ethernet switch fast path wires itself on the switch side, but a
+        peer's anchor only comes into existence when the peer starts (and a
+        peer restart can replace the interface under the same name — e.g.
+        QEMU recreates its TAPs at every start). The switch cannot observe
+        that, so the controller re-pushes its NIO: the switch completes a
+        join it had to defer (or re-joins an anchor that disappeared),
+        then re-applies the link state it owns.
+        """
+
+        if not self._created:
+            return
+        switch = self._switch_endpoint()
+        if switch is None or not self.kernel_datapath:
+            return
+        index, switch_node = switch
+        adapter_number = self._nodes[index]["adapter_number"]
+        port_number = self._nodes[index]["port_number"]
+        try:
+            await switch_node.put(
+                f"/adapters/{adapter_number}/ports/{port_number}/nio",
+                data=self._link_data[index],
+                timeout=120,
+            )
+        except (ComputeError, ControllerError):
+            # The link keeps its stored NIO; the next node start or link
+            # update retries. A failure here must not fail the node start.
+            log.warning("Could not re-push switch NIO for link %s after node start", self.id)
 
     async def start_marker(
         self,

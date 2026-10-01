@@ -146,15 +146,23 @@ class KernelDatapathMixin:
         Both link endpoints run this concurrently and either may create the
         bridge first: an existing bridge is success instead of a create race
         failure.
+
+        A NIO whose ``bridge`` is None means the anchor is bridged
+        elsewhere — an Ethernet switch absorbed it into the switch's own
+        bridge — so the membership work is skipped here and only the link
+        state the anchor carries (capture, markers, impairment filters) is
+        applied. Exactly one end of such a link owns the anchor's bridge
+        state; the other end is a passive carrier.
         """
 
-        try:
-            await self._ubridge_send(f'brctl create "{nio.bridge}"')
-        except UbridgeError:
-            # Raises again if the bridge genuinely does not exist.
-            await self._ubridge_send(f'brctl show "{nio.bridge}"')
-        await self._ubridge_send(f'link set "{nio.bridge}" up')
-        await self._ubridge_send(f'brctl addif "{nio.bridge}" "{anchor}"')
+        if nio.bridge is not None:
+            try:
+                await self._ubridge_send(f'brctl create "{nio.bridge}"')
+            except UbridgeError:
+                # Raises again if the bridge genuinely does not exist.
+                await self._ubridge_send(f'brctl show "{nio.bridge}"')
+            await self._ubridge_send(f'link set "{nio.bridge}" up')
+            await self._ubridge_send(f'brctl addif "{nio.bridge}" "{anchor}"')
         if nio.capturing:
             # Restore a capture that was active before a node restart
             # (mirrors the relay path's start_capture).
@@ -235,6 +243,11 @@ class KernelDatapathMixin:
         this concurrently: deleting a bridge that still has the peer's port
         enslaved fails with EBUSY, so the last endpoint to remove its port
         wins the deletion and the loser's failure is expected and suppressed.
+
+        A NIO whose ``bridge`` is None owns no bridge here: the anchor is
+        bridged by an Ethernet switch, which tears its own membership down
+        on its side; this end only releases the link state it applied
+        (markers, impairments, carrier).
         """
 
         host_ifc = self._kernel_host_ifc(adapter_number, port_number)
@@ -248,10 +261,12 @@ class KernelDatapathMixin:
                 await self._ubridge_send(f'tc reset "{host_ifc}"')
             if self.status == "started":
                 await self._set_adapter_carrier(adapter_number, False, port_number)
+            if nio.bridge is not None:
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
+        if nio.bridge is not None:
             with contextlib.suppress(UbridgeError):
-                await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
-        with contextlib.suppress(UbridgeError):
-            await self._ubridge_send(f'brctl delete "{nio.bridge}"')
+                await self._ubridge_send(f'brctl delete "{nio.bridge}"')
 
     async def _remove_kernel_bridges(self):
         """
@@ -269,7 +284,9 @@ class KernelDatapathMixin:
             return
         for adapter in self._ethernet_adapters:
             for nio in adapter.ports.values():
-                if isinstance(nio, NIOBridge):
+                # bridge None = externally bridged (an Ethernet switch owns
+                # the bridge); never delete a bridge this node does not own.
+                if isinstance(nio, NIOBridge) and nio.bridge is not None:
                     with contextlib.suppress(UbridgeError):
                         await self._ubridge_send(f'brctl delete "{nio.bridge}"')
 

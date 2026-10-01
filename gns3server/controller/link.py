@@ -202,13 +202,16 @@ class Link:
     @property
     def kernel_datapath(self):
         """
-        Whether this link is wired on the kernel datapath (veth pairs
-        enslaved into a per-link Linux bridge — no uBridge relay in the
-        forwarding path). Impairment filters run as tc netem on the veth
-        host end; markers and capture are served by uBridge's AF_PACKET
+        Whether this link is wired on the kernel datapath (no uBridge relay
+        in the forwarding path): either both endpoints enslave their
+        anchors into a per-link Linux bridge (``nio_bridge``), or an
+        Ethernet switch absorbs the peer's anchor into its own kernel
+        bridge (``nio_anchor`` on the switch end, ``nio_bridge`` with no
+        bridge on the peer end). Impairment filters run as tc netem on the
+        anchors; markers and capture are served by uBridge's AF_PACKET
         module.
         """
-        return any(d.get("type") == "nio_bridge" for d in (getattr(self, "_link_data", None) or []))
+        return any(d.get("type") in ("nio_bridge", "nio_anchor") for d in (getattr(self, "_link_data", None) or []))
 
     @property
     def markers(self):
@@ -335,9 +338,7 @@ class Link:
                 raise ControllerError(
                     "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
                     "veth host end); this link is wired on the uBridge relay — delete and "
-                    "recreate the link to switch it to the kernel datapath".format(
-                        ", ".join(sorted(conflicts))
-                    )
+                    "recreate the link to switch it to the kernel datapath".format(", ".join(sorted(conflicts)))
                 )
 
         # An unchanged filters dict is normally a no-op skip, but a PUT that
@@ -684,6 +685,14 @@ class Link:
         Called when a node member of the link is updated
         """
         raise NotImplementedError
+
+    async def node_started(self, node):
+        """
+        Called after a node member of the link reached the started state.
+        The base link has nothing to re-synchronise; UDPLink uses it for
+        the Ethernet-switch fast path (the switch must re-join a peer anchor
+        that only comes into existence when the peer starts).
+        """
 
     def default_capture_file_name(self):
         """

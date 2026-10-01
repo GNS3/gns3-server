@@ -612,3 +612,65 @@ async def test_manager_create_nio_builds_the_bridge_nio(router):
     assert nio.filters == {"delay": [5]}
     assert nio.suspend is True
     assert _hypervisor_commands(router) == []
+
+
+# ---------------------------------------------------------------------------
+# Externally bridged anchors (an Ethernet switch absorbed them)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_external_bridge_nio_skips_bridge_membership(router):
+    """
+    A NIOBridge with no bridge means an Ethernet switch owns the anchor's
+    bridge membership: the router still opens the anchor in the hypervisor
+    (the TAP needs its fd holder) but never touches any kernel bridge.
+    """
+
+    router.status = "started"
+    router._kernel_taps[(0, 0)] = TAP00
+    nio = await _nio(router, bridge=None)
+
+    await router.slot_add_nio_binding(0, 0, nio)
+
+    hypervisor = _hypervisor_commands(router)
+    assert any(c.startswith("nio create_tap tap-") for c in hypervisor)
+    assert any(c.startswith('vm slot_add_nio_binding "R1" 0 0 tap-') for c in hypervisor)
+    assert not any("brctl" in c for c in _ubridge_commands(router))
+
+
+@pytest.mark.asyncio
+async def test_external_bridge_nio_remove_skips_bridge_ops(router):
+    """
+    Detaching an externally bridged anchor releases the hypervisor's fd and
+    resets the link state, but must not delif or delete any bridge — the
+    switch owns them, and deleting the switch's bridge would take the whole
+    switch down.
+    """
+
+    router.status = "started"
+    router._kernel_taps[(0, 0)] = TAP00
+    nio = await _nio(router, bridge=None)
+    await router.slot_add_nio_binding(0, 0, nio)
+    router._ubridge_send.reset_mock()
+
+    await router.slot_remove_nio_binding(0, 0)
+
+    commands = _ubridge_commands(router)
+    assert not any("brctl" in c for c in commands), commands
+    assert any(c == f'tc reset "{TAP00}"' for c in commands)
+
+
+@pytest.mark.asyncio
+async def test_remove_kernel_bridges_skips_external_nios(router):
+    """
+    The bridge sweep never deletes a bridge this node does not own.
+    """
+
+    router._kernel_taps[(0, 0)] = TAP00
+    external = await _nio(router, bridge=None)
+    router._slots[0].add_nio(0, external)
+
+    await router._remove_kernel_bridges()
+
+    assert not any("brctl" in c for c in _ubridge_commands(router))

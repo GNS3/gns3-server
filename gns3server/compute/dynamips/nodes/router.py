@@ -36,6 +36,7 @@ from gns3server.utils.asyncio import monitor_process, wait_run_in_executor
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.images import md5sum
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 from ...base_node import BaseNode
 from ...error import NodeError
@@ -1547,14 +1548,13 @@ class Router(KernelDatapathMixin, BaseNode):
 
     def _tap_name(self, slot_number, port_number):
         """
-        Deterministic anchor TAP name for a slot/port. The ``gd`` prefix
-        keeps it out of the ``gns3`` bridge/TAP name space (and apart from
-        Docker's ``gv``/``gc``, QEMU's ``gq`` and IOU's ``gi``); 8 hex chars
-        of the node id plus slot/port keep it unique and within IFNAMSIZ
-        (15), even for WIC port numbers (16, 32, 48).
+        Deterministic anchor TAP name for a slot/port (the shared
+        utils.kernel_anchor naming contract — the controller names a peer's
+        anchor with the same function when an Ethernet switch absorbs it;
+        fits IFNAMSIZ even for WIC port numbers 16/32/48).
         """
 
-        return f"gd{self._id.replace('-', '')[:8]}e{slot_number}p{port_number}"
+        return kernel_anchor_name("dynamips", self._id, slot_number, port_number)
 
     def _kernel_host_ifc(self, slot_number, port_number=0):
         """

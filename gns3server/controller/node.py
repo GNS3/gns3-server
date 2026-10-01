@@ -936,6 +936,11 @@ class Node:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
             raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+        # A started node may have brought kernel anchors into existence that
+        # a link needs to finish wiring (the Ethernet-switch fast path joins
+        # the peer's anchor on the switch side — see UDPLink.node_started).
+        for link in self._links:
+            await link.node_started(self)
 
     async def stop(self):
         """

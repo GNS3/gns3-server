@@ -23,7 +23,7 @@ through uBridge's ``brctl`` module (see
 """
 
 import os
-from typing import Any
+from typing import Any, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
@@ -103,16 +103,20 @@ async def update_ethernet_switch(
     Update an Ethernet switch.
     """
 
-    data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in data and node.name != data["name"]:
-        node.name = data["name"]
-    if "usage" in data:
-        node.usage = data["usage"]
-    if "ports_mapping" in data:
-        node.ports_mapping = data["ports_mapping"]
-        await node.update_port_settings()
-    if "console_type" in data:
-        node.console_type = data["console_type"]
+    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in node_data and node.name != node_data["name"]:
+        node.name = node_data["name"]
+    if "usage" in node_data:
+        node.usage = node_data["usage"]
+    if "ports_mapping" in node_data:
+        # capture the mapping before the setter replaces it: the VLAN
+        # reconcile diffs old against new to touch only what changed, in
+        # place (the setter itself keeps the port-count guard)
+        previous_mapping = [dict(port) for port in node.ports_mapping]
+        node.ports_mapping = node_data["ports_mapping"]
+        await node.update_port_settings(previous_mapping)
+    if "console_type" in node_data:
+        node.console_type = node_data["console_type"]
     node.updated()
     return node.asdict()
 
@@ -174,15 +178,20 @@ def reload_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.AnchorNIO],
 )
 async def create_ethernet_switch_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.AnchorNIO],
     node: EthernetSwitch = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.AnchorNIO]:
+    """
+    Add a NIO (Network Input/Output) to the node: a UDP NIO wires the relay
+    datapath, an anchor NIO absorbs the peer's kernel anchor into this
+    switch's kernel bridge. The adapter number on the switch is always 0.
+    """
 
     nio = Builtin.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.add_nio(nio, port_number)
@@ -192,19 +201,21 @@ async def create_ethernet_switch_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.AnchorNIO],
 )
 async def update_ethernet_switch_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.AnchorNIO],
     node: EthernetSwitch = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.AnchorNIO]:
     """
     Update a NIO (Network Input/Output) on the node: re-apply the packet
-    filters and traffic-insight markers carried by the NIO onto the port's
-    uBridge relay. The adapter number on the switch is always 0.
+    filters, traffic-insight markers and suspend state carried by the NIO —
+    on the port's uBridge relay for a relay port, on the absorbed anchor
+    (tc + kernel markers + carrier) for a kernel port. The adapter number
+    on the switch is always 0.
     """
 
     nio = node.get_nio(port_number)
@@ -212,6 +223,10 @@ async def update_ethernet_switch_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     nio.markers = nio_data.markers or {}
+    # Suspend is what the compute turns into an admin-down anchor on a
+    # kernel link (native carrier), so it must reach the NIO like it does
+    # on the other node routes.
+    nio.suspend = getattr(nio_data, "suspend", None) or False
     await node.update_nio(port_number, nio)
     return nio.asdict()
 

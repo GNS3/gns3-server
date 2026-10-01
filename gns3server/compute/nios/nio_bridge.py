@@ -25,17 +25,22 @@ filters ride the NIO and run as one tc netem qdisc per veth host end (the
 types without a netem equivalent — frequency_drop, bpf — stay relay-only);
 markers and packet capture are served by uBridge's AF_PACKET modules on the
 veth host end (marker add_kernel / capture start_kernel).
+
+``bridge`` may be ``None``: the anchor is then bridged elsewhere — an
+Ethernet switch absorbed it into the switch's own kernel bridge — and this
+node applies only the link state the anchor carries (carrier, markers,
+impairments), never bridge membership.
 """
 
 from .nio import NIO
 
 
 class NIOBridge(NIO):
-
     """
     Kernel-bridge NIO.
 
-    :param bridge: name of the per-link Linux kernel bridge
+    :param bridge: name of the per-link Linux kernel bridge, or None when
+        the anchor is bridged by an Ethernet switch (see module docstring)
     """
 
     def __init__(self, bridge):
@@ -46,7 +51,8 @@ class NIOBridge(NIO):
     @property
     def bridge(self):
         """
-        Returns the kernel bridge name.
+        Returns the kernel bridge name, or None for an externally bridged
+        anchor.
 
         :returns: bridge name
         """

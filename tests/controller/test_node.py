@@ -937,6 +937,22 @@ async def test_start(node, compute):
 
 
 @pytest.mark.asyncio
+async def test_start_notifies_links(node, compute):
+    """
+    A successful start tells the node's links: the Ethernet-switch fast
+    path completes a deferred anchor join only then (UDPLink.node_started).
+    """
+
+    compute.post = AsyncioMagicMock()
+    link = AsyncioMagicMock()
+    link.deferred = False
+    node.add_link(link)
+
+    await node.start()
+    assert link.node_started.called
+
+
+@pytest.mark.asyncio
 async def test_start_iou(compute, project, controller):
 
     node = Node(project, compute, "demo", node_id=str(uuid.uuid4()), node_type="iou")

@@ -802,3 +802,131 @@ async def test_available_filters_unconstrained_without_report(project):
     link, _node1, _node2 = await _kernel_link(project)
     link._link_data = [{"type": "nio_bridge"}]
     assert [f["type"] for f in link.available_filters()] == [f["type"] for f in FILTERS]
+
+
+# ---------------------------------------------------------------------------
+# Ethernet switch fast path: the switch absorbs the peer's anchor
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_switch_links_select_the_kernel_fast_path(project):
+    """
+    A link with an Ethernet switch endpoint rides the kernel fast path when
+    the *peer* can anchor — the switch side needs no anchoring capability
+    (its bridge exists by construction). Switch-to-switch links never
+    qualify (a kernel interface belongs to exactly one bridge), nor do
+    anchor-less peers.
+    """
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
+    switch = _node(project, compute, "sw1", node_type="ethernet_switch")
+
+    for peer in (
+        _node(project, compute, "docker1"),
+        _node(project, compute, "qemu1", node_type="qemu"),
+        _node(project, compute, "iou1", node_type="iou"),
+        _node(project, compute, "r1", node_type="dynamips"),
+    ):
+        link = await _link(project, switch, peer)
+        assert link._kernel_datapath_eligible(switch, peer) is True, peer.node_type
+
+    # a switch peer: cascades need a veth pair between two bridges — relay
+    switch2 = _node(project, compute, "sw2", node_type="ethernet_switch")
+    link = await _link(project, switch, switch2)
+    assert link._kernel_datapath_eligible(switch, switch2) is False
+
+    # an anchor-less peer
+    vpcs = _node(project, compute, "pc1", node_type="vpcs")
+    link = await _link(project, switch, vpcs)
+    assert link._kernel_datapath_eligible(switch, vpcs) is False
+
+    # a peer whose compute cannot anchor stays relay too
+    compute_no_tap = _tap_capable_compute(tap_support=None)
+    qemu = _node(project, compute_no_tap, "qemu1", node_type="qemu")
+    switch3 = _node(project, compute_no_tap, "sw3", node_type="ethernet_switch")
+    link = await _link(project, switch3, qemu)
+    assert link._kernel_datapath_eligible(switch3, qemu) is False
+
+
+@pytest.mark.asyncio
+async def test_switch_link_prepare_emits_anchor_and_external_bridge(project):
+    """
+    The fast path's wire format: the switch receives ``nio_anchor`` naming
+    the peer's anchor (the shared naming contract, computable while the
+    node is stopped), the peer receives ``nio_bridge`` with no bridge —
+    its anchor is bridged by the switch. The link's tc impairments are
+    owned by exactly one end (the switch): both would hit the same
+    interface.
+    """
+
+    from gns3server.utils.kernel_anchor import kernel_anchor_name
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    switch = _node(project, compute, "sw1", node_type="ethernet_switch")
+    peer = _node(project, compute, "docker1")
+    link = await _link(project, switch, peer)
+    link._filters = {"delay": [10]}
+
+    entries = await link._prepare()
+    switch_nio = entries[0][3]
+    peer_nio = entries[1][3]
+
+    assert switch_nio["type"] == "nio_anchor"
+    assert switch_nio["anchor"] == kernel_anchor_name("docker", peer.id, 0, 0)
+    assert switch_nio["filters"] == {"delay": [10]}
+    assert peer_nio["type"] == "nio_bridge"
+    assert peer_nio["bridge"] is None
+    assert peer_nio["filters"] == {}
+    assert link.kernel_datapath is True
+
+    # the reverse endpoint order must keep index alignment
+    link = await _link(project, peer, switch)
+    link._filters = {"delay": [10]}
+    entries = await link._prepare()
+    assert entries[0][3]["type"] == "nio_bridge"
+    assert entries[0][3]["bridge"] is None
+    assert entries[0][3]["filters"] == {}
+    assert entries[1][3]["type"] == "nio_anchor"
+    assert entries[1][3]["filters"] == {"delay": [10]}
+
+
+@pytest.mark.asyncio
+async def test_switch_link_repushes_the_switch_nio_on_node_start(project):
+    """
+    The switch cannot observe the peer's anchors coming into existence: the
+    controller re-pushes the switch's NIO after a node of the link starts,
+    which completes a deferred join (or re-joins an anchor a peer restart
+    replaced). Relay links do nothing.
+    """
+
+    from tests.utils import AsyncioMagicMock
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    switch = _node(project, compute, "sw1", node_type="ethernet_switch")
+    peer = _node(project, compute, "docker1")
+    link = await _link(project, switch, peer)
+    entries = await link._prepare()
+    link._created = True
+    switch.put = AsyncioMagicMock()
+
+    await link.node_started(peer)
+    switch.put.assert_called_once_with(
+        "/adapters/0/ports/0/nio", data=entries[0][3], timeout=120
+    )
+
+    # a relay link never re-pushes anything
+    switch.put.reset_mock()
+    compute2 = MagicMock()
+    compute2.id = "compute-1"
+    relay_switch = _node(project, compute2, "sw2", node_type="ethernet_switch")
+    vpcs = _node(project, compute2, "pc1", node_type="vpcs")
+    relay_link = await _link(project, relay_switch, vpcs)
+    relay_link._created = True
+    relay_switch.put = AsyncioMagicMock()
+    await relay_link.node_started(vpcs)
+    assert not relay_switch.put.called

@@ -29,6 +29,7 @@ from gns3server.compute.kernel_datapath import KernelDatapathMixin
 from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 
 from .docker_error import DockerError
+from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name
 
 import logging
 
@@ -48,12 +49,15 @@ class DockerKernelDatapathMixin(KernelDatapathMixin):
         kernel bridge); the guest end is moved into the container namespace
         and renamed. The ``gv``/``gc`` prefixes keep these out of the ``gns3``
         bridge/TAP name space and serve as search keys for stale-interface
-        cleanup. 8 hex chars of the node id + adapter/port keep the names
-        unique and within IFNAMSIZ (15).
+        cleanup; the host end's name is the shared anchor naming contract
+        (utils.kernel_anchor), which the controller also uses to name a
+        peer's anchor for an Ethernet-switch link.
         """
 
-        suffix = f"{self._id.replace('-', '')[:8]}e{adapter_number}p{port_number}"
-        return f"gv{suffix}", f"gc{suffix}"
+        return (
+            kernel_anchor_name("docker", self._id, adapter_number, port_number),
+            f"gc{anchor_suffix(self._id, adapter_number, port_number)}",
+        )
 
     # ------------------------------------------------------------------
     # Anchor hooks (see KernelDatapathMixin)

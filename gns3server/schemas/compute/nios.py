@@ -84,10 +84,18 @@ class BridgeNIO(BaseModel):
     uBridge reporting cbpf), frequency_drop and quota as the eBPF stateful
     classifier (needs ebpf). Markers and packet capture are served by
     uBridge's AF_PACKET modules on the veth host end.
+
+    ``bridge`` may be None: the anchor is then bridged by an Ethernet switch
+    (its own kernel bridge absorbed it) and the node applies only carrier,
+    markers and impairments — never bridge membership.
     """
 
     type: BridgeNIOType
-    bridge: str = Field(..., description="Kernel bridge name e.g. gns3a1b2c3d4e5")
+    bridge: Optional[str] = Field(
+        None,
+        description="Kernel bridge name e.g. gns3a1b2c3d4e5; None when an Ethernet switch "
+        "owns the anchor's bridge membership (absorbed link)",
+    )
     suspend: Optional[bool] = Field(None, description="Suspend the NIO")
     filters: Optional[dict] = Field(
         None,
@@ -95,6 +103,30 @@ class BridgeNIO(BaseModel):
         "bpf via cls_bpf, frequency_drop/quota via the eBPF classifier)",
     )
     markers: Optional[dict] = Field(None, description="Traffic-insight markers (attached to the veth host end)")
+
+
+class AnchorNIOType(str, Enum):
+    anchor = "nio_anchor"
+
+
+class AnchorNIO(BaseModel):
+    """
+    Anchor-absorbing Network Input/Output properties, for a node that owns a
+    kernel bridge (the Ethernet switch): the named foreign interface — the
+    peer's kernel-datapath anchor — is joined to the node's own bridge with
+    the node's port settings applied to it. The mirror of BridgeNIO; filters,
+    markers and capture ride the NIO and attach to the named anchor.
+    """
+
+    type: AnchorNIOType
+    anchor: str = Field(..., description="Host interface to absorb e.g. gv00010203e0p0")
+    suspend: Optional[bool] = Field(None, description="Suspend the NIO")
+    filters: Optional[dict] = Field(
+        None,
+        description="Packet filters served on the absorbed anchor (netem surface + extensions via one tc netem "
+        "qdisc, bpf via cls_bpf, frequency_drop/quota via the eBPF classifier)",
+    )
+    markers: Optional[dict] = Field(None, description="Traffic-insight markers (attached to the absorbed anchor)")
 
 
 class MarkerToggle(BaseModel):
@@ -131,7 +163,7 @@ class BatchNIOEntry(BaseModel):
     node_id: str = Field(..., description="Node the NIO is attached to")
     adapter_number: int = Field(0, ge=0, description="Adapter number")
     port_number: int = Field(0, ge=0, description="Port number")
-    nio: Union[UDPNIO, BridgeNIO] = Field(..., description="NIO settings")
+    nio: Union[UDPNIO, BridgeNIO, AnchorNIO] = Field(..., description="NIO settings")
 
 
 class BatchNIOCreate(BaseModel):

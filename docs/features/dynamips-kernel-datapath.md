@@ -149,7 +149,7 @@ enable_kernel_datapath = True
 
 ## Roadmap
 
-The Ethernet switch is next (its ports are already uBridge-owned TAPs; the
-kernel link should attach the peer's anchor straight into the switch's
-per-node bridge), then the IOL Docker node. Cross-compute kernel links need
+The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` —
+it absorbs the peer's anchor into its own kernel bridge; switch-to-switch
+cascades and the IOL Docker node are next). Cross-compute kernel links need
 VXLAN/GENEVE encapsulation — deferred until every node type is kernelized.

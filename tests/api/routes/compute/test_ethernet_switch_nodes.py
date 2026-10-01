@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest.mock import MagicMock, call
+import os
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import pytest_asyncio
@@ -535,3 +536,507 @@ class TestEthernetSwitchNodesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         node._ubridge_send.assert_any_call(f"bridge stop_capture {relay}")
+
+    # ------------------------------------------------------------------ #
+    # kernel datapath: absorbed anchors (nio_anchor)
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _anchor_params(anchor: str = "gv00010203e0p0", **extra) -> dict:
+        params = {"type": "nio_anchor", "anchor": anchor}
+        params.update(extra)
+        return params
+
+    @staticmethod
+    def _sysfs(anchor_exists: bool = True, bridge_member: bool = True):
+        """An ``os.path.exists`` that answers the /sys/class/net probes of the
+        kernel-port wiring, delegating everything else to the real one."""
+        real = os.path.exists
+
+        def fake(path):
+            value = str(path)
+            if "/brif/" in value:
+                return bridge_member
+            if value.startswith("/sys/class/net/"):
+                return anchor_exists
+            return real(path)
+
+        return patch("os.path.exists", new=fake)
+
+    async def test_ethernet_switch_create_anchor_nio(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        A kernel link joins the peer's anchor straight to the switch bridge
+        with the port's VLAN mode applied — no relay, no per-port TAP.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True):
+            response = await compute_client.post(url, json=self._anchor_params(anchor))
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["type"] == "nio_anchor"
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        br = node._bridge_name
+        # access VLAN 1 (default): the anchor replaces the port TAP as the
+        # bridge port, so it carries the port's membership
+        node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
+        node._ubridge_send.assert_any_call(f'brctl vlan_del "{br}" "{anchor}" 1')
+        node._ubridge_send.assert_any_call(f'brctl vlan_add "{br}" "{anchor}" 1 pvid untagged')
+        node._ubridge_send.assert_any_call(f'link set "{anchor}" up')
+        # no relay was created for this port
+        assert not any("bridge create" in str(c) for c in node._ubridge_send.call_args_list)
+        assert node._kernel_ports[0] == anchor
+        assert node.get_nio(0).anchor == anchor
+
+    async def test_ethernet_switch_create_anchor_nio_defers_when_anchor_missing(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        The peer's anchor only exists while the peer runs: a link created
+        against a stopped peer must not fail (nor stop the switch's
+        uBridge) — the join is deferred to the re-push after the peer
+        starts.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=False):
+            response = await compute_client.post(url, json=self._anchor_params(anchor))
+        assert response.status_code == status.HTTP_201_CREATED
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        assert node._kernel_ports[0] == anchor
+        assert node.get_nio(0).anchor == anchor
+        assert not any("addif" in str(c) for c in node._ubridge_send.call_args_list)
+        assert not any("brctl" in str(c) for c in node._ubridge_send.call_args_list)
+
+    async def test_ethernet_switch_update_anchor_nio_reconciles(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Updating a joined kernel port reconciles on the anchor: tc
+        impairments, markers and the carrier the suspend flag drives.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        update_url = app.url_path_for(
+            "compute:update_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True, bridge_member=True):
+            response = await compute_client.put(
+                update_url, json=self._anchor_params(anchor, filters={"delay": [10]}, suspend=True)
+            )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["suspend"] is True
+
+        node._ubridge_send.assert_any_call(f'tc reset "{anchor}"')
+        node._ubridge_send.assert_any_call(f'tc netem set "{anchor}" delay 10')
+        node._ubridge_send.assert_any_call(f'link set "{anchor}" down')
+        # no re-join on a plain reconcile
+        assert not any("addif" in str(c) for c in node._ubridge_send.call_args_list)
+
+    async def test_ethernet_switch_update_anchor_nio_completes_deferred_join(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        The controller re-pushes the switch NIO once the peer starts: a join
+        deferred at link creation completes (the anchor exists but is not a
+        bridge member), and a peer restart that replaced its anchor under
+        the same name re-joins.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=False):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        update_url = app.url_path_for(
+            "compute:update_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        # the anchor exists now (peer started) but is not a bridge member
+        with self._sysfs(anchor_exists=True, bridge_member=False):
+            response = await compute_client.put(update_url, json=self._anchor_params(anchor))
+        assert response.status_code == status.HTTP_201_CREATED
+
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
+        node._ubridge_send.assert_any_call(f'brctl vlan_add "{br}" "{anchor}" 1 pvid untagged')
+        node._ubridge_send.assert_any_call(f'link set "{anchor}" up')
+
+    async def test_ethernet_switch_delete_anchor_nio(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Removing a kernel link resets the anchor's qdisc, takes it out of
+        the switch bridge and drops its carrier — the anchor itself survives
+        (it belongs to the peer).
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        with self._sysfs(anchor_exists=True):
+            response = await compute_client.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'tc reset "{anchor}"')
+        node._ubridge_send.assert_any_call(f'brctl delif "{br}" "{anchor}"')
+        node._ubridge_send.assert_any_call(f'link set "{anchor}" down')
+        assert 0 not in node._kernel_ports
+        assert 0 not in node._nios
+
+    async def test_ethernet_switch_capture_anchor_nio(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Capture on a kernel port runs on the absorbed anchor (AF_PACKET),
+        not on a relay.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:start_ethernet_switch_capture",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number="0",
+            ),
+            json={"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert any(
+            c.args and str(c.args[0]).startswith(f'capture start_kernel {anchor} "')
+            for c in node._ubridge_send.call_args_list
+        ), node._ubridge_send.call_args_list
+
+        response = await compute_client.post(
+            app.url_path_for(
+                "compute:stop_ethernet_switch_capture",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number="0",
+            )
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        node._ubridge_send.assert_any_call("capture stop_kernel")
+
+    async def test_ethernet_switch_batch_create_anchor_nio(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        The project-open batch endpoint accepts anchor NIOs (a reopen must
+        not 422 the switch's kernel links).
+        """
+
+        anchor = "gv00010203e0p3"
+        params = {
+            "nios": [
+                {
+                    "node_id": ethernet_switch["node_id"],
+                    "adapter_number": 0,
+                    "port_number": 3,
+                    "nio": {"type": "nio_anchor", "anchor": anchor},
+                }
+            ]
+        }
+        with self._sysfs(anchor_exists=False):
+            response = await compute_client.post(
+                app.url_path_for("compute:create_batch_nios", project_id=compute_project.id), json=params
+            )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["added"] == 1
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        assert node._kernel_ports[3] == anchor
+
+    # ------------------------------------------------------------------ #
+    # in-place VLAN reconfiguration (no port ever leaves the bridge)
+    # ------------------------------------------------------------------ #
+
+    async def test_ethernet_switch_update_ports_reconfigures_in_place(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Changing a wired port's VLAN edits its membership in place: delete the
+        old membership, add the new one — the port is never detached from the
+        bridge (a relay TAP here; the TAP is the cloud/relay-side port).
+        """
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        await compute_client.post(url, json=self._udp_params())
+        node._ubridge_send.reset_mock()
+
+        ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
+        ports[0]["vlan"] = 10
+        response = await compute_client.put(
+            app.url_path_for(
+                "compute:update_ethernet_switch",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+            ),
+            json={"ports_mapping": ports},
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        br = node._bridge_name
+        tap = f"{br}-0"
+        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+        assert commands == [
+            f'brctl vlan_del "{br}" "{tap}" 1',
+            f'brctl vlan_add "{br}" "{tap}" 10 pvid untagged',
+        ], commands
+        assert not any("delif" in c or "addif" in c for c in commands)
+
+    async def test_ethernet_switch_update_ports_leaves_untouched_ports_alone(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Only ports whose mode/VLAN changed are touched: re-saving the mapping
+        no longer re-programs every wired port.
+        """
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        for port_number in (0, 1):
+            url = app.url_path_for(
+                "compute:create_ethernet_switch_nio",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number=str(port_number),
+            )
+            await compute_client.post(url, json=self._udp_params())
+        node._ubridge_send.reset_mock()
+
+        ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
+        ports[1]["vlan"] = 20
+        response = await compute_client.put(
+            app.url_path_for(
+                "compute:update_ethernet_switch",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+            ),
+            json={"ports_mapping": ports},
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        br = node._bridge_name
+        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+        assert commands == [
+            f'brctl vlan_del "{br}" "{br}-1" 1',
+            f'brctl vlan_add "{br}" "{br}-1" 20 pvid untagged',
+        ], commands
+        assert not any(f'"{br}-0"' in c for c in commands)
+
+    async def test_ethernet_switch_vlan_transition_table(self, compute_project: Project, ethernet_switch: dict) -> None:
+        """
+        Every mode transition is expressed as in-place VLAN edits: the old
+        mode's entries the new mode does not want, then the new mode's
+        entries. The dot1q admits-all entry is one range operation in both
+        directions, and same-to-same emits nothing.
+        """
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        br = node._bridge_name
+        iface = "gvdeadbeef0p0"
+
+        cases = [
+            (
+                {"type": "access", "vlan": 10},
+                {"type": "dot1q", "vlan": 20},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 10',
+                    f'brctl vlan_add "{br}" "{iface}" 1 vid 4094',
+                    f'brctl vlan_add "{br}" "{iface}" 20 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "dot1q", "vlan": 20},
+                {"type": "access", "vlan": 30},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 1 vid 4094',
+                    f'brctl vlan_add "{br}" "{iface}" 30 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "dot1q", "vlan": 20},
+                {"type": "dot1q", "vlan": 30},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 20',
+                    f'brctl vlan_add "{br}" "{iface}" 30 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "qinq", "vlan": 2},
+                {"type": "dot1q", "vlan": 5},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 2',
+                    f'brctl vlan_add "{br}" "{iface}" 1 vid 4094',
+                    f'brctl vlan_add "{br}" "{iface}" 5 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "dot1q", "vlan": 5},
+                {"type": "qinq", "vlan": 2},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 1 vid 4094',
+                    f'brctl vlan_add "{br}" "{iface}" 2 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "access", "vlan": 10},
+                {"type": "qinq", "vlan": 2},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 10',
+                    f'brctl vlan_add "{br}" "{iface}" 2 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "qinq", "vlan": 2},
+                {"type": "access", "vlan": 10},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 2',
+                    f'brctl vlan_add "{br}" "{iface}" 10 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "qinq", "vlan": 2},
+                {"type": "qinq", "vlan": 9},
+                [
+                    f'brctl vlan_del "{br}" "{iface}" 2',
+                    f'brctl vlan_add "{br}" "{iface}" 9 pvid untagged',
+                ],
+            ),
+            (
+                {"type": "access", "vlan": 7},
+                {"type": "access", "vlan": 7},
+                [],
+            ),
+        ]
+        for old_settings, new_settings, expected in cases:
+            node._ubridge_send.reset_mock()
+            await node._reconfigure_port_vlan(iface, old_settings, new_settings)
+            commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+            assert commands == expected, (old_settings, new_settings, commands)
+            assert not any("delif" in c or "addif" in c for c in commands)
+
+    async def test_ethernet_switch_update_ports_reconfigures_absorbed_anchor_in_place(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        The same in-place reconcile applies to an absorbed kernel anchor (a
+        peer node's interface): a ports_mapping update issues VLAN edits on
+        it and never detaches it from the bridge.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=True):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
+        ports[0]["vlan"] = 10
+        response = await compute_client.put(
+            app.url_path_for(
+                "compute:update_ethernet_switch",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+            ),
+            json={"ports_mapping": ports},
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        br = node._bridge_name
+        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+        assert commands == [
+            f'brctl vlan_del "{br}" "{anchor}" 1',
+            f'brctl vlan_add "{br}" "{anchor}" 10 pvid untagged',
+        ], commands
+        assert not any("delif" in c or "addif" in c for c in commands)

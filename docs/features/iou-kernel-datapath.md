@@ -170,9 +170,10 @@ enable_kernel_datapath = True
 ## Roadmap
 
 Dynamips has landed (see `dynamips-kernel-datapath.md` — the hypervisor
-opens uBridge-created TAPs, the same shape QEMU uses). Next: the Ethernet
-switch (its ports are already uBridge-owned TAPs; the kernel link should
-attach the peer's anchor straight into the switch's per-node bridge), then
-the IOL Docker node (same `bridge add_nio_tap` shape as this one).
-Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred
-until every node type is kernelized.
+opens uBridge-created TAPs, the same shape QEMU uses), and so has the
+Ethernet switch (see `ethernet-switch-kernel-datapath.md` — it absorbs the
+peer's anchor into its own kernel bridge). What remains: switch-to-switch
+cascades (a veth pair between the two kernel bridges) and the IOL Docker
+node (same `bridge add_nio_tap` shape as this one). Cross-compute kernel
+links need VXLAN/GENEVE encapsulation — deferred until every node type is
+kernelized.

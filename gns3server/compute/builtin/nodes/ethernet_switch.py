@@ -37,12 +37,16 @@ be the switch). ESW ``access``/``dot1q``/``qinq`` port modes are composed from
 the ``brctl`` VLAN primitives here -- see ``_apply_port_vlan``.
 """
 
+import contextlib
 import logging
+import os
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 from ...base_node import BaseNode
 from ...error import NodeError
+from ...kernel_datapath import KernelDatapathMixin
+from ...nios.nio_anchor import NIOAnchor
 from ...nios.nio_udp import NIOUDP
 
 log = logging.getLogger(__name__)
@@ -55,7 +59,7 @@ _SUPPORTED_VLAN_ETHERTYPE = {"0x8100", "0x88a8"}
 _QINQ_ETHERTYPE = "0x88a8"
 
 
-class EthernetSwitch(BaseNode):
+class EthernetSwitch(KernelDatapathMixin, BaseNode):
     """
     Ethernet switch.
 
@@ -75,9 +79,11 @@ class EthernetSwitch(BaseNode):
 
         self._nios = {}
         self._tap_by_port = {}  # port_number -> kernel TAP enslaved to the bridge
+        self._kernel_ports = {}  # port_number -> foreign anchor absorbed into the bridge
         self._bridge_name = None  # kernel bridge interface name (allocated on start)
         self._bridge_created = False
         self._bridge_proto_set = False  # whether ``brctl setvlanproto`` has been applied
+        self._ubridge_tc_caps = None  # probed once per uBridge process (mixin)
         # Idempotency flag for start(). Decoupled from ``status`` so the node can
         # report "started" (always-on, like the ESW) while ``duplicate_node`` still
         # sees status "stopped" and refuses only genuinely running stateful nodes.
@@ -195,11 +201,16 @@ class EthernetSwitch(BaseNode):
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 await self._stop_ubridge()
             await self._start_ubridge(self._ubridge_require_privileged_access)
+            # A fresh uBridge process: the tc capabilities must be probed again.
+            self._ubridge_tc_caps = None
             await self._ensure_bridge()
             for port_number in self._nios:
                 if self._nios[port_number]:
                     try:
-                        await self._add_ubridge_connection(self._nios[port_number], port_number)
+                        if isinstance(self._nios[port_number], NIOAnchor):
+                            await self._add_kernel_port(self._nios[port_number], port_number)
+                        else:
+                            await self._add_ubridge_connection(self._nios[port_number], port_number)
                     except (UbridgeError, NodeError) as e:
                         self._started = False
                         raise e
@@ -275,11 +286,24 @@ class EthernetSwitch(BaseNode):
             if nio and isinstance(nio, NIOUDP):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._nios.clear()
-        self._tap_by_port.clear()
 
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running() and self._bridge_created:
+            # Project close runs every node's close concurrently: a peer's
+            # anchor may still be enslaved at this instant (its node's close
+            # is in flight), which would make the bridge delete fail EBUSY
+            # and leak an empty bridge. Detach every member we know first —
+            # a peer anchor that is already gone answers ENOENT (suppressed;
+            # the kernel removed it with the interface), and our own TAPs go
+            # with the relay teardown — so the delete always sees an empty
+            # bridge. The foreign anchors themselves are not ours to delete.
+            for anchor in self._kernel_ports.values():
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{anchor}"')
+            for tap in self._tap_by_port.values():
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{tap}"')
             try:
-                # Deleting the bridge releases its enslaved TAPs; uBridge destroys
+                # Deleting the bridge releases any enslaved TAPs; uBridge destroys
                 # them when it stops below.
                 await self._ubridge_send(f'brctl delete "{self._bridge_name}"')
             except UbridgeError as e:
@@ -287,6 +311,8 @@ class EthernetSwitch(BaseNode):
             self._bridge_created = False
             self._bridge_proto_set = False
             self._bridge_name = None
+        self._tap_by_port.clear()
+        self._kernel_ports.clear()
         self._started = False
 
         await self._stop_ubridge()
@@ -301,19 +327,27 @@ class EthernetSwitch(BaseNode):
         """
         Adds a NIO as a new port on this switch.
 
+        Two kinds are accepted: a UDP NIO (relay datapath — the per-port
+        uBridge relay ends in a bridge TAP) and the kernel datapath's
+        NIOAnchor (the peer's anchor is absorbed straight into this switch's
+        kernel bridge).
+
         :param nio: NIO instance to add
         :param port_number: port to allocate for the NIO
         """
 
         if port_number in self._nios:
             raise NodeError(f"Port {port_number} isn't free")
-        if not isinstance(nio, NIOUDP):
-            raise NodeError("Ethernet switch ports only support UDP NIOs")
+        if not isinstance(nio, (NIOUDP, NIOAnchor)):
+            raise NodeError("Ethernet switch ports only support UDP NIOs and anchor NIOs")
 
         log.debug(f'Ethernet switch "{self._name}" [{self._id}]: NIO {nio} bound to port {port_number}')
         try:
             await self.start()
-            await self._add_ubridge_connection(nio, port_number)
+            if isinstance(nio, NIOAnchor):
+                await self._add_kernel_port(nio, port_number)
+            else:
+                await self._add_ubridge_connection(nio, port_number)
             self._nios[port_number] = nio
         except (NodeError, UbridgeError) as e:
             log.error(f'Cannot add NIO on Ethernet switch "{self._name}": {e}')
@@ -350,6 +384,95 @@ class EthernetSwitch(BaseNode):
             await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{nio.pcap_output_file}"')
         await self._ubridge_send(f"bridge start {ubridge_bridge}")
         self._tap_by_port[port_number] = tap
+
+    # ------------------------------------------------------------------ #
+    # kernel datapath: absorb the peer's anchor (fast path)
+    # ------------------------------------------------------------------ #
+
+    def _kernel_host_ifc(self, adapter_number, port_number=0):
+        """
+        The foreign anchor absorbed on a port, or None for a relay port. The
+        switch has no adapters, so *adapter_number* is always 0.
+        """
+
+        return self._kernel_ports.get(port_number)
+
+    def _kernel_anchors(self):
+        """
+        Every absorbed anchor — the interfaces this switch bridges and on
+        which kernel markers may attach (the mixin's marker polymorphism).
+        """
+
+        return set(self._kernel_ports.values())
+
+    def _kernel_error(self, message):
+        return NodeError(message)
+
+    async def _add_kernel_port(self, nio, port_number):
+        """
+        Absorbs the peer's anchor for one port: joins the anchor straight to
+        this switch's kernel bridge and applies the port's VLAN mode — no
+        relay, no per-port TAP, the peer anchor *is* the port.
+
+        The anchor only exists on the host while the peer is running (its
+        compute creates it at node start), so a link created against a
+        stopped peer defers the join: the port remembers the anchor and
+        ``update_nio`` completes the wiring when the controller re-pushes
+        the NIO after the peer starts (UdpLink.node_started). A peer
+        restart can also replace the interface under the same name, so the
+        membership is re-checked rather than assumed.
+
+        The link state the anchored end carries (capture, markers, tc
+        impairments) is applied by the shared mixin flow: NIOAnchor reports
+        no per-link bridge, so only the link state is applied here, while
+        the bridge membership above is this switch's own.
+        """
+
+        port_settings = self._port_settings(port_number)
+        if port_settings is None:
+            raise NodeError(f"Port {port_number} doesn't exist on Ethernet switch '{self.name}'")
+
+        anchor = nio.anchor
+        # Register before _kernel_attach: the marker reconcile recognises
+        # kernel anchors through _kernel_anchors().
+        self._kernel_ports[port_number] = anchor
+        if not os.path.exists(f"/sys/class/net/{anchor}"):
+            log.info(
+                'Ethernet switch "{name}" [{id}]: anchor {anchor} for port {port} does not exist yet '
+                "(peer not started); join deferred".format(
+                    name=self._name, id=self._id, anchor=anchor, port=port_number
+                )
+            )
+            return
+        try:
+            await self._ubridge_send(f'brctl addif "{self._bridge_name}" "{anchor}"')
+            await self._apply_port_vlan(port_settings, anchor)
+            await self._kernel_attach(anchor, nio)
+            await self._set_adapter_carrier(0, not nio.suspend, port_number)
+        except (NodeError, UbridgeError):
+            self._kernel_ports.pop(port_number, None)
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{anchor}"')
+            raise
+
+    async def _remove_kernel_port(self, port_number):
+        """
+        Releases an absorbed anchor: detaches the link state (markers,
+        impairments, carrier) and takes the anchor out of the switch bridge.
+        The anchor itself belongs to the peer and survives.
+        """
+
+        anchor = self._kernel_ports.pop(port_number, None)
+        if anchor is None:
+            return
+        await self._remove_kernel_markers(anchor)
+        with contextlib.suppress(UbridgeError):
+            await self._ubridge_send(f'tc reset "{anchor}"')
+        if self._bridge_created:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{anchor}"')
+        with contextlib.suppress(UbridgeError):
+            await self._ubridge_send(f'link set "{anchor}" down')
 
     async def _delete_ubridge_connection(self, port_number):
         """
@@ -388,7 +511,10 @@ class EthernetSwitch(BaseNode):
         log.debug(f'Ethernet switch "{self._name}" [{self._id}]: NIO {nio} removed from port {port_number}')
         del self._nios[port_number]
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            await self._delete_ubridge_connection(port_number)
+            if isinstance(nio, NIOAnchor):
+                await self._remove_kernel_port(port_number)
+            else:
+                await self._delete_ubridge_connection(port_number)
         return nio
 
     def get_nio(self, port_number):
@@ -405,32 +531,85 @@ class EthernetSwitch(BaseNode):
 
     async def update_nio(self, port_number, nio):
         """
-        Re-applies uBridge filters/markers for a port (called when a link is updated).
+        Re-applies filters/markers (and carrier) for a port when a link is
+        updated: on the per-port uBridge relay for a relay port, on the
+        absorbed anchor (tc + kernel markers) for a kernel port.
         """
 
+        if not (self._ubridge_hypervisor and self._ubridge_hypervisor.is_running()):
+            return
+        if port_number in self._kernel_ports:
+            anchor = self._kernel_ports[port_number]
+            if not os.path.exists(f"/sys/class/net/{self._bridge_name}/brif/{anchor}"):
+                # Not joined (a deferred link whose peer has just started, or
+                # a peer restart that replaced its anchor under the same
+                # name): complete the whole wiring now.
+                await self._add_kernel_port(nio, port_number)
+                return
+            # Kernel port: reconcile on the anchor — markers, tc impairments
+            # and the carrier the suspend flag drives. No re-joining, no
+            # VLAN re-programming (the port mode did not change).
+            await self._kernel_update(anchor, nio)
+            await self._set_adapter_carrier(0, not nio.suspend, port_number)
+            return
         ubridge_bridge = self._ubridge_bridge_name(port_number)
-        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            await self._ubridge_apply_filters(ubridge_bridge, nio.filters)
-            await self._ubridge_apply_markers(ubridge_bridge, nio)
+        await self._ubridge_apply_filters(ubridge_bridge, nio.filters)
+        await self._ubridge_apply_markers(ubridge_bridge, nio)
 
     # ------------------------------------------------------------------ #
     # VLAN mode translation
     # ------------------------------------------------------------------ #
 
-    async def _reset_port_vlan(self, tap):
+    async def _reconfigure_port_vlan(self, iface, old_settings, new_settings):
         """
-        Resets a port's VLAN membership to the kernel default (PVID 1, untagged)
-        by re-enslaving it. Used before re-applying a changed mode so stale VIDs
-        from the previous mode do not leak.
+        Moves one port's VLAN membership from its previous mode to the new one
+        **in place**: the port never leaves the bridge, so there is no traffic
+        gap, no FDB flush, and nothing that detaches an interface this switch
+        does not own (an absorbed kernel anchor belongs to the peer's node —
+        re-enslaving it from here is not this switch's business).
+
+        Each mode's membership, as installed on a clean port by
+        ``_apply_port_vlan``: access(N) = {N, PVID untagged}; dot1q(V) =
+        {1..4094, tagged} plus V as PVID untagged (the all-VIDs entry is a
+        single range entry); qinq(O) = {O, PVID untagged}. The transition
+        deletes exactly the previous mode's entries the new mode does not
+        want, then adds the new mode's entries — the dot1q range is added and
+        deleted as one range operation.
         """
 
-        await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{tap}"')
-        await self._ubridge_send(f'brctl addif "{self._bridge_name}" "{tap}"')
+        old_type, old_vlan = old_settings["type"], int(old_settings["vlan"])
+        new_type, new_vlan = new_settings["type"], int(new_settings["vlan"])
+        if old_type == new_type and old_vlan == new_vlan:
+            return
+
+        br = self._bridge_name
+        commands = []
+
+        if old_type == "dot1q" and new_type != "dot1q":
+            # the admits-all-VIDs range, the old native VLAN included in it
+            commands.append(f'brctl vlan_del "{br}" "{iface}" 1 vid 4094')
+        elif old_type == "dot1q":
+            if old_vlan != new_vlan:
+                commands.append(f'brctl vlan_del "{br}" "{iface}" {old_vlan}')
+        elif new_type == "dot1q" or old_vlan != new_vlan:
+            # access/qinq single-VID entry, replaced by the new mode's
+            commands.append(f'brctl vlan_del "{br}" "{iface}" {old_vlan}')
+
+        if new_type == "dot1q":
+            if old_type != "dot1q":
+                commands.append(f'brctl vlan_add "{br}" "{iface}" 1 vid 4094')
+            commands.append(f'brctl vlan_add "{br}" "{iface}" {new_vlan} pvid untagged')
+        else:
+            commands.append(f'brctl vlan_add "{br}" "{iface}" {new_vlan} pvid untagged')
+
+        for command in commands:
+            await self._ubridge_send(command)
 
     async def _apply_port_vlan(self, port_settings, tap):
         """
-        Translates an ESW port mode into ``brctl`` VLAN primitives. The port must
-        already be enslaved to the bridge and carry the default PVID 1.
+        Translates an ESW port mode into ``brctl`` VLAN primitives, for a
+        **newly wired** port. The port must already be enslaved to the bridge
+        and carry the default PVID 1.
 
         - access VLAN N: drop default 1, add N as PVID + egress untagged.
         - dot1q trunk (native N): drop default 1, admit all VIDs tagged, then mark
@@ -438,6 +617,9 @@ class EthernetSwitch(BaseNode):
           VLAN per trunk port, so the trunk admits all VIDs, like the emulated ESW.)
         - qinq (outer N): the bridge-level protocol is set separately; the port
           gets the service VLAN as PVID + untagged so customer frames are S-tagged.
+
+        Mode *changes* on an already-wired port go through
+        ``_reconfigure_port_vlan`` (in place, no re-enslaving) instead.
         """
 
         br = self._bridge_name
@@ -458,23 +640,41 @@ class EthernetSwitch(BaseNode):
         else:
             raise NodeError(f"Unknown port type '{port_type}' on Ethernet switch '{self.name}'")
 
-    async def update_port_settings(self):
+    async def update_port_settings(self, previous_mapping=None):
         """
-        Re-applies port settings (called after ``ports_mapping`` is updated). For
-        ports already wired, reset then re-apply so a mode/VLAN change fully
-        replaces the previous VLAN membership.
+        Reconciles port settings after a ``ports_mapping`` update. Only the
+        wired ports whose mode/VLAN actually changed are touched, and each
+        change is applied in place (``_reconfigure_port_vlan``) — no port is
+        ever detached from the bridge just to change its VLANs, on the
+        switch's own relay TAPs and on absorbed kernel anchors alike.
+
+        :param previous_mapping: the ports_mapping as it was before this
+            update (the caller's duty — the setter has already stored the new
+            one); without it nothing can be diffed and no port is touched.
         """
 
         await self._apply_bridge_proto_if_needed()
         if not (self._ubridge_hypervisor and self._ubridge_hypervisor.is_running() and self._bridge_created):
             return
-        for port_settings in self._ports_mapping:
-            port_number = port_settings["port_number"]
-            tap = self._tap_by_port.get(port_number)
-            if tap is None:
+
+        previous = {port["port_number"]: port for port in (previous_mapping or [])}
+        wired = dict(self._tap_by_port)
+        for port_number, anchor in self._kernel_ports.items():
+            wired[port_number] = anchor
+        for port_number, iface in wired.items():
+            new_settings = self._port_settings(port_number)
+            if new_settings is None:
                 continue
-            await self._reset_port_vlan(tap)
-            await self._apply_port_vlan(port_settings, tap)
+            old_settings = previous.get(port_number)
+            if old_settings is None:
+                # a wired port always has previous settings; without them a
+                # diff is impossible and re-enslaving would be guessing
+                log.warning(
+                    'Ethernet switch "{name}" [{id}]: no previous settings for wired port {port}; '
+                    "VLAN reconfiguration skipped".format(name=self._name, id=self._id, port=port_number)
+                )
+                continue
+            await self._reconfigure_port_vlan(iface, old_settings, new_settings)
 
     # ------------------------------------------------------------------ #
     # capture
@@ -482,7 +682,9 @@ class EthernetSwitch(BaseNode):
 
     async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
-        Starts a packet capture on a port (uBridge captures on the per-port relay).
+        Starts a packet capture on a port — on the per-port relay bridge for
+        a relay port, on the absorbed anchor (AF_PACKET, capture start_kernel)
+        for a kernel port.
 
         :param port_number: allocated port number
         :param output_file: PCAP destination file for the capture
@@ -494,9 +696,17 @@ class EthernetSwitch(BaseNode):
             raise NodeError(f"Packet capture is already activated on port {port_number}")
         nio.start_packet_capture(output_file)
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            ubridge_bridge = self._ubridge_bridge_name(port_number)
-            await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{output_file}"')
-        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: starting packet capture on port {port_number}')
+            anchor = self._kernel_ports.get(port_number)
+            if anchor is not None:
+                await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+            else:
+                ubridge_bridge = self._ubridge_bridge_name(port_number)
+                await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{output_file}"')
+        log.debug(
+            'Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(
+                name=self.name, id=self.id, port=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -510,6 +720,13 @@ class EthernetSwitch(BaseNode):
             return
         nio.stop_packet_capture()
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            ubridge_bridge = self._ubridge_bridge_name(port_number)
-            await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")
-        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: stopping packet capture on port {port_number}')
+            if port_number in self._kernel_ports:
+                await self._ubridge_send("capture stop_kernel")
+            else:
+                ubridge_bridge = self._ubridge_bridge_name(port_number)
+                await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")
+        log.debug(
+            'Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
+                name=self.name, id=self.id, port=port_number
+            )
+        )

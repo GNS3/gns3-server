@@ -282,6 +282,12 @@ def live_server(kernel=True):
     already be configured for it); everything else starts an isolated
     instance. Relay-mode tests always need an isolated instance — the
     datapath choice is a server configuration.
+
+    Either way this waits for the controller's local compute to finish
+    connecting: the connection's ``GET /capabilities`` runs the uBridge
+    probes (several ubridge spawns, seconds), and until it completes the
+    controller caches a default dict with every capability None — a test
+    reading capabilities in that window would wrongly skip itself.
     """
     url = os.environ.get("GNS3_E2E_URL")
     if url and kernel:
@@ -290,8 +296,14 @@ def live_server(kernel=True):
             os.environ.get("GNS3_E2E_USER", "admin"),
             os.environ.get("GNS3_E2E_PASSWORD", "admin"),
         ).login()
-        return Server(compute)
-    return _start_isolated(kernel)
+        server = Server(compute)
+    else:
+        server = _start_isolated(kernel)
+    if not wait_until(lambda: (server.compute.capabilities() or {}).get("version"), timeout=45):
+        raise AssertionError(
+            f"{server.compute.url}: the controller's local compute did not report capabilities within 45s"
+        )
+    return server
 
 
 def release(server, project_id, failed=False):
