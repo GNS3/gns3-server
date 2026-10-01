@@ -270,7 +270,7 @@ async def test_update_nio_binding_reapplies_filters_on_the_anchor(vm):
 
     vm._ubridge_send.assert_any_call(f'tc reset "{TAP0}"')
     vm._ubridge_send.assert_any_call(f'tc netem set "{TAP0}" delay 10')
-    assert not any(f'brctl addif' in str(c) for c in vm._ubridge_send.call_args_list)
+    assert not any(f"brctl addif" in str(c) for c in vm._ubridge_send.call_args_list)
 
 
 @pytest.mark.asyncio
@@ -346,3 +346,34 @@ async def test_capture_on_a_relay_link_uses_the_relay_bridge(vm):
 
     await vm.stop_capture(0)
     vm._ubridge_send.assert_any_call(f"bridge stop_capture QEMU-{vm.id}-0")
+
+
+@pytest.mark.asyncio
+async def test_stop_stops_the_process_before_deleting_the_taps(vm):
+    """
+    The QEMU process is the guest side of every adapter TAP, and uBridge's
+    tap delete refuses a held device ("Device or resource busy") — that
+    best-effort delete is suppressed, so removing the taps while QEMU still
+    ran leaked the persistent TAPs. The process must be gone first (the same
+    lesson as IOU's reverse stop order: process side, then the devices).
+    """
+
+    _running(vm)
+    order = []
+
+    async def fake_termination(process, timeout=None):
+        order.append("process")
+
+    async def fake_stop_ubridge():
+        order.append("taps")
+
+    with (
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=fake_termination),
+        patch.object(vm, "_stop_ubridge", new=fake_stop_ubridge),
+        asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._export_config"),
+        asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._clear_save_vm_stated"),
+        asyncio_patch("gns3server.compute.base_node.BaseNode.stop"),
+    ):
+        await vm.stop()
+
+    assert order == ["process", "taps"]

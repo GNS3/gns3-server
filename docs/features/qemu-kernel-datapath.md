@@ -83,11 +83,15 @@ datapaths (delete + re-create, or a project reopen).
 * **Life (running)** — the TAP is never created or destroyed again. Link
   create/delete/switch, suspend, capture and markers only change *what is
   attached to it*.
-* **Death (node stop)** — `_remove_taps` un-persists the TAPs (`tap delete`;
-  QEMU's open fd keeps each device alive until it exits) and deletes the
-  per-link kernel bridges the node still holds. Deleting a node never runs the
-  link-teardown path, so those bridges would otherwise stay behind as empty
-  orphans; a restart rebuilds them from the NIO.
+* **Death (node stop)** — the QEMU process is stopped **first**, then
+  `_remove_taps` un-persists the TAPs (`tap delete`) and deletes the
+  per-link kernel bridges the node still holds. The order matters: uBridge's
+  `tap delete` refuses a device another process holds open ("Device or
+  resource busy") and that best-effort delete is suppressed, so deleting the
+  TAPs while QEMU still ran leaked every persistent TAP (process side first,
+  then the devices — the same lesson as IOU's reverse stop order). Deleting
+  a node never runs the link-teardown path, so those bridges would otherwise
+  stay behind as empty orphans; a restart rebuilds them from the NIO.
 
 ## Link operations
 
@@ -176,3 +180,7 @@ TAPs bound to the IOL fabric; serial links stay relay). **Dynamips has
 landed** too — see `docs/features/dynamips-kernel-datapath.md` (the
 hypervisor opens uBridge-created TAPs with `nio create_tap`: the same
 external-fd-holder shape QEMU uses; serial/ATM/POS ports stay relay).
+**The Ethernet switch has landed** — see
+`docs/features/ethernet-switch-kernel-datapath.md` (the switch absorbs a
+peer's anchor into its own kernel bridge; switch-to-switch cascades stay
+relay for now).
