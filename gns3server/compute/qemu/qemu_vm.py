@@ -1274,13 +1274,22 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             await self._export_config()
             await super().stop()
 
-        # Release the datapath only once QEMU is gone: the process holds the
-        # adapter TAPs open (it is the guest side), and uBridge's tap delete
-        # refuses a held device ("Device or resource busy") — deleting them
-        # while QEMU still ran leaked the persistent TAPs, because that
-        # best-effort delete is suppressed. Order: process side first, then
-        # the devices (the same lesson as IOU's reverse stop order).
-        await self._stop_ubridge()
+            # Release the datapath only once QEMU is gone: the process holds
+            # the adapter TAPs open (it is the guest side), and uBridge's tap
+            # delete refuses a held device ("Device or resource busy") —
+            # deleting them while QEMU still ran leaked the persistent TAPs,
+            # because that best-effort delete is suppressed. Order: process
+            # side first, then the devices (the same lesson as IOU's reverse
+            # stop order).
+            #
+            # It stays under the lock: the process monitor calls stop() on its
+            # own when QEMU dies, so an API stop and a process-death stop run
+            # concurrently in the normal case — and the TAP sweep walks the
+            # adapter map across awaits, which the second stop was free to
+            # clear underneath it ("dictionary changed size during
+            # iteration"). Serialized, it finds uBridge already gone and
+            # sweeps nothing.
+            await self._stop_ubridge()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):
         """

@@ -21,6 +21,7 @@ netdev, kernel-link enslavement, relay attach on the anchor, capture, and the
 legacy socket-netdev fallback for a uBridge without the tap module.
 """
 
+import asyncio
 import os
 import stat
 import sys
@@ -41,6 +42,7 @@ from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 BRIDGE = "gns3a1b2c3d4e5f"
 TAP0 = "gq00010203e0p0"  # the vm fixture's node id, adapter 0
+TAP1 = "gq00010203e1p0"  # ... adapter 1
 
 
 @pytest_asyncio.fixture
@@ -377,3 +379,64 @@ async def test_stop_stops_the_process_before_deleting_the_taps(vm):
         await vm.stop()
 
     assert order == ["process", "taps"]
+
+
+@pytest.mark.asyncio
+async def test_concurrent_stops_sweep_every_tap_exactly_once(vm):
+    """
+    The process monitor calls stop() by itself when QEMU dies, so an API stop
+    and a process-death stop run concurrently in the normal case. Both used to
+    reach the TAP sweep, which walks the adapter map across awaits: whichever
+    swept first cleared the map under the other's iterator, and the survivor
+    died with "dictionary changed size during iteration" — logged against the
+    monitor's task as "Task exception was never retrieved", with the rest of
+    its sweep skipped.
+
+    The first stop is parked inside the sweep while the second one runs to
+    completion (in the fixed code it waits on the execution lock instead), then
+    released: every TAP must be swept exactly once and the sweep must survive.
+    """
+
+    _running(vm)
+    vm._tap_datapath = True
+    vm._kernel_taps[(0, 0)] = TAP0
+    vm._kernel_taps[(1, 0)] = TAP1
+
+    release = asyncio.Event()
+    deletes = []
+
+    async def send(command):
+        if command.startswith("tap delete"):
+            deletes.append(command)
+            if len(deletes) == 1:
+                # park the first stop in the middle of its sweep
+                await release.wait()
+
+    vm._ubridge_send = AsyncioMagicMock(side_effect=send)
+
+    async def fake_termination(process, timeout=None):
+        pass
+
+    with (
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=fake_termination),
+        asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._export_config"),
+        asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._clear_save_vm_stated"),
+        asyncio_patch("gns3server.compute.base_node.BaseNode.stop"),
+    ):
+        api_stop = asyncio.ensure_future(vm.stop())
+        for _ in range(50):
+            if deletes:
+                break
+            await asyncio.sleep(0)
+        assert deletes, "the first stop never reached the TAP sweep"
+
+        monitor_stop = asyncio.ensure_future(vm.stop())
+        for _ in range(50):
+            if monitor_stop.done():
+                break
+            await asyncio.sleep(0)
+
+        release.set()
+        await asyncio.gather(api_stop, monitor_stop)
+
+    assert sorted(deletes) == [f'tap delete "{TAP0}"', f'tap delete "{TAP1}"']
