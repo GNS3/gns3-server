@@ -53,19 +53,30 @@ async def _kernel_link(project, **kwargs):
 
 
 def _mock_compute_http(compute):
-    """Wire the async compute HTTP callbacks the relay _prepare path needs."""
+    """Wire the async compute HTTP callbacks the relay paths need: POST
+    (port reservation, NIO creation) and PUT (filter updates — without an
+    awaitable put, a relay filter update blows up on the sync MagicMock,
+    which is what made this file fail when run alone: some other module's
+    fixtures happened to mask it in a full run)."""
 
     async def subnet_callback(other):
         return ("192.168.1.1", "192.168.1.2")
 
     compute.get_ip_on_same_subnet.side_effect = subnet_callback
 
-    async def port_callback(path, data=None, **kwargs):
+    async def post_callback(path, data=None, **kwargs):
         response = MagicMock()
         response.json = {"udp_port": 1024}
         return response
 
-    compute.post.side_effect = port_callback
+    compute.post.side_effect = post_callback
+
+    async def put_callback(path, data=None, **kwargs):
+        response = MagicMock()
+        response.json = {}
+        return response
+
+    compute.put.side_effect = put_callback
 
 
 async def _relay_link(project):
@@ -855,9 +866,10 @@ async def test_switch_links_select_the_kernel_fast_path(project):
     """
     A link with an Ethernet switch endpoint rides the kernel fast path when
     the *peer* can anchor — the switch side needs no anchoring capability
-    (its bridge exists by construction). Switch-to-switch links never
-    qualify (a kernel interface belongs to exactly one bridge), nor do
-    anchor-less peers.
+    (its bridge exists by construction). A switch peer cascades through a
+    veth pair (one end per bridge — a kernel interface belongs to exactly
+    one bridge, so the pair is the only cable shape); anchor-less peers
+    stay on the relay.
     """
 
     compute = MagicMock()
@@ -874,10 +886,10 @@ async def test_switch_links_select_the_kernel_fast_path(project):
         link = await _link(project, switch, peer)
         assert link._kernel_datapath_eligible(switch, peer) is True, peer.node_type
 
-    # a switch peer: cascades need a veth pair between two bridges — relay
+    # a switch peer: cascade — the veth pair joins the two kernel bridges
     switch2 = _node(project, compute, "sw2", node_type="ethernet_switch")
     link = await _link(project, switch, switch2)
-    assert link._kernel_datapath_eligible(switch, switch2) is False
+    assert link._kernel_datapath_eligible(switch, switch2) is True
 
     # an anchor-less peer
     vpcs = _node(project, compute, "pc1", node_type="vpcs")
@@ -969,3 +981,78 @@ async def test_switch_link_repushes_the_switch_nio_on_node_start(project):
     relay_switch.put = AsyncioMagicMock()
     await relay_link.node_started(vpcs)
     assert not relay_switch.put.called
+
+
+# ---------------------------------------------------------------------------
+# Switch-to-switch cascade: one veth pair joins the two kernel bridges
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_prepare_cascade_link_emits_paired_anchor_nios(project):
+    """
+    A link between two Ethernet switches rides the kernel datapath through
+    one veth pair: each side gets an anchor NIO naming its own end and
+    carrying the other end's name (both sides create the pair when their
+    end is missing, so no ordering between the two NIO posts is needed).
+    Unlike the absorbed-anchor fast path, filters are two-sided — each end
+    is its own interface, so each direction of the link is impaired exactly
+    once like any other kernel link.
+    """
+
+    from gns3server.utils.kernel_anchor import kernel_cascade_names
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    sw1 = _node(project, compute, "sw1", node_type="ethernet_switch")
+    sw2 = _node(project, compute, "sw2", node_type="ethernet_switch")
+    link = await _link(project, sw1, sw2)
+    link._filters = {"delay": [10]}
+
+    entries = await link._prepare()
+    end0, end1 = kernel_cascade_names(link.id)
+
+    assert entries[0][3] == {
+        "type": "nio_anchor",
+        "anchor": end0,
+        "peer": end1,
+        "filters": {"delay": [10]},
+        "markers": {},
+        "suspend": False,
+    }
+    assert entries[1][3] == {
+        "type": "nio_anchor",
+        "anchor": end1,
+        "peer": end0,
+        "filters": {"delay": [10]},
+        "markers": {},
+        "suspend": False,
+    }
+    assert link.kernel_datapath is True
+
+
+@pytest.mark.asyncio
+async def test_node_started_repushes_both_cascade_ends(project):
+    """
+    A cascade link has a switch on both ends and each end is its own veth
+    half: whichever switch starts (recreating its bridge and losing its
+    half's membership), both ends are re-pushed — each switch's update
+    re-checks and re-joins its own half.
+    """
+
+    from tests.utils import AsyncioMagicMock
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    sw1 = _node(project, compute, "sw1", node_type="ethernet_switch")
+    sw2 = _node(project, compute, "sw2", node_type="ethernet_switch")
+    link = await _link(project, sw1, sw2)
+    entries = await link._prepare()
+    link._created = True
+    sw1.put = AsyncioMagicMock()
+    sw2.put = AsyncioMagicMock()
+
+    await link.node_started(sw1)
+
+    sw1.put.assert_called_once_with("/adapters/0/ports/0/nio", data=entries[0][3], timeout=120)
+    sw2.put.assert_called_once_with("/adapters/0/ports/0/nio", data=entries[1][3], timeout=120)

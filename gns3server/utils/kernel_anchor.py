@@ -66,3 +66,19 @@ def kernel_anchor_name(node_type, node_id, adapter_number, port_number=0):
     if prefix is None:
         return None
     return prefix + anchor_suffix(node_id, adapter_number, port_number)
+
+
+def kernel_cascade_names(link_id):
+    """
+    The two veth ends of a switch-to-switch cascade link, as
+    ``(owner end, peer end)``. The pair belongs to the *link* (not to either
+    switch): both names are a pure function of the link id, so each side
+    computes its own end and the controller can hand each switch exactly
+    the name to enslave — the same deterministic-name trick per-link
+    bridges use. ``gs`` keeps the cascade ends out of the node-anchor and
+    ``gns3`` name spaces; 10 hex chars of the link id plus the side index
+    stay within IFNAMSIZ (15).
+    """
+
+    stem = str(link_id).replace("-", "")[:10]
+    return f"gs{stem}0", f"gs{stem}1"

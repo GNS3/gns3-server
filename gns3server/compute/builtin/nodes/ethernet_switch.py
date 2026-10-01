@@ -80,6 +80,11 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         self._nios = {}
         self._tap_by_port = {}  # port_number -> kernel TAP enslaved to the bridge
         self._kernel_ports = {}  # port_number -> foreign anchor absorbed into the bridge
+        # port_number -> the other end's name, for the ports that are one end
+        # of a switch-to-switch cascade veth pair (created when missing,
+        # destroyed on teardown — symmetrically, from either side). Absent
+        # for absorbed anchors and relay ports.
+        self._cascade_peers = {}
         self._bridge_name = None  # kernel bridge interface name (allocated on start)
         self._bridge_created = False
         self._bridge_proto_set = False  # whether ``brctl setvlanproto`` has been applied
@@ -299,6 +304,17 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             for anchor in self._kernel_ports.values():
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{anchor}"')
+            # Cascade pairs die with the switch: the delif above released
+            # this end, and deleting it takes the peer end (still enslaved
+            # on the other side, if that close is still in flight) out of
+            # its bridge as well — which is where the pair is headed anyway,
+            # the link is going away with the project. The other switch's
+            # own delete answers ENOENT, suppressed.
+            for port_number in self._cascade_peers:
+                anchor = self._kernel_ports.get(port_number)
+                if anchor is not None:
+                    with contextlib.suppress(UbridgeError):
+                        await self._ubridge_send(f'docker delete_veth "{anchor}"')
             for tap in self._tap_by_port.values():
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{tap}"')
@@ -313,6 +329,7 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             self._bridge_name = None
         self._tap_by_port.clear()
         self._kernel_ports.clear()
+        self._cascade_peers.clear()
         self._started = False
 
         await self._stop_ubridge()
@@ -433,6 +450,29 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             raise NodeError(f"Port {port_number} doesn't exist on Ethernet switch '{self.name}'")
 
         anchor = nio.anchor
+        if nio.peer is not None:
+            # Cascade: this port is one end of a link-owned veth pair. Both
+            # sides create the pair when their end is missing — the two
+            # uBridge processes may race (the project-open batch even wires
+            # different nodes concurrently), one create wins and the other's
+            # failure is re-checked against the kernel: an existing pair
+            # means the race was lost, anything else is a real failure the
+            # link must not paper over. A pre-existing end (this switch
+            # restarted, or a leftover from a previous life of this link id
+            # — the names are a function of it) is reused as-is: the other
+            # end may still be a live port of the peer switch, and a stale
+            # tc qdisc is all a reused end can carry (VLAN entries die with
+            # the bridge that held them).
+            self._cascade_peers[port_number] = nio.peer
+            if not os.path.exists(f"/sys/class/net/{anchor}"):
+                try:
+                    await self._ubridge_send(f'docker create_veth "{anchor}" "{nio.peer}"')
+                except UbridgeError:
+                    if not os.path.exists(f"/sys/class/net/{anchor}"):
+                        raise
+            else:
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'tc reset "{anchor}"')
         # Register before _kernel_attach: the marker reconcile recognises
         # kernel anchors through _kernel_anchors().
         self._kernel_ports[port_number] = anchor
@@ -459,10 +499,15 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         """
         Releases an absorbed anchor: detaches the link state (markers,
         impairments, carrier) and takes the anchor out of the switch bridge.
-        The anchor itself belongs to the peer and survives.
+        The anchor itself belongs to the peer and survives. A cascade end
+        dies with the link instead: deleting one veth end destroys the pair
+        (and the peer end with it), so either side's teardown converges on
+        the same gone pair — the other side's delif then answers ENOENT,
+        suppressed.
         """
 
         anchor = self._kernel_ports.pop(port_number, None)
+        peer = self._cascade_peers.pop(port_number, None)
         if anchor is None:
             return
         await self._remove_kernel_markers(anchor)
@@ -473,6 +518,9 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
                 await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{anchor}"')
         with contextlib.suppress(UbridgeError):
             await self._ubridge_send(f'link set "{anchor}" down')
+        if peer is not None:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'docker delete_veth "{anchor}"')
 
     async def _delete_ubridge_connection(self, port_number):
         """

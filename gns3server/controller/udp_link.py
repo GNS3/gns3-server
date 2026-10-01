@@ -21,7 +21,7 @@ import logging
 
 from gns3server.config import Config
 from gns3server.utils.application_id import is_iol_runner_environment
-from gns3server.utils.kernel_anchor import kernel_anchor_name
+from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_cascade_names
 from gns3server.utils.packet_filter_validation import (
     KERNEL_UNSUPPORTED_FILTERS,
     split_kernel_only_features,
@@ -121,9 +121,15 @@ class UDPLink(Link):
             # Ethernet switch fast path: the link's tc impairments apply on
             # the absorbed anchor, which is a single interface — exactly one
             # end may own them, and that end is the switch (it owns the
-            # anchor's bridge membership and port VLANs).
+            # anchor's bridge membership and port VLANs). A cascade link is
+            # two interfaces (one veth end per switch), so it takes the
+            # normal two-sided treatment like any other kernel link.
             switch = self._switch_endpoint()
-            if switch is not None:
+            both_switches = (
+                self._nodes[0]["node"].node_type == "ethernet_switch"
+                and self._nodes[1]["node"].node_type == "ethernet_switch"
+            )
+            if switch is not None and not both_switches:
                 return (self._filters, {}) if switch[0] == 0 else ({}, self._filters)
             return self._filters, self._filters
         # Relay datapath: the netem-extension filters (rate, reorder, gemodel…)
@@ -217,14 +223,14 @@ class UDPLink(Link):
         # Ethernet switch fast path: the switch absorbs the peer's anchor
         # into its own kernel bridge, so the switch side needs no anchoring
         # capability of its own (its bridge and brctl already exist) — only
-        # the peer must be able to anchor. Two switches never qualify: a
-        # kernel interface belongs to exactly one bridge, so a cascaded
-        # link would need a veth pair between the two bridges and stays on
-        # the relay for now.
+        # the peer must be able to anchor. Two switches cascade instead: a
+        # veth pair joins the two kernel bridges, each side enslaving its
+        # own end (a kernel interface belongs to exactly one bridge, so the
+        # pair is the only shape a bridge-to-bridge cable can take).
         switch = self._switch_endpoint()
         if switch is not None:
             if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
-                return False
+                return True
             peer = node2 if switch[0] == 0 else node1
             return self._kernel_endpoint_ready(peer)
         return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
@@ -292,6 +298,47 @@ class UDPLink(Link):
             node1_markers, node2_markers = self._get_node_markers(node1, node2)
             switch = self._switch_endpoint()
             if switch is not None:
+                if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
+                    # Switch-to-switch cascade: one veth pair joins the two
+                    # kernel bridges, each side enslaving its own end into
+                    # its own bridge and applying its own port mode to it —
+                    # the kernel-native shape of a cable between two
+                    # bridges (an interface belongs to exactly one bridge,
+                    # so the pair is the only way to express it). The names
+                    # derive from the link id (utils.kernel_anchor) and both
+                    # sides carry the other end's name: each creates the
+                    # pair when its end is missing (the two uBridge
+                    # processes may race — one create wins, the other's
+                    # failure is re-checked against the kernel), and either
+                    # side's teardown may destroy it (deleting one veth end
+                    # takes the whole pair), so no ordering between the two
+                    # NIO posts is needed. Filters are two-sided (each end
+                    # is its own interface, so each direction is impaired
+                    # exactly once, like any other kernel link — not the
+                    # single-sided absorbed-anchor case).
+                    end0, end1 = kernel_cascade_names(self._id)
+                    self._link_data = [
+                        {
+                            "type": "nio_anchor",
+                            "anchor": end0,
+                            "peer": end1,
+                            "filters": node1_filters,
+                            "markers": node1_markers,
+                            "suspend": self._suspended,
+                        },
+                        {
+                            "type": "nio_anchor",
+                            "anchor": end1,
+                            "peer": end0,
+                            "filters": node2_filters,
+                            "markers": node2_markers,
+                            "suspend": self._suspended,
+                        },
+                    ]
+                    return [
+                        (node1, adapter_number1, port_number1, self._link_data[0]),
+                        (node2, adapter_number2, port_number2, self._link_data[1]),
+                    ]
                 # Ethernet switch fast path: the switch absorbs the peer's
                 # anchor into its own kernel bridge — no per-link bridge at
                 # all, so the peer end carries no bridge name (its anchor is
@@ -430,8 +477,12 @@ class UDPLink(Link):
 
         # The two ends are independent once the ports and peer addresses are
         # known — each node talks to its own compute/uBridge with no shared
-        # lock between them — so the two POSTs overlap. If either fails, roll
-        # back whichever side succeeded before re-raising the first error.
+        # lock between them — so the two POSTs overlap. That includes a
+        # cascade link: both sides create the veth pair when their end is
+        # missing (a race one side is designated to lose benignly), so
+        # neither post depends on the other's completion. If either fails,
+        # roll back whichever side succeeded before re-raising the first
+        # error.
         results = await asyncio.gather(
             node1.post(f"/adapters/{adapter_number1}/ports/{port_number1}/nio", data=nio_data1, timeout=120),
             node2.post(f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=nio_data2, timeout=120),
@@ -677,19 +728,28 @@ class UDPLink(Link):
         switch = self._switch_endpoint()
         if switch is None or not self.kernel_datapath:
             return
-        index, switch_node = switch
-        adapter_number = self._nodes[index]["adapter_number"]
-        port_number = self._nodes[index]["port_number"]
-        try:
-            await switch_node.put(
-                f"/adapters/{adapter_number}/ports/{port_number}/nio",
-                data=self._link_data[index],
-                timeout=120,
-            )
-        except (ComputeError, ControllerError):
-            # The link keeps its stored NIO; the next node start or link
-            # update retries. A failure here must not fail the node start.
-            log.warning("Could not re-push switch NIO for link %s after node start", self.id)
+        both_switches = (
+            self._nodes[0]["node"].node_type == "ethernet_switch"
+            and self._nodes[1]["node"].node_type == "ethernet_switch"
+        )
+        # A cascade link has a switch on both ends and each end is its own
+        # veth half: either switch starting (recreating its bridge) can
+        # leave its own half unjoined, so both ends are re-pushed.
+        indices = [0, 1] if both_switches else [switch[0]]
+        for index in indices:
+            switch_node = self._nodes[index]["node"]
+            adapter_number = self._nodes[index]["adapter_number"]
+            port_number = self._nodes[index]["port_number"]
+            try:
+                await switch_node.put(
+                    f"/adapters/{adapter_number}/ports/{port_number}/nio",
+                    data=self._link_data[index],
+                    timeout=120,
+                )
+            except (ComputeError, ControllerError):
+                # The link keeps its stored NIO; the next node start or link
+                # update retries. A failure here must not fail the node start.
+                log.warning("Could not re-push switch NIO for link %s after node start", self.id)
 
     async def start_marker(
         self,

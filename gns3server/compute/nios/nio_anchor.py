@@ -40,12 +40,22 @@ class NIOAnchor(NIO):
     Anchor-absorbing NIO.
 
     :param anchor: host interface to join to the node's own bridge
+    :param peer: for a switch-to-switch cascade link, the *other* end of the
+        veth pair this port is one end of. Both sides carry it: each creates
+        the pair when its end is missing (``docker create_veth <anchor>
+        <peer>``, the race between the two uBridge processes lost benignly
+        by whoever's create answers "exists"), and either side's teardown
+        may destroy it — deleting one veth end takes the whole pair, so the
+        deletions converge. Absent on absorbed-anchor links, where the
+        interface belongs to the peer's node and is never this switch's to
+        create or destroy.
     """
 
-    def __init__(self, anchor):
+    def __init__(self, anchor, peer=None):
 
         super().__init__()
         self._anchor = anchor
+        self._peer = peer
 
     @property
     def anchor(self):
@@ -56,6 +66,17 @@ class NIOAnchor(NIO):
         """
 
         return self._anchor
+
+    @property
+    def peer(self):
+        """
+        Returns the other end of the cascade veth pair, or None when the
+        anchor is a foreign interface the switch merely absorbs.
+
+        :returns: interface name or None
+        """
+
+        return self._peer
 
     @property
     def bridge(self):
@@ -75,10 +96,13 @@ class NIOAnchor(NIO):
 
     def asdict(self):
 
-        return {
+        data = {
             "type": "nio_anchor",
             "anchor": self._anchor,
             "suspend": self._suspended,
             "filters": self._filters,
             "markers": self._markers,
         }
+        if self._peer is not None:
+            data["peer"] = self._peer
+        return data

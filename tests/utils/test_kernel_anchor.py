@@ -17,12 +17,14 @@
 """
 The kernel-datapath anchor naming contract (shared by the compute classes
 that create anchors and the controller that names a peer's anchor for an
-Ethernet-switch link).
+Ethernet-switch link), plus the cascade veth naming for switch-to-switch
+links.
 """
 
-from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name
+from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name, kernel_cascade_names
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
+LINK_ID = "1a2b3c4d-5e6f-4a5b-8c9d-0e1f2a3b4c5d"
 
 
 def test_every_node_type_has_its_own_prefix():
@@ -45,3 +47,22 @@ def test_names_fit_ifnamsiz():
 def test_suffix_is_stable_across_the_node_type():
     assert anchor_suffix(NODE_ID, 1, 2) == "00010203e1p2"
     assert kernel_anchor_name("docker", NODE_ID, 1, 2) == "gv" + anchor_suffix(NODE_ID, 1, 2)
+
+
+def test_cascade_names_are_a_pair_of_distinct_sides():
+    end0, end1 = kernel_cascade_names(LINK_ID)
+    assert end0 == "gs1a2b3c4d5e0"
+    assert end1 == "gs1a2b3c4d5e1"
+    assert end0 != end1
+
+
+def test_cascade_names_fit_ifnamsiz():
+    for end in kernel_cascade_names(LINK_ID):
+        assert len(end) <= 15
+
+
+def test_cascade_names_stay_out_of_the_node_anchor_namespace():
+    # "gs" cannot collide with any node anchor prefix (gv/gq/gi/gd), so a
+    # cascade end is never mistaken for another node's anchor
+    for end in kernel_cascade_names(LINK_ID):
+        assert not any(end.startswith(prefix) for prefix in ("gv", "gq", "gi", "gd"))

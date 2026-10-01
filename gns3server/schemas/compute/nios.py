@@ -120,6 +120,11 @@ class AnchorNIO(BaseModel):
 
     type: AnchorNIOType
     anchor: str = Field(..., description="Host interface to absorb e.g. gv00010203e0p0")
+    peer: Optional[str] = Field(
+        None,
+        description="Switch-to-switch cascade: the other end of the veth pair this port is one end of. Present on "
+        "exactly one side (the owner, which creates and destroys the pair); absent for an absorbed anchor",
+    )
     suspend: Optional[bool] = Field(None, description="Suspend the NIO")
     filters: Optional[dict] = Field(
         None,

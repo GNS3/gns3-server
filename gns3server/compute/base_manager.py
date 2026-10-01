@@ -384,8 +384,9 @@ class BaseManager:
         elif nio_settings["type"] == "nio_anchor":
             # The node-owned-bridge mirror of nio_bridge: the Ethernet
             # switch joins the named foreign anchor to its own kernel
-            # bridge (AnchorNIO/NIOAnchor).
-            nio = NIOAnchor(nio_settings["anchor"])
+            # bridge (AnchorNIO/NIOAnchor). A cascade link carries the
+            # other veth end's name in "peer" on the owning side.
+            nio = NIOAnchor(nio_settings["anchor"], nio_settings.get("peer"))
             nio.filters = nio_settings.get("filters", {})
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)

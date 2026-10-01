@@ -822,6 +822,174 @@ class TestEthernetSwitchNodesRoutes:
         assert node._kernel_ports[3] == anchor
 
     # ------------------------------------------------------------------ #
+    # switch-to-switch cascade: one veth pair joins the two bridges
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _cascade_params(anchor: str, peer: str) -> dict:
+        return {"type": "nio_anchor", "anchor": anchor, "peer": peer}
+
+    def _cascade_sysfs(self, anchor: str, exists: dict):
+        """An ``os.path.exists`` whose answer for *one* interface flips with
+        the ``exists`` flag — for the create-race test, where the pair comes
+        into being between the pre-check and the failed create."""
+        real = os.path.exists
+
+        def fake(path):
+            value = str(path)
+            if value == f"/sys/class/net/{anchor}":
+                return exists["value"]
+            if "/brif/" in value:
+                return True
+            if value.startswith("/sys/class/net/"):
+                return True
+            return real(value)
+
+        return patch("os.path.exists", new=fake)
+
+    async def test_ethernet_switch_create_cascade_nio_creates_the_pair(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        A cascade port is one end of a link-owned veth pair: the switch
+        creates the pair (uBridge's docker create_veth — the same primitive
+        every Docker adapter is born from) and enslaves its own end into its
+        bridge with the port's VLAN mode, exactly like an absorbed anchor.
+        """
+
+        anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        exists = {"value": False}
+
+        async def create_the_pair(command):
+            if "create_veth" in str(command):
+                exists["value"] = True
+
+        node._ubridge_send.side_effect = create_the_pair
+
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._cascade_sysfs(anchor, exists):
+            response = await compute_client.post(url, json=self._cascade_params(anchor, peer))
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["peer"] == peer
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'docker create_veth "{anchor}" "{peer}"')
+        node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
+        node._ubridge_send.assert_any_call(f'brctl vlan_add "{br}" "{anchor}" 1 pvid untagged')
+        node._ubridge_send.assert_any_call(f'link set "{anchor}" up')
+        assert node._kernel_ports[0] == anchor
+        assert node._cascade_peers[0] == peer
+
+    async def test_ethernet_switch_create_cascade_nio_reuses_an_existing_pair(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        An existing end (this switch restarted, or a leftover from a previous
+        life of this link id) is reused as-is: the other end may still be a
+        live port of the peer switch, so the pair is never destroyed here —
+        a stale tc qdisc is all a reused end can carry, and the reset clears
+        it before the join.
+        """
+
+        anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._cascade_sysfs(anchor, {"value": True}):
+            response = await compute_client.post(url, json=self._cascade_params(anchor, peer))
+        assert response.status_code == status.HTTP_201_CREATED
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'tc reset "{anchor}"')
+        node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
+        assert not any("create_veth" in str(c) for c in node._ubridge_send.call_args_list)
+
+    async def test_ethernet_switch_create_cascade_nio_lost_create_race(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        Both cascade sides create the pair when their end is missing, so the
+        two uBridge processes can race: the loser's create fails with
+        "exists", the kernel re-check shows the pair is there, and the join
+        proceeds — a lost race is not an error.
+        """
+
+        from gns3server.compute.ubridge.ubridge_error import UbridgeError
+
+        anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        exists = {"value": False}
+
+        async def lose_the_race(command):
+            if "create_veth" in str(command):
+                # the peer switch's create won between our pre-check and now
+                exists["value"] = True
+                raise UbridgeError("202-interface already exists")
+
+        node._ubridge_send.side_effect = lose_the_race
+
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._cascade_sysfs(anchor, exists):
+            response = await compute_client.post(url, json=self._cascade_params(anchor, peer))
+        assert response.status_code == status.HTTP_201_CREATED
+
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
+        assert node._kernel_ports[0] == anchor
+
+    async def test_ethernet_switch_delete_cascade_nio_destroys_the_pair(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        The cascade pair dies with the link: the teardown detaches the link
+        state, delifs the end, and destroys the pair (deleting one veth end
+        takes the peer end with it — either side's teardown converges on the
+        same gone pair).
+        """
+
+        anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._cascade_sysfs(anchor, {"value": True}):
+            await compute_client.post(url, json=self._cascade_params(anchor, peer))
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.reset_mock()
+
+        response = await compute_client.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        br = node._bridge_name
+        node._ubridge_send.assert_any_call(f'brctl delif "{br}" "{anchor}"')
+        node._ubridge_send.assert_any_call(f'docker delete_veth "{anchor}"')
+        assert node._kernel_ports == {}
+        assert node._cascade_peers == {}
+
+    # ------------------------------------------------------------------ #
     # in-place VLAN reconfiguration (no port ever leaves the bridge)
     # ------------------------------------------------------------------ #
 

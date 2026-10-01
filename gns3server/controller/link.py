@@ -207,9 +207,10 @@ class Link:
         anchors into a per-link Linux bridge (``nio_bridge``), or an
         Ethernet switch absorbs the peer's anchor into its own kernel
         bridge (``nio_anchor`` on the switch end, ``nio_bridge`` with no
-        bridge on the peer end). Impairment filters run as tc netem on the
-        anchors; markers and capture are served by uBridge's AF_PACKET
-        module.
+        bridge on the peer end), or two switches are cascaded through a
+        veth pair (``nio_anchor`` on both ends). Impairment filters run as
+        tc netem on the anchors; markers and capture are served by
+        uBridge's AF_PACKET module.
         """
         return any(d.get("type") in ("nio_bridge", "nio_anchor") for d in (getattr(self, "_link_data", None) or []))
 
