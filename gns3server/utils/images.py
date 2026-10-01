@@ -164,7 +164,7 @@ def inspect_image_file(path, expected_image_type=None, allow_raw_image=False, st
     )
 
 
-async def read_image_info(path: str, expected_image_type: str = None, allow_raw_image=False) -> dict:
+async def read_image_info(path: str, expected_image_type: str | None = None, allow_raw_image=False) -> dict:
     try:
         return await asyncio.to_thread(inspect_image_file, path, expected_image_type, allow_raw_image)
     except OSError as e:
@@ -376,7 +376,7 @@ async def write_image(
             break
     if len(prefix) < 7:
         raise InvalidImageError("The image content is empty or too small to be valid")
-    image_type = check_valid_image_header(image_path, prefix, allow_raw_image or not check_image_header)
+    image_type = check_valid_image_header(image_path, bytes(prefix), allow_raw_image or not check_image_header)
     if not image_dir:
         image_path = os.path.abspath(os.path.join(default_images_directory(image_type), image_name))
         root = os.path.realpath(os.path.expanduser(Config.instance().settings.Server.images_path))
@@ -399,8 +399,8 @@ async def write_image(
                 raise InvalidImageError(
                     f"File '{image_path}' already exists, please choose a different name or remove the existing image"
                 )
-            checksum = checksum.hexdigest()
-            duplicate_image = await images_repo.get_image_by_checksum(checksum, os.path.dirname(image_path))
+            checksum_str: str = checksum.hexdigest()
+            duplicate_image = await images_repo.get_image_by_checksum(checksum_str, os.path.dirname(image_path))
             if duplicate_image:
                 raise InvalidImageError(
                     f"Image '{duplicate_image.filename}' with the same checksum "
@@ -410,17 +410,20 @@ async def write_image(
             publish_image(tmp_path, image_path)
             # Complete files survive a database failure so the next scan can
             # recover them. Never compensate by unlinking a published image.
-            return await images_repo.save_verified_image(
+            image = await images_repo.save_verified_image(
                 dict(
                     image_name=image_name,
                     image_type=image_type,
                     image_size=image_size,
                     path=image_path,
-                    checksum=checksum,
+                    checksum=checksum_str,
                     checksum_algorithm="md5",
                     file_fingerprint=fingerprint(image_path),
                 )
             )
+            if image is None:
+                raise InvalidImageError(f"Failed to save image '{image_name}' to database")
+            return image
     finally:
         try:
             if os.path.exists(tmp_path):

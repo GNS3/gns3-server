@@ -277,9 +277,7 @@ extend-immutable-calls = [
 "tests/test_utils.py" = ["F403", "F405"]
 "tests/utils/test_asyncio.py" = ["B017"]
 "tests/utils/test_packet_filter_validation.py" = ["W292"]
-"tests/tests/services/test_image_reconciliation.py" = ["S324"]
-
-
+"tests/services/test_image_reconciliation.py" = ["S324"]
 
 [tool.mypy]
 files = ["gns3server"]

@@ -154,7 +154,7 @@ class ImagesRepository(BaseRepository):
             await self._db_session.refresh(image_db)  # force refresh of updated_at value
         return image_db
 
-    async def save_verified_image(self, info: dict) -> models.Image:
+    async def save_verified_image(self, info: dict) -> Optional[models.Image]:
         """Upsert an exact path, preserving template associations and the image ID.
 
         Callers coordinate publication/inspection with image_lock(). Each commit
@@ -217,11 +217,12 @@ class ImagesRepository(BaseRepository):
             except Exception:
                 await self._db_session.rollback()
                 raise
+        return None
 
     async def delete_image_exact(self, image_id: int) -> bool:
         result = await self._db_session.execute(delete(models.Image).where(models.Image.image_id == image_id))
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
     async def delete_image(self, image_path: str) -> bool:
         """
@@ -246,7 +247,7 @@ class ImagesRepository(BaseRepository):
         await self._db_session.commit()
         return cast(CursorResult, result).rowcount > 0
 
-    async def prune_images(self, skip_images: Optional[list[str]] = None,  is_in_use: Optional[Callable] = None) -> int:
+    async def prune_images(self, skip_images: Optional[list[str]] = None, is_in_use: Optional[Callable] = None) -> int:
         """
         Prune images not attached to any template.
         """

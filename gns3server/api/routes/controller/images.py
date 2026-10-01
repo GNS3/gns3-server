@@ -110,7 +110,7 @@ async def create_qemu_image(
     image_path: str,
     image_data: schemas.QemuDiskImageCreate,
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> models.Image:
+) -> Optional[models.Image]:
     """
     Create a new blank Qemu image.
 

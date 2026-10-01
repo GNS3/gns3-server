@@ -203,7 +203,7 @@ async def update_disk_checksums(updated_disks: List[str]) -> None:
                 repository = ImagesRepository(db_session)
                 image = await repository.get_image(path)
                 if image:
-                    info = await read_image_info(path, image.image_type, allow_raw_image=True)
+                    info = await read_image_info(path, str(image.image_type), allow_raw_image=True)
                     try:
                         os.unlink(path + ".md5sum")
                     except FileNotFoundError:
