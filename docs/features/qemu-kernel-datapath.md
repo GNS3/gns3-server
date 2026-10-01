@@ -172,4 +172,7 @@ a separate project (it would serve Docker links the same way).
 
 Update: **IOU has landed** on the same mixin — see
 `docs/features/iou-kernel-datapath.md` (Ethernet bays anchor on persistent
-TAPs bound to the IOL fabric; serial links stay relay).
+TAPs bound to the IOL fabric; serial links stay relay). **Dynamips has
+landed** too — see `docs/features/dynamips-kernel-datapath.md` (the
+hypervisor opens uBridge-created TAPs with `nio create_tap`: the same
+external-fd-holder shape QEMU uses; serial/ATM/POS ports stay relay).
