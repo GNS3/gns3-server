@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 import pytest_asyncio
 import tempfile
 import shutil
@@ -101,12 +102,32 @@ async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncGenerator[
 
     app.dependency_overrides[get_db_session] = _get_test_db
 
-    async with AsyncClient(
-        base_url="http://test-api",
-        headers={"Content-Type": "application/json"},
-        transport=ASGIWebSocketTransport(app=app),
-    ) as async_client:
-        yield async_client
+    # AnyIO cancel scopes must be entered and exited by the same task. Recent
+    # pytest-asyncio versions finalize yield fixtures in a different task.
+    ready = asyncio.get_running_loop().create_future()
+    finished = asyncio.Event()
+
+    async def own_client():
+        try:
+            async with AsyncClient(
+                base_url="http://test-api",
+                headers={"Content-Type": "application/json"},
+                transport=ASGIWebSocketTransport(app=app),
+            ) as async_client:
+                ready.set_result(async_client)
+                await finished.wait()
+        except BaseException as e:
+            if not ready.done():
+                ready.set_exception(e)
+            raise
+
+    owner = asyncio.create_task(own_client())
+    try:
+        yield await ready
+    finally:
+        finished.set()
+        await owner
+        app.dependency_overrides.pop(get_db_session, None)
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")

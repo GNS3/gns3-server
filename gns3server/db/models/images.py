@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Column, String, ForeignKey, BigInteger, Integer
+from sqlalchemy import Table, Column, String, ForeignKey, BigInteger, Integer, DateTime, JSON, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, BaseTable, GUID
@@ -39,4 +39,21 @@ class Image(BaseTable):
     image_size = Column(BigInteger)
     checksum = Column(String, index=True)
     checksum_algorithm = Column(String)
+    availability = Column(String, nullable=False, default="unknown", server_default="unknown")
+    file_fingerprint = Column(String)
+    last_seen_at = Column(DateTime)
+    last_verified_at = Column(DateTime)
+    last_error = Column(String)
     templates = relationship("Template", secondary=image_template_map, back_populates="images")
+
+
+class ImageSyncJob(BaseTable):
+    __tablename__ = "image_sync_jobs"
+
+    job_id = Column(String, primary_key=True)
+    status = Column(String, nullable=False)
+    dry_run = Column(Boolean, nullable=False)
+    force_checksum = Column(Boolean, nullable=False)
+    finished_at = Column(DateTime)
+    counts = Column(JSON, nullable=False)
+    errors = Column(JSON, nullable=False)

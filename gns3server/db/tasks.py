@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
-import time
 import os
 
 from fastapi import FastAPI
@@ -31,13 +29,10 @@ from alembic import command, config
 from alembic.script import ScriptDirectory
 from alembic.runtime.migration import MigrationContext
 from alembic.util.exc import CommandError
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.utils.images import md5sum, discover_images, read_image_info, InvalidImageError
-from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.images import read_image_info
 from gns3server import schemas
 
 from .models import Base
@@ -142,7 +137,18 @@ async def connect_to_db(app: FastAPI) -> None:
                     log.info("Created new database and stamped to head revision")
                 elif db_state == "new_with_llm_configs":
                     # Database already has llm_model_configs table (from Base.metadata.create_all)
-                    # Just stamp the version
+                    # Older unversioned metadata databases lack inventory fields.
+                    # Ensure the additive schema before stamping the current head.
+                    def upgrade_inventory(connection):
+                        from alembic.operations import Operations
+                        from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
+                            upgrade,
+                        )
+
+                        with Operations.context(MigrationContext.configure(connection)):
+                            upgrade()
+
+                    await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
                     await conn.commit()
                     log.info("Database has llm_model_configs table, stamped to head revision")
@@ -186,145 +192,25 @@ async def get_computes(app: FastAPI) -> List[schemas.Compute]:
     return computes
 
 
-async def discover_images_on_filesystem(app: FastAPI) -> None:
-
-    async with AsyncSession(app.state._db_engine) as db_session:
-        images_repository = ImagesRepository(db_session)
-        db_images = await images_repository.get_images()
-        existing_image_paths = []
-        for db_image in db_images:
-            try:
-                image = schemas.Image.model_validate(db_image)
-                existing_image_paths.append(image.path)
-            except ValidationError as e:
-                log.error(f"Could not load image '{db_image.filename}' from database: {e}")
-                continue
-        for image_type in ("qemu", "ios", "iou"):
-            discovered_images = await discover_images(image_type, existing_image_paths)
-            for image_info in discovered_images:
-                log.info(f"Adding discovered image '{image_info['path']}' to the database")
-                try:
-                    await images_repository.add_image(**image_info)
-                except SQLAlchemyError as e:
-                    log.warning(f"Error while adding image '{image_info['path']}' to the database: {e}")
-
-    # monitor if images have been manually added
-    asyncio.create_task(monitor_images_on_filesystem(app))
-
-
 async def update_disk_checksums(updated_disks: List[str]) -> None:
-    """
-    Update the checksum of a list of disks in the database.
-
-    :param updated_disks: list of updated disks
-    """
-
+    """Refresh complete metadata after a server-managed disk modification."""
     from gns3server.api.server import app
+    from gns3server.utils.image_inventory import image_lock
 
-    async with AsyncSession(app.state._db_engine) as db_session:
-        images_repository = ImagesRepository(db_session)
-        for path in updated_disks:
-            image = await images_repository.get_image(path)
-            if image:
-                log.info(f"Updating image '{path}' in the database")
-                checksum = await wait_run_in_executor(md5sum, path, cache_to_md5file=False)
-                if image.checksum != checksum:
-                    await images_repository.update_image(path, checksum, "md5")
-
-
-class EventHandler(PatternMatchingEventHandler):
-    """
-    Watchdog event handler.
-    """
-
-    def __init__(self, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop, **kwargs):
-
-        self._loop = loop
-        self._queue = queue
-
-        # ignore temporary files, md5sum files, hidden files and directories
-        super().__init__(ignore_patterns=["*.tmp", "*.md5sum", ".*"], ignore_directories=True, **kwargs)
-
-    def on_closed(self, event: FileSystemEvent) -> None:
-        # monitor for closed files (e.g. when a file has finished to be copied)
-        if "/lib/" in event.src_path or "/lib64/" in event.src_path:
-            return  # ignore custom IOU libraries
-        self._loop.call_soon_threadsafe(self._queue.put_nowait, event)
-
-
-class EventIterator:
-    """
-    Watchdog Event iterator.
-    """
-
-    def __init__(self, queue: asyncio.Queue):
-        self.queue = queue
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-
-        item = await self.queue.get()
-        if item is None:
-            raise StopAsyncIteration
-        return item
-
-
-async def monitor_images_on_filesystem(app: FastAPI):
-
-    def watchdog(
-        path: str, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop, app: FastAPI, recursive: bool = False
-    ) -> None:
-        """
-        Thread to monitor a directory for new images.
-        """
-
-        handler = EventHandler(queue, loop)
-        observer = Observer()
-        observer.schedule(handler, str(path), recursive=recursive)
-        observer.start()
-        log.info(f"Monitoring for new images in '{path}'")
-        while True:
-            time.sleep(1)
-            # stop when the app is exiting
-            if app.state.exiting:
-                observer.stop()
-                observer.join(10)
-                log.info(f"Stopping monitoring for new images in '{path}'")
-                loop.call_soon_threadsafe(queue.put_nowait, None)
-                break
-
-    queue: asyncio.Queue = asyncio.Queue()
-    loop = asyncio.get_event_loop()
-    server_config = Config.instance().settings.Server
-    image_dir = os.path.expanduser(server_config.images_path)
-    asyncio.get_event_loop().run_in_executor(None, watchdog, image_dir, queue, loop, app, True)
-
-    async for filesystem_event in EventIterator(queue):
-        # read the file system event from the queue
-        image_path = filesystem_event.src_path
-        expected_image_type = None
-        if "IOU" in image_path:
-            expected_image_type = "iou"
-        elif "QEMU" in image_path:
-            expected_image_type = "qemu"
-        elif "IOS" in image_path:
-            expected_image_type = "ios"
-        async with AsyncSession(app.state._db_engine) as db_session:
-            images_repository = ImagesRepository(db_session)
-            try:
-                image = await read_image_info(image_path, expected_image_type)
-            except InvalidImageError as e:
-                log.warning(str(e))
-                continue
-            try:
-                if await images_repository.get_image(image_path):
-                    continue
-                await images_repository.add_image(**image)
-                log.info(f"Discovered image '{image_path}' has been added to the database")
-            except SQLAlchemyError as e:
-                log.warning(f"Error while adding image '{image_path}' to the database: {e}")
+    for path in updated_disks:
+        async with image_lock(path):
+            async with AsyncSession(app.state._db_engine, expire_on_commit=False) as db_session:
+                repository = ImagesRepository(db_session)
+                image = await repository.get_image(path)
+                if image:
+                    info = await read_image_info(path, str(image.image_type), allow_raw_image=True)
+                    try:
+                        os.unlink(path + ".md5sum")
+                    except FileNotFoundError:
+                        pass
+                    except OSError as e:
+                        log.warning("Could not invalidate checksum cache for '%s': %s", path, e)
+                    await repository.save_verified_image(info)
 
 
 async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]:

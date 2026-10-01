@@ -31,6 +31,8 @@ from .base import BaseRepository
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.utils.image_inventory import image_lock
+from gns3server.controller.controller_error import ControllerNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -136,18 +138,22 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.refresh(db_template)
         return db_template
 
-    async def get_image(self, image_path: str) -> Optional[models.Image]:
+    async def get_image(self, image_path: str, *, include_unavailable: bool = False) -> Optional[models.Image]:
         """
         Get an image by its path.
         """
 
         image_dir, image_name = os.path.split(image_path)
-        if image_dir:
+        if os.path.isabs(image_path):
+            query = select(models.Image).where(models.Image.path == image_path)
+        elif image_dir:
             query = select(models.Image).where(
-                models.Image.filename == image_name, models.Image.path.endswith(image_path)
+                models.Image.filename == image_name, models.Image.path.endswith(os.sep + image_path, autoescape=True)
             )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
+        if not include_unavailable:
+            query = query.where(models.Image.availability.in_(["unknown", "available"]))
         query = query.order_by(models.Image.image_id)
         result = await self._db_session.execute(query)
         images = result.scalars().all()
@@ -164,20 +170,28 @@ class TemplatesRepository(BaseRepository):
         Add an image to template.
         """
 
-        query = (
-            select(models.Template)
-            .options(selectinload(models.Template.images))
-            .where(models.Template.template_id == template_id)
-        )
-        result = await self._db_session.execute(query)
-        template_in_db = result.scalars().first()
-        if not template_in_db:
-            return None
+        async with image_lock(image.path):
+            exists = (
+                await self._db_session.execute(
+                    select(models.Image.image_id).where(models.Image.image_id == image.image_id)
+                )
+            ).scalar_one_or_none()
+            if exists is None:
+                raise ControllerNotFoundError(f"Image '{image.path}' was removed while creating the template")
+            query = (
+                select(models.Template)
+                .options(selectinload(models.Template.images))
+                .where(models.Template.template_id == template_id)
+            )
+            result = await self._db_session.execute(query)
+            template_in_db = result.scalars().first()
+            if not template_in_db:
+                return None
 
-        template_in_db.images.append(image)
-        await self._db_session.commit()
-        await self._db_session.refresh(template_in_db)
-        return template_in_db
+            template_in_db.images.append(image)
+            await self._db_session.commit()
+            await self._db_session.refresh(template_in_db)
+            return template_in_db
 
     async def remove_image_from_template(self, template_id: UUID, image: models.Image) -> Union[None, models.Template]:
         """

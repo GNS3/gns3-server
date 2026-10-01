@@ -117,8 +117,8 @@ done
 
 if [ "$REPOSITORY" == "ppa-v3" ]
 then
-  if ! python3 -c 'import sys; assert sys.version_info >= (3,9)' > /dev/null 2>&1; then
-    echo "GNS3 version >= 3.0 requires Python 3.9 or later"
+  if ! python3 -c 'import sys; assert sys.version_info >= (3,10)' > /dev/null 2>&1; then
+    echo "GNS3 version >= 3.1 requires Python 3.10 or later"
     exit 1
   fi
 fi
