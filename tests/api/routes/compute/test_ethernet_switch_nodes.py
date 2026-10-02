@@ -956,6 +956,37 @@ class TestEthernetSwitchNodesRoutes:
         node._ubridge_send.assert_any_call(f'brctl addif "{br}" "{anchor}"')
         assert node._kernel_ports[0] == anchor
 
+    async def test_ethernet_switch_create_cascade_nio_hardens_own_end_l2only(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        ``docker create_veth`` hardens only its FIRST end (the Docker shape:
+        host anchor plus a container leg that keeps its L3 life) — but a
+        cascade end the peer's winning create minted is that second,
+        unhardened end, and the kernel gives it an IPv6 link-local (a silent
+        L3 identity on the switch fabric, ubridge-l2-anchor-spec §E). Each
+        switch therefore hardens its OWN end once the pair exists, whatever
+        branch brought it there (fresh create, lost race, reuse).
+        """
+
+        anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        # pre-existing end: the branch whose end create_veth did NOT harden
+        with self._cascade_sysfs(anchor, {"value": True}):
+            response = await compute_client.post(url, json=self._cascade_params(anchor, peer))
+        assert response.status_code == status.HTTP_201_CREATED
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        node._ubridge_send.assert_any_call(f'link l2only "{anchor}" on')
+        # only its own end — the peer's end is the peer switch's to harden
+        assert not any(f'"{peer}"' in str(c) and "l2only" in str(c) for c in node._ubridge_send.call_args_list)
+
     async def test_ethernet_switch_delete_cascade_nio_destroys_the_pair(
         self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:

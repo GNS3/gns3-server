@@ -476,6 +476,22 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             else:
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'tc reset "{anchor}"')
+            # ``docker create_veth`` hardens only its FIRST end (the Docker
+            # shape: host anchor plus a container leg that keeps its L3
+            # life). Here BOTH ends are anchors, and whichever switch loses
+            # the create race owns the second, unhardened end — its kernel
+            # IPv6 link-local would give the switch fabric a silent L3
+            # identity (ubridge-l2-anchor-spec §E). Each switch hardens its
+            # OWN end once the pair exists; idempotent, and it covers a
+            # reused pre-existing end as well.
+            try:
+                await self._ubridge_send(f'link l2only "{anchor}" on')
+            except UbridgeError as e:
+                log.warning(
+                    'Ethernet switch "{name}" [{id}]: could not harden cascade end "{anchor}" L2-only: {error}'.format(
+                        name=self._name, id=self._id, anchor=anchor, error=e
+                    )
+                )
         # Register before _kernel_attach: the marker reconcile recognises
         # kernel anchors through _kernel_anchors().
         self._kernel_ports[port_number] = anchor
