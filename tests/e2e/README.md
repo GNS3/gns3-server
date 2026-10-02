@@ -44,3 +44,15 @@ Current scenarios:
   (anchors, per-link bridge, netem delay, suspend, capture, delete/re-create,
   stop/start) plus a serial link staying on the relay, and a negative
   control on an isolated relay-configured instance.
+* `test_ethernet_switch_kernel_datapath.py` — a real Ethernet switch
+  (kernel bridge) between two c7200 routers: deferred joins on boot, VLAN
+  isolation, absorbed-anchor filters/suspend/capture, VPCS peers staying on
+  the relay, and a relay negative control.
+* `test_iol_docker_kernel_datapath.py` — two real iol-xe containers (Cisco
+  CML iol-runner images): kernel link through the port bridge's swappable
+  TAP leg (anchors at start, netem delay, suspend, capture, link
+  delete/re-create swap, node stop/start rewiring) and a relay negative
+  control.
+
+Set `GNS3_E2E_DEBUG=1` to run the isolated instance with debug logging (the
+uBridge command stream lands in its `server.log`).

@@ -126,6 +126,26 @@ class Compute:
             {"compute_id": "local", "name": name, "node_type": "dynamips", "properties": properties},
         )
 
+    def create_iol_router(self, project_id, name, image, adapters=2):
+        """An IOL runner container (iol-runner images), the appliance's
+        template properties."""
+        return self.call(
+            "POST",
+            f"/projects/{project_id}/nodes",
+            {
+                "compute_id": "local",
+                "name": name,
+                "node_type": "docker",
+                "properties": {
+                    "image": image,
+                    "adapters": adapters,
+                    "console_type": "telnet",
+                    "environment": "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=iol-xe-base.txt",
+                    "extra_volumes": ["/config"],
+                },
+            },
+        )
+
     def create_link(self, project_id, a, b):
         return self.call(
             "POST",
@@ -149,6 +169,9 @@ class Compute:
 
     def dynamips_images(self):
         return [image["filename"] for image in self.call("GET", "/computes/local/dynamips/images")]
+
+    def docker_images(self):
+        return [image["image"] for image in self.call("GET", "/computes/local/docker/images")]
 
 
 # ---------------------------------------------------------------------------
@@ -247,8 +270,11 @@ def _start_isolated(kernel):
 
     log = open(os.path.join(tmpdir, "server.log"), "w")
     # S603: fixed argv, this interpreter, no shell involvement
+    argv = [sys.executable, "-m", "gns3server", "--config", config_path]
+    if os.environ.get("GNS3_E2E_DEBUG"):
+        argv.append("-d")  # debug logging — the uBridge command stream lands in server.log
     process = subprocess.Popen(  # noqa: S603
-        [sys.executable, "-m", "gns3server", "--config", config_path],
+        argv,
         cwd=REPO_ROOT,
         stdout=log,
         stderr=subprocess.STDOUT,
@@ -370,10 +396,14 @@ class IOSConsole:
         out, self.buf = self.buf, ""
         return out
 
-    def boot_wait(self, timeout=360):
+    def boot_wait(self, timeout=360, straight_prompt=False):
         """Wait until the IOS prompt is ready, answering the initial config
         dialog if it appears. The prompt only counts once the stream around
-        it goes quiet — a boot banner still printing is not a prompt."""
+        it goes quiet — a boot banner still printing is not a prompt.
+
+        ``straight_prompt`` accepts a quiet prompt without the "Press RETURN"
+        sentinel — images that boot straight from a startup config into the
+        CLI (IOL from its NVRAM) never print it."""
         answered = False
         deadline = time.time() + timeout
         self.buf = ""
@@ -385,7 +415,8 @@ class IOSConsole:
                 self.sock.sendall(b"no\r")
                 answered = True
                 last_growth = time.time()
-            prompt_seen = ("Press RETURN" in self.buf or answered) and PROMPT_RE.search(self.buf)
+            sentinel = straight_prompt or "Press RETURN" in self.buf or answered
+            prompt_seen = sentinel and PROMPT_RE.search(self.buf)
             if prompt_seen and time.time() - last_growth > 1.2:
                 self.buf = ""
                 return
@@ -490,6 +521,27 @@ def link_bridge_name(link_id):
 def anchor_name(node_id, adapter, port):
     """The dynamips anchor TAP name for a slot/port (see Router._tap_name)."""
     return "gd" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def iol_anchor_name(node_id, adapter, port):
+    """The IOL runner container's anchor TAP name (see IOLDockerVM._tap_name)."""
+    return "gx" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def stage_iol_base_config(server):
+    """
+    Copy the shipped iol-xe base config into an isolated instance's configs
+    directory (its GNS3_IOL_STARTUP_CONFIG lookup path) so nodes boot past
+    the setup dialog. A no-op for an external server — there the operator's
+    install provides it.
+    """
+
+    if not server.isolated:
+        return
+    src = os.path.join(REPO_ROOT, "gns3server", "configs", "iol-xe-base.txt")
+    configs_dir = os.path.join(server.tmpdir, "configs")
+    os.makedirs(configs_dir, exist_ok=True)
+    shutil.copy(src, os.path.join(configs_dir, "iol-xe-base.txt"))
 
 
 def qdiscs(dev):
