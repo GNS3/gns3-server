@@ -19,6 +19,9 @@ bridge, kernel filters, suspend and capture.
   before any link — and the per-link bridge enslaves exactly the two of them;
 * real ICMP crosses the [unix ↔ TAP] port bridge relay;
 * a ``delay 100`` filter lands as netem on both anchors, RTT grows ~200 ms;
+* the classifier spot check on a TAP anchor: ``bpf`` match-drop and the
+  eBPF ``frequency_drop`` every-nth mode (the Docker suite runs the full
+  matrix on veth host ends);
 * suspend admin-downs the anchor and kills the traffic; resume restores;
 * link delete releases the port bridge's TAP leg (stop → delete_nio_tap) and
   the anchor survives — re-creating the link swaps the leg back in (the
@@ -144,6 +147,40 @@ def test_iol_docker_kernel_datapath():
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < 50, fast
+
+        # Classifier spot check on the container's TAP anchor (the Docker
+        # suite runs the full matrix on veth host ends): cls_bpf match-drop
+        # and the eBPF stateful classifier attach to a tun/tap anchor the
+        # same way.
+        tc_caps = (caps or {}).get("ubridge_tc") or {}
+        if tc_caps.get("cbpf"):
+            print(".. bpf 'icmp' drops everything on the TAP anchor")
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"bpf": ["icmp"]}})
+            assert "clsact" in harness.qdiscs(a1) and "clsact" in harness.qdiscs(a2), (
+                harness.qdiscs(a1),
+                harness.qdiscs(a2),
+            )
+            blocked = harness.ping(c1, "10.1.1.2", repeat=4)
+            assert blocked["success"] == 0, blocked["raw"]
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+            assert "clsact" not in harness.qdiscs(a1), harness.qdiscs(a1)
+            assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        else:
+            print(".. uBridge reports no cbpf: skipping the bpf check")
+
+        modes = tc_caps.get("ebpf_modes") or []
+        if "nth" in modes:
+            print(".. frequency_drop 3 (eBPF nth) on the TAP anchor")
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"frequency_drop": [3]}})
+            nth = harness.ping(c1, "10.1.1.2", repeat=9)
+            loss = 100 - nth["success"]
+            print(f"..   {loss} % round-trip loss")
+            # the kernel counts per direction: 1 - (2/3)^2 = 55.6 % round trip
+            assert 20 <= loss <= 90, nth["raw"]
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+            assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        else:
+            print(".. uBridge reports no eBPF nth: skipping the frequency_drop check")
 
         # suspend: anchor admin-down (the port bridge's TAP writes fail EIO,
         # nothing comes back); resume restores

@@ -72,16 +72,18 @@ Current scenarios:
   names), zero residue.
 * `test_iol_docker_kernel_datapath.py` — two real iol-xe containers (Cisco
   CML iol-runner images): kernel link through the port bridge's swappable
-  TAP leg (anchors at start, netem delay, suspend, capture, link
-  delete/re-create swap, node stop/start rewiring) and a relay negative
-  control.
+  TAP leg (anchors at start, netem delay, the TAP-anchor classifier spot
+  check for bpf match-drop and the eBPF every-nth mode, suspend, capture,
+  link delete/re-create swap, node stop/start rewiring) and a relay
+  negative control.
 * `test_iou_kernel_datapath.py` — two real IOU routers (a real IOU image
   from the images directory, the real IOS CLI on the server's telnet
   console): kernel link through the [IOL fabric ↔ TAP] port bridge (same
-  lifecycle as the iol-xe containers), a serial link staying on the relay
-  (serial bays never anchor), and a relay negative control whose filters
-  ride the IOU-specific `iol_bridge add_packet_filter` engine (delay and
-  frequency_drop measured through real traffic).
+  lifecycle as the iol-xe containers) including the TAP-anchor classifier
+  spot check and a filter surviving a node restart, a serial link staying
+  on the relay (serial bays never anchor), and a relay negative control
+  whose filters ride the IOU-specific `iol_bridge add_packet_filter` engine
+  (delay and frequency_drop measured through real traffic).
 * `test_qemu_kernel_datapath.py` — two real IOSv routers (a real qcow2
   image from the images directory's `QEMU` subfolder, linked clone, the
   real IOS CLI on the server's telnet console): the anchor TAP is QEMU's

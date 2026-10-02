@@ -21,6 +21,9 @@ Linux bridge, kernel filters, suspend and capture.
   bridge enslaves exactly the two of them;
 * real ICMP crosses the [IOL fabric ↔ TAP] port bridge;
 * a ``delay 100`` filter lands as netem on both anchors, RTT grows ~200 ms;
+* the classifier spot check on a TAP anchor: ``bpf`` match-drop and the
+  eBPF ``frequency_drop`` every-nth mode (the Docker suite runs the full
+  matrix on veth host ends);
 * suspend admin-downs the anchor and kills the traffic; resume restores;
 * a serial link between the same nodes never anchors (per-port exclusion):
   it stays on the relay, ``kernel_datapath`` is False, and real traffic
@@ -29,7 +32,7 @@ Linux bridge, kernel filters, suspend and capture.
   re-creating the link swaps the leg back in and the traffic returns;
 * node stop tears the anchors down (uBridge holds their fds — the IOL
   bridge goes first, then ``tap delete``); a restart recreates the whole
-  wiring from the NIO;
+  wiring from the NIO, a delay filter applied before the stop included;
 * deleting the project leaves no anchors and no bridges behind.
 
 ``test_iou_relay_control`` is the negative control on an isolated
@@ -159,6 +162,39 @@ def test_iou_kernel_datapath():
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < 50, fast
 
+        # Classifier spot check on a TAP anchor (the Docker suite runs the
+        # full matrix on veth host ends): cls_bpf match-drop and the eBPF
+        # stateful classifier attach to a tun/tap anchor the same way.
+        tc_caps = (caps or {}).get("ubridge_tc") or {}
+        if tc_caps.get("cbpf"):
+            print(".. bpf 'icmp' drops everything on the TAP anchor")
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"bpf": ["icmp"]}})
+            assert "clsact" in harness.qdiscs(a1) and "clsact" in harness.qdiscs(a2), (
+                harness.qdiscs(a1),
+                harness.qdiscs(a2),
+            )
+            blocked = harness.ping(c1, "10.1.1.2", repeat=4)
+            assert blocked["success"] == 0, blocked["raw"]
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+            assert "clsact" not in harness.qdiscs(a1), harness.qdiscs(a1)
+            assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        else:
+            print(".. uBridge reports no cbpf: skipping the bpf check")
+
+        modes = tc_caps.get("ebpf_modes") or []
+        if "nth" in modes:
+            print(".. frequency_drop 3 (eBPF nth) on the TAP anchor")
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"frequency_drop": [3]}})
+            nth = harness.ping(c1, "10.1.1.2", repeat=9)
+            loss = 100 - nth["success"]
+            print(f"..   {loss} % round-trip loss")
+            # the kernel counts per direction: 1 - (2/3)^2 = 55.6 % round trip
+            assert 20 <= loss <= 90, nth["raw"]
+            compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+            assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        else:
+            print(".. uBridge reports no eBPF nth: skipping the frequency_drop check")
+
         # suspend: anchor admin-down (the port bridge's TAP writes fail EIO,
         # nothing comes back); resume restores
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": True})
@@ -206,8 +242,11 @@ def test_iou_kernel_datapath():
         # node stop: uBridge holds the anchor fds, so the IOL bridge goes
         # first and the taps with it (a stopped node must not litter the
         # host with gi devices); a restart recreates the whole wiring from
-        # the NIO that outlived it.
-        print(".. stopping and restarting router 1")
+        # the NIO that outlived it — *including the NIO's filters*, which
+        # land on the freshly created anchor. The delay filter goes on
+        # before the stop so the restart has something to restore.
+        print(".. stopping and restarting router 1 with a delay filter applied")
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"delay": [100]}})
         compute.call("POST", f"/projects/{pid}/nodes/{n1_id}/stop")
         assert harness.wait_until(lambda: not harness.tap_exists(a1), timeout=15), a1
         # the per-link bridge lost this end's port; it may be gone entirely
@@ -218,8 +257,14 @@ def test_iou_kernel_datapath():
         c1 = _boot(server, pid, n1_id)
         assert harness.tap_exists(a1)
         assert harness.bridge_members(bridge) == sorted([a1, a2]), harness.bridge_members(bridge)
+        assert harness.wait_until(lambda: "netem" in harness.qdiscs(a1), timeout=15), harness.qdiscs(a1)
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if="Ethernet0/0")
-        assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        survivor = harness.wait_ping(c1, "10.1.1.2", attempts=5)
+        assert survivor["success"] == 100, survivor["raw"]
+        assert survivor["avg"] >= 150, (baseline, survivor)
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+        cleared = harness.ping(c1, "10.1.1.2", repeat=3)
+        assert cleared["success"] == 100 and cleared["avg"] < 50, (baseline, cleared)
 
         c1.close()
         c2.close()

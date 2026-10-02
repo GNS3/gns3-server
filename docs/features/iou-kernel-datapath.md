@@ -146,10 +146,13 @@ The repository's live e2e suite carries the same scenario with **real
 IOU routers** (`tests/e2e/test_iou_kernel_datapath.py`, pytest marker
 `e2e`): a real L3 IOU image provides the fabric and the real IOS CLI on
 the server's telnet console, driving anchors-born-with-the-node, real ICMP
-through the port bridge, netem delay, suspend, capture, link
-delete/re-create, node stop/start rewiring, the serial link staying on the
-relay, and a relay negative control whose real `delay`/`frequency_drop`
-filters ride the port's `iol_bridge add_packet_filter` list.
+through the port bridge, netem delay, the TAP-anchor classifier spot check
+(bpf match-drop; the eBPF every-nth mode at 56 % measured round-trip loss,
+55.6 % expected), suspend, capture, link delete/re-create, node
+stop/start rewiring with a delay filter restored on the fresh anchor
+(tc and traffic both), the serial link staying on the relay, and a relay
+negative control whose real `delay`/`frequency_drop` filters ride the
+port's `iol_bridge add_packet_filter` list.
 
 The uBridge side passed its own 30/30 (`tests/iol/test_tap_anchor.py` in the
 fork), including the DOWN-anchor resilience and kernel-bridge interop this

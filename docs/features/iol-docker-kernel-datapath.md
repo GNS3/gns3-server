@@ -140,6 +140,10 @@ isolated instance, real `iol-xe/iol-xe:17-18-02` images, real uBridge with
 * real ICMP crosses the [unix ↔ tap] port-bridge relay (100 % ping);
 * `delay 100` lands as netem on both anchors, measured RTT grows ≥ 150 ms
   and returns < 50 ms when cleared;
+* the classifier spot check on a TAP anchor (the Docker suite runs the full
+  matrix on veth host ends): `bpf "icmp"` drops everything (clsact on the
+  anchor), `frequency_drop 3` as the eBPF every-nth mode measured 56 %
+  round-trip loss (theory 55.6 %), both restoring on clear;
 * suspend admin-downs the anchor and kills the traffic; resume restores;
 * AF_PACKET capture writes a real pcap of the ICMP exchange;
 * link delete/re-create swaps the port bridge's TAP leg out and back in
