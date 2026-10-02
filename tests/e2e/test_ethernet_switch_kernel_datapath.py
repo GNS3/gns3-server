@@ -24,6 +24,8 @@ Real ICMP crossing the switch proves the datapath:
   and defer the join; once the routers boot, the controller's re-push
   makes the switch join their anchors — the switch bridge's members become
   exactly the two router anchors (no relay TAPs anywhere);
+* the L2-anchor spec §E.2 silence window with both routers shut: the
+  absorbed anchors and the switch bridge stay silent for 5 s;
 * VLAN programming applies to absorbed anchors: different access VLANs
   isolate the routers (ping dies), the same VLAN bridges them again;
 * a ``delay 100`` filter lands as netem on the absorbed anchor (single
@@ -94,6 +96,16 @@ def _boot(server, project_id, node_id, timeout=360):
     return console
 
 
+def _eth_shutdown(console, shut):
+    """Shut/unshut the router's f1/0 — the only legitimate speaker on the
+    segment (IOS's own CDP/keepalives) — for §E.2's silence window; the
+    address stays configured and answers once it is back."""
+    console.run("conf t")
+    console.run("interface f1/0")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("end")
+
+
 def test_ethernet_switch_kernel_fast_path():
     server = harness.live_server(kernel=True)
     compute = server.compute
@@ -139,6 +151,19 @@ def test_ethernet_switch_kernel_fast_path():
         print(".. both routers configured, pinging through the switch")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+
+        # L2-anchor spec §E.2: with both routers shut, the absorbed anchors
+        # and the switch bridge stay silent for 5 s (the bridge is created
+        # with multicast snooping off precisely so the bridge role can).
+        if harness.l2only_supported():
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=True)
+            harness.assert_idle_silence(a1, a2, sw_bridge)
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=False)
+            assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        else:
+            print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
         # L2-anchor spec §E.1: the absorbed anchors and the switch bridge
         # carry no L3 identity (skipped on a uBridge without `link l2only`),

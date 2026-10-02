@@ -224,8 +224,16 @@ is hardened like the rest — best-effort, before the NIO is handed back.
     assertion is what exercises the fifth creator end-to-end (the same
     uBridge creation path cloud's transient TAPs take);
   - an idle link stays silent for 5 s after the settle window
-    (`assert_idle_silence`, §E.2) — measured with the guest interfaces shut
-    (silencing IOS's own CDP/keepalives) over the anchors and the bridge;
+    (`assert_idle_silence`, §E.2) — measured with the guests silenced (the
+    IOS consoles' interfaces shut, the Docker guests' links down, all four
+    cascade routers shut) over the anchors, the per-link bridge and the
+    switch bridges, in every kernel scenario: Dynamips, Docker, QEMU, IOU,
+    the IOL container, the switch fast path and the switch cascade. That
+    covers each creation
+    path — `tap create`, `docker create_veth` (plus the server-side
+    harden-after-create on the cascade's race-loser end), `bridge
+    add_nio_tap` and the `brctl` switch bridges (whose multicast snooping
+    is off precisely so the bridge role can reach silence);
   - a silent-failure guard found while validating this spec: after attach, every
     bridge port reports `brport/state == 3` (forwarding) (`assert_forwarding`).
     A bridge device left DOWN keeps its ports `DISABLED` (`state == 0`) and

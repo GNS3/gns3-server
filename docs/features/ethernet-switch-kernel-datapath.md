@@ -152,12 +152,14 @@ The cascade has its own in-repo e2e
 (`tests/e2e/test_ethernet_switch_cascade.py`): two switches joined by the
 link-owned veth pair, two c7200 routers per switch, real ICMP crossing both
 bridges — the pair is born UP with exactly one end per bridge, a dot1q
-trunk cascade carries two VLANs at once, the symmetric access/trunk mode
-flip on the cascade ends isolates and revives a VLAN in place, a `delay`
-filter lands as netem on both ends (one per direction, RTT ≈ 2×delay),
-suspend admin-downs both ends, and a link delete/re-create retires the whole
-pair and mints a new one under the new link id — with zero host residue
-after the project goes.
+trunk cascade carries two VLANs at once, the §E.2 idle-silence window with
+all four router interfaces shut (the absorbed anchors, both cascade ends
+and both switch bridges), the symmetric access/trunk mode flip on the
+cascade ends isolates and revives a VLAN in place, a `delay` filter lands
+as netem on both ends (one per direction, RTT ≈ 2×delay), suspend
+admin-downs both ends, and a link delete/re-create retires the whole pair
+and mints a new one under the new link id — with zero host residue after
+the project goes.
 
 The host-side checks throughout are the kernel's own view: bridge
 membership under `/sys/class/net/<bridge>/brif/`, the `master` link

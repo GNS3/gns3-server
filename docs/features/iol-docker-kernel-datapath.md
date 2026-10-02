@@ -138,6 +138,9 @@ isolated instance, real `iol-xe/iol-xe:17-18-02` images, real uBridge with
 * kernel link reports `kernel_datapath`, anchors exist from node start, the
   per-link bridge enslaves exactly the two of them;
 * real ICMP crosses the [unix ↔ tap] port-bridge relay (100 % ping);
+* the L2-anchor spec §E.2 silence window with the guests shut — the
+  behavioral half of the hardening on anchors created by uBridge's bridge
+  TAP module (`bridge add_nio_tap`);
 * `delay 100` lands as netem on both anchors, measured RTT grows ≥ 150 ms
   and returns < 50 ms when cleared;
 * the classifier spot check on a TAP anchor (the Docker suite runs the full

@@ -145,8 +145,9 @@ net for the port-coordinate capture restore this work touched.
 The repository's live e2e suite carries the same scenario with **real
 IOU routers** (`tests/e2e/test_iou_kernel_datapath.py`, pytest marker
 `e2e`): a real L3 IOU image provides the fabric and the real IOS CLI on
-the server's telnet console, driving anchors-born-with-the-node, real ICMP
-through the port bridge, netem delay, the TAP-anchor classifier spot check
+the server's telnet console, driving anchors-born-with-the-node, the §E.2
+idle-silence window with the guests shut, real ICMP through the port
+bridge, netem delay, the TAP-anchor classifier spot check
 (bpf match-drop; the eBPF every-nth mode at 56 % measured round-trip loss,
 55.6 % expected), suspend, capture, link delete/re-create, node
 stop/start rewiring with a delay filter restored on the fresh anchor

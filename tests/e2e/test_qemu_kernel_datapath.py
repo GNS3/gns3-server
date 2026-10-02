@@ -19,6 +19,8 @@ port bridge, the anchor is the NIC's host side.
   anchors (``gq`` TAPs, one per adapter) exist from node start, before any
   link — and the per-link bridge enslaves exactly the two of them;
 * real ICMP crosses the [QEMU netdev ↔ TAP] anchor;
+* the L2-anchor spec §E.2 silence window with the guests shut (the anchors
+  here are QEMU's own netdevs);
 * a ``delay 100`` filter lands as netem on both anchors, RTT grows ~200 ms;
 * suspend admin-downs the anchor (the e1000 loses carrier) and kills the
   traffic; resume restores;
@@ -78,6 +80,16 @@ def _boot(server, project_id, node_id, timeout=BOOT_TIMEOUT):
     console = harness.ios_console(server, project_id, node_id)
     console.boot_wait(timeout=timeout)
     return console
+
+
+def _eth_shutdown(console, shut):
+    """Shut/unshut the guest's GigabitEthernet0/0 — the only legitimate
+    speaker on the link segment (IOSv's own chatter) — for §E.2's silence
+    window; the address stays configured and answers once it is back."""
+    console.run("conf t")
+    console.run(f"interface {GUEST_ETH_IF}")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("end")
 
 
 def test_qemu_kernel_datapath():
@@ -143,6 +155,18 @@ def test_qemu_kernel_datapath():
         print(".. both routers configured, pinging through the anchor TAPs")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+
+        # L2-anchor spec §E.2: with the guests shut the anchors (QEMU's own
+        # netdevs) and the per-link bridge stay silent for 5 s.
+        if harness.l2only_supported():
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=True)
+            harness.assert_idle_silence(a1, a2, bridge)
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=False)
+            assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        else:
+            print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
         # delay 100: netem on both anchors (each impairs one direction),
         # one-way ~100 ms => RTT grows by ~200 ms

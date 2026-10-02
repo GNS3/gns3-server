@@ -141,9 +141,10 @@ expected), no kernel bridge holding the tap.
 The repo suite `tests/e2e/test_qemu_kernel_datapath.py` covers the same
 ground with a *real* guest: two IOSv routers (a real qcow2 image, linked
 clone, the real IOS CLI on the telnet console) — the full kernel lifecycle
-(anchors at start, per-link bridge membership, pure-L2 anchors, real ICMP,
-netem delay, suspend, capture, link delete/re-create, node stop/start
-rewiring, zero residue on project delete) plus the relay negative control,
+(anchors at start, per-link bridge membership, pure-L2 anchors, the §E.2
+idle-silence window with the guests shut, real ICMP, netem delay, suspend,
+capture, link delete/re-create, node stop/start rewiring, zero residue on
+project delete) plus the relay negative control,
 where the anchor is up and carrying as the relay's AF_PACKET endpoint (QEMU
 has no other leg — the TAP is the netdev on the relay too). It needs an L3
 IOSv image in the images directory's `QEMU` subfolder; a raw node must also

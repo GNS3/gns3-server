@@ -34,6 +34,9 @@ off each switch. Real ICMP crossing both switches proves the datapath:
   Asymmetric flips are deliberately not tested: an access end egresses
   untagged, and the far trunk end would park those frames in its native
   VLAN — symmetric modes are the only sane inter-switch configuration;
+* the L2-anchor spec §E.2 silence window with all four router interfaces
+  shut: the absorbed anchors, both cascade ends and both switch bridges
+  stay silent for 5 s;
 * a ``delay 100`` filter lands as netem on BOTH veth ends (each direction
   impaired exactly once, like any two-sided kernel link) and the measured
   RTT grows by ~2 x 100 ms;
@@ -121,6 +124,19 @@ def _boot(server, project_id, node_id, timeout=360):
     return console
 
 
+def _eth_shutdown(console, shut):
+    """Shut/unshut both router interfaces on their switch links — the only
+    legitimate speakers on these segments (IOS's own CDP/keepalives) — for
+    §E.2's silence window; the addresses stay configured and answer once the
+    interfaces are back."""
+    console.run("conf t")
+    console.run("interface f1/0")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("interface f1/1")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("end")
+
+
 def test_ethernet_switch_cascade_kernel_datapath():
     server = harness.live_server(kernel=True)
     compute = server.compute
@@ -193,6 +209,22 @@ def test_ethernet_switch_cascade_kernel_datapath():
         assert baseline10["success"] == 100, baseline10["raw"]
         baseline20 = harness.wait_ping(c1, IP20 % 2)
         assert baseline20["success"] == 100, baseline20["raw"]
+
+        # L2-anchor spec §E.2: with all four router interfaces shut, every
+        # host-side device of this fabric stays silent for 5 s — the four
+        # absorbed router anchors, both cascade ends and both switch bridges
+        # (the bridges are created with multicast snooping off precisely so
+        # the bridge role can reach silence, see uBridge's brctl create).
+        if harness.l2only_supported():
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=True)
+            harness.assert_idle_silence(a1_10, a1_20, a2_10, a2_20, e0, e1, br1, br2)
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=False)
+            assert harness.wait_ping(c1, IP10 % 2, attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, IP20 % 2, attempts=5)["success"] == 100
+        else:
+            print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
         # L2-anchor spec §E.1: the cascade ends and both bridges carry no L3
         # identity, and the bridged ends are FORWARDING.

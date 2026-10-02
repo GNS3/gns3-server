@@ -20,6 +20,7 @@ Linux bridge, kernel filters, suspend and capture.
   bay/unit) exist from node start, before any link — and the per-link
   bridge enslaves exactly the two of them;
 * real ICMP crosses the [IOL fabric ↔ TAP] port bridge;
+* the L2-anchor spec §E.2 silence window with the guests shut;
 * a ``delay 100`` filter lands as netem on both anchors, RTT grows ~200 ms;
 * the classifier spot check on a TAP anchor: ``bpf`` match-drop and the
   eBPF ``frequency_drop`` every-nth mode (the Docker suite runs the full
@@ -79,6 +80,16 @@ def _boot(server, project_id, node_id, timeout=BOOT_TIMEOUT):
     console = harness.ios_console(server, project_id, node_id)
     console.boot_wait(timeout=timeout)
     return console
+
+
+def _eth_shutdown(console, shut):
+    """Shut/unshut the guest's Ethernet0/0 — the only legitimate speaker on
+    the link segment (the IOL fabric's own chatter) — for §E.2's silence
+    window; the address stays configured and answers once it is back."""
+    console.run("conf t")
+    console.run("interface Ethernet0/0")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("end")
 
 
 def test_iou_kernel_datapath():
@@ -146,6 +157,19 @@ def test_iou_kernel_datapath():
         print(".. both routers configured, pinging through the [IOL fabric <-> TAP] port bridge")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+
+        # L2-anchor spec §E.2: with the guests shut the anchors and the
+        # per-link bridge stay silent for 5 s (these anchors are the `tap
+        # create` persistent TAPs, one per Ethernet bay/unit).
+        if harness.l2only_supported():
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=True)
+            harness.assert_idle_silence(a1, a2, bridge)
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=False)
+            assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        else:
+            print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
         # delay 100: netem on both anchors (each impairs one direction),
         # one-way ~100 ms => RTT grows by ~200 ms
