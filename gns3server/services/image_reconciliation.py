@@ -8,7 +8,7 @@ import threading
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -24,7 +24,7 @@ from gns3server.utils.image_inventory import (
     image_lock,
     normalized_path,
 )
-from gns3server.utils.images import inspect_image_file, InvalidImageError, ImageChangedError
+from gns3server.utils.images import ImageChangedError, InvalidImageError, inspect_image_file
 
 log = logging.getLogger(__name__)
 COUNTERS = (

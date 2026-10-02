@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import configparser
 import os
@@ -13,7 +14,6 @@ from typing import Any, AsyncGenerator
 from unittest.mock import MagicMock, patch
 
 import pytest
-import asyncio
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import AsyncClient

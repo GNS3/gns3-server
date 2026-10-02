@@ -29,8 +29,8 @@ from sqlalchemy.orm.session import make_transient
 
 import gns3server.db.models as models
 from gns3server import schemas
-from gns3server.utils.image_inventory import image_lock
 from gns3server.controller.controller_error import ControllerNotFoundError
+from gns3server.utils.image_inventory import image_lock
 
 from .base import BaseRepository
 
