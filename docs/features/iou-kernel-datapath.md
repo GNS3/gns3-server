@@ -142,6 +142,14 @@ qdiscs, userspace `delay` at 100.7 ms, suspend via the synthetic
 frequency_drop, `iol_bridge start_capture`), which is also the regression
 net for the port-coordinate capture restore this work touched.
 
+The repository's live e2e suite carries the same scenario with **real
+IOU routers** (`tests/e2e/test_iou_kernel_datapath.py`, pytest marker
+`e2e`): a real L3 IOU image provides the fabric and the real IOS CLI on
+the server's telnet console, driving anchors-born-with-the-node, real ICMP
+through the port bridge, netem delay, suspend, capture, link
+delete/re-create, node stop/start rewiring, the serial link staying on the
+relay, and a relay negative control.
+
 The uBridge side passed its own 30/30 (`tests/iol/test_tap_anchor.py` in the
 fork), including the DOWN-anchor resilience and kernel-bridge interop this
 design depends on.
