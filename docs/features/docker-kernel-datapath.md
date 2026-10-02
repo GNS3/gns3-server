@@ -458,6 +458,19 @@ links and a relay link both hides it and 409s it; teardown leaves no filter
 or qdisc behind. The P6b e2e was re-run as a regression on the same uBridge
 build (13/13 — nth/quota unaffected by the de-looping below).
 
+In-repo live coverage: `tests/e2e/test_docker_kernel_datapath.py` (pytest
+marker `e2e`) runs two real Alpine containers on an isolated instance — the
+per-link bridge enslaving exactly the two veth host ends, real ICMP, the
+L2-anchor spec §E assertions (no L3 identity, forwarding ports, idle
+silence with the guests' links down), the filter matrix one type at a time
+(netem core and extensions, cls_bpf match-drop, the eBPF classifier, each
+asserted through real traffic), suspend, capture, link delete/re-create,
+container stop/start, a relay negative control, and the relay→kernel
+upgrade on project reopen (the datapath choice is flipped across a server
+restart). The container image is digest-pinned and pulled through the
+server's own pull route on a cache miss, so collaborators test the same
+bytes.
+
 The uBridge-side window work took two fixes that are worth recording, both
 found by *this* integration rather than by unit tests: the delivered
 catch-up loop tripped the verifier's 8192 **jump-sequence** budget — on the
