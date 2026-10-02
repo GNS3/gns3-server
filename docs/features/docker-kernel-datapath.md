@@ -465,9 +465,10 @@ L2-anchor spec §E assertions (no L3 identity, forwarding ports, idle
 silence with the guests' links down), the filter matrix one type at a time
 (netem core and extensions, cls_bpf match-drop, the eBPF classifier, each
 asserted through real traffic), suspend, capture, link delete/re-create,
-container stop/start, a relay negative control, and the relay→kernel
-upgrade on project reopen (the datapath choice is flipped across a server
-restart). The container image is digest-pinned and pulled through the
+container stop/start, a relay negative control — whose own filters
+(delay/frequency_drop/bpf) are asserted to really shape the relay wire as
+uBridge userspace bridge filters — and the relay→kernel upgrade on project
+reopen (the datapath choice is flipped across a server restart). The container image is digest-pinned and pulled through the
 server's own pull route on a cache miss, so collaborators test the same
 bytes.
 

@@ -79,7 +79,9 @@ Current scenarios:
   from the images directory, the real IOS CLI on the server's telnet
   console): kernel link through the [IOL fabric ↔ TAP] port bridge (same
   lifecycle as the iol-xe containers), a serial link staying on the relay
-  (serial bays never anchor), and a relay negative control.
+  (serial bays never anchor), and a relay negative control whose filters
+  ride the IOU-specific `iol_bridge add_packet_filter` engine (delay and
+  frequency_drop measured through real traffic).
 * `test_qemu_kernel_datapath.py` — two real IOSv routers (a real qcow2
   image from the images directory's `QEMU` subfolder, linked clone, the
   real IOS CLI on the server's telnet console): the anchor TAP is QEMU's
@@ -91,9 +93,10 @@ Current scenarios:
   veth datapath): the per-link kernel bridge enslaves exactly the two veth
   host ends, real ICMP crosses, the filter matrix runs one type at a time
   (netem core and extensions, cls_bpf match-drop, the eBPF classifier —
-  each measured through real traffic), plus a relay negative control and a
-  relay→kernel reopen upgrade (the server's datapath choice is flipped
-  across a restart).
+  each measured through real traffic), plus a relay negative control whose
+  own filters (delay, frequency_drop, bpf) really shape the wire as uBridge
+  userspace bridge filters, and a relay→kernel reopen upgrade (the server's
+  datapath choice is flipped across a restart).
 * `test_marker_kernel_datapath.py` — two real Alpine containers on a
   kernel-only link with traffic-insight markers attached to a veth anchor
   (`marker add_kernel`): `marker.match` signals collected off the dedicated

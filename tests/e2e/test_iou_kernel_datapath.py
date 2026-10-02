@@ -34,7 +34,9 @@ Linux bridge, kernel filters, suspend and capture.
 
 ``test_iou_relay_control`` is the negative control on an isolated
 relay-configured instance: the same topology rides the fabric socket ↔ UDP
-relay (no per-link bridge, nothing enslaved) and still pings.
+relay (no per-link bridge, nothing enslaved) and still pings — with its
+filters applied by the IOU-specific engine
+(``iol_bridge add_packet_filter`` on the IOL port) really shaping the wire.
 """
 
 import re
@@ -238,7 +240,9 @@ def test_iou_relay_control():
     Negative control: the same topology with ``enable_kernel_datapath =
     false`` (an isolated instance) wires nothing into the kernel — no
     per-link bridge, no enslavement — and still pings over the fabric
-    socket ↔ UDP relay.
+    socket ↔ UDP relay. The relay's filters ride the IOU-specific engine:
+    the IOL port's userspace filter list (``iol_bridge add_packet_filter``),
+    walked by both the fabric → wire and wire → fabric paths.
 
     Anchors DO exist here (an IOU node creates its port TAPs at start
     whenever the uBridge can terminate an IOL port on one); the server
@@ -280,6 +284,34 @@ def test_iou_relay_control():
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if="Ethernet0/0")
         relay_ping = harness.wait_ping(c1, "10.1.1.2")
         assert relay_ping["success"] == 100, relay_ping["raw"]
+
+        # The relay link's filters really shape the wire on the IOU engine
+        # too. delay 100: one delay line per direction (the port's IOL and
+        # NIO sides are separate lines), so the RTT grows by ~200 ms.
+        lid = link["link_id"]
+        offered = {entry["type"] for entry in compute.call("GET", f"/projects/{pid}/links/{lid}/available_filters")}
+        assert "delay" in offered and "frequency_drop" in offered, offered
+
+        print(".. iol_bridge relay filter: delay 100 ms (per-direction delay lines, RTT +~200 ms)")
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"delay": [100]}})
+        delayed = harness.ping(c1, "10.1.1.2", repeat=5)
+        assert delayed["success"] == 100, delayed["raw"]
+        assert delayed["avg"] >= 150, (relay_ping, delayed)
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+        fast = harness.ping(c1, "10.1.1.2", repeat=3)
+        assert fast["success"] == 100 and fast["avg"] < 50, (relay_ping, fast)
+
+        # frequency_drop shares one counter between the port's two
+        # directions: on an alternating ping stream one whole direction dies
+        # (same semantics as the plain relay's bridge filters).
+        print(".. iol_bridge relay filter: frequency_drop 2 (shared counter, one direction dies)")
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"frequency_drop": [2]}})
+        dropped = harness.ping(c1, "10.1.1.2", repeat=6)
+        print(f"..   success {dropped['success']} %")
+        assert dropped["success"] <= 50, dropped["raw"]
+        compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
+        recovered = harness.wait_ping(c1, "10.1.1.2")
+        assert recovered["success"] == 100, recovered["raw"]
 
         c1.close()
         c2.close()

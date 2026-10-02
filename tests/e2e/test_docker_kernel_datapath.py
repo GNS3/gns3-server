@@ -36,7 +36,10 @@ server itself uses. The scenarios cover:
   offered by ``available_filters`` and everything restores cleanly.
 * ``test_docker_relay_control`` — the negative control on an isolated
   relay-configured instance: no per-link kernel bridge, the wire is the
-  uBridge relay, and the kernel-only filter types are hidden.
+  uBridge relay, the kernel-only filter types are hidden — and the relay's
+  own filter set (delay, frequency_drop, bpf) really shapes the wire, as
+  uBridge userspace filters on the filter node's bridge
+  (``bridge add_packet_filter``).
 * ``test_docker_relay_to_kernel_reopen_upgrade`` — the server's datapath
   choice is flipped (relay → kernel) across a restart and the project is
   reopened: the link is rebuilt on the kernel datapath and forwards.
@@ -481,6 +484,49 @@ def test_docker_relay_control():
         assert not (offered & {"rate", "reorder", "gemodel", "duplicate", "seed", "limit", "quota", "window_drop"}), (
             offered
         )
+
+        # The relay's filters are real uBridge userspace filters walked by
+        # the bridge's two listener threads: both directions of the wire
+        # cross them. delay 100 creates one delay line per direction, so the
+        # RTT grows by ~200 ms.
+        print(".. relay filters: delay 100 ms (one delay line per direction, RTT +~200 ms)")
+        _put_filters(compute, pid, link["link_id"], {"delay": [100]})
+        harness.docker_wait_ping(daemon, n1["container_id"], R2_IP)
+        delayed = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)
+        assert delayed["loss"] == 0, delayed["raw"]
+        assert delayed["avg"] >= 150, (relay_ping, delayed)
+        _put_filters(compute, pid, link["link_id"], {})
+        fast = harness.docker_wait_ping(daemon, n1["container_id"], R2_IP)
+        assert fast["loss"] == 0 and fast["avg"] < 50, (relay_ping, fast)
+
+        # frequency_drop counts every packet crossing the bridge, both
+        # directions sharing one counter, so on an alternating ping stream
+        # the same direction dies on every crossing (probed against uBridge
+        # directly: replies drop, round trips die wholesale). -1 is the
+        # drop-everything encoding the suspend emulation uses.
+        print(".. relay filters: frequency_drop 2 (shared counter, one direction dies)")
+        _put_filters(compute, pid, link["link_id"], {"frequency_drop": [2]})
+        dropped = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=10)
+        print(f"..   {dropped['loss']} % round-trip loss")
+        assert dropped["loss"] >= 50, dropped["raw"]
+        _put_filters(compute, pid, link["link_id"], {"frequency_drop": [-1]})
+        blackholed = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
+        assert blackholed["loss"] == 100, blackholed["raw"]
+
+        # bpf on the relay is uBridge's libpcap userspace match-drop — a
+        # different engine from the kernel datapath's cls_bpf
+        print(".. relay filters: bpf 'icmp' drops every ICMP frame")
+        _put_filters(compute, pid, link["link_id"], {"bpf": ["icmp"]})
+        icmp_dropped = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
+        assert icmp_dropped["loss"] == 100, icmp_dropped["raw"]
+        print(".. relay filters: bpf 'greater 150' discriminates by frame size")
+        _put_filters(compute, pid, link["link_id"], {"bpf": ["greater 150"]})
+        small = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
+        assert small["loss"] == 0, small["raw"]
+        big = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4, size=300)
+        assert big["loss"] == 100, big["raw"]
+        _put_filters(compute, pid, link["link_id"], {})
+        assert harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)["loss"] == 0
     except BaseException:
         harness.release(server, pid, failed=True)
         raise
