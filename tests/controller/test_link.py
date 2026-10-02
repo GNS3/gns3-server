@@ -142,6 +142,37 @@ async def test_add_node_already_connected_after_node_update(project, compute):
 
 
 @pytest.mark.asyncio
+async def test_link_delete_after_node_update_releases_port(project, compute):
+    """
+    Link.delete drops the port's link reference through the port object it
+    stored at add_node time; a node update since then rebuilt the port list,
+    so that stored object is stale. The delete must release the *live* port,
+    or the next link on it is refused with "Port is already used".
+    """
+
+    project.dump = AsyncioMagicMock()
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link.node_updated = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    await link.add_node(node1, 0, 0)
+    await link.add_node(node2, 0, 0)
+
+    # a node update (e.g. the status change of a start) rebuilds the ports
+    await node1.parse_node_response({"status": "started"})
+
+    await link.delete()
+
+    link2 = Link(project)
+    link2.create = AsyncioMagicMock()
+    await link2.add_node(node1, 0, 0)  # must not raise "Port is already used"
+
+
+@pytest.mark.asyncio
 async def test_add_node_cloud(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="qemu")

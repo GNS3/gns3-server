@@ -987,9 +987,7 @@ class Project:
             # an image is missing. Keep the link on the controller (so the
             # topology is preserved) but defer the NIO creation until the
             # missing image is resolved.
-            for n in link._nodes:
-                n["node"].add_link(link)
-                n["port"].link = link
+            link._bind_members()
             link._deferred = True
             log.info(
                 "Project '%s' [%s]: deferring link %s until missing image(s) are resolved",
@@ -1990,9 +1988,7 @@ class Project:
             # Finalise every link: wire node/port back-references, mark created,
             # notify clients, and apply project-level marker definitions.
             for link, _entries in valid:
-                for n in link._nodes:
-                    n["node"].add_link(link)
-                    n["port"].link = link
+                link._bind_members()
                 link._created = True
                 self.emit_notification("link.created", link.asdict())
             log.info("Project '%s' [%s]: created %d links", self._name, self._id, len(valid))

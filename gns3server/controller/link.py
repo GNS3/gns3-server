@@ -438,9 +438,7 @@ class Link:
 
         if len(self._nodes) == 2 and not batch:
             await self.create()
-            for n in self._nodes:
-                n["node"].add_link(self)
-                n["port"].link = self
+            self._bind_members()
             self._created = True
             self._project.emit_notification("link.created", self.asdict())
 
@@ -471,14 +469,32 @@ class Link:
         """
         raise NotImplementedError
 
+    def _bind_members(self):
+        """
+        Wire the back-references on every member: the node's link set and the
+        port's link. The port is resolved live, through the node's current
+        port list — the object stored at add_node time goes stale whenever a
+        node update rebuilds that list (``parse_node_response``), and a
+        back-reference set on the stale object is invisible to the "Port is
+        already used" guard in add_node, which reads the live one.
+        """
+
+        for n in self._nodes:
+            n["node"].add_link(self)
+            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
+            port.link = self
+
     async def delete(self):
         """
         Delete the link
         """
         for n in self._nodes:
-            # It could be different of self if we rollback an already existing link
-            if n["port"].link == self:
-                n["port"].link = None
+            # The live port, for the same staleness reason as _bind_members;
+            # the link could be different from self if we rollback an
+            # already existing link
+            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
+            if port.link == self:
+                port.link = None
                 n["node"].remove_link(self)
 
     async def reset(self):
