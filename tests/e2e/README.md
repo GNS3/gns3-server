@@ -62,6 +62,13 @@ Current scenarios:
   (kernel bridge) between two c7200 routers: deferred joins on boot, VLAN
   isolation, absorbed-anchor filters/suspend/capture, VPCS peers staying on
   the relay, and a relay negative control.
+* `test_ethernet_switch_cascade.py` — two Ethernet switches cascaded through
+  the link-owned veth pair (`gs<link_id>0/1`, each end enslaved into its own
+  switch's bridge): a dot1q trunk cascade carrying two VLANs at once across
+  two c7200 routers per switch, the symmetric access/trunk mode flip on the
+  cascade ends, two-sided netem (one end per direction), suspend, link
+  delete/re-create (the pair dies with the link, the replacement mints new
+  names), zero residue.
 * `test_iol_docker_kernel_datapath.py` — two real iol-xe containers (Cisco
   CML iol-runner images): kernel link through the port bridge's swappable
   TAP leg (anchors at start, netem delay, suspend, capture, link

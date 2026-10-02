@@ -1104,6 +1104,14 @@ def link_bridge_name(link_id):
     return "gns3" + link_id.replace("-", "")[:11]
 
 
+def cascade_end_names(link_id):
+    """The two veth ends of a switch-to-switch cascade link, as
+    ``(end0, end1)`` — a pure function of the link id, like the per-link
+    bridge name (see utils.kernel_cascade_names)."""
+    stem = link_id.replace("-", "")[:10]
+    return f"gs{stem}0", f"gs{stem}1"
+
+
 def anchor_name(node_id, adapter, port):
     """The dynamips anchor TAP name for a slot/port (see Router._tap_name)."""
     return "gd" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
