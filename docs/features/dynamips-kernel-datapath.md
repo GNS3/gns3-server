@@ -151,5 +151,7 @@ enable_kernel_datapath = True
 
 The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` —
 it absorbs the peer's anchor into its own kernel bridge; switch-to-switch
-cascades and the IOL Docker node are next). Cross-compute kernel links need
+cascades and the IOL runner container have landed too — see
+`ethernet-switch-kernel-datapath.md` and
+`iol-docker-kernel-datapath.md`). Cross-compute kernel links need
 VXLAN/GENEVE encapsulation — deferred until every node type is kernelized.

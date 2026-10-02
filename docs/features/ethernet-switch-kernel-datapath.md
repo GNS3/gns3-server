@@ -28,15 +28,17 @@ end / TAP becomes the switch port; frames cross
 ## Datapath selection
 
 A link with an `ethernet_switch` endpoint rides the fast path when the
-**peer** can anchor (same compute; Docker always, QEMU/IOU/Dynamips per
+**peer** can anchor (same compute; Docker always — including IOL runner
+containers, per their own capability gate — QEMU/IOU/Dynamips per
 their capabilities) — the switch side needs no anchoring capability of its
 own, its bridge and brctl exist by construction. Exclusions, all staying
 on the relay:
 
-* **switch ↔ switch**: a kernel interface can belong to exactly one
-  bridge, so cascading two switch bridges needs a veth pair between them —
-  a separate mechanism, deferred;
-* anchor-less peers (VPCS, cloud, the Dynamips-hosted hub);
+* **switch ↔ switch** cascades ride the kernel too — through a veth pair
+  joining the two bridges (one end per switch, each side applying its own
+  port mode to its own end); see the wire format below;
+* anchor-less peers (VPCS, cloud, the Dynamips-hosted hub, generic
+  `GNS3_UNIX_SOCKET_NIO` containers);
 * cross-compute links, non-Ethernet ports: the common rules.
 
 ## The wire format: one NIO names the other end's interface
@@ -153,6 +155,8 @@ enable_kernel_datapath = True
 ## Roadmap
 
 Switch-to-switch links (a veth pair joining the two kernel bridges, with
-each side's port mode applied at its own end) and the IOL Docker node
-(`bridge add_nio_tap`); cross-compute kernel links need VXLAN/GENEVE
-encapsulation, deferred until every node type is kernelized.
+each side's port mode applied at its own end) have landed (see above), and
+so has the IOL runner container (`iol-docker-kernel-datapath.md` — its
+`iol_docker` anchors absorb like any peer's). Cross-compute kernel links
+need VXLAN/GENEVE encapsulation, deferred until every node type is
+kernelized.

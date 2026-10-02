@@ -182,5 +182,8 @@ hypervisor opens uBridge-created TAPs with `nio create_tap`: the same
 external-fd-holder shape QEMU uses; serial/ATM/POS ports stay relay).
 **The Ethernet switch has landed** — see
 `docs/features/ethernet-switch-kernel-datapath.md` (the switch absorbs a
-peer's anchor into its own kernel bridge; switch-to-switch cascades stay
-relay for now).
+peer's anchor into its own kernel bridge; switch-to-switch cascades too).
+**The IOL runner container has landed** — see
+`docs/features/iol-docker-kernel-datapath.md` (persistent TAP anchors
+through the generic bridge module's swappable TAP leg; the unix-socket guest
+leg keeps one userspace hop, like IOU's fabric).

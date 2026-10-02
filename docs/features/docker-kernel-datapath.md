@@ -85,7 +85,7 @@ markers):
 |---|---|---|---|
 | `DockerVM` | default | veth pair | yes |
 | `VendorDockerVM` (non-unix-socket) | `console_type=docker_exec`, `GNS3_SKIP_INIT`, … (XRd, SR Linux, …) | veth pair (same path via `super()`) | yes |
-| `IOLDockerVM` | `GNS3_IOL_RUNNER=1` | AF_UNIX datagram socket pairs (`sNN`/`cNN`) — the container netns is unused | rejected (no host-side interface) |
+| `IOLDockerVM` | `GNS3_IOL_RUNNER=1` | AF_UNIX datagram socket pairs (`sNN`/`cNN`) — the container netns is unused; kernel links ride persistent `gx` TAP anchors through the port bridge's swappable TAP leg (see `iol-docker-kernel-datapath.md`) | yes (gated on `ubridge_bridge_tap` + `ubridge_tap`) |
 | `VendorDockerVM` (unix-socket) | `GNS3_UNIX_SOCKET_NIO=1` | same socket contract, generic capability for vendor NOS images | rejected |
 
 Unix-socket containers are detected both in the controller
