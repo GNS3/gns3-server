@@ -1807,16 +1807,17 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
 
     async def _connect_nio(self, adapter_number, nio, port_number=0):
 
-        host_ifc = self._kernel_veths.get((adapter_number, port_number))
+        host_ifc = self._kernel_host_ifc(adapter_number, port_number)
 
         if isinstance(nio, NIOBridge):
             if host_ifc is None:
                 # Only reachable for containers started before the
                 # unified-veth change (or unix-socket vendor containers,
-                # rejected earlier): the kernel path needs the veth host end.
+                # rejected earlier): the kernel path needs an anchor — the
+                # veth host end, or the persistent TAP of an IOL runner.
                 raise DockerError(
-                    "Adapter {adapter_number} port {port_number} of container '{name}' has no veth "
-                    "interface (it was started before the unified-veth datapath); "
+                    "Adapter {adapter_number} port {port_number} of container '{name}' has no host-side "
+                    "anchor interface (it was started before the unified-veth datapath); "
                     "restart the node to attach a kernel link to it".format(
                         adapter_number=adapter_number, port_number=port_number, name=self.name
                     )
@@ -1894,7 +1895,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         if self.ubridge:
             if isinstance(nio, NIOBridge):
                 if self.status == "started":
-                    host_ifc = self._kernel_veths.get((adapter_number, port_number))
+                    host_ifc = self._kernel_host_ifc(adapter_number, port_number)
                     if host_ifc is not None:
                         # Incremental marker + filter reconcile on the anchor
                         # — the relay-datapath equivalent of the branch below.
@@ -2008,9 +2009,11 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         nio = self._ethernet_adapters[adapter_number].get_nio(port_number)
         if isinstance(nio, NIOBridge):
             # Kernel datapath: no relay bridge exists — capture via uBridge's
-            # AF_PACKET module bound to the veth host end. Single capture per
-            # uBridge process: a concurrent second one returns EALREADY.
-            host_ifc = self._kernel_veths.get((adapter_number, port_number))
+            # AF_PACKET module bound to the anchor (a veth host end for the
+            # standard container, a persistent TAP for an IOL runner).
+            # Single capture per uBridge process: a concurrent second one
+            # returns EALREADY.
+            host_ifc = self._kernel_host_ifc(adapter_number, port_number)
             await self._ubridge_send(f'capture start_kernel {host_ifc} "{output_file}"')
             return
         # Relay datapath (even though the adapter interface is a veth, the

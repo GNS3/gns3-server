@@ -21,7 +21,7 @@ Ethernet-switch link), plus the cascade veth naming for switch-to-switch
 links.
 """
 
-from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name, kernel_cascade_names
+from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name, kernel_anchor_type, kernel_cascade_names
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
 LINK_ID = "1a2b3c4d-5e6f-4a5b-8c9d-0e1f2a3b4c5d"
@@ -32,6 +32,22 @@ def test_every_node_type_has_its_own_prefix():
     assert kernel_anchor_name("qemu", NODE_ID, 1, 2) == "gq00010203e1p2"
     assert kernel_anchor_name("iou", NODE_ID, 0, 3) == "gi00010203e0p3"
     assert kernel_anchor_name("dynamips", NODE_ID, 6, 48) == "gd00010203e6p48"
+    assert kernel_anchor_name("iol_docker", NODE_ID, 0, 0) == "gx00010203e0p0"
+
+
+def test_anchor_type_keys_iol_runner_containers_apart():
+    """
+    IOL runner containers are Docker nodes whose anchors are persistent TAPs,
+    not veth host ends — their own key keeps the gv namespace free of TAPs.
+    The marker check must ignore a mere mention of the knob and survive a
+    multi-line environment.
+    """
+
+    assert kernel_anchor_type("docker", "GNS3_IOL_RUNNER=1") == "iol_docker"
+    assert kernel_anchor_type("docker", "GNS3_IOL_STARTUP_CONFIG=cfg.txt\nGNS3_IOL_RUNNER=1") == "iol_docker"
+    assert kernel_anchor_type("docker") == "docker"
+    assert kernel_anchor_type("docker", "GNS3_UNIX_SOCKET_NIO=1") == "docker"
+    assert kernel_anchor_type("qemu") == "qemu"
 
 
 def test_unknown_node_types_have_no_anchor():
@@ -62,7 +78,7 @@ def test_cascade_names_fit_ifnamsiz():
 
 
 def test_cascade_names_stay_out_of_the_node_anchor_namespace():
-    # "gs" cannot collide with any node anchor prefix (gv/gq/gi/gd), so a
+    # "gs" cannot collide with any node anchor prefix (gv/gq/gi/gd/gx), so a
     # cascade end is never mistaken for another node's anchor
     for end in kernel_cascade_names(LINK_ID):
-        assert not any(end.startswith(prefix) for prefix in ("gv", "gq", "gi", "gd"))
+        assert not any(end.startswith(prefix) for prefix in ("gv", "gq", "gi", "gd", "gx"))

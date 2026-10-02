@@ -20,10 +20,12 @@ The kernel-datapath anchor naming contract, in one place.
 Every node type whose adapters own a host-side interface names that anchor
 deterministically: ``g<type>{node_id[:8]}e{adapter}p{port}`` — ``gv`` for a
 Docker veth host end, ``gq`` for a QEMU TAP, ``gi`` for an IOU port TAP,
-``gd`` for a Dynamips port TAP. The prefixes keep anchors out of the
-``gns3`` bridge/TAP name space and name-collision-free on a host; the 8
-hex chars of the node id plus adapter/port keep every name unique and
-within IFNAMSIZ (15).
+``gd`` for a Dynamips port TAP, ``gx`` for an IOL runner container's port
+TAP (a Docker node whose guest leg is unix sockets, so its anchor is a TAP
+like IOU's, not a veth). The prefixes keep anchors out of the ``gns3``
+bridge/TAP name space and name-collision-free on a host; the 8 hex chars of
+the node id plus adapter/port keep every name unique and within IFNAMSIZ
+(15).
 
 The compute classes create their anchors with these helpers (single source
 of truth), and so does the controller when a switch link has to name the
@@ -40,10 +42,30 @@ log = logging.getLogger(__name__)
 # Docker veth guest end) is container-local and deliberately absent.
 ANCHOR_PREFIX = {
     "docker": "gv",
+    "iol_docker": "gx",
     "qemu": "gq",
     "iou": "gi",
     "dynamips": "gd",
 }
+
+
+def kernel_anchor_type(node_type, environment=None):
+    """
+    The anchor-type key a node of this type and environment names its
+    anchors under. IOL runner containers are Docker nodes (node_type
+    "docker") whose anchors are persistent TAPs, not veth host ends — their
+    own key keeps the ``gv`` veth namespace free of TAPs (stale-interface
+    sweeps and human eyes both key on the prefix). Every other node type is
+    its own key unchanged.
+    """
+
+    # The marker check mirrors utils.application_id.is_iol_runner_environment
+    # inline: this module sits below every node module (compute and
+    # controller alike import it during their own import), so it must not
+    # depend on anything that pulls the controller package in.
+    if node_type == "docker" and "GNS3_IOL_RUNNER=" in (environment or ""):
+        return "iol_docker"
+    return node_type
 
 
 def anchor_suffix(node_id, adapter_number, port_number=0):
@@ -59,7 +81,8 @@ def kernel_anchor_name(node_type, node_id, adapter_number, port_number=0):
     """
     The host-side kernel-datapath anchor of one adapter port, or None for a
     node type without one (the anchor-less types never anchor a kernel
-    link).
+    link). Accepts either a raw node type or an anchor-type key from
+    :func:`kernel_anchor_type`.
     """
 
     prefix = ANCHOR_PREFIX.get(node_type)
