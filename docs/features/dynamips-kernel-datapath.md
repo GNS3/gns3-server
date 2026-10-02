@@ -93,6 +93,27 @@ filters are one tc netem qdisc per anchor plus cls_bpf/eBPF drops. A relay
 port keeps its Dynamips NIO and the node's uBridge relay bridge
 (`DYNAMIPS-*`) with userspace filters, exactly as before.
 
+## Link-local frames (LACP, LLDP, 802.1X, STP)
+
+The bridge stands in for a cable, but the kernel's `br_handle_frame()` does
+not forward the IEEE 802.1D reserved range (`01:80:c2:00:00:00`-`0f`) by
+default — LACP, LLDP/DCBX and 802.1X would never cross a kernel link while
+the UDP relay carries them fine. uBridge therefore opens every port's
+per-port `group_fwd_mask` (`IFLA_BRPORT_GROUP_FWD_MASK`) to `0xfffd` at
+`brctl addif` time (Linux 4.15+, best-effort on older kernels). The
+bridge-level knob cannot do this: `BR_GROUPFWD_RESTRICTED` rejects bits 0-2,
+so LACP is reachable per port only.
+
+Result on kernel links: ordinary multicast, STP/RSTP, LACP, 802.1X and
+LLDP/DCBX all cross; **802.3x PAUSE / PFC does not** — `case 0x01` in
+`br_handle_frame()` drops it unconditionally and no mask can enable it.
+That is a documented limit, not a regression (PFC's hardware semantics are
+out of emulation's reach anyway); a lab that needs PAUSE frames on the wire
+must use a relay link. Verified live by
+`tests/e2e/test_docker_link_local_frames.py` (per-MAC guest-to-guest
+matrix); the contract and kernel references live in
+`docs/design/ubridge-link-local-frame-forwarding-spec.md`.
+
 ## Relay fallback
 
 A uBridge without the tap module keeps the node relay-only: `_prepare_tap_datapath`
