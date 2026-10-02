@@ -344,6 +344,15 @@ direction relative to the capture node; see [Direction](#direction).
 
 ## Notes
 
+- **Live e2e coverage.** `tests/e2e/test_marker_kernel_datapath.py` drives two real
+  Alpine containers over a kernel-only link with markers attached to a veth anchor
+  (`marker add_kernel`): it asserts the exact `marker.match` identity on the dedicated
+  marker WebSocket (filter/tag/link_id/node_id/ts/len and the tx/rx direction set of a
+  ping), that the main project channel carries no `marker.match`, that a non-matching
+  BPF and a `tx`-directioned sibling each see exactly their intended traffic, the host
+  pcap frame count, pause/resume silence counting against a still-firing sibling,
+  marker delete removing the pcap and silencing signals, and the empty marker
+  directory at the end.
 - **Marker name is immutable.** It is the identifier across the controller, the uBridge
   filter, the pcap filename, and `MARK` signal routing — so rename is a delete + recreate,
   not a field update. PUT ignores the body `name`; the `{name}` path parameter identifies

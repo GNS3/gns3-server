@@ -62,12 +62,14 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
 import pytest
+from websockets.sync.client import connect as ws_connect
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -466,6 +468,70 @@ def release(server, project_id, failed=False):
             print(f"!! could not delete project {project_id}: {e}")
     if server.isolated and not (failed and keep_on_failure()):
         server.stop()
+
+
+# ---------------------------------------------------------------------------
+# WebSocket notification collector
+# ---------------------------------------------------------------------------
+
+
+class WebSocketCollector:
+    """Collects server notification messages from one WebSocket.
+
+    The e2e tests are synchronous; this is a sync facade over ``websockets``'
+    sync client: a background thread drains the socket into a list and the
+    test polls :meth:`events` / :meth:`wait_events`. Messages are the
+    server's ``{"action": ..., "event": ...}`` JSON objects.
+    """
+
+    def __init__(self, server, path, open_timeout=15):
+        base = server.compute.url.replace("https", "wss", 1).replace("http", "ws", 1)
+        self._ws = ws_connect(f"{base}{path}?token={server.compute.token}", open_timeout=open_timeout)
+        self._messages = []
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._pump, daemon=True)
+        self._thread.start()
+
+    def _pump(self):
+        while not self._stop.is_set():
+            try:
+                raw = self._ws.recv(timeout=0.5)
+            except TimeoutError:
+                continue
+            except Exception:
+                break  # socket closed under us: stop draining
+            try:
+                self._messages.append(json.loads(raw))
+            except ValueError:
+                continue
+
+    def messages(self, action=None):
+        """Every message received so far, optionally only for one action."""
+        messages = list(self._messages)
+        if action is not None:
+            messages = [m for m in messages if m.get("action") == action]
+        return messages
+
+    def events(self, action):
+        """The ``event`` payload of every message carrying the action."""
+        return [m.get("event") for m in self.messages(action)]
+
+    def wait_events(self, action, count=1, timeout=10):
+        """Poll until at least *count* events of the action arrived (or the
+        timeout passes); returns whatever was collected either way."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            events = self.events(action)
+            if len(events) >= count:
+                return events
+            time.sleep(0.2)
+        return self.events(action)
+
+    def close(self):
+        self._stop.set()
+        with contextlib.suppress(Exception):
+            self._ws.close()
+        self._thread.join(timeout=5)
 
 
 # ---------------------------------------------------------------------------

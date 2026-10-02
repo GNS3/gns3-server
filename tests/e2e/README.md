@@ -47,10 +47,11 @@ fatal: the routers simply run without one).
 
 `harness.py` holds the shared pieces — REST client, server lifecycle, the
 IOS console driver, the Docker guest driver (a tiny Docker Engine API
-client over the daemon socket, plus the digest-pinned image helper),
-host-side kernel inspections (bridge membership, tap admin state, tc
-qdiscs, the L2-anchor spec §E assertions) — so a new node type adds only
-its own scenario module.
+client over the daemon socket, plus the digest-pinned image helper), a
+WebSocket notification collector (a sync facade over `websockets`' sync
+client for asserting on live notification streams), host-side kernel
+inspections (bridge membership, tap admin state, tc qdiscs, the L2-anchor
+spec §E assertions) — so a new node type adds only its own scenario module.
 
 Current scenarios:
 
@@ -93,6 +94,15 @@ Current scenarios:
   each measured through real traffic), plus a relay negative control and a
   relay→kernel reopen upgrade (the server's datapath choice is flipped
   across a restart).
+* `test_marker_kernel_datapath.py` — two real Alpine containers on a
+  kernel-only link with traffic-insight markers attached to a veth anchor
+  (`marker add_kernel`): `marker.match` signals collected off the dedicated
+  marker WebSocket with their full identity (filter/tag/link_id/node_id/len
+  and the tx/rx direction set of a ping), the main project channel asserted
+  free of matches, BPF and direction enforcement, host pcap exactness,
+  pause/resume silence counting against a still-firing sibling, tag replay
+  (timeline, display filter, link narrowing, window, the 409 gate) and
+  marker delete taking pcap plus signals with it.
 
 The Docker scenarios run a digest-pinned `alpine:3`, so every developer
 tests the same bytes: a cached copy in the local Docker daemon costs no
