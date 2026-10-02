@@ -386,7 +386,10 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         ubridge_bridge = self._ubridge_bridge_name(port_number)
         tap = self._tap_name(port_number)
 
-        # per-port uBridge relay -- uBridge holds the TAP fd
+        # per-port uBridge relay -- uBridge holds the TAP fd. Nothing created
+        # this TAP before: add_nio_tap mints it (transient, a free name) and
+        # hardens it L2-only at creation (ubridge-l2-anchor-spec §B, the fifth
+        # creator — the server issues no link l2only of its own).
         await self._ubridge_send(f"bridge create {ubridge_bridge}")
         await self._ubridge_send(f'bridge add_nio_tap {ubridge_bridge} "{tap}"')
         # enslave the same TAP to the kernel bridge (the cloud.py::_add_linux_ethernet move)

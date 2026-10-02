@@ -41,6 +41,15 @@ on the relay:
   `GNS3_UNIX_SOCKET_NIO` containers);
 * cross-compute links, non-Ethernet ports: the common rules.
 
+**Relay port TAPs.** The switch's own relay-path port TAPs (the
+`gns3{id}-N` devices) are created *implicitly* by uBridge's
+`bridge add_nio_tap` — a name that is free is minted as a transient TAP,
+and uBridge hardens it L2-only at creation (the fifth creator of
+`docs/design/ubridge-l2-anchor-spec.md` §B, uBridge `fb72758`). The server
+issues nothing extra: without that hardening the device would take a
+kernel-default IPv6 identity whose DAD/MLD noise floods the segment, which
+is exactly what the e2e's relay-control §E.1 assertion guards against.
+
 ## The wire format: one NIO names the other end's interface
 
 ```

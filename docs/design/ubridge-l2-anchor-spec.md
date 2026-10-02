@@ -4,10 +4,11 @@ See LICENSE file for licensing information.
 -->
 
 > Frozen requirements spec for the **uBridge** project. Status: **delivered**
-> (uBridge `e2e3155` — `link l2only` plus the creators that apply it) and
-> verified from the server side: anchors and per-link bridges report
-> `addrgenmode none`, `ip -4/-6 addr` are empty, and an idle anchor is silent
-> once the one-shot membership burst of §0 has settled.
+> (uBridge `e2e3155` — `link l2only` plus the creators that apply it;
+> `fb72758` — the fifth creator: the TAP `bridge add_nio_tap` creates for a
+> free name) and verified from the server side: anchors and per-link bridges
+> report `addrgenmode none`, `ip -4/-6 addr` are empty, and an idle anchor is
+> silent once the one-shot membership burst of §0 has settled.
 >
 > **Residual, accepted (measured after delivery):** enslaving a port still
 > makes the *bridge device* announce its multicast memberships — one IGMPv3
@@ -141,9 +142,15 @@ directly, and a caller cannot forget it:
 | `docker create_veth <host> <guest>` | the **host** end only | the guest end moves into a container netns and is deliberately untouched |
 | `link veth <name> <peer>` | both ends | both ends are host-side |
 | `brctl create <bridge>` | the bridge device itself | the fabric the anchors are enslaved to; the bridge's own link-local floods to every port |
+| `bridge add_nio_tap <br> <name>` | the TAP it **creates** (name free) | by-name `TUNSETIFF` creates a transient device when the name is free — cloud's bridge interfaces, and the relay swap's create-if-missing path. Hardened at creation; an attach to an existing device is left untouched (the caller may name a user-owned TAP that has addresses). |
 
 Rule for future creators: any command that creates a host-side device for the
 data plane hardens it, and the acceptance checks in §E apply to it.
+
+An **attach** is not a creation: `bridge add_nio_tap` (and every other open
+of a TAP that already exists) must leave that device's addresses alone. The
+transient TAP `bridge add_nio_tap` creates for a free name is a creation and
+is hardened like the rest — best-effort, before the NIO is handed back.
 
 ## C. Implementation notes (netlink, not `/proc`)
 
@@ -198,17 +205,35 @@ data plane hardens it, and the acceptance checks in §E apply to it.
 
 ## gns3-server alignment (informational — not uBridge scope)
 
-- **Call sites unchanged**: the four creators harden the devices; the server does
-  not issue `link l2only`, and no NIO/JSON schema, filter or MCP tool description
-  changes. This is host-side hygiene only.
-- **e2e assertions to add** (kernel-datapath suites, alongside the existing
-  capture/marker/filter checks):
-  - anchors and per-link bridges have no IPv4/IPv6 addresses (§E.1);
-  - an idle anchor captures zero frames in 5 s (§E.2);
+- **Call sites**: the creators harden the devices; the server issues no
+  `link l2only` itself, and no NIO/JSON schema, filter or MCP tool
+  description changes. This is host-side hygiene only.
+- **The fifth creator was found by these servers' e2e assertions**: on a
+  build predating `fb72758`, the Ethernet switch's relay port TAPs
+  (`gns3{id}-N`, created implicitly by `bridge add_nio_tap`) carried a live
+  `fe80::` — the §E.1 assertion failed on exactly that device, live. The
+  close is uBridge-side (§B table row 5): the transient TAP is hardened at
+  creation, attaches stay untouched. The server side needed no change for
+  it — the assertion alone caught it, and it now guards the fixed build.
+- **e2e assertions** (landed in `tests/e2e/harness.py`, asserted by the
+  kernel-datapath suites alongside the existing capture/marker/filter checks):
+  - anchors and per-link bridges have no IPv4/IPv6 addresses, addrgenmode
+    `none` (`assert_pure_l2`, §E.1) — on the kernel scenarios' anchors and
+    bridges, and on relay-mode anchors/switch TAPs alike (the hardening is a
+    creation-time property, not a datapath one). The switch relay-TAP
+    assertion is what exercises the fifth creator end-to-end (the same
+    uBridge creation path cloud's transient TAPs take);
+  - an idle link stays silent for 5 s after the settle window
+    (`assert_idle_silence`, §E.2) — measured with the guest interfaces shut
+    (silencing IOS's own CDP/keepalives) over the anchors and the bridge;
   - a silent-failure guard found while validating this spec: after attach, every
-    bridge port reports `brport/state == 3` (forwarding). A bridge device left
-    DOWN keeps its ports `DISABLED` (`state == 0`) and forwards nothing — with
-    no error anywhere, so the assertion is the only signal.
+    bridge port reports `brport/state == 3` (forwarding) (`assert_forwarding`).
+    A bridge device left DOWN keeps its ports `DISABLED` (`state == 0`) and
+    forwards nothing — with no error anywhere, so the assertion is the only
+    signal.
 - **Rollout**: with a uBridge that lacks the command the anchors keep today's
   behaviour (noise present). The e2e assertions skip when `link l2only` answers
-  `202-Unknown command`, mirroring the existing tc-capability degradation.
+  `202-Unknown command` (`harness.l2only_supported()` probes a throwaway
+  uBridge once), mirroring the existing tc-capability degradation. A build
+  that has the command but predates `fb72758` fails the switch relay-TAP
+  assertion instead of skipping: the gap is exactly what it exists to catch.
