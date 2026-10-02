@@ -21,7 +21,7 @@ import logging
 
 from gns3server.config import Config
 from gns3server.utils.application_id import is_iol_runner_environment
-from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_cascade_names
+from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_anchor_type, kernel_cascade_names
 from gns3server.utils.packet_filter_validation import (
     KERNEL_UNSUPPORTED_FILTERS,
     split_kernel_only_features,
@@ -57,18 +57,21 @@ log = logging.getLogger(__name__)
 def _is_unix_socket_docker(node):
     """
     Best-effort detection of vendor containers bridged through AF_UNIX
-    socket pairs: they have no host-side interface to enslave into a kernel
-    bridge. Two ways in — the generic GNS3_UNIX_SOCKET_NIO knob, or the IOL
-    runner marker, whose class (IOLDockerVM, selected on GNS3_IOL_RUNNER)
-    forces the unix-socket wiring whatever the knob says. The compute side
-    independently rejects kernel-datapath NIOs on these containers, so a
-    missed detection surfaces as a clearer-late error — except on the switch
-    fast path, where an absent anchor is deferred forever by design (a link
-    to a stopped node must not fail), making the miss a silently dead cable.
+    socket pairs with no anchor of their own: the generic
+    GNS3_UNIX_SOCKET_NIO knob. IOL runner containers also bridge through
+    unix sockets (their class forces the wiring), but their anchors are
+    persistent TAPs — they graduate through _kernel_endpoint_ready's
+    capability gate instead of this exclusion. When both markers are present
+    the IOL runner one wins the compute's class selection, so the exclusion
+    must not fire for it. The compute side independently rejects
+    kernel-datapath NIOs on anchor-less containers, so a missed detection
+    surfaces as a clearer-late error — except on the switch fast path, where
+    an absent anchor is deferred forever by design (a link to a stopped node
+    must not fail), making the miss a silently dead cable.
     """
 
     environment = (node.properties or {}).get("environment") or ""
-    return "GNS3_UNIX_SOCKET_NIO" in environment or is_iol_runner_environment(environment)
+    return "GNS3_UNIX_SOCKET_NIO" in environment and not is_iol_runner_environment(environment)
 
 
 class UDPLink(Link):
@@ -196,8 +199,12 @@ class UDPLink(Link):
         anchor (brctl) or attaches the relay to it (add_nio_ethernet) without
         touching the interfaces the node itself uses. Both endpoints must be
         on the same compute (there is no kernel link across hosts) and both
-        must be able to anchor: Docker adapters are born as veth pairs,
-        QEMU adapters as persistent TAPs, which need uBridge's tap module —
+        must be able to anchor: Docker adapters are born as veth pairs, and
+        IOL runner containers — whose guest leg is unix sockets, not a veth —
+        anchor on persistent TAPs reached through the bridge module's
+        swappable TAP leg (its own capability pair, see
+        _kernel_endpoint_ready). QEMU adapters are persistent TAPs, which
+        need uBridge's tap module —
         asked of that compute, since an old uBridge leaves QEMU on the relay
         datapath and cannot carry a kernel link at all. IOU's Ethernet
         bays anchor on persistent TAPs too, bound to its IOL fabric
@@ -253,6 +260,15 @@ class UDPLink(Link):
         """
 
         if node.node_type == "docker":
+            environment = (node.properties or {}).get("environment") or ""
+            if is_iol_runner_environment(environment):
+                # IOL runner containers anchor on persistent TAPs like IOU,
+                # through the bridge module's swappable TAP leg — both
+                # capabilities strict True: an unreported one (old uBridge,
+                # failed probe) keeps the link on the relay, where it always
+                # works.
+                capabilities = node.compute.capabilities or {}
+                return capabilities.get("ubridge_bridge_tap") is True and capabilities.get("ubridge_tap") is True
             return True
         capabilities = node.compute.capabilities or {}
         if node.node_type == "qemu":
@@ -354,7 +370,7 @@ class UDPLink(Link):
                 peer_index = 1 - index
                 peer = self._nodes[peer_index]["node"]
                 peer_anchor = kernel_anchor_name(
-                    peer.node_type,
+                    kernel_anchor_type(peer.node_type, (peer.properties or {}).get("environment")),
                     peer.id,
                     self._nodes[peer_index]["adapter_number"],
                     self._nodes[peer_index]["port_number"],

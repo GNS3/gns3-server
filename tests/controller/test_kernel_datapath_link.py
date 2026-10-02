@@ -431,43 +431,73 @@ async def test_kernel_datapath_not_eligible_for_unix_socket_containers(project):
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_for_iol_runner_containers(project):
+async def test_iol_runner_containers_gate_on_the_bridge_tap_capabilities(project):
     """
-    The IOL runner marker is the other way into the unix-socket datapath: the
-    compute selects IOLDockerVM on GNS3_IOL_RUNNER and that class wires the
-    adapters through AF_UNIX socket pairs whatever the generic
-    GNS3_UNIX_SOCKET_NIO knob says — and the documented environment for
-    those nodes carries only the marker. Matching the knob alone let them
-    through to a kernel link their compute cannot serve.
+    The IOL runner marker selects a container whose guest leg is unix
+    sockets: it can still anchor kernel links (persistent TAPs through the
+    bridge module's swappable TAP leg), but only when its compute reports
+    both ubridge_bridge_tap and ubridge_tap — an unreported capability (old
+    uBridge, failed probe) keeps the link on the relay, where it always
+    works. This is also the regression guard for the compute that cannot
+    serve the anchor lifecycle being handed a kernel link anyway.
     """
 
-    link, node1, node2 = await _kernel_link(project)
-    node2._properties = {"environment": "GNS3_IOL_RUNNER=1"}
-    assert link._kernel_datapath_eligible(node1, node2) is False
+    def iol_capable_compute(bridge_tap, tap):
+        compute = MagicMock()
+        compute.id = "compute-1"
+        compute.capabilities = {"ubridge_bridge_tap": bridge_tap, "ubridge_tap": tap}
+        return compute
 
-    # the marker travels in a multi-line environment like any other knob
-    node2._properties = {"environment": "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=cfg.txt"}
-    assert link._kernel_datapath_eligible(node1, node2) is False
+    for environment in ("GNS3_IOL_RUNNER=1", "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=cfg.txt"):
+        compute = iol_capable_compute(True, True)
+        node1 = _node(project, compute, "docker1")
+        node2 = _node(project, compute, "iol1", environment=environment)
+        link = await _link(project, node1, node2)
+        assert link._kernel_datapath_eligible(node1, node2) is True, environment
+
+        for bridge_tap, tap in ((None, True), (True, None), (False, True), (True, False)):
+            compute = iol_capable_compute(bridge_tap, tap)
+            node1 = _node(project, compute, "docker1")
+            node2 = _node(project, compute, "iol1", environment=environment)
+            link = await _link(project, node1, node2)
+            assert link._kernel_datapath_eligible(node1, node2) is False, (environment, bridge_tap, tap)
 
 
 @pytest.mark.asyncio
-async def test_kernel_datapath_not_eligible_for_an_iol_runner_container_on_a_switch(project):
+async def test_iol_runner_container_on_a_switch_gates_and_names_the_iol_docker_anchor(project):
     """
-    The switch fast path absorbs the peer's anchor, and a container bridged
-    through unix sockets has none — nor will it ever. The switch defers a
-    join against a stopped peer by design (it must not fail the link), so
-    such a cable would be silently dead instead of merely slow: the gate has
-    to run before the switch branch, keeping the link on the relay the
-    switch's own port TAP serves.
+    On the switch fast path an IOL runner peer gates on the same capability
+    pair — and when it passes, the switch absorbs an anchor named under the
+    ``iol_docker`` key (a persistent TAP, not the ``gv`` veth namespace).
+    Without the capabilities the link must stay on the relay: the switch
+    defers a join against a missing anchor by design (a link to a stopped
+    node must not fail), so a gate miss here is a silently dead cable, not
+    a late error.
     """
 
+    from gns3server.utils.kernel_anchor import kernel_anchor_name
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_bridge_tap": True, "ubridge_tap": True}
+    switch = _node(project, compute, "sw1", node_type="ethernet_switch")
+    peer = _node(project, compute, "iol1", environment="GNS3_IOL_RUNNER=1")
+    link = await _link(project, switch, peer)
+
+    assert link._kernel_datapath_eligible(switch, peer) is True
+    entries = await link._prepare()
+    switch_nio = entries[0][3]
+    assert switch_nio["type"] == "nio_anchor"
+    assert switch_nio["anchor"] == kernel_anchor_name("iol_docker", peer.id, 0, 0)
+    assert switch_nio["anchor"].startswith("gx")
+
+    # a compute that cannot serve the swappable leg keeps the link relay
     compute = MagicMock()
     compute.id = "compute-1"
     compute.capabilities = {"ubridge_tap": True, "ubridge_iol_tap": True}
     switch = _node(project, compute, "sw1", node_type="ethernet_switch")
     peer = _node(project, compute, "iol1", environment="GNS3_IOL_RUNNER=1")
     link = await _link(project, switch, peer)
-
     assert link._kernel_datapath_eligible(switch, peer) is False
 
 
