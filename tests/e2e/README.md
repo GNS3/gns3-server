@@ -27,7 +27,8 @@ Two run modes, chosen per test through `harness.live_server(kernel=...)`:
   process on a free port with its own config directory (the controller DB
   and every path follow the config), so nothing on the machine is touched.
   It needs `ubridge`, `dynamips` and an images directory
-  (`GNS3_E2E_IMAGES`, default `~/GNS3/images`) available locally.
+  (`GNS3_E2E_IMAGES`, default `~/GNS3/images`) available locally; the
+  Docker scenarios additionally need the Docker daemon the server talks to.
 
 Either way each test creates its own project and deletes it again. Set
 `GNS3_E2E_KEEP=1` to keep the project (and a started instance) on failure
@@ -43,9 +44,11 @@ to skip the detection and use the given value (detection failing is never
 fatal: the routers simply run without one).
 
 `harness.py` holds the shared pieces — REST client, server lifecycle, the
-IOS console driver, host-side kernel inspections (bridge membership, tap
-admin state, tc qdiscs, the L2-anchor spec §E assertions) — so a new node
-type adds only its own scenario module.
+IOS console driver, the Docker guest driver (a tiny Docker Engine API
+client over the daemon socket, plus the digest-pinned image helper),
+host-side kernel inspections (bridge membership, tap admin state, tc
+qdiscs, the L2-anchor spec §E assertions) — so a new node type adds only
+its own scenario module.
 
 Current scenarios:
 
@@ -62,6 +65,22 @@ Current scenarios:
   TAP leg (anchors at start, netem delay, suspend, capture, link
   delete/re-create swap, node stop/start rewiring) and a relay negative
   control.
+* `test_docker_kernel_datapath.py` — two real Alpine containers (the plain
+  veth datapath): the per-link kernel bridge enslaves exactly the two veth
+  host ends, real ICMP crosses, the filter matrix runs one type at a time
+  (netem core and extensions, cls_bpf match-drop, the eBPF classifier —
+  each measured through real traffic), plus a relay negative control and a
+  relay→kernel reopen upgrade (the server's datapath choice is flipped
+  across a restart).
+
+The Docker scenarios run a digest-pinned `alpine:3`, so every developer
+tests the same bytes: a cached copy in the local Docker daemon costs no
+network, a cache miss pulls through the server's own image-pull route, and
+with neither cache nor registry the scenario skips (`GNS3_E2E_DOCKER_IMAGE`
+overrides the reference). Their guests are addressed the way a GNS3 user
+does it — the node's persistent `/etc/network/interfaces`, which the
+container's `init.sh` applies at boot — and driven through the Docker
+daemon socket the server itself uses.
 
 Every kernel scenario also asserts the L2-anchor spec's server-side
 guarantees (`docs/design/ubridge-l2-anchor-spec.md` §E): anchors and bridges

@@ -42,11 +42,18 @@ Environment knobs:
 * ``GNS3_E2E_IDLEPC`` — use this idle-PC value for the dynamips routers
   instead of detecting one (see ``dynamips_idlepc``; without an idle-PC each
   router burns a full CPU core for the whole scenario).
+* ``GNS3_E2E_DOCKER_IMAGE`` — the image the Docker scenarios run (default
+  ``alpine:3``, pinned by digest and pulled on a cache miss; see
+  ``ensure_docker_image``).
+* ``GNS3_E2E_DOCKER_SOCKET`` — the Docker daemon socket the Docker guest
+  driver talks to (default ``/var/run/docker.sock`` — the same daemon the
+  server uses).
 * ``GNS3_E2E_KEEP=1`` — keep the project (and the isolated instance) when a
   test fails, and print their ids, for inspection.
 """
 
 import contextlib
+import http.client
 import json
 import os
 import re
@@ -57,6 +64,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import pytest
@@ -133,6 +141,20 @@ class Compute:
             "POST",
             f"/projects/{project_id}/nodes",
             {"compute_id": "local", "name": name, "node_type": "dynamips", "properties": properties},
+        )
+
+    def create_docker_node(self, project_id, name, image, adapters=1):
+        """A standard Docker node (the veth datapath): the scenario addresses
+        its eth0 from the host and pings through it."""
+        return self.call(
+            "POST",
+            f"/projects/{project_id}/nodes",
+            {
+                "compute_id": "local",
+                "name": name,
+                "node_type": "docker",
+                "properties": {"image": image, "adapters": adapters, "console_type": "telnet"},
+            },
         )
 
     def create_iol_router(self, project_id, name, image, adapters=2):
@@ -244,7 +266,7 @@ class Server:
         with open(path) as f:
             return "".join(f.readlines()[-lines:])
 
-    def stop(self):
+    def _stop_process(self):
         if self.process and self.process.poll() is None:
             self.process.terminate()
             try:
@@ -252,11 +274,30 @@ class Server:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait(timeout=10)
+
+    def stop(self):
+        self._stop_process()
         if self.tmpdir:
             shutil.rmtree(self.tmpdir, ignore_errors=True)
 
+    def restart(self, kernel=True):
+        """Restart an isolated instance in place: stop the process — the
+        temporary directory (config, controller DB, projects) survives — and
+        start a new one on the same paths with the given kernel-datapath
+        setting and a fresh port. This is how the reopen-upgrade scenario
+        flips the datapath choice and reopens a project created on the
+        relay."""
+        if not self.isolated:
+            raise AssertionError("restart() needs an isolated instance (the harness did not start one)")
+        self._stop_process()
+        self.process, self.compute = _spawn_isolated(self.tmpdir, kernel)
+        return self
 
-def _start_isolated(kernel):
+
+def _spawn_isolated(tmpdir, kernel):
+    """Start one isolated instance inside *tmpdir* (its config is written
+    there; a fresh free port each boot) and return ``(process, compute)``,
+    logged in. Shared by the first boot and by ``Server.restart``."""
     ubridge = shutil.which("ubridge")
     dynamips = shutil.which("dynamips")
     if not ubridge:
@@ -267,7 +308,6 @@ def _start_isolated(kernel):
     if not os.path.isdir(images):
         pytest.skip(f"images directory not found: {images} (set GNS3_E2E_IMAGES)")
 
-    tmpdir = tempfile.mkdtemp(prefix="gns3-e2e-")
     os.makedirs(os.path.join(tmpdir, "projects"), exist_ok=True)
     port = _free_port()
     config = ISOLATED_CONFIG.format(
@@ -277,7 +317,7 @@ def _start_isolated(kernel):
     with open(config_path, "w") as f:
         f.write(config)
 
-    log = open(os.path.join(tmpdir, "server.log"), "w")
+    log = open(os.path.join(tmpdir, "server.log"), "a")
     # S603: fixed argv, this interpreter, no shell involvement
     argv = [sys.executable, "-m", "gns3server", "--config", config_path]
     if os.environ.get("GNS3_E2E_DEBUG"):
@@ -307,6 +347,17 @@ def _start_isolated(kernel):
         raise AssertionError("isolated server did not come up within 60s")
 
     compute.login()
+    # The controller's connection to its own local compute comes up
+    # asynchronously; until it reports capabilities the compute counts as
+    # disconnected and a project open is refused. Same wait as live_server.
+    if not wait_until(lambda: (compute.capabilities() or {}).get("version"), timeout=45):
+        raise AssertionError(f"{compute.url}: the controller's local compute did not report capabilities within 45s")
+    return process, compute
+
+
+def _start_isolated(kernel):
+    tmpdir = tempfile.mkdtemp(prefix="gns3-e2e-")
+    process, compute = _spawn_isolated(tmpdir, kernel)
     return Server(compute, process, tmpdir)
 
 
@@ -567,6 +618,262 @@ def wait_ping(console, target, attempts=4, repeat=3, timeout=1):
 
 
 # ---------------------------------------------------------------------------
+# Docker guest driver (Docker Engine API over the daemon socket)
+# ---------------------------------------------------------------------------
+
+# The e2e needs two things the server's REST surface does not expose: the
+# identity of the image a container runs (to verify a cached image is the
+# pinned build) and a way to run commands inside a booted container (address
+# the guest, drive real ICMP from it). Both are plain Engine API calls over
+# the same socket the server itself uses.
+
+DOCKER_SOCKET = os.environ.get("GNS3_E2E_DOCKER_SOCKET", "/var/run/docker.sock")
+
+# The image the Docker scenarios run. Both the registry digest (what to pull
+# on a cache miss; a rolling tag resolved once and then pinned forever) and
+# the repo-digest it must resolve to locally are pinned, so every developer
+# tests the same bytes. The Docker daemon is the cache: a hit costs no
+# network, a miss pulls through the server's own route (the WebUI's path),
+# and no cache + no registry skips the scenario.
+DOCKER_IMAGE = "alpine:3"
+DOCKER_IMAGE_DIGEST = "sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
+
+
+class _UnixHTTPConnection(http.client.HTTPConnection):
+    """An HTTP connection speaking over a Unix socket (stdlib only)."""
+
+    def __init__(self, socket_path, timeout):
+        super().__init__("localhost", timeout=timeout)
+        self._socket_path = socket_path
+
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect(self._socket_path)
+
+
+class DockerDaemon:
+    """Minimal Docker Engine API client over the daemon socket."""
+
+    def __init__(self, socket_path=DOCKER_SOCKET, timeout=60):
+        self.socket_path = socket_path
+        self.timeout = timeout
+
+    def _request(self, method, path, body=None, timeout=None):
+        conn = _UnixHTTPConnection(self.socket_path, timeout or self.timeout)
+        try:
+            data = None
+            headers = {}
+            if body is not None:
+                data = json.dumps(body).encode()
+                headers["Content-Type"] = "application/json"
+            conn.request(method, path, body=data, headers=headers)
+            response = conn.getresponse()
+            return response.status, response.read()
+        except (OSError, http.client.HTTPException) as e:
+            raise AssertionError(f"docker {method} {path} failed: {e}") from None
+        finally:
+            conn.close()
+
+    def container_id(self, name):
+        """The id of the container called *name* (any state), or None. The
+        controller's node payload does not carry a Docker node's container
+        id (a compute-side read-only field); the daemon knows the container
+        by the deterministic name the server gives it (DockerVM.docker_name:
+        ``GNS3.<node name>.<project id>``)."""
+        filters = urllib.parse.quote(json.dumps({"name": [name]}), safe="")
+        status, payload = self._request("GET", f"/containers/json?all=1&filters={filters}")
+        assert status == 200, f"docker container list -> HTTP {status}: {payload[:300]!r}"
+        for container in json.loads(payload):
+            if name in [entry.lstrip("/") for entry in container.get("Names") or []]:
+                return container["Id"]
+        return None
+
+    def image_inspect(self, reference):
+        """The image record stored under *reference*, or None."""
+        status, payload = self._request("GET", "/images/" + urllib.parse.quote(reference, safe="") + "/json")
+        if status == 404:
+            return None
+        assert status == 200, f"docker image inspect {reference} -> HTTP {status}: {payload[:300]!r}"
+        return json.loads(payload)
+
+    def pull(self, reference, timeout=600):
+        """Pull *reference* (digest-pinned when the caller wants
+        reproducibility). Raises AssertionError on the daemon's error
+        stream — offline, unknown manifest, ..."""
+        status, payload = self._request(
+            "POST", "/images/create?fromImage=" + urllib.parse.quote(reference, safe=""), timeout=timeout
+        )
+        if status != 200:
+            raise AssertionError(f"docker pull {reference} -> HTTP {status}: {payload[:300]!r}")
+        # the body is a stream of JSON progress objects; any object carrying
+        # an error key (in either shape) is a failure
+        text = payload.decode(errors="replace").strip()
+        decoder = json.JSONDecoder()
+        while text:
+            try:
+                obj, index = decoder.raw_decode(text)
+            except ValueError:
+                break
+            error = obj.get("error") or (obj.get("errorDetail") or {}).get("message")
+            if error:
+                raise AssertionError(f"docker pull {reference} failed: {error}")
+            text = text[index:].strip()
+
+    def exec(self, container_id, cmd, timeout=60):
+        """Run *cmd* inside a container; returns (exit_code, combined
+        output)."""
+        status, payload = self._request(
+            "POST",
+            f"/containers/{container_id}/exec",
+            {"AttachStdout": True, "AttachStderr": True, "Tty": False, "Cmd": list(cmd)},
+        )
+        assert status == 201, f"docker exec create in {container_id[:12]} -> HTTP {status}: {payload[:300]!r}"
+        exec_id = json.loads(payload)["Id"]
+        try:
+            status, payload = self._request(
+                "POST", f"/exec/{exec_id}/start", {"Detach": False, "Tty": False}, timeout=timeout
+            )
+        except AssertionError as e:
+            # A stalled stream is diagnosable: was the process still running
+            # (stream open, nothing flushed) or already gone?
+            raise AssertionError(f"{e} (exec {exec_id[:12]} still running: {self._exec_running(exec_id)})") from None
+        assert status == 200, f"docker exec start {exec_id[:12]} -> HTTP {status}: {payload[:300]!r}"
+        # the hijacked stream multiplexes stdout/stderr: 8-byte frame headers
+        # (stream id + big-endian length) — demultiplex into one buffer
+        output = bytearray()
+        index = 0
+        while index + 8 <= len(payload):
+            length = int.from_bytes(payload[index + 4 : index + 8], "big")
+            output += payload[index + 8 : index + 8 + length]
+            index += 8 + length
+        status, payload = self._request("GET", f"/exec/{exec_id}/json")
+        assert status == 200, f"docker exec inspect {exec_id[:12]} -> HTTP {status}: {payload[:300]!r}"
+        return json.loads(payload)["ExitCode"], output.decode(errors="replace")
+
+    def _exec_running(self, exec_id):
+        """Whether an exec is still running (diagnostic only, never raises)."""
+        try:
+            status, payload = self._request("GET", f"/exec/{exec_id}/json", timeout=10)
+            return json.loads(payload).get("Running") if status == 200 else f"HTTP {status}"
+        except (AssertionError, ValueError):
+            return "unknown"
+
+
+def ensure_docker_image(server):
+    """The Docker image the scenarios run, ensured present locally.
+
+    The pinned reference (``DOCKER_IMAGE``, digest ``DOCKER_IMAGE_DIGEST``)
+    is pulled through the server's own pull route on a cache miss and
+    verified against the pinned repo digest afterwards. A cached image that
+    resolves to another digest is used with a warning if the pull fails
+    (offline developer), but with no cached image and no registry the
+    scenario skips. ``GNS3_E2E_DOCKER_IMAGE`` overrides the reference
+    entirely (the operator then owns its content)."""
+
+    override = os.environ.get("GNS3_E2E_DOCKER_IMAGE")
+    daemon = DockerDaemon()
+    if override:
+        info = daemon.image_inspect(override)
+        if info is None:
+            pytest.skip(f"GNS3_E2E_DOCKER_IMAGE={override} is not present on the Docker daemon")
+        print(f".. using GNS3_E2E_DOCKER_IMAGE={override} ({info['Id'][:19]}…)")
+        return override
+
+    reference = f"{DOCKER_IMAGE}@{DOCKER_IMAGE_DIGEST}"
+    info = daemon.image_inspect(DOCKER_IMAGE)
+    if info is not None and any(DOCKER_IMAGE_DIGEST in d for d in (info.get("RepoDigests") or [])):
+        print(f".. Docker image {DOCKER_IMAGE} is cached at the pinned digest ({info['Id'][:19]}…)")
+        return DOCKER_IMAGE
+    if info is None:
+        print(f".. Docker image {DOCKER_IMAGE} is not cached — pulling the pinned digest")
+    else:
+        print(
+            f".. cached {DOCKER_IMAGE} is {info.get('RepoDigests') or info['Id'][:19]}…, not the pinned digest — pulling"
+        )
+    try:
+        server.compute.call("POST", "/computes/local/docker/images/pull", {"image": reference}, timeout=600)
+    except AssertionError as e:
+        if info is None:
+            pytest.skip(f"Docker image {DOCKER_IMAGE} is not cached and could not be pulled: {e}")
+        print(f".. pull failed ({e}); using the cached {DOCKER_IMAGE} — not the pinned build")
+        return DOCKER_IMAGE
+    print(f".. pulled {reference}")
+    return DOCKER_IMAGE
+
+
+def configure_docker_interfaces(node, address, netmask="255.255.255.0", adapter=0):
+    """Give the container's eth{adapter} a static address the way a GNS3
+    user does: write the persistent ``/etc/network/interfaces`` the server
+    bind-mounts into the container and init.sh applies with busybox ifup at
+    boot (CIDR is not understood — separate address/netmask lines). Call
+    before starting the node."""
+    directory = node.get("node_directory")
+    if not directory or not os.path.isdir(directory):
+        pytest.skip(f"cannot reach the node directory {directory!r} — this scenario needs the compute on this host")
+    path = os.path.join(directory, "etc", "network", "interfaces")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(f"auto eth{adapter}\niface eth{adapter} inet static\n\taddress {address}\n\tnetmask {netmask}\n")
+
+
+def docker_wait_address(daemon, container_id, address, timeout=30):
+    """Wait until the container's eth0 carries *address* — init.sh applies
+    the interfaces file (busybox ifup) a moment after container start."""
+
+    def present():
+        _code, output = daemon.exec(container_id, ["ip", "-4", "-o", "addr", "show", "dev", "eth0"])
+        return address in output
+
+    if not wait_until(present, timeout=timeout, interval=0.5):
+        raise AssertionError(f"container {container_id[:12]} did not configure {address} within {timeout}s")
+
+
+_BUSYBOX_PING_LOSS_RE = re.compile(r"(\d+)% packet loss")
+_BUSYBOX_PING_RTT_RE = re.compile(r"round-trip min/avg/max = [\d.]+/([\d.]+)/[\d.]+ ms")
+
+
+def docker_ping(daemon, container_id, target, count=3, timeout=1, interval=0.2, size=None):
+    """Run a real busybox ping inside a container; returns
+    ``{loss, avg, raw, exit}`` (loss in percent, avg in ms). The default
+    0.2 s interval packs more samples into loss measurements; loss-based
+    checks pass a higher count.
+
+    The ping is wrapped in busybox `timeout` with a generous cap so a
+    misbehaving guest can never hold the exec stream open past it — the
+    harness then reports a normal failed ping instead of a socket timeout.
+    """
+    cap = int(count * interval + timeout + 15)
+    cmd = ["timeout", str(cap), "ping", "-c", str(count), "-W", str(timeout)]
+    if interval is not None:
+        cmd += ["-i", str(interval)]
+    if size is not None:
+        cmd += ["-s", str(size)]
+    cmd.append(target)
+    code, output = daemon.exec(container_id, cmd, timeout=cap + 10)
+    loss = _BUSYBOX_PING_LOSS_RE.search(output)
+    rtt = _BUSYBOX_PING_RTT_RE.search(output)
+    return {
+        "loss": int(loss.group(1)) if loss else 100,
+        "avg": float(rtt.group(1)) if rtt else None,
+        "raw": output,
+        "exit": code,
+    }
+
+
+def docker_wait_ping(daemon, container_id, target, attempts=4, **kwargs):
+    """ping until it fully succeeds (a fresh veth/bridge needs a beat for
+    carrier and ARP); returns the last result either way."""
+    result = None
+    for _ in range(attempts):
+        result = docker_ping(daemon, container_id, target, **kwargs)
+        if result["loss"] == 0:
+            return result
+        time.sleep(1.5)
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Host-side inspection (same machine as the compute)
 # ---------------------------------------------------------------------------
 
@@ -735,6 +1042,13 @@ def link_bridge_name(link_id):
 def anchor_name(node_id, adapter, port):
     """The dynamips anchor TAP name for a slot/port (see Router._tap_name)."""
     return "gd" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def docker_anchor_name(node_id, adapter, port=0):
+    """The standard Docker node's anchor: the veth host end the server keeps
+    in the root namespace (see DockerKernelDatapathMixin._veth_names and
+    utils.kernel_anchor)."""
+    return "gv" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
 
 
 def iol_anchor_name(node_id, adapter, port):
