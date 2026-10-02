@@ -22,7 +22,12 @@ payload: spawn a throwaway uBridge, ask once, cache by binary identity.
 import pytest
 
 from gns3server.compute.ubridge import tc_probe
-from gns3server.compute.ubridge.tc_probe import probe_iol_tap_support, probe_tc_capabilities, probe_tap_support
+from gns3server.compute.ubridge.tc_probe import (
+    probe_bridge_tap_support,
+    probe_iol_tap_support,
+    probe_tc_capabilities,
+    probe_tap_support,
+)
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 pytestmark = pytest.mark.asyncio
@@ -36,6 +41,10 @@ class FakeHypervisor:
     reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     error = None
     error_prefix = None  # fail only commands starting with this (a build missing one command)
+    # what `bridge delete_nio_tap` answers: a new build's 214 (the bridge
+    # doesn't exist), None = answer 100 (an impossible reply on the probe's
+    # uuid name — the probe must treat it as unknown)
+    bridge_tap_error = "214-bridge 'nosuch' doesn't exist"
     spawned = 0
 
     def __init__(self, project, path, working_dir, transport, host, node_id):
@@ -57,6 +66,10 @@ class FakeHypervisor:
             raise UbridgeError(self.error)
         if self.error_prefix and command.startswith(self.error_prefix):
             raise UbridgeError(f"202-Unknown command")
+        if command.startswith("bridge delete_nio_tap "):
+            if FakeHypervisor.bridge_tap_error:
+                raise UbridgeError(FakeHypervisor.bridge_tap_error)
+            return ["OK"]
         if command == "tc capabilities":
             return FakeHypervisor.reply
         return ["OK"]
@@ -71,10 +84,12 @@ def probe_env(monkeypatch, tmp_path):
     FakeHypervisor.spawned = 0
     FakeHypervisor.error = None
     FakeHypervisor.error_prefix = None
+    FakeHypervisor.bridge_tap_error = "214-bridge 'nosuch' doesn't exist"
     FakeHypervisor.reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     tc_probe._cache.clear()
     tc_probe._tap_cache.clear()
     tc_probe._iol_tap_cache.clear()
+    tc_probe._bridge_tap_cache.clear()
     FakeHypervisor.last = None
     # a real file on disk: the cache is keyed on its (path, mtime, size)
     binary = tmp_path / "ubridge"
@@ -192,4 +207,45 @@ async def test_probe_iol_tap_support_missing_binary(monkeypatch):
 
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
     assert await probe_iol_tap_support() is None
+    assert FakeHypervisor.spawned == 0
+
+
+async def test_probe_bridge_tap_support_asks_one_unused_bridge():
+    """
+    The probe needs no scratch objects and no capabilities: one command
+    against a bridge that cannot exist, whose 214 answer means the command
+    ran (new build). Nothing is created, nothing needs cleaning up.
+    """
+
+    assert await probe_bridge_tap_support() is True
+    assert FakeHypervisor.spawned == 1
+    commands = FakeHypervisor.last.commands
+    assert len(commands) == 1
+    assert commands[0].startswith("bridge delete_nio_tap gns3brtapprobe")
+    # cached like the other probes: no respawn on every /capabilities hit
+    assert await probe_bridge_tap_support() is True
+    assert FakeHypervisor.spawned == 1
+
+
+async def test_probe_bridge_tap_support_unknown_on_an_old_build():
+    """
+    A uBridge without the command answers 202 "Unknown command": unknown, so
+    IOL runner containers stay on the relay datapath. A 100 answer is
+    unknown too — the bridge "existed" on the probe's uuid name, which
+    cannot happen on a sane build.
+    """
+
+    FakeHypervisor.error_prefix = "bridge delete_nio_tap"
+    assert await probe_bridge_tap_support() is None
+
+    FakeHypervisor.error_prefix = None
+    FakeHypervisor.bridge_tap_error = None
+    tc_probe._bridge_tap_cache.clear()
+    assert await probe_bridge_tap_support() is None
+
+
+async def test_probe_bridge_tap_support_missing_binary(monkeypatch):
+
+    monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
+    assert await probe_bridge_tap_support() is None
     assert FakeHypervisor.spawned == 0

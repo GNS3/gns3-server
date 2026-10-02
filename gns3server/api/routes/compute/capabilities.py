@@ -25,7 +25,12 @@ from fastapi import APIRouter, Request
 
 from gns3server import schemas
 from gns3server.compute import MODULES
-from gns3server.compute.ubridge.tc_probe import probe_iol_tap_support, probe_tc_capabilities, probe_tap_support
+from gns3server.compute.ubridge.tc_probe import (
+    probe_bridge_tap_support,
+    probe_iol_tap_support,
+    probe_tc_capabilities,
+    probe_tap_support,
+)
 from gns3server.utils.path import get_default_project_directory
 from gns3server.utils.tc_capabilities import usable_ebpf_modes
 from gns3server.version import __version__
@@ -60,6 +65,11 @@ async def get_capabilities(request: Request) -> dict:
     # Ethernet ports need for the kernel datapath. None = unknown.
     ubridge_iol_tap = await probe_iol_tap_support()
 
+    # Swappable TAP leg on the generic bridge module (bridge delete_nio_tap):
+    # what lets an IOL runner container's per-port bridge carry a kernel-link
+    # anchor. None = unknown (probe failed or uBridge too old).
+    ubridge_bridge_tap = await probe_bridge_tap_support()
+
     # record the controller hostname or IP address
     if request.client:
         request.app.state.controller_host = request.client.host
@@ -74,4 +84,5 @@ async def get_capabilities(request: Request) -> dict:
         "ubridge_tc": ubridge_tc,
         "ubridge_tap": ubridge_tap,
         "ubridge_iol_tap": ubridge_iol_tap,
+        "ubridge_bridge_tap": ubridge_bridge_tap,
     }

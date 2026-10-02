@@ -102,6 +102,7 @@ class Compute:
             "ubridge_tc": None,
             "ubridge_tap": None,
             "ubridge_iol_tap": None,
+            "ubridge_bridge_tap": None,
         }
         self.name = name
         # Cache of interfaces on remote host

@@ -53,6 +53,8 @@ _cache = {}
 _tap_cache = {}
 # binary identity -> whether iol_bridge can bind a port to a TAP (None = unknown)
 _iol_tap_cache = {}
+# binary identity -> whether the bridge module can release a named TAP NIO (None = unknown)
+_bridge_tap_cache = {}
 _lock = asyncio.Lock()
 
 
@@ -269,6 +271,83 @@ async def _probe_iol_tap(path, config, timeout):
             # Old build ("Unknown command"), missing module, or no
             # CAP_NET_ADMIN: unknown.
             log.debug("uBridge iol-tap probe failed: %s", e)
+            return None
+    finally:
+        with contextlib.suppress(Exception):
+            await hypervisor.stop()
+        shutil.rmtree(working_dir, ignore_errors=True)
+
+
+async def probe_bridge_tap_support(timeout: float = 15.0):
+    """
+    Whether this host's uBridge has ``bridge delete_nio_tap`` — the command
+    that makes the bridge module's TAP leg swappable (stop -> delete -> add ->
+    start), which is what lets an IOL runner container's per-port bridge swap
+    its topology leg between UDP (relay) and a persistent TAP anchor (kernel
+    datapath). Probed with no scratch objects and no capabilities needed:
+    deleting from a bridge that doesn't exist answers 214 on a build with the
+    command and 202 (unknown command) on one without. Cached by binary
+    identity like the other probes; any failure means unknown, reported as
+    None and cached as such.
+    """
+
+    config = Config.instance()
+    path = shutil.which(config.settings.Server.ubridge_path)
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+        key = (path, stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return None
+
+    async with _lock:
+        if key in _bridge_tap_cache:
+            return _bridge_tap_cache[key]
+        supported = await _probe_bridge_tap(path, config, timeout)
+        _bridge_tap_cache[key] = supported
+        return supported
+
+
+async def _probe_bridge_tap(path, config, timeout):
+    """
+    Spawn a throwaway uBridge and issue the probe command against a bridge
+    name that cannot exist (uuid). The reply splits the builds: "bridge ...
+    doesn't exist" (214) means the command ran — this is the new build;
+    "Unknown command" (202) is the old one. Both arrive as UbridgeError (the
+    wrapper raises on any non-100 reply), so the message is the discriminator.
+    """
+
+    working_dir = tempfile.mkdtemp(prefix="gns3-brtap-probe-")
+    hypervisor = Hypervisor(
+        None,
+        path,
+        working_dir,
+        config.settings.Server.ubridge_control_transport,
+        config.settings.Server.host,
+        str(uuid.uuid4()),
+    )
+    try:
+
+        async def ask():
+            await hypervisor.start()
+            await hypervisor.connect()
+            try:
+                await hypervisor.send(f"bridge delete_nio_tap gns3brtapprobe{uuid.uuid4().hex[:4]} any")
+            except UbridgeError as e:
+                if "doesn't exist" in str(e):
+                    return True
+                # "Unknown command" (and anything else): old or broken build.
+                log.debug("uBridge bridge-tap probe answered: %s", e)
+                return None
+            # A 100 here would mean the bridge existed — impossible on this
+            # uuid name; treat it as unknown rather than supported.
+            return None
+
+        try:
+            return await asyncio.wait_for(ask(), timeout=timeout)
+        except (OSError, asyncio.TimeoutError, ValueError) as e:
+            log.debug("uBridge bridge-tap probe failed: %s", e)
             return None
     finally:
         with contextlib.suppress(Exception):

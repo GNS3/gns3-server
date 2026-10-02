@@ -61,3 +61,9 @@ class Capabilities(BaseModel):
         "the anchor IOU Ethernet ports need to wire IOU links on the kernel datapath); absent when the "
         "probe failed",
     )
+    ubridge_bridge_tap: Optional[bool] = Field(
+        None,
+        description="Whether uBridge's generic bridge module can release a named TAP NIO "
+        "(bridge delete_nio_tap, the swappable TAP leg an IOL runner container's per-port bridge "
+        "needs to wire its links on the kernel datapath); absent when the probe failed",
+    )
