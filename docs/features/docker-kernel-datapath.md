@@ -466,9 +466,10 @@ silence with the guests' links down), the filter matrix one type at a time
 (netem core and extensions, cls_bpf match-drop, the eBPF classifier, each
 asserted through real traffic), suspend, capture, link delete/re-create,
 container stop/start, a relay negative control — whose own filters
-(delay/frequency_drop/bpf) are asserted to really shape the relay wire as
-uBridge userspace bridge filters — and the relay→kernel upgrade on project
-reopen (the datapath choice is flipped across a server restart). The container image is digest-pinned and pulled through the
+(delay/frequency_drop/bpf) really shape the relay wire, whose capture and
+markers ride the same relay engine (`bridge start_capture`, the bridge
+`mark` filter) — and the relay→kernel upgrade on project reopen (the
+datapath choice is flipped across a server restart). The container image is digest-pinned and pulled through the
 server's own pull route on a cache miss, so collaborators test the same
 bytes.
 

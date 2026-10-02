@@ -39,7 +39,9 @@ server itself uses. The scenarios cover:
   uBridge relay, the kernel-only filter types are hidden — and the relay's
   own filter set (delay, frequency_drop, bpf) really shapes the wire, as
   uBridge userspace filters on the filter node's bridge
-  (``bridge add_packet_filter``).
+  (``bridge add_packet_filter``); its capture (``bridge start_capture``)
+  and its markers (``bridge add_packet_filter … mark``) ride the same
+  relay engine, not the kernel datapath's AF_PACKET modules.
 * ``test_docker_relay_to_kernel_reopen_upgrade`` — the server's datapath
   choice is flipped (relay → kernel) across a restart and the project is
   reopened: the link is rebuilt on the kernel datapath and forwards.
@@ -112,6 +114,10 @@ def _clear_filters(compute, pid, lid, *anchors):
 
 def _filter_types(compute, pid, lid):
     return {entry["type"] for entry in compute.call("GET", f"/projects/{pid}/links/{lid}/available_filters")}
+
+
+def _matches(marker_ws, marker_name):
+    return [e for e in marker_ws.events("marker.match") if e["filter"] == marker_name]
 
 
 def _silence_guest(daemon, container_id):
@@ -448,7 +454,8 @@ def test_docker_kernel_filter_matrix():
 def test_docker_relay_control():
     """Negative control: the same topology on an isolated relay-configured
     instance wires nothing into the kernel — no per-link bridge, no
-    enslavement — and still pings over the uBridge UDP relay."""
+    enslavement — and still pings over the uBridge UDP relay, its filters,
+    capture and markers all riding the relay engine."""
     server = harness.live_server(kernel=False)
     compute = server.compute
     image = harness.ensure_docker_image(server)
@@ -527,6 +534,58 @@ def test_docker_relay_control():
         assert big["loss"] == 100, big["raw"]
         _put_filters(compute, pid, link["link_id"], {})
         assert harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)["loss"] == 0
+
+        # capture on the relay: the same REST call as the kernel datapath's,
+        # hosted by the relay node's uBridge bridge (bridge start_capture)
+        # instead of AF_PACKET on an anchor
+        print(".. relay capture: bridge start_capture writes the ICMP exchange")
+        capture = compute.call(
+            "POST", f"/projects/{pid}/links/{link['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+        )
+        harness.docker_ping(daemon, n1["container_id"], R2_IP)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{link['link_id']}/capture/stop")
+        path = capture["capture_file_path"]
+        count, ethertypes = harness.pcap_records(path)
+        assert count >= 4, f"{path}: {count} records"
+        assert "0800" in ethertypes, (path, ethertypes)
+
+        # markers on the relay are uBridge's `mark` packet filter on the
+        # relay bridge (bridge add_packet_filter ... mark), signalled over
+        # the same dedicated marker WS — the relay engine's observability
+        # path (the kernel datapath's marker add_kernel is the other one)
+        print(".. relay marker: 5 ICMP echoes through a mark filter on the relay bridge")
+        marker_ws = harness.WebSocketCollector(server, f"/projects/{pid}/notifications/markers/ws")
+        try:
+            m = compute.call(
+                "POST",
+                f"/projects/{pid}/links/{link['link_id']}/markers",
+                {"name": "m-icmp", "bpf": "icmp", "tag": 4242, "capture_node_id": n1_id},
+            )
+            assert m["capture_node_id"] == n1_id and m["enabled"] is True, m
+            result = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)
+            assert result["loss"] == 0, result["raw"]
+            harness.wait_until(lambda: len(_matches(marker_ws, "m-icmp")) >= 10, timeout=10)
+            icmp = _matches(marker_ws, "m-icmp")
+            assert len(icmp) == 10, len(icmp)  # 5 requests + 5 replies
+            assert {e["dir"] for e in icmp} == {"tx", "rx"}, [e["dir"] for e in icmp]
+            for event in icmp:
+                assert event["node_id"] == n1_id, event
+                assert event["link_id"] == link["link_id"], event
+                assert event["tag"] == 4242, event
+                assert event["len"] == 98, event  # busybox ping frame
+            # the marker's pcap on the host holds exactly the matched frames
+            markers_dir = os.path.join(compute.call("GET", f"/projects/{pid}")["path"], "project-files", "markers")
+            pcap = os.path.join(markers_dir, f"{n1_id}_{link['link_id']}_m-icmp.pcap")
+            assert os.path.exists(pcap), os.listdir(markers_dir)
+            count, ethertypes = harness.pcap_records(pcap)
+            assert count == 10, count
+            assert set(ethertypes) == {"0800"}, ethertypes
+            # deleting the marker removes its pcap with it
+            compute.call("DELETE", f"/projects/{pid}/links/{link['link_id']}/markers/m-icmp")
+            assert harness.wait_until(lambda: not os.path.exists(pcap), timeout=10), pcap
+        finally:
+            marker_ws.close()
     except BaseException:
         harness.release(server, pid, failed=True)
         raise

@@ -41,8 +41,11 @@ relay-configured instance: the same topology rides the fabric socket ↔ UDP
 relay (no per-link bridge, nothing enslaved) and still pings — with its
 filters applied by the IOU-specific engine
 (``iol_bridge add_packet_filter`` on the IOL port) really shaping the wire.
+Its capture and markers ride the same engine
+(``iol_bridge start_capture`` / ``iol_bridge add_packet_filter … mark``).
 """
 
+import os
 import re
 import time
 
@@ -80,6 +83,10 @@ def _boot(server, project_id, node_id, timeout=BOOT_TIMEOUT):
     console = harness.ios_console(server, project_id, node_id)
     console.boot_wait(timeout=timeout)
     return console
+
+
+def _matches(marker_ws, marker_name):
+    return [e for e in marker_ws.events("marker.match") if e["filter"] == marker_name]
 
 
 def _eth_shutdown(console, shut):
@@ -381,6 +388,52 @@ def test_iou_relay_control():
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         recovered = harness.wait_ping(c1, "10.1.1.2")
         assert recovered["success"] == 100, recovered["raw"]
+
+        # capture on the relay: iol_bridge start_capture on the port's IOL
+        # location (the IOU engine's own capture path, distinct from the
+        # kernel datapath's capture start_kernel on the anchor)
+        print(".. iol_bridge relay capture: start_capture writes the ICMP exchange")
+        capture = compute.call("POST", f"/projects/{pid}/links/{lid}/capture/start", {"data_link_type": "DLT_EN10MB"})
+        harness.ping(c1, "10.1.1.2", repeat=5)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{lid}/capture/stop")
+        path = capture["capture_file_path"]
+        count, ethertypes = harness.pcap_records(path)
+        assert count >= 4, f"{path}: {count} records"
+        assert "0800" in ethertypes, (path, ethertypes)
+
+        # markers on the relay: iol_bridge add_packet_filter ... mark on the
+        # port's IOL location, signalled over the dedicated marker WS
+        print(".. iol_bridge relay marker: 5 ICMP echoes through a mark filter")
+        marker_ws = harness.WebSocketCollector(server, f"/projects/{pid}/notifications/markers/ws")
+        try:
+            m = compute.call(
+                "POST",
+                f"/projects/{pid}/links/{lid}/markers",
+                {"name": "m-icmp", "bpf": "icmp", "tag": 4242, "capture_node_id": n1_id},
+            )
+            assert m["capture_node_id"] == n1_id and m["enabled"] is True, m
+            result = harness.ping(c1, "10.1.1.2", repeat=5)
+            assert result["success"] == 100, result["raw"]
+            harness.wait_until(lambda: len(_matches(marker_ws, "m-icmp")) >= 10, timeout=10)
+            icmp = _matches(marker_ws, "m-icmp")
+            assert len(icmp) == 10, len(icmp)  # 5 requests + 5 replies
+            assert {e["dir"] for e in icmp} == {"tx", "rx"}, [e["dir"] for e in icmp]
+            for event in icmp:
+                assert event["node_id"] == n1_id, event
+                assert event["link_id"] == lid, event
+                assert event["tag"] == 4242, event
+            markers_dir = os.path.join(compute.call("GET", f"/projects/{pid}")["path"], "project-files", "markers")
+            pcap = os.path.join(markers_dir, f"{n1_id}_{lid}_m-icmp.pcap")
+            assert os.path.exists(pcap), os.listdir(markers_dir)
+            count, ethertypes = harness.pcap_records(pcap)
+            assert count == 10, count
+            assert set(ethertypes) == {"0800"}, ethertypes
+            # deleting the marker removes its pcap with it
+            compute.call("DELETE", f"/projects/{pid}/links/{lid}/markers/m-icmp")
+            assert harness.wait_until(lambda: not os.path.exists(pcap), timeout=10), pcap
+        finally:
+            marker_ws.close()
 
         c1.close()
         c2.close()

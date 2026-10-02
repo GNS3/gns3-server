@@ -153,7 +153,8 @@ bridge, netem delay, the TAP-anchor classifier spot check
 stop/start rewiring with a delay filter restored on the fresh anchor
 (tc and traffic both), the serial link staying on the relay, and a relay
 negative control whose real `delay`/`frequency_drop` filters ride the
-port's `iol_bridge add_packet_filter` list.
+port's `iol_bridge add_packet_filter` list — capture and markers on the
+same engine (`iol_bridge start_capture` / the port's `mark` filter).
 
 The uBridge side passed its own 30/30 (`tests/iol/test_tap_anchor.py` in the
 fork), including the DOWN-anchor resilience and kernel-bridge interop this

@@ -83,7 +83,8 @@ Current scenarios:
   spot check and a filter surviving a node restart, a serial link staying
   on the relay (serial bays never anchor), and a relay negative control
   whose filters ride the IOU-specific `iol_bridge add_packet_filter` engine
-  (delay and frequency_drop measured through real traffic).
+  (delay and frequency_drop measured through real traffic, capture and
+  markers on `iol_bridge start_capture` and the port's `mark` filter).
 * `test_qemu_kernel_datapath.py` — two real IOSv routers (a real qcow2
   image from the images directory's `QEMU` subfolder, linked clone, the
   real IOS CLI on the server's telnet console): the anchor TAP is QEMU's
@@ -97,8 +98,10 @@ Current scenarios:
   (netem core and extensions, cls_bpf match-drop, the eBPF classifier —
   each measured through real traffic), plus a relay negative control whose
   own filters (delay, frequency_drop, bpf) really shape the wire as uBridge
-  userspace bridge filters, and a relay→kernel reopen upgrade (the server's
-  datapath choice is flipped across a restart).
+  userspace bridge filters and whose capture and markers ride the relay
+  engine (`bridge start_capture` / the bridge `mark` filter), and a
+  relay→kernel reopen upgrade (the server's datapath choice is flipped
+  across a restart).
 * `test_marker_kernel_datapath.py` — two real Alpine containers on a
   kernel-only link with traffic-insight markers attached to a veth anchor
   (`marker add_kernel`): `marker.match` signals collected off the dedicated
