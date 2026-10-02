@@ -113,6 +113,35 @@ async def test_add_node_already_connected(project, compute):
 
 
 @pytest.mark.asyncio
+async def test_add_node_already_connected_after_node_update(project, compute):
+    """
+    A node update (any compute node.updated notification) rebuilds its port
+    objects; the port must still count as used afterwards, or the duplicate
+    link reaches the compute and fails on the already-bound NIO instead of
+    being refused here.
+    """
+
+    project.dump = AsyncioMagicMock()
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link.node_updated = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    await link.add_node(node1, 0, 0)
+    await link.add_node(node2, 0, 0)
+
+    await node1.parse_node_response({"status": "started"})
+
+    link2 = Link(project)
+    link2.create = AsyncioMagicMock()
+    with pytest.raises(ControllerError, match="already used"):
+        await link2.add_node(node1, 0, 0)
+
+
+@pytest.mark.asyncio
 async def test_add_node_cloud(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="qemu")

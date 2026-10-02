@@ -1191,3 +1191,20 @@ async def test_parse_node_response(node):
     node.add_link(link)
     await node.parse_node_response({"status": "started"})
     assert link.node_updated.called
+
+
+@pytest.mark.asyncio
+async def test_port_link_survives_port_rebuild(node):
+    """
+    A node update rebuilds the port objects (every compute node.updated
+    notification does); the link back-references must survive the rebuild,
+    or the "Port is already used" guard silently stops matching.
+    """
+
+    port = node.get_port(0, 0)
+    link = MagicMock()
+    port.link = link
+    await node.parse_node_response({"status": "started"})
+    rebuilt = node.get_port(0, 0)
+    assert rebuilt is not port  # the rebuild really does replace the objects
+    assert rebuilt.link is link
