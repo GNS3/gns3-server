@@ -28,8 +28,9 @@ Two run modes, chosen per test through `harness.live_server(kernel=...)`:
   and every path follow the config), so nothing on the machine is touched.
   It needs `ubridge`, `dynamips` and an images directory
   (`GNS3_E2E_IMAGES`, default `~/GNS3/images`) available locally — the IOU
-  scenario takes its L3 image from that directory's `IOU` subfolder; the
-  Docker scenarios additionally need the Docker daemon the server talks to.
+  scenario takes its L3 image from that directory's `IOU` subfolder, the
+  QEMU scenario its L3 IOSv qcow2 from the `QEMU` subfolder; the Docker
+  scenarios additionally need the Docker daemon the server talks to.
 
 Either way each test creates its own project and deletes it again. Set
 `GNS3_E2E_KEEP=1` to keep the project (and a started instance) on failure
@@ -71,6 +72,13 @@ Current scenarios:
   console): kernel link through the [IOL fabric ↔ TAP] port bridge (same
   lifecycle as the iol-xe containers), a serial link staying on the relay
   (serial bays never anchor), and a relay negative control.
+* `test_qemu_kernel_datapath.py` — two real IOSv routers (a real qcow2
+  image from the images directory's `QEMU` subfolder, linked clone, the
+  real IOS CLI on the server's telnet console): the anchor TAP is QEMU's
+  own netdev (no port bridge in between) — the full kernel lifecycle plus
+  a relay negative control where the anchor carries as the relay's
+  AF_PACKET endpoint. IOSv boots a real IOS: this is the slowest scenario
+  pair (~6½ min kernel, ~5 min relay).
 * `test_docker_kernel_datapath.py` — two real Alpine containers (the plain
   veth datapath): the per-link kernel bridge enslaves exactly the two veth
   host ends, real ICMP crosses, the filter matrix runs one type at a time

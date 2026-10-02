@@ -202,6 +202,37 @@ class Compute:
             },
         )
 
+    def create_qemu_node(self, project_id, name, image, adapters=2, adapter_type="e1000", ram=512):
+        """A QEMU VM node: the real qemu-system binary on this host running
+        the image (a linked clone keeps the image pristine), the guest on the
+        server's telnet console. The kernel scenario picks the image through
+        ``qemu_images`` (an L3 IOSv image — the IOS console driver drives it)
+        and addresses its first adapter. The disk interface must be named:
+        a raw node defaults to ``none``, which attaches no frontend device to
+        the drive backend — the VM comes up diskless (the IOSv appliance
+        boots virtio)."""
+        return self.call(
+            "POST",
+            f"/projects/{project_id}/nodes",
+            {
+                "compute_id": "local",
+                "name": name,
+                "node_type": "qemu",
+                "properties": {
+                    # a raw node carries no template, so the binary (and with
+                    # it the platform) must be named explicitly
+                    "qemu_path": "qemu-system-x86_64",
+                    "hda_disk_image": image,
+                    "hda_disk_interface": "virtio",
+                    "adapter_type": adapter_type,
+                    "adapters": adapters,
+                    "ram": ram,
+                    "linked_clone": True,
+                    "console_type": "telnet",
+                },
+            },
+        )
+
     def create_link(self, project_id, a, b):
         return self.call(
             "POST",
@@ -231,6 +262,9 @@ class Compute:
 
     def iou_images(self):
         return [image["filename"] for image in self.call("GET", "/computes/local/iou/images")]
+
+    def qemu_images(self):
+        return [image["filename"] for image in self.call("GET", "/computes/local/qemu/images")]
 
 
 # ---------------------------------------------------------------------------
@@ -1091,6 +1125,13 @@ def iou_anchor_name(node_id, adapter, port=0):
     """The IOU node's anchor TAP name: one persistent TAP per Ethernet
     bay/unit (see IOUVM._tap_name and utils.kernel_anchor)."""
     return "gi" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def qemu_anchor_name(node_id, adapter, port=0):
+    """The QEMU node's anchor TAP name: one persistent TAP per adapter —
+    the netdev QEMU itself opens by ifname (see QemuVM._tap_name and
+    utils.kernel_anchor)."""
+    return "gq" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
 
 
 def stage_iol_base_config(server):
