@@ -139,6 +139,18 @@ def test_ethernet_switch_kernel_fast_path():
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
 
+        # L2-anchor spec §E.1: the absorbed anchors and the switch bridge
+        # carry no L3 identity (skipped on a uBridge without `link l2only`),
+        # and the joined ports are FORWARDING — the silent-failure guard.
+        if harness.l2only_supported():
+            harness.assert_pure_l2(a1)
+            harness.assert_pure_l2(a2)
+            harness.assert_pure_l2(sw_bridge)
+        else:
+            print(".. uBridge without link l2only: skipping the §E.1 assertions")
+        harness.assert_forwarding(a1)
+        harness.assert_forwarding(a2)
+
         # VLAN programming on absorbed anchors: different access VLANs
         # isolate, the same VLAN bridges again.
         compute.call(
@@ -274,6 +286,12 @@ def test_ethernet_switch_relay_control():
         members = harness.bridge_members(sw_bridge)
         assert members == sorted([f"{sw_bridge}-0", f"{sw_bridge}-1"]), members
         assert a1 not in members
+        if harness.l2only_supported():
+            # creation-time hardening applies on the relay too: the switch's
+            # own port TAPs and its bridge are pure L2
+            for member in members:
+                harness.assert_pure_l2(member)
+            harness.assert_pure_l2(sw_bridge)
 
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")

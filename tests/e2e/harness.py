@@ -43,6 +43,7 @@ Environment knobs:
   test fails, and print their ids, for inspection.
 """
 
+import contextlib
 import json
 import os
 import re
@@ -62,6 +63,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 # tc lives in /usr/sbin on most distributions; subprocesses do not always
 # inherit a PATH that has it.
 TC = shutil.which("tc", path=os.environ.get("PATH", "") + ":/usr/sbin:/sbin")
+# Reading addresses with iproute2 needs no privileges; the L2 assertions
+# below refuse to pass silently when it is missing.
+IP = shutil.which("ip", path=os.environ.get("PATH", "") + ":/usr/sbin:/sbin")
 
 # IOS prompt as the last thing on the stream: any hostname/mode shape.
 PROMPT_RE = re.compile(r"[A-Za-z0-9\-_.()/]+[>#]\s*$")
@@ -510,6 +514,138 @@ def bridge_members(bridge):
     if not os.path.exists(f"/sys/class/net/{bridge}/brif"):
         return None
     return sorted(os.listdir(f"/sys/class/net/{bridge}/brif"))
+
+
+# ---------------------------------------------------------------------------
+# L2-anchor spec assertions (docs/design/ubridge-l2-anchor-spec.md §E)
+# ---------------------------------------------------------------------------
+
+# uBridge's creators harden every host-side datapath device with
+# ``link l2only``; these assertions verify the result from the server side.
+# They need the probe below to confirm the command exists — the spec's
+# degradation contract is a skip on old builds, where anchors keep the
+# kernel-default L3 behaviour (measured: 6 frames of MLD/DAD noise per 2 s).
+
+
+def l2only_supported():
+    """Whether this host's uBridge knows ``link l2only`` (probed once).
+
+    Sends the command for a nonexistent device to a throwaway uBridge: a
+    208 reply means the command exists, ``202-Unknown command`` an old
+    build. Anything unreadable also degrades to False — the L2 assertions
+    skip rather than fail, mirroring the tc-capability degradation."""
+    global _l2only_support
+    if _l2only_support is None:
+        _l2only_support = _probe_l2only()
+    return _l2only_support
+
+
+_l2only_support = None
+
+
+def _probe_l2only():
+    ubridge = shutil.which("ubridge")
+    if not ubridge:
+        return False
+    port = _free_port()
+    with tempfile.TemporaryDirectory(prefix="gns3-e2e-l2probe-") as workdir:
+        # S603: resolved binary, fixed argv, no shell
+        proc = subprocess.Popen(  # noqa: S603
+            [ubridge, "-H", f"127.0.0.1:{port}"],
+            cwd=workdir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            sock = None
+            deadline = time.time() + 10
+            while time.time() < deadline and sock is None:
+                if proc.poll() is not None:
+                    return False
+                try:
+                    sock = socket.create_connection(("127.0.0.1", port), timeout=1)
+                except OSError:
+                    time.sleep(0.1)
+            if sock is None:
+                return False
+            with sock:
+                sock.settimeout(3)
+                sock.sendall(b"link l2only e2el2probe0\n")
+                buf = b""
+                deadline = time.time() + 5
+                while time.time() < deadline:
+                    try:
+                        chunk = sock.recv(4096)
+                    except TimeoutError:
+                        break
+                    if not chunk:
+                        break
+                    buf += chunk
+                    if re.match(rb"\d{3}-", buf.split(b"\n")[0]):
+                        break
+            reply = buf.decode(errors="replace").splitlines()[0] if buf else ""
+            # 208 = the command ran and refused the nonexistent device
+            return reply.startswith("208-")
+        finally:
+            proc.terminate()
+            with contextlib.suppress(Exception):
+                proc.wait(timeout=5)
+
+
+def assert_pure_l2(name):
+    """§E.1: a host-side datapath device (anchor or bridge) carries no L3
+    identity — no IPv4/IPv6 address, and addrgenmode none so none can
+    self-provision (no DAD, MLD or RS is ever generated from it)."""
+    mode_path = f"/sys/class/net/{name}/addr_gen_mode"
+    mode = sysfs(mode_path) if os.path.exists(mode_path) else None
+    assert mode in (None, "1"), f"{name}: addr_gen_mode is {mode!r}, expected none ('1')"
+    if os.path.exists("/proc/net/if_inet6"):
+        with open("/proc/net/if_inet6") as f:
+            assigned = [line.strip() for line in f if line.split()[-1] == name]
+        assert not assigned, f"{name}: unexpected IPv6 address: {assigned}"
+    if not IP:
+        raise AssertionError("ip binary not found — cannot verify the anchor has no IPv4 address")
+    # S603: resolved binary, fixed argv, no shell
+    v4 = subprocess.run(  # noqa: S603
+        [IP, "-o", "-4", "addr", "show", "dev", name], capture_output=True, text=True, check=False
+    ).stdout.strip()
+    assert not v4, f"{name}: unexpected IPv4 address: {v4}"
+
+
+def brport_state(name):
+    """The interface's bridge-port STP state (None when not enslaved); the
+    kernel reports 3 for forwarding."""
+    path = f"/sys/class/net/{name}/brport/state"
+    return sysfs(path) if os.path.exists(path) else None
+
+
+def assert_forwarding(name):
+    """Silent-failure guard found while validating the L2 spec: an attached
+    bridge port must be FORWARDING. A bridge device left DOWN keeps its
+    ports disabled and forwards nothing — with no error anywhere, this
+    assertion is the only signal."""
+    state = brport_state(name)
+    assert state == "3", f"{name}: bridge port state {state!r}, expected forwarding (3)"
+
+
+def packet_counters(name):
+    """(rx, tx) packet counters of a host interface."""
+    return (
+        int(sysfs(f"/sys/class/net/{name}/statistics/rx_packets")),
+        int(sysfs(f"/sys/class/net/{name}/statistics/tx_packets")),
+    )
+
+
+def assert_idle_silence(*names, settle=2.5, window=5.0):
+    """§E.2: after the one-shot enslavement burst settles (the IGMP/MLD
+    membership reports of the bridge are accepted residual, see §0), an
+    idle device in its normal role shows no traffic for *window* seconds.
+    The baseline without the hardening: 6 frames / 2 s, continuous."""
+    time.sleep(settle)
+    before = {name: packet_counters(name) for name in names}
+    time.sleep(window)
+    noisy = {name: (before[name], packet_counters(name)) for name in names if packet_counters(name) != before[name]}
+    assert not noisy, f"idle devices saw traffic (before -> after): {noisy}"
 
 
 def link_bridge_name(link_id):

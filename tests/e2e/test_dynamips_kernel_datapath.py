@@ -71,6 +71,13 @@ def _boot(server, project_id, node_id, timeout=360):
     return console
 
 
+def _eth_shutdown(console, shut):
+    console.run("conf t")
+    console.run("interface f1/0")
+    console.run("shutdown" if shut else "no shutdown")
+    console.run("end")
+
+
 def test_dynamips_kernel_datapath():
     server = harness.live_server(kernel=True)
     compute = server.compute
@@ -108,6 +115,19 @@ def test_dynamips_kernel_datapath():
         assert harness.tap_exists(t1) and harness.tap_exists(t2), (t1, t2)
         assert harness.bridge_members(bridge) == sorted([t1, t2]), harness.bridge_members(bridge)
 
+        # L2-anchor spec §E.1: anchors and the per-link bridge carry no L3
+        # identity (skipped on a uBridge without `link l2only` — the spec's
+        # degradation), and both ports are FORWARDING — the silent-failure
+        # guard against a bridge device left DOWN.
+        if harness.l2only_supported():
+            harness.assert_pure_l2(t1)
+            harness.assert_pure_l2(t2)
+            harness.assert_pure_l2(bridge)
+        else:
+            print(".. uBridge without link l2only: skipping the §E.1 assertions")
+        harness.assert_forwarding(t1)
+        harness.assert_forwarding(t2)
+
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")
         out = c1.run("show ip int brief")
@@ -115,6 +135,18 @@ def test_dynamips_kernel_datapath():
         print(".. both routers configured, pinging over the kernel link")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+
+        # L2-anchor spec §E.2: shut the guest interfaces (silencing IOS's own
+        # CDP/keepalives — the only legitimate speakers on the segment) and
+        # demand the host side stays silent for 5 s: without the hardening
+        # the host's own MLD/DAD noise floods the link (6 frames / 2 s).
+        if harness.l2only_supported():
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=True)
+            harness.assert_idle_silence(t1, t2, bridge)
+            for console in (c1, c2):
+                _eth_shutdown(console, shut=False)
+            assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
 
         # delay 100: netem on both anchors (each impairs one direction),
         # one-way ~100 ms => RTT grows by ~200 ms
@@ -237,6 +269,10 @@ def test_dynamips_relay_control():
         assert harness.bridge_members(harness.link_bridge_name(lid)) is None
         if harness.tap_exists(t1):
             assert not harness.tap_up(t1), "an unattached relay anchor should sit down"
+            if harness.l2only_supported():
+                # the L2 hardening is a creation-time property, not a
+                # datapath one: relay anchors are pure L2 too
+                harness.assert_pure_l2(t1)
 
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")

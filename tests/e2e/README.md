@@ -35,8 +35,8 @@ and print where to look at it.
 
 `harness.py` holds the shared pieces — REST client, server lifecycle, the
 IOS console driver, host-side kernel inspections (bridge membership, tap
-admin state, tc qdiscs) — so a new node type adds only its own scenario
-module.
+admin state, tc qdiscs, the L2-anchor spec §E assertions) — so a new node
+type adds only its own scenario module.
 
 Current scenarios:
 
@@ -53,6 +53,13 @@ Current scenarios:
   TAP leg (anchors at start, netem delay, suspend, capture, link
   delete/re-create swap, node stop/start rewiring) and a relay negative
   control.
+
+Every kernel scenario also asserts the L2-anchor spec's server-side
+guarantees (`docs/design/ubridge-l2-anchor-spec.md` §E): anchors and bridges
+carry no L3 identity (`assert_pure_l2`), joined ports are FORWARDING
+(`assert_forwarding`), and — in the Dynamips suite — an idle link with the
+guests silenced stays silent for 5 s (`assert_idle_silence`). These skip on
+a uBridge without `link l2only` (probed once by `harness.l2only_supported()`).
 
 Set `GNS3_E2E_DEBUG=1` to run the isolated instance with debug logging (the
 uBridge command stream lands in its `server.log`).

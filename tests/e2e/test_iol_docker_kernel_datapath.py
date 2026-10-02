@@ -110,6 +110,18 @@ def test_iol_docker_kernel_datapath():
         assert harness.tap_exists(a1) and harness.tap_exists(a2), (a1, a2)
         assert harness.bridge_members(bridge) == sorted([a1, a2]), harness.bridge_members(bridge)
 
+        # L2-anchor spec §E.1: anchors and the per-link bridge carry no L3
+        # identity (skipped on a uBridge without `link l2only`), and both
+        # ports are FORWARDING — the silent-failure guard.
+        if harness.l2only_supported():
+            harness.assert_pure_l2(a1)
+            harness.assert_pure_l2(a2)
+            harness.assert_pure_l2(bridge)
+        else:
+            print(".. uBridge without link l2only: skipping the §E.1 assertions")
+        harness.assert_forwarding(a1)
+        harness.assert_forwarding(a2)
+
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if="Ethernet0/0")
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if="Ethernet0/0")
         out = c1.run("show ip int brief")
@@ -236,6 +248,10 @@ def test_iol_docker_relay_control():
         assert harness.bridge_members(harness.link_bridge_name(link["link_id"])) is None
         if harness.tap_exists(a1):
             assert not harness.tap_up(a1), a1
+            if harness.l2only_supported():
+                # the L2 hardening is a creation-time property, not a
+                # datapath one: relay anchors are pure L2 too
+                harness.assert_pure_l2(a1)
         harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if="Ethernet0/0")
         harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if="Ethernet0/0")
         relay_ping = harness.wait_ping(c1, "10.1.1.2")
