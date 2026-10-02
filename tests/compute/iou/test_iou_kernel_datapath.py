@@ -33,6 +33,7 @@ from gns3server.compute.iou import IOU
 from gns3server.compute.iou.iou_vm import IOUVM
 from gns3server.compute.iou.iou_error import IOUError
 from gns3server.compute.nios.nio_bridge import NIOBridge
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -166,6 +167,45 @@ async def test_attach_kernel_nio_without_anchor_raises(vm):
 
     with pytest.raises(IOUError, match="no TAP anchor"):
         await vm._attach_kernel_nio(2, 0, nio)
+
+
+@pytest.mark.asyncio
+async def test_add_nio_binding_refuses_an_occupied_port(vm):
+    """
+    The compute-side backstop of the duplicate-port guard: a second NIO for
+    a port that already carries one is refused here instead of overwriting
+    — the occupying link's teardown needs its own NIO handle, and its host
+    state with it.
+    """
+
+    vm._kernel_taps[(0, 0)] = TAP00
+    first = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    await vm.adapter_add_nio_binding(0, 0, first)
+    assert vm._ethernet_adapters[0].get_nio(0) is first
+
+    second = vm.manager.create_nio({"type": "nio_bridge", "bridge": "gns3other"})
+    with pytest.raises(IOUError, match="already has a link"):
+        await vm.adapter_add_nio_binding(0, 0, second)
+
+    assert vm._ethernet_adapters[0].get_nio(0) is first
+
+
+@pytest.mark.asyncio
+async def test_add_nio_binding_attach_failure_leaves_the_port_unbound(vm):
+    """
+    The bookkeeping happens last: an attach that fails mid-way (uBridge
+    EBUSY on a held anchor) must leave the port without a binding, so the
+    failed link creates no half-wired state.
+    """
+
+    vm._kernel_taps[(0, 0)] = TAP00
+    vm._ubridge_send.side_effect = UbridgeError("208-Device or resource busy")
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    with pytest.raises(UbridgeError):
+        await vm.adapter_add_nio_binding(0, 0, nio)
+
+    assert vm._ethernet_adapters[0].get_nio(0) is None
 
 
 @pytest.mark.asyncio

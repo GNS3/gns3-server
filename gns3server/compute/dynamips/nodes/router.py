@@ -1312,12 +1312,26 @@ class Router(KernelDatapathMixin, BaseNode):
         if not adapter.port_exists(port_number):
             raise DynamipsError(f"Port {port_number} does not exist on adapter {adapter}")
 
+        # The compute-side backstop of the controller's duplicate-port guard:
+        # a port carries at most one NIO, and overwriting the one a link
+        # still owns orphans that link's teardown (its host state leaks).
+        # Refusing also keeps the kernel wiring's own idempotence check from
+        # silently skipping the attach while rebinding the bookkeeping.
+        if adapter.get_nio(port_number) is not None:
+            raise DynamipsError(
+                "Port {port_number} on slot {slot_number} of router '{name}' already has a link".format(
+                    name=self._name, slot_number=slot_number, port_number=port_number
+                )
+            )
+
         if isinstance(nio, NIOBridge):
             # Kernel datapath: the port's anchor TAP is opened in the
             # hypervisor and enslaved into the NIO's per-link bridge (the
             # wiring is deferred to the node's start when no anchors exist).
-            adapter.add_nio(port_number, nio)
+            # Wire before bookkeeping: an attach that fails mid-way leaves
+            # the port unbound instead of half-wired.
             await self._attach_kernel_nio(slot_number, port_number, nio)
+            adapter.add_nio(port_number, nio)
             log.debug(
                 'Router "{name}" [{id}]: {nio} bound to port {slot_number}/{port_number}'.format(
                     name=self._name, id=self._id, nio=nio, slot_number=slot_number, port_number=port_number

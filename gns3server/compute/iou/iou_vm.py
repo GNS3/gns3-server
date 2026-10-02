@@ -1345,27 +1345,39 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         if not adapter.port_exists(port_number):
             raise IOUError(f"Port {port_number} does not exist on adapter {adapter}")
 
-        adapter.add_nio(port_number, nio)
-        log.debug(f'IOU "{self._name}" [{self._id}]: {nio} added to {adapter_number}/{port_number}')
+        # The compute-side backstop of the controller's duplicate-port guard:
+        # a port carries at most one NIO, and overwriting the one a link
+        # still owns orphans that link's teardown (its host state leaks).
+        if adapter.get_nio(port_number) is not None:
+            raise IOUError(
+                "Port {port_number} on adapter {adapter_number} of IOU '{name}' already has a link".format(
+                    name=self._name, adapter_number=adapter_number, port_number=port_number
+                )
+            )
 
+        # Wire before bookkeeping: an attach that fails mid-way leaves the
+        # port unbound instead of half-wired.
         if self.ubridge:
             if isinstance(nio, NIOBridge):
                 await self._attach_kernel_nio(adapter_number, port_number, nio)
-                return
-            await self._ubridge_send(
-                "iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(
-                    name=self._iol_bridge_name(),
-                    iol_id=self.application_id,
-                    bay=adapter_number,
-                    unit=port_number,
-                    lport=nio.lport,
-                    rhost=nio.rhost,
-                    rport=nio.rport,
+            else:
+                await self._ubridge_send(
+                    "iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(
+                        name=self._iol_bridge_name(),
+                        iol_id=self.application_id,
+                        bay=adapter_number,
+                        unit=port_number,
+                        lport=nio.lport,
+                        rhost=nio.rhost,
+                        rport=nio.rport,
+                    )
                 )
-            )
-            location = self._iol_location(adapter_number, port_number)
-            await self._ubridge_apply_filters(location, nio.filters)
-            await self._ubridge_apply_markers(location, nio)
+                location = self._iol_location(adapter_number, port_number)
+                await self._ubridge_apply_filters(location, nio.filters)
+                await self._ubridge_apply_markers(location, nio)
+
+        adapter.add_nio(port_number, nio)
+        log.debug(f'IOU "{self._name}" [{self._id}]: {nio} added to {adapter_number}/{port_number}')
 
     async def adapter_update_nio_binding(self, adapter_number, port_number, nio):
         """

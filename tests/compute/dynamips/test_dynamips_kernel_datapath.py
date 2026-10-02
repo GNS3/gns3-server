@@ -271,6 +271,48 @@ async def test_attach_kernel_nio_opens_the_anchor_in_the_hypervisor_and_enslaves
 
 
 @pytest.mark.asyncio
+async def test_slot_add_nio_binding_refuses_an_occupied_port(router):
+    """
+    The compute-side backstop of the duplicate-port guard: a second NIO for
+    a port that already carries one is refused here instead of overwriting
+    (the wiring's own idempotence check would silently skip the attach and
+    rebind the bookkeeping) — the occupying link's teardown needs its own
+    NIO handle, and its host state with it.
+    """
+
+    router.status = "started"
+    router._kernel_taps[(0, 0)] = TAP00
+    first = await _nio(router)
+    await router.slot_add_nio_binding(0, 0, first)
+    assert router._slots[0].get_nio(0) is first
+
+    second = await _nio(router, bridge="gns3other")
+    with pytest.raises(DynamipsError, match="already has a link"):
+        await router.slot_add_nio_binding(0, 0, second)
+
+    assert router._slots[0].get_nio(0) is first
+
+
+@pytest.mark.asyncio
+async def test_slot_add_nio_binding_attach_failure_leaves_the_port_unbound(router):
+    """
+    The bookkeeping happens last: a kernel attach that fails mid-way (the
+    anchor is another link's bridge port — uBridge EBUSY) must leave the
+    port without a binding, so the failed link creates no half-wired state.
+    """
+
+    router.status = "started"
+    router._kernel_taps[(0, 0)] = TAP00
+    router._ubridge_send.side_effect = UbridgeError("208-Device or resource busy")
+
+    nio = await _nio(router)
+    with pytest.raises(UbridgeError):
+        await router.slot_add_nio_binding(0, 0, nio)
+
+    assert router._slots[0].get_nio(0) is None
+
+
+@pytest.mark.asyncio
 async def test_attach_kernel_nio_without_anchor_on_a_running_node_raises(router):
     """
     A kernel link on a serial port (or a router that never anchored) is an
