@@ -51,6 +51,7 @@ __all__ = [
     "EthernetSwitchTemplate",
     "IOUTemplate",
     "Image",
+    "ImageSyncJob",
     "LLMModelConfig",
     "Privilege",
     "QemuTemplate",

@@ -18,7 +18,7 @@ from watchdog.events import FileDeletedEvent, FileModifiedEvent, FileMovedEvent
 from gns3server.db.models import Base, Image, ImageSyncJob, Template
 from gns3server.db.models.images import image_template_map
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.services.image_reconciliation import ImageReconciliationService, InventoryEvents, enumerate_root
+from gns3server.services.image_reconciliation import ImageReconciliationService, InventoryEvents
 from gns3server.utils.image_inventory import ImageLockBusy, fingerprint, image_lock
 from gns3server.utils.images import InvalidImageError, inspect_image_file, md5sum, write_image
 

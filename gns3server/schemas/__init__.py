@@ -230,6 +230,8 @@ __all__ = [
     "IOUTemplateUpdate",
     "IOUUpdate",
     "Image",
+    "ImageSyncJob",
+    "ImageSyncRequest",
     "ImageType",
     "LLMModelConfigCreate",
     "LLMModelConfigData",
