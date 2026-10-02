@@ -66,7 +66,7 @@ def _pick_image(server):
 
 
 def _boot(server, project_id, node_id, timeout=360):
-    console = harness.dynamips_console(server, project_id, node_id)
+    console = harness.ios_console(server, project_id, node_id)
     console.boot_wait(timeout=timeout)
     return console
 

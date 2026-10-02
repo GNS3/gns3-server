@@ -27,7 +27,8 @@ Two run modes, chosen per test through `harness.live_server(kernel=...)`:
   process on a free port with its own config directory (the controller DB
   and every path follow the config), so nothing on the machine is touched.
   It needs `ubridge`, `dynamips` and an images directory
-  (`GNS3_E2E_IMAGES`, default `~/GNS3/images`) available locally; the
+  (`GNS3_E2E_IMAGES`, default `~/GNS3/images`) available locally — the IOU
+  scenario takes its L3 image from that directory's `IOU` subfolder; the
   Docker scenarios additionally need the Docker daemon the server talks to.
 
 Either way each test creates its own project and deletes it again. Set
@@ -65,6 +66,11 @@ Current scenarios:
   TAP leg (anchors at start, netem delay, suspend, capture, link
   delete/re-create swap, node stop/start rewiring) and a relay negative
   control.
+* `test_iou_kernel_datapath.py` — two real IOU routers (a real IOU image
+  from the images directory, the real IOS CLI on the server's telnet
+  console): kernel link through the [IOL fabric ↔ TAP] port bridge (same
+  lifecycle as the iol-xe containers), a serial link staying on the relay
+  (serial bays never anchor), and a relay negative control.
 * `test_docker_kernel_datapath.py` — two real Alpine containers (the plain
   veth datapath): the per-link kernel bridge enslaves exactly the two veth
   host ends, real ICMP crosses, the filter matrix runs one type at a time

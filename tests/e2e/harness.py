@@ -157,6 +157,31 @@ class Compute:
             },
         )
 
+    def create_iou_node(self, project_id, name, image, ethernet_adapters=2, serial_adapters=2, ram=1024, nvram=256):
+        """An IOU node: the real IOU binary running on this host, its IOS on
+        the server's telnet console. The kernel scenario picks the image
+        through ``iou_images`` (an L3 image — an L2 switching image does not
+        take addresses on its switchports) and addresses Ethernet0/0."""
+        return self.call(
+            "POST",
+            f"/projects/{project_id}/nodes",
+            {
+                "compute_id": "local",
+                "name": name,
+                "node_type": "iou",
+                "properties": {
+                    "path": image,
+                    "ethernet_adapters": ethernet_adapters,
+                    "serial_adapters": serial_adapters,
+                    "ram": ram,
+                    "nvram": nvram,
+                    # explicit ram/nvram, like the IOU appliance template
+                    "use_default_iou_values": False,
+                    "console_type": "telnet",
+                },
+            },
+        )
+
     def create_iol_router(self, project_id, name, image, adapters=2):
         """An IOL runner container (iol-runner images), the appliance's
         template properties."""
@@ -203,6 +228,9 @@ class Compute:
 
     def docker_images(self):
         return [image["image"] for image in self.call("GET", "/computes/local/docker/images")]
+
+    def iou_images(self):
+        return [image["filename"] for image in self.call("GET", "/computes/local/iou/images")]
 
 
 # ---------------------------------------------------------------------------
@@ -565,7 +593,10 @@ class IOSConsole:
         self.sock.close()
 
 
-def dynamips_console(server, project_id, node_id):
+def ios_console(server, project_id, node_id):
+    """The telnet console of a node running IOS (dynamips, IOU, IOL
+    container): the server-side telnet endpoint around the emulator's own
+    stdio — same driver for all of them."""
     node = server.compute.node(project_id, node_id)
     host = node["console_host"] if node["console_host"] not in ("0.0.0.0", "::") else "127.0.0.1"
     return IOSConsole(host, node["console"])
@@ -1054,6 +1085,12 @@ def docker_anchor_name(node_id, adapter, port=0):
 def iol_anchor_name(node_id, adapter, port):
     """The IOL runner container's anchor TAP name (see IOLDockerVM._tap_name)."""
     return "gx" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def iou_anchor_name(node_id, adapter, port=0):
+    """The IOU node's anchor TAP name: one persistent TAP per Ethernet
+    bay/unit (see IOUVM._tap_name and utils.kernel_anchor)."""
+    return "gi" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
 
 
 def stage_iol_base_config(server):
