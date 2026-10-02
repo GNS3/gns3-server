@@ -890,6 +890,25 @@ class DockerDaemon:
         except (AssertionError, ValueError):
             return "unknown"
 
+    def cp(self, container_id, tar_bytes, path):
+        """Upload a tar archive into the container at *path* (``docker cp``
+        in); the daemon extracts it, honoring the entries' modes."""
+        conn = _UnixHTTPConnection(self.socket_path, self.timeout)
+        try:
+            conn.request(
+                "PUT",
+                f"/containers/{container_id}/archive?path={urllib.parse.quote(path)}",
+                body=tar_bytes,
+                headers={"Content-Type": "application/x-tar"},
+            )
+            response = conn.getresponse()
+            payload = response.read()
+            assert response.status == 200, f"docker cp into {container_id[:12]} -> HTTP {response.status}: {payload[:300]!r}"
+        except (OSError, http.client.HTTPException) as e:
+            raise AssertionError(f"docker cp into {container_id[:12]} failed: {e}") from None
+        finally:
+            conn.close()
+
 
 def ensure_docker_image(server):
     """The Docker image the scenarios run, ensured present locally.
