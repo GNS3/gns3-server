@@ -84,13 +84,14 @@ def test_dynamips_kernel_datapath():
     if compute.capabilities().get("ubridge_tap") is not True:
         pytest.skip("this compute's uBridge cannot create persistent TAPs (ubridge_tap != True)")
     image = _pick_image(server)
+    idlepc = harness.dynamips_idlepc(server, image)
 
     project = compute.create_project("dyn-e2e")
     pid = project["project_id"]
     t1 = t2 = None
     try:
-        r1 = compute.create_dynamips_router(pid, "E2E-R1", image, SLOTS)
-        r2 = compute.create_dynamips_router(pid, "E2E-R2", image, SLOTS)
+        r1 = compute.create_dynamips_router(pid, "E2E-R1", image, SLOTS, idlepc=idlepc)
+        r2 = compute.create_dynamips_router(pid, "E2E-R2", image, SLOTS, idlepc=idlepc)
         r1_id, r2_id = r1["node_id"], r2["node_id"]
         t1 = harness.anchor_name(r1_id, *ETH)
         t2 = harness.anchor_name(r2_id, *ETH)
@@ -244,13 +245,14 @@ def test_dynamips_relay_control():
     server = harness.live_server(kernel=False)
     compute = server.compute
     image = _pick_image(server)
+    idlepc = harness.dynamips_idlepc(server, image)
 
     project = compute.create_project("dyn-e2e-relay")
     pid = project["project_id"]
     t1 = None
     try:
-        r1 = compute.create_dynamips_router(pid, "E2E-R1", image, SLOTS)
-        r2 = compute.create_dynamips_router(pid, "E2E-R2", image, SLOTS)
+        r1 = compute.create_dynamips_router(pid, "E2E-R1", image, SLOTS, idlepc=idlepc)
+        r2 = compute.create_dynamips_router(pid, "E2E-R2", image, SLOTS, idlepc=idlepc)
         r1_id, r2_id = r1["node_id"], r2["node_id"]
         t1 = harness.anchor_name(r1_id, *ETH)
 

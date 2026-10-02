@@ -67,7 +67,7 @@ def _switch_bridge_name(switch_id):
     return "gns3" + switch_id.replace("-", "")[:6]
 
 
-def _create_topology(compute, pid, image, name):
+def _create_topology(compute, pid, image, name, idlepc=None):
     switch = compute.call(
         "POST",
         f"/projects/{pid}/nodes",
@@ -83,8 +83,8 @@ def _create_topology(compute, pid, image, name):
             },
         },
     )
-    r1 = compute.create_dynamips_router(pid, f"{name}-R1", image, SLOTS)
-    r2 = compute.create_dynamips_router(pid, f"{name}-R2", image, SLOTS)
+    r1 = compute.create_dynamips_router(pid, f"{name}-R1", image, SLOTS, idlepc=idlepc)
+    r2 = compute.create_dynamips_router(pid, f"{name}-R2", image, SLOTS, idlepc=idlepc)
     return switch, r1, r2
 
 
@@ -100,12 +100,13 @@ def test_ethernet_switch_kernel_fast_path():
     if compute.capabilities().get("ubridge_tap") is not True:
         pytest.skip("this compute's uBridge cannot create persistent TAPs (ubridge_tap != True)")
     image = _pick_image(server)
+    idlepc = harness.dynamips_idlepc(server, image)
 
     project = compute.create_project("esw-e2e")
     pid = project["project_id"]
     sw_bridge = None
     try:
-        switch, r1, r2 = _create_topology(compute, pid, image, "E2E")
+        switch, r1, r2 = _create_topology(compute, pid, image, "E2E", idlepc)
         switch_id = switch["node_id"]
         r1_id, r2_id = r1["node_id"], r2["node_id"]
         sw_bridge = _switch_bridge_name(switch_id)
@@ -262,12 +263,13 @@ def test_ethernet_switch_relay_control():
     server = harness.live_server(kernel=False)
     compute = server.compute
     image = _pick_image(server)
+    idlepc = harness.dynamips_idlepc(server, image)
 
     project = compute.create_project("esw-e2e-relay")
     pid = project["project_id"]
     sw_bridge = None
     try:
-        switch, r1, r2 = _create_topology(compute, pid, image, "E2E")
+        switch, r1, r2 = _create_topology(compute, pid, image, "E2E", idlepc)
         sw_bridge = _switch_bridge_name(switch["node_id"])
         r1_id, r2_id = r1["node_id"], r2["node_id"]
         a1 = harness.anchor_name(r1_id, *ETH)

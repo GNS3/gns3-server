@@ -33,6 +33,15 @@ Either way each test creates its own project and deletes it again. Set
 `GNS3_E2E_KEEP=1` to keep the project (and a started instance) on failure
 and print where to look at it.
 
+The dynamips scenarios give their routers an idle-PC: detected once per
+image through the controller's `auto_idlepc` (a throwaway project and a
+real CPU-usage measurement — the GUI's idle-PC finder path) and cached in
+`~/.cache/gns3-e2e/idlepc.json` keyed by the image checksum. Without one,
+each c7200 burns a **full CPU core** for the whole scenario — the e2e
+creates raw nodes, so no template supplies a value. Set `GNS3_E2E_IDLEPC`
+to skip the detection and use the given value (detection failing is never
+fatal: the routers simply run without one).
+
 `harness.py` holds the shared pieces — REST client, server lifecycle, the
 IOS console driver, host-side kernel inspections (bridge membership, tap
 admin state, tc qdiscs, the L2-anchor spec §E assertions) — so a new node

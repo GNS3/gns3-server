@@ -39,6 +39,9 @@ Environment knobs:
 * ``GNS3_E2E_USER`` / ``GNS3_E2E_PASSWORD`` — credentials for the target.
 * ``GNS3_E2E_IMAGES`` — images directory the isolated instance uses
   (default ``~/GNS3/images``); also where the dynamips test finds its image.
+* ``GNS3_E2E_IDLEPC`` — use this idle-PC value for the dynamips routers
+  instead of detecting one (see ``dynamips_idlepc``; without an idle-PC each
+  router burns a full CPU core for the whole scenario).
 * ``GNS3_E2E_KEEP=1`` — keep the project (and the isolated instance) when a
   test fails, and print their ids, for inspection.
 """
@@ -121,8 +124,10 @@ class Compute:
     def create_project(self, name="e2e"):
         return self.call("POST", "/projects", {"name": f"{name}-{int(time.time())}"})
 
-    def create_dynamips_router(self, project_id, name, image, slots, platform="c7200", ram=512):
+    def create_dynamips_router(self, project_id, name, image, slots, platform="c7200", ram=512, idlepc=None):
         properties = {"platform": platform, "image": image, "ram": ram}
+        if idlepc:
+            properties["idlepc"] = idlepc
         properties.update(slots)
         return self.call(
             "POST",
@@ -348,6 +353,79 @@ def release(server, project_id, failed=False):
             print(f"!! could not delete project {project_id}: {e}")
     if server.isolated and not (failed and keep_on_failure()):
         server.stop()
+
+
+# ---------------------------------------------------------------------------
+# Dynamips idle-PC (CPU)
+# ---------------------------------------------------------------------------
+
+# Detected values, keyed by image identity; the detection needs a throwaway
+# boot, so it is worth caching across runs.
+IDLEPC_CACHE_PATH = os.path.join(os.path.expanduser("~/.cache/gns3-e2e"), "idlepc.json")
+
+
+def dynamips_idlepc(server, image, platform="c7200", ram=512):
+    """The idle-PC value the scenarios' dynamips routers should be created
+    with — detected once per image and cached.
+
+    Without one, dynamips busy-waits and burns a *full CPU core per router*
+    for the whole scenario: the e2e creates raw nodes, and no template
+    supplies an idle-PC. Detection goes through the controller's
+    ``auto_idlepc`` endpoint — the GUI's idle-PC finder path: a throwaway
+    project boots the image, candidate values are validated by measuring the
+    actual process CPU (first candidate under 70 % wins) — and the result is
+    cached in ``~/.cache/gns3-e2e/idlepc.json`` keyed by the image's
+    checksum, so the cost is paid once per image, not once per run.
+
+    ``GNS3_E2E_IDLEPC`` overrides detection and cache entirely. Any failure
+    returns None: the scenarios then run without an idle-PC (and burn the
+    cores) rather than fail on a CPU optimisation.
+    """
+    override = os.environ.get("GNS3_E2E_IDLEPC")
+    if override:
+        return override
+
+    checksum = None
+    for entry in server.compute.call("GET", "/computes/local/dynamips/images"):
+        if entry["filename"] == image:
+            checksum = entry.get("md5sum")
+            break
+    key = f"{image}:{checksum}" if checksum else image
+
+    cache = {}
+    try:
+        with open(IDLEPC_CACHE_PATH) as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        pass
+    if cache.get(key):
+        print(f".. idle-PC {cache[key]} for {image} (cached)")
+        return cache[key]
+
+    print(f".. detecting an idle-PC for {image} (once per image — this takes a few minutes)")
+    try:
+        result = server.compute.call(
+            "POST",
+            "/computes/local/dynamips/auto_idlepc",
+            {"platform": platform, "image": image, "ram": ram},
+            timeout=600,
+        )
+    except Exception as e:
+        print(f".. idle-PC detection failed ({e}); the routers will burn a core each")
+        return None
+    idlepc = (result or {}).get("idlepc")
+    if not idlepc:
+        print(f".. no idle-PC value found for {image}; the routers will burn a core each")
+        return None
+    cache[key] = idlepc
+    try:
+        os.makedirs(os.path.dirname(IDLEPC_CACHE_PATH), exist_ok=True)
+        with open(IDLEPC_CACHE_PATH, "w") as f:
+            json.dump(cache, f, indent=2, sort_keys=True)
+    except OSError as e:
+        print(f".. could not write the idle-PC cache {IDLEPC_CACHE_PATH}: {e}")
+    print(f".. idle-PC {idlepc} for {image} (cached for later runs)")
+    return idlepc
 
 
 # ---------------------------------------------------------------------------
