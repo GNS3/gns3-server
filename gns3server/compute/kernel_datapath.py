@@ -616,7 +616,7 @@ class KernelDatapathMixin:
         and the kernel-only ``window_drop`` type the time-window mode
         (``tc window_drop``: single outage, or recurring flaps with an
         optional per-cycle jitter). The program evaluates the modes in the
-        fixed order nth → quota → window. A mode is only sent when
+        fixed order nth → quota → window → flow. A mode is only sent when
         ``tc capabilities`` declares its token (``ebpf_modes``); builds
         predating the field keep their shipped modes (everything but
         window).

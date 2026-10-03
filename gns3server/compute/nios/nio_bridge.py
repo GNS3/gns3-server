@@ -21,9 +21,10 @@ Interface for kernel-datapath bridge NIOs.
 A NIO of this type instructs the node to enslave its adapter's veth host end
 into the named Linux kernel bridge instead of wiring a uBridge UDP relay.
 Frames then flow entirely in the kernel (veth -> bridge -> veth). Impairment
-filters ride the NIO and run as one tc netem qdisc per veth host end (the
-types without a netem equivalent — frequency_drop, bpf — stay relay-only);
-markers and packet capture are served by uBridge's AF_PACKET modules on the
+filters ride the NIO and run on the veth host end — one tc netem qdisc
+(delay/loss/corrupt and the netem extensions), cls_bpf match-drop (bpf) and
+the eBPF stateful classifier (frequency_drop, quota, window_drop); markers
+and packet capture are served by uBridge's AF_PACKET modules on the
 veth host end (marker add_kernel / capture start_kernel).
 
 ``bridge`` may be ``None``: the anchor is then bridged elsewhere — an

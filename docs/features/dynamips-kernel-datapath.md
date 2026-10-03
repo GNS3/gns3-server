@@ -9,7 +9,7 @@ Dynamips routers emulate every port inside the Dynamips process; on the relay da
 
 ## Architecture
 
-The diagram shows the e2e shape — two c7200 routers on one link (slot 0 port 0 each), the topology `tests/e2e/test_dynamips_kernel_datapath.py` drives. A Dynamips↔Docker/QEMU/IOU link is the same shape with the peer's own anchor on the other side; a routed transit is two such links with IOS forwarding between them. Interface names follow the deterministic rules `gd{node_id[:8]}e{slot}p{port}` for the anchor TAPs and `gns3{link_id[:11]}` for the bridge; the concrete names in the diagrams use node ids `7c1d4e2f` / `9e8b6a3f` and link id prefix `5d3c2b1a4e6` (`gdA`/`gdB` shorthand in the sequence below). Terms the diagrams use:
+The diagram shows the e2e shape — two c7200 routers on one link (slot 1 port 0 each, a PA-2FE-TX — slot 0 is the c7200's fixed I/O slot), the topology `tests/e2e/test_dynamips_kernel_datapath.py` drives. A Dynamips↔Docker/QEMU/IOU link is the same shape with the peer's own anchor on the other side; a routed transit is two such links with IOS forwarding between them. Interface names follow the deterministic rules `gd{node_id[:8]}e{slot}p{port}` for the anchor TAPs and `gns3{link_id[:11]}` for the bridge; the concrete names in the diagrams use node ids `7c1d4e2f` / `9e8b6a3f` and link id prefix `5d3c2b1a4e6` (`gdA`/`gdB` shorthand in the sequence below). Terms the diagrams use:
 
 | Term | Meaning |
 |---|---|
@@ -17,7 +17,7 @@ The diagram shows the e2e shape — two c7200 routers on one link (slot 0 port 0
 | anchor | the host-side interface a link attaches to — for Dynamips the `gd` persistent TAP, for Docker the `gv` veth host end |
 | persistent TAP | the TAP created per Ethernet slot/port at node start (`tap create` + `tap set_owner`, ownership handed to the server user so the unprivileged hypervisor can open it); born DOWN, it outlives `vm stop` and hypervisor crashes |
 | per-link bridge | the Linux bridge `gns3{link_id[:11]}` that stands in for the cable; the two anchors are its only ports |
-| tap fd | a TAP's file descriptor: reads return frames the kernel received on the device, writes inject frames into it — the hypervisor opens it with `nio create_tap` and holds it for the port's lifetime |
+| tap fd | a TAP's file descriptor: writes inject frames into the kernel as if the device received them, reads return frames the kernel transmits through the device (bridge-forwarded, toward the router) — the hypervisor opens it with `nio create_tap` and holds it for the port's lifetime |
 | FDB | the bridge's forwarding database (learned MAC → port); unknown, broadcast and multicast destinations are flooded |
 | `01:80:c2` / `group_fwd_mask` | the IEEE 802.1D reserved multicast range (STP, LACP, LLDP, 802.1X, PAUSE); the bridge forwards it only per the port's `group_fwd_mask` — `0xfffd` passes everything except PAUSE/PFC |
 | `clsact` | the tc classifier carrier on the anchor; its egress chain is where the drop classifiers run |
@@ -35,9 +35,9 @@ flowchart LR
         ios1["IOS router 1"]
     end
     subgraph RootNS["root namespace"]
-        gdA["gd7c1d4e2fe0p0"]
+        gdA["gd7c1d4e2fe1p0"]
         BR["gns35d3c2b1a4e6"]
-        gdB["gd9e8b6a3fe0p0"]
+        gdB["gd9e8b6a3fe1p0"]
         ub1["uBridge R1"]
         ub2["uBridge R2"]
     end
@@ -99,7 +99,7 @@ flowchart LR
         S1["IOS port sends"]
     end
     subgraph ROOT["root namespace"]
-        subgraph GA["gd7c1d4e2fe0p0 — ingress (egress chain serves R2→R1)"]
+        subgraph GA["gd7c1d4e2fe1p0 — ingress (egress chain serves R2→R1)"]
             S3["ingress"]
         end
         subgraph BRP["per-link bridge"]
@@ -107,7 +107,7 @@ flowchart LR
             D["dropped"]
             S4["FDB lookup / flood"]
         end
-        subgraph GB["gd9e8b6a3fe0p0 — egress chain (clsact, then netem)"]
+        subgraph GB["gd9e8b6a3fe1p0 — egress chain (clsact, then netem)"]
             S5["eBPF prio 1"]
             S6["bpf_drop prio 10-99"]
             S7["netem qdisc"]
@@ -128,18 +128,18 @@ flowchart LR
     S7 -. "AF_PACKET tap" .-> T
 ```
 
-What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below). The R2 → R1 reply is symmetric — its impairment points are `gd9e8b6a3fe0p0`'s egress (entering R2) and `gd7c1d4e2fe0p0`'s egress (entering R1) — so every direction is impaired exactly once, and `delay 100` measures ≈200 ms round trip (the e2e-verified number). Copies 1-2 are the whole kernel/user bill — both are the TAP-fd legs of the emulation itself; the same frame on the relay datapath crosses six times (diagram above). The dashed sideband is uBridge's observation: capture and markers run as AF_PACKET taps on whichever end hosts them, cloning this frame at that anchor's stage — gdA's rx or gdB's tx — and a clsact-dropped frame never reaches the tap.
+What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below). The R2 → R1 reply is symmetric — its impairment points are `gd9e8b6a3fe1p0`'s egress (entering R2) and `gd7c1d4e2fe1p0`'s egress (entering R1) — so every direction is impaired exactly once, and `delay 100` adds one-way 100 ms per direction, ≈200 ms round trip (the e2e pins the lower bound: RTT ≥ 150 ms with 100% success). Copies 1-2 are the whole kernel/user bill — both are the TAP-fd legs of the emulation itself; the same frame on the relay datapath crosses six times (diagram above). The dashed sideband is uBridge's observation: capture and markers run as AF_PACKET taps on whichever end hosts them, cloning this frame at that anchor's stage — gdA's rx or gdB's tx — and a clsact-dropped frame never reaches the tap.
 
 ## Datapath selection
 
 `UDPLink._kernel_datapath_eligible` extends the common rules with:
 
 * the compute must report **`ubridge_tap`** — the anchors are uBridge-created TAPs the hypervisor merely opens, the same capability QEMU gates on; there is no Dynamips-specific one;
-* **both ports must be Ethernet**. The controller's port matrix decides per port; serial, ATM and POS ports keep the relay whatever the capabilities (the adapter registry in `compute/dynamips/adapters/adapter.py` names the Ethernet models — `ETHERNET_ADAPTERS` / `ETHERNET_WICS`, WIC-1ENET included, at its Dynamips port number `16 * (wic_slot + 1)`).
+* **both ports must be Ethernet**. The controller's port matrix decides per port (the port's `link_type`); serial, ATM and POS ports keep the relay whatever the capabilities. Anchor creation on the compute side uses its own registry of Ethernet models — `ETHERNET_ADAPTERS` / `ETHERNET_WICS` in `compute/dynamips/adapters/adapter.py`, WIC-1ENET included at its Dynamips port number `16 * (wic_slot + 1)` — a name-keyed list kept in step with the controller's matrix by convention, not derivation.
 
 ## Link creation sequence
 
-Both routers sit on the same compute (a kernel-link precondition) and each drives its own uBridge process; the hypervisor is one process per router. The two node handlers attach concurrently and compute the same bridge name independently (a pure function of the link id), so either may win the `brctl create` race — the loser verifies the bridge exists (`brctl show`) and continues:
+Both routers sit on the same compute (a kernel-link precondition) and each drives its own uBridge process; the hypervisor is one process per router. The sequence shows the running-router case — a router that is stopped stores the NIO and defers every step here to its next start (deferred wiring, below). The two node handlers attach concurrently and compute the same bridge name independently (a pure function of the link id), so either may win the `brctl create` race — the loser verifies the bridge exists (`brctl show`) and continues:
 
 ```mermaid
 sequenceDiagram
@@ -175,15 +175,15 @@ sequenceDiagram
     Note over HY1,UB2: steady state — kernel forwards between the anchors, the hypervisors hold the tap fds
 ```
 
-`nio create_tap`, `vm slot_add_nio_binding` and `vm slot_enable_nio` are the Dynamips-specific steps: the hypervisor opens the anchor and binds it to the slot/port before any bridge work, so a half-wired port never appears on the link. Capture, markers and `tc netem set` run only when the NIO carries them — a marker's real form is `marker add_kernel <name> <if> "<bpf>"`, `bpf` expressions arrive as `tc bpf_drop add`, the stateful modes as `tc nth/quota/window_drop` — and `brctl addif` is itself what opens the port's `group_fwd_mask` to `0xfffd` (no separate command exists). The anchor's carrier stays down while the link is suspended. A link created while the router is **stopped** is stored and wired by the next start — the NIO simply waits in the slot adapter (deferred wiring, Anchor lifecycle below).
+`nio create_tap`, `vm slot_add_nio_binding` and `vm slot_enable_nio` are the Dynamips-specific steps: the hypervisor opens the anchor and binds it to the slot/port before any bridge work, so a half-wired port never appears on the link. Capture, markers and `tc netem set` run only when the NIO carries them — a marker's real form is `marker add_kernel <name> <if> "<bpf>"`, `bpf` expressions arrive as `tc bpf_drop add`, the stateful modes as `tc nth/quota/window_drop` — and `brctl addif` is itself what opens the port's `group_fwd_mask` to `0xfffd` — the server sends no separate command for it (uBridge does have one, `brctl setportgroupfwd`, last-writer-wins against addif's default, which re-applies on every re-attach). The anchor's carrier stays down while the link is suspended. A link created while the router is **stopped** is stored and wired by the next start — the NIO simply waits in the slot adapter (deferred wiring, Anchor lifecycle below).
 
 ## Anchor lifecycle
 
 * **Birth (node start)** — `_prepare_tap_datapath` probes the tap module (one create/delete cycle) and creates one persistent TAP per Ethernet slot/port, ownership handed to the server user, born DOWN. A stale leftover from a previous run is swept first; an anchor that already exists (restart) is kept — an anchor is never recreated under a live link. Serial/ATM/POS ports simply have no anchor.
 * **Life** — a kernel link opens the anchor in the hypervisor (`nio create_tap`), binds it to the slot/port and enslaves it into the per-link bridge; removing the link unbinds the port, deletes the hypervisor's TAP NIO (releasing the fd) and tears the anchor out of the bridge. A link bound while the router is **stopped** is stored and wired by the next start (deferred wiring — the NIO simply waits in the slot adapter).
-* **Death (node close)** — `_stop_ubridge` runs in **QEMU's order**, not IOU's: here the Dynamips hypervisor holds the anchor fds, so its TAP NIOs go first (`nio delete` closes the fd), then `tap delete` per anchor, then the per-link kernel bridges, then uBridge itself.
+* **Death (node close)** — the fd holder releases before the devices are deleted, the order every node type uses: here the Dynamips hypervisor (not uBridge) holds the anchor fds, so its TAP NIOs go first (`nio delete` closes the fd), then `tap delete` per anchor, then the per-link kernel bridges, then uBridge itself.
 
-**A stop is not a close.** `stop` only halts the emulated router: the hypervisor process — and with it the TAP fds, the port bindings and the per-link bridges — survives `vm stop` (the same reason a relay link's tunnel always survived a stop). Links therefore keep working through a stop/start with no re-wiring at all; the restart's attach pass skips every port that still has its TAP NIO. If the hypervisor died mid-flight (crash or kill), the persistent TAPs remain and the next start re-attaches from the stored NIOs.
+**A stop is not a close.** `stop` only halts the emulated router: the hypervisor process — and with it the TAP fds, the port bindings and the per-link bridges — survives `vm stop` (the same reason a relay link's tunnel always survived a stop). Links therefore keep working through a stop/start with no re-wiring at all; the restart's attach pass skips every port that still has its TAP NIO. If the hypervisor died mid-flight (crash or kill), the persistent TAPs remain, but the node cannot simply be started again — `start()` speaks to the dead hypervisor and nothing respawns it; recovery is re-creating the node (a project reopen does it), where the stale anchors are swept and rebuilt and the controller re-posts the link NIOs.
 
 ## Link operations
 
@@ -211,18 +211,18 @@ A uBridge without the tap module keeps the node relay-only: `_prepare_tap_datapa
 
 ## Verified
 
-Unit level (`tests/compute/dynamips/test_dynamips_kernel_datapath.py`): anchor topology (Ethernet models and WIC-1ENET port numbering only), the lifecycle (create/sweep/skip-existing), deferred wiring of NIOs bound while stopped, attach/update/remove command shapes on both datapaths, the stop order (hypervisor NIO delete before tap delete before brctl delete), capture and marker shapes, hot-added adapters, and the manager's `nio_bridge` construction. Plus the controller-eligibility cases (mixable with docker/qemu/iou, tap capability required, serial excluded) in `tests/controller/test_kernel_datapath_link.py`.
+Unit level (`tests/compute/dynamips/test_dynamips_kernel_datapath.py`): anchor topology (Ethernet models and WIC-1ENET port numbering only), the lifecycle (create/sweep/skip-existing), deferred wiring of NIOs bound while stopped, attach/update/remove command shapes on both datapaths, the idempotent re-attach across a restart, the stop order (hypervisor NIO delete before tap delete before brctl delete), capture and marker shapes, hot-added adapters, and the manager's `nio_bridge` construction. Plus the controller-eligibility cases (mixable with docker/qemu/iou, tap capability required, serial excluded) in `tests/controller/test_kernel_datapath_link.py`.
 
 End-to-end (`tests/e2e/test_dynamips_kernel_datapath.py`, pytest marker `e2e`) on a live server with **two real c7200 routers on a real IOS image**, driven through the REST API and the IOS consoles with real ICMP:
 
 * a link created while both routers are stopped selects the kernel datapath and is wired by node start (deferred wiring);
 * the per-link kernel bridge on the host has exactly the two anchor TAPs enslaved; `show ip int brief` is up/up and ping R1→R2 succeeds;
-* `delay 100` ⇒ netem qdisc visible on both anchors and the ping RTT grows by ~200 ms (one-way 100 per direction, each anchor impairing its own ingress side); clearing resets the qdiscs and the RTT;
+* `delay 100` ⇒ netem qdisc visible on both anchors and the ping RTT grows by ~200 ms (one-way 100 per direction, each anchor's egress chain impairing the direction entering its own router); clearing resets the qdiscs and the RTT;
 * suspend ⇒ anchor administratively down, ping 0%; resume restores both;
 * capture writes a pcap full of ICMP-over-Ethernet records;
 * a **serial** link between the same two routers stays on the relay (per-port exclusion) and pings over it — the relay regression net;
 * link delete/re-create: the bridge goes and comes back, the anchors survive, traffic resumes;
-* router stop/start keeps the wiring intact (bridge membership unchanged, no duplicate NIOs) and traffic resumes after the reboot;
+* router stop/start keeps the wiring intact (bridge membership unchanged — the no-duplicate-NIO half is the unit-tested idempotent re-attach) and traffic resumes after the reboot;
 * deleting the project removes every anchor and bridge.
 
 `test_dynamips_relay_control` is the negative control: the same topology on an isolated relay-configured instance (`enable_kernel_datapath = false`) has no per-link bridge and nothing enslaved, and still pings — so the kernel objects above can only come from the kernel datapath.
@@ -238,4 +238,4 @@ enable_kernel_datapath = True
 
 ## Roadmap
 
-The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` — it absorbs the peer's anchor into its own kernel bridge; switch-to-switch cascades and the IOL runner container have landed too — see `ethernet-switch-kernel-datapath.md` and `iol-docker-kernel-datapath.md`). Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred until every node type is kernelized.
+The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` — it absorbs the peer's anchor into its own kernel bridge, and switch-to-switch cascades with it), and so has the IOL runner container (`iol-docker-kernel-datapath.md`). Every router and switch node type now anchors; VPCS, the hub, the cloud and the NAT node stay on the relay by design. Cross-compute kernel links need VXLAN/GENEVE encapsulation — a separate, still-deferred project.

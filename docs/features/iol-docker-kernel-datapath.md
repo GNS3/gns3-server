@@ -13,7 +13,7 @@ IOL runner containers (`IOLDockerVM`, selected by the `GNS3_IOL_RUNNER` environm
 
 The kernel datapath gives every Ethernet bay/unit a **persistent TAP anchor** (`gx` names, born at node start exactly like IOU's) and wires the *link segment* through the kernel. One userspace hop on the container leg is irreducible — the socket pair is the only physical layer the runner exposes — but the anchor → per-link bridge → peer anchor crossing, the kernel filters, the suspend carrier and the AF_PACKET capture/markers are all native now.
 
-The port bridge is the deployment shape ubridge's `doc/gns3server-integration.md` § *bridge — generic NIO relay with a swappable TAP leg* froze: a per-node bridge created at start, the unix NIO in the first slot for the node's whole life, the topology leg in the second — `add_nio_udp` (relay) or `add_nio_tap` (kernel link) — swapped as links are attached, suspended, deleted or the project reopens, through stop → delete → add → start. The c-socket binding never re-binds across a swap: frames the container sends while the bridge is stopped queue on the socket and relay after `start` (regression-tested in ubridge's bridge suite).
+The port bridge is the deployment shape ubridge's `doc/gns3server-integration.md` § *bridge — generic NIO relay with a swappable TAP leg* froze: one bridge per bay/unit, all created at start, the unix NIO in the first slot for the node's whole life, the topology leg in the second — `add_nio_udp` (relay) or `add_nio_tap` (kernel link) — swapped through stop → delete → add → start whenever a link is deleted, re-created or switched between datapaths. Suspend swaps no leg (an in-place NIO update), and a project reopen is a fresh build from the NIO, not a swap. The c-socket binding never re-binds across a swap: frames the container sends while the bridge is stopped queue on the socket and relay after `start` (regression-tested in ubridge's bridge suite).
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Kernel link between two IOL runner containers on the same compute. Interface nam
 | `sNN.sock` / `cNN.sock` | the interface's socket pair (`NN = bay×4 + unit`): frames sent to `s` are injected into the guest, the guest's egress arrives on `c` |
 | wiring dir | the host-side directory bind-mounted at the container's `/tmp` (`$XDG_RUNTIME_DIR/gns3/unixio/<node-id>`) — the same socket files on both sides, short enough for the 107-byte `sun_path` cap |
 | uBridge | the per-node helper process gns3-server spawns; its hypervisor command surface executes all host-side wiring (anchors, bridges, carrier, tc, taps) — and, unique to this node type, it also carries frames: the socket guest leg has no kernel form |
-| port bridge | the per-bay/unit uBridge bridge (`bridge{bay}_{unit}`): `nio_unix` in its first slot for the node's whole life, the topology leg — `nio_tap` (kernel link) or `nio_udp` (relay) — in the second |
+| port bridge | the per-bay/unit uBridge bridge (`bridge{bay}` on unit 0, `bridge{bay}_{unit}` on units 1-3 — the historical `_bridge_name` naming): `nio_unix` in its first slot for the node's whole life, the topology leg — `nio_tap` (kernel link) or `nio_udp` (relay) — in the second |
 | anchor | the persistent TAP `gx…` a link attaches to: born at node start, DOWN, its fd held by the port bridge while a kernel link binds the port |
 | per-link bridge | the Linux bridge `gns3{link_id[:11]}` that stands in for the cable; the two anchors are its only ports |
 | bridge port | an interface enslaved to a Linux bridge (`brctl addif`) — it no longer sends or receives on its own: frames arriving on it go to the bridge's forwarding logic, and the bridge transmits through it |
@@ -38,7 +38,7 @@ Kernel link between two IOL runner containers on the same compute. Interface nam
 | netem | the impairment qdisc behind clsact: delay, loss, rate, corrupt, duplicate, … |
 | `AF_PACKET tap` | uBridge's packet socket bound to the anchor; the kernel clones every frame the interface sends or receives to it (the tcpdump mechanism) — read-only copies for capture and markers, the original stays on the kernel path |
 | carrier | the anchor's admin state (`link set up/down`); suspend is carrier down on both anchors = 100 % loss |
-| `nio_bridge` | the NIO record the controller sends each compute: bridge name, filters, markers, suspend flag |
+| `nio_bridge` | the NIO record the controller sends each compute: bridge name, filters, markers, suspend flag — the bridge name is None when an Ethernet-switch peer absorbs the anchor into its own kernel bridge (then no per-link bridge exists on this side) |
 
 ```mermaid
 flowchart TB
@@ -121,7 +121,7 @@ Drawn one-way; the reverse direction is the mirror image. The IOL relay crosses 
 
 Two further contrasts with Docker's relay: the IOL relay's local leg is the unix NIO itself, so the anchors never appear on the path (idle from birth — a Docker relay attaches to the *same* veth host end the kernel link enslaves); and the port bridge's first slot is shared with the kernel datapath — the unix NIO and its c-socket binding survive every leg swap, so frames the container sends while the bridge is stopped for a swap queue on the socket and relay after `start`. On this datapath suspend rides the synthetic frequency_drop filter (the kernel datapath's suspend is the anchor's admin state).
 
-Frame path for one A → B frame, with the relay diagram's copy numbering: copies 1, 2, 5 and 6 are the socket guest legs and are paid identically on both datapaths — only the middle two swap (TAP fd write/read here, loopback UDP there). The impairment chain fires on the egress of the *destination* anchor, in order clsact → netem (a classifier drop means netem never sees the frame); each direction is impaired exactly once and B → A is symmetric on gxA's egress chain — hence `delay 100` doubles the RTT (measured ≥ 150 ms):
+Frame path for one A → B frame, with the relay diagram's copy numbering: copies 1, 2, 5 and 6 are the socket guest legs and are paid identically on both datapaths — only the middle two swap (TAP fd write/read here, loopback UDP there). The impairment chain fires on the egress of the *destination* anchor, in order clsact → netem (a classifier drop means netem never sees the frame); each direction is impaired exactly once and B → A is symmetric on gxA's egress chain — `delay 100` is therefore collected once per direction, ~200 ms on the RTT (measured ≥ 150 ms):
 
 ```mermaid
 flowchart LR
@@ -225,7 +225,7 @@ sequenceDiagram
 
 Every arrow to uBridge is one `_ubridge_send` command line on the node's local hypervisor console; uBridge executes it (netlink/ioctl) and replies OK or an error synchronously before the next command is sent — those replies are omitted for brevity. uBridge never initiates anything: it is a pure executor, and the only data ever flowing back (capture/marker frame copies) rides separate AF_PACKET sockets, not this console.
 
-The attach above is `_attach_kernel_link`; its ensures are the frozen ensure-then-add contract: the port bridge (`bridge create` + `add_nio_unix`) comes from the node's start loop or is created here, and `tap create` runs only when `/sys/class/net` shows the anchor missing — it is strictly create-only (`IFF_TUN_EXCL`) and answers EBUSY on the device the start loop just made. `bridge add_nio_tap` is what opens and holds the anchor fd, `bridge start` starts the [unix ↔ tap] relay, and the final `link set up` is the carrier pass that brings the born-down anchor up (a suspended NIO sets it back down).
+The attach above is `_attach_kernel_link`; its ensures are the frozen ensure-then-add contract: the port bridge (`bridge create` + `add_nio_unix`) comes from the node's start loop or is created here, and `tap create` runs only when `/sys/class/net` shows the anchor missing — it is strictly create-only (`IFF_TUN_EXCL`) and answers EBUSY on the device the start loop just made. `bridge add_nio_tap` is what opens and holds the anchor fd, `bridge start` starts the [unix ↔ tap] relay, and the final `link set up` refines the anchor's admin state to the NIO's suspend flag — `brctl addif` has already brought the port up (addif auto-UPs it along with its fwd_mask), so on an unsuspended link the command changes nothing, and a suspended one is what pushes the anchor back down.
 
 * **Link delete** (`_release_port_tap`): `bridge stop` (delete_nio_tap refuses while running — the relay threads hold the NIO pointers for their whole life; freeing under them is a use-after-free) → `bridge delete_nio_tap <bridge> "<tap>"` (matched on the kernel-resolved name) → the mixin teardown (markers, tc reset, `brctl delif`, per-link bridge deletion). The anchor survives — the node owns it, not the link.
 * **Relay link** — unchanged: the port bridge's second leg is `add_nio_udp`, userspace filters at the port bridge. The unix NIO stays in its slot across every datapath switch.
@@ -252,9 +252,9 @@ Live on the real server (`tests/e2e/test_iol_docker_kernel_datapath.py`, isolate
 
 * kernel link reports `kernel_datapath`, anchors exist from node start, the per-link bridge enslaves exactly the two of them;
 * real ICMP crosses the [unix ↔ tap] port-bridge relay (100 % ping);
-* the L2-anchor spec §E.2 silence window with the guests shut — the behavioral half of the hardening on anchors created by uBridge's bridge TAP module (`bridge add_nio_tap`);
+* the L2-anchor spec on the anchors: FORWARDING ports always, and on a uBridge with `link l2only` §E.1's pure-L2 checks plus §E.2's silence window with the guests shut — the behavioral half of the hardening on anchors created by uBridge's bridge TAP module (`bridge add_nio_tap`);
 * `delay 100` lands as netem on both anchors, measured RTT grows ≥ 150 ms and returns < 50 ms when cleared;
-* the classifier spot check on a TAP anchor (the Docker suite runs the full matrix on veth host ends): `bpf "icmp"` drops everything (clsact on the anchor), `frequency_drop 3` as the eBPF every-nth mode measured 56 % round-trip loss (theory 55.6 %), both restoring on clear;
+* the classifier spot check on a TAP anchor (the Docker suite runs the full matrix on veth host ends), each behind its capability gate: `bpf "icmp"` drops everything (clsact on the anchor, needs cbpf), `frequency_drop 3` as the eBPF every-nth mode (needs the nth token) — round-trip loss asserted 20-90 % around the per-direction theory 1-(2/3)² = 55.6 %, both restoring on clear;
 * suspend admin-downs the anchor and kills the traffic; resume restores;
 * AF_PACKET capture writes a real pcap of the ICMP exchange;
 * link delete/re-create swaps the port bridge's TAP leg out and back in (unix binding never re-binds) with the ping returning;
@@ -274,4 +274,4 @@ The anchor lifecycle needs no configuration of its own — the capability probes
 
 ## Roadmap
 
-Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred until every node type is kernelized; with the IOL runner container anchored, that condition is one project away from met.
+Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred until every node type is kernelized; with the IOL runner container anchored, every node type in scope can now anchor (hub, cloud, NAT and VPCS stay on the relay by decision), so the encapsulation work is all that remains.

@@ -39,11 +39,11 @@ Which interface a Docker node's adapters use is decided by the node class (`Dock
 | Node class | Selected by | Adapter interface | Kernel links |
 |---|---|---|---|
 | `DockerVM` | default | veth pair | yes |
-| `VendorDockerVM` (non-unix-socket) | `console_type=docker_exec`, `GNS3_SKIP_INIT`, … (XRd, SR Linux, …) | veth pair (same path via `super()`) | yes |
+| `VendorDockerVM` (non-unix-socket) | `console_type=docker_exec` (XRd, SR Linux, …) | veth pair (same path via `super()`) | yes |
 | `IOLDockerVM` | `GNS3_IOL_RUNNER=1` | AF_UNIX datagram socket pairs (`sNN`/`cNN`) — the container netns is unused; kernel links ride persistent `gx` TAP anchors through the port bridge's swappable TAP leg (see `iol-docker-kernel-datapath.md`) | yes (gated on `ubridge_bridge_tap` + `ubridge_tap`) |
 | `VendorDockerVM` (unix-socket) | `GNS3_UNIX_SOCKET_NIO=1` | same socket contract, generic capability for vendor NOS images | rejected |
 
-Unix-socket containers are detected both in the controller (`_is_unix_socket_docker`, link eligibility) and on the compute side (NIO rejection) — a missed detection surfaces as a clearer-late error.
+The other `GNS3_*` markers a vendor image sets (`GNS3_SKIP_INIT`, `GNS3_INTERFACE_NAMES`, …) are behavior knobs of the selected class, not class selectors — an environment carrying only `GNS3_SKIP_INIT` stays on `DockerVM`. Unix-socket containers are detected both in the controller (`_is_unix_socket_docker`, link eligibility) and on the compute side (NIO rejection) — a missed detection surfaces as a clearer-late error, except on the Ethernet-switch fast path, where an absent anchor is deferred forever by design (the join must not fail while the peer is stopped), leaving a silently dead cable.
 
 ## Architecture
 
@@ -61,7 +61,7 @@ Kernel link between two containers on the same compute. Interface names follow t
 | `01:80:c2` / `group_fwd_mask` | the IEEE 802.1D reserved multicast range (STP, LACP, LLDP, 802.1X, PAUSE); the bridge forwards it only per the port's `group_fwd_mask` — `0xfffd` passes everything except PAUSE/PFC |
 | tc / qdisc | traffic-control objects the kernel inserts into the host end's egress path — stages frames pass through in flight, not external packet consumers; uBridge only installs them over netlink |
 | `clsact` | the tc classifier carrier on the host end; its egress chain is where the drop classifiers run |
-| eBPF classifier | the stateful drop modes (every-Nth, quota, time window) at clsact egress prio 1 |
+| eBPF classifier | the stateful drop classifier at clsact egress prio 1 — modes every-Nth, quota, time window and flow (GNS3 exposes the first three as filter types) |
 | `bpf_drop` | match-drop BPF expressions at clsact egress prio 10–99 |
 | `netem` | the impairment qdisc behind clsact: delay, loss, rate, corrupt, duplicate, … |
 | `AF_PACKET tap` | uBridge's packet socket bound to the host end; the kernel clones every frame the interface sends or receives to it (the tcpdump mechanism) — read-only copies, the original stays on the kernel path |
@@ -97,7 +97,7 @@ Everything in the root namespace is built the same way: gns3-server creates the 
 
 uBridge sits off the forwarding path — the dashed edges are control and observation, never data flow. The `qdisc install` edge is uBridge configuring the kernel over netlink; the kernel then runs those qdiscs in-flight on the host end's egress (they are stages of the transmit path, not packet consumers). The `frame copies` edge is the AF_PACKET tap: bound to the host end, the kernel clones every frame the interface sends or receives to uBridge's packet socket (the tcpdump mechanism) — read-only copies; the originals never leave the kernel.
 
-Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (mixed node types and cross-compute wiring fall back too; there the UDP hop rides the real network instead of loopback, the copy count unchanged):
+Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (cross-compute wiring and an endpoint that cannot anchor — VPCS, a cloud node, … — fall back too; across computes the UDP hop rides the real network instead of loopback, the copy count unchanged):
 
 ```mermaid
 flowchart LR
@@ -175,7 +175,7 @@ flowchart LR
 
 What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Packet filters below). Whichever end hosts capture / markers, its AF_PACKET tap — the dashed sideband above — clones the frame at that anchor: a tap on gvA sees the frame on arrival, a tap on gvB only if the clsact chain let it through.
 
-All dozen-plus GNS3 filter types ride these three kernel objects — nine of them (delay, packet_loss, corrupt, duplicate, rate, reorder, gemodel, seed, limit) are parameters of the single netem qdisc, `bpf` expressions are the cls_bpf filters, and frequency_drop / quota / window_drop are the three modes inside the one eBPF program (evaluated nth → quota → window). The complete type-to-object mapping is the Packet filters table below.
+All dozen-plus GNS3 filter types ride these three kernel objects — nine of them (delay, packet_loss, corrupt, duplicate, rate, reorder, gemodel, seed, limit) are parameters of the single netem qdisc, `bpf` expressions are the cls_bpf filters, and frequency_drop / quota / window_drop map to three of the one eBPF program's four modes (evaluated nth → quota → window → flow; the flow-hash mode has no GNS3 filter type). The complete type-to-object mapping is the Packet filters table below.
 
 ## Datapath selection
 
@@ -212,8 +212,7 @@ sequenceDiagram
         CA->>UA: brctl create
         CA->>UA: link set bridge up
         CA->>UA: brctl addif gvA
-        CA->>UA: port fwd_mask 0xfffd
-        CA->>UA: markers / capture if any
+        CA->>UA: capture / markers if any
         CA->>UA: tc netem + bpf + eBPF
         CA->>UA: link set gvA up
     and Docker node B
@@ -237,7 +236,7 @@ The veth pairs already exist at attach time — every adapter is born as a veth 
 
 | Operation | Kernel-datapath action |
 |---|---|
-| Create / attach | `brctl create` (EEXIST tolerated via `brctl show` verify) + `link set up` + `brctl addif` both ends (concurrent, race-tolerant) + carrier up + markers + `tc netem set` (filters) |
+| Create / attach | `brctl create` (EEXIST tolerated via `brctl show` verify) + `link set up` + `brctl addif` both ends (concurrent, race-tolerant) + capture / markers if any + the tc chain (netem, bpf, eBPF) + carrier up |
 | Delete / detach | marker teardown → `tc reset` (netem teardown — the veth survives the link) → carrier off → `brctl delif` → `brctl delete` (last endpoint wins; EBUSY/ENOENT suppressed). The veth survives — unlike a relay bridge, whose death dropped its filters, an orphaned AF_PACKET marker would keep sniffing, hence the explicit teardown |
 | Reset (`POST /links/{id}/reset`) | delete + create (re-evaluates eligibility) |
 | Suspend (`PUT /links/{id}` `{"suspend": true}`) | veth host end admin-state down both ends — 100 % loss, no synthetic filter needed; resume restores (netem qdisc survives the carrier flap) |
@@ -284,10 +283,10 @@ Semantics:
 
 * **Both endpoints** receive the filter dict and attach one qdisc to *their* veth host end. The qdisc's egress covers traffic entering that container, so every direction of the link is impaired exactly once — the same net effect as the relay, where both directions cross the single filtered bridge. A `delay 100` link measures ≈200 ms RTT; `packet_loss 30` measures ≈51 % round-trip (1 − 0.7²); `rate 512kbit` adds ≈2× the per-packet serialization time to the RTT.
 * **Reconcile = reset + full re-apply.** The kernel's netem replace MERGES optional attributes (rate, correlation, reorder, corrupt, gemodel, distribution: an absent attr keeps its previous value), so re-applying a filter set with a parameter *removed* would silently keep the old value. Every apply therefore starts with `tc reset` (also drops clsact and its bpf_drop filters — re-added right after in the same flow) followed by one `netem set` built from the current filters; no per-parameter diffing. An empty filter set is the reset alone (ENOENT-tolerated).
-* **Extension gating.** The netem-extension keywords (rate, reorder, gemodel, dist, seed, limit, and the correl suffixes) probe `tc capabilities` once per uBridge process and require the tokens; a plain delay/loss/corrupt/dup filter never probes — an old uBridge serves the original surface untouched.
-* **kernel-only vs relay-available.** The extension types and `quota` have no uBridge relay equivalent: `available_filters` hides them on relay links, setting one on a created relay link returns 409, and a project loaded with such filters on a link that cannot be kernel-wired drops them with a warning (invalid filters are dropped the same way at load). `frequency_drop` runs on both datapaths (relay userspace filter / eBPF every-Nth).
+* **Extension gating.** The netem-extension keywords (rate, reorder, gemodel, dist, seed, limit — plus the correl suffixes, which gate on the `rate` token as the extension-build marker) probe `tc capabilities` once per uBridge process and require the tokens; a plain delay/loss/corrupt/dup filter never probes — an old uBridge serves the original surface untouched.
+* **kernel-only vs relay-available.** The extension types, `quota` and `window_drop` have no uBridge relay equivalent: `available_filters` hides them on relay links, setting one on a created relay link returns 409, and a project loaded with such filters on a link that cannot be kernel-wired drops them with a warning (invalid filters are dropped the same way at load). `frequency_drop` runs on both datapaths (relay userspace filter / eBPF every-Nth).
 * **frequency_drop counting semantics differ per datapath.** The relay's single filtered bridge counts packets of BOTH directions through one counter; the kernel attaches one classifier per veth end, so each direction drops every Nth independently. For a round-trip measurement with every-Nth N: relay ≈ 1/N of frames (phase-locked), kernel = 1 − ((N−1)/N)² (e.g. N=3 → 55.6 % round-trip loss, measured 57 %). The kernel count is exact (atomic counter), unlike netem's stochastic loss.
-* **Classifier order** on clsact egress: the eBPF stateful filter runs at prio 1, `bpf_drop` expressions at 10–99 — a packet dropped by the stateful modes never reaches the expression drops, and dropped packets never reach netem. Within the stateful program the modes evaluate in the fixed order nth → quota → window.
+* **Classifier order** on clsact egress: the eBPF stateful filter runs at prio 1, `bpf_drop` expressions at 10–99 — a packet dropped by the stateful modes never reaches the expression drops, and dropped packets never reach netem. Within the stateful program the modes evaluate in the fixed order nth → quota → window → flow.
 * **window_drop semantics.** `start` is relative to the moment the filter is applied — and because reconcile re-sets the classifier on every apply (any filter change, node restart, link reset reloads the program after the netem reset), every such event **restarts the schedule**. 3 parameters = one single outage (`[start, start+outage)`), traffic passes before and after — the classic "link dies at T, comes back at T+outage". 4 parameters = recurring flap: `period ≥ outage` (validated), so the outage occupies `outage/period` of each cycle. 5 parameters = randomized flap: each cycle's outage and period are re-drawn uniformly in nominal ± `jitter` (integer-ms grid; jitter 0 draws nothing and equals the fixed schedule). Inside a window each packet drops with the given chance (100 = full outage, lower = degraded service during the window). Both endpoints run their own schedule, started ~simultaneously by the controller — a round trip survives only when **both** directions are outside their windows. Note `start = 0` (outage begins immediately) is a valid, active configuration — unlike other filters, a zero first parameter does not mean "disabled". A PUT re-sending an unchanged filters dict is normally a controller no-op, but one still carrying `window_drop` is reconciled anyway, so re-applying the same window re-arms a one-shot outage that has already passed (arm the filter immediately before generating traffic, or use a period for a repeatable event).
 * **Validation** mirrors the tc grammar: `reorder` requires `delay`, `gemodel` and `packet_loss` are mutually exclusive (both map to the netem loss keyword), `distribution` requires jitter > 0, rate must be integer + unit ≤ 100gbit.
 * **Node restart** restores the qdisc from the NIO (like capture and markers); **link deletion** detaches it explicitly — the veth survives the link and an orphaned qdisc would keep impairing the next one.

@@ -11,7 +11,7 @@ Serial bays never anchor (a TAP carries Ethernet frames): serial links stay on t
 
 ## Architecture
 
-The diagram shows the native shape — two IOU devices linked on the kernel datapath, the scenario the e2e suite drives. A Docker or QEMU peer on the far end is the same link segment with a different anchor (a `gv` veth host end or a `gq` TAP — see `docker-kernel-datapath.md`); each IOU still terminates its own fabric in its own uBridge. Interface names follow the deterministic rules `gi{node_id[:8]}e{bay}p{unit}` for the anchors and `gns3{link_id[:11]}` for the per-link bridge; the concrete names in the diagrams use node ids `a1b2c3d4` / `5e6f7a8b` (IOU A/B), link id prefix `5d3c2b1a4e6`, and application ids 1 / 2 (so the fake instances are `IOL-BRIDGE-513` / `IOL-BRIDGE-514`). Terms the diagrams use:
+The diagram shows the native shape — two IOU devices linked on the kernel datapath, the scenario the e2e suite drives. A Docker or QEMU peer on the far end is the same link segment with a different anchor (a `gv` veth host end or a `gq` TAP — see `docker-kernel-datapath.md`); each IOU still terminates its own fabric in its own uBridge. Interface names follow the deterministic rules `gi{node_id[:8]}e{bay}p{unit}` for the anchors and `gns3{link_id[:11]}` for the per-link bridge (ids stripped of dashes before the slice); the concrete names in the diagrams use node ids `a1b2c3d4` / `5e6f7a8b` (IOU A/B), link id prefix `5d3c2b1a4e6`, and application ids 1 / 2 (so the fake instances are `IOL-BRIDGE-513` / `IOL-BRIDGE-514`). Terms the diagrams use:
 
 | Term | Meaning |
 |---|---|
@@ -163,7 +163,7 @@ The NIO schema on the compute NIO routes accepts `nio_bridge` alongside the UDP/
 
 ## Link creation sequence
 
-Both endpoints sit on the **same compute** (a kernel-link prerequisite). The controller derives the bridge name once from the link id and ships one `nio_bridge` record to each endpoint — same bridge name, each side's own filters/markers and the suspend flag — the two POSTs overlapping (`asyncio.gather`, either failure rolls the peer back). The bridge has no owner: both sides race `brctl create` (EEXIST tolerated, the loser verifies via `brctl show`). The anchors already exist, born at node start (Anchor lifecycle below), so attaching only binds and enslaves:
+Both endpoints sit on the **same compute** (a kernel-link prerequisite). The controller derives the bridge name once from the link id and ships one `nio_bridge` record to each endpoint — same bridge name, each side's own filters/markers and the suspend flag — the two POSTs overlapping (`asyncio.gather`, either failure rolls the peer back). The bridge has no owner: both sides race `brctl create` (EEXIST tolerated, the loser verifies via `brctl show`). When both endpoints run, the anchors already exist (born at node start — Anchor lifecycle below), so attaching only binds and enslaves:
 
 ```mermaid
 sequenceDiagram
@@ -183,7 +183,7 @@ sequenceDiagram
         NA->>UA: brctl create
         NA->>UA: link set bridge up
         NA->>UA: brctl addif giA
-        NA->>UA: markers / capture if any
+        NA->>UA: capture / markers if any
         NA->>UA: tc netem + bpf + eBPF
         NA->>UA: link set giA up
     and POST nio_bridge to node B
@@ -195,17 +195,19 @@ sequenceDiagram
 
 `iol_bridge add_nio_tap <bridge> <iol_id> <bay> <unit> "<tap>"` is the one IOU-specific step: it binds the fabric port to the anchor and hands uBridge the TAP fd. Deletion reverses it in miniature — markers, tc reset, delif, `brctl delete`, then `iol_bridge delete_nio_tap` releases the fd while the control channel lives (Link operations below).
 
-## Anchor lifecycle — and why the stop order is QEMU's reverse
+A stopped endpoint defers its whole side of the flow — the common case, since a project is typically opened with its links already drawn. With no uBridge up, the NIO POST lands as bookkeeping only (the duplicate-port guard still applies), and the node's start replays this same attach from the recorded NIO once the anchors exist (`_networking` → `_attach_kernel_nio`), capture and filters included — which is also how a link survives its node's stop/start.
+
+## Anchor lifecycle — and why the fd holder must let go first
 
 * **Birth (node start)** — `_prepare_tap_datapath` probes the capability and creates one persistent TAP per Ethernet bay/unit (4 units per bay, swept for stale leftovers first, born DOWN). uBridge holds a device's fd only while a kernel link binds the port; until then the TAP has no holder.
-* **Life** — the TAP is never recreated. A kernel link adds `iol_bridge add_nio_tap <bridge> <iol_id> <bay> <unit> <tap>` then enslaves the anchor (`_kernel_attach`); a relay link keeps `iol_bridge add_nio_udp` and never touches the anchor. Switching a port between datapaths is just an NIO swap — the IOL port frees its previous NIO (fd or socket) on attach.
-* **Death (node stop)** — `_stop_ubridge` runs the cleanup **in the reverse order of QEMU's**, because here uBridge itself holds the anchor fds: `iol_bridge delete` (releases every port's TAP fd) → `tap delete` per anchor (a held TAP answers EBADFD/207) → `brctl delete` for per-link bridges still held → stop the hypervisor. Removing a single kernel link does the same in miniature: `_remove_kernel_nio` (markers, tc reset, delif, brctl delete) then `iol_bridge delete_nio_tap` — releasing the fd while the control channel lives.
+* **Life** — link churn never recreates the TAP. A kernel link adds `iol_bridge add_nio_tap <bridge> <iol_id> <bay> <unit> <tap>` then enslaves the anchor (`_kernel_attach`); a relay link keeps `iol_bridge add_nio_udp` and never touches the anchor. Switching a port between datapaths is just an NIO swap — the IOL port frees its previous NIO (fd or socket) on attach.
+* **Death (node stop)** — the fd holder must let go before the devices are deleted. Here the holder is uBridge itself (on QEMU it is the VM's own process), so the uBridge side retires first: `iol_bridge delete` (releases every port's TAP fd) → `tap delete` per anchor (a held TAP answers EBADFD/207) → `brctl delete` for per-link bridges still held → stop uBridge. The IOU process is stopped last, holding no anchor fd — the reverse of QEMU's process-first sequence. Removing a single kernel link does the same in miniature: `_remove_kernel_nio` (markers, tc reset, delif, brctl delete) then `iol_bridge delete_nio_tap` — releasing the fd while the control channel lives.
 
 ## Link operations
 
 | Operation | Kernel-datapath action |
 |---|---|
-| Create / attach | `iol_bridge add_nio_tap` (bind port ↔ anchor, uBridge holds the fd) + `brctl create` (EEXIST tolerated) + `link set <bridge> up` + `brctl addif` + markers + `tc netem set` + carrier up |
+| Create / attach | `iol_bridge add_nio_tap` (bind port ↔ anchor, uBridge holds the fd) + `brctl create` (EEXIST tolerated) + `link set <bridge> up` + `brctl addif` + capture/markers + `tc netem set` + carrier up |
 | Delete / detach | marker teardown → `tc reset <tap>` → carrier off → `brctl delif`/`brctl delete` (last endpoint wins) → `iol_bridge delete_nio_tap` (release the fd; the device survives) |
 | Update (filters/markers changed) | reconcile on the anchor only — no re-binding, no re-enslaving |
 | Suspend | anchor admin-down (TAP-fd writes fail EIO → dropped; reads answer EIO too — the §B hardening tolerates both) + resume restores |
@@ -216,7 +218,7 @@ Capture on a kernel link is `capture start_kernel <tap>` (driven by the NIO type
 
 ## Link-local frames (LACP, LLDP, 802.1X, STP)
 
-The bridge stands in for a cable, but the kernel's `br_handle_frame()` does not forward the IEEE 802.1D reserved range (`01:80:c2:00:00:00`-`0f`) by default — LACP, LLDP/DCBX and 802.1X would never cross a kernel link while the UDP relay carries them fine. uBridge therefore opens every port's per-port `group_fwd_mask` (`IFLA_BRPORT_GROUP_FWD_MASK`) to `0xfffd` at `brctl addif` time (Linux 4.15+, best-effort on older kernels). The bridge-level knob cannot do this: `BR_GROUPFWD_RESTRICTED` rejects bits 0-2, so LACP is reachable per port only.
+The bridge stands in for a cable, but the kernel's `br_handle_frame()` does not forward the IEEE 802.1D reserved range (`01:80:c2:00:00:00`-`0f`) by default — LACP, LLDP/DCBX and 802.1X would never cross a kernel link while the UDP relay carries them fine. uBridge therefore opens every port's per-port `group_fwd_mask` (`IFLA_BRPORT_GROUP_FWD_MASK`) to `0xfffd` at `brctl addif` time (Linux 4.15+, best-effort on older kernels) — delivered by the fork's `feature/bridge-tap-l2only` branch (which also carries the `iol_bridge add_nio_tap` anchor work; a build from an earlier branch point leaves ports at the kernel default). The bridge-level knob cannot do this: `BR_GROUPFWD_RESTRICTED` rejects bits 0-2, so LACP is reachable per port only.
 
 Result on kernel links: ordinary multicast, STP/RSTP, LACP, 802.1X and LLDP/DCBX all cross; **802.3x PAUSE / PFC does not** — `case 0x01` in `br_handle_frame()` drops it unconditionally and no mask can enable it. That is a documented limit, not a regression (PFC's hardware semantics are out of emulation's reach anyway); a lab that needs PAUSE frames on the wire must use a relay link. Verified live by `tests/e2e/test_docker_link_local_frames.py` (per-MAC guest-to-guest matrix, driven on the Docker datapath — the same per-link-bridge mechanism; the IOU e2e does not repeat it); the contract and kernel references live in `docs/design/ubridge-link-local-frame-forwarding-spec.md`.
 
@@ -226,9 +228,9 @@ A uBridge without `iol_bridge add_nio_tap` (old build) keeps the node on the rel
 
 ## Verified
 
-Unit level: anchor lifecycle and naming, kernel/relay binding on add, update and remove, the stop order (iol_bridge delete before tap delete before brctl delete before hypervisor stop), `_networking` on restart with mixed kernel/relay ports, capture and marker command shapes on both datapaths, the capability probe (cycle, old-build fallback, cleanup, caching), capability plumbing, and controller eligibility (per-compute capability, its independence from `ubridge_tap`, serial-port exclusion).
+Unit level: anchor lifecycle and naming, kernel/relay binding on add, update and remove, the stop order (iol_bridge delete before tap delete before brctl delete before uBridge stops), `_networking` on restart with mixed kernel/relay ports, capture and marker command shapes on both datapaths, the capability probe (cycle, old-build fallback, cleanup, caching), capability plumbing, and controller eligibility (per-compute capability, its independence from `ubridge_tap`, serial-port exclusion).
 
-End-to-end on a live server (isolated instance, two IOU nodes behind a fake ELF image, the test playing the IOL fabric on `/tmp/netio<uid>/` and pushing frames through it): **64/64 checks** on the kernel datapath and **62/62** on the relay (`enable_kernel_datapath = false`). Kernel highlights:
+An isolated-instance validation run — a development harness that is not part of this repository: two IOU nodes behind a fake ELF image, the driver playing the IOL fabric on `/tmp/netio<uid>/` and pushing frames through it — passed **64/64 checks** on the kernel datapath and **62/62** on the relay (`enable_kernel_datapath = false`). Kernel highlights:
 
 * 8 anchors per node (2 bays × 4 units), persistent, DOWN, address-free; `link_list` reports `kernel_datapath: true` and one per-link bridge holds both anchors with `brport/state = 3`;
 * fabric → anchor → bridge → anchor → fabric in both directions at ~0.2 ms; `delay 100` ⇒ netem on both anchors and a measured **100.5 ms** one-way;
@@ -240,7 +242,7 @@ End-to-end on a live server (isolated instance, two IOU nodes behind a fake ELF 
 
 The relay run exercises the same lifecycle with the IOL UDP NIOs (no tc qdiscs, userspace `delay` at 100.7 ms, suspend via the synthetic frequency_drop, `iol_bridge start_capture`), which is also the regression net for the port-coordinate capture restore this work touched.
 
-The repository's live e2e suite carries the same scenario with **real IOU routers** (`tests/e2e/test_iou_kernel_datapath.py`, pytest marker `e2e`): a real L3 IOU image provides the fabric and the real IOS CLI on the server's telnet console, driving anchors-born-with-the-node, the §E.2 idle-silence window with the guests shut, real ICMP through the port bridge, netem delay, the TAP-anchor classifier spot check (bpf match-drop; the eBPF every-nth mode at 56 % measured round-trip loss, 55.6 % expected), suspend, capture, link delete/re-create, node stop/start rewiring with a delay filter restored on the fresh anchor (tc and traffic both), the serial link staying on the relay, and a relay negative control whose real `delay`/`frequency_drop` filters ride the port's `iol_bridge add_packet_filter` list — capture and markers on the same engine (`iol_bridge start_capture` / the port's `mark` filter).
+The repository's live e2e suite carries the same scenario with **real IOU routers** — the reproducible run in the tree (`tests/e2e/test_iou_kernel_datapath.py`, pytest marker `e2e`): a real L3 IOU image provides the fabric and the real IOS CLI on the server's telnet console, driving anchors-born-with-the-node, the §E.2 idle-silence window with the guests shut, real ICMP through the port bridge, netem delay, the TAP-anchor classifier spot check (bpf match-drop; the eBPF every-nth mode at 56 % measured round-trip loss, 55.6 % expected), suspend, capture, link delete/re-create, node stop/start rewiring with a delay filter restored on the fresh anchor (tc and traffic both), the serial link staying on the relay, and a relay negative control whose real `delay`/`frequency_drop` filters ride the port's `iol_bridge add_packet_filter` list — capture and markers on the same engine (`iol_bridge start_capture` / the port's `mark` filter).
 
 The uBridge side passed its own 30/30 (`tests/iol/test_tap_anchor.py` in the fork), including the DOWN-anchor resilience and kernel-bridge interop this design depends on.
 

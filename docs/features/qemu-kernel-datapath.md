@@ -68,7 +68,7 @@ flowchart LR
 
 Everything in the root namespace is built the same way: gns3-server creates the persistent TAPs at node start (before QEMU is launched), the per-link bridge and its memberships at link creation, and every later change (carrier, capture, markers, filters) by sending hypervisor commands to the node's uBridge process — the privileged agent that turns them into netlink/ioctl operations. That build flow is the Link creation sequence below; this diagram is the steady state that remains, where the only uBridge relationships left are the two dashed kinds.
 
-uBridge sits off the forwarding path — the dashed edges are control and observation, never data flow. The `qdisc install` edge is uBridge configuring the kernel over netlink; the kernel then runs those qdiscs in-flight on the anchor's egress (stages of the transmit path, not packet consumers). The `frame copies` edge is the AF_PACKET tap: the kernel clones every frame the TAP sends or receives to uBridge's packet socket (the tcpdump mechanism) — read-only copies for capture and markers; the originals never leave the kernel. The only userspace on the path is the two QEMU processes pumping their own tap fds — the irreducible VM leg, one fd crossing at each end per direction.
+uBridge sits off the forwarding path — the dashed edges are control and observation, never data flow. The `qdisc install` edge is uBridge configuring the kernel over netlink; the kernel then runs those qdiscs in-flight on the anchor's egress (stages of the transmit path, not packet consumers). The `frame copies` edge is the AF_PACKET tap, there only while a capture or markers is active (a kernel link leaves no uBridge endpoint on the anchor otherwise): the kernel clones every frame the TAP sends or receives to uBridge's packet socket (the tcpdump mechanism) — read-only copies for capture and markers; the originals never leave the kernel. The only userspace on the path is the two QEMU processes pumping their own tap fds — the irreducible VM leg, one fd crossing at each end per direction.
 
 Relay link between the same two QEMU nodes on the same single compute — what every link becomes when `enable_kernel_datapath` is off (mixed node types and cross-compute wiring fall back too; there the UDP hop rides the real network instead of loopback, the copy count unchanged):
 
@@ -177,9 +177,9 @@ So every filter, capture and marker primitive carries over verbatim, and `delay 
 
 ## Datapath selection
 
-`UDPLink._kernel_datapath_eligible` needs both endpoints on one compute and both able to anchor:
+`UDPLink._kernel_datapath_eligible` needs both endpoints on one compute and both able to anchor (an Ethernet-switch endpoint is the exception — it absorbs the peer's anchor into its own bridge, so the switch side needs no anchoring capability of its own; `docs/features/ethernet-switch-kernel-datapath.md`):
 
-* Docker always can (adapters are born as veth pairs);
+* Docker can (adapters are born as veth pairs), except the IOL runner container, whose unix-socket guest leg anchors on a TAP under its own capability pair (`docs/features/iol-docker-kernel-datapath.md`);
 * QEMU can when that compute's uBridge reports the `tap` module — asked per compute through `/capabilities` (`ubridge_tap`, probed by creating and deleting one throwaway TAP, cached by binary identity), because an old uBridge leaves QEMU on the legacy socket-netdev datapath and cannot anchor a kernel link. An unknown/failed probe keeps the link on the relay.
 
 Because the `-netdev` type is fixed when QEMU is launched, this is all-or-nothing per VM: on the TAP datapath *every* link can attach to (or detach from) a running VM, including switching a link between the two datapaths (delete + re-create, or a project reopen).
@@ -206,8 +206,7 @@ sequenceDiagram
         CA->>UA: brctl create
         CA->>UA: link set bridge up
         CA->>UA: brctl addif gq3f2a1b9ce0p0
-        CA->>UA: port fwd_mask 0xfffd
-        CA->>UA: markers / capture if any
+        CA->>UA: capture / markers if any
         CA->>UA: tc netem + bpf + eBPF
         CA->>UA: link set gq3f2a1b9ce0p0 up
     and QEMU node B
@@ -216,9 +215,9 @@ sequenceDiagram
     Note over UA,UB: steady state — kernel forwards, uBridge taps
 ```
 
-Every arrow to uBridge is one `_ubridge_send` command line on the node's local hypervisor console; uBridge executes it (netlink/ioctl) and replies OK or an error synchronously before the next command is sent — those replies are omitted for brevity. uBridge never initiates anything: it is a pure executor, and the only data ever flowing back (capture/marker frame copies) rides separate AF_PACKET sockets, not this console.
+Every arrow to uBridge is one `_ubridge_send` command line on the node's local hypervisor console; uBridge executes it (netlink/ioctl) and replies OK or an error synchronously before the next command is sent — those replies are omitted for brevity. The per-port `group_fwd_mask` 0xfffd is deliberately not an arrow: uBridge applies it inside `brctl addif` itself (Link-local frames below). uBridge never initiates anything: it is a pure executor, and the only data ever flowing back (capture/marker frame copies) rides separate AF_PACKET sockets, not this console.
 
-The TAP already exists at attach time — created at node start, before QEMU launched (Adapter lifecycle below) — which is what makes the attach runtime-safe on a running VM: anchors, bridge memberships and qdiscs all change around the `-netdev tap` QEMU already holds, and nothing talks to QEMU itself outside suspend/resume (QMP `set_link`, so the guest's carrier follows the link).
+The TAP already exists at attach time — created at node start, before QEMU launched (Adapter lifecycle below) — which is what makes the attach runtime-safe on a running VM: anchors, bridge memberships and qdiscs all change around the `-netdev tap` QEMU already holds, and the only QEMU traffic is carrier replication — QMP `set_link` on attach, detach and suspend/resume, gated by the node's `replicate_network_connection_state` option (default on), so the guest's carrier follows the link.
 
 A mixed Docker↔QEMU link runs the identical sequence per end — each node's uBridge receives the same commands on its own anchor, the Docker end's `gv` veth host end in place of the `gq` TAP; only the anchor name differs (the mixin is anchor-agnostic, which is the point of the shared `gns3server/compute/kernel_datapath.py`).
 
@@ -226,13 +225,13 @@ A mixed Docker↔QEMU link runs the identical sequence per end — each node's u
 
 * **Birth (node start, before QEMU is launched)** — `_prepare_tap_datapath` probes the tap module, then `_create_taps` sweeps any leftover (a persistent TAP outlives a crash) and creates one TAP per adapter: `tap create gq{node_id[:8]}e{adapter}p{port}` → `tap set_owner <uid>` (so the unprivileged QEMU process can open it) → `link set <tap> down` (carrier off until a link attaches). QEMU then opens it as `-netdev tap,id=gns3-{adapter},ifname=<tap>,script=no,downscript=no`.
 * **Life (running)** — the TAP is never created or destroyed again. Link create/delete/switch, suspend, capture and markers only change *what is attached to it*.
-* **Death (node stop)** — the QEMU process is stopped **first**, then `_remove_taps` un-persists the TAPs (`tap delete`) and deletes the per-link kernel bridges the node still holds. The order matters: uBridge's `tap delete` refuses a device another process holds open ("Device or resource busy") and that best-effort delete is suppressed, so deleting the TAPs while QEMU still ran leaked every persistent TAP (process side first, then the devices — the same lesson as IOU's reverse stop order). Deleting a node never runs the link-teardown path, so those bridges would otherwise stay behind as empty orphans; a restart rebuilds them from the NIO.
+* **Death (node stop)** — the QEMU process is stopped **first**, then `_remove_taps` un-persists the TAPs (`tap delete`) and deletes the per-link kernel bridges the node still holds. The order matters: uBridge's `tap delete` refuses a device another process holds open ("Device or resource busy") and that best-effort delete is suppressed, so deleting the TAPs while QEMU still ran leaked every persistent TAP (process side first, then the devices — the same lesson as IOU's stop order, where uBridge itself holds the anchors and is made to release them before `tap delete`). Stopping a node never runs the link-teardown path — links survive stops by design, and project close is the same (it stops nodes without deleting links) — so those bridges would otherwise stay behind as empty orphans; a restart rebuilds them from the NIO. Deleting a node from the project is not that case: the controller deletes its links first, so the teardown does run.
 
 ## Link operations
 
 | Operation | Kernel-datapath action |
 |---|---|
-| Create / attach | `brctl create` (EEXIST tolerated via `brctl show`) + `link set <bridge> up` + `brctl addif <bridge> <tap>` + carrier up + markers + `tc netem set` (filters) |
+| Create / attach | `brctl create` (EEXIST tolerated via `brctl show`) + `link set <bridge> up` + `brctl addif <bridge> <tap>`, then capture and markers and filters on the anchor (`tc netem set`, bpf/eBPF drops), carrier up last |
 | Delete / detach | marker teardown → `tc reset <tap>` → carrier off → `brctl delif` → `brctl delete` (last endpoint wins; EBUSY/ENOENT suppressed). The TAP survives — the adapter keeps it for the next link |
 | Reset (`POST /links/{id}/reset`) | delete + create (re-evaluates eligibility) |
 | Suspend (`PUT /links/{id}` `{"suspend": true}`) | tap admin-down (writing to a down TAP fd fails with EIO, so the link is genuinely dead) + QMP `set_link gns3-N off` so the guest notices; resume restores both, and the netem qdisc survives the flap |
@@ -255,7 +254,7 @@ A uBridge build without the `tap` module (or without `CAP_NET_ADMIN`) keeps the 
 
 End-to-end through a real server (isolated instance, two QEMU nodes with a stub binary, the test playing the guest by holding the TAP fds and pushing frames): **32/32 checks** on the kernel datapath and **29/29** on the relay variant (`enable_kernel_datapath = false`). Kernel run highlights:
 
-* anchors created persistent and owned by the server user, QEMU's netdev is the TAP, no local UDP tunnel left; `link_list` reports `kernel_datapath: true` and one per-link bridge holds both taps;
+* anchors created persistent and owned by the server user, QEMU's netdev is the TAP, no local UDP tunnel left; the link object reports `kernel_datapath: true` (the `POST /links` response) and one per-link bridge holds both taps;
 * frames cross in both directions (~0.1 ms); `delay 100` ⇒ netem on both anchors and a measured **100.3 ms** one-way;
 * suspend ⇒ anchor DOWN, no traffic, resume ⇒ 100.3 ms again (filter kept);
 * capture ⇒ a 252-byte pcap written by `capture start_kernel`;
@@ -282,6 +281,6 @@ One residual is accepted and documented there: enslaving a port makes the *kerne
 
 ## Roadmap
 
-IOU (its fabric terminator in uBridge needs a TAP-terminated port — `iol_bridge add_nio_tap`, frozen in `docs/design/ubridge-iol-tap-anchor-spec.md`; unlike QEMU, one userspace hop on the IOU leg is irreducible, the fabric is Unix sockets), Dynamips (hypervisor-created taps, enslavable as they are), and the Ethernet switch / cloud paths (their anchors are ubridge-owned by design) are still on the relay; cross-compute kernel links need VXLAN/GENEVE encapsulation, which is a separate project (it would serve Docker links the same way).
+The rest of the node family has landed on the same mixin: **IOU** — see `docs/features/iou-kernel-datapath.md` (Ethernet bays anchor on persistent TAPs bound to the IOL fabric, `iol_bridge add_nio_tap` per `docs/design/ubridge-iol-tap-anchor-spec.md`; serial links stay relay, and one userspace hop on the IOU leg is irreducible — the fabric is Unix sockets); **Dynamips** — see `docs/features/dynamips-kernel-datapath.md` (the hypervisor opens uBridge-created TAPs with `nio create_tap`: the same external-fd-holder shape QEMU uses; serial/ATM/POS ports stay relay); **the Ethernet switch** — see `docs/features/ethernet-switch-kernel-datapath.md` (the switch absorbs a peer's anchor into its own kernel bridge; switch-to-switch cascades too); **the IOL runner container** — see `docs/features/iol-docker-kernel-datapath.md` (persistent TAP anchors through the generic bridge module's swappable TAP leg; the unix-socket guest leg keeps one userspace hop, like IOU's fabric).
 
-Update: **IOU has landed** on the same mixin — see `docs/features/iou-kernel-datapath.md` (Ethernet bays anchor on persistent TAPs bound to the IOL fabric; serial links stay relay). **Dynamips has landed** too — see `docs/features/dynamips-kernel-datapath.md` (the hypervisor opens uBridge-created TAPs with `nio create_tap`: the same external-fd-holder shape QEMU uses; serial/ATM/POS ports stay relay). **The Ethernet switch has landed** — see `docs/features/ethernet-switch-kernel-datapath.md` (the switch absorbs a peer's anchor into its own kernel bridge; switch-to-switch cascades too). **The IOL runner container has landed** — see `docs/features/iol-docker-kernel-datapath.md` (persistent TAP anchors through the generic bridge module's swappable TAP leg; the unix-socket guest leg keeps one userspace hop, like IOU's fabric).
+Still on the relay: the cloud paths (their anchors are ubridge-owned by design); and cross-compute kernel links need VXLAN/GENEVE encapsulation, which is a separate project (it would serve Docker links the same way).
