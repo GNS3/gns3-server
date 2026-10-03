@@ -155,8 +155,9 @@ flowchart LR
         subgraph GVB["gvB — egress chain (clsact, then netem)"]
             S5["eBPF prio 1"]
             S6["bpf_drop prio 10-99"]
-            S7["netem"]
+            S7["netem qdisc"]
         end
+        T["capture / markers"]
     end
     subgraph BNS["container B netns"]
         S9["eth0 B receives"]
@@ -168,9 +169,11 @@ flowchart LR
     S4 --> S5
     S5 --> S6 --> S7
     S7 -->|"veth pair"| S9
+    S3 -. "AF_PACKET tap" .-> T
+    S7 -. "AF_PACKET tap" .-> T
 ```
 
-What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Packet filters below). The AF_PACKET taps observe both host ends but never a clsact-dropped frame.
+What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Packet filters below). Whichever end hosts capture / markers, its AF_PACKET tap — the dashed sideband above — clones the frame at that anchor: a tap on gvA sees the frame on arrival, a tap on gvB only if the clsact chain let it through.
 
 All dozen-plus GNS3 filter types ride these three kernel objects — nine of them (delay, packet_loss, corrupt, duplicate, rate, reorder, gemodel, seed, limit) are parameters of the single netem qdisc, `bpf` expressions are the cls_bpf filters, and frequency_drop / quota / window_drop are the three modes inside the one eBPF program (evaluated nth → quota → window). The complete type-to-object mapping is the Packet filters table below.
 

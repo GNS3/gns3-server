@@ -115,10 +115,8 @@ flowchart LR
     subgraph UBA["uBridge A — userspace"]
         S2["relay"]
     end
-    subgraph GIA["giA — ingress"]
+    subgraph GIA["giA — ingress (its egress chain serves B→A)"]
         S4["ingress"]
-        chA["clsact + netem chain"]
-        tapA["AF_PACKET tap: capture + markers"]
     end
     subgraph BRP["per-link bridge"]
         G1{"reserved 01:80:c2?"}
@@ -128,7 +126,7 @@ flowchart LR
     subgraph GIB["giB — egress chain (clsact, then netem)"]
         S6["eBPF prio 1"]
         S7["bpf_drop prio 10-99"]
-        S8["netem"]
+        S8["netem qdisc"]
     end
     subgraph UBB["uBridge B — userspace"]
         S9["relay"]
@@ -147,8 +145,9 @@ flowchart LR
     S8 -->|"copy 4: kernel→user"| S9
     S9 -->|"copy 5: user→kernel"| mbxB
     mbxB -->|"copy 6: kernel→user"| S11
-    S4 -.->|"serves B→A"| chA
-    S4 -.->|"observes tx + rx"| tapA
+    tap["capture / markers"]
+    S4 -.->|"AF_PACKET tap"| tap
+    S8 -.->|"AF_PACKET tap"| tap
 ```
 
 What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below); the AF_PACKET tap — capture and markers ride it, installed at whichever end captures — observes both directions of the link through its anchor (tx/rx signal pairs) but never a clsact-dropped frame. The crossings do not disappear on this datapath: each leg still crosses the kernel/user boundary three times (`sendto`/`recvfrom` on the fabric, then the TAP write — the B leg mirrors them, six per one-way frame, the same count as the relay); what moves into the kernel is the link segment — no UDP tunnel, no protocol-stack pass — and with it the impairment chain. A fabric → anchor → bridge → anchor → fabric round trip measures ≈0.2 ms (Verified below).

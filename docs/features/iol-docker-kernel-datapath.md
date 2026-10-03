@@ -121,22 +121,53 @@ Drawn one-way; the reverse direction is the mirror image. The IOL relay crosses 
 
 Two further contrasts with Docker's relay: the IOL relay's local leg is the unix NIO itself, so the anchors never appear on the path (idle from birth — a Docker relay attaches to the *same* veth host end the kernel link enslaves); and the port bridge's first slot is shared with the kernel datapath — the unix NIO and its c-socket binding survive every leg swap, so frames the container sends while the bridge is stopped for a swap queue on the socket and relay after `start`. On this datapath suspend rides the synthetic frequency_drop filter (the kernel datapath's suspend is the anchor's admin state).
 
-Frame path for one A → B frame. The impairment chain fires on the egress of the *destination* anchor, in order clsact → netem (a classifier drop means netem never sees the frame); each direction is impaired exactly once and B → A is symmetric on gxA — hence `delay 100` doubles the RTT (measured ≥ 150 ms):
+Frame path for one A → B frame, with the relay diagram's copy numbering: copies 1, 2, 5 and 6 are the socket guest legs and are paid identically on both datapaths — only the middle two swap (TAP fd write/read here, loopback UDP there). The impairment chain fires on the egress of the *destination* anchor, in order clsact → netem (a classifier drop means netem never sees the frame); each direction is impaired exactly once and B → A is symmetric on gxA's egress chain — hence `delay 100` doubles the RTT (measured ≥ 150 ms):
 
 ```mermaid
 flowchart LR
-    S1["IOL A sends on Eth0/0"] --> S2["netiomux writes c00.sock"]
-    S2 --> S3["port bridge A relay"]
-    S3 --> S4["gxA ingress"]
-    S4 --> G1{"reserved 01:80:c2?"}
-    G1 -->|"PAUSE 0x01"| D["dropped"]
-    G1 -->|"0xfffd passes"| S5["FDB lookup / flood"]
-    S5 --> S6["clsact: eBPF prio 1"]
-    S6 --> S7["clsact: bpf_drop prio 10-99"]
-    S7 --> S8["netem qdisc"]
-    S8 --> S9["port bridge B relay"]
-    S9 --> S10["netiomux B via s00.sock"]
-    S10 --> S11["IOL B receives on Eth0/0"]
+    subgraph CTA["IOL A container — userspace"]
+        S1["IOL A sends on Eth0/0"]
+    end
+    subgraph KERN["kernel"]
+        SOCKA["c00.sock"]
+        SOCKB["s00.sock"]
+    end
+    subgraph UBA["uBridge port bridge A — userspace"]
+        S2["relay"]
+    end
+    subgraph GXA["gxA — ingress (egress chain serves B→A)"]
+        S4["ingress"]
+    end
+    subgraph BRP["per-link bridge"]
+        G1{"reserved 01:80:c2?"}
+        D["dropped"]
+        S5["FDB lookup / flood"]
+    end
+    subgraph GXB["gxB — egress chain (clsact, then netem)"]
+        S6["eBPF prio 1"]
+        S7["bpf_drop prio 10-99"]
+        S8["netem qdisc"]
+    end
+    subgraph UBB["uBridge port bridge B — userspace"]
+        S9["relay"]
+    end
+    subgraph CTB["IOL B container — userspace"]
+        S11["IOL B receives on Eth0/0"]
+    end
+    tap["capture / markers"]
+    S1 -->|"copy 1: user→kernel"| SOCKA
+    SOCKA -->|"copy 2: kernel→user"| S2
+    S2 -->|"copy 3: user→kernel"| S4
+    S4 --> G1
+    G1 -->|"PAUSE 0x01"| D
+    G1 -->|"0xfffd passes"| S5
+    S5 --> S6
+    S6 --> S7 --> S8
+    S8 -->|"copy 4: kernel→user"| S9
+    S9 -->|"copy 5: user→kernel"| SOCKB
+    SOCKB -->|"copy 6: kernel→user"| S11
+    S4 -.->|"AF_PACKET tap"| tap
+    S8 -.->|"AF_PACKET tap"| tap
 ```
 
 The reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below). The AF_PACKET taps observe both anchors but never a clsact-dropped frame.

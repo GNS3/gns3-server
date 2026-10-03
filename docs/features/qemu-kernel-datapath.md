@@ -139,8 +139,9 @@ flowchart LR
         subgraph GQB["gqB — egress chain (clsact, then netem)"]
             S5["eBPF prio 1"]
             S6["bpf_drop prio 10-99"]
-            S7["netem"]
+            S7["netem qdisc"]
         end
+        T["capture / markers"]
     end
     subgraph QPB["QEMU B — userspace"]
         S8["tap fd to QEMU"]
@@ -149,17 +150,19 @@ flowchart LR
         S9["NIC receives"]
     end
     S1 -->|"virtio"| S2
-    S2 --> S3
+    S2 -->|"tap fd, copy 1: user→kernel"| S3
     S3 --> G1
     G1 -->|"PAUSE 0x01"| D
     G1 -->|"0xfffd passes"| S4
     S4 --> S5
     S5 --> S6 --> S7
-    S7 --> S8
+    S7 -->|"tap fd, copy 2: kernel→user"| S8
     S8 -->|"virtio IRQ"| S9
+    S3 -. "AF_PACKET tap" .-> T
+    S7 -. "AF_PACKET tap" .-> T
 ```
 
-What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below). The AF_PACKET taps observe both anchors but never a clsact-dropped frame.
+What each stage drops: the reserved-range gate passes LACP, LLDP, 802.1X and STP per the port mask but never PAUSE/PFC (Link-local frames below); the clsact/netem stages drop or impair per the installed filters (Capture, markers, filters below). The AF_PACKET taps observe both anchors but never a clsact-dropped frame. Copies 1–2 are the whole path's only kernel/user crossings — both halves of the emulation's own TAP-fd leg (QEMU A's write, QEMU B's read); every stage between them runs in the kernel.
 
 ## Why a TAP works like a veth host end
 
