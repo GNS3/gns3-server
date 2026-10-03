@@ -178,7 +178,7 @@ class QemuVM(BaseNode):
         self.config_disk_image = ""
         if self.config_disk_name:
             if not shutil.which("mcopy"):
-                log.warning("Config disk: 'mtools' are not installed.")
+                log.warning("Config disk: 'mtools' are not installed. Creating a config disk will not work.")
                 self.config_disk_name = ""
             else:
                 try:
