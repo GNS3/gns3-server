@@ -26,54 +26,65 @@ Implements the standard MCP protocol over SSE transport using FastMCP:
 Tools are registered via @mcp.tool() decorators.
 """
 
+import asyncio
 import contextvars
 import json
-import asyncio
 import logging
 import socket
-from uuid import UUID
-import bcrypt
-from typing import Any, Annotated
+from typing import Annotated, Any
 from urllib.parse import parse_qs
+from uuid import UUID
 
+import bcrypt
 from fastapi import APIRouter
 from fastapi.responses import Response
-
-from pydantic import Field
-
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
-
+from pydantic import Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gns3server.config import Config
-from gns3server.services.authentication import AuthService
 import gns3server.db.models as models
-from gns3server.services import auth_service
-from gns3server.utils.request_utils import extract_client_info
+from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
+    available_filters_handler,
+    create_link_handler,
+    create_node_handler,
+    delete_link_handler,
+    delete_node_file_handler,
+    delete_node_handler,
+    download_capture_file_handler,
+    duplicate_node_handler,
+    get_link_handler,
+    get_links_handler,
+    get_node_console_info_handler,
+    get_node_file_handler,
+    get_node_handler,
+    get_node_links_handler,
+    get_nodes_handler,
+    isolate_node_handler,
+    link_marker_handler,
+    list_node_files_handler,
+    marker_definition_handler,
+    reset_link_handler,
+    start_all_nodes_handler,
+    start_capture_handler,
+    start_node_handler,
+    stop_all_nodes_handler,
+    stop_capture_handler,
+    stop_node_handler,
+    suspend_all_nodes_handler,
+    suspend_node_handler,
+    unisolate_node_handler,
+    update_link_handler,
+    update_node_handler,
+    write_node_file_handler,
+)
+from gns3server.config import Config
 from gns3server.db.repositories.api_keys import ApiKeysRepository
 from gns3server.db.repositories.users import UsersRepository
-from .projects import (
-    list_projects_handler,
-    get_project_handler,
-    create_project_handler,
-    delete_project_handler,
-    open_project_handler,
-    close_project_handler,
-    get_project_stats_handler,
-    update_project_handler,
-    duplicate_project_handler,
-    get_project_readme_handler,
-    update_project_readme_handler,
-    lock_project_handler,
-    unlock_project_handler,
-    get_locked_project_handler,
-)
-from .server import (
-    get_version_handler,
-    get_statistics_handler,
-)
+from gns3server.services import auth_service
+from gns3server.services.authentication import AuthService
+from gns3server.utils.request_utils import extract_client_info
 
 # Symbol tools are disabled for now: they require a vision-capable model to
 # be genuinely useful (the tools shuttle SVG content, which a text-only LLM
@@ -84,80 +95,66 @@ from .server import (
 #     upload_symbol_handler, delete_symbol_handler,
 # )
 from .appliances import (
-    get_appliances_handler,
     get_appliance_handler,
+    get_appliances_handler,
     install_appliance_handler,
 )
-from .images import (
-    get_images_handler,
-    get_image_handler,
-    delete_image_handler,
-    prune_images_handler,
-    install_images_handler,
+from .computes import (
+    get_compute_handler,
+    get_compute_images_handler,
+    list_computes_handler,
 )
 from .device_config import (
     device_config_send_handler,
     device_show_run_handler,
     vpcs_config_set_handler,
 )
-from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
-    get_nodes_handler,
-    get_node_handler,
-    start_node_handler,
-    stop_node_handler,
-    suspend_node_handler,
-    create_node_handler,
-    delete_node_handler,
-    update_node_handler,
-    get_node_console_info_handler,
-    list_node_files_handler,
-    get_node_file_handler,
-    write_node_file_handler,
-    delete_node_file_handler,
-    start_all_nodes_handler,
-    stop_all_nodes_handler,
-    suspend_all_nodes_handler,
-    duplicate_node_handler,
-    isolate_node_handler,
-    unisolate_node_handler,
-    get_node_links_handler,
-    get_links_handler,
-    get_link_handler,
-    available_filters_handler,
-    create_link_handler,
-    delete_link_handler,
-    update_link_handler,
-    reset_link_handler,
-    start_capture_handler,
-    stop_capture_handler,
-    download_capture_file_handler,
-    link_marker_handler,
-    marker_definition_handler,
+from .drawings import (
+    create_drawing_handler,
+    delete_drawing_handler,
+    get_drawing_handler,
+    get_drawings_handler,
+    update_drawing_handler,
 )
-from .templates import (
-    list_templates_handler,
-    get_template_handler,
-    create_template_handler,
-    update_template_handler,
-    delete_template_handler,
+from .images import (
+    delete_image_handler,
+    get_image_handler,
+    get_images_handler,
+    install_images_handler,
+    prune_images_handler,
 )
-from .computes import (
-    list_computes_handler,
-    get_compute_handler,
-    get_compute_images_handler,
+from .projects import (
+    close_project_handler,
+    create_project_handler,
+    delete_project_handler,
+    duplicate_project_handler,
+    get_locked_project_handler,
+    get_project_handler,
+    get_project_readme_handler,
+    get_project_stats_handler,
+    list_projects_handler,
+    lock_project_handler,
+    open_project_handler,
+    unlock_project_handler,
+    update_project_handler,
+    update_project_readme_handler,
+)
+from .server import (
+    get_statistics_handler,
+    get_version_handler,
 )
 from .snapshots import (
-    get_snapshots_handler,
     create_snapshot_handler,
     delete_snapshot_handler,
+    get_snapshots_handler,
     restore_snapshot_handler,
 )
-from .drawings import (
-    get_drawings_handler,
-    create_drawing_handler,
-    get_drawing_handler,
-    update_drawing_handler,
-    delete_drawing_handler,
+from .templates import (
+    create_template_handler,
+    delete_template_handler,
+    get_template_handler,
+    list_templates_handler,
+    update_template_handler,
 )
 
 log = logging.getLogger(__name__)

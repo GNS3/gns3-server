@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import threading
 import uuid
-
-from fastapi import HTTPException
 from unittest.mock import patch
+
+import pytest
+from fastapi import HTTPException
 
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project import Project

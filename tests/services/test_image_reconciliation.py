@@ -1,26 +1,26 @@
 import asyncio
 import hashlib
 import os
+import subprocess
 import sys
 import threading
-import subprocess
-from types import SimpleNamespace
 from pathlib import Path
-from unittest.mock import patch, AsyncMock
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import select, text, event
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy import event, select, text
 from sqlalchemy.exc import SQLAlchemyError
-from watchdog.events import FileMovedEvent, FileDeletedEvent, FileModifiedEvent
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from watchdog.events import FileDeletedEvent, FileModifiedEvent, FileMovedEvent
 
 from gns3server.db.models import Base, Image, ImageSyncJob, Template
 from gns3server.db.models.images import image_template_map
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.services.image_reconciliation import ImageReconciliationService, InventoryEvents, enumerate_root
-from gns3server.utils.image_inventory import ImageLockBusy, image_lock, fingerprint
-from gns3server.utils.images import write_image, inspect_image_file, md5sum, InvalidImageError
+from gns3server.utils.image_inventory import ImageLockBusy, fingerprint, image_lock
+from gns3server.utils.images import InvalidImageError, inspect_image_file, md5sum, write_image
 
 pytestmark = pytest.mark.asyncio
 QCOW = b"QFI\xfb\x00\x00\x00"
@@ -633,6 +633,7 @@ async def test_startup_upgrades_unversioned_existing_catalog(inventory, config, 
     from alembic import command
     from alembic.config import Config
     from fastapi import FastAPI
+
     from gns3server.db.tasks import connect_to_db, disconnect_from_db
 
     image_file(config)
@@ -665,7 +666,9 @@ async def test_startup_upgrades_unversioned_existing_catalog(inventory, config, 
 @pytest.mark.parametrize("reuse_id", [False, True])
 async def test_delete_preserves_replacement_created_while_waiting_for_lock(inventory, config, operation, reuse_id):
     from contextlib import asynccontextmanager
+
     from sqlalchemy import delete
+
     from gns3server.api.routes.controller.images import delete_image
     from gns3server.controller.controller_error import ControllerError
 

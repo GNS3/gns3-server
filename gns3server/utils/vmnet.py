@@ -15,12 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-import ipaddress
 import argparse
+import ipaddress
+import os
 import shutil
-
+import sys
 from collections import OrderedDict
 
 if sys.platform.startswith("darwin"):

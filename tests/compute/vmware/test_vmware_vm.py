@@ -17,8 +17,8 @@
 import pytest
 import pytest_asyncio
 
-from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware import VMware
+from gns3server.compute.vmware.vmware_vm import VMwareVM
 
 
 @pytest_asyncio.fixture

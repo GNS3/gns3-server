@@ -23,12 +23,11 @@ This script pulls or builds the gns3/web-wireshark Docker image.
 Run with: pip install gns3server && gns3server-web-wireshark-setup
 """
 
+import argparse
 import os
-import sys
 import shutil
 import subprocess
-import argparse
-
+import sys
 
 DOCKER_IMAGE = "gns3/web-wireshark:latest"
 DOCKERFILE_NAME = "Dockerfile"

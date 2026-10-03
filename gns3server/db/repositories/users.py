@@ -15,20 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+from typing import List, Optional, Union, cast
 from uuid import UUID
-from typing import Optional, List, Union, cast
-from sqlalchemy import select, update, delete, func
+
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
-from .base import BaseRepository
 
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.services import auth_service
 
-import logging
+from .base import BaseRepository
 
 log = logging.getLogger(__name__)
 

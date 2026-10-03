@@ -19,12 +19,13 @@
 API routes for managing the GNS3 VM.
 """
 
-from fastapi import APIRouter
-from fastapi.encoders import jsonable_encoder
 from typing import List
 
-from gns3server.controller import Controller
+from fastapi import APIRouter
+from fastapi.encoders import jsonable_encoder
+
 from gns3server import schemas
+from gns3server.controller import Controller
 
 router = APIRouter()
 

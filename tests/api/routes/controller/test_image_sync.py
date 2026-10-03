@@ -6,9 +6,9 @@ import pytest
 import pytest_asyncio
 
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.services.image_reconciliation import ImageReconciliationService
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
+from gns3server.services.image_reconciliation import ImageReconciliationService
 
 pytestmark = pytest.mark.asyncio
 QCOW = b"QFI\xfb\x00\x00\x00"

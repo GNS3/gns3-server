@@ -5,7 +5,6 @@
 
 import hashlib
 
-
 # Display/port allocation range (stable across process restarts)
 DISPLAY_RANGE = 10000
 DISPLAY_MODULO = 10000

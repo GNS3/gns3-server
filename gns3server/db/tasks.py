@@ -15,30 +15,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
+from typing import List, Optional
 
+import sqlalchemy as sa
+from alembic import command, config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
+from alembic.util.exc import CommandError
 from fastapi import FastAPI
 from pydantic import ValidationError
-from typing import List, Optional
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
-import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from alembic import command, config
-from alembic.script import ScriptDirectory
-from alembic.runtime.migration import MigrationContext
-from alembic.util.exc import CommandError
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from gns3server import schemas
+from gns3server.config import Config
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.images import read_image_info
-from gns3server import schemas
 
 from .models import Base
-from gns3server.config import Config
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -141,6 +140,7 @@ async def connect_to_db(app: FastAPI) -> None:
                     # Ensure the additive schema before stamping the current head.
                     def upgrade_inventory(connection):
                         from alembic.operations import Operations
+
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
@@ -230,6 +230,7 @@ async def get_user_llm_config_full(user_id: str, app: FastAPI) -> Optional[dict]
         or None if not found.
     """
     from uuid import UUID
+
     from gns3server.db.repositories.llm_model_configs import LLMModelConfigsRepository
     from gns3server.utils.encryption import decrypt, is_encrypted
 

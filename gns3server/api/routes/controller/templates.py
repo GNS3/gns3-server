@@ -18,30 +18,30 @@
 API routes for templates.
 """
 
-import os
 import hashlib
 import json
-
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, HTTPException, Depends, Response, status, Query
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+
 from gns3server import schemas
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.db.repositories.images import ImagesRepository
-from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.utils.images import get_builtin_disks
 
 from .dependencies.authentication import get_current_active_user
-from .dependencies.rbac import has_privilege
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
 
 responses: dict[int | str, dict[str, Any]] = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find template"}

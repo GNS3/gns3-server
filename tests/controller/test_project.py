@@ -15,26 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
+import os
 import uuid
-import pytest
-import pytest_asyncio
-from unittest.mock import MagicMock
-from tests.utils import AsyncioMagicMock, asyncio_patch
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from gns3server.controller.project import Project
+import pytest
+import pytest_asyncio
+
+from gns3server.config import Config
+from gns3server.controller.controller_error import (
+    ComputeConflictError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+)
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerForbiddenError,
-    ComputeConflictError,
-)
-from gns3server.config import Config
+from gns3server.controller.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

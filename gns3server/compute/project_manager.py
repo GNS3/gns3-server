@@ -15,14 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import psutil
+import logging
 import platform
-from .project import Project
 from uuid import UUID
+
+import psutil
 
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError
 
-import logging
+from .project import Project
 
 log = logging.getLogger(__name__)
 

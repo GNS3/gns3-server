@@ -18,44 +18,45 @@
 API routes for projects.
 """
 
-import os
 import asyncio
+import logging
+import os
 import tempfile
-import aiofiles
 import time
 import urllib.parse
-import gns3server.utils.zipfile_zstd as zipfile
 
-import logging
+import aiofiles
+
+import gns3server.utils.zipfile_zstd as zipfile
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse, FileResponse
-from websockets.exceptions import ConnectionClosed, WebSocketException
 from typing import Any, List, Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, StreamingResponse
+from websockets.exceptions import ConnectionClosed, WebSocketException
+
 from gns3server import schemas
-from gns3server.controller import Controller
-from gns3server.controller.project import Project
-from gns3server.controller.link import _UNSET
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
-from gns3server.controller.import_project import import_project as import_controller_project
+from gns3server.controller import Controller, marker_replay
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.controller.export_project import export_project as export_controller_project
-from gns3server.controller import marker_replay
+from gns3server.controller.import_project import import_project as import_controller_project
+from gns3server.controller.link import _UNSET
 from gns3server.controller.marker_replay import SharkdError, SharkdMissingError
+from gns3server.controller.project import Project
+from gns3server.db.repositories.pools import ResourcePoolsRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.services.templates import TemplatesService
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
-from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
-from gns3server.services.templates import TemplatesService
 
-from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 responses: dict[int | str, dict[str, Any]] = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project"}

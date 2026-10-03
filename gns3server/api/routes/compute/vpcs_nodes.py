@@ -19,16 +19,17 @@ API routes for VPCS nodes.
 """
 
 import os
-
-from fastapi import APIRouter, WebSocket, Depends, Body, Path, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from typing import Any, Union
 from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, WebSocket, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
+
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses: dict[int | str, dict[str, Any]] = {

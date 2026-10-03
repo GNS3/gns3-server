@@ -19,23 +19,21 @@ API routes for appliances.
 """
 
 import logging
+from typing import List, Optional, Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from typing import Optional, List, Union
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
-
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError, ControllerNotFoundError
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
-
 
 log = logging.getLogger(__name__)
 

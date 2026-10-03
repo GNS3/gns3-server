@@ -15,16 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import posixpath
 
-from .symbol_themes import BUILTIN_SYMBOL_THEMES
-from .controller_error import ControllerNotFoundError
+from ..config import Config
 from ..utils.get_resource import get_resource
 from ..utils.picture import get_size
-from ..config import Config
-
-import logging
+from .controller_error import ControllerNotFoundError
+from .symbol_themes import BUILTIN_SYMBOL_THEMES
 
 log = logging.getLogger(__name__)
 

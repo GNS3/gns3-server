@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Literal, Union
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import Literal, Optional, Union
 from uuid import UUID
 
-from .base import DateTimeModelMixin
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .base import DateTimeModelMixin
 
 # Valid model types
 ModelType = Literal["text", "vision", "stt", "tts", "multimodal", "embedding", "reranking", "other"]

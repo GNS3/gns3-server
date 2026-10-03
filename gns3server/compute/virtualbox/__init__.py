@@ -18,19 +18,19 @@
 VirtualBox server module.
 """
 
+import asyncio
+import logging
 import os
 import re
-import sys
 import shutil
-import asyncio
 import subprocess
-import logging
+import sys
 
 log = logging.getLogger(__name__)
 
 from ..base_manager import BaseManager
-from .virtualbox_vm import VirtualBoxVM
 from .virtualbox_error import VirtualBoxError
+from .virtualbox_vm import VirtualBoxVM
 
 
 class VirtualBox(BaseManager):

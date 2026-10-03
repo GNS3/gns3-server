@@ -18,32 +18,31 @@
 API routes for nodes.
 """
 
-import aiohttp
 import asyncio
 import contextlib
 import ipaddress
+import logging
+from typing import Any, Callable, List, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status, Query, HTTPException
+import aiohttp
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
-from typing import Any, List, Callable, Optional
-from uuid import UUID
 
-from gns3server.controller import Controller
+from gns3server import schemas
 from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerForbiddenError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
-from gns3server.controller.controller_error import ControllerForbiddenError, ControllerBadRequestError
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server import schemas
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
-
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -15,25 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import json
 import asyncio
+import json
+import sys
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
 import aiohttp
 import pytest
-from types import SimpleNamespace
-from unittest.mock import patch, MagicMock
+from pydantic import SecretStr
 
-from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute
 from gns3server.api.server import app as gns3_app
+from gns3server.controller.compute import Compute
 from gns3server.controller.controller_error import (
+    ComputeConflictError,
     ControllerError,
     ControllerNotFoundError,
     ControllerUnauthorizedError,
-    ComputeConflictError,
 )
-from pydantic import SecretStr
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from gns3server.controller.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest.fixture

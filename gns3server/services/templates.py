@@ -16,23 +16,22 @@
 
 import os
 import uuid
-import pydantic
-
-from uuid import UUID
-from fastapi.encoders import jsonable_encoder
 from typing import List, Optional
+from uuid import UUID
 
+import pydantic
+from fastapi.encoders import jsonable_encoder
+
+import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.config import Config
-import gns3server.db.models as models
-from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller.controller_error import (
-    ControllerError,
     ControllerBadRequestError,
-    ControllerNotFoundError,
+    ControllerError,
     ControllerForbiddenError,
+    ControllerNotFoundError,
 )
-
+from gns3server.db.repositories.templates import TemplatesRepository
 
 TEMPLATE_TYPE_TO_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "cloud": schemas.CloudTemplate,

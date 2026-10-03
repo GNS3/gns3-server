@@ -15,102 +15,107 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # General schemas
-from .config import ServerConfig
 from .common import ErrorMessage
-from .version import Version
-
-# Controller schemas
-from .controller.links import (
-    LinkCreate,
-    LinkUpdate,
-    Link,
-    UDPPortInfo,
-    EthernetPortInfo,
-    LinkCapture,
-    MarkerCreate,
-    MarkerUpdate,
-    MarkerDefinitionCreate,
-)
+from .config import ServerConfig
+from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionV8
 from .controller.computes import (
+    AutoIdlePC,
+    Compute,
     ComputeCreate,
+    ComputeDockerImage,
     ComputeUpdate,
     ComputeVirtualBoxVM,
     ComputeVMwareVM,
-    ComputeDockerImage,
-    AutoIdlePC,
-    Compute,
 )
-from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
-from .controller.images import Image, ImageType, ImageSyncRequest, ImageSyncJob
-from .controller.appliances import ApplianceVersion, ApplianceVersionV8, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
-from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
-from .controller.projects import (
-    ProjectCreate,
-    ProjectUpdate,
-    ProjectDuplicate,
-    Project,
-    ProjectFile,
-    ProjectCompression,
-    NodeFile,
+from .controller.images import Image, ImageSyncJob, ImageSyncRequest, ImageType
+
+# Controller schemas
+from .controller.links import (
+    EthernetPortInfo,
+    Link,
+    LinkCapture,
+    LinkCreate,
+    LinkUpdate,
+    MarkerCreate,
+    MarkerDefinitionCreate,
+    MarkerUpdate,
+    UDPPortInfo,
 )
+from .controller.nodes import Node, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
+from .controller.projects import (
+    NodeFile,
+    Project,
+    ProjectCompression,
+    ProjectCreate,
+    ProjectDuplicate,
+    ProjectFile,
+    ProjectUpdate,
+)
+from .controller.templates import Template, TemplateCreate, TemplateUpdate, TemplateUsage
 from .controller.users import (
-    UserCreate,
-    UserUpdate,
+    Credentials,
     LoggedInUserUpdate,
     User,
-    Credentials,
+    UserCreate,
+    UserGroup,
     UserGroupCreate,
     UserGroupUpdate,
-    UserGroup,
+    UserUpdate,
 )
+from .version import Version
 
 # Conditionally import AI-related schemas
 try:
-    from .controller.llm_model_configs import (
-        LLMModelConfigData,
-        LLMModelConfigCreate,
-        LLMModelConfigUpdate,
-        LLMModelConfigResponse,
-        LLMModelConfigWithSource,
-        LLMModelConfigInheritedResponse,
-        LLMModelConfigListResponse,
-    )
     from .controller.chat import (
-        OpenAIToolCall,
         ChatRequest,
         ChatResponse,
-        OpenAIMessage,
-        ConversationHistory,
         ChatSession,
+        ConversationHistory,
+        OpenAIMessage,
+        OpenAIToolCall,
         RenameSession,
+    )
+    from .controller.llm_model_configs import (
+        LLMModelConfigCreate,
+        LLMModelConfigData,
+        LLMModelConfigInheritedResponse,
+        LLMModelConfigListResponse,
+        LLMModelConfigResponse,
+        LLMModelConfigUpdate,
+        LLMModelConfigWithSource,
     )
 except ImportError:
     # AI schemas are not available (should not happen as they don't depend on external libs)
     pass
 
-from .controller.rbac import RoleCreate, RoleUpdate, Role, Privilege, ACECreate, ACEUpdate, ACE
-from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
-from .controller.pools import Resource, ResourceCreate, ResourcePoolCreate, ResourcePoolUpdate, ResourcePool
-from .controller.tokens import Token, ApiKeyCreate, RefreshTokenRequest
-from .controller.snapshots import SnapshotCreate, Snapshot
-from .controller.iou_license import IOULicense
-from .controller.capabilities import Capabilities
-from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
+from .compute.atm_switch_nodes import ATMSwitch, ATMSwitchCreate, ATMSwitchUpdate
+from .compute.cloud_nodes import Cloud, CloudCreate, CloudUpdate
+from .compute.docker_nodes import Docker, DockerCreate, DockerUpdate
+from .compute.dynamips_nodes import Dynamips, DynamipsCreate, DynamipsUpdate
+from .compute.ethernet_hub_nodes import EthernetHub, EthernetHubCreate, EthernetHubUpdate
+from .compute.ethernet_switch_nodes import EthernetSwitch, EthernetSwitchCreate, EthernetSwitchUpdate
+from .compute.frame_relay_switch_nodes import FrameRelaySwitch, FrameRelaySwitchCreate, FrameRelaySwitchUpdate
+from .compute.iou_nodes import IOU, IOUCreate, IOUStart, IOUUpdate
+from .compute.nat_nodes import NAT, NATCreate, NATUpdate
 
-# Controller template schemas
-from .controller.templates.vpcs_templates import VPCSTemplate, VPCSTemplateUpdate
+# Compute schemas
+from .compute.nios import TAPNIO, UDPNIO, BatchNIOCreate, BatchNIOEntry, EthernetNIO, MarkerRebuild, MarkerToggle
+from .compute.qemu_nodes import Qemu, QemuCreate, QemuUpdate
+from .compute.virtualbox_nodes import VirtualBox, VirtualBoxCreate, VirtualBoxUpdate
+from .compute.vmware_nodes import VMware, VMwareCreate, VMwareUpdate
+from .compute.vpcs_nodes import VPCS, VPCSCreate, VPCSUpdate
+from .controller.capabilities import Capabilities
+from .controller.iou_license import IOULicense
+from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
+from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
+from .controller.rbac import ACE, ACECreate, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
+from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
+from .controller.snapshots import Snapshot, SnapshotCreate
 from .controller.templates.cloud_templates import CloudTemplate, CloudTemplateUpdate
-from .controller.templates.iou_templates import IOUTemplate, IOUTemplateUpdate
 from .controller.templates.docker_templates import DockerTemplate, DockerTemplateUpdate
-from .controller.templates.ethernet_hub_templates import EthernetHubTemplate, EthernetHubTemplateUpdate
-from .controller.templates.ethernet_switch_templates import EthernetSwitchTemplate, EthernetSwitchTemplateUpdate
-from .controller.templates.virtualbox_templates import VirtualBoxTemplate, VirtualBoxTemplateUpdate
-from .controller.templates.vmware_templates import VMwareTemplate, VMwareTemplateUpdate
-from .controller.templates.qemu_templates import QemuTemplate, QemuTemplateUpdate
 from .controller.templates.dynamips_templates import (
-    DynamipsTemplate,
     C1700DynamipsTemplate,
     C1700DynamipsTemplateUpdate,
     C2600DynamipsTemplate,
@@ -125,23 +130,18 @@ from .controller.templates.dynamips_templates import (
     C3745DynamipsTemplateUpdate,
     C7200DynamipsTemplate,
     C7200DynamipsTemplateUpdate,
+    DynamipsTemplate,
 )
+from .controller.templates.ethernet_hub_templates import EthernetHubTemplate, EthernetHubTemplateUpdate
+from .controller.templates.ethernet_switch_templates import EthernetSwitchTemplate, EthernetSwitchTemplateUpdate
+from .controller.templates.iou_templates import IOUTemplate, IOUTemplateUpdate
+from .controller.templates.qemu_templates import QemuTemplate, QemuTemplateUpdate
+from .controller.templates.virtualbox_templates import VirtualBoxTemplate, VirtualBoxTemplateUpdate
+from .controller.templates.vmware_templates import VMwareTemplate, VMwareTemplateUpdate
 
-# Compute schemas
-from .compute.nios import UDPNIO, TAPNIO, EthernetNIO, MarkerToggle, MarkerRebuild, BatchNIOEntry, BatchNIOCreate
-from .compute.atm_switch_nodes import ATMSwitchCreate, ATMSwitchUpdate, ATMSwitch
-from .compute.cloud_nodes import CloudCreate, CloudUpdate, Cloud
-from .compute.docker_nodes import DockerCreate, DockerUpdate, Docker
-from .compute.dynamips_nodes import DynamipsCreate, DynamipsUpdate, Dynamips
-from .compute.ethernet_hub_nodes import EthernetHubCreate, EthernetHubUpdate, EthernetHub
-from .compute.ethernet_switch_nodes import EthernetSwitchCreate, EthernetSwitchUpdate, EthernetSwitch
-from .compute.frame_relay_switch_nodes import FrameRelaySwitchCreate, FrameRelaySwitchUpdate, FrameRelaySwitch
-from .compute.qemu_nodes import QemuCreate, QemuUpdate, Qemu
-from .compute.iou_nodes import IOUCreate, IOUUpdate, IOUStart, IOU
-from .compute.nat_nodes import NATCreate, NATUpdate, NAT
-from .compute.vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
-from .compute.vmware_nodes import VMwareCreate, VMwareUpdate, VMware
-from .compute.virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
+# Controller template schemas
+from .controller.templates.vpcs_templates import VPCSTemplate, VPCSTemplateUpdate
+from .controller.tokens import ApiKeyCreate, RefreshTokenRequest, Token
 
 # Schemas for both controller and compute
-from .qemu_disk_image import QemuDiskImageFormat, QemuDiskImageCreate, QemuDiskImageUpdate
+from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageFormat, QemuDiskImageUpdate

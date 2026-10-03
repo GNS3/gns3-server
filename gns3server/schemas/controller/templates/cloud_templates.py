@@ -15,11 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.cloud_nodes import EthernetPort, TAPPort, UDPPort, CloudConsoleType
+from typing import List, Optional, Union
 
 from pydantic import Field
-from typing import Optional, Union, List
+
+from gns3server.schemas.compute.cloud_nodes import CloudConsoleType, EthernetPort, TAPPort, UDPPort
+
+from . import Category, TemplateBase
 
 
 class CloudTemplate(TemplateBase):

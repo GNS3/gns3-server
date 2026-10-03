@@ -15,18 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import hashlib
 import base64
-import uuid
-import re
+import hashlib
+import logging
 import os
+import re
+import uuid
 import xml.etree.ElementTree as ET
 
-
 from gns3server.utils.picture import get_size
-
-
-import logging
 
 log = logging.getLogger(__name__)
 

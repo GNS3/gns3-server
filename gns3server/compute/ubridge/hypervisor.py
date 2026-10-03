@@ -18,20 +18,19 @@
 Represents a uBridge hypervisor and starts/stops the associated uBridge process.
 """
 
+import asyncio
+import logging
 import os
+import re
 import socket
 import subprocess
-import asyncio
 import tempfile
-import re
 
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import subprocess_check_output
-from .ubridge_hypervisor import UBridgeHypervisor
-from .ubridge_error import UbridgeError
+from gns3server.utils.asyncio import subprocess_check_output, wait_for_process_termination
 
-import logging
+from .ubridge_error import UbridgeError
+from .ubridge_hypervisor import UBridgeHypervisor
 
 log = logging.getLogger(__name__)
 

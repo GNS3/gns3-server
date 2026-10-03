@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import copy
 import asyncio
+import copy
 import ipaddress
+import logging
+import sys
 
 from ...utils.asyncio import locking
-from .vmware_gns3_vm import VMwareGNS3VM
-from .virtualbox_gns3_vm import VirtualBoxGNS3VM
-from .hyperv_gns3_vm import HyperVGNS3VM
-from .remote_gns3_vm import RemoteGNS3VM
-from .gns3_vm_error import GNS3VMError
 from ...version import __version__
 from ..compute import ComputeError
 from ..controller_error import ControllerError
-
-import logging
+from .gns3_vm_error import GNS3VMError
+from .hyperv_gns3_vm import HyperVGNS3VM
+from .remote_gns3_vm import RemoteGNS3VM
+from .virtualbox_gns3_vm import VirtualBoxGNS3VM
+from .vmware_gns3_vm import VMwareGNS3VM
 
 log = logging.getLogger(__name__)
 

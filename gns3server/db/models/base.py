@@ -21,9 +21,9 @@ from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
-from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import CHAR, VARCHAR, TypeDecorator
 
 
 class Base(DeclarativeBase):

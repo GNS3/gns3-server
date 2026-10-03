@@ -19,17 +19,17 @@
 # This file contains the validation for checking a .gns3 file
 #
 
+from enum import Enum
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 from .computes import Compute
 from .drawings import Drawing
 from .links import Link
 from .nodes import Node
-
 from .projects import Supplier, Variable
-
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
-from uuid import UUID
 
 
 class TopologyType(str, Enum):

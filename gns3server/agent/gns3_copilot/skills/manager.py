@@ -33,7 +33,7 @@ including Git operations and hot reload of skills.
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 try:
     import git
@@ -43,6 +43,7 @@ except ImportError:
     GIT_AVAILABLE = False
 
 from gns3server.config import Config
+
 from .loader import SkillsLoader
 
 logger = logging.getLogger(__name__)

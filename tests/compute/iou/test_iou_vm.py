@@ -14,22 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import asyncio
 import os
-import stat
+import shutil
 import socket
+import stat
 import struct
 import uuid
-import shutil
-
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
 from unittest.mock import MagicMock, call
-from gns3server.compute.iou.iou_vm import IOUL1KeepaliveProtocol, IOUVM
-from gns3server.compute.iou.iou_error import IOUError
+
+import pytest
+import pytest_asyncio
+
 from gns3server.compute.iou import IOU
+from gns3server.compute.iou.iou_error import IOUError
+from gns3server.compute.iou.iou_vm import IOUVM, IOUL1KeepaliveProtocol
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

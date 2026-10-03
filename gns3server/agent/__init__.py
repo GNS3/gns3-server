@@ -34,8 +34,7 @@ AI_COPILOT_AVAILABLE = False
 
 # Try to import AI Copilot components
 try:
-    from .gns3_copilot.project_agent_manager import get_project_agent_manager
-    from .gns3_copilot.project_agent_manager import ProjectAgentManager
+    from .gns3_copilot.project_agent_manager import ProjectAgentManager, get_project_agent_manager
 
     AI_COPILOT_AVAILABLE = True
 

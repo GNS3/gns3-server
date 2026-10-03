@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import uuid
-import json
 import asyncio
-import pytest
+import json
+import os
 import socket
+import uuid
 from unittest.mock import MagicMock, patch
-from tests.utils import AsyncioMagicMock, asyncio_patch
-from watchdog.events import FileCreatedEvent, DirCreatedEvent
 
+import pytest
+from watchdog.events import DirCreatedEvent, FileCreatedEvent
+
+from gns3server.controller import _ProjectsDirectoryEventHandler
 from gns3server.controller.compute import Compute
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
-from gns3server.controller import _ProjectsDirectoryEventHandler
 from gns3server.version import __version__
-
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 # def test_save(controller, controller_config_path):
 #

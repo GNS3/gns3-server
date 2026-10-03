@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from enum import Enum
+from typing import List, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter
+from pydantic import BaseModel, Field
+
+from ..common import CustomAdapter, NodeStatus
 
 
 class VMwareConsoleType(str, Enum):

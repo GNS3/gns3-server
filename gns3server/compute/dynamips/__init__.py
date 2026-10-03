@@ -18,49 +18,38 @@
 Dynamips server module.
 """
 
-import sys
+import asyncio
+import glob
+import logging
 import os
+import re
 import shutil
 import socket
-import time
-import asyncio
-import tempfile
-import logging
 import subprocess
-import glob
-import re
+import sys
+import tempfile
+import time
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.interfaces import is_interface_up
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output
-from gns3server.utils import parse_version
 from uuid import uuid4
+
+from gns3server.utils import parse_version
+from gns3server.utils.asyncio import subprocess_check_output, wait_run_in_executor
+from gns3server.utils.interfaces import is_interface_up
+
 from ..base_manager import BaseManager
 from ..port_manager import PortManager
-from .dynamips_error import DynamipsError
-from .hypervisor import Hypervisor
-from .nodes.router import Router
-from .dynamips_factory import DynamipsFactory
-
-# NIOs
-from .nios.nio_udp import NIOUDP
-from .nios.nio_unix import NIOUNIX
-from .nios.nio_vde import NIOVDE
-from .nios.nio_tap import NIOTAP
-from .nios.nio_generic_ethernet import NIOGenericEthernet
-from .nios.nio_linux_ethernet import NIOLinuxEthernet
-from .nios.nio_null import NIONull
 
 # Adapters
 from .adapters.c7200_io_2fe import C7200_IO_2FE
 from .adapters.c7200_io_fe import C7200_IO_FE
 from .adapters.c7200_io_ge_e import C7200_IO_GE_E
-from .adapters.nm_16esw import NM_16ESW
 from .adapters.nm_1e import NM_1E
 from .adapters.nm_1fe_tx import NM_1FE_TX
 from .adapters.nm_4e import NM_4E
 from .adapters.nm_4t import NM_4T
+from .adapters.nm_16esw import NM_16ESW
 from .adapters.pa_2fe_tx import PA_2FE_TX
 from .adapters.pa_4e import PA_4E
 from .adapters.pa_4t import PA_4T
@@ -73,7 +62,19 @@ from .adapters.pa_pos_oc3 import PA_POS_OC3
 from .adapters.wic_1enet import WIC_1ENET
 from .adapters.wic_1t import WIC_1T
 from .adapters.wic_2t import WIC_2T
+from .dynamips_error import DynamipsError
+from .dynamips_factory import DynamipsFactory
+from .hypervisor import Hypervisor
+from .nios.nio_generic_ethernet import NIOGenericEthernet
+from .nios.nio_linux_ethernet import NIOLinuxEthernet
+from .nios.nio_null import NIONull
+from .nios.nio_tap import NIOTAP
 
+# NIOs
+from .nios.nio_udp import NIOUDP
+from .nios.nio_unix import NIOUNIX
+from .nios.nio_vde import NIOVDE
+from .nodes.router import Router
 
 ADAPTER_MATRIX = {
     "C7200-IO-2FE": C7200_IO_2FE,

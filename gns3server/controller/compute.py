@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import ipaddress
-import aiohttp
 import asyncio
-import socket
-import json
-import sys
 import io
+import ipaddress
+import json
+import socket
+import sys
 
+import aiohttp
 from fastapi import HTTPException
 
 if sys.version_info >= (3, 11):
@@ -30,22 +30,21 @@ if sys.version_info >= (3, 11):
 else:
     from async_timeout import timeout as asynctimeout
 
-from ..utils import parse_version
-from ..utils.asyncio import locking, async_iterable_to_stream
+import logging
+
 from ..controller.controller_error import (
-    ControllerError,
+    ComputeConflictError,
+    ComputeError,
     ControllerBadRequestError,
-    ControllerNotFoundError,
+    ControllerError,
     ControllerForbiddenError,
+    ControllerNotFoundError,
     ControllerTimeoutError,
     ControllerUnauthorizedError,
-    ComputeError,
-    ComputeConflictError,
 )
+from ..utils import parse_version
+from ..utils.asyncio import async_iterable_to_stream, locking
 from ..version import __version__, __version_info__
-
-
-import logging
 
 log = logging.getLogger(__name__)
 

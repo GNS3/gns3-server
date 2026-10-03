@@ -19,10 +19,10 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey, JSON
+from sqlalchemy import JSON, Boolean, Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import BaseTable, generate_uuid, GUID
+from .base import GUID, BaseTable, generate_uuid
 from .images import image_template_map
 
 

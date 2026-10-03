@@ -43,18 +43,15 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
 from nornir.core import Nornir
-from nornir.core.task import AggregatedResult
-from nornir.core.task import Result
-from nornir.core.task import Task
+from nornir.core.task import AggregatedResult, Result, Task
 from nornir_netmiko.tasks import netmiko_multiline
 
 from gns3server.agent.gns3_copilot.gns3_client import get_gns3_server_host
-from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
 
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_vpcs_telnet and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko
+from gns3server.agent.gns3_copilot.utils import custom_netmiko, get_device_ports_from_topology
 
 # Explicitly register VPCS device type to ensure it is available
 try:

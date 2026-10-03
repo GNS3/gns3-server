@@ -20,11 +20,11 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L326
 """
 
 import asyncio
-from .router import Router
+import logging
+
 from ..adapters.gt96100_fe import GT96100_FE
 from ..dynamips_error import DynamipsError
-
-import logging
+from .router import Router
 
 log = logging.getLogger(__name__)
 

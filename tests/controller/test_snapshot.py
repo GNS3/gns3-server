@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from unittest import mock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from unittest import mock
-from unittest.mock import patch, MagicMock
-from gns3server.controller.snapshot import Snapshot
 
+from gns3server.controller.snapshot import Snapshot
 from tests.utils import AsyncioMagicMock
 
 

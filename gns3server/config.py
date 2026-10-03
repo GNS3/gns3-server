@@ -18,19 +18,19 @@
 Reads the configuration file and store the settings for the server.
 """
 
-import sys
-import os
-import shutil
-import secrets
 import configparser
-
-from enum import Enum
-from pydantic import ValidationError
-from .schemas import ServerConfig
-from .version import __version_info__
-from .utils.file_watcher import FileWatcher
-
 import logging
+import os
+import secrets
+import shutil
+import sys
+from enum import Enum
+
+from pydantic import ValidationError
+
+from .schemas import ServerConfig
+from .utils.file_watcher import FileWatcher
+from .version import __version_info__
 
 log = logging.getLogger(__name__)
 

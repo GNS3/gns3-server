@@ -15,19 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from uuid import UUID
 from typing import List, Union
+from uuid import UUID
 
-from gns3server import schemas
 import gns3server.db.models as models
-
-from gns3server.db.repositories.computes import ComputesRepository
+from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
-    ControllerNotFoundError,
     ControllerForbiddenError,
+    ControllerNotFoundError,
 )
+from gns3server.db.repositories.computes import ComputesRepository
 
 
 class ComputesService:

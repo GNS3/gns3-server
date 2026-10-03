@@ -20,10 +20,10 @@ API routes for images.
 
 import os
 import urllib.parse
-
-from fastapi import APIRouter, Body, Request, status, Response, HTTPException
-from fastapi.responses import FileResponse
 from typing import List
+
+from fastapi import APIRouter, Body, HTTPException, Request, Response, status
+from fastapi.responses import FileResponse
 
 from gns3server.compute.docker import Docker
 from gns3server.compute.dynamips import Dynamips

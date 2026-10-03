@@ -16,9 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-
 from pathlib import Path
+
 from fastapi import HTTPException, status
+
 from ..config import Config
 
 

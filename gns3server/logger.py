@@ -17,12 +17,11 @@
 
 """Provide a pretty logging on console"""
 
+import gzip
 import logging
-import sys
 import os
 import shutil
-import gzip
-
+import sys
 from logging.handlers import RotatingFileHandler
 
 

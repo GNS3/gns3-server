@@ -20,6 +20,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 """
 
 import asyncio
+
 from .device import Device
 
 

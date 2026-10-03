@@ -21,36 +21,33 @@ FastAPI app
 
 from typing import cast
 
-from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.exc import SQLAlchemyError
-from uvicorn.main import Server as UvicornServer
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import (
     get_redoc_html,
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerBadRequestError,
-    ControllerTimeoutError,
-    ControllerForbiddenError,
-    ControllerUnauthorizedError,
-    ComputeConflictError,
-)
-
-from gns3server.api.routes import controller, index
-from gns3server.api.routes.compute import compute_api
-from gns3server.core import tasks
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import SQLAlchemyError
+from uvicorn.main import Server as UvicornServer
 
 # MCP is an optional feature — import only if dependencies are installed
 from gns3server.agent import MCP_AVAILABLE
+from gns3server.api.routes import controller, index
+from gns3server.api.routes.compute import compute_api
+from gns3server.controller.controller_error import (
+    ComputeConflictError,
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+    ControllerTimeoutError,
+    ControllerUnauthorizedError,
+)
+from gns3server.core import tasks
 
 if MCP_AVAILABLE:
     from gns3server.agent import mcp

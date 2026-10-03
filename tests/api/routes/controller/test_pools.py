@@ -16,16 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
+
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.db.repositories.pools import ResourcePoolsRepository
+
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
+from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.schemas.controller.pools import ResourceCreate, ResourcePoolCreate
 
 pytestmark = pytest.mark.asyncio

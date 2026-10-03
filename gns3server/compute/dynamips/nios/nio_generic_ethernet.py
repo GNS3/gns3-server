@@ -19,10 +19,10 @@ Interface for generic Ethernet NIOs (PCAP library).
 """
 
 import asyncio
-import uuid
-from .nio import NIO
-
 import logging
+import uuid
+
+from .nio import NIO
 
 log = logging.getLogger(__name__)
 

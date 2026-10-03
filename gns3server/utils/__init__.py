@@ -16,14 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
-import re
-import shlex
-import textwrap
-import posixpath
-import socket
 import errno
 import hashlib
+import posixpath
+import re
+import shlex
+import socket
+import sys
+import textwrap
 
 
 def force_unix_path(path):

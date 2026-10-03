@@ -15,11 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.iou_nodes import ConsoleType
+from typing import Optional
 
 from pydantic import Field
-from typing import Optional
+
+from gns3server.schemas.compute.iou_nodes import ConsoleType
+
+from . import Category, TemplateBase
 
 
 class IOUTemplateBase(TemplateBase):

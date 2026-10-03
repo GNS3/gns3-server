@@ -16,13 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import locale
 import tempfile
 
+import pytest
+
+from gns3server.config import Config
 from gns3server.main import parse_arguments as parse
 from gns3server.server import Server
-from gns3server.config import Config
 
 
 def test_locale_check():

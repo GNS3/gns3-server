@@ -36,11 +36,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any
-from typing import AsyncGenerator
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from uuid import uuid4
 
 import aiosqlite
@@ -53,8 +49,6 @@ from gns3server.agent.gns3_copilot.chat_sessions_repository import (
 )
 from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     set_current_jwt_token,
-)
-from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     set_current_llm_config,
 )
 from gns3server.agent.gns3_copilot.utils.error_handler import format_error_message

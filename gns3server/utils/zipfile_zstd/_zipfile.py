@@ -1,7 +1,8 @@
-import zipfile as _zipfile_module
-import zstandard as zstd
 import inspect
+import zipfile as _zipfile_module
 from typing import Any
+
+import zstandard as zstd
 
 from ._patcher import patch
 

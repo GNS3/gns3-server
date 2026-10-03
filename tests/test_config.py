@@ -17,12 +17,11 @@
 
 import configparser
 import os
-import pytest
 
-from gns3server.config import Config
-from gns3server.config import ConfigConflictError
-from gns3server.config import ServerConfig
+import pytest
 from pydantic import ValidationError
+
+from gns3server.config import Config, ConfigConflictError, ServerConfig
 
 
 def load_config(tmpdir, settings):

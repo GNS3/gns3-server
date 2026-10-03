@@ -33,8 +33,7 @@ database.
 
 import asyncio
 import logging
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
 from gns3server.agent.gns3_copilot.agent_service import AgentService
 

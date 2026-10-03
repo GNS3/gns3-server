@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from enum import Enum
+from typing import List, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 from ..common import NodeStatus
 

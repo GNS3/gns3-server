@@ -19,9 +19,8 @@
 MCP tool handlers for GNS3 appliance management.
 """
 
-from typing import Any
-
 import logging
+from typing import Any
 
 log = logging.getLogger(__name__)
 

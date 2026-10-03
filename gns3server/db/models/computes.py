@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, Integer, String
 
-from .base import BaseTable, GUID
+from .base import GUID, BaseTable
 
 
 class Compute(BaseTable):

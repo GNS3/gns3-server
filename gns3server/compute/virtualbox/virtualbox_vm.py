@@ -18,28 +18,27 @@
 VirtualBox VM instance.
 """
 
-import re
-import os
-import sys
+import asyncio
 import json
-import uuid
+import logging
+import os
+import re
 import shlex
 import shutil
-import asyncio
+import sys
 import tempfile
+import uuid
 import xml.etree.ElementTree as ET
 
-from gns3server.utils import parse_version
-from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.asyncio.serial import asyncio_open_serial
-from gns3server.utils.asyncio import locking
-from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
-from gns3server.compute.nios.nio_udp import NIOUDP
 from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
 from gns3server.compute.base_node import BaseNode
-
-import logging
+from gns3server.compute.nios.nio_udp import NIOUDP
+from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.utils import parse_version
+from gns3server.utils.asyncio import locking
+from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 
 log = logging.getLogger(__name__)
 

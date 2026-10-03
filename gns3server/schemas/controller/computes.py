@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
-
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, field_validator, model_validator
-from typing import List, Optional, Union, Any
 from enum import Enum
+from typing import Any, List, Optional, Union
 
-from .nodes import NodeType
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+
 from .base import DateTimeModelMixin
+from .nodes import NodeType
 
 
 class Protocol(str, Enum):

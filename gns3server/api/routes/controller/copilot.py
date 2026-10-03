@@ -21,7 +21,9 @@ API routes for GNS3 Copilot global operations (non-project).
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+
 from gns3server import schemas
+
 from .dependencies.authentication import get_current_active_user
 
 log = logging.getLogger(__name__)

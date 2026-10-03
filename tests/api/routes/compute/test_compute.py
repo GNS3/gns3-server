@@ -14,16 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from gns3server.version import __version__
 from gns3server.compute.project import Project
 from gns3server.config import Config
 from gns3server.schemas.config import ServerSettings
+from gns3server.version import __version__
 
 pytestmark = pytest.mark.asyncio
 

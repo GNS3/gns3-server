@@ -18,28 +18,27 @@
 API routes for projects.
 """
 
+import asyncio
+import inspect
+import logging
 import os
 import shutil
 import urllib.parse
-import inspect
-import asyncio
-
-import logging
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import FileResponse
 from typing import List
 from uuid import UUID
 
-from gns3server.compute.project_manager import ProjectManager
-from gns3server.compute.project import Project
-from gns3server.compute.base_manager import BaseManager
-from gns3server.utils.path import is_safe_path
-from gns3server import schemas
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse
 
+from gns3server import schemas
+from gns3server.compute.base_manager import BaseManager
+from gns3server.compute.project import Project
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.utils.path import is_safe_path
 
 router = APIRouter()
 

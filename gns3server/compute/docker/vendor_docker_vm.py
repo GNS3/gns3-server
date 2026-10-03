@@ -34,10 +34,10 @@ import os
 import shutil
 import tempfile
 
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
+from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 
 log = logging.getLogger(__name__)
 

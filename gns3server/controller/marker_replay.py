@@ -63,7 +63,7 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 
-from .controller_error import ControllerError, ControllerNotFoundError, ControllerBadRequestError
+from .controller_error import ControllerBadRequestError, ControllerError, ControllerNotFoundError
 
 log = logging.getLogger(__name__)
 

@@ -18,10 +18,9 @@
 import pytest
 import pytest_asyncio
 
-from tests.utils import asyncio_patch
-from gns3server.utils.asyncio import wait_run_in_executor
-
 from gns3server.controller.gns3vm.virtualbox_gns3_vm import VirtualBoxGNS3VM
+from gns3server.utils.asyncio import wait_run_in_executor
+from tests.utils import asyncio_patch
 
 
 @pytest_asyncio.fixture

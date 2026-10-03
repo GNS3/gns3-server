@@ -15,7 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
+
 from .dynamips_error import DynamipsError
+from .nodes.atm_switch import ATMSwitch
 from .nodes.c1700 import C1700
 from .nodes.c2600 import C2600
 from .nodes.c2691 import C2691
@@ -23,12 +26,9 @@ from .nodes.c3600 import C3600
 from .nodes.c3725 import C3725
 from .nodes.c3745 import C3745
 from .nodes.c7200 import C7200
-from .nodes.atm_switch import ATMSwitch
-from .nodes.ethernet_switch import EthernetSwitch
 from .nodes.ethernet_hub import EthernetHub
+from .nodes.ethernet_switch import EthernetSwitch
 from .nodes.frame_relay_switch import FrameRelaySwitch
-
-import logging
 
 log = logging.getLogger(__name__)
 

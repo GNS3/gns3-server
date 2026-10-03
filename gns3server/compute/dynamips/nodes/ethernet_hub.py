@@ -18,12 +18,12 @@
 Hub object that uses the Bridge interface to create a hub with ports.
 """
 
-from .bridge import Bridge
-from ..nios.nio_udp import NIOUDP
-from ..dynamips_error import DynamipsError
-from ...error import NodeError
-
 import logging
+
+from ...error import NodeError
+from ..dynamips_error import DynamipsError
+from ..nios.nio_udp import NIOUDP
+from .bridge import Bridge
 
 log = logging.getLogger(__name__)
 

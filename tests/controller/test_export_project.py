@@ -16,22 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import json
+import os
+import stat
+import zipfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
-import zipfile
-import stat
 
-from pathlib import Path
-from unittest.mock import patch
-from unittest.mock import MagicMock
-from tests.utils import AsyncioMagicMock, AsyncioBytesIO
-
-from gns3server.controller.project import Project
-from gns3server.controller.export_project import export_project, _is_exportable
-from gns3server.utils.asyncio import aiozipstream
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.export_project import _is_exportable, export_project
+from gns3server.controller.project import Project
+from gns3server.utils.asyncio import aiozipstream
+from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
 @pytest_asyncio.fixture

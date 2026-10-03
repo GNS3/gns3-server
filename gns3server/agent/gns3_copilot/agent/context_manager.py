@@ -46,8 +46,7 @@ import logging
 import os
 import warnings
 from pathlib import Path
-from typing import Any
-from typing import Callable
+from typing import Any, Callable
 
 # Configure tiktoken cache directory (must be set before importing tiktoken)
 _cache_dir = Path(__file__).parent.parent / "cache" / "tiktoken"
@@ -55,9 +54,7 @@ _cache_dir.mkdir(parents=True, exist_ok=True)
 os.environ["TIKTOKEN_CACHE_DIR"] = str(_cache_dir)
 
 import tiktoken
-from langchain_core.messages import BaseMessage
-from langchain_core.messages import SystemMessage
-from langchain_core.messages import trim_messages
+from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 
 logger = logging.getLogger(__name__)
 

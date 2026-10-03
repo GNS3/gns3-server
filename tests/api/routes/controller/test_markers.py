@@ -23,10 +23,9 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from tests.utils import asyncio_patch
-
 from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

@@ -22,17 +22,17 @@ through uBridge's ``brctl`` module (see
 ``gns3server.compute.builtin.nodes.ethernet_switch``).
 """
 
-from typing import Any
 import os
-
-from fastapi import APIRouter, Depends, Body, Path, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
+from typing import Any
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+
+from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.ethernet_switch import EthernetSwitch
-from gns3server import schemas
 
 responses: dict[int | str, dict[str, Any]] = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet switch node"}

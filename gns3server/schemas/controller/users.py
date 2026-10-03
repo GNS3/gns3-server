@@ -16,8 +16,9 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import ConfigDict, EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
 from .base import DateTimeModelMixin
 

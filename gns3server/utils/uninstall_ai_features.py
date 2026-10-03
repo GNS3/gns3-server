@@ -7,10 +7,10 @@ Usage:
     gns3server-uninstall-ai-features -y
 """
 
-import os
-import sys
-import subprocess
 import argparse
+import os
+import subprocess
+import sys
 
 
 def _find_base_dir():

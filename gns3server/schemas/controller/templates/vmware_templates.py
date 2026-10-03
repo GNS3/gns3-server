@@ -15,16 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.vmware_nodes import (
-    VMwareConsoleType,
-    VMwareAdapterType,
-    VMwareOnCloseAction,
-    CustomAdapter,
-)
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from gns3server.schemas.compute.vmware_nodes import (
+    CustomAdapter,
+    VMwareAdapterType,
+    VMwareConsoleType,
+    VMwareOnCloseAction,
+)
+
+from . import Category, TemplateBase
 
 
 class VMwareTemplateBase(TemplateBase):

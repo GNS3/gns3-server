@@ -27,22 +27,19 @@ import glob
 import json
 import os
 import uuid
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import patch, MagicMock, call
-
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
 from gns3server.compute.docker import Docker
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
-from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.docker.docker_error import DockerError
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
+from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.iou.utils.iou_export import nvram_export
 from gns3server.compute.iou.utils.iou_import import nvram_import
-
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

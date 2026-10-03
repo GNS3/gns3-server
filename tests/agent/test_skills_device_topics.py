@@ -301,9 +301,9 @@ class TestReloadSkillsValidation:
     """
 
     def test_invalid_injection_skill_is_dropped(self, tmp_path, monkeypatch):
-        from gns3server.config import Config
         from gns3server.agent.gns3_copilot.skills import registry
         from gns3server.agent.gns3_copilot.skills.manager import SkillsManager
+        from gns3server.config import Config
 
         # SkillsManager derives its local path from <config_dir>/skills
         injection_dir = tmp_path / "skills" / "injection"

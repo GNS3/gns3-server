@@ -23,17 +23,17 @@ except ImportError:
     # Sentry SDK is not installed with deb package in order to simplify packaging
     SENTRY_SDK_AVAILABLE = False
 
-import os
-import sys
-import struct
-import platform
 import locale
+import logging
+import os
+import platform
+import struct
+import sys
+
 import distro
 
-from .version import __version__, __version_info__
 from .config import Config
-
-import logging
+from .version import __version__, __version_info__
 
 log = logging.getLogger(__name__)
 

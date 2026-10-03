@@ -19,22 +19,21 @@
 API routes for resource pools.
 """
 
-from fastapi import APIRouter, Depends, status
-from uuid import UUID
-from typing import List, Optional
-
-from gns3server import schemas
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
-
-from gns3server.controller import Controller
-import gns3server.db.models as models
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
-
-from .dependencies.rbac import has_privilege
-from .dependencies.database import get_repository
-
 import logging
+from typing import List, Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, status
+
+import gns3server.db.models as models
+from gns3server import schemas
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError, ControllerNotFoundError
+from gns3server.db.repositories.pools import ResourcePoolsRepository
+from gns3server.db.repositories.rbac import RbacRepository
+
+from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
 
 log = logging.getLogger(__name__)
 

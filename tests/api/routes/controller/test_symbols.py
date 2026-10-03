@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import os
 import urllib.parse
 
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 

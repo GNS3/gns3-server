@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pydantic import BaseModel, Field, HttpUrl
+from enum import Enum
 from typing import List, Optional
 from uuid import UUID
-from enum import Enum
+
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class ProjectStatus(str, Enum):

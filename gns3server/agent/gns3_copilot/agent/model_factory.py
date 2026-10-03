@@ -32,8 +32,7 @@ Configuration is passed directly from the database.
 """
 
 import logging
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.chat_models import init_chat_model
 

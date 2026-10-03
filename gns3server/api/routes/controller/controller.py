@@ -15,29 +15,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import signal
+import logging
 import os
+import signal
 import time
-import psutil
+from typing import Dict, List
 
-from fastapi import APIRouter, FastAPI, Request, Depends, WebSocket, WebSocketDisconnect, status
-from fastapi.responses import StreamingResponse
+import psutil
+from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from fastapi.routing import Mount
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
-from typing import List, Dict
-
+from gns3server import schemas
+from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
-from gns3server.version import __version__
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
-from gns3server import schemas
+from gns3server.version import __version__
 
 from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
-
-import logging
 
 log = logging.getLogger(__name__)
 

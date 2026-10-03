@@ -37,12 +37,13 @@ be the switch). ESW ``access``/``dot1q``/``qinq`` port modes are composed from
 the ``brctl`` VLAN primitives here -- see ``_apply_port_vlan``.
 """
 
-from ...base_node import BaseNode
-from ...nios.nio_udp import NIOUDP
-from ...error import NodeError
+import logging
+
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
-import logging
+from ...base_node import BaseNode
+from ...error import NodeError
+from ...nios.nio_udp import NIOUDP
 
 log = logging.getLogger(__name__)
 

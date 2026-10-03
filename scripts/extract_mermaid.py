@@ -27,11 +27,11 @@ Usage:
     python3 scripts/extract_mermaid.py docs/implemented/ my_svgs/
 """
 
-import re
-import os
-import sys
-import subprocess
 import argparse
+import os
+import re
+import subprocess
+import sys
 
 # Chrome binary path discovery
 PUPPETEER_CACHE = os.environ.get(

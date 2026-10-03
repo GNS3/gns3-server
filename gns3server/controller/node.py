@@ -16,21 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import html
 import copy
-import uuid
-import os
-
-from .controller_error import ControllerError, ControllerTimeoutError, ComputeError, ComputeConflictError
-from .node_types import BUILTIN_NODE_TYPES
-from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
-from ..utils.images import images_directories
-from ..utils.application_id import is_iol_runner_environment
-from ..utils import macaddress_to_int, int_to_macaddress
-from ..config import Config
-
-
+import html
 import logging
+import os
+import uuid
+
+from ..config import Config
+from ..utils import int_to_macaddress, macaddress_to_int
+from ..utils.application_id import is_iol_runner_environment
+from ..utils.images import images_directories
+from .controller_error import ComputeConflictError, ComputeError, ControllerError, ControllerTimeoutError
+from .node_types import BUILTIN_NODE_TYPES
+from .ports.port_factory import DynamipsPortFactory, PortFactory, StandardPortFactory
 
 log = logging.getLogger(__name__)
 

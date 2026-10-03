@@ -14,24 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import datetime
+import hashlib
+import logging
 import os
 import shutil
-import magic
-import asyncio
-import hashlib
-import datetime
-
 from uuid import UUID, uuid4
+
+import magic
 from fastapi import HTTPException, status
 
-from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
-from .port_manager import PortManager
-from .notification_manager import NotificationManager
+from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
+
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
-
-import logging
+from .notification_manager import NotificationManager
+from .port_manager import PortManager
 
 log = logging.getLogger(__name__)
 

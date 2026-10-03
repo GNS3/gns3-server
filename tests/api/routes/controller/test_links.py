@@ -14,23 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import uuid
-import pytest_asyncio
-
 from typing import Tuple
+from unittest.mock import MagicMock, patch
+
+import pytest
+import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from unittest.mock import patch, MagicMock
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
-from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
+from gns3server.controller.link import FILTERS, Link
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.link import Link, FILTERS
+from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

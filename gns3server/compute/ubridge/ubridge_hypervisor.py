@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import logging
 import re
 import time
-import logging
-import asyncio
 
 from gns3server.utils.asyncio import locking
+
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)

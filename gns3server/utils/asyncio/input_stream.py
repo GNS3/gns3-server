@@ -5,11 +5,10 @@ Parser for VT100 input stream.
 # Copied from prompt_toolkit/terminal/vt100_input.py due to dependency on termios (which is not available on Windows)
 
 import re
+
 import six
-
-
-from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.input_processor import KeyPress
+from prompt_toolkit.keys import Keys
 
 # __all__ = (
 #     'InputStream',

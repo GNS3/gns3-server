@@ -15,13 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import pydantic
+import pytest
 
 from gns3server.controller.appliance_to_template import ApplianceToTemplate
 from gns3server.controller.controller_error import ControllerError
 from gns3server.schemas.controller.appliances import ApplianceModel
-
 
 # reduced mirror of the upstream vyos.gns3a (registry version 8, qemu, 2 settings sets)
 VYOS_V8 = {

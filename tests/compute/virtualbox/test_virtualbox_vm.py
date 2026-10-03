@@ -15,13 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import pytest
 import pytest_asyncio
-from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
-from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.virtualbox import VirtualBox
+from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
+from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

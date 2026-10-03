@@ -17,8 +17,8 @@
 
 import asyncio
 
-from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.compute.error import NodeError
+from gns3server.utils.asyncio import wait_for_file_creation
 
 """
 This module handle connection to unix socket

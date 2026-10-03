@@ -17,6 +17,7 @@
 
 import asyncio
 from contextlib import contextmanager
+
 from gns3server.utils.notification_queue import NotificationQueue
 
 

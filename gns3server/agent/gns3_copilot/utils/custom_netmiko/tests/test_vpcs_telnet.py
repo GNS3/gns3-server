@@ -20,10 +20,10 @@ This script tests:
 Run with: python test_vpcs_telnet.py
 """
 
+import os
 import sys
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-import os
+from unittest.mock import MagicMock, Mock, patch
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))

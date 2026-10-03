@@ -17,12 +17,12 @@
 import os
 import sys
 import threading
-import pytest
 from unittest.mock import patch
 
+import pytest
 
 from gns3server.utils import force_unix_path
-from gns3server.utils.images import md5sum, remove_checksum, images_directories, list_images
+from gns3server.utils.images import images_directories, list_images, md5sum, remove_checksum
 
 
 def test_images_directories(tmpdir, config):

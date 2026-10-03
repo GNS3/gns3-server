@@ -15,16 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import stat
-import pytest
 import platform
+import stat
 import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
 from tests.utils import asyncio_patch
-
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture

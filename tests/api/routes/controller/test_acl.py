@@ -17,16 +17,15 @@
 
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.db.repositories.users import UsersRepository
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.schemas.controller.users import User
-from gns3server.schemas.controller.rbac import ACECreate
+
 from gns3server.controller import Controller
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.users import User
 
 pytestmark = pytest.mark.asyncio
 

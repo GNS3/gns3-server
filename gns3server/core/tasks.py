@@ -16,21 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-
-from fastapi import FastAPI
+import logging
 from contextlib import asynccontextmanager
 
-from gns3server.controller import Controller
-from gns3server.config import Config
+from fastapi import FastAPI
+
 from gns3server.compute import MODULES
-from gns3server.compute.port_manager import PortManager
 from gns3server.compute.marker.marker_manager import MarkerManager
-from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db
+from gns3server.compute.port_manager import PortManager
+from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes
 from gns3server.services.image_reconciliation import get_image_reconciliation_service
-
-
-import logging
+from gns3server.utils.http_client import HTTPClient
 
 log = logging.getLogger(__name__)
 

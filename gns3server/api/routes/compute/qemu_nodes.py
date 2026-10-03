@@ -18,21 +18,21 @@
 API routes for Qemu nodes.
 """
 
+import logging
 import os
-
-from fastapi import APIRouter, WebSocket, Depends, Body, Path, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from typing import Any, Union
 from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, WebSocket, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute import qemu
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
-from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-import logging
+from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 log = logging.getLogger(__name__)
 

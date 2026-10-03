@@ -15,17 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List, Optional, Union, cast
 from uuid import UUID
-from typing import Optional, List, Union
-from sqlalchemy import select, update, delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.engine import CursorResult
-from typing import cast
 
-from .base import BaseRepository
+from sqlalchemy import delete, select, update
+from sqlalchemy.engine import CursorResult
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import gns3server.db.models as models
 from gns3server import schemas
+
+from .base import BaseRepository
 
 
 class ComputesRepository(BaseRepository):

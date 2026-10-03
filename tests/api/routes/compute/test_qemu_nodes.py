@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import shutil
+import stat
+import uuid
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
-import os
-import stat
-import shutil
-import uuid
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import asyncio_patch
-from unittest.mock import patch, MagicMock
 
 from gns3server.compute.project import Project
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 

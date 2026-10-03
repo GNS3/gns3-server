@@ -20,9 +20,9 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L451
 """
 
 import asyncio
-from ..dynamips_error import DynamipsError
-
 import logging
+
+from ..dynamips_error import DynamipsError
 
 log = logging.getLogger(__name__)
 

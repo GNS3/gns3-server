@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
+
 from ..error import NodeError
 from .nodes.cloud import Cloud
-from .nodes.nat import Nat
 from .nodes.ethernet_hub import EthernetHub
 from .nodes.ethernet_switch import EthernetSwitch
-
-import logging
+from .nodes.nat import Nat
 
 log = logging.getLogger(__name__)
 

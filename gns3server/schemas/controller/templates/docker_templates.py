@@ -15,11 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from ...common import ConsoleType, AuxType, CustomAdapter, ExtraConfig
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from ...common import AuxType, ConsoleType, CustomAdapter, ExtraConfig
+from . import Category, TemplateBase
 
 
 class DockerTemplateBase(TemplateBase):

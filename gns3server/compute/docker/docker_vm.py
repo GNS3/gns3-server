@@ -18,38 +18,35 @@
 Docker container instance.
 """
 
-import sys
 import asyncio
 import contextlib
 import json
-import shutil
-import psutil
-import shlex
-import aiohttp
-import subprocess
+import logging
 import os
 import re
+import shlex
+import shutil
+import subprocess
+import sys
 
+import aiohttp
+import psutil
+
+from gns3server.compute.compute_error import ComputeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
+from gns3server.utils import int_to_macaddress, macaddress_to_int
+from gns3server.utils.asyncio import monitor_process, wait_for_file_creation, wait_run_in_executor
+from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
-from gns3server.utils.asyncio import wait_for_file_creation
-from gns3server.utils.asyncio import monitor_process
-from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils.get_resource import get_resource
 from gns3server.utils.hostname import is_rfc1123_hostname_valid
-from gns3server.utils import macaddress_to_int, int_to_macaddress
-
-from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
-from gns3server.compute.compute_error import ComputeError
-from ..base_node import BaseNode
 
 from ..adapters.ethernet_adapter import EthernetAdapter
+from ..base_node import BaseNode
+from ..error import ImageMissingError
 from ..nios.nio_udp import NIOUDP
 from .docker_error import DockerError, DockerHttp304Error, DockerHttp404Error, DockerHttp409Error
-from ..error import ImageMissingError
-
-import logging
 
 log = logging.getLogger(__name__)
 

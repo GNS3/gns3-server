@@ -14,30 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import hashlib
-import stat
-import aiofiles
 import asyncio
+import hashlib
+import os
+import stat
 import tempfile
 
-from gns3server.utils.image_inventory import fingerprint, stat_fingerprint, image_lock, publish_image, contained_path
+import aiofiles
+
+from gns3server.utils.image_inventory import contained_path, fingerprint, image_lock, publish_image, stat_fingerprint
 
 try:
     import importlib_resources
 except ImportError:
     from importlib import resources as importlib_resources
 
-from typing import List, AsyncGenerator
-from ..config import Config
-from . import force_unix_path
+import logging
 from io import DEFAULT_BUFFER_SIZE
+from typing import AsyncGenerator, List
 
 import gns3server.db.models as models
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.asyncio import wait_run_in_executor
 
-import logging
+from ..config import Config
+from . import force_unix_path
 
 log = logging.getLogger(__name__)
 

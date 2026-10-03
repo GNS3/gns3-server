@@ -14,20 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import Category, TemplateBase
-
-from gns3server.schemas.compute.dynamips_nodes import (
-    DynamipsConsoleType,
-    DynamipsPlatform,
-    DynamipsAdapters,
-    DynamipsWics,
-    DynamipsNPE,
-    DynamipsMidplane,
-)
+from enum import Enum
+from typing import Optional
 
 from pydantic import Field
-from typing import Optional
-from enum import Enum
+
+from gns3server.schemas.compute.dynamips_nodes import (
+    DynamipsAdapters,
+    DynamipsConsoleType,
+    DynamipsMidplane,
+    DynamipsNPE,
+    DynamipsPlatform,
+    DynamipsWics,
+)
+
+from . import Category, TemplateBase
 
 
 class DynamipsTemplateBase(TemplateBase):

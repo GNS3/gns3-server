@@ -19,12 +19,12 @@ API routes for cloud nodes.
 """
 
 import os
-
-from fastapi import APIRouter, Depends, Path, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from typing import Any, Union
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute.builtin import Builtin

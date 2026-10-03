@@ -19,12 +19,12 @@ API routes for VirtualBox nodes.
 """
 
 import os
+from typing import Any, Union
+from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from uuid import UUID
-from typing import Any, Union
 
 from gns3server import schemas
 from gns3server.compute.virtualbox import VirtualBox

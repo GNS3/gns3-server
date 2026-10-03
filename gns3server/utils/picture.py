@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
 import io
+import re
 import struct
 from xml.etree.ElementTree import ElementTree, ParseError
 

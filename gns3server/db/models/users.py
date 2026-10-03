@@ -15,19 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Table, Boolean, Column, Integer, String, DateTime, ForeignKey, event
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from .base import Base, BaseTable, generate_uuid, GUID
 
 from gns3server.config import Config
 from gns3server.services import auth_service
 
-import logging
-import uuid
+from .base import GUID, Base, BaseTable, generate_uuid
 
 log = logging.getLogger(__name__)
 

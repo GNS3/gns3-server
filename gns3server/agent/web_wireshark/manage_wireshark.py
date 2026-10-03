@@ -67,12 +67,12 @@ For more information on each command, use:
     python manage_wireshark.py <command> --help
 """
 
-import sys
-import json
 import argparse
-import logging
 import asyncio
+import json
+import logging
 import os
+import sys
 from typing import Optional
 
 from gns3server.utils.uuid_validator import validate_uuid

@@ -19,27 +19,23 @@ VPCS VM management (creates command line, processes, files etc.) in
 order to run a VPCS VM.
 """
 
+import asyncio
+import logging
 import os
-import sys
+import re
+import shutil
+import signal
 import socket
 import subprocess
-import signal
-import re
-import asyncio
-import shutil
+import sys
 
-from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import monitor_process
-from gns3server.utils.asyncio import subprocess_check_output
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import monitor_process, subprocess_check_output, wait_for_process_termination
 
-from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
-from ..nios.nio_udp import NIOUDP
 from ..base_node import BaseNode
-
-
-import logging
+from ..nios.nio_udp import NIOUDP
+from .vpcs_error import VPCSError
 
 log = logging.getLogger(__name__)
 

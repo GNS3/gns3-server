@@ -18,40 +18,40 @@
 API routes for images.
 """
 
-import os
 import logging
-import urllib.parse
+import os
 import tempfile
+import urllib.parse
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Request, Response, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.encoders import jsonable_encoder
-from starlette.requests import ClientDisconnect
-from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import SQLAlchemyError
-from typing import List, Optional, Literal
+from sqlalchemy.orm.exc import MultipleResultsFound
+from starlette.requests import ClientDisconnect
 
+import gns3server.db.models as models
 from gns3server import schemas
-from gns3server.config import Config
 from gns3server.compute.qemu import Qemu
+from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+)
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.services.image_reconciliation import get_image_reconciliation_service
+from gns3server.utils.image_inventory import ImageLockBusy, contained_path, fingerprint, image_lock, publish_image
 from gns3server.utils.images import (
     InvalidImageError,
-    write_image,
-    read_image_info,
     default_images_directory,
     get_builtin_disks,
-)
-import gns3server.db.models as models
-from gns3server.db.repositories.images import ImagesRepository
-from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.controller import Controller
-from gns3server.services.image_reconciliation import get_image_reconciliation_service
-from gns3server.utils.image_inventory import contained_path, image_lock, publish_image, fingerprint, ImageLockBusy
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerForbiddenError,
-    ControllerBadRequestError,
+    read_image_info,
+    write_image,
 )
 
 from .dependencies.authentication import get_current_active_user

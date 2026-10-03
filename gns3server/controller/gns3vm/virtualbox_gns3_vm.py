@@ -15,21 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-import sys
-import aiohttp
-import logging
 import asyncio
-import socket
 import ipaddress
+import logging
+import re
+import socket
+import sys
 
-from .base_gns3_vm import BaseGNS3VM
-from .gns3_vm_error import GNS3VMError
+import aiohttp
+
 from gns3server.utils import parse_version
-from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.http_client import HTTPClient
 
 from ...compute.virtualbox import VirtualBox, VirtualBoxError
+from .base_gns3_vm import BaseGNS3VM
+from .gns3_vm_error import GNS3VMError
 
 log = logging.getLogger(__name__)
 

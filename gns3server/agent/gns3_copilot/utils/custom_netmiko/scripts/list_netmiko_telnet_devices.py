@@ -31,8 +31,8 @@ Features:
 
 import os
 import sys
-from typing import Dict, List, Tuple
 from datetime import datetime
+from typing import Dict, List, Tuple
 
 
 def get_netmiko_version() -> str:

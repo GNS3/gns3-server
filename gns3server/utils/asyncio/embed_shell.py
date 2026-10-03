@@ -16,24 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
 import asyncio
 import inspect
 import io
+import sys
 
 from prompt_toolkit import prompt
-from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.eventloop.base import EventLoop
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.input import StdinInput
 from prompt_toolkit.interface import CommandLineInterface
 from prompt_toolkit.layout.screen import Size
-from prompt_toolkit.shortcuts import create_prompt_application, create_asyncio_eventloop
+from prompt_toolkit.shortcuts import create_asyncio_eventloop, create_prompt_application
 from prompt_toolkit.terminal.vt100_output import Vt100_Output
-from prompt_toolkit.input import StdinInput
 
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
 from gns3server.utils.asyncio.input_stream import InputStream
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
 
 
 class EmbedShell:

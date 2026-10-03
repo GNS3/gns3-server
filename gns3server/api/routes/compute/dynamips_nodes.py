@@ -19,16 +19,16 @@ API routes for Dynamips nodes.
 """
 
 import os
-
-from fastapi import APIRouter, WebSocket, Body, Depends, status, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+
+from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.router import Router
-from gns3server import schemas
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 

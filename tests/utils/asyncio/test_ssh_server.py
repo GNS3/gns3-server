@@ -6,7 +6,6 @@ import pytest
 
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
