@@ -22,7 +22,7 @@ import os
 import urllib.parse
 from typing import List
 
-from fastapi import APIRouter, Body, HTTPException, Request, Response, status
+from fastapi import APIRouter, Body, HTTPException, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.compute.docker import Docker

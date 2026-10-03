@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from gns3server import schemas
 from gns3server.controller import Controller

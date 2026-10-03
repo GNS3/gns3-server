@@ -41,10 +41,8 @@ from fastapi.responses import Response
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import gns3server.db.models as models
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
     available_filters_handler,
     create_link_handler,
@@ -80,10 +78,11 @@ from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
     write_node_file_handler,
 )
 from gns3server.config import Config
+from gns3server.db import models as models
 from gns3server.db.repositories.api_keys import ApiKeysRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
-from gns3server.services.authentication import AuthService
+from gns3server.services.authentication import AuthService as AuthService
 from gns3server.utils.request_utils import extract_client_info
 
 # Symbol tools are disabled for now: they require a vision-capable model to

@@ -19,7 +19,6 @@ Interface for Dynamips virtual ATM switch module ("atmsw").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L593
 """
 
-import asyncio
 import logging
 import re
 

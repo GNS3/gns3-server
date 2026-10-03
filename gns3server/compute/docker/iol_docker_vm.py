@@ -48,7 +48,6 @@ import shutil
 
 from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
-from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.iou.utils.iou_export import nvram_export
 from gns3server.compute.iou.utils.iou_import import nvram_import

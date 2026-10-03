@@ -18,7 +18,6 @@
 Interface for VDE (Virtual Distributed Ethernet) NIOs (Unix based OSes only).
 """
 
-import asyncio
 import logging
 import uuid
 

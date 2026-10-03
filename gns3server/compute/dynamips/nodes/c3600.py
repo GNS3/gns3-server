@@ -19,7 +19,6 @@ Interface for Dynamips virtual Cisco 3600 instances module ("c3600")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L366
 """
 
-import asyncio
 import logging
 
 from ..adapters.leopard_2fe import Leopard_2FE

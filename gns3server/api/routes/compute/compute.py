@@ -19,26 +19,22 @@
 API routes for compute.
 """
 
-import os
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 import cpuinfo
 import psutil
-from fastapi import APIRouter, Body, HTTPException, Response, status
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, HTTPException, status
 
-from gns3server import schemas
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.vmware import VMware
-from gns3server.config import Config
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.utils.interfaces import interfaces
-from gns3server.utils.path import get_default_project_directory, is_safe_path
+from gns3server.utils.path import get_default_project_directory
 from gns3server.version import __version__
 
 router = APIRouter()

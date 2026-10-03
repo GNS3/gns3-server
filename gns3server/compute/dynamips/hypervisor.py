@@ -22,7 +22,6 @@ import asyncio
 import logging
 import os
 import subprocess
-import sys
 
 from gns3server.utils.asyncio import wait_for_process_termination
 

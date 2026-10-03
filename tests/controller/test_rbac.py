@@ -18,7 +18,6 @@
 import uuid
 
 import pytest
-import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from httpx_ws.transport import ASGIWebSocketTransport

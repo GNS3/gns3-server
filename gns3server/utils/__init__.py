@@ -20,9 +20,7 @@ import errno
 import hashlib
 import posixpath
 import re
-import shlex
 import socket
-import sys
 import textwrap
 
 

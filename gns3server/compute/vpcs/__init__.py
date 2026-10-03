@@ -18,7 +18,6 @@
 VPCS server module.
 """
 
-import asyncio
 import os
 
 from ..base_manager import BaseManager

@@ -18,7 +18,6 @@
 Interface for UNIX NIOs (Unix based OSes only).
 """
 
-import asyncio
 import logging
 import uuid
 

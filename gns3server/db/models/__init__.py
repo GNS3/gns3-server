@@ -38,3 +38,30 @@ from .templates import (
     VPCSTemplate,
 )
 from .users import User, UserGroup
+
+__all__ = [
+    "ACE",
+    "ApiKey",
+    "Base",
+    "CloudTemplate",
+    "Compute",
+    "DockerTemplate",
+    "DynamipsTemplate",
+    "EthernetHubTemplate",
+    "EthernetSwitchTemplate",
+    "IOUTemplate",
+    "Image",
+    "ImageSyncJob",
+    "LLMModelConfig",
+    "Privilege",
+    "QemuTemplate",
+    "Resource",
+    "ResourcePool",
+    "Role",
+    "Template",
+    "User",
+    "UserGroup",
+    "VMwareTemplate",
+    "VPCSTemplate",
+    "VirtualBoxTemplate",
+]

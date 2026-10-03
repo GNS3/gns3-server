@@ -27,7 +27,6 @@ from fastapi import HTTPException, status
 
 from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
 
-from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
 from .notification_manager import NotificationManager

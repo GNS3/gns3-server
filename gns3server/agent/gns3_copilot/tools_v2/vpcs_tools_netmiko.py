@@ -51,7 +51,7 @@ from gns3server.agent.gns3_copilot.gns3_client import get_gns3_server_host
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_vpcs_telnet and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko, get_device_ports_from_topology
+from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
 
 # Explicitly register VPCS device type to ensure it is available
 try:
@@ -585,7 +585,6 @@ class VPCSCommands(BaseTool):
 
 if __name__ == "__main__":
     # Example usage
-    import sys
 
     command_groups = json.dumps(
         {

@@ -426,7 +426,6 @@ IP/MASK     : 192.168.1.20/24"""
 
     def test_send_command_calls_strip_ansi(self):
         """Test that send_command calls _strip_ansi_codes."""
-        from unittest.mock import patch
 
         instance = self.VPCSTelnet.__new__(self.VPCSTelnet)
 

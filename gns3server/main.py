@@ -32,8 +32,6 @@ import os
 import resource
 import sys
 
-import gns3server.utils.get_resource
-
 
 def daemonize():
     """

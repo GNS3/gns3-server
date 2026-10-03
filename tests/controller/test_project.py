@@ -24,7 +24,6 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
-from gns3server.config import Config
 from gns3server.controller.controller_error import (
     ComputeConflictError,
     ControllerError,

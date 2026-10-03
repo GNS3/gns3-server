@@ -19,7 +19,6 @@ Interface for Dynamips virtual Frame-Relay switch module.
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L642
 """
 
-import asyncio
 import logging
 
 from ..dynamips_error import DynamipsError

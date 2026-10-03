@@ -73,7 +73,6 @@ import json
 import logging
 import os
 import sys
-from typing import Optional
 
 from gns3server.utils.uuid_validator import validate_uuid
 

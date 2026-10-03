@@ -40,7 +40,7 @@ from ..utils import md5sum, parse_version
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.images import default_images_directory
 from ..version import __version__
-from .appliance import Appliance
+from .appliance import Appliance as Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
 from .controller_error import ControllerError, ControllerNotFoundError

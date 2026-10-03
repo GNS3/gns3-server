@@ -18,7 +18,6 @@
 Interface for UDP NIOs.
 """
 
-import asyncio
 import logging
 import uuid
 
