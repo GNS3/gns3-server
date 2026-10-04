@@ -323,6 +323,32 @@ async def test_connect_nio_kernel_eexist_still_reapplies_everything(vm):
 
 
 @pytest.mark.asyncio
+async def test_connect_nio_kernel_passive_anchor_skips_impairments(vm):
+    """
+    A NIOBridge with no bridge of its own (bridge is None) is the absorbed
+    end of an Ethernet switch link: the anchor belongs to the switch, which
+    owns its tc state and applies the link's filters there (the controller
+    routes them to the switch end, so this NIO always carries {}). The
+    passive end must not reconcile impairments — an empty filter set is a
+    tc reset, which would silently wipe the switch's qdisc off the shared
+    anchor at every node start.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": None})
+
+    await vm._connect_nio(0, nio)
+
+    tc_calls = [c.args[0] for c in vm._ubridge_send.call_args_list if str(c.args[0]).startswith("tc ")]
+    assert tc_calls == [], tc_calls
+    # The membership is the switch's as well: no per-link bridge work here.
+    assert not any("brctl" in c.args[0] for c in vm._ubridge_send.call_args_list)
+
+
+@pytest.mark.asyncio
 async def test_connect_nio_kernel_create_failure_propagates(vm):
 
     async def send(command):
@@ -531,6 +557,33 @@ async def test_update_nio_kernel_turns_ebpf_modes_off(vm):
     vm._ubridge_send.assert_any_call(f'tc window_drop "{host_ifc}" off')
     for c in vm._ubridge_send.call_args_list:
         assert "nth_drop" not in c.args[0] or "off" in c.args[0]
+
+
+@pytest.mark.asyncio
+async def test_update_nio_kernel_passive_anchor_skips_impairments(vm):
+    """
+    The link-update reconcile on the absorbed (passive) end must leave the
+    anchor's tc state to the switch: no tc reset / netem / drop classifiers
+    from this end, or the reset would wipe what the switch applied moments
+    earlier in the same link update (switch-first links PUT this side last).
+    The carrier (suspend) is still driven here, and markers still reconcile
+    (this end may host some).
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": None})
+    vm._ethernet_adapters[0].add_nio(0, nio)
+
+    await vm.adapter_update_nio_binding(0, nio)
+
+    tc_calls = [c.args[0] for c in vm._ubridge_send.call_args_list if str(c.args[0]).startswith("tc ")]
+    assert tc_calls == [], tc_calls
+    # The carrier still follows the suspend flag on the shared anchor.
+    vm._ubridge_send.assert_any_call(f'link set "{host_ifc}" up')
 
 
 @pytest.mark.asyncio

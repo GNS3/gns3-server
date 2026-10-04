@@ -29,7 +29,9 @@ Real ICMP crossing the switch proves the datapath:
 * VLAN programming applies to absorbed anchors: different access VLANs
   isolate the routers (ping dies), the same VLAN bridges them again;
 * a ``delay 100`` filter lands as netem on the absorbed anchor (single
-  interface, switch-owned) and the measured RTT grows by ~100 ms;
+  interface, switch-owned) and the measured RTT grows by ~100 ms — on both
+  link endpoint orders (peer-first and switch-first; the order decides
+  which side's NIO update runs last and must not decide the outcome);
 * suspend admin-downs the anchor and kills the traffic; resume restores;
 * capture (hosted by the switch side) writes a pcap of ICMP records;
 * deleting a link detaches the anchor (which survives — the router owns
@@ -128,8 +130,12 @@ def test_ethernet_switch_kernel_fast_path():
         # The switch bridge exists from the moment the switch node does; a
         # link against a stopped router must not fail — the join defers.
         assert harness.bridge_members(sw_bridge) == []
+        # link1 is created peer-first, link2 switch-first: the endpoint order
+        # decides which side's NIO update runs last, and only the switch-first
+        # order used to expose the passive end's tc-reset wipe (its empty-filter
+        # reconcile ran after the switch's apply). Both orders must work.
         link1 = compute.create_link(pid, (r1_id, *ETH), (switch_id, 0, 0))
-        link2 = compute.create_link(pid, (r2_id, *ETH), (switch_id, 0, 1))
+        link2 = compute.create_link(pid, (switch_id, 0, 1), (r2_id, *ETH))
         assert link1["kernel_datapath"] is True, link1
         assert link2["kernel_datapath"] is True, link2
         assert harness.bridge_members(sw_bridge) == []
@@ -222,6 +228,22 @@ def test_ethernet_switch_kernel_fast_path():
         assert "netem" not in harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < 50, fast
+
+        # The same single-owned impairment on link2 — created switch-first,
+        # the order whose peer NIO update runs LAST. The passive end's empty
+        # reconcile used to tc-reset the shared anchor right after the switch
+        # applied the netem, wiping it (API green, data plane unimpaired);
+        # the qdisc and the RTT must both hold under this order too.
+        compute.call("PUT", f"/projects/{pid}/links/{link2['link_id']}", {"filters": {"delay": [100]}})
+        assert "netem" in harness.qdiscs(a2), harness.qdiscs(a2)
+        assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
+        delayed2 = harness.wait_ping(c1, "10.1.1.2")
+        assert delayed2["success"] == 100, delayed2["raw"]
+        assert 60 <= delayed2["avg"] <= 250, (baseline, delayed2)
+        compute.call("PUT", f"/projects/{pid}/links/{link2['link_id']}", {"filters": {}})
+        assert "netem" not in harness.qdiscs(a2)
+        fast2 = harness.wait_ping(c1, "10.1.1.2")
+        assert fast2["success"] == 100 and fast2["avg"] < 50, fast2
 
         # suspend: the anchor admin-downs, the link is dead; resume restores
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"suspend": True})

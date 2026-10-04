@@ -135,6 +135,21 @@ class KernelDatapathMixin:
     # Link attach / detach
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _owns_anchor_impairments(nio):
+        """
+        Whether this end owns the tc state (netem, cls_bpf, eBPF) of the
+        anchor it was handed. A NIOBridge with no bridge of its own
+        (``bridge is None``) means the anchor is absorbed by an Ethernet
+        switch: the switch owns the anchor's bridge membership and its
+        impairment state — the controller routes the link's filters to the
+        switch end, so this NIO always carries an empty filter set, whose
+        reconcile is a plain ``tc reset``. Applying it here would silently
+        wipe the netem/bpf/eBPF the switch just put on the shared anchor.
+        """
+
+        return not (isinstance(nio, NIOBridge) and nio.bridge is None)
+
     async def _kernel_attach(self, anchor, nio):
         """
         Attach an anchor to the per-link kernel bridge carried by *nio*
@@ -150,9 +165,11 @@ class KernelDatapathMixin:
         A NIO whose ``bridge`` is None means the anchor is bridged
         elsewhere — an Ethernet switch absorbed it into the switch's own
         bridge — so the membership work is skipped here and only the link
-        state the anchor carries (capture, markers, impairment filters) is
-        applied. Exactly one end of such a link owns the anchor's bridge
-        state; the other end is a passive carrier.
+        state this end owns is applied: capture and markers always, the
+        impairment filters only when this end owns the anchor's tc state
+        (see _owns_anchor_impairments). Exactly one end of such a link
+        owns the anchor's bridge and impairment state; the other end is a
+        passive carrier.
         """
 
         if nio.bridge is not None:
@@ -174,10 +191,13 @@ class KernelDatapathMixin:
         # (restored here on node restart, like the capture above); bpf
         # expressions become cls_bpf match-drop classifiers and
         # frequency_drop/quota/window_drop become the eBPF stateful
-        # classifier.
-        await self._ubridge_apply_netem(anchor, nio.filters)
-        await self._ubridge_apply_bpf_drops(anchor, nio.filters)
-        await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
+        # classifier. A passive end owns none of this: its empty filter
+        # set is a tc reset, which would wipe the switch's qdisc off the
+        # shared anchor.
+        if self._owns_anchor_impairments(nio):
+            await self._ubridge_apply_netem(anchor, nio.filters)
+            await self._ubridge_apply_bpf_drops(anchor, nio.filters)
+            await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
 
     async def _relay_attach(self, anchor, bridge_name, nio):
         """
@@ -226,16 +246,19 @@ class KernelDatapathMixin:
         """
         Re-apply everything a kernel link carries on an already-attached
         anchor (filters and markers changed): no re-enslaving, no bridge
-        create.
+        create. A passive end (bridge is None — an anchor absorbed by an
+        Ethernet switch) leaves the anchor's impairment state to the
+        switch that owns it.
         """
 
         await self._ubridge_apply_markers(anchor, nio)
         # The netem apply resets the interface first (the kernel merges
         # optional netem attrs on replace), so everything anchored on clsact
         # must re-apply after it: bpf drops flush + re-add, eBPF modes re-set.
-        await self._ubridge_apply_netem(anchor, nio.filters)
-        await self._ubridge_apply_bpf_drops(anchor, nio.filters)
-        await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
+        if self._owns_anchor_impairments(nio):
+            await self._ubridge_apply_netem(anchor, nio.filters)
+            await self._ubridge_apply_bpf_drops(anchor, nio.filters)
+            await self._ubridge_apply_ebpf_drops(anchor, nio.filters)
 
     async def _remove_kernel_nio(self, nio, adapter_number, port_number=0):
         """
