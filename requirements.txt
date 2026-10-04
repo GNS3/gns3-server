@@ -26,7 +26,7 @@ truststore>=0.10.4; python_version >= '3.10'
 
 # Shared dependencies (also used by AI Copilot)
 telnetlib3==5.0.1,<6
-asyncssh>=2.24.0,<3
+asyncssh>=2.24.1,<3
 typing-extensions>=4.16.0
 requests>=2.34.2
 urllib3>=2.8.0
