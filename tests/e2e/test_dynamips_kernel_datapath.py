@@ -111,6 +111,11 @@ def test_dynamips_kernel_datapath():
         c1 = _boot(server, pid, r1_id)
         c2 = _boot(server, pid, r2_id)
 
+        # NetworkManager can release an NM-managed TAP from its bridge after
+        # (re-)enslavement (docs/bugs/networkmanager-tap-release.md); take the
+        # anchors out of its reach for the rest of the run.
+        harness.unmanage_from_networkmanager(t1, t2)
+
         # Kernel objects: anchors exist and the per-link bridge has exactly
         # the two of them enslaved.
         assert harness.tap_exists(t1) and harness.tap_exists(t2), (t1, t2)

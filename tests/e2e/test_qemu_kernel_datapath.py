@@ -127,6 +127,12 @@ def test_qemu_kernel_datapath():
         c1 = _boot(server, pid, n1_id)
         c2 = _boot(server, pid, n2_id)
 
+        # NetworkManager can release an NM-managed TAP from its bridge after
+        # (re-)enslavement (docs/bugs/networkmanager-tap-release.md); take the
+        # anchors out of its reach for the rest of the run (the restart below
+        # re-attaches them under fresh devices).
+        harness.unmanage_from_networkmanager(a1, a2, harness.qemu_anchor_name(n1_id, 1))
+
         # Kernel objects: one persistent TAP per adapter (both adapters of
         # router 1, the addressed one of router 2), and the per-link bridge
         # has exactly the two addressed ports.

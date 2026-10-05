@@ -188,6 +188,11 @@ def test_ethernet_switch_cascade_kernel_datapath():
         c1 = _boot(server, pid, r1_id)
         c2 = _boot(server, pid, r2_id)
 
+        # NetworkManager can release an NM-managed TAP from its bridge after
+        # (re-)enslavement (docs/bugs/networkmanager-tap-release.md); take the
+        # anchors out of its reach for the rest of the run.
+        harness.unmanage_from_networkmanager(a1_10, a1_20, a2_10, a2_20)
+
         # The deferred host joins completed via the node-start re-push: each
         # switch bridges its two router anchors plus its cascade end.
         assert harness.wait_until(lambda: harness.bridge_members(br1) == sorted([a1_10, a1_20, e0]), timeout=15), (

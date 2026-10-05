@@ -135,6 +135,11 @@ def test_iou_kernel_datapath():
         c1 = _boot(server, pid, n1_id)
         c2 = _boot(server, pid, n2_id)
 
+        # NetworkManager can release an NM-managed TAP from its bridge after
+        # (re-)enslavement (docs/bugs/networkmanager-tap-release.md); take the
+        # anchors out of its reach for the rest of the run.
+        harness.unmanage_from_networkmanager(a1, a2)
+
         # Kernel objects: the anchors are one persistent TAP per Ethernet
         # bay/unit, born with the node (all eight — the IOU port model),
         # and the per-link bridge has exactly the two addressed ports.
