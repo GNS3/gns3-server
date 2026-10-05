@@ -1815,11 +1815,9 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                 # rejected earlier): the kernel path needs an anchor — the
                 # veth host end, or the persistent TAP of an IOL runner.
                 raise DockerError(
-                    "Adapter {adapter_number} port {port_number} of container '{name}' has no host-side "
+                    f"Adapter {adapter_number} port {port_number} of container '{self.name}' has no host-side "
                     "anchor interface (it was started before the unified-veth datapath); "
-                    "restart the node to attach a kernel link to it".format(
-                        adapter_number=adapter_number, port_number=port_number, name=self.name
-                    )
+                    "restart the node to attach a kernel link to it"
                 )
             # The mechanics (bridge create/addif, capture, markers, filters)
             # live in KernelDatapathMixin, shared with every other node type
@@ -1845,11 +1843,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             # NIO sets it back down).
             await self._ubridge_send(f'link set "{host_ifc}" up')
             await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{host_ifc}"')
-        await self._ubridge_send(
-            "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
-                bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
-            )
-        )
+        await self._ubridge_send(f"bridge add_nio_udp {bridge_name} {nio.lport} {nio.rhost} {nio.rport}")
         if nio.capturing:
             await self._ubridge_send(f'bridge start_capture {bridge_name} "{nio.pcap_output_file}"')
         await self._ubridge_send(f"bridge start {bridge_name}")
@@ -1934,11 +1928,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                 if self.status == "started":
                     await self._set_adapter_carrier(adapter_number, False, port_number)
                 await self._ubridge_send(f"bridge stop {bridge_name}")
-                await self._ubridge_send(
-                    "bridge remove_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
-                        bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
-                    )
-                )
+                await self._ubridge_send(f"bridge remove_nio_udp {bridge_name} {nio.lport} {nio.rhost} {nio.rport}")
 
         adapter.remove_nio(port_number)
 

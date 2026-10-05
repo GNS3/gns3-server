@@ -101,11 +101,7 @@ class DockerKernelDatapathMixin(KernelDatapathMixin):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise DockerError(f"Adapter {adapter_number} doesn't exist on Docker container '{self.name}'")
 
         host_ifc, guest_ifc = self._veth_names(adapter_number, port_number)
         # The host end lives in the root namespace and survives container
@@ -144,12 +140,7 @@ class DockerKernelDatapathMixin(KernelDatapathMixin):
         adapter.host_ifc = host_ifc
         self._kernel_veths[(adapter_number, port_number)] = host_ifc
         log.debug(
-            "Created veth adapter {adapter_number} port {port_number} with MAC address {mac_address} in namespace {namespace}".format(
-                adapter_number=adapter_number,
-                port_number=port_number,
-                mac_address=mac_address,
-                namespace=self._namespace,
-            )
+            f"Created veth adapter {adapter_number} port {port_number} with MAC address {mac_address} in namespace {self._namespace}"
         )
 
     async def _remove_kernel_veths(self):

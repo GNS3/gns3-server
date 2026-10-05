@@ -1635,10 +1635,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if not self._tap_datapath:
             if isinstance(nio, NIOBridge):
                 raise QemuError(
-                    "Adapter {adapter_number} of QEMU VM '{name}' runs on the legacy relay datapath "
-                    "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link".format(
-                        adapter_number=adapter_number, name=self._name
-                    )
+                    f"Adapter {adapter_number} of QEMU VM '{self._name}' runs on the legacy relay datapath "
+                    "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link"
                 )
             await self.add_ubridge_udp_connection(bridge_name, self._local_udp_tunnels[adapter_number][1], nio)
             return
@@ -1646,10 +1644,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         anchor = self._kernel_host_ifc(adapter_number, port_number)
         if anchor is None:
             raise QemuError(
-                "Adapter {adapter_number} port {port_number} of QEMU VM '{name}' has no TAP interface; "
-                "restart the node to attach a link to it".format(
-                    adapter_number=adapter_number, port_number=port_number, name=self._name
-                )
+                f"Adapter {adapter_number} port {port_number} of QEMU VM '{self._name}' has no TAP interface; "
+                "restart the node to attach a link to it"
             )
         if isinstance(nio, NIOBridge):
             await self._kernel_attach(anchor, nio)
@@ -1673,11 +1669,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             try:
                 await self._connect_nio(adapter_number, nio)
             except (IndexError, KeyError):
-                raise QemuError(
-                    'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
-                        name=self._name, adapter_number=adapter_number
-                    )
-                )
+                raise QemuError(f'Adapter {adapter_number} does not exist on QEMU VM "{self._name}"')
             await self._set_adapter_carrier(adapter_number, not nio.suspend)
             if self._replicate_network_connection_state:
                 await self._control_vm(f"set_link gns3-{adapter_number} on")

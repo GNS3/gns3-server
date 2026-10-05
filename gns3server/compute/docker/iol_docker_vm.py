@@ -573,10 +573,10 @@ class IOLDockerVM(VendorDockerVM):
         anchor = self._kernel_host_ifc(adapter_number, port_number)
         if anchor is None:
             raise DockerError(
-                "Bay {bay}/{unit} of IOL container '{name}' has no TAP anchor to carry a kernel "
+                f"Bay {adapter_number}/{port_number} of IOL container '{self._name}' has no TAP anchor to carry a kernel "
                 "link (this compute's uBridge lacks the tap module or bridge delete_nio_tap, "
                 "or the node was started before the kernel-datapath support); restart the "
-                "node after upgrading uBridge".format(bay=adapter_number, unit=port_number, name=self._name)
+                "node after upgrading uBridge"
             )
         await self._ensure_unix_port_bridge(adapter_number, port_number)
         await self._ensure_anchor(adapter_number, port_number)

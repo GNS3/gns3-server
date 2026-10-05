@@ -950,18 +950,12 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         anchor = self._kernel_host_ifc(adapter_number, port_number)
         if anchor is None:
             raise self._kernel_error(
-                "Bay {bay}/{unit} of IOU '{name}' has no TAP anchor to carry a kernel link "
+                f"Bay {adapter_number}/{port_number} of IOU '{self._name}' has no TAP anchor to carry a kernel link "
                 "(serial ports stay on the relay datapath, and a node whose uBridge lacks "
-                "iol_bridge add_nio_tap runs relay-only)".format(bay=adapter_number, unit=port_number, name=self._name)
+                "iol_bridge add_nio_tap runs relay-only)"
             )
         await self._ubridge_send(
-            'iol_bridge add_nio_tap {name} {iol_id} {bay} {unit} "{tap}"'.format(
-                name=self._iol_bridge_name(),
-                iol_id=self.application_id,
-                bay=adapter_number,
-                unit=port_number,
-                tap=anchor,
-            )
+            f'iol_bridge add_nio_tap {self._iol_bridge_name()} {self.application_id} {adapter_number} {port_number} "{anchor}"'
         )
         await self._kernel_attach(anchor, nio)
         await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
@@ -1348,11 +1342,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         # a port carries at most one NIO, and overwriting the one a link
         # still owns orphans that link's teardown (its host state leaks).
         if adapter.get_nio(port_number) is not None:
-            raise IOUError(
-                "Port {port_number} on adapter {adapter_number} of IOU '{name}' already has a link".format(
-                    name=self._name, adapter_number=adapter_number, port_number=port_number
-                )
-            )
+            raise IOUError(f"Port {port_number} on adapter {adapter_number} of IOU '{self._name}' already has a link")
 
         # Wire before bookkeeping: an attach that fails mid-way leaves the
         # port unbound instead of half-wired.
@@ -1361,15 +1351,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 await self._attach_kernel_nio(adapter_number, port_number, nio)
             else:
                 await self._ubridge_send(
-                    "iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(
-                        name=self._iol_bridge_name(),
-                        iol_id=self.application_id,
-                        bay=adapter_number,
-                        unit=port_number,
-                        lport=nio.lport,
-                        rhost=nio.rhost,
-                        rport=nio.rport,
-                    )
+                    f"iol_bridge add_nio_udp {self._iol_bridge_name()} {self.application_id} {adapter_number} {port_number} {nio.lport} {nio.rhost} {nio.rport}"
                 )
                 location = self._iol_location(adapter_number, port_number)
                 await self._ubridge_apply_filters(location, nio.filters)
@@ -1442,7 +1424,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
             return
         self._validate_marker_name(name)
         # iol_bridge add_packet_filter {br} {bay} {unit} {name} mark "{bpf}" [tag {id}] pcap "{path}"
-        cmd = 'iol_bridge add_packet_filter {loc} {name} mark "{bpf}"'.format(loc=location, name=name, bpf=bpf)
+        cmd = f'iol_bridge add_packet_filter {location} {name} mark "{bpf}"'
         if tag is not None:
             cmd += f" tag {tag}"
         if link_id:
@@ -1452,7 +1434,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         linktype = self._marker_linktype(data_link_type)
         if linktype is not None:
             cmd += f" linktype {linktype}"
-        cmd += ' pcap "{path}"'.format(path=pcap_path)
+        cmd += f' pcap "{pcap_path}"'
         await self._ubridge_send(cmd)
 
     async def _ubridge_enable_marker_filter(self, location, name, state):
@@ -1518,15 +1500,11 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 # persistent device itself survives for the next link.
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(
-                        "iol_bridge delete_nio_tap {name} {bay} {unit}".format(
-                            name=self._iol_bridge_name(), bay=adapter_number, unit=port_number
-                        )
+                        f"iol_bridge delete_nio_tap {self._iol_bridge_name()} {adapter_number} {port_number}"
                     )
             else:
                 await self._ubridge_send(
-                    "iol_bridge delete_nio_udp {name} {bay} {unit}".format(
-                        name=self._iol_bridge_name(), bay=adapter_number, unit=port_number
-                    )
+                    f"iol_bridge delete_nio_udp {self._iol_bridge_name()} {adapter_number} {port_number}"
                 )
 
         return nio
@@ -1852,9 +1830,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 anchor = self._kernel_host_ifc(adapter_number, port_number)
                 if anchor is None:
                     raise self._kernel_error(
-                        "Bay {bay}/{unit} of IOU '{name}' has no TAP anchor to capture on".format(
-                            bay=adapter_number, unit=port_number, name=self._name
-                        )
+                        f"Bay {adapter_number}/{port_number} of IOU '{self._name}' has no TAP anchor to capture on"
                     )
                 await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
             else:
@@ -1886,7 +1862,5 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 await self._ubridge_send("capture stop_kernel")
             else:
                 await self._ubridge_send(
-                    "iol_bridge stop_capture {name} {bay} {unit}".format(
-                        name=self._iol_bridge_name(), bay=adapter_number, unit=port_number
-                    )
+                    f"iol_bridge stop_capture {self._iol_bridge_name()} {adapter_number} {port_number}"
                 )

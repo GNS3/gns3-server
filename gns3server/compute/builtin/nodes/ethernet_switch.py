@@ -488,19 +488,15 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
                 await self._ubridge_send(f'link l2only "{anchor}" on')
             except UbridgeError as e:
                 log.warning(
-                    'Ethernet switch "{name}" [{id}]: could not harden cascade end "{anchor}" L2-only: {error}'.format(
-                        name=self._name, id=self._id, anchor=anchor, error=e
-                    )
+                    f'Ethernet switch "{self._name}" [{self._id}]: could not harden cascade end "{anchor}" L2-only: {e}'
                 )
         # Register before _kernel_attach: the marker reconcile recognises
         # kernel anchors through _kernel_anchors().
         self._kernel_ports[port_number] = anchor
         if not os.path.exists(f"/sys/class/net/{anchor}"):
             log.info(
-                'Ethernet switch "{name}" [{id}]: anchor {anchor} for port {port} does not exist yet '
-                "(peer not started); join deferred".format(
-                    name=self._name, id=self._id, anchor=anchor, port=port_number
-                )
+                f'Ethernet switch "{self._name}" [{self._id}]: anchor {anchor} for port {port_number} does not exist yet '
+                "(peer not started); join deferred"
             )
             return
         try:
@@ -737,8 +733,8 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
                 # a wired port always has previous settings; without them a
                 # diff is impossible and re-enslaving would be guessing
                 log.warning(
-                    'Ethernet switch "{name}" [{id}]: no previous settings for wired port {port}; '
-                    "VLAN reconfiguration skipped".format(name=self._name, id=self._id, port=port_number)
+                    f'Ethernet switch "{self._name}" [{self._id}]: no previous settings for wired port {port_number}; '
+                    "VLAN reconfiguration skipped"
                 )
                 continue
             await self._reconfigure_port_vlan(iface, old_settings, new_settings)
@@ -769,11 +765,7 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             else:
                 ubridge_bridge = self._ubridge_bridge_name(port_number)
                 await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{output_file}"')
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(
-                name=self.name, id=self.id, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: starting packet capture on port {port_number}')
 
     async def stop_capture(self, port_number):
         """
@@ -792,8 +784,4 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             else:
                 ubridge_bridge = self._ubridge_bridge_name(port_number)
                 await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")
-        log.debug(
-            'Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
-                name=self.name, id=self.id, port=port_number
-            )
-        )
+        log.debug(f'Ethernet switch "{self.name}" [{self.id}]: stopping packet capture on port {port_number}')

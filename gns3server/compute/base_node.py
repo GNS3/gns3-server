@@ -1226,7 +1226,7 @@ class BaseNode:
 
         # mark <bpf> [tag <id>] [pcap <path>] — tag/pcap keyword pairs, any order.
         self._validate_marker_name(name)
-        cmd = 'bridge add_packet_filter {bridge} {name} mark "{bpf}"'.format(bridge=bridge_name, name=name, bpf=bpf)
+        cmd = f'bridge add_packet_filter {bridge_name} {name} mark "{bpf}"'
         if tag is not None:
             cmd += f" tag {tag}"
         # Per-link attribution (contract §3.2): when one ubridge bridge serves

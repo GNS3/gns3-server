@@ -340,11 +340,7 @@ class Router(KernelDatapathMixin, BaseNode):
             # the node was stopped wire themselves as IOS comes up.
             await self._prepare_tap_datapath()
 
-            await self._hypervisor.send(
-                'vm set_config "{name}" "{startup}" "{private}"'.format(
-                    name=self._name, startup=startup_config_path, private=private_config_path
-                )
-            )
+            await self._hypervisor.send(f'vm set_config "{self._name}" "{startup_config_path}" "{private_config_path}"')
             await self._hypervisor.send(f'vm start "{self._name}"')
             self.status = "started"
             log.debug(f'router "{self._name}" [{self._id}] has been started')
@@ -1318,11 +1314,7 @@ class Router(KernelDatapathMixin, BaseNode):
         # Refusing also keeps the kernel wiring's own idempotence check from
         # silently skipping the attach while rebinding the bookkeeping.
         if adapter.get_nio(port_number) is not None:
-            raise DynamipsError(
-                "Port {port_number} on slot {slot_number} of router '{name}' already has a link".format(
-                    name=self._name, slot_number=slot_number, port_number=port_number
-                )
-            )
+            raise DynamipsError(f"Port {port_number} on slot {slot_number} of router '{self._name}' already has a link")
 
         if isinstance(nio, NIOBridge):
             # Kernel datapath: the port's anchor TAP is opened in the
@@ -1332,11 +1324,7 @@ class Router(KernelDatapathMixin, BaseNode):
             # the port unbound instead of half-wired.
             await self._attach_kernel_nio(slot_number, port_number, nio)
             adapter.add_nio(port_number, nio)
-            log.debug(
-                'Router "{name}" [{id}]: {nio} bound to port {slot_number}/{port_number}'.format(
-                    name=self._name, id=self._id, nio=nio, slot_number=slot_number, port_number=port_number
-                )
-            )
+            log.debug(f'Router "{self._name}" [{self._id}]: {nio} bound to port {slot_number}/{port_number}')
             return
 
         try:
@@ -1401,19 +1389,11 @@ class Router(KernelDatapathMixin, BaseNode):
         if isinstance(nio, NIOBridge):
             await self._remove_kernel_nio_binding(slot_number, port_number, nio)
             adapter.remove_nio(port_number)
-            log.debug(
-                'Router "{name}" [{id}]: {nio} removed from port {slot_number}/{port_number}'.format(
-                    name=self._name, id=self._id, nio=nio, slot_number=slot_number, port_number=port_number
-                )
-            )
+            log.debug(f'Router "{self._name}" [{self._id}]: {nio} removed from port {slot_number}/{port_number}')
             return nio
 
         await self.slot_disable_nio(slot_number, port_number)
-        await self._hypervisor.send(
-            'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
-                name=self._name, slot_number=slot_number, port_number=port_number
-            )
-        )
+        await self._hypervisor.send(f'vm slot_remove_nio_binding "{self._name}" {slot_number} {port_number}')
         await nio.close()
         adapter.remove_nio(port_number)
 
@@ -1512,9 +1492,7 @@ class Router(KernelDatapathMixin, BaseNode):
                 if anchor is not None:
                     await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
             log.debug(
-                'Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(
-                    name=self._name, id=self._id, slot_number=slot_number, port_number=port_number
-                )
+                f'Router "{self._name}" [{self._id}]: starting packet capture on port {slot_number}/{port_number}'
             )
             return
 
@@ -1726,19 +1704,15 @@ class Router(KernelDatapathMixin, BaseNode):
             if self.status != "started":
                 return
             raise self._kernel_error(
-                "Port {slot}/{port} of router '{name}' runs on the relay datapath "
-                "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link".format(
-                    slot=slot_number, port=port_number, name=self._name
-                )
+                f"Port {slot_number}/{port_number} of router '{self._name}' runs on the relay datapath "
+                "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link"
             )
 
         tap_nio = NIOTAP(self._hypervisor, anchor)
         await tap_nio.create()
         try:
             await self._hypervisor.send(
-                'vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(
-                    name=self._name, slot_number=slot_number, port_number=port_number, nio=tap_nio.name
-                )
+                f'vm slot_add_nio_binding "{self._name}" {slot_number} {port_number} {tap_nio.name}'
             )
         except DynamipsError:
             with contextlib.suppress(DynamipsError):
@@ -1764,11 +1738,7 @@ class Router(KernelDatapathMixin, BaseNode):
             with contextlib.suppress(DynamipsError, OSError):
                 await self.slot_disable_nio(slot_number, port_number)
             with contextlib.suppress(DynamipsError, OSError):
-                await self._hypervisor.send(
-                    'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
-                        name=self._name, slot_number=slot_number, port_number=port_number
-                    )
-                )
+                await self._hypervisor.send(f'vm slot_remove_nio_binding "{self._name}" {slot_number} {port_number}')
             with contextlib.suppress(DynamipsError, OSError):
                 await tap_nio.delete()
 
@@ -1788,9 +1758,7 @@ class Router(KernelDatapathMixin, BaseNode):
             for (slot_number, port_number), tap_nio in list(self._tap_nios.items()):
                 with contextlib.suppress(DynamipsError, OSError):
                     await self._hypervisor.send(
-                        'vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(
-                            name=self._name, slot_number=slot_number, port_number=port_number
-                        )
+                        f'vm slot_remove_nio_binding "{self._name}" {slot_number} {port_number}'
                     )
                 with contextlib.suppress(DynamipsError, OSError):
                     await tap_nio.delete()

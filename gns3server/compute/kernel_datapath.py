@@ -214,17 +214,9 @@ class KernelDatapathMixin:
         # afterwards (a suspended NIO sets it back down).
         await self._ubridge_send(f'link set "{anchor}" up')
         await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{anchor}"')
-        await self._ubridge_send(
-            "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
-                bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
-            )
-        )
+        await self._ubridge_send(f"bridge add_nio_udp {bridge_name} {nio.lport} {nio.rhost} {nio.rport}")
         if nio.capturing:
-            await self._ubridge_send(
-                'bridge start_capture {bridge_name} "{pcap_file}"'.format(
-                    bridge_name=bridge_name, pcap_file=nio.pcap_output_file
-                )
-            )
+            await self._ubridge_send(f'bridge start_capture {bridge_name} "{nio.pcap_output_file}"')
         await self._ubridge_send(f"bridge start {bridge_name}")
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         await self._ubridge_apply_markers(bridge_name, nio)
@@ -328,7 +320,7 @@ class KernelDatapathMixin:
 
         if self._kernel_marker_anchor(bridge_name):
             self._validate_marker_name(name)
-            cmd = 'marker add_kernel {name} {ifc} "{bpf}"'.format(name=name, ifc=bridge_name, bpf=bpf)
+            cmd = f'marker add_kernel {name} {bridge_name} "{bpf}"'
             if tag is not None:
                 cmd += f" tag {tag}"
             if link_id:
@@ -338,7 +330,7 @@ class KernelDatapathMixin:
             linktype = self._marker_linktype(data_link_type)
             if linktype is not None:
                 cmd += f" linktype {linktype}"
-            cmd += ' pcap "{path}"'.format(path=pcap_path)
+            cmd += f' pcap "{pcap_path}"'
             await self._ubridge_send(cmd)
             return
         await super()._ubridge_add_marker_filter(
@@ -614,9 +606,7 @@ class KernelDatapathMixin:
         await self._ubridge_send(f'tc bpf_drop flush "{host_ifc}"')
         for offset, line in enumerate(lines):
             try:
-                await self._ubridge_send(
-                    'tc bpf_drop add "{ifc}" {prio} "{expr}"'.format(ifc=host_ifc, prio=10 + offset, expr=line)
-                )
+                await self._ubridge_send(f'tc bpf_drop add "{host_ifc}" {10 + offset} "{line}"')
             except UbridgeError as e:
                 if "Cannot compile filter" not in str(e):
                     raise
@@ -710,9 +700,7 @@ class KernelDatapathMixin:
         elif "nth" in modes:
             await self._ubridge_send(f'tc nth_drop "{host_ifc}" off')
         if quota:
-            await self._ubridge_send(
-                'tc quota_drop "{ifc}" {bytes} {pct}'.format(ifc=host_ifc, bytes=int(quota[0]), pct=int(quota[1]))
-            )
+            await self._ubridge_send(f'tc quota_drop "{host_ifc}" {int(quota[0])} {int(quota[1])}')
         elif "quota" in modes:
             await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
         if window:
