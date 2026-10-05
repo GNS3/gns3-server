@@ -141,7 +141,7 @@ How the numbers are produced:
 - 40 iterations; each is one **re-enslavement**: `link set <tap> up`, `brctl addif`, then membership sampled at ~1 kHz for 200 ms, then `brctl delif` + `link set down`.
 - A **release** is counted when `/sys/class/net/<bridge>/brif/<tap>` disappears inside that 200 ms window; the script prints the release latency after the join (the NM release lands at 58-87 ms).
 - The tap is kept between runs, so the A/B flip is single-variable on the *same* device; a fresh device would reset NM's assumption state (the first enslavement of a fresh tap is always stable).
-- The numbers below were measured on a host **without** the declaration from *Fix*. On a host that already carries it the tap is unmanaged from birth and the loop prints `0/40` by design; to re-observe the baseline there, temporarily remove the conf.d file (`sudo rm /etc/NetworkManager/conf.d/99-gns3-datapath.conf && sudo systemctl reload NetworkManager`) or run on an un-declared host.
+- The numbers below were measured on a host **without** the declaration from *Fix*. On a host that already carries it the tap is unmanaged from birth and the loop prints `0/40` by design; to re-observe the baseline there, temporarily remove the conf.d file (`sudo rm /etc/NetworkManager/conf.d/99-gns3-datapath.conf && sudo systemctl reload NetworkManager`) or run on an un-declared host. A runtime `nmcli device set <tap> managed yes` is *not* enough — the configuration match wins (the device stays `unmanaged` and the loop still prints 0/40; measured).
 
 Measured on an affected host (same code, five baseline runs, then the A/B between runs):
 
