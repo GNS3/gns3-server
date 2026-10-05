@@ -269,7 +269,7 @@ def test_ethernet_switch_cascade_kernel_datapath():
         compute.call("PUT", f"/projects/{pid}/links/{cascade['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(e0) and "netem" not in harness.qdiscs(e1)
         fast = harness.wait_ping(c1, IP10 % 2)
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # suspend: both ends admin-down, both VLANs die; resume restores.
         compute.call("PUT", f"/projects/{pid}/links/{cascade['link_id']}", {"suspend": True})

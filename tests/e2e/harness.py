@@ -727,6 +727,15 @@ def configure_ios(console, hostname, eth_ip=None, serial_ip=None, clock=False, e
     console.run("end")
 
 
+# "No impairment applied" RTT bound for the fast-path asserts of the
+# kernel-datapath scenarios: an unimpaired link measures ~20-45 ms on the
+# IOS-based nodes (4 ms-quantized RTT; host scheduling jitter has pushed
+# three-packet averages to 56 measured), while the delayed regime those
+# asserts contrast against is >= 150 ms. 100 separates the two with
+# headroom for a blip.
+FAST_RTT_MS = 100
+
+
 def ping(console, target, repeat=3, timeout=1):
     """Run an IOS ping; returns {success, avg, raw} (success in percent)."""
     out = console.run(f"ping {target} repeat {repeat} timeout {timeout}", timeout=repeat * timeout + 20)

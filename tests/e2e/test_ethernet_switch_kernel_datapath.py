@@ -236,7 +236,7 @@ def test_ethernet_switch_kernel_fast_path():
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # The same single-owned impairment on link2 — created switch-first,
         # the order whose peer NIO update runs LAST. The passive end's empty
@@ -252,7 +252,7 @@ def test_ethernet_switch_kernel_fast_path():
         compute.call("PUT", f"/projects/{pid}/links/{link2['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a2)
         fast2 = harness.wait_ping(c1, "10.1.1.2")
-        assert fast2["success"] == 100 and fast2["avg"] < 50, fast2
+        assert fast2["success"] == 100 and fast2["avg"] < harness.FAST_RTT_MS, fast2
 
         # suspend: the anchor admin-downs, the link is dead; resume restores
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"suspend": True})

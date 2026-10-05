@@ -196,7 +196,7 @@ def test_iou_kernel_datapath():
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # Classifier spot check on a TAP anchor (the Docker suite runs the
         # full matrix on veth host ends): cls_bpf match-drop and the eBPF
@@ -300,7 +300,7 @@ def test_iou_kernel_datapath():
         assert survivor["avg"] >= 150, (baseline, survivor)
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         cleared = harness.ping(c1, "10.1.1.2", repeat=3)
-        assert cleared["success"] == 100 and cleared["avg"] < 50, (baseline, cleared)
+        assert cleared["success"] == 100 and cleared["avg"] < harness.FAST_RTT_MS, (baseline, cleared)
 
         c1.close()
         c2.close()
@@ -380,7 +380,7 @@ def test_iou_relay_control():
         assert delayed["avg"] >= 150, (relay_ping, delayed)
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         fast = harness.ping(c1, "10.1.1.2", repeat=3)
-        assert fast["success"] == 100 and fast["avg"] < 50, (relay_ping, fast)
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, (relay_ping, fast)
 
         # frequency_drop shares one counter between the port's two
         # directions: on an alternating ping stream one whole direction dies

@@ -167,7 +167,7 @@ def test_dynamips_kernel_datapath():
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(t1), harness.qdiscs(t1)
         fast = harness.wait_ping(c1, "10.1.1.2")
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # suspend: anchor admin-down, traffic dead; resume restores it
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": True})

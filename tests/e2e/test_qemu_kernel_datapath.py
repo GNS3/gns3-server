@@ -187,7 +187,7 @@ def test_qemu_kernel_datapath():
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # suspend: anchor admin-down — the e1000 loses carrier, the bridge
         # port is disabled and nothing crosses; resume restores

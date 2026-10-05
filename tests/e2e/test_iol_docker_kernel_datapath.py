@@ -179,7 +179,7 @@ def test_iol_docker_kernel_datapath():
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
-        assert fast["success"] == 100 and fast["avg"] < 50, fast
+        assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
 
         # Classifier spot check on the container's TAP anchor (the Docker
         # suite runs the full matrix on veth host ends): cls_bpf match-drop
