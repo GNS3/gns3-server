@@ -44,8 +44,8 @@ class Nat(Cloud):
                 nat_interface = "virbr0"
             if allowed_interfaces and nat_interface not in allowed_interfaces:
                 raise NodeError(
-                    "NAT interface {} is not allowed be used on this server. "
-                    "Please check the server configuration file.".format(nat_interface)
+                    f"NAT interface {nat_interface} is not allowed be used on this server. "
+                    "Please check the server configuration file."
                 )
             if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
                 raise NodeError(f"NAT interface {nat_interface} is missing, please install libvirt")
@@ -56,8 +56,8 @@ class Nat(Cloud):
                 nat_interface = "vmnet8"
             if allowed_interfaces and nat_interface not in allowed_interfaces:
                 raise NodeError(
-                    "NAT interface {} is not allowed be used on this server. "
-                    "Please check the server configuration file.".format(nat_interface)
+                    f"NAT interface {nat_interface} is not allowed be used on this server. "
+                    "Please check the server configuration file."
                 )
             interfaces = list(
                 filter(

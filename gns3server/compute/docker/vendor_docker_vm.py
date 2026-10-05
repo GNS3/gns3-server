@@ -418,11 +418,7 @@ class VendorDockerVM(DockerVM):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise DockerError(f"Adapter {adapter_number} doesn't exist on Docker container '{self.name}'")
 
         interface_number = adapter_number * adapter.interfaces + port_number
         bridge_name = self._bridge_name(adapter_number, port_number)

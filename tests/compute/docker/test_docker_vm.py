@@ -103,7 +103,7 @@ async def test_create(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -145,7 +145,7 @@ async def test_create_with_tag(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -192,7 +192,7 @@ async def test_create_vnc(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -423,7 +423,7 @@ async def test_create_start_cmd(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -520,7 +520,7 @@ async def test_create_image_digest_match(compute_project, manager):
         )
         await vm.create()
         # the last query is the container creation: the digest check let it through
-        assert mock.call_args[0] == ("POST", "containers/create?name={}".format(vm.docker_name))
+        assert mock.call_args[0] == ("POST", f"containers/create?name={vm.docker_name}")
         assert vm._cid == "sha256:" + "a" * 64
 
 
@@ -554,7 +554,7 @@ async def test_create_with_user(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -647,7 +647,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -699,7 +699,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -751,7 +751,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -803,7 +803,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -853,7 +853,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -905,7 +905,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -956,7 +956,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -1376,7 +1376,7 @@ async def test_update(vm):
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call(
         "POST",
-        "containers/create?name={}".format(vm.docker_name),
+        f"containers/create?name={vm.docker_name}",
         data={
             "Tty": True,
             "OpenStdin": True,
@@ -1448,7 +1448,7 @@ async def test_update_running(vm):
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call(
         "POST",
-        "containers/create?name={}".format(vm.docker_name),
+        f"containers/create?name={vm.docker_name}",
         data={
             "Tty": True,
             "OpenStdin": True,
@@ -1633,7 +1633,7 @@ async def test_add_ubridge_connection_no_free_interface(vm):
     nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
         # We create fake ethernet interfaces for docker
-        interfaces = ["tap-gns3-e{}".format(index) for index in range(4096)]
+        interfaces = [f"tap-gns3-e{index}" for index in range(4096)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):
             await vm._add_ubridge_connection(nio, 0)
@@ -1821,9 +1821,9 @@ async def test_start_vnc(vm):
         "None",
         "-desktop",
         "test",
-        ":{}".format(vm._display),
+        f":{vm._display}",
     )
-    mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
+    mock_wait.assert_called_with(f"/tmp/.X11-unix/X{vm._display}")
 
 
 @pytest.mark.asyncio
@@ -1882,9 +1882,7 @@ async def test_fix_permission(vm):
         "/gns3/bin/busybox",
         "sh",
         "-c",
-        '(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {}:{} -R "/etc"'.format(
-            os.getuid(), os.getgid()
-        ),
+        f'(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {os.getuid()}:{os.getgid()} -R "/etc"',
         stderr=asyncio.subprocess.PIPE,
     )
     assert process.wait.called
@@ -1907,9 +1905,7 @@ async def test_fix_permission_not_running(vm):
         "/gns3/bin/busybox",
         "sh",
         "-c",
-        '(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {}:{} -R "/etc"'.format(
-            os.getuid(), os.getgid()
-        ),
+        f'(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {os.getuid()}:{os.getgid()} -R "/etc"',
         stderr=asyncio.subprocess.PIPE,
     )
     assert mock_start.called
@@ -2080,7 +2076,7 @@ async def test_cpus(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -2122,7 +2118,7 @@ async def test_memory(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,

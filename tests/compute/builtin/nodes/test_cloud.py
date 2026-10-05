@@ -189,11 +189,11 @@ async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
 
     ubridge_mock.assert_has_calls(
         [
-            call("bridge create {}-0".format(cloud._id)),
-            call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
-            call("bridge reset_packet_filters {}-0".format(cloud._id)),
-            call('bridge add_nio_linux_raw {}-0 "eth0"'.format(cloud._id)),
-            call("bridge start {}-0".format(cloud._id)),
+            call(f"bridge create {cloud._id}-0"),
+            call(f"bridge add_nio_udp {cloud._id}-0 4242 127.0.0.1 4343"),
+            call(f"bridge reset_packet_filters {cloud._id}-0"),
+            call(f'bridge add_nio_linux_raw {cloud._id}-0 "eth0"'),
+            call(f"bridge start {cloud._id}-0"),
         ]
     )
 
@@ -218,11 +218,11 @@ async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project
     tap = "gns3tap0-0"
     ubridge_mock.assert_has_calls(
         [
-            call("bridge create {}-0".format(cloud._id)),
-            call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
-            call("bridge reset_packet_filters {}-0".format(cloud._id)),
-            call('bridge add_nio_tap "{}-0" "{}"'.format(cloud._id, tap)),
-            call('brctl addif "bridge0" "{}"'.format(tap)),
-            call("bridge start {}-0".format(cloud._id)),
+            call(f"bridge create {cloud._id}-0"),
+            call(f"bridge add_nio_udp {cloud._id}-0 4242 127.0.0.1 4343"),
+            call(f"bridge reset_packet_filters {cloud._id}-0"),
+            call(f'bridge add_nio_tap "{cloud._id}-0" "{tap}"'),
+            call(f'brctl addif "bridge0" "{tap}"'),
+            call(f"bridge start {cloud._id}-0"),
         ]
     )

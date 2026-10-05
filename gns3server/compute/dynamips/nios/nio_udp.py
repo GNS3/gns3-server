@@ -55,11 +55,7 @@ class NIOUDP(NIO):
             return
         # Ubridge is not supported
         if not hasattr(self._node, "add_ubridge_udp_connection"):
-            await self._hypervisor.send(
-                "nio create_udp {name} {lport} {rhost} {rport}".format(
-                    name=self._name, lport=self._lport, rhost=self._rhost, rport=self._rport
-                )
-            )
+            await self._hypervisor.send(f"nio create_udp {self._name} {self._lport} {self._rhost} {self._rport}")
             return
         self._local_tunnel_lport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
         self._local_tunnel_rport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
@@ -70,11 +66,7 @@ class NIOUDP(NIO):
             )
         )
 
-        log.debug(
-            "NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(
-                name=self._name, lport=self._lport, rhost=self._rhost, rport=self._rport
-            )
-        )
+        log.debug(f"NIO UDP {self._name} created with lport={self._lport}, rhost={self._rhost}, rport={self._rport}")
 
         self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport, "127.0.0.1", self._local_tunnel_lport)
         self._destination_nio = nio_udp.NIOUDP(self._lport, self._rhost, self._rport)

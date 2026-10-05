@@ -145,11 +145,7 @@ class EthernetHub(Bridge):
 
         await Bridge.add_nio(self, nio)
 
-        log.info(
-            'Ethernet hub "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
-                name=self._name, id=self._id, nio=nio, port=port_number
-            )
-        )
+        log.info(f'Ethernet hub "{self._name}" [{self._id}]: NIO {nio} bound to port {port_number}')
         self._mappings[port_number] = nio
 
     async def remove_nio(self, port_number):
@@ -170,11 +166,7 @@ class EthernetHub(Bridge):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         await Bridge.remove_nio(self, nio)
 
-        log.info(
-            'Ethernet hub "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
-                name=self._name, id=self._id, nio=nio, port=port_number
-            )
-        )
+        log.info(f'Ethernet hub "{self._name}" [{self._id}]: NIO {nio} removed from port {port_number}')
 
         del self._mappings[port_number]
         return nio
@@ -216,11 +208,7 @@ class EthernetHub(Bridge):
             raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info(
-            'Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(
-                name=self._name, id=self._id, port=port_number
-            )
-        )
+        log.info(f'Ethernet hub "{self._name}" [{self._id}]: starting packet capture on port {port_number}')
 
     async def stop_capture(self, port_number):
         """
@@ -233,8 +221,4 @@ class EthernetHub(Bridge):
         if not nio.capturing:
             return
         await nio.stop_packet_capture()
-        log.info(
-            'Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(
-                name=self._name, id=self._id, port=port_number
-            )
-        )
+        log.info(f'Ethernet hub "{self._name}" [{self._id}]: stopping packet capture on port {port_number}')

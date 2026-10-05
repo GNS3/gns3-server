@@ -46,15 +46,15 @@ def test_convert(directory, tmpdir):
     before_directory = os.path.join(topologies_directory, directory, "before")
     after_directory = os.path.join(topologies_directory, directory, "after")
 
-    assert os.path.exists(before_directory), "No before directory found file for {}".format(directory)
-    assert os.path.exists(after_directory), "No after directory found file for {}".format(directory)
+    assert os.path.exists(before_directory), f"No before directory found file for {directory}"
+    assert os.path.exists(after_directory), f"No after directory found file for {directory}"
 
     gns3_file = None
     for file in os.listdir(before_directory):
         if file.endswith(".gns3"):
             gns3_file = file
 
-    assert gns3_file, "No .gns3 found file for {}".format(before_directory)
+    assert gns3_file, f"No .gns3 found file for {before_directory}"
 
     with open(os.path.join(before_directory, gns3_file)) as f:
         before_topology = json.load(f)
@@ -76,19 +76,19 @@ def test_convert(directory, tmpdir):
         for file in files:
             directory = os.path.relpath(root, after_directory)
             file_path = os.path.join(work_directory, directory, file)
-            assert os.path.exists(file_path), "{} is missing".format(os.path.join(directory, file))
+            assert os.path.exists(file_path), f"{os.path.join(directory, file)} is missing"
 
             # For gns3project we check if size are not too much differents
             if file_path.endswith(".gns3project"):
                 size = os.stat(file_path).st_size
                 other_size = os.stat(os.path.join(os.path.join(root, file))).st_size
-                assert size in range(other_size - 100, other_size + 100), "File {} is different".format(
-                    os.path.join(directory, file)
+                assert size in range(other_size - 100, other_size + 100), (
+                    f"File {os.path.join(directory, file)} is different"
                 )
             # For non .gns3 file we check if the file are the same
             elif not file_path.endswith(".gns3"):
                 assert os.stat(file_path).st_size == os.stat(os.path.join(os.path.join(root, file))).st_size, (
-                    "File {} is different".format(os.path.join(directory, file))
+                    f"File {os.path.join(directory, file)} is different"
                 )
 
     # Check if we don't have unexpected file in work directory
@@ -98,7 +98,7 @@ def test_convert(directory, tmpdir):
             file_path = os.path.join(after_directory, directory, file)
             # .backup are created by the conversion process
             if ".backup" not in file_path:
-                assert os.path.exists(file_path), "{} should not be here".format(os.path.join(directory, file))
+                assert os.path.exists(file_path), f"{os.path.join(directory, file)} should not be here"
 
     with open(os.path.join(after_directory, gns3_file)) as f:
         after_topology = json.load(f)
@@ -109,12 +109,12 @@ def compare_dict(path, source, reference):
     """
     Compare two dictionary of a topology
     """
-    assert isinstance(source, dict), "Source is not a dict in {}".format(path)
+    assert isinstance(source, dict), f"Source is not a dict in {path}"
     for key in source:
-        assert key in reference, "Unexpected {} in {} it should be {}".format(key, source, reference)
+        assert key in reference, f"Unexpected {key} in {source} it should be {reference}"
     for key in sorted(reference.keys()):
         val = reference[key]
-        assert key in source, "{} is missing in {}".format(key, source)
+        assert key in source, f"{key} is missing in {source}"
         if (
             isinstance(val, str)
             or isinstance(val, float)
@@ -133,12 +133,12 @@ def compare_dict(path, source, reference):
             elif key == "version":
                 assert source[key] == __version__
             else:
-                assert val == source[key], "Wrong value for {}: \n{}\nit should be\n{}".format(key, source[key], val)
+                assert val == source[key], f"Wrong value for {key}: \n{source[key]}\nit should be\n{val}"
         elif isinstance(val, dict):
             compare_dict(path + key + "/", source[key], val)
         elif isinstance(val, list):
-            assert len(val) == len(source[key]), "Not enough value in {} ({}/{}) it shoud be {} not {}".format(
-                key, len(val), len(source[key]), val, source[key]
+            assert len(val) == len(source[key]), (
+                f"Not enough value in {key} ({len(val)}/{len(source[key])}) it shoud be {val} not {source[key]}"
             )
             for idx, element in enumerate(source[key]):
                 if isinstance(element, dict):
@@ -146,4 +146,4 @@ def compare_dict(path, source, reference):
                 else:
                     assert element == val[idx]
         else:
-            assert False, "Value type for {} is not supported".format(key)
+            assert False, f"Value type for {key} is not supported"

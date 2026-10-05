@@ -195,13 +195,13 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
+        command.extend(["-l", f"dynamips_i{self._id}_log.txt"])  # log file
 
         if self._bind_console_host:
             # support was added in Dynamips version 0.2.23
-            command.extend(["-H", "{}:{}".format(self._host, self._port), "--console-binding-addr", self._console_host])
+            command.extend(["-H", f"{self._host}:{self._port}", "--console-binding-addr", self._console_host])
         elif self._console_host != "0.0.0.0" and self._console_host != "::":
-            command.extend(["-H", "{}:{}".format(self._host, self._port)])
+            command.extend(["-H", f"{self._host}:{self._port}"])
         else:
             command.extend(["-H", str(self._port)])
 

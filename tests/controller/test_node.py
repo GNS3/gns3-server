@@ -312,7 +312,7 @@ async def test_create(node, compute):
 
     assert await node.create() is True
     data = {"console": 2048, "console_type": "vnc", "node_id": node.id, "startup_script": "echo test", "name": "demo"}
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
     assert node._console == 2048
     assert node._properties == {"startup_script": "echo test"}
 
@@ -359,7 +359,7 @@ async def test_create_image_missing_kept_in_degraded_state(project, compute, tmp
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/qemu/nodes".format(project.id),
+            f"/projects/{project.id}/qemu/nodes",
             {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"},
         )
 
@@ -390,7 +390,7 @@ async def test_create_image_missing_raises_by_default(project, compute, tmpdir, 
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/qemu/nodes".format(project.id),
+            f"/projects/{project.id}/qemu/nodes",
             {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"},
         )
 
@@ -513,7 +513,7 @@ async def test_create_docker_image_missing_after_failed_pull(project, compute):
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/docker/nodes".format(project.id),
+            f"/projects/{project.id}/docker/nodes",
             {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"},
         )
 
@@ -544,7 +544,7 @@ async def test_create_docker_image_missing_pull_error_raises_by_default(project,
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/docker/nodes".format(project.id),
+            f"/projects/{project.id}/docker/nodes",
             {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"},
         )
 
@@ -714,7 +714,7 @@ async def test_create_base_script(node, config, compute, tmpdir):
         "name": "demo",
     }
 
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
 
 
 def test_symbol(node, symbols_dir):
@@ -779,7 +779,7 @@ async def test_update(node, compute, project, controller):
 
     await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo")
     data = {"console": 2048, "console_type": "vnc", "startup_script": "echo test", "name": "demo"}
-    compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
+    compute.put.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}", data=data)
     assert node._console == 2048
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
@@ -799,7 +799,7 @@ async def test_update_properties(node, compute, controller):
 
     await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "hello world"}, name="demo")
     data = {"console": 2048, "console_type": "vnc", "startup_script": "hello world", "name": "demo"}
-    compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
+    compute.put.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}", data=data)
     assert node._console == 2048
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
@@ -933,7 +933,7 @@ async def test_start(node, compute):
     compute.post = AsyncioMagicMock()
 
     await node.start()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/start", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -949,7 +949,7 @@ async def test_start_iou(compute, project, controller):
     controller._iou_license_settings = {"license_check": True, "iourc_content": "aa"}
     await node.start()
     compute.post.assert_called_with(
-        "/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id),
+        f"/projects/{node.project.id}/iou/nodes/{node.id}/start",
         timeout=240,
         data={"license_check": True, "iourc_content": "aa"},
     )
@@ -962,7 +962,7 @@ async def test_stop(node, compute):
 
     await node.stop()
     compute.post.assert_called_with(
-        "/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240, dont_connect=True
+        f"/projects/{node.project.id}/vpcs/nodes/{node.id}/stop", timeout=240, dont_connect=True
     )
 
 
@@ -971,7 +971,7 @@ async def test_suspend(node, compute):
 
     compute.post = AsyncioMagicMock()
     await node.suspend()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/suspend", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -979,7 +979,7 @@ async def test_reload(node, compute):
 
     compute.post = AsyncioMagicMock()
     await node.reload()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/reload", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -994,7 +994,7 @@ async def test_create_without_console(node, compute):
 
     await node.create()
     data = {"console_type": "vnc", "node_id": node.id, "startup_script": "echo test", "name": "demo"}
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
     assert node._console == 2048
     assert node._properties == {"test_value": "success", "startup_script": "echo test"}
 
@@ -1003,21 +1003,21 @@ async def test_create_without_console(node, compute):
 async def test_delete(node, compute):
 
     await node.destroy()
-    compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id))
+    compute.delete.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}")
 
 
 @pytest.mark.asyncio
 async def test_post(node, compute):
 
     await node.post("/test", {"a": "b"})
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id), data={"a": "b"})
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/test", data={"a": "b"})
 
 
 @pytest.mark.asyncio
 async def test_delete(node, compute):
 
     await node.delete("/test")
-    compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id))
+    compute.delete.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/test")
 
 
 @pytest.mark.asyncio
@@ -1028,9 +1028,7 @@ async def test_dynamips_idle_pc(node, compute):
     response.json = {"idlepc": "0x60606f54"}
     compute.get = AsyncioMagicMock(return_value=response)
     await node.dynamips_auto_idlepc()
-    compute.get.assert_called_with(
-        "/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id), timeout=240
-    )
+    compute.get.assert_called_with(f"/projects/{node.project.id}/dynamips/nodes/{node.id}/auto_idlepc", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -1042,7 +1040,7 @@ async def test_dynamips_idlepc_proposals(node, compute):
     compute.get = AsyncioMagicMock(return_value=response)
     await node.dynamips_idlepc_proposals()
     compute.get.assert_called_with(
-        "/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240
+        f"/projects/{node.project.id}/dynamips/nodes/{node.id}/idlepc_proposals", timeout=240
     )
 
 

@@ -188,9 +188,7 @@ class UBridgeHypervisor:
             await self._writer.drain()
         except OSError as e:
             raise UbridgeError(
-                "Lost communication with {endpoint} when sending command '{command}': {error}, uBridge process running: {run}".format(
-                    endpoint=self.endpoint, command=command, error=e, run=self.is_running()
-                )
+                f"Lost communication with {self.endpoint} when sending command '{command}': {e}, uBridge process running: {self.is_running()}"
             )
 
         # Now retrieve the result
@@ -215,9 +213,7 @@ class UBridgeHypervisor:
                 if not chunk:
                     if retries > max_retries:
                         raise UbridgeError(
-                            "No data returned from {endpoint} after sending command '{command}', uBridge process running: {run}".format(
-                                endpoint=self.endpoint, command=command, run=self.is_running()
-                            )
+                            f"No data returned from {self.endpoint} after sending command '{command}', uBridge process running: {self.is_running()}"
                         )
                     else:
                         retries += 1
@@ -227,9 +223,7 @@ class UBridgeHypervisor:
                 buf += chunk.decode("utf-8")
             except OSError as e:
                 raise UbridgeError(
-                    "Lost communication with {endpoint} after sending command '{command}': {error}, uBridge process running: {run}".format(
-                        endpoint=self.endpoint, command=command, error=e, run=self.is_running()
-                    )
+                    f"Lost communication with {self.endpoint} after sending command '{command}': {e}, uBridge process running: {self.is_running()}"
                 )
 
             # If the buffer doesn't end in '\n' then we can't be done
@@ -238,9 +232,7 @@ class UBridgeHypervisor:
                     continue
             except IndexError:
                 raise UbridgeError(
-                    "Could not communicate with {endpoint} after sending command '{command}', uBridge process running: {run}".format(
-                        endpoint=self.endpoint, command=command, run=self.is_running()
-                    )
+                    f"Could not communicate with {self.endpoint} after sending command '{command}', uBridge process running: {self.is_running()}"
                 )
 
             data += buf.split("\r\n")
