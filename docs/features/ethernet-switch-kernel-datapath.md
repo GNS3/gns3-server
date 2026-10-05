@@ -123,6 +123,9 @@ in-place reconcile removes this particular re-enslavement, but link delete
 remains on NM hosts wherever NM manages the taps; the kernel e2e scenarios
 take the anchors out of NM's hands
 (`harness.unmanage_from_networkmanager`) before they exercise those paths.
+The full record — forensic signatures, the minimal server-free reproducer,
+the NetworkManager source-level mechanism and the verified host fix — is in
+`docs/bugs/networkmanager-tap-release.md`.
 
 ## Link-local frames (LACP, LLDP, 802.1X, STP)
 
