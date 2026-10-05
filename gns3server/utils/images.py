@@ -424,8 +424,8 @@ async def write_image(
                         f"File '{image_path}' already exists, "
                         f"please choose a different name or remove the existing image"
                     )
-                checksum = checksum.hexdigest()
-                duplicate_image = await images_repo.get_image_by_checksum(checksum, os.path.dirname(image_path))
+                checksum_str = checksum.hexdigest()
+                duplicate_image = await images_repo.get_image_by_checksum(checksum_str, os.path.dirname(image_path))
                 if duplicate_image:
                     raise InvalidImageError(
                         f"Image '{duplicate_image.filename}' with the same checksum "
@@ -439,7 +439,7 @@ async def write_image(
                         image_type=image_type,
                         image_size=image_size,
                         path=image_path,
-                        checksum=checksum,
+                        checksum=checksum_str,
                         checksum_algorithm="md5",
                         file_fingerprint=file_fingerprint,
                     )

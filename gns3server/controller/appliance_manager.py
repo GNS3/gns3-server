@@ -254,6 +254,8 @@ class ApplianceManager:
                                         )
                                     try:
                                         image_in_db = await images_repo.save_verified_image(image_info)
+                                        if image_in_db is None:
+                                            raise ControllerError(f"Could not register image '{image_path}'")
                                         version_images[appliance_key] = self._image_reference(image_in_db)
                                     except SQLAlchemyError as e:
                                         raise ControllerError(f"Could not register image '{image_path}': {e}") from e
