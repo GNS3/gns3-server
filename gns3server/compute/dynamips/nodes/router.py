@@ -42,10 +42,10 @@ from ...base_node import BaseNode
 from ...error import NodeError
 from ...kernel_datapath import KernelDatapathMixin
 from ...nios.nio_bridge import NIOBridge
-from ...nios.nio_tap import NIOTAP
 from ...ubridge.ubridge_error import UbridgeError
 from ..adapters.adapter import ETHERNET_ADAPTERS, ETHERNET_WICS
 from ..dynamips_error import DynamipsError
+from ..nios.nio_tap import NIOTAP
 
 
 class Router(KernelDatapathMixin, BaseNode):

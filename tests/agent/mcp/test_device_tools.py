@@ -246,7 +246,9 @@ class TestDuplicateDeviceMerging:
         nornir = MagicMock()
         nornir.run.return_value = _aggregated_result({"R1": "merged output"})
         with (
-            patch(f"{CONFIG_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}),
+            patch(
+                f"{CONFIG_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}
+            ),
             patch.object(ExecuteMultipleDeviceConfigCommands, "_initialize_nornir", return_value=nornir),
         ):
             result = ExecuteMultipleDeviceConfigCommands()._run(
@@ -310,7 +312,9 @@ class TestDuplicateDeviceMerging:
         nornir = MagicMock()
         nornir.run.return_value = _aggregated_result({"R1": "ok"})
         with (
-            patch(f"{DISPLAY_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}),
+            patch(
+                f"{DISPLAY_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}
+            ),
             patch.object(ExecuteMultipleDeviceCommands, "_initialize_nornir", return_value=nornir),
             patch(f"{DISPLAY_MOD}.filter_forbidden_commands", side_effect=fake_filter),
         ):

@@ -28,8 +28,8 @@ from gns3server.compute import MODULES
 from gns3server.compute.ubridge.tc_probe import (
     probe_bridge_tap_support,
     probe_iol_tap_support,
-    probe_tc_capabilities,
     probe_tap_support,
+    probe_tc_capabilities,
 )
 from gns3server.utils.path import get_default_project_directory
 from gns3server.utils.tc_capabilities import usable_ebpf_modes

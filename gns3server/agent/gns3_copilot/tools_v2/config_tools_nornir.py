@@ -47,6 +47,7 @@ from nornir.core.task import AggregatedResult, Result, Task
 from nornir_netmiko.tasks import netmiko_send_config
 
 from gns3server.agent.gns3_copilot.gns3_client import get_gns3_server_host
+
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_huawei_telnet_ce and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered

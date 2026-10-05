@@ -37,8 +37,9 @@ distance 2 earns a "Did you mean ..." hint.
 import re
 from typing import Any, Callable
 
-from .projects import list_projects_handler
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_links_handler, get_nodes_handler
+
+from .projects import list_projects_handler
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 _ID_IN_TEXT_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
@@ -94,9 +95,7 @@ def resolve_locators(
     return params, None
 
 
-def add_did_you_mean(
-    result: Any, params: dict[str, Any], run: Callable[[Callable, dict], Any]
-) -> Any:
+def add_did_you_mean(result: Any, params: dict[str, Any], run: Callable[[Callable, dict], Any]) -> Any:
     """
     Append a "Did you mean ...?" hint to an error reply that names a
     non-existent UUID, when exactly one in-scope id is within edit
@@ -118,7 +117,11 @@ def add_did_you_mean(
 
     hints = []
     for bad in bad_ids:
-        close = [(cid, label) for cid, label in candidates if bad != cid and _edit_distance_at_most(bad.lower(), cid.lower(), 2)]
+        close = [
+            (cid, label)
+            for cid, label in candidates
+            if bad != cid and _edit_distance_at_most(bad.lower(), cid.lower(), 2)
+        ]
         if len(close) == 1:
             cid, label = close[0]
             hints.append(f"Did you mean {label} ({cid})?")
@@ -177,7 +180,7 @@ def _collect_candidates(params: dict[str, Any], run: Callable[[Callable, dict], 
     just yields what was gathered so far.
     """
 
-    candidates = []
+    candidates: list[tuple[str, str]] = []
     try:
         projects = _as_items(run(list_projects_handler, {}), "projects") or []
         candidates.extend((p["project_id"], f"project '{p.get('name', '?')}'") for p in projects if p.get("project_id"))

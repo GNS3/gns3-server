@@ -20,6 +20,7 @@ order to run a QEMU VM.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import math
@@ -53,6 +54,7 @@ from ..kernel_datapath import KernelDatapathMixin
 from ..nios.nio_bridge import NIOBridge
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_udp import NIOUDP
+from ..ubridge.ubridge_error import UbridgeError
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
 from .utils.ziputils import pack_zip, unpack_zip

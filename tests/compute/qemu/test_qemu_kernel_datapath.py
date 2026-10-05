@@ -24,21 +24,16 @@ legacy socket-netdev fallback for a uBridge without the tap module.
 import asyncio
 import os
 import stat
-import sys
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import MagicMock, patch
-
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
 from gns3server.compute.qemu import Qemu
-from gns3server.compute.qemu.qemu_vm import QemuVM
 from gns3server.compute.qemu.qemu_error import QemuError
-from gns3server.compute.nios.nio_bridge import NIOBridge
+from gns3server.compute.qemu.qemu_vm import QemuVM
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 BRIDGE = "gns3a1b2c3d4e5f"
 TAP0 = "gq00010203e0p0"  # the vm fixture's node id, adapter 0
@@ -272,7 +267,7 @@ async def test_update_nio_binding_reapplies_filters_on_the_anchor(vm):
 
     vm._ubridge_send.assert_any_call(f'tc reset "{TAP0}"')
     vm._ubridge_send.assert_any_call(f'tc netem set "{TAP0}" delay 10')
-    assert not any(f"brctl addif" in str(c) for c in vm._ubridge_send.call_args_list)
+    assert not any("brctl addif" in str(c) for c in vm._ubridge_send.call_args_list)
 
 
 @pytest.mark.asyncio

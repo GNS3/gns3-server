@@ -103,20 +103,20 @@ async def update_ethernet_switch(
     Update an Ethernet switch.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    if "name" in node_data and node.name != node_data["name"]:
-        node.name = node_data["name"]
-    if "usage" in node_data:
-        node.usage = node_data["usage"]
-    if "ports_mapping" in node_data:
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    if "name" in data and node.name != data["name"]:
+        node.name = data["name"]
+    if "usage" in data:
+        node.usage = data["usage"]
+    if "ports_mapping" in data:
         # capture the mapping before the setter replaces it: the VLAN
         # reconcile diffs old against new to touch only what changed, in
         # place (the setter itself keeps the port-count guard)
         previous_mapping = [dict(port) for port in node.ports_mapping]
-        node.ports_mapping = node_data["ports_mapping"]
+        node.ports_mapping = data["ports_mapping"]
         await node.update_port_settings(previous_mapping)
-    if "console_type" in node_data:
-        node.console_type = node_data["console_type"]
+    if "console_type" in data:
+        node.console_type = data["console_type"]
     node.updated()
     return node.asdict()
 

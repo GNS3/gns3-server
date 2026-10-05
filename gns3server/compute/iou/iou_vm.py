@@ -22,6 +22,7 @@ order to run an IOU VM.
 import asyncio
 import binascii
 import configparser
+import contextlib
 import functools
 import glob
 import hashlib
@@ -951,9 +952,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
             raise self._kernel_error(
                 "Bay {bay}/{unit} of IOU '{name}' has no TAP anchor to carry a kernel link "
                 "(serial ports stay on the relay datapath, and a node whose uBridge lacks "
-                "iol_bridge add_nio_tap runs relay-only)".format(
-                    bay=adapter_number, unit=port_number, name=self._name
-                )
+                "iol_bridge add_nio_tap runs relay-only)".format(bay=adapter_number, unit=port_number, name=self._name)
             )
         await self._ubridge_send(
             'iol_bridge add_nio_tap {name} {iol_id} {bay} {unit} "{tap}"'.format(

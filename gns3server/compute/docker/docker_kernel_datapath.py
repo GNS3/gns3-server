@@ -24,14 +24,13 @@ markers, attach/detach, adapter carrier — lives in
 """
 
 import contextlib
+import logging
 
 from gns3server.compute.kernel_datapath import KernelDatapathMixin
 from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
-
-from .docker_error import DockerError
 from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name
 
-import logging
+from .docker_error import DockerError
 
 log = logging.getLogger(__name__)
 

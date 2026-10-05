@@ -16,11 +16,12 @@
 
 import uuid
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from .base import DateTimeModelMixin
+
 # The capabilities payload has one definition (controller.capabilities): a
 # second, private copy here silently stripped every field it did not know
 # about from GET /computes/{id} — which is how ubridge_tap and

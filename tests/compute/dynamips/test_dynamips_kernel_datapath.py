@@ -25,27 +25,24 @@ hypervisor's fds released before the TAPs are unpersisted — QEMU's order,
 since here it is Dynamips that holds them).
 """
 
+import contextlib
 import os
 import shutil
-import contextlib
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import MagicMock, patch
-
-from tests.utils import AsyncioMagicMock
-
 from gns3server.compute.dynamips import Dynamips
-from gns3server.compute.dynamips.nodes.router import Router
-from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from gns3server.compute.dynamips.adapters.gt96100_fe import GT96100_FE
 from gns3server.compute.dynamips.adapters.pa_4t import PA_4T
 from gns3server.compute.dynamips.adapters.pa_fe_tx import PA_FE_TX
 from gns3server.compute.dynamips.adapters.wic_1enet import WIC_1ENET
-from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.compute.dynamips.dynamips_error import DynamipsError
+from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.nios.nio_bridge import NIOBridge
-
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from tests.utils import AsyncioMagicMock
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
 BRIDGE = "gns3a1b2c3d4e5f"
@@ -237,7 +234,7 @@ async def test_prepare_tap_datapath_wires_nios_bound_while_stopped(router):
 
     hypervisor = _hypervisor_commands(router)
     assert any(c.startswith("nio create_tap tap-") and c.endswith(f"{TAP00}") for c in hypervisor)
-    assert any(c.startswith(f"vm slot_add_nio_binding \"R1\" 0 0 tap-") for c in hypervisor)
+    assert any(c.startswith('vm slot_add_nio_binding "R1" 0 0 tap-') for c in hypervisor)
     router._ubridge_send.assert_any_call(f'brctl addif "{BRIDGE}" "{TAP00}"')
     assert (0, 0) in router._tap_nios
 
@@ -489,9 +486,7 @@ async def test_stop_ubridge_releases_hypervisor_fds_before_deleting_taps(router)
     router._ubridge_send.reset_mock()
     router._hypervisor.commands.clear()
 
-    with patch(
-        "gns3server.compute.base_node.BaseNode._stop_ubridge", new=AsyncioMagicMock()
-    ) as stop:
+    with patch("gns3server.compute.base_node.BaseNode._stop_ubridge", new=AsyncioMagicMock()) as stop:
         await router._stop_ubridge()
 
     hypervisor = _hypervisor_commands(router)

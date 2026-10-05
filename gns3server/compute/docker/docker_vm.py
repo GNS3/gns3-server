@@ -33,14 +33,13 @@ import aiohttp
 import psutil
 
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
+from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.utils import int_to_macaddress, macaddress_to_int
 from gns3server.utils.asyncio import monitor_process, wait_for_file_creation, wait_run_in_executor
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.hostname import is_rfc1123_hostname_valid
-from gns3server.utils.packet_filter_validation import KERNEL_UNSUPPORTED_FILTERS
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode

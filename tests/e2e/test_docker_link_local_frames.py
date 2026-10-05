@@ -47,6 +47,7 @@ The negative control for the old behaviour is the uBridge suite's
 import functools
 import io
 import os
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -246,9 +247,12 @@ def _llprobe():
     binary = os.path.join(directory, "llprobe")
     with open(source, "w") as f:
         f.write(_LLPROBE_C)
+    cc = shutil.which("cc")
+    if cc is None:
+        pytest.skip("cannot build the raw-frame probe (no C compiler found)")
     try:
-        subprocess.run(["cc", "-static", "-O2", "-o", binary, source], check=True, capture_output=True)
-    except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        subprocess.run([cc, "-static", "-O2", "-o", binary, source], check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
         pytest.skip(f"cannot build the raw-frame probe (cc -static): {e}")
     return binary
 
@@ -270,9 +274,7 @@ def _upload_probe(daemon, *container_ids):
 
 def _recv_counts(daemon, container_id, window, macs):
     """Run the receiver to completion and parse its "<mac>=<count>" lines."""
-    code, output = daemon.exec(
-        container_id, ["/tmp/llprobe", "recv", "eth0", str(window), *macs], timeout=window + 30
-    )
+    code, output = daemon.exec(container_id, ["/tmp/llprobe", "recv", "eth0", str(window), *macs], timeout=window + 30)
     assert code == 0, output
     return {line.split("=")[0]: int(line.split("=")[1]) for line in output.strip().splitlines() if "=" in line}
 
@@ -316,7 +318,7 @@ def test_docker_link_local_frames():
         print(".. starting containers")
         for node in nodes:
             compute.call("POST", f"/projects/{pid}/nodes/{node['node_id']}/start")
-        for node, address in zip(nodes, (R1_IP, R2_IP)):
+        for node, address in zip(nodes, (R1_IP, R2_IP), strict=True):
             harness.docker_wait_address(daemon, node["container_id"], address)
 
         a1 = harness.docker_anchor_name(n1["node_id"], *ETH)

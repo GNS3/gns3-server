@@ -23,23 +23,18 @@ fallback and cleanup.
 
 import os
 import uuid
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import patch
-
-from tests.utils import AsyncioMagicMock
-
-from gns3server.compute.docker import Docker
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.nios.nio_udp import NIOUDP
+from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-
+from tests.utils import AsyncioMagicMock
 
 BRIDGE = "gns3a1b2c3d4e5f"
 
@@ -1373,7 +1368,13 @@ def test_create_nio_udp_rejects_kernel_only_filters(vm):
 
     with pytest.raises(ComputeError, match="kernel-datapath"):
         vm.manager.create_nio(
-            {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1", "filters": {"gemodel": [100, 0, 30]}}
+            {
+                "type": "nio_udp",
+                "lport": 4242,
+                "rport": 4343,
+                "rhost": "127.0.0.1",
+                "filters": {"gemodel": [100, 0, 30]},
+            }
         )
 
 

@@ -264,8 +264,10 @@ async def duplicate_docker_node(
     dependencies=[Depends(compute_authentication)],
 )
 async def create_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
-    node: DockerVM = Depends(dep_node)
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
 ) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
@@ -284,8 +286,10 @@ async def create_docker_node_nio(
     dependencies=[Depends(compute_authentication)],
 )
 async def update_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
-    node: DockerVM = Depends(dep_node)
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
 ) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.

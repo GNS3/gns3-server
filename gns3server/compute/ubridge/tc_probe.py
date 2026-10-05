@@ -32,29 +32,31 @@ failure (missing binary, old build answering "Unknown command", timeout)
 means unknown, reported as None and cached as such.
 """
 
-import os
-import uuid
-import shutil
 import asyncio
-import tempfile
-import logging
 import contextlib
+import logging
+import os
+import shutil
+import tempfile
+import uuid
+from typing import Optional
 
 from gns3server.config import Config
 from gns3server.utils.tc_capabilities import parse_tc_capabilities
+
 from .hypervisor import Hypervisor
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
 
 # binary identity -> parsed report (None = probed and unusable)
-_cache = {}
+_cache: dict[tuple[str, int, int], Optional[dict[str, str]]] = {}
 # binary identity -> whether the tap module works (None = unknown)
-_tap_cache = {}
+_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
 # binary identity -> whether iol_bridge can bind a port to a TAP (None = unknown)
-_iol_tap_cache = {}
+_iol_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
 # binary identity -> whether the bridge module can release a named TAP NIO (None = unknown)
-_bridge_tap_cache = {}
+_bridge_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
 _lock = asyncio.Lock()
 
 
@@ -252,9 +254,7 @@ async def _probe_iol_tap(path, config, timeout):
             await hypervisor.send(f"iol_bridge create {bridge} {_IOL_PROBE_BRIDGE_ID}")
             try:
                 await hypervisor.send(f"tap create {tap}")
-                await hypervisor.send(
-                    f"iol_bridge add_nio_tap {bridge} {_IOL_PROBE_BRIDGE_ID - 1} 0 0 {tap}"
-                )
+                await hypervisor.send(f"iol_bridge add_nio_tap {bridge} {_IOL_PROBE_BRIDGE_ID - 1} 0 0 {tap}")
                 await hypervisor.send(f"iol_bridge delete_nio_tap {bridge} 0 0")
             finally:
                 # iol_bridge delete releases every port NIO (the TAP fd),

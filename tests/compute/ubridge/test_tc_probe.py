@@ -25,8 +25,8 @@ from gns3server.compute.ubridge import tc_probe
 from gns3server.compute.ubridge.tc_probe import (
     probe_bridge_tap_support,
     probe_iol_tap_support,
-    probe_tc_capabilities,
     probe_tap_support,
+    probe_tc_capabilities,
 )
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
@@ -65,7 +65,7 @@ class FakeHypervisor:
         if self.error:
             raise UbridgeError(self.error)
         if self.error_prefix and command.startswith(self.error_prefix):
-            raise UbridgeError(f"202-Unknown command")
+            raise UbridgeError("202-Unknown command")
         if command.startswith("bridge delete_nio_tap "):
             if FakeHypervisor.bridge_tap_error:
                 raise UbridgeError(FakeHypervisor.bridge_tap_error)

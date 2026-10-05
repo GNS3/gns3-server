@@ -23,7 +23,6 @@ from gns3server.config import Config
 from gns3server.utils.application_id import is_iol_runner_environment
 from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_anchor_type, kernel_cascade_names
 from gns3server.utils.packet_filter_validation import (
-    KERNEL_UNSUPPORTED_FILTERS,
     split_kernel_only_features,
     validate_bpf_syntax,
 )

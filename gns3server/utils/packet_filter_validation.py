@@ -5,7 +5,7 @@ Packet filter parameter validation utilities.
 import logging
 import re
 import subprocess
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ _RATE_UNITS = {
 _RATE_MAX_BITS = 100 * 1000**3
 
 
-def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Optional[str]]:
+def validate_bpf_syntax(bpf_expression: str) -> Dict[str, Any]:
     """
     Validate BPF filter expression syntax using tcpdump.
 
@@ -142,9 +142,7 @@ def _validate_int_parameter(filter_type: str, rules: dict, i: int, value: Any) -
         else:
             int_value = int(value)
     except (ValueError, TypeError):
-        raise FilterValidationError(
-            f"{filter_type} parameter {rules['names'][i]} must be an integer, got: {value}"
-        )
+        raise FilterValidationError(f"{filter_type} parameter {rules['names'][i]} must be an integer, got: {value}")
 
     # Range validation
     min_val, max_val = rules["ranges"][i]
@@ -441,7 +439,9 @@ def validate_all_filters(filters: Dict[str, List[Any]]) -> None:
     if "reorder" in filters and "delay" not in filters:
         raise FilterValidationError("reorder requires delay")
     if "gemodel" in filters and "packet_loss" in filters:
-        raise FilterValidationError("gemodel and packet_loss are mutually exclusive (both map to the netem loss keyword)")
+        raise FilterValidationError(
+            "gemodel and packet_loss are mutually exclusive (both map to the netem loss keyword)"
+        )
     window = filters.get("window_drop")
     if window and len(window) >= 4 and int(window[3]) < int(window[1]):
         raise FilterValidationError("window_drop period must be greater than or equal to the outage length")

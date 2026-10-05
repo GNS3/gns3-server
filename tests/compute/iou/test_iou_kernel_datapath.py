@@ -22,19 +22,16 @@ it, kernel-link enslavement, the relay fallback for a uBridge without the
 command, and the reverse-of-QEMU stop order (uBridge holds the anchor fds).
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
 
-from unittest.mock import MagicMock, patch
-
-from tests.utils import AsyncioMagicMock
-
 from gns3server.compute.iou import IOU
-from gns3server.compute.iou.iou_vm import IOUVM
 from gns3server.compute.iou.iou_error import IOUError
-from gns3server.compute.nios.nio_bridge import NIOBridge
+from gns3server.compute.iou.iou_vm import IOUVM
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-
+from tests.utils import AsyncioMagicMock
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
 BRIDGE = "gns3a1b2c3d4e5f"

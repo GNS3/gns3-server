@@ -14,19 +14,15 @@ Image-free: everything is asserted against the uBridge command stream and
 the anchor naming contract.
 """
 
-import uuid
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from unittest.mock import MagicMock, patch
-
-from tests.utils import AsyncioMagicMock
-
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
-
+from tests.utils import AsyncioMagicMock
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
 TAP00 = "gx00010203e0p0"  # the vm fixture's node id, bay 0 unit 0
@@ -296,7 +292,9 @@ async def test_remove_nio_binding_kernel_releases_the_port_leg_first(vm):
     commands = _commands(vm)
     assert f"bridge stop {PORT_BRIDGE}" in commands
     assert f'bridge delete_nio_tap {PORT_BRIDGE} "{TAP00}"' in commands
-    assert commands.index(f"bridge stop {PORT_BRIDGE}") < commands.index(f'bridge delete_nio_tap {PORT_BRIDGE} "{TAP00}"')
+    assert commands.index(f"bridge stop {PORT_BRIDGE}") < commands.index(
+        f'bridge delete_nio_tap {PORT_BRIDGE} "{TAP00}"'
+    )
     assert f'tc reset "{TAP00}"' in commands
     assert f'brctl delif "{BRIDGE}" "{TAP00}"' in commands
     assert f'brctl delete "{BRIDGE}"' in commands

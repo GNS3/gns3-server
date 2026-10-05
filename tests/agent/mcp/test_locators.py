@@ -69,8 +69,12 @@ def test_uuid_params_pass_through_without_calls():
 def test_project_name_resolved():
     """A name-shaped project_id becomes the project's UUID."""
 
-    run, calls = _run_factory(projects=[{"project_id": "11111111-1111-1111-1111-111111111111", "name": "other"},
-                                        {"project_id": PROJECT_ID, "name": "my-lab"}])
+    run, calls = _run_factory(
+        projects=[
+            {"project_id": "11111111-1111-1111-1111-111111111111", "name": "other"},
+            {"project_id": PROJECT_ID, "name": "my-lab"},
+        ]
+    )
     params, error = resolve_locators({"project_id": "my-lab"}, run)
     assert error is None
     assert params["project_id"] == PROJECT_ID
@@ -88,8 +92,9 @@ def test_project_name_not_found_lists_known_names():
 
 def test_node_name_resolved_within_project():
 
-    run, calls = _run_factory(projects=[{"project_id": PROJECT_ID, "name": "my-lab"}],
-                              nodes=[{"node_id": NODE_ID, "name": "FRRDocker-4"}])
+    run, calls = _run_factory(
+        projects=[{"project_id": PROJECT_ID, "name": "my-lab"}], nodes=[{"node_id": NODE_ID, "name": "FRRDocker-4"}]
+    )
     params, error = resolve_locators({"project_id": "my-lab", "node_id": "FRRDocker-4"}, run)
     assert error is None
     assert params["project_id"] == PROJECT_ID
@@ -125,11 +130,10 @@ def test_handler_failure_during_resolution_is_reported():
 def test_did_you_mean_appended_for_transcription_slip():
     """The 2c9e -> 3b9e class of typo earns exactly one hint."""
 
-    run, _calls = _run_factory(projects=[{"project_id": PROJECT_ID, "name": "my-lab"}],
-                               nodes=[{"node_id": NODE_ID, "name": "FRRDocker-4"}])
-    result = add_did_you_mean(
-        {"error": f"Node ID {NODE_ID_TYPO} doesn't exist"}, {"project_id": PROJECT_ID}, run
+    run, _calls = _run_factory(
+        projects=[{"project_id": PROJECT_ID, "name": "my-lab"}], nodes=[{"node_id": NODE_ID, "name": "FRRDocker-4"}]
     )
+    result = add_did_you_mean({"error": f"Node ID {NODE_ID_TYPO} doesn't exist"}, {"project_id": PROJECT_ID}, run)
     assert f"Did you mean node 'FRRDocker-4' ({NODE_ID})" in result["error"]
     # original message preserved
     assert NODE_ID_TYPO in result["error"]
@@ -144,9 +148,7 @@ def test_no_hint_when_too_far_or_ambiguous():
 
     two = [NODE_ID, "b78a2630-2b9e-4b43-9397-c855c8053d1a"]  # both within distance 2 of the typo
     run2, _calls2 = _run_factory(nodes=[{"node_id": i, "name": f"n{i}"} for i in two])
-    result2 = add_did_you_mean(
-        {"error": f"Node ID {NODE_ID_TYPO} doesn't exist"}, {"project_id": PROJECT_ID}, run2
-    )
+    result2 = add_did_you_mean({"error": f"Node ID {NODE_ID_TYPO} doesn't exist"}, {"project_id": PROJECT_ID}, run2)
     assert "Did you mean" not in result2["error"]
 
 

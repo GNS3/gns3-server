@@ -20,14 +20,15 @@ Controller-side kernel-datapath link selection: eligibility of Docker-to-
 Docker links, NIO emission and the filters/markers guards.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from gns3server.config import Config
-from gns3server.controller.udp_link import UDPLink
-from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.node import Node
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.node import Node
+from gns3server.controller.ports.ethernet_port import EthernetPort
+from gns3server.controller.udp_link import UDPLink
 
 
 def _node(project, compute, name, node_type="docker", status="stopped", environment=None):

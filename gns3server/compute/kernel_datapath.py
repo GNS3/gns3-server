@@ -41,16 +41,15 @@ A node type using this mixin provides:
   failures surface as ``DockerError`` / ``QemuError`` rather than ``NodeError``.
 """
 
-import os
 import contextlib
+import logging
+import os
 
-from gns3server.utils.tc_capabilities import FILTER_EBPF_MODES, parse_tc_capabilities, usable_ebpf_modes
-from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.compute.error import NodeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.utils.tc_capabilities import FILTER_EBPF_MODES, parse_tc_capabilities, usable_ebpf_modes
 
 from .nios.nio_bridge import NIOBridge
-
-import logging
 
 log = logging.getLogger(__name__)
 

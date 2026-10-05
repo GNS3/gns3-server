@@ -672,4 +672,3 @@ class IOLDockerVM(VendorDockerVM):
 
         if self._kernel_host_ifc(adapter_number, port_number) is not None:
             await KernelDatapathMixin._set_adapter_carrier(self, adapter_number, connected, port_number)
-

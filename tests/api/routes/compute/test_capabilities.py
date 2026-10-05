@@ -170,7 +170,9 @@ class TestCapabilitiesRoutes:
         async def fake_bridge_tap_probe():
             return True
 
-        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", fake_bridge_tap_probe)
+        monkeypatch.setattr(
+            "gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", fake_bridge_tap_probe
+        )
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_iol_tap_support", _no_tap_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))

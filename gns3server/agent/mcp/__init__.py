@@ -346,13 +346,13 @@ def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
 
     # Name-shaped project_id/node_id values become UUIDs before the handler
     # runs; a name that matches nothing fails fast with the known names.
-    params, resolution_error = resolve_locators(params, run)
-    if resolution_error is not None:
+    resolved_params, resolution_error = resolve_locators(params, run)
+    if resolved_params is None:
         result = resolution_error
     else:
-        result = handler(params, ctx)
+        result = handler(resolved_params, ctx)
         # backstop for UUID transcription slips: "Did you mean ...?"
-        result = add_did_you_mean(result, params, run)
+        result = add_did_you_mean(result, resolved_params, run)
     return [{"type": "text", "text": json.dumps(result, ensure_ascii=False, default=str)}]
 
 
