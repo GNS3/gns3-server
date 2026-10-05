@@ -1583,7 +1583,6 @@ class TestImageAssociationWithTemplate:
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-
     @pytest.mark.parametrize("reference", ["Vendor/router.bin", "router.bin"])
     async def test_nested_template_resolves_image_in_correct_type_root(self, client, images_dir, db_session, reference):
         repository = ImagesRepository(db_session)
@@ -1596,10 +1595,16 @@ class TestImageAssociationWithTemplate:
                 path.name, "iou" if index == 0 else "qemu", 11, str(path), str(index) * 32, "md5"
             )
         expected_path = str(Path(images_dir) / "QEMU" / reference)
-        response = await client.post("/v3/templates", json={
-            "name": f"Nested QEMU {reference}", "template_type": "qemu", "compute_id": "local",
-            "hda_disk_image": reference, "ram": 512,
-        })
+        response = await client.post(
+            "/v3/templates",
+            json={
+                "name": f"Nested QEMU {reference}",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "hda_disk_image": reference,
+                "ram": 512,
+            },
+        )
         assert response.status_code == 201, response.text
         templates = TemplatesRepository(db_session)
         template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
@@ -1610,7 +1615,6 @@ class TestImageAssociationWithTemplate:
         await db_session.refresh(template, ["images"])
         assert template.images == []
 
-
     async def test_update_removes_legacy_association_when_new_exact_path_exists(self, client, images_dir, db_session):
         repository = ImagesRepository(db_session)
         legacy_path = Path(images_dir) / "QEMU/Other/Vendor/router.qcow2"
@@ -1619,10 +1623,16 @@ class TestImageAssociationWithTemplate:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"image bytes")
             await repository.add_image(path.name, "qemu", 11, str(path), str(index) * 32, "md5")
-        response = await client.post("/v3/templates", json={
-            "name": "Legacy nested association", "template_type": "qemu", "compute_id": "local",
-            "hda_disk_image": str(legacy_path), "ram": 512,
-        })
+        response = await client.post(
+            "/v3/templates",
+            json={
+                "name": "Legacy nested association",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "hda_disk_image": str(legacy_path),
+                "ram": 512,
+            },
+        )
         assert response.status_code == 201, response.text
         templates = TemplatesRepository(db_session)
         template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
