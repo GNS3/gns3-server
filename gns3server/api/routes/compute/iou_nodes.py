@@ -225,7 +225,9 @@ async def update_iou_node_nio(
 
     nio = node.get_nio(adapter_number, port_number)
     nio.filters.clear()
-    if isinstance(nio_data, schemas.UDPNIO) and nio_data.filters:
+    # EthernetNIO/TAPNIO carry no filters field; UDPNIO (relay) and
+    # BridgeNIO (kernel datapath) both do.
+    if isinstance(nio_data, (schemas.UDPNIO, schemas.BridgeNIO)) and nio_data.filters:
         nio.filters = nio_data.filters
     # NIO type is a Union (Ethernet/TAP/UDP/bridge); only UDPNIO and
     # BridgeNIO carry markers and suspend. Suspend is what the compute turns
