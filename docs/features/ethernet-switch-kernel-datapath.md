@@ -113,10 +113,16 @@ on **absorbed anchors** re-enslaving an interface owned by another node
 proved to be where links died: live testing showed an anchor occasionally
 losing its bridge membership right after a `ports_mapping` update (later
 updates then failed `delif` with EINVAL), reproducibly with qemu, IOU and
-Dynamips peers, never with Docker's veths. Replaying the exact command
-sequence by hand against uBridge (held TAPs, no server involved) did not
-reproduce it, and the in-place reconcile removes the operation entirely —
-the failure mode no longer exists by construction.
+Dynamips peers, never with Docker's veths. That failure was root-caused
+later: it is NetworkManager releasing NM-managed TAPs from their bridge
+tens of milliseconds after (re)enslavement — veths are not NM-managed,
+which is exactly why only TAP peers showed it (the mechanics and the
+`nmcli device set <tap> managed no` remedy are in the L2-anchor spec). The
+in-place reconcile removes this particular re-enslavement, but link delete
++ recreate and peer restarts still re-enslave the anchor, so the hazard
+remains on NM hosts wherever NM manages the taps; the kernel e2e scenarios
+take the anchors out of NM's hands
+(`harness.unmanage_from_networkmanager`) before they exercise those paths.
 
 ## Link-local frames (LACP, LLDP, 802.1X, STP)
 

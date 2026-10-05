@@ -1053,6 +1053,32 @@ def bridge_members(bridge):
     return sorted(os.listdir(f"/sys/class/net/{bridge}/brif"))
 
 
+def unmanage_from_networkmanager(*names):
+    """Best-effort ``nmcli device set <name> managed no`` for the given
+    interfaces.
+
+    NetworkManager (desktop hosts) manages the TAP devices uBridge creates.
+    While a tap is in NM's not-yet-assumed state, NM's netdev-event state
+    machine can *release* it from its bridge some 60-70 ms after
+    enslavement (measured: ~50% of re-enslavements on an NM host): the port
+    is left administratively up, out of the bridge, with no server-side log
+    or error — a silent blackhole. Scenarios that detach and re-enslave an
+    anchor (link delete + recreate, node restart) must call this once their
+    nodes have booted, or they are nondeterministically flaky on such
+    hosts. Silently a no-op where nmcli is unavailable.
+    """
+    nmcli = shutil.which("nmcli")
+    if not nmcli:
+        return
+    for name in names:
+        # S603: resolved binary, fixed argv, no shell
+        subprocess.run(  # noqa: S603
+            [nmcli, "device", "set", name, "managed", "no"],
+            capture_output=True,
+            check=False,
+        )
+
+
 # ---------------------------------------------------------------------------
 # L2-anchor spec assertions (docs/design/ubridge-l2-anchor-spec.md §E)
 # ---------------------------------------------------------------------------

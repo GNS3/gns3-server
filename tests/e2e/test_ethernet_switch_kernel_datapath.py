@@ -146,6 +146,15 @@ def test_ethernet_switch_kernel_fast_path():
         c1 = _boot(server, pid, r1_id)
         c2 = _boot(server, pid, r2_id)
 
+        # Keep NetworkManager's hands off the anchors: on NM hosts its
+        # netdev state machine can release a freshly re-enslaved tap from
+        # the bridge ~60 ms after the join (silently — the port stays up,
+        # the server keeps believing it is attached), which the link
+        # delete/recreate below triggers nondeterministically. The first
+        # join at node start is unaffected; this covers everything after
+        # it.
+        harness.unmanage_from_networkmanager(a1, a2)
+
         # Deferred joins completed by the node-start re-push: the anchors
         # ARE the switch ports now.
         assert harness.wait_until(lambda: harness.bridge_members(sw_bridge) == sorted([a1, a2]), timeout=15), (

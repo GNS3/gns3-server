@@ -86,6 +86,12 @@ acceptance test in §E.2 therefore measures after a settle window. Suppressing
 it (e.g. `disable_ipv6` on the bridge before enslaving, for the MLD half) would
 be a new, separate requirement and has not been asked for.
 
+### NetworkManager releases managed TAPs from bridges (measured)
+
+On hosts where NetworkManager manages the data-plane TAPs — it claims uBridge-created tun/tap devices on many desktops (`nmcli device` shows them as `disconnected` before NM's state machine has assumed them, `connected (externally)` after) — NM can **release a tap from its bridge** some 60-70 ms after enslavement, while the port is in that not-yet-assumed state. Measured with a minimal harness (one uBridge, one fresh tap, one bridge, an `addif`/`delif` loop, no server): ~50 % of re-enslavements lose the port, the freed device stays administratively **up** with the bridge's promiscuity/allmulti cleared, and no GNS3 process sends anything — gns3-server and uBridge log nothing, and the server's attachment bookkeeping stays intact. The *first* enslavement of a newly created tap was stable in every run; the hazard is a **re-enslavement** (link delete + recreate, a port re-join after a peer restart) before NM assumes the device — on the same tap, `nmcli device set <tap> managed no` flips the failure rate from 20/40 to 0/40, and re-managing it restores 20/40.
+
+Consequence for an affected link: the port silently leaves the bridge (frames drop) while the API stays green — the next NIO update re-heals it, because the switch's `_kernel_update` re-checks `brif` membership, but nothing forces one. Docker's veth host ends are not NM-managed and never showed the failure; every TAP anchor family is exposed (Dynamips `gd`, QEMU `gq`, IOU `gi`, IOL `gx`, and switch-absorbed anchors). Host-side remedy: `nmcli device set <tap> managed no` (runtime, per device), or NM's `unmanaged-devices` configuration keyed on the anchor name prefixes; the e2e harness takes the anchors it re-enslaves out of NM's hands (`harness.unmanage_from_networkmanager`).
+
 ### Goal
 
 Every host-side device uBridge creates for the data plane is **pure L2**: no
