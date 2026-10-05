@@ -983,6 +983,25 @@ def docker_wait_address(daemon, container_id, address, timeout=30):
 
 _BUSYBOX_PING_LOSS_RE = re.compile(r"(\d+)% packet loss")
 _BUSYBOX_PING_RTT_RE = re.compile(r"round-trip min/avg/max = [\d.]+/([\d.]+)/[\d.]+ ms")
+_BUSYBOX_PING_REPLY_RE = re.compile(r"\bseq=\d+")
+
+
+def _busybox_ping_parse(output, count):
+    """(loss percent, avg rtt or None) from busybox ping output.
+
+    The summary line can be lost when the exec stream truncates (observed
+    after busybox's 4294967 ms RTT timer-wrap artifact truncates the
+    tail): with replies visible but no summary, derive the loss from the
+    replies actually seen instead of reporting a phantom 100 %.
+    """
+    loss = _BUSYBOX_PING_LOSS_RE.search(output)
+    if loss is not None:
+        loss_pct = int(loss.group(1))
+    else:
+        replies = len(_BUSYBOX_PING_REPLY_RE.findall(output))
+        loss_pct = round(100 * max(0, count - replies) / count) if replies else 100
+    rtt = _BUSYBOX_PING_RTT_RE.search(output)
+    return loss_pct, (float(rtt.group(1)) if rtt else None)
 
 
 def docker_ping(daemon, container_id, target, count=3, timeout=1, interval=0.2, size=None):
@@ -1003,11 +1022,10 @@ def docker_ping(daemon, container_id, target, count=3, timeout=1, interval=0.2, 
         cmd += ["-s", str(size)]
     cmd.append(target)
     code, output = daemon.exec(container_id, cmd, timeout=cap + 10)
-    loss = _BUSYBOX_PING_LOSS_RE.search(output)
-    rtt = _BUSYBOX_PING_RTT_RE.search(output)
+    loss_pct, avg_rtt = _busybox_ping_parse(output, count)
     return {
-        "loss": int(loss.group(1)) if loss else 100,
-        "avg": float(rtt.group(1)) if rtt else None,
+        "loss": loss_pct,
+        "avg": avg_rtt,
         "raw": output,
         "exit": code,
     }
