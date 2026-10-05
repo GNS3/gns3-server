@@ -18,11 +18,18 @@ import asyncio
 import hashlib
 import os
 import stat
-import tempfile
 
 import aiofiles
 
-from gns3server.utils.image_inventory import contained_path, fingerprint, image_lock, publish_image, stat_fingerprint
+from gns3server.utils.image_inventory import (
+    ImageUploadDirectory,
+    contained_path,
+    fingerprint,
+    image_lock,
+    stat_fingerprint,
+    validate_image_subdirectory,
+    validate_image_upload_name,
+)
 
 try:
     import importlib_resources
@@ -365,9 +372,14 @@ async def write_image(
     images_repo: ImagesRepository,
     check_image_header=True,
     allow_raw_image=False,
+    subdirectory=None,
 ) -> models.Image:
 
     image_dir, image_name = os.path.split(image_filename)
+    subfolders = []
+    if subdirectory is not None:
+        validate_image_upload_name(image_filename)
+        subfolders = validate_image_subdirectory(subdirectory)
     # HTTP chunk boundaries need not align with the seven-byte image header.
     iterator = stream.__aiter__()
     prefix = bytearray()
@@ -379,55 +391,68 @@ async def write_image(
         raise InvalidImageError("The image content is empty or too small to be valid")
     image_type = check_valid_image_header(image_path, bytes(prefix), allow_raw_image or not check_image_header)
     if not image_dir:
-        image_path = os.path.abspath(os.path.join(default_images_directory(image_type), image_name))
+        image_path = os.path.abspath(os.path.join(default_images_directory(image_type), *subfolders, image_name))
         root = os.path.realpath(os.path.expanduser(Config.instance().settings.Server.images_path))
         if not contained_path(os.path.realpath(image_path), root):
             raise InvalidImageError(f"Image destination is outside the configured image directory: {image_path}")
-    os.makedirs(os.path.dirname(image_path), exist_ok=True)
-    descriptor, tmp_path = tempfile.mkstemp(prefix=".gns3-upload-", suffix=".tmp", dir=os.path.dirname(image_path))
-    os.close(descriptor)
-    checksum = hashlib.md5()
-    try:
-        async with aiofiles.open(tmp_path, "wb") as f:
-            await f.write(prefix)
-            checksum.update(prefix)
-            async for chunk in iterator:
-                await f.write(chunk)
-                checksum.update(chunk)
-        image_size = os.path.getsize(tmp_path)
-        async with image_lock(image_path):
-            if os.path.lexists(image_path):
-                raise InvalidImageError(
-                    f"File '{image_path}' already exists, please choose a different name or remove the existing image"
-                )
-            checksum_str: str = checksum.hexdigest()
-            duplicate_image = await images_repo.get_image_by_checksum(checksum_str, os.path.dirname(image_path))
-            if duplicate_image:
-                raise InvalidImageError(
-                    f"Image '{duplicate_image.filename}' with the same checksum "
-                    f"already exists in '{os.path.dirname(image_path)}'"
-                )
-            os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
-            publish_image(tmp_path, image_path)
-            # Complete files survive a database failure so the next scan can
-            # recover them. Never compensate by unlinking a published image.
-            image = await images_repo.save_verified_image(
-                dict(
-                    image_name=image_name,
-                    image_type=image_type,
-                    image_size=image_size,
-                    path=image_path,
-                    checksum=checksum_str,
-                    checksum_algorithm="md5",
-                    file_fingerprint=fingerprint(image_path),
-                )
-            )
-            if image is None:
-                raise InvalidImageError(f"Failed to save image '{image_name}' to database")
-            return image
-    finally:
+    root = Config.instance().settings.Server.images_path
+    with ImageUploadDirectory(root, os.path.dirname(image_path)) as directory:
+        descriptor, temporary = directory.temporary()
+        checksum = hashlib.md5()
         try:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
-        except OSError:
-            log.warning(f"Could not remove '{tmp_path}'")
+            # Own the descriptor explicitly so cancellation cannot leak it.
+            async with aiofiles.open(descriptor, "wb", closefd=False) as f:
+                await f.write(prefix)
+                checksum.update(prefix)
+                async for chunk in iterator:
+                    await f.write(chunk)
+                    checksum.update(chunk)
+            image_size = os.fstat(descriptor).st_size
+            # Preserve executable IOU permissions even under a restrictive umask.
+            permissions = stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC
+            if hasattr(os, "fchmod"):
+                os.fchmod(descriptor, permissions)
+            else:
+                directory.verify()
+                os.chmod(os.path.join(directory.path, temporary), permissions)
+            os.close(descriptor)
+            descriptor = None
+            async with image_lock(image_path):
+                directory.verify()
+                if os.path.lexists(image_path):
+                    raise InvalidImageError(
+                        f"File '{image_path}' already exists, "
+                        f"please choose a different name or remove the existing image"
+                    )
+                checksum = checksum.hexdigest()
+                duplicate_image = await images_repo.get_image_by_checksum(checksum, os.path.dirname(image_path))
+                if duplicate_image:
+                    raise InvalidImageError(
+                        f"Image '{duplicate_image.filename}' with the same checksum "
+                        f"already exists in '{os.path.dirname(image_path)}'"
+                    )
+                file_fingerprint = directory.publish(temporary, image_name)
+                # Complete files survive a database failure for reconciliation.
+                image = await images_repo.save_verified_image(
+                    dict(
+                        image_name=image_name,
+                        image_type=image_type,
+                        image_size=image_size,
+                        path=image_path,
+                        checksum=checksum,
+                        checksum_algorithm="md5",
+                        file_fingerprint=file_fingerprint,
+                    )
+                )
+                if image is None:
+                    raise InvalidImageError(f"Failed to save image '{image_name}' to database")
+                return image
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
+            try:
+                directory.remove(temporary)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                log.warning("Could not remove temporary image '%s'", temporary)

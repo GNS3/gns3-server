@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 import json
 import logging
 import os
@@ -28,6 +29,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from gns3server import schemas
+from gns3server.db.models import Image
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -38,7 +40,7 @@ from gns3server.utils.images import default_images_directory
 from ..config import Config
 from ..utils.asyncio import locking
 from ..utils.http_client import HTTPClient
-from ..utils.image_inventory import image_lock
+from ..utils.image_inventory import contained_path, image_lock
 from ..utils.images import InvalidImageError, read_image_info, write_image
 from .appliance import Appliance
 from .appliance_to_template import ApplianceToTemplate
@@ -133,9 +135,74 @@ class ApplianceManager:
                         appliances.append((appliance, image.get("version")))
         return appliances
 
+    def image_compatibility_catalog(self) -> dict:
+        """Return a conservative size filter; uncertain metadata requires full hashing."""
+        sizes = set()
+        unknown = False
+        for appliance in self._appliances.values():
+            for image in appliance.images or []:
+                if not image.get("md5sum"):
+                    continue
+                size = image.get("filesize")
+                if isinstance(size, int) and not isinstance(size, bool) and size >= 0:
+                    sizes.add(size)
+                else:
+                    unknown = True
+        return {"image_sizes": sorted(sizes), "has_unknown_sizes": unknown}
+
+    async def check_image_compatibility(self, checksums: list[str], images_repo: ImagesRepository) -> list[dict]:
+        """Read catalog eligibility without uploading, downloading, or creating templates.
+
+        Other images in the selected batch count as prospective dependencies.
+        Final installation still verifies the uploaded contents and dependencies.
+        """
+        selected = {checksum.lower() for checksum in checksums}
+        available = {}
+        results = []
+        for checksum in dict.fromkeys(checksum.lower() for checksum in checksums):
+            matches = []
+            seen = set()
+            for appliance, image_version in self._find_appliances_from_image_checksum(checksum):
+                try:
+                    ApplianceModel.model_validate(appliance.asdict())
+                except ValidationError:
+                    continue
+                for version in appliance.versions or []:
+                    name = version.get("name")
+                    if name != image_version or (appliance.id, name) in seen:
+                        continue
+                    seen.add((appliance.id, name))
+                    missing, downloadable = [], []
+                    definitions = {image.get("filename"): image for image in appliance.images or []}
+                    for filename in dict.fromkeys((version.get("images") or {}).values()):
+                        definition = definitions.get(filename, {})
+                        dependency_checksum = (definition.get("md5sum") or "").lower()
+                        if dependency_checksum in selected:
+                            continue
+                        if dependency_checksum not in available:
+                            available[dependency_checksum] = bool(
+                                dependency_checksum and await images_repo.get_image_by_checksum(dependency_checksum)
+                            )
+                        if available[dependency_checksum]:
+                            continue
+                        if definition.get("direct_download_url"):
+                            downloadable.append(filename)
+                        else:
+                            missing.append(filename)
+                    matches.append(
+                        {
+                            "name": appliance.name,
+                            "version": name,
+                            "missing_images": missing,
+                            "downloadable_images": downloadable,
+                        }
+                    )
+            results.append({"checksum": checksum, "matches": matches})
+        return results
+
     async def _download_image(
         self, image_dir: str, image_name: str, image_type: str, image_url: str, images_repo: ImagesRepository
-    ) -> None:
+    ) -> Image:
         """
         Download an image.
         """
@@ -146,8 +213,9 @@ class ApplianceManager:
             async with HTTPClient.get(image_url) as response:
                 if response.status != 200:
                     raise ControllerError(f"Could not download '{image_name}' due to HTTP error code {response.status}")
-                await write_image(
-                    image_name, image_path, response.content.iter_any(), images_repo, allow_raw_image=True
+                # Explicit paths keep dependencies in the appliance's selected directory.
+                return await write_image(
+                    image_path, image_path, response.content.iter_any(), images_repo, allow_raw_image=True
                 )
         except (OSError, InvalidImageError) as e:
             raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
@@ -169,9 +237,11 @@ class ApplianceManager:
                 for image in appliance.images or []:
                     if appliance_file == image.get("filename"):
                         image_checksum = image.get("md5sum")
-                        image_in_db = await images_repo.get_image_by_checksum(image_checksum)
+                        image_in_db = await images_repo.get_image_by_checksum(image_checksum, image_dir)
+                        if image_in_db is None:
+                            image_in_db = await images_repo.get_image_by_checksum(image_checksum)
                         if image_in_db:
-                            version_images[appliance_key] = image_in_db.filename
+                            version_images[appliance_key] = self._image_reference(image_in_db)
                         else:
                             # check if the image is on disk but it not yet in the database
                             image_path = os.path.join(image_dir, appliance_file)
@@ -183,18 +253,27 @@ class ApplianceManager:
                                             f"Image '{image_path}' does not match the appliance checksum"
                                         )
                                     try:
-                                        await images_repo.save_verified_image(image_info)
+                                        image_in_db = await images_repo.save_verified_image(image_info)
+                                        version_images[appliance_key] = self._image_reference(image_in_db)
                                     except SQLAlchemyError as e:
                                         raise ControllerError(f"Could not register image '{image_path}': {e}") from e
                             else:
                                 # download the image if there is a direct download URL
                                 direct_download_url = image.get("direct_download_url")
                                 if direct_download_url:
-                                    await self._download_image(
+                                    image_in_db = await self._download_image(
                                         image_dir, appliance_file, appliance.type, direct_download_url, images_repo
                                     )
+                                    version_images[appliance_key] = self._image_reference(image_in_db)
                                 else:
                                     raise ControllerError(f"Could not find '{appliance_file}'")
+
+    @staticmethod
+    def _image_reference(image: Image) -> str:
+        directory = default_images_directory(image.image_type)
+        if contained_path(image.path, directory):
+            return os.path.relpath(image.path, directory).replace(os.sep, "/")
+        return image.path
 
     async def _create_template(self, template_data, templates_repo, rbac_repo, current_user) -> dict:
         """
@@ -266,6 +345,7 @@ class ApplianceManager:
                 for version in appliance.versions:
                     if version.get("name") == image_version:
                         try:
+                            version = copy.deepcopy(version)
                             await self._find_appliance_version_images(appliance, version, images_repo, image_dir)
                             template_data = await self._appliance_to_template(appliance, version)
                             name = template_data.get("name")
@@ -337,6 +417,7 @@ class ApplianceManager:
             for appliance_version_info in appliance.versions:
                 if appliance_version_info.get("name") == version:
                     try:
+                        appliance_version_info = copy.deepcopy(appliance_version_info)
                         template_type = ApplianceToTemplate().get_template_type(
                             appliance.asdict(), appliance_version_info
                         )

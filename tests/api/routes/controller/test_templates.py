@@ -1582,3 +1582,57 @@ class TestImageAssociationWithTemplate:
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+    @pytest.mark.parametrize("reference", ["Vendor/router.bin", "router.bin"])
+    async def test_nested_template_resolves_image_in_correct_type_root(self, client, images_dir, db_session, reference):
+        repository = ImagesRepository(db_session)
+        # Insert the wrong type first, then a suffix collision below QEMU itself.
+        for index, relative in enumerate([f"IOU/{reference}", f"QEMU/Other/{reference}", f"QEMU/{reference}"]):
+            path = Path(images_dir) / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"image bytes")
+            await repository.add_image(
+                path.name, "iou" if index == 0 else "qemu", 11, str(path), str(index) * 32, "md5"
+            )
+        expected_path = str(Path(images_dir) / "QEMU" / reference)
+        response = await client.post("/v3/templates", json={
+            "name": f"Nested QEMU {reference}", "template_type": "qemu", "compute_id": "local",
+            "hda_disk_image": reference, "ram": 512,
+        })
+        assert response.status_code == 201, response.text
+        templates = TemplatesRepository(db_session)
+        template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
+        assert [image.path for image in template.images] == [expected_path]
+        # Updating removes the association for the same correctly resolved path.
+        response = await client.put(f"/v3/templates/{template.template_id}", json={"hda_disk_image": ""})
+        assert response.status_code == 200, response.text
+        await db_session.refresh(template, ["images"])
+        assert template.images == []
+
+
+    async def test_update_removes_legacy_association_when_new_exact_path_exists(self, client, images_dir, db_session):
+        repository = ImagesRepository(db_session)
+        legacy_path = Path(images_dir) / "QEMU/Other/Vendor/router.qcow2"
+        canonical_path = Path(images_dir) / "QEMU/Vendor/router.qcow2"
+        for index, path in enumerate([legacy_path, canonical_path]):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"image bytes")
+            await repository.add_image(path.name, "qemu", 11, str(path), str(index) * 32, "md5")
+        response = await client.post("/v3/templates", json={
+            "name": "Legacy nested association", "template_type": "qemu", "compute_id": "local",
+            "hda_disk_image": str(legacy_path), "ram": 512,
+        })
+        assert response.status_code == 201, response.text
+        templates = TemplatesRepository(db_session)
+        template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
+        # Simulate an existing template that used the legacy suffix lookup.
+        await templates.update_template(template, {"hda_disk_image": "Vendor/router.qcow2"})
+        legacy_image = template.images[0]
+        legacy_image.availability = "missing"
+        await db_session.commit()
+        legacy_path.unlink()
+        response = await client.put(f"/v3/templates/{template.template_id}", json={"hda_disk_image": ""})
+        assert response.status_code == 200, response.text
+        await db_session.refresh(template, ["images"])
+        assert template.images == []

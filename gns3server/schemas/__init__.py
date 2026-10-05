@@ -29,7 +29,7 @@ from .controller.computes import (
 )
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
-from .controller.images import Image, ImageSyncJob, ImageSyncRequest, ImageType
+from .controller.images import Image, ImageSyncJob, ImageSyncRequest, ImageType, ImageUpload
 
 # Controller schemas
 from .controller.links import (
@@ -233,6 +233,7 @@ __all__ = [
     "ImageSyncJob",
     "ImageSyncRequest",
     "ImageType",
+    "ImageUpload",
     "LLMModelConfigCreate",
     "LLMModelConfigData",
     "LLMModelConfigInheritedResponse",
