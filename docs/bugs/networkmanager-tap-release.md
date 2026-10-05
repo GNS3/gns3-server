@@ -42,13 +42,113 @@ Docker veth host ends are not NM-managed (and the veth naming/type heuristics hi
 
 ## Reproduction (minimal, gns3-server not involved)
 
-Self-contained harness: one uBridge (`ubridge -U <sock>`), one fresh TAP (`tap create`), one kernel bridge (`brctl create` + `vlanfiltering on`), then loop { `link set <tap> up`, `brctl addif <br> <tap>`, 200 ms of ~1 kHz membership sampling, `brctl delif`, `link set down` }. Measured on an affected host (same code, five baseline runs, then single-variable A/B on one tap):
+A self-contained reproducer — one uBridge, one TAP, one kernel bridge, an enslavement loop — needs none of the server. It drives uBridge's control socket through the repository's own client, so no build step and no extra dependencies beyond the venv:
+
+```python
+#!/usr/bin/env python3
+"""Minimal reproducer: NetworkManager releases an enslaved TAP from its bridge.
+
+Run from the gns3-server repo root on an affected host (Linux + NetworkManager
+managing the TAPs; uBridge installed with cap_net_admin):
+
+    venv/bin/python nm_tap_release_repro.py       # 40 re-enslavements
+    nmcli device set gdlab-nm managed no          # the A/B flip (same tap!)
+    venv/bin/python nm_tap_release_repro.py       # -> 0 releases
+
+The tap and bridge are kept between runs (same device = same NM state).
+Clean up afterwards:
+
+    venv/bin/python nm_tap_release_repro.py --cleanup
+"""
+import asyncio
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, os.getcwd())  # run from the repo root for gns3server imports
+from gns3server.compute.ubridge.ubridge_hypervisor import UBridgeHypervisor
+
+TAP = "gdlab-nm"
+BRIDGE = "gns3lab-nm"
+SOCK = "/tmp/nm_tap_release_repro.sock"
+ITERATIONS = 40
+SAMPLE_MS = 200  # membership sampled at ~1 kHz for this long after each addif
+
+
+def in_bridge():
+    return os.path.exists(f"/sys/class/net/{BRIDGE}/brif/{TAP}")
+
+
+async def main():
+    ubridge = shutil.which("ubridge")
+    if not ubridge:
+        sys.exit("ubridge not found in PATH")
+    if os.path.exists(SOCK):
+        os.unlink(SOCK)
+    proc = subprocess.Popen(
+        [ubridge, "-U", SOCK], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd="/tmp"
+    )
+    try:
+        h = UBridgeHypervisor(socket_path=SOCK)
+        await h.connect()
+
+        async def send(cmd):
+            try:
+                await h.send(cmd)
+            except Exception:
+                pass  # ENOENT during setup/teardown is expected
+
+        if "--cleanup" in sys.argv:
+            await send(f'tap delete "{TAP}"')
+            await send(f'brctl delete "{BRIDGE}"')
+            return
+        await send(f'tap create "{TAP}"')  # no-op if the tap already exists
+        await send(f'brctl create "{BRIDGE}"')
+        await send(f'link set "{BRIDGE}" up')
+        await send(f'brctl vlanfiltering "{BRIDGE}" on')
+
+        releases, latencies = 0, []
+        for _ in range(ITERATIONS):
+            await send(f'link set "{TAP}" up')
+            await send(f'brctl addif "{BRIDGE}" "{TAP}"')
+            t0 = time.time()
+            for _ in range(SAMPLE_MS):
+                await asyncio.sleep(0.001)
+                if not in_bridge():
+                    releases += 1
+                    latencies.append(round((time.time() - t0) * 1000, 1))
+                    break
+            await send(f'brctl delif "{BRIDGE}" "{TAP}"')
+            await send(f'link set "{TAP}" down')
+            await asyncio.sleep(0.005)
+
+        print(f"releases: {releases}/{ITERATIONS} re-enslavements", flush=True)
+        if latencies:
+            print(f"release latency after join (ms): {latencies[:10]}")
+            print(f"expect ~19-20/40 while NetworkManager manages {TAP}, "
+                  f"0/40 after `nmcli device set {TAP} managed no`")
+    finally:
+        proc.kill()
+
+
+asyncio.run(main())
+```
+
+How the numbers are produced:
+
+- 40 iterations; each is one **re-enslavement**: `link set <tap> up`, `brctl addif`, then membership sampled at ~1 kHz for 200 ms, then `brctl delif` + `link set down`.
+- A **release** is counted when `/sys/class/net/<bridge>/brif/<tap>` disappears inside that 200 ms window; the script prints the release latency after the join (the NM release lands at 58-87 ms).
+- The tap is kept between runs, so the A/B flip is single-variable on the *same* device; a fresh device would reset NM's assumption state (the first enslavement of a fresh tap is always stable).
+
+Measured on an affected host (same code, five baseline runs, then the A/B between runs):
 
 | Condition | Releases / 40 re-enslavements |
 |---|---|
 | NM-managed (default) | 19, 20, 19, 20, 20 |
-| `nmcli device set <tap> managed no` | **0** |
-| re-managed (`nmcli device set <tap> managed yes`) | 20 |
+| `nmcli device set <tap> managed no`, same tap | **0** |
+| re-managed (`nmcli device set <tap> managed yes`), same tap | 20 |
 
 e2e-level reproduction: `tests/e2e/test_ethernet_switch_kernel_datapath.py::test_ethernet_switch_kernel_fast_path` fails at its link delete/recreate step (`wait_ping` after the anchor re-join) roughly half of fresh runs on an NM host — it failed twice consecutively on 2026-10-05 during the 3.1 rebase validation before the fix.
 
@@ -63,7 +163,7 @@ Three layers, of which the first is the verified root fix:
    unmanaged-devices=interface-name:gd*;interface-name:gq*;interface-name:gi*;interface-name:gx*;interface-name:gv*;interface-name:gns3*
    ```
 
-   then `systemctl reload NetworkManager`. Devices matching are unmanaged from birth (also future ones and after re-creations); hosts without NM treat the file as inert. Verified on the affected host: minimal loop **0/40**, and the e2e scenario passes with the test-side workaround disabled (pure host config). This belongs in installers/documentation, not in the server (no root; and the server must not reconfigure the host's NM).
+   then `systemctl reload NetworkManager`. Devices matching are unmanaged from birth (also future ones and after re-creations); hosts without NM treat the file as inert. Verified on the affected host: minimal loop **0/40**, and the e2e scenario passes with the test-side workaround disabled (pure host config); re-verify with the reproducer below — same tap, expect 0/40 after the reload. This belongs in installers/documentation, not in the server (no root; and the server must not reconfigure the host's NM).
 
 2. **Test-side best effort** — `harness.unmanage_from_networkmanager(*taps)` runs `nmcli device set <tap> managed no` where nmcli exists (no-op otherwise); kernel-datapath scenarios that re-enslave anchors call it after their nodes have booted. This keeps the e2e deterministic on un-declared hosts.
 
