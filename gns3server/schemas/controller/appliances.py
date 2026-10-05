@@ -19,7 +19,9 @@
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
+
 from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag
+
 from ..common import ExtraConfig
 
 # ============================================================================
