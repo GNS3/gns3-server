@@ -122,7 +122,7 @@ async def test_update_on_compute(controller):
     project._project_created_on_compute = [compute]
     project.emit_notification = MagicMock()
     await project.update(variables=variables)
-    compute.put.assert_any_call("/projects/{}".format(project.id), {"variables": variables})
+    compute.put.assert_any_call(f"/projects/{project.id}", {"variables": variables})
 
 
 @pytest.mark.asyncio
@@ -203,7 +203,7 @@ async def test_add_node_local(controller):
         },
     )
     compute.post.assert_any_call(
-        "/projects/{}/vpcs/nodes".format(project.id),
+        f"/projects/{project.id}/vpcs/nodes",
         data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
         timeout=1200,
     )
@@ -272,7 +272,7 @@ async def test_add_node_non_local(controller):
 
     compute.post.assert_any_call("/projects", data={"name": project._name, "project_id": project._id})
     compute.post.assert_any_call(
-        "/projects/{}/vpcs/nodes".format(project.id),
+        f"/projects/{project.id}/vpcs/nodes",
         data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
         timeout=1200,
     )
@@ -448,7 +448,7 @@ async def test_add_node_iou_no_id_available(controller):
     with pytest.raises(ControllerError):
         for i in range(1, 513):
             prop = {"properties": {"application_id": i}}
-            project._nodes[i] = Node(project, compute, "Node{}".format(i), node_id=i, node_type="iou", **prop)
+            project._nodes[i] = Node(project, compute, f"Node{i}", node_id=i, node_type="iou", **prop)
         await project.add_node(compute, "test1", None, node_type="iou")
 
 
@@ -538,7 +538,7 @@ async def test_delete_node(controller):
     await project.delete_node(node.id)
     assert node.id not in project._nodes
 
-    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
+    compute.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node.id}")
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
 
 
@@ -585,7 +585,7 @@ async def test_delete_node_delete_link(controller):
     assert node.id not in project._nodes
     assert link.id not in project._links
 
-    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
+    compute.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node.id}")
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
     project.emit_notification.assert_any_call("link.deleted", link.asdict())
 

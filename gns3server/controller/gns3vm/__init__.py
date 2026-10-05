@@ -60,9 +60,7 @@ class GNS3VM:
         :returns: Return list of engines supported by GNS3 for the GNS3VM
         """
 
-        download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VMware.Workstation.{version}.zip".format(
-            version=__version__
-        )
+        download_url = f"https://github.com/GNS3/gns3-gui/releases/download/v{__version__}/GNS3.VM.VMware.Workstation.{__version__}.zip"
         vmware_info = {
             "engine_id": "vmware",
             "description": f'VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href="{download_url}">downloaded here</a>.',
@@ -76,9 +74,7 @@ class GNS3VM:
             vmware_info["name"] = "VMware Workstation / Player (recommended)"
 
         download_url = (
-            "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.Hyper-V.{version}.zip".format(
-                version=__version__
-            )
+            f"https://github.com/GNS3/gns3-gui/releases/download/v{__version__}/GNS3.VM.Hyper-V.{__version__}.zip"
         )
         hyperv_info = {
             "engine_id": "hyper-v",
@@ -90,9 +86,7 @@ class GNS3VM:
         }
 
         download_url = (
-            "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VirtualBox.{version}.zip".format(
-                version=__version__
-            )
+            f"https://github.com/GNS3/gns3-gui/releases/download/v{__version__}/GNS3.VM.VirtualBox.{__version__}.zip"
         )
         virtualbox_info = {
             "engine_id": "virtualbox",
@@ -377,9 +371,7 @@ class GNS3VM:
                         if netmask:
                             compute_network = ipaddress.ip_interface(f"{compute.host_ip}/{netmask}").network
                             if vm_network.compare_networks(compute_network) != 0:
-                                msg = "The GNS3 VM (IP={}, NETWORK={}) is not on the same network as the {} server (IP={}, NETWORK={}), please make sure the local server binding is in the same network as the GNS3 VM".format(
-                                    self.ip_address, vm_network, compute_id, compute.host_ip, compute_network
-                                )
+                                msg = f"The GNS3 VM (IP={self.ip_address}, NETWORK={vm_network}) is not on the same network as the {compute_id} server (IP={compute.host_ip}, NETWORK={compute_network}), please make sure the local server binding is in the same network as the GNS3 VM"
                                 self._controller.notification.controller_emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning(f"Could not check the VM is in the same subnet as the local server: {e}")

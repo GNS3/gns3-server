@@ -51,7 +51,7 @@ async def test_query_success(vm):
     data = await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},
@@ -76,7 +76,7 @@ async def test_query_error(vm):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},
@@ -99,7 +99,7 @@ async def test_query_error_json(vm):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},

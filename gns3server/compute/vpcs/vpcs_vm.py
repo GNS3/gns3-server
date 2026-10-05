@@ -384,21 +384,13 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError(
-                "Port {port_number} doesn't exist on adapter {adapter}".format(
-                    adapter=self._ethernet_adapter, port_number=port_number
-                )
-            )
+            raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
 
         if self.is_running():
             await self.add_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info(
-            'VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(
-                name=self._name, id=self.id, nio=nio, port_number=port_number
-            )
-        )
+        log.info(f'VPCS "{self._name}" [{self.id}]: {nio} added to port {port_number}')
 
         return nio
 
@@ -411,11 +403,7 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError(
-                "Port {port_number} doesn't exist on adapter {adapter}".format(
-                    adapter=self._ethernet_adapter, port_number=port_number
-                )
-            )
+            raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
         if self.is_running():
             await self.update_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
 
@@ -429,11 +417,7 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError(
-                "Port {port_number} doesn't exist on adapter {adapter}".format(
-                    adapter=self._ethernet_adapter, port_number=port_number
-                )
-            )
+            raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
 
         await self.stop_capture(port_number)
         if self.is_running():
@@ -444,11 +428,7 @@ class VPCSVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
 
-        log.info(
-            'VPCS "{name}" [{id}]: {nio} removed from port {port_number}'.format(
-                name=self._name, id=self.id, nio=nio, port_number=port_number
-            )
-        )
+        log.info(f'VPCS "{self._name}" [{self.id}]: {nio} removed from port {port_number}')
         return nio
 
     def get_nio(self, port_number):
@@ -461,11 +441,7 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError(
-                "Port {port_number} doesn't exist on adapter {adapter}".format(
-                    adapter=self._ethernet_adapter, port_number=port_number
-                )
-            )
+            raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
         nio = self._ethernet_adapter.get_nio(port_number)
         if not nio:
             raise VPCSError(f"Port {port_number} is not connected")
@@ -489,11 +465,7 @@ class VPCSVM(BaseNode):
                 'bridge start_capture {name} "{output_file}"'.format(name=f"VPCS-{self._id}", output_file=output_file)
             )
 
-        log.info(
-            "VPCS '{name}' [{id}]: starting packet capture on port {port_number}".format(
-                name=self.name, id=self.id, port_number=port_number
-            )
-        )
+        log.info(f"VPCS '{self.name}' [{self.id}]: starting packet capture on port {port_number}")
 
     async def stop_capture(self, port_number):
         """
@@ -510,11 +482,7 @@ class VPCSVM(BaseNode):
         if self.ubridge:
             await self._ubridge_send("bridge stop_capture {name}".format(name=f"VPCS-{self._id}"))
 
-        log.info(
-            "VPCS '{name}' [{id}]: stopping packet capture on port {port_number}".format(
-                name=self.name, id=self.id, port_number=port_number
-            )
-        )
+        log.info(f"VPCS '{self.name}' [{self.id}]: stopping packet capture on port {port_number}")
 
     def _build_command(self):
         """

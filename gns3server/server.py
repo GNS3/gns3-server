@@ -260,9 +260,7 @@ class Server:
             raise SystemExit("Python 3.9 or higher is required")
 
         log.info(
-            "Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
-                major=sys.version_info[0], minor=sys.version_info[1], micro=sys.version_info[2], pid=os.getpid()
-            )
+            f"Running with Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} and has PID {os.getpid()}"
         )
 
         # check for the correct locale (UNIX/Linux only)

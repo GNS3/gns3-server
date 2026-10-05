@@ -107,7 +107,6 @@ ignore = [
   "S110",      #   23  try-except-pass
   "UP006",     #  270  non-pep585-annotation
   "UP007",     #   81  non-pep604-annotation-union
-  "UP032",     #  560  f-string
   "UP035",     #  106  deprecated-import
   "UP045",     # 1100  non-pep604-annotation-optional
 ]

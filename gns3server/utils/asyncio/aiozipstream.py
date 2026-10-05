@@ -184,7 +184,7 @@ class ZipFile(zipfile.ZipFile):
         """
 
         if not isinstance(comment, bytes):
-            raise TypeError("comment: expected bytes, got {}".format(type(comment)))
+            raise TypeError(f"comment: expected bytes, got {type(comment)}")
         # check for valid comment length
         if len(comment) >= zipfile.ZIP_MAX_COMMENT:
             if self.debug:

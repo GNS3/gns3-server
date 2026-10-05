@@ -130,11 +130,7 @@ class NIO:
             raise DynamipsError(f"Unknown direction {direction} to bind filter {filter_name}:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send(
-            "nio bind_filter {name} {direction} {filter}".format(
-                name=self._name, direction=dynamips_direction, filter=filter_name
-            )
-        )
+        await self._hypervisor.send(f"nio bind_filter {self._name} {dynamips_direction} {filter_name}")
 
         if direction == "in":
             self._input_filter = filter_name
@@ -155,9 +151,7 @@ class NIO:
             raise DynamipsError(f"Unknown direction {direction} to unbind filter:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send(
-            "nio unbind_filter {name} {direction}".format(name=self._name, direction=dynamips_direction)
-        )
+        await self._hypervisor.send(f"nio unbind_filter {self._name} {dynamips_direction}")
 
         if direction == "in":
             self._input_filter = None
@@ -190,11 +184,7 @@ class NIO:
             raise DynamipsError(f"Unknown direction {direction} to setup filter:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send(
-            "nio setup_filter {name} {direction} {options}".format(
-                name=self._name, direction=dynamips_direction, options=options
-            )
-        )
+        await self._hypervisor.send(f"nio setup_filter {self._name} {dynamips_direction} {options}")
 
         if direction == "in":
             self._input_filter_options = options

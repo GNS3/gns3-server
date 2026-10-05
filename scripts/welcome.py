@@ -39,7 +39,7 @@ class Welcome_dialog:
         if self.gns3_version() is None:
             self.display.set_background_title("GNS3")
         else:
-            self.display.set_background_title("GNS3 {}".format(self.gns3_version()))
+            self.display.set_background_title(f"GNS3 {self.gns3_version()}")
 
     def get_ip(self):
         """
@@ -228,42 +228,36 @@ class Welcome_dialog:
             if answer != self.display.OK:
                 return
             if destination == self.get_ip():
-                self.display.msgbox("The destination cannot be the same as this VM IP address ({})".format(destination))
+                self.display.msgbox(f"The destination cannot be the same as this VM IP address ({destination})")
                 return
             if option == "Send":
                 # first make sure they are no files belonging to root
                 os.system("sudo chown -R gns3:gns3 /opt/gns3")
                 # then rsync the data
-                command = r"rsync -az --progress -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/gns3/.ssh/gns3-vm-key' /opt/gns3 gns3@{}:/opt".format(
-                    destination
-                )
-                ret = os.system('bash -c "{}"'.format(command))
+                command = rf"rsync -az --progress -e 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/gns3/.ssh/gns3-vm-key' /opt/gns3 gns3@{destination}:/opt"
+                ret = os.system(f'bash -c "{command}"')
                 time.sleep(10)
                 if ret != 0:
-                    self.display.msgbox("Could not send data to the other GNS3 VM located at {}".format(destination))
+                    self.display.msgbox(f"Could not send data to the other GNS3 VM located at {destination}")
                 else:
                     self.display.msgbox(
-                        "Images and projects have been successfully sent to the other GNS3 VM located at {}".format(
-                            destination
-                        )
+                        f"Images and projects have been successfully sent to the other GNS3 VM located at {destination}"
                     )
             elif option == "Setup":
-                script = """
+                script = f"""
     if [ ! -f ~/.ssh/gns3-vm-key ]
     then
-        ssh-keygen -f ~/.ssh/gns3-vm-key -N '' -C gns3@{}
+        ssh-keygen -f ~/.ssh/gns3-vm-key -N '' -C gns3@{self.get_ip()}
     fi
-    ssh-copy-id -i ~/.ssh/gns3-vm-key gns3@{}
-    """.format(self.get_ip(), destination)
-                ret = os.system('bash -c "{}"'.format(script))
+    ssh-copy-id -i ~/.ssh/gns3-vm-key gns3@{destination}
+    """
+                ret = os.system(f'bash -c "{script}"')
                 time.sleep(10)
                 if ret != 0:
                     self.display.msgbox("Error while setting up the migrate feature")
                 else:
                     self.display.msgbox(
-                        "Configuration successful, you can now send data to the GNS3 VM located at {} without password".format(
-                            destination
-                        )
+                        f"Configuration successful, you can now send data to the GNS3 VM located at {destination} without password"
                     )
 
     def shrink_disk(self):
@@ -300,11 +294,7 @@ class Welcome_dialog:
         if version is None:
             content += "GNS3 is not installed please install it with sudo pip3 install gns3-server. Or download a preinstalled VM.\n\n"
         else:
-            content = (
-                "GNS3 version: {gns3_version}\nVM version: {gns3vm_version}\nKVM support available: {kvm}\n\n".format(
-                    gns3vm_version=self.gns3vm_version(), gns3_version=version, kvm=self.kvm_support()
-                )
-            )
+            content = f"GNS3 version: {version}\nVM version: {self.gns3vm_version()}\nKVM support available: {self.kvm_support()}\n\n"
 
         ip = self.get_ip()
 
@@ -336,7 +326,7 @@ Images and projects are located in /opt/gns3
         try:
             response = urllib.request.urlopen("http://pypi.python.org/", timeout=5)
         except urllib.request.URLError as err:
-            self.display.infobox("Can't connect to Internet (pypi.python.org): {}".format(str(err)))
+            self.display.infobox(f"Can't connect to Internet (pypi.python.org): {err!s}")
             time.sleep(15)
             return
         self.display.infobox("Connection to Internet: OK")
@@ -384,7 +374,7 @@ Images and projects are located in /opt/gns3
 
         major_version = self.gns3_major_version()
         if major_version == "2.2":
-            os.system("nano ~/.config/GNS3/{}/gns3_server.conf".format(major_version))
+            os.system(f"nano ~/.config/GNS3/{major_version}/gns3_server.conf")
         else:
             os.system("nano ~/.config/GNS3/gns3_server.conf")
 
@@ -474,7 +464,7 @@ Images and projects are located in /opt/gns3
         try:
             while True:
                 code, tag = self.display.menu(
-                    "GNS3 {}".format(self.gns3_version()),
+                    f"GNS3 {self.gns3_version()}",
                     choices=[
                         ("Information", "Display VM information"),
                         ("Upgrade", "Upgrade GNS3"),

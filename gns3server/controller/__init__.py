@@ -362,7 +362,7 @@ class Controller:
         # install the built-in appliances if needed
         if Config.instance().settings.Server.install_builtin_appliances:
             previous_version = controller_vars.get("version")
-            log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+            log.info(f"Comparing controller version {__version__} with config version {previous_version}")
             builtin_appliances_path = self._appliance_manager.builtin_appliances_path()
             if not previous_version or parse_version(__version__.split("+")[0]) > parse_version(
                 previous_version.split("+")[0]
