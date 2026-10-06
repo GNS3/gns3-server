@@ -20,7 +20,7 @@ from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag, model_validator
+from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag
 
 from ..common import ExtraConfig
 
@@ -599,45 +599,38 @@ class QemuPropertiesV8(BaseModel):
     process_priority: Optional[QemuProcessPriority] = Field(None, title="Process priority for QEMU")
 
 
-_V8_PROPERTIES_MODELS = {
-    TemplateType.qemu: QemuPropertiesV8,
-    TemplateType.dynamips: DynamipsPropertiesV8,
-    TemplateType.iou: IouPropertiesV8,
-    TemplateType.docker: DockerPropertiesV8,
-}
-
-
-class TemplateSetting(BaseModel):
+class TemplateSettingBase(BaseModel):
     """Emulator settings configuration (v8)"""
 
     name: Optional[str] = Field(None, title="Name of the settings set")
     default: Optional[bool] = Field(None, title="Whether these are the default settings")
     inherit_default_properties: Optional[bool] = Field(True, title="Whether the default properties should be used")
-    template_type: TemplateType = Field(..., title="Type of emulator properties")
-    template_properties: Union[QemuPropertiesV8, DynamipsPropertiesV8, IouPropertiesV8, DockerPropertiesV8] = Field(
-        ..., title="Properties for the template"
-    )
 
-    @model_validator(mode="before")
-    @classmethod
-    def _validate_template_properties(cls, data):
-        """
-        Validate template_properties against the model matching template_type.
-        The template_type discriminator lives at the settings level (not inside
-        template_properties), so the union cannot be discriminated by pydantic
-        alone and would misroute properties between the per-type models.
-        """
 
-        if isinstance(data, dict):
-            # work on a copy: replacing template_properties with the validated
-            # model must not mutate the caller's data
-            data = data.copy()
-            template_type = data.get("template_type")
-            template_properties = data.get("template_properties")
-            model = _V8_PROPERTIES_MODELS.get(template_type)
-            if model is not None and isinstance(template_properties, dict):
-                data["template_properties"] = model.model_validate(template_properties)
-        return data
+class QemuTemplateSetting(TemplateSettingBase):
+    template_type: Literal[TemplateType.qemu] = Field(..., title="Type of emulator properties")
+    template_properties: QemuPropertiesV8 = Field(..., title="Properties for the template")
+
+
+class DynamipsTemplateSetting(TemplateSettingBase):
+    template_type: Literal[TemplateType.dynamips] = Field(..., title="Type of emulator properties")
+    template_properties: DynamipsPropertiesV8 = Field(..., title="Properties for the template")
+
+
+class IouTemplateSetting(TemplateSettingBase):
+    template_type: Literal[TemplateType.iou] = Field(..., title="Type of emulator properties")
+    template_properties: IouPropertiesV8 = Field(..., title="Properties for the template")
+
+
+class DockerTemplateSetting(TemplateSettingBase):
+    template_type: Literal[TemplateType.docker] = Field(..., title="Type of emulator properties")
+    template_properties: DockerPropertiesV8 = Field(..., title="Properties for the template")
+
+
+TemplateSetting = Annotated[
+    Union[QemuTemplateSetting, DynamipsTemplateSetting, IouTemplateSetting, DockerTemplateSetting],
+    Field(discriminator="template_type"),
+]
 
 
 class ApplianceVersionV8(BaseModel):
