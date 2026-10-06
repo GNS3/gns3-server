@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class VirtualBoxConsoleType(str, Enum):
@@ -83,12 +84,15 @@ class VirtualBoxCreate(VirtualBoxBase):
     vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
 
 
-class VirtualBoxUpdate(VirtualBoxBase):
+class VirtualBoxUpdate(PartialUpdateModel, VirtualBoxBase):
     """
     Properties to update a VirtualBox node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
+    vmname: Optional[str] = None
 
 
 class VirtualBox(VirtualBoxBase):

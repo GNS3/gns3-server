@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class HostInterfaceType(str, Enum):
@@ -106,12 +107,14 @@ class NATCreate(NATBase):
     name: str
 
 
-class NATUpdate(NATBase):
+class NATUpdate(PartialUpdateModel, NATBase):
     """
     Properties to update a NAT node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
 
 
 class NAT(NATBase):

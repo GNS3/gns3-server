@@ -284,11 +284,6 @@ async def update_node(node_update: schemas.NodeUpdate, node: Node = Depends(dep_
 
     node_data = jsonable_encoder(node_update, exclude_unset=True)
 
-    # Ignore these because we only use them when creating a node
-    node_data.pop("node_id", None)
-    node_data.pop("node_type", None)
-    node_data.pop("compute_id", None)
-
     await node.update(**node_data)
     return node.asdict()
 

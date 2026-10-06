@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class VMwareConsoleType(str, Enum):
@@ -89,12 +90,16 @@ class VMwareCreate(VMwareBase):
     linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
 
 
-class VMwareUpdate(VMwareBase):
+class VMwareUpdate(PartialUpdateModel, VMwareBase):
     """
     Properties to update a VMware node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
+    vmx_path: Optional[str] = None
+    linked_clone: Optional[bool] = None
 
 
 class VMware(VMwareBase):

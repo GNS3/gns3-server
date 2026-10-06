@@ -21,6 +21,7 @@ from pydantic import Field
 
 from gns3server.schemas.compute.iou_nodes import ConsoleType
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -50,5 +51,5 @@ class IOUTemplate(IOUTemplateBase):
     path: str = Field(..., description="Path of IOU executable")
 
 
-class IOUTemplateUpdate(IOUTemplateBase):
-    pass
+class IOUTemplateUpdate(PartialUpdateModel, IOUTemplateBase):
+    update_excluded_fields = ("template_id",)

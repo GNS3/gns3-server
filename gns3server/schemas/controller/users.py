@@ -20,6 +20,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
+from ..update import PartialUpdateModel
 from .base import DateTimeModelMixin
 
 
@@ -43,7 +44,7 @@ class UserCreate(UserBase):
     password: SecretStr = Field(..., min_length=8, max_length=100)
 
 
-class UserUpdate(UserBase):
+class UserUpdate(PartialUpdateModel, UserBase):
     """
     Properties to update a user.
     """

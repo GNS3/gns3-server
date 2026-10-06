@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class QemuPlatform(str, Enum):
@@ -227,12 +228,14 @@ class QemuCreate(QemuBase):
     )
 
 
-class QemuUpdate(QemuBase):
+class QemuUpdate(PartialUpdateModel, QemuBase):
     """
     Properties to update a Qemu node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
 
 
 class Qemu(QemuBase):
