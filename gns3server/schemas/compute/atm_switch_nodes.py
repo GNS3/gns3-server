@@ -20,6 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class ATMSwitchBase(BaseModel):
@@ -41,10 +42,12 @@ class ATMSwitchCreate(ATMSwitchBase):
     node_id: Optional[UUID] = None
 
 
-class ATMSwitchUpdate(ATMSwitchBase):
+class ATMSwitchUpdate(PartialUpdateModel, ATMSwitchBase):
     """
     Properties to update an ATM switch node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     node_id: Optional[UUID] = None

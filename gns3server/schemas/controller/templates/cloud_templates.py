@@ -21,6 +21,7 @@ from pydantic import Field
 
 from gns3server.schemas.compute.cloud_nodes import CloudConsoleType, EthernetPort, TAPPort, UDPPort
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -35,5 +36,5 @@ class CloudTemplate(TemplateBase):
     remote_console_http_path: Optional[str] = Field("/", description="Path of the remote web interface")
 
 
-class CloudTemplateUpdate(CloudTemplate):
-    pass
+class CloudTemplateUpdate(PartialUpdateModel, CloudTemplate):
+    update_excluded_fields = ("template_id",)

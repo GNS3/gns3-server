@@ -26,6 +26,7 @@ from gns3server.schemas.compute.vmware_nodes import (
     VMwareOnCloseAction,
 )
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -63,5 +64,5 @@ class VMwareTemplate(VMwareTemplateBase):
     vmx_path: str = Field(..., description="Path to the vmx file")
 
 
-class VMwareTemplateUpdate(VMwareTemplateBase):
-    pass
+class VMwareTemplateUpdate(PartialUpdateModel, VMwareTemplateBase):
+    update_excluded_fields = ("template_id",)

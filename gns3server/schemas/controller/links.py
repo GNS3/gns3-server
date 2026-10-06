@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from ..update import PartialUpdateModel
 from .labels import Label
 
 
@@ -73,7 +74,7 @@ class LinkCreate(LinkBase):
     nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
 
 
-class LinkUpdate(LinkBase):
+class LinkUpdate(PartialUpdateModel, LinkBase):
     pass
 
 

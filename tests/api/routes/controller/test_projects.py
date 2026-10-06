@@ -117,6 +117,28 @@ class TestControllerProjectRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "test2"
 
+    async def test_update_project_ignores_path_and_project_id(
+        self, app: FastAPI, client: AsyncClient, controller: Controller
+    ) -> None:
+
+        params = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
+        response = await client.post(app.url_path_for("create_project"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        path = response.json()["path"]
+
+        params = {
+            "name": "test2",
+            "path": os.path.join(os.path.dirname(path), "other"),
+            "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f",
+        }
+        response = await client.put(
+            app.url_path_for("update_project", project_id="10010203-0405-0607-0809-0a0b0c0d0e0f"), json=params
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["name"] == "test2"
+        assert response.json()["path"] == path
+        assert response.json()["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
+
     async def test_update_project_with_variables(
         self, app: FastAPI, client: AsyncClient, controller: Controller
     ) -> None:

@@ -20,6 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from ..common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class DockerBase(BaseModel):
@@ -91,12 +92,15 @@ class DockerCreate(DockerBase):
     )
 
 
-class DockerUpdate(DockerBase):
+class DockerUpdate(PartialUpdateModel, DockerBase):
     """
     Properties to update a Docker node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
+    image: Optional[str] = Field(None, description="Docker image name")
 
 
 class Docker(DockerBase):

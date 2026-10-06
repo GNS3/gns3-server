@@ -21,6 +21,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from ..update import PartialUpdateModel
+
 
 class ProjectStatus(str, Enum):
     """
@@ -82,12 +84,12 @@ class ProjectDuplicate(ProjectBase):
     reset_mac_addresses: Optional[bool] = Field(False, description="Reset MAC addresses for this project")
 
 
-class ProjectUpdate(ProjectBase):
+class ProjectUpdate(PartialUpdateModel, ProjectBase):
     """
     Properties for project update.
     """
 
-    pass
+    update_excluded_fields = ("project_id", "path")
 
 
 class Project(ProjectBase):

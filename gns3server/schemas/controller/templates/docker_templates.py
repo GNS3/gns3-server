@@ -20,6 +20,7 @@ from typing import List, Optional
 from pydantic import Field
 
 from ...common import AuxType, ConsoleType, CustomAdapter, ExtraConfig
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -63,5 +64,5 @@ class DockerTemplate(DockerTemplateBase):
     image: str = Field(..., description="Docker image name")
 
 
-class DockerTemplateUpdate(DockerTemplateBase):
-    pass
+class DockerTemplateUpdate(PartialUpdateModel, DockerTemplateBase):
+    update_excluded_fields = ("template_id",)

@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class HostInterfaceType(str, Enum):
@@ -148,12 +149,14 @@ class CloudCreate(CloudBase):
     name: str
 
 
-class CloudUpdate(CloudBase):
+class CloudUpdate(PartialUpdateModel, CloudBase):
     """
     Properties to update a cloud node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
 
 
 class Cloud(CloudBase):

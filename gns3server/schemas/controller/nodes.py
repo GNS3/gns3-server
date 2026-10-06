@@ -21,6 +21,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ..common import ConsoleType, CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 from .labels import Label
 
 
@@ -169,12 +170,12 @@ class NodeCreate(NodeBase):
     node_id: UUID = Field(default_factory=uuid4)
 
 
-class NodeUpdate(NodeBase):
+class NodeUpdate(PartialUpdateModel, NodeBase):
     """
     Data to update a node.
     """
 
-    pass
+    update_excluded_fields = ("node_id", "compute_id", "node_type")
 
 
 class Node(NodeBase):
