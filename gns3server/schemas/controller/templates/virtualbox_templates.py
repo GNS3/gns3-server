@@ -25,6 +25,7 @@ from gns3server.schemas.compute.virtualbox_nodes import (
     VirtualBoxOnCloseAction,
 )
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -65,5 +66,5 @@ class VirtualBoxTemplate(VirtualBoxTemplateBase):
     vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
 
 
-class VirtualBoxTemplateUpdate(VirtualBoxTemplateBase):
-    pass
+class VirtualBoxTemplateUpdate(PartialUpdateModel, VirtualBoxTemplateBase):
+    update_excluded_fields = ("template_id",)

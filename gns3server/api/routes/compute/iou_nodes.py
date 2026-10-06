@@ -105,8 +105,6 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
     data = jsonable_encoder(node_data, exclude_unset=True)
     for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
-            if name == "application_id":
-                continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
             setattr(node, name, value)
 
     if node.use_default_iou_values:
