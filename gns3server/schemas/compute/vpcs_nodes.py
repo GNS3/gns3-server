@@ -21,6 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class ConsoleType(str, Enum):
@@ -54,12 +55,14 @@ class VPCSCreate(VPCSBase):
     name: str
 
 
-class VPCSUpdate(VPCSBase):
+class VPCSUpdate(PartialUpdateModel, VPCSBase):
     """
     Properties to update a VPCS node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
+
+    name: Optional[str] = None
 
 
 class VPCS(VPCSBase):

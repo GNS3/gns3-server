@@ -20,6 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import ConsoleType, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class IOUBase(BaseModel):
@@ -58,12 +59,16 @@ class IOUCreate(IOUBase):
     application_id: int = Field(..., description="Application ID for running IOU executable")
 
 
-class IOUUpdate(IOUBase):
+class IOUUpdate(PartialUpdateModel, IOUBase):
     """
     Properties to update an IOU node.
     """
 
-    pass
+    update_excluded_fields = ("node_id", "application_id")
+
+    name: Optional[str] = None
+    path: Optional[str] = Field(None, description="IOU executable path")
+    application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
 
 
 class IOU(IOUBase):

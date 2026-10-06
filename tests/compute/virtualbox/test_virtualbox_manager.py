@@ -91,7 +91,7 @@ async def test_list_vms(manager):
                 return ["memory=512"]
             elif args[0] == "ccd8c50b-c172-457d-99fa-dd69371ede0e":
                 return ["memory=256"]
-        assert False, "Unknow {} {}".format(cmd, args)
+        assert False, f"Unknow {cmd} {args}"
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock

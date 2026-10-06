@@ -298,7 +298,7 @@ def test_update_startup_script_with_escaping_characters_in_name(vm):
 
     vm.startup_script = "set pcname initial-name\n"
     vm.name = "test\\"
-    assert vm.startup_script == "set pcname test{}".format(os.linesep)
+    assert vm.startup_script == f"set pcname test{os.linesep}"
 
 
 def test_get_startup_script(vm):

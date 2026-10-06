@@ -166,6 +166,32 @@ def test_v8_template_properties_validated_against_template_type():
         ApplianceModel.model_validate(appliance)
 
 
+def test_v8_unknown_template_type_is_discriminator_error():
+    appliance = dict(
+        XRD_V8,
+        settings=[{"name": "only", "default": True, "template_type": "vmware", "template_properties": {}}],
+    )
+    with pytest.raises(pydantic.ValidationError) as exc_info:
+        ApplianceModel.model_validate(appliance)
+    errors = exc_info.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["type"] == "union_tag_invalid"
+
+
+def test_v8_invalid_properties_report_only_matching_type():
+    appliance = dict(
+        XRD_V8,
+        settings=[
+            {"name": "only", "default": True, "template_type": "docker", "template_properties": {"adapters": 2}},
+        ],
+    )
+    with pytest.raises(pydantic.ValidationError) as exc_info:
+        ApplianceModel.model_validate(appliance)
+    locs = [error["loc"] for error in exc_info.value.errors()]
+    assert all("docker" in loc for loc in locs)
+    assert any(loc[-1] == "image" for loc in locs)
+
+
 def test_v8_qemu_kvm_property_validates():
     appliance = dict(
         XRD_V8,

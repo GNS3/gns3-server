@@ -30,6 +30,7 @@ from gns3server.schemas.compute.qemu_nodes import (
     QemuProcessPriority,
 )
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
@@ -102,5 +103,5 @@ class QemuTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class QemuTemplateUpdate(QemuTemplate):
-    pass
+class QemuTemplateUpdate(PartialUpdateModel, QemuTemplate):
+    update_excluded_fields = ("template_id",)

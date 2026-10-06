@@ -139,11 +139,7 @@ class C7200(Router):
 
         await self._hypervisor.send(f'c7200 set_npe "{self._name}" {npe}')
 
-        log.info(
-            'Router "{name}" [{id}]: NPE updated from {old_npe} to {new_npe}'.format(
-                name=self._name, id=self._id, old_npe=self._npe, new_npe=npe
-            )
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: NPE updated from {self._npe} to {npe}')
         self._npe = npe
 
     @property
@@ -165,11 +161,7 @@ class C7200(Router):
 
         await self._hypervisor.send(f'c7200 set_midplane "{self._name}" {midplane}')
 
-        log.info(
-            'Router "{name}" [{id}]: midplane updated from {old_midplane} to {new_midplane}'.format(
-                name=self._name, id=self._id, old_midplane=self._midplane, new_midplane=midplane
-            )
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: midplane updated from {self._midplane} to {midplane}')
         self._midplane = midplane
 
     @property
@@ -196,20 +188,10 @@ class C7200(Router):
 
         sensor_id = 0
         for sensor in sensors:
-            await self._hypervisor.send(
-                'c7200 set_temp_sensor "{name}" {sensor_id} {temp}'.format(
-                    name=self._name, sensor_id=sensor_id, temp=sensor
-                )
-            )
+            await self._hypervisor.send(f'c7200 set_temp_sensor "{self._name}" {sensor_id} {sensor}')
 
             log.info(
-                'Router "{name}" [{id}]: sensor {sensor_id} temperature updated from {old_temp}C to {new_temp}C'.format(
-                    name=self._name,
-                    id=self._id,
-                    sensor_id=sensor_id,
-                    old_temp=self._sensors[sensor_id],
-                    new_temp=sensors[sensor_id],
-                )
+                f'Router "{self._name}" [{self._id}]: sensor {sensor_id} temperature updated from {self._sensors[sensor_id]}C to {sensors[sensor_id]}C'
             )
 
             sensor_id += 1
@@ -235,16 +217,10 @@ class C7200(Router):
 
         power_supply_id = 0
         for power_supply in power_supplies:
-            await self._hypervisor.send(
-                'c7200 set_power_supply "{name}" {power_supply_id} {powered_on}'.format(
-                    name=self._name, power_supply_id=power_supply_id, powered_on=power_supply
-                )
-            )
+            await self._hypervisor.send(f'c7200 set_power_supply "{self._name}" {power_supply_id} {power_supply}')
 
             log.info(
-                'Router "{name}" [{id}]: power supply {power_supply_id} state updated to {powered_on}'.format(
-                    name=self._name, id=self._id, power_supply_id=power_supply_id, powered_on=power_supply
-                )
+                f'Router "{self._name}" [{self._id}]: power supply {power_supply_id} state updated to {power_supply}'
             )
             power_supply_id += 1
 
