@@ -189,9 +189,9 @@ class TemplatesService:
                 templates.append(jsonable_encoder(builtin_template))
         return templates
 
-    async def _find_image(self, image_path: str):
+    async def _find_image(self, image_path: str, image_type: str):
 
-        image = await self._templates_repo.get_image(image_path)
+        image = await self._templates_repo.get_image(image_path, image_type=image_type)
         if not image:
             raise ControllerNotFoundError(f"Image '{image_path}' could not be found in the controller database")
         if not os.path.exists(image.path):
@@ -203,7 +203,7 @@ class TemplatesService:
         images_to_add_to_template = []
         if template_type == "dynamips":
             if settings.get("image"):
-                image = await self._find_image(settings["image"])
+                image = await self._find_image(settings["image"], "ios")
                 if image.image_type != "ios":
                     raise ControllerBadRequestError(
                         f"Image '{image.filename}' type is not 'ios' but '{image.image_type}'"
@@ -211,7 +211,7 @@ class TemplatesService:
                 images_to_add_to_template.append(image)
         elif template_type == "iou":
             if settings.get("path"):
-                image = await self._find_image(settings["path"])
+                image = await self._find_image(settings["path"], "iou")
                 if image.image_type != "iou":
                     raise ControllerBadRequestError(
                         f"Image '{image.filename}' type is not 'iou' but '{image.image_type}'"
@@ -220,7 +220,7 @@ class TemplatesService:
         elif template_type == "qemu":
             for key, value in settings.items():
                 if key.endswith("_image") and value:
-                    image = await self._find_image(value)
+                    image = await self._find_image(value, "qemu")
                     if image.image_type != "qemu":
                         raise ControllerBadRequestError(
                             f"Image '{image.filename}' type is not 'qemu' but '{image.image_type}'"
@@ -274,12 +274,14 @@ class TemplatesService:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
         return template
 
-    async def _remove_image(self, template_id: UUID, image_path: str) -> None:
+    async def _remove_image(self, template_id: UUID, image_path: str, image_type: str) -> None:
 
         if not image_path:
             return
         # Removing an association must also find missing/invalid image rows.
-        image = await self._templates_repo.get_image(image_path, include_unavailable=True)
+        image = await self._templates_repo.get_image(
+            image_path, include_unavailable=True, image_type=image_type, template_id=template_id
+        )
         if image is None:
             return
         await self._templates_repo.remove_image_from_template(template_id, image)
@@ -314,13 +316,13 @@ class TemplatesService:
 
         images_to_add_to_template = await self._find_images(db_template.template_type, template_settings)
         if isinstance(db_template, models.DynamipsTemplate) and "image" in template_settings:
-            await self._remove_image(db_template.template_id, db_template.image)
+            await self._remove_image(db_template.template_id, db_template.image, "ios")
         elif isinstance(db_template, models.IOUTemplate) and "path" in template_settings:
-            await self._remove_image(db_template.template_id, db_template.path)
+            await self._remove_image(db_template.template_id, db_template.path, "iou")
         elif db_template.template_type == "qemu":
             for key in template_update.model_dump().keys():
                 if key.endswith("_image") and key in template_settings:
-                    await self._remove_image(db_template.template_id, db_template.__dict__[key])
+                    await self._remove_image(db_template.template_id, db_template.__dict__[key], "qemu")
 
         db_template = await self._templates_repo.update_template(db_template, template_settings)
         for image in images_to_add_to_template:

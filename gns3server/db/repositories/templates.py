@@ -29,7 +29,8 @@ from sqlalchemy.orm.session import make_transient
 
 import gns3server.db.models as models
 from gns3server.controller.controller_error import ControllerNotFoundError
-from gns3server.utils.image_inventory import image_lock
+from gns3server.utils.image_inventory import image_lock, normalized_path
+from gns3server.utils.images import default_images_directory
 
 from .base import BaseRepository
 
@@ -137,30 +138,56 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.refresh(db_template)
         return db_template
 
-    async def get_image(self, image_path: str, *, include_unavailable: bool = False) -> Optional[models.Image]:
+    async def get_image(
+        self,
+        image_path: str,
+        *,
+        include_unavailable: bool = False,
+        image_type: Optional[str] = None,
+        template_id: Optional[UUID] = None,
+    ) -> Optional[models.Image]:
         """
-        Get an image by its path.
+        Get an image by its path, preferring its type root for relative references.
+
+        Without image_type, retain legacy filename/suffix matching. Absolute
+        references always match the supplied path regardless of image_type.
+        template_id limits lookup to existing associations when removing an image.
         """
 
-        image_dir, image_name = os.path.split(image_path)
+        lookup_path = os.path.normpath(image_path) if image_type and not os.path.isabs(image_path) else image_path
+        image_dir, image_name = os.path.split(lookup_path)
         if os.path.isabs(image_path):
             query = select(models.Image).where(models.Image.path == image_path)
         elif image_dir:
             query = select(models.Image).where(
-                models.Image.filename == image_name, models.Image.path.endswith(os.sep + image_path, autoescape=True)
+                models.Image.filename == image_name, models.Image.path.endswith(os.sep + lookup_path, autoescape=True)
             )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
+        if template_id is not None:
+            query = query.where(models.Image.templates.any(models.Template.template_id == template_id))
         if not include_unavailable:
             query = query.where(models.Image.availability.in_(["unknown", "available"]))
         query = query.order_by(models.Image.image_id)
         result = await self._db_session.execute(query)
-        images = result.scalars().all()
+        images = list(result.scalars().all())
+        if image_type and not os.path.isabs(image_path):
+            # Type-relative paths must resolve below that type's root first.
+            # Preserve legacy suffix/basename lookup for additional image roots.
+            typed_images = [image for image in images if image.image_type == image_type]
+            if typed_images:
+                expected = normalized_path(os.path.join(default_images_directory(image_type), image_path))
+                for image in typed_images:
+                    if normalized_path(image.path) == expected:
+                        return image
+                images = typed_images
         if len(images) > 1:
             log.warning(
-                f"Multiple DB entries found for image '{image_path}' "
-                f"({len(images)} rows). This indicates a data integrity issue. "
-                f"Using the entry with the lowest image_id ({images[0].image_id})."
+                "Multiple images match reference '%s' (%s rows); using '%s' with the lowest image_id (%s)",
+                image_path,
+                len(images),
+                images[0].path,
+                images[0].image_id,
             )
         return images[0] if images else None
 

@@ -16,7 +16,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,6 +50,19 @@ class Image(DateTimeModelMixin, ImageBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ImageTemplateResult(BaseModel):
+    status: Literal["created", "skipped"]
+    name: Optional[str] = None
+    reason: Optional[str] = None
+    template_id: Optional[str] = None
+    version: Optional[str] = None
+    template_type: Optional[str] = None
+
+
+class ImageUpload(Image):
+    template_results: Optional[list[ImageTemplateResult]] = None
+
+
 class ImageSyncRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     dry_run: bool = False
@@ -65,3 +78,25 @@ class ImageSyncJob(DateTimeModelMixin):
     finished_at: Optional[datetime] = None
     counts: dict[str, int]
     errors: list[dict[str, str]]
+
+
+class ImageCompatibilityRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    checksums: list[Annotated[str, Field(pattern=r"^[a-fA-F0-9]{32}$")]] = Field(min_length=1, max_length=1000)
+
+
+class ImageApplianceMatch(BaseModel):
+    name: str
+    version: str
+    missing_images: list[str] = Field(default_factory=list)
+    downloadable_images: list[str] = Field(default_factory=list)
+
+
+class ImageCompatibility(BaseModel):
+    checksum: str
+    matches: list[ImageApplianceMatch]
+
+
+class ImageCompatibilityCatalog(BaseModel):
+    image_sizes: list[int]
+    has_unknown_sizes: bool
