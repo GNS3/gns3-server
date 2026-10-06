@@ -243,7 +243,7 @@ The veth pairs already exist at attach time — every adapter is born as a veth 
 
 ## Capture
 
-Kernel links capture via uBridge's AF_PACKET module bound to the veth host end: `capture start_kernel <if> "<pcap>" [dlt]` / `capture stop_kernel`. Single capture per uBridge process (second concurrent → EALREADY). Start/stop key on the **NIO type**, not on veth presence — a relay NIO riding a veth captures at its relay bridge.
+Kernel links capture via uBridge's AF_PACKET module bound to the veth host end: `capture start_kernel <if> "<pcap>" [dlt]` / `capture stop_kernel`. Single capture per uBridge process (second concurrent → EALREADY): the server tracks which anchor owns the slot, refuses a second port's capture with a clear error instead of leaving it wedged, and only the owning port's stop issues the process-wide `capture stop_kernel`. Start/stop key on the **NIO type**, not on veth presence — a relay NIO riding a veth captures at its relay bridge.
 
 ## Markers
 

@@ -803,14 +803,18 @@ class Link:
         if not reported:
             return True
         for caps in reported:
+            # Field-wise .get: the controller stores the compute's raw
+            # capabilities verbatim, so a divergent or hand-crafted payload
+            # with a partial ubridge_tc dict must read as "not supported"
+            # rather than raising a KeyError into the API response.
             if filter_type in FILTER_EBPF_MODES:
-                if FILTER_EBPF_MODES[filter_type] not in caps["ebpf_modes"]:
+                if FILTER_EBPF_MODES[filter_type] not in (caps.get("ebpf_modes") or []):
                     return False
             elif filter_type == "bpf":
-                if not caps["cbpf"]:
+                if not caps.get("cbpf"):
                     return False
             elif filter_type in FILTER_NETEM_KEYWORDS:
-                if FILTER_NETEM_KEYWORDS[filter_type] not in caps["netem"]:
+                if FILTER_NETEM_KEYWORDS[filter_type] not in (caps.get("netem") or []):
                     return False
             # the remaining types (delay, packet_loss, corrupt) run on any
             # build that reports tc capabilities at all

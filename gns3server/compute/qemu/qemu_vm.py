@@ -1132,13 +1132,20 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             # created — and before QEMU opens them. Unlike a container, whose
             # veths are created after it starts, the TAP has to pre-exist the
             # process that reads it.
+            #
+            # The try starts here rather than at the launch: every step up to
+            # the launch can fail (a broken qemu_path in _build_command, a
+            # tap create refused), and each of those failures must take the
+            # datapath down again — a node that reports stopped must not keep
+            # a uBridge process and root-namespace TAPs alive, since nothing
+            # else ever reclaims them.
             self._ubridge_tc_caps = None
-            await self._start_ubridge()
-            await self._prepare_tap_datapath()
-
-            command = await self._build_command()
-            command_string = " ".join(shlex.quote(s) for s in command)
             try:
+                await self._start_ubridge()
+                await self._prepare_tap_datapath()
+
+                command = await self._build_command()
+                command_string = " ".join(shlex.quote(s) for s in command)
                 log.debug(f"Starting QEMU with: {command_string}")
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                 log.debug(f"logging to {self._stdout_file}")
@@ -1159,6 +1166,12 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 # the launch: don't leave either behind on a failed start.
                 await self._stop_ubridge()
                 raise QemuError(f"Could not start QEMU {self.qemu_path}: {e}\n{stdout}")
+            except Exception:
+                # The same teardown for a failure raised as anything else
+                # (QemuError from _build_command, UbridgeError from the tap
+                # setup) — re-raised unchanged so callers keep their contract.
+                await self._stop_ubridge()
+                raise
 
             await self._set_process_priority()
             if self._cpu_throttling:
@@ -1238,60 +1251,63 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         async with self._execute_lock:
             # stop the QEMU process
             self._hw_virtualization = False
-            if self.is_running():
-                log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
-                try:
-                    if self.on_close == "save_vm_state":
-                        await self._control_vm("stop")
-                        await self._control_vm("savevm GNS3_SAVED_STATE")
-                        wait_for_savevm = 120
-                        while wait_for_savevm:
-                            await asyncio.sleep(1)
-                            status = await self._saved_state_option()
-                            wait_for_savevm -= 1
-                            if status != []:
-                                break
+            try:
+                if self.is_running():
+                    log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
+                    try:
+                        if self.on_close == "save_vm_state":
+                            await self._control_vm("stop")
+                            await self._control_vm("savevm GNS3_SAVED_STATE")
+                            wait_for_savevm = 120
+                            while wait_for_savevm:
+                                await asyncio.sleep(1)
+                                status = await self._saved_state_option()
+                                wait_for_savevm -= 1
+                                if status != []:
+                                    break
 
-                    if self.on_close == "shutdown_signal":
-                        await self._control_vm("system_powerdown")
-                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
-                    else:
-                        self._process.terminate()
-                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
-                except ProcessLookupError:
-                    pass
-                except asyncio.TimeoutError:
-                    if self._process:
-                        try:
-                            self._process.kill()
-                        except ProcessLookupError:
-                            pass
-                        if self._process.returncode is None:
-                            log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
-            self._process = None
-            self._stop_cpulimit()
-            self._stop_swtpm()
-            if self.on_close != "save_vm_state":
-                await self._clear_save_vm_stated()
-            await self._export_config()
-            await super().stop()
-
-            # Release the datapath only once QEMU is gone: the process holds
-            # the adapter TAPs open (it is the guest side), and uBridge's tap
-            # delete refuses a held device ("Device or resource busy") —
-            # deleting them while QEMU still ran leaked the persistent TAPs,
-            # because that best-effort delete is suppressed. Order: process
-            # side first, then the devices (the same lesson as IOU's reverse
-            # stop order).
-            #
-            # It stays under the lock: the process monitor calls stop() on its
-            # own when QEMU dies, so an API stop and a process-death stop run
-            # concurrently in the normal case — and the TAP sweep walks the
-            # adapter map across awaits, which the second stop was free to
-            # clear underneath it ("dictionary changed size during
-            # iteration"). Serialized, it finds uBridge already gone and
-            # sweeps nothing.
-            await self._stop_ubridge()
+                        if self.on_close == "shutdown_signal":
+                            await self._control_vm("system_powerdown")
+                            await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
+                        else:
+                            self._process.terminate()
+                            await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                    except ProcessLookupError:
+                        pass
+                    except asyncio.TimeoutError:
+                        if self._process:
+                            try:
+                                self._process.kill()
+                            except ProcessLookupError:
+                                pass
+                            if self._process.returncode is None:
+                                log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
+                self._process = None
+                self._stop_cpulimit()
+                self._stop_swtpm()
+                if self.on_close != "save_vm_state":
+                    await self._clear_save_vm_stated()
+                await self._export_config()
+                await super().stop()
+            finally:
+                # Release the datapath once QEMU is gone: the process holds
+                # the adapter TAPs open (it is the guest side), and uBridge's
+                # tap delete refuses a held device ("Device or resource
+                # busy") — deleting them while QEMU still ran leaked the
+                # persistent TAPs, because that best-effort delete is
+                # suppressed. Order: process side first, then the devices
+                # (the same lesson as IOU's reverse stop order). The finally
+                # keeps a mid-stop raise (a failed savevm, an export error)
+                # from skipping the teardown entirely.
+                #
+                # It stays under the lock: the process monitor calls stop() on
+                # its own when QEMU dies, so an API stop and a process-death
+                # stop run concurrently in the normal case — and the TAP
+                # sweep walks the adapter map across awaits, which the second
+                # stop was free to clear underneath it ("dictionary changed
+                # size during iteration"). Serialized, it finds uBridge
+                # already gone and sweeps nothing.
+                await self._stop_ubridge()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):
         """
@@ -1665,6 +1681,12 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         except IndexError:
             raise QemuError(f'Adapter {adapter_number} does not exist on QEMU VM "{self._name}"')
 
+        # The compute-side backstop of the controller's duplicate-port guard:
+        # a port carries at most one NIO, and overwriting the one a link
+        # still owns orphans that link's teardown (its host state leaks).
+        if adapter.get_nio(0) is not None:
+            raise QemuError(f'Adapter {adapter_number} of QEMU VM "{self._name}" already has a link')
+
         if self.is_running():
             try:
                 await self._connect_nio(adapter_number, nio)
@@ -1777,8 +1799,17 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if self.ubridge:
             anchor = self._kernel_host_ifc(adapter_number)
             if isinstance(nio, NIOBridge) and anchor is not None:
-                # Kernel link: capture on the adapter's TAP anchor (AF_PACKET).
-                await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                # Kernel link: capture on the adapter's TAP anchor (AF_PACKET,
+                # one capture per uBridge process — see _reserve_kernel_capture;
+                # a failed start rolls the port's flag back so the port cannot
+                # later stop the winner's capture).
+                try:
+                    self._reserve_kernel_capture(anchor)
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                except Exception:
+                    self._release_kernel_capture(anchor)
+                    nio.stop_packet_capture()
+                    raise
             else:
                 await self._ubridge_send(
                     'bridge start_capture {name} "{output_file}"'.format(
@@ -1801,8 +1832,14 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            if isinstance(nio, NIOBridge) and self._kernel_host_ifc(adapter_number) is not None:
-                await self._ubridge_send("capture stop_kernel")
+            anchor = self._kernel_host_ifc(adapter_number)
+            if isinstance(nio, NIOBridge) and anchor is not None:
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it (a second port's stop would kill this
+                # capture while its own flag still says capturing).
+                if self._kernel_capture_owned_by(anchor):
+                    await self._ubridge_send("capture stop_kernel")
+                    self._release_kernel_capture(anchor)
             else:
                 await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 

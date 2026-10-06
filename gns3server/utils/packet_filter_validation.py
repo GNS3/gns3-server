@@ -399,7 +399,12 @@ def split_kernel_only_features(filters: Dict[str, List[Any]]) -> Tuple[Dict[str,
                 correl = 0
             if correl:
                 dropped.add("packet_loss correlation")
-                values = values[:1]
+            # The correlation slot is stripped even when it is zero: the
+            # relay filter takes exactly one argument (ubridge's
+            # packet_loss_setup rejects argc != 1), so a kept "0" would make
+            # the whole filter fail to load — only a non-zero value is worth
+            # reporting as a dropped feature.
+            values = values[:1]
         clean[filter_type] = values
     return clean, dropped
 

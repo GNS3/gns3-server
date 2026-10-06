@@ -1065,6 +1065,10 @@ class BaseNode:
         # than skipping them as "already installed".
         self._marker_filter_bridges.clear()
         self._marker_specs.clear()
+        # ...and so is the kernel capture, uBridge's single AF_PACKET slot
+        # (meaningful for the kernel-datapath node types; see
+        # KernelDatapathMixin._reserve_kernel_capture).
+        self._kernel_capture_ifc = None
 
     async def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
@@ -1116,9 +1120,18 @@ class BaseNode:
         :param filters: Array of filter dictionary
         """
 
-        # The netem-extension filters (rate, reorder, gemodel…) only exist on
-        # the kernel datapath. The controller keeps them off relay links;
-        # this is the second guard for direct compute API use.
+        self._guard_kernel_only_filters(filters)
+        await self._ubridge_send("bridge reset_packet_filters " + bridge_name)
+        for packet_filter in self._build_filter_list(filters):
+            await self._ubridge_add_packet_filter(f"bridge add_packet_filter {bridge_name} {packet_filter}")
+
+    def _guard_kernel_only_filters(self, filters):
+        """
+        The netem-extension filters (rate, reorder, gemodel…) only exist on
+        the kernel datapath. The controller keeps them off relay links; this
+        is the second guard for direct compute API use.
+        """
+
         from gns3server.utils.packet_filter_validation import kernel_only_features
 
         kernel_only = kernel_only_features(filters)
@@ -1127,19 +1140,25 @@ class BaseNode:
                 "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
                 "veth host end); the uBridge relay has no equivalent".format(", ".join(sorted(kernel_only)))
             )
-        await self._ubridge_send("bridge reset_packet_filters " + bridge_name)
-        for packet_filter in self._build_filter_list(filters):
-            cmd = f"bridge add_packet_filter {bridge_name} {packet_filter}"
-            try:
-                await self._ubridge_send(cmd)
-            except UbridgeError as e:
-                match = re.search(r"Cannot compile filter '(.*)': syntax error", str(e))
-                if match:
-                    message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {match.group(1)}"
-                    log.warning(message)
-                    self.project.emit("log.warning", {"message": message})
-                else:
-                    raise
+
+    async def _ubridge_add_packet_filter(self, cmd):
+        """
+        Send one relay filter command, degrading a BPF expression that no
+        longer compiles on this uBridge's libpcap to a warning instead of
+        breaking the link (the controller already validated the syntax with
+        tcpdump at create/update time).
+        """
+
+        try:
+            await self._ubridge_send(cmd)
+        except UbridgeError as e:
+            match = re.search(r"Cannot compile filter '(.*)': syntax error", str(e))
+            if match:
+                message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {match.group(1)}"
+                log.warning(message)
+                self.project.emit("log.warning", {"message": message})
+            else:
+                raise
 
     def _build_filter_list(self, filters):
         """

@@ -91,8 +91,11 @@ class BridgeNIO(BaseModel):
     """
 
     type: BridgeNIOType
+    # Required-but-nullable: the NIO factories read nio_settings["bridge"],
+    # and the create/update routes drop unset fields — an omitted key would
+    # pass validation and then surface as a KeyError (500) during binding.
     bridge: Optional[str] = Field(
-        None,
+        ...,
         description="Kernel bridge name e.g. gns3a1b2c3d4e5; None when an Ethernet switch "
         "owns the anchor's bridge membership (absorbed link)",
     )

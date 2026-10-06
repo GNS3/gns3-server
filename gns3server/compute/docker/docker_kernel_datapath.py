@@ -128,11 +128,12 @@ class DockerKernelDatapathMixin(KernelDatapathMixin):
                 await self._ubridge_send(f"docker move_to_ns {guest_ifc} {self._namespace} {ifname}")
             except UbridgeError as e:
                 raise UbridgeNamespaceError(e)
-        except UbridgeNamespaceError:
-            raise
         except Exception:
             # Don't leave a half-created pair behind (the next start would
-            # fail on create_veth EEXIST until the stale sweep runs).
+            # fail on create_veth EEXIST until the stale sweep runs). The
+            # namespace failure cleans up the same way — the bare raise
+            # preserves its type for the caller's UbridgeNamespaceError
+            # handling (docker_vm.start converts it into a failed start).
             with contextlib.suppress(UbridgeError):
                 await self._ubridge_send(f'docker delete_veth "{host_ifc}"')
             raise

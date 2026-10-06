@@ -1486,11 +1486,23 @@ class Router(KernelDatapathMixin, BaseNode):
         if isinstance(nio, NIOBridge):
             # Kernel link: capture on the port's TAP anchor (AF_PACKET),
             # not in the Dynamips NIO (this link has no Dynamips NIO).
+            if nio.capturing:
+                raise DynamipsError(f"Packet capture is already activated on port {slot_number}/{port_number}")
             nio.start_packet_capture(output_file, data_link_type)
             if self.ubridge:
                 anchor = self._kernel_host_ifc(slot_number, port_number)
                 if anchor is not None:
-                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                    # One capture per uBridge process — see
+                    # _reserve_kernel_capture; a failed start rolls the
+                    # port's flag back so it cannot later stop the winner's
+                    # capture.
+                    try:
+                        self._reserve_kernel_capture(anchor)
+                        await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                    except Exception:
+                        self._release_kernel_capture(anchor)
+                        nio.stop_packet_capture()
+                        raise
             log.debug(
                 f'Router "{self._name}" [{self._id}]: starting packet capture on port {slot_number}/{port_number}'
             )
@@ -1526,8 +1538,12 @@ class Router(KernelDatapathMixin, BaseNode):
 
         if isinstance(nio, NIOBridge):
             nio.stop_packet_capture()
-            if self.ubridge and self._kernel_host_ifc(slot_number, port_number) is not None:
+            anchor = self._kernel_host_ifc(slot_number, port_number)
+            if self.ubridge and anchor is not None and self._kernel_capture_owned_by(anchor):
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it.
                 await self._ubridge_send("capture stop_kernel")
+                self._release_kernel_capture(anchor)
             return
         await nio.stop_packet_capture()
 
@@ -1720,8 +1736,21 @@ class Router(KernelDatapathMixin, BaseNode):
             raise
         await self.slot_enable_nio(slot_number, port_number)
         self._tap_nios[(slot_number, port_number)] = tap_nio
-        await self._kernel_attach(anchor, nio)
-        await self._set_adapter_carrier(slot_number, not nio.suspend, port_number)
+        try:
+            await self._kernel_attach(anchor, nio)
+            await self._set_adapter_carrier(slot_number, not nio.suspend, port_number)
+        except Exception:
+            # Undo the half-attach: while the _tap_nios entry exists the port
+            # guard above short-circuits every retry, and a link delete reads
+            # the still-unbound adapter as "nothing to do" — the port would
+            # stay a silent black hole until the router restarts. The undo
+            # tolerates the partial state (its marker/bridge steps are
+            # best-effort) and takes the hypervisor binding and the TAP with
+            # it, so a retry starts from scratch. It is best-effort here as
+            # well: the original failure is what must surface.
+            with contextlib.suppress(Exception):
+                await self._remove_kernel_nio_binding(slot_number, port_number, nio)
+            raise
 
     async def _remove_kernel_nio_binding(self, slot_number, port_number, nio):
         """

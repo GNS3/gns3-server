@@ -183,7 +183,11 @@ class VPCSCommands(BaseTool):
             return device_configs_list
 
         # Merge same-device entries before anything keys by device_name
-        device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="commands")
+        try:
+            device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="commands")
+        except ValueError as e:
+            logger.error("Invalid device_configs input: %s", e)
+            return [{"status": "failed", "error": str(e)}]
 
         # Create a mapping of device names to their commands
         device_configs_map = self._configs_map(device_configs_list)

@@ -686,74 +686,87 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                     raise IOUError(f"The iourc path '{iourc_path}' is not a regular file")
                 await self._check_iou_license()
 
-            await self._start_ubridge()
-            await self._prepare_tap_datapath()
-            self._create_netmap_config()
-            if self.use_default_iou_values:
-                # make sure we have the default nvram amount to correctly push the configs
-                await self.update_default_iou_values()
-            self._push_configs_to_nvram()
-
-            # check if there is enough RAM to run
-            self.check_available_ram(self.ram)
-
-            self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=2)
-
-            # created an environment variable pointing to the iourc file.
-            env = os.environ.copy()
-            if "IOURC" not in os.environ and iourc_path:
-                env["IOURC"] = iourc_path
-
-            # create a symbolic link to the image to avoid IOU error "failed code signing checks"
-            # on newer images, see https://github.com/GNS3/gns3-server/issues/1484
+            # The try starts before the uBridge spawn: a raise anywhere from
+            # here to the launch (tap datapath, netmap config, symlink,
+            # command build) must take the datapath down again — a node that
+            # reports a failed start must not keep a uBridge process and its
+            # anchor TAPs alive, since nothing else ever reclaims them.
             try:
-                iou_image_path = os.path.basename(self.path)
-                if len(iou_image_path) > 63:
-                    # IOU file basename length must be <= 63 chars
-                    iou_file_name, iou_file_ext = os.path.splitext(iou_image_path)
-                    iou_image_path = iou_file_name[: 63 - len(iou_file_ext)] + iou_file_ext
-                symlink = os.path.join(self.working_dir, iou_image_path)
-                if os.path.islink(symlink):
-                    os.unlink(symlink)
-                os.symlink(self.path, symlink)
-            except OSError as e:
-                raise IOUError(f"Could not create symbolic link: {e}")
+                await self._start_ubridge()
+                await self._prepare_tap_datapath()
+                self._create_netmap_config()
+                if self.use_default_iou_values:
+                    # make sure we have the default nvram amount to correctly push the configs
+                    await self.update_default_iou_values()
+                self._push_configs_to_nvram()
 
-            command = await self._build_command()
-            # Only start the responder when the capability probe actually
-            # enabled IOU's L1 protocol on the command line.
-            if "-l" in command:
-                await self._start_l1_keepalive_responder()
-            try:
-                if self._loader:
-                    log.debug(f"Starting IOU: {command} with loader {self._loader}")
-                else:
-                    log.debug(f"Starting IOU: {command}")
-                self.command_line = " ".join(command)
-                self._iou_process = await asyncio.create_subprocess_exec(
-                    *self._loader,
-                    *command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stdin=asyncio.subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    cwd=self.working_dir,
-                    env=env,
-                )
-                log.debug(f"IOU instance {self._id} started PID={self._iou_process.pid}")
-                self._started = True
-                self.status = "started"
-                callback = functools.partial(self._termination_callback, "IOU")
-                gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
-            except FileNotFoundError as e:
-                self._stop_l1_keepalive_responder()
-                raise IOUError(
-                    f"Could not start IOU: {e}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead"
-                )
-            except (OSError, subprocess.SubprocessError) as e:
-                self._stop_l1_keepalive_responder()
-                iou_stdout = self.read_iou_stdout()
-                log.error(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
-                raise IOUError(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
+                # check if there is enough RAM to run
+                self.check_available_ram(self.ram)
+
+                self._nvram_watcher = FileWatcher(self._nvram_file(), self._nvram_changed, delay=2)
+
+                # created an environment variable pointing to the iourc file.
+                env = os.environ.copy()
+                if "IOURC" not in os.environ and iourc_path:
+                    env["IOURC"] = iourc_path
+
+                # create a symbolic link to the image to avoid IOU error "failed code signing checks"
+                # on newer images, see https://github.com/GNS3/gns3-server/issues/1484
+                try:
+                    iou_image_path = os.path.basename(self.path)
+                    if len(iou_image_path) > 63:
+                        # IOU file basename length must be <= 63 chars
+                        iou_file_name, iou_file_ext = os.path.splitext(iou_image_path)
+                        iou_image_path = iou_file_name[: 63 - len(iou_file_ext)] + iou_file_ext
+                    symlink = os.path.join(self.working_dir, iou_image_path)
+                    if os.path.islink(symlink):
+                        os.unlink(symlink)
+                    os.symlink(self.path, symlink)
+                except OSError as e:
+                    raise IOUError(f"Could not create symbolic link: {e}")
+
+                command = await self._build_command()
+                # Only start the responder when the capability probe actually
+                # enabled IOU's L1 protocol on the command line.
+                if "-l" in command:
+                    await self._start_l1_keepalive_responder()
+                try:
+                    if self._loader:
+                        log.debug(f"Starting IOU: {command} with loader {self._loader}")
+                    else:
+                        log.debug(f"Starting IOU: {command}")
+                    self.command_line = " ".join(command)
+                    self._iou_process = await asyncio.create_subprocess_exec(
+                        *self._loader,
+                        *command,
+                        stdout=asyncio.subprocess.PIPE,
+                        stdin=asyncio.subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        cwd=self.working_dir,
+                        env=env,
+                    )
+                    log.debug(f"IOU instance {self._id} started PID={self._iou_process.pid}")
+                    self._started = True
+                    self.status = "started"
+                    callback = functools.partial(self._termination_callback, "IOU")
+                    gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
+                except FileNotFoundError as e:
+                    self._stop_l1_keepalive_responder()
+                    raise IOUError(
+                        f"Could not start IOU: {e}: 32-bit binary support is probably not installed, it is recommended to use a 64-bit image instead"
+                    )
+                except (OSError, subprocess.SubprocessError) as e:
+                    self._stop_l1_keepalive_responder()
+                    iou_stdout = self.read_iou_stdout()
+                    log.error(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
+                    raise IOUError(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
+            except Exception:
+                # Re-raise unchanged after the teardown so callers keep the
+                # original error contract. The L1 responder needs no stop
+                # here: _start_l1_keepalive_responder cleans up after itself
+                # and everything after it runs under handlers that stop it.
+                await self._stop_ubridge()
+                raise
 
             await self.start_console()
 
@@ -1394,10 +1407,14 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         :param filters: Array of filter dictionnary
         """
 
+        # The base relay path's guards apply here too: kernel-only filters
+        # must be a clear NodeError (a direct compute API update would
+        # otherwise reach iol_bridge and fail there), and a BPF line that no
+        # longer compiles degrades to a warning instead of a hard error.
+        self._guard_kernel_only_filters(filters)
         await self._ubridge_send("iol_bridge reset_packet_filters " + location)
         for filter in self._build_filter_list(filters):
-            cmd = f"iol_bridge add_packet_filter {location} {filter}"
-            await self._ubridge_send(cmd)
+            await self._ubridge_add_packet_filter(f"iol_bridge add_packet_filter {location} {filter}")
 
     async def _ubridge_add_marker_filter(
         self, location, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None
@@ -1826,13 +1843,22 @@ class IOUVM(KernelDatapathMixin, BaseNode):
 
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                # Kernel link: capture on the port's TAP anchor (AF_PACKET).
+                # Kernel link: capture on the port's TAP anchor (AF_PACKET,
+                # one capture per uBridge process — see _reserve_kernel_capture;
+                # a failed start rolls the port's flag back so the port cannot
+                # later stop the winner's capture).
                 anchor = self._kernel_host_ifc(adapter_number, port_number)
-                if anchor is None:
-                    raise self._kernel_error(
-                        f"Bay {adapter_number}/{port_number} of IOU '{self._name}' has no TAP anchor to capture on"
-                    )
-                await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                try:
+                    if anchor is None:
+                        raise self._kernel_error(
+                            f"Bay {adapter_number}/{port_number} of IOU '{self._name}' has no TAP anchor to capture on"
+                        )
+                    self._reserve_kernel_capture(anchor)
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                except Exception:
+                    self._release_kernel_capture(anchor)
+                    nio.stop_packet_capture()
+                    raise
             else:
                 await self._ubridge_send(
                     'iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(
@@ -1859,7 +1885,13 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         log.debug(f'IOU "{self._name}" [{self._id}]: stopping packet capture on {adapter_number}/{port_number}')
         if self.ubridge:
             if isinstance(nio, NIOBridge):
-                await self._ubridge_send("capture stop_kernel")
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it (a second port's stop would kill this
+                # capture while its own flag still says capturing).
+                anchor = self._kernel_host_ifc(adapter_number, port_number)
+                if self._kernel_capture_owned_by(anchor):
+                    await self._ubridge_send("capture stop_kernel")
+                    self._release_kernel_capture(anchor)
             else:
                 await self._ubridge_send(
                     f"iol_bridge stop_capture {self._iol_bridge_name()} {adapter_number} {port_number}"

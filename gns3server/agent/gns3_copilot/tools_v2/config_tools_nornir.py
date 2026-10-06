@@ -200,7 +200,11 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             return device_configs_list
 
         # Merge same-device entries before anything keys by device_name
-        device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="config_commands")
+        try:
+            device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="config_commands")
+        except ValueError as e:
+            logger.error("Invalid device_configs input: %s", e)
+            return [{"status": "failed", "error": str(e)}]
 
         # Filter forbidden commands and store blocked commands info
         device_configs_list, blocked_commands_map = self._filter_forbidden_commands_from_device_configs(

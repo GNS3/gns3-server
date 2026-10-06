@@ -723,6 +723,13 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         previous = {port["port_number"]: port for port in (previous_mapping or [])}
         wired = dict(self._tap_by_port)
         for port_number, anchor in self._kernel_ports.items():
+            if not os.path.exists(f"/sys/class/net/{anchor}"):
+                # A kernel port whose peer is stopped keeps its registration
+                # but has no interface yet (the join is deferred by design):
+                # vlan commands would fail with ENODEV and abort the whole
+                # reconcile. Its new settings apply when the peer starts —
+                # the deferred join runs _apply_port_vlan then.
+                continue
             wired[port_number] = anchor
         for port_number, iface in wired.items():
             new_settings = self._port_settings(port_number)
@@ -761,7 +768,16 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             anchor = self._kernel_ports.get(port_number)
             if anchor is not None:
-                await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                # One capture per uBridge process — see
+                # _reserve_kernel_capture; a failed start rolls the port's
+                # flag back so it cannot later stop the winner's capture.
+                try:
+                    self._reserve_kernel_capture(anchor)
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                except Exception:
+                    self._release_kernel_capture(anchor)
+                    nio.stop_packet_capture()
+                    raise
             else:
                 ubridge_bridge = self._ubridge_bridge_name(port_number)
                 await self._ubridge_send(f'bridge start_capture {ubridge_bridge} "{output_file}"')
@@ -779,8 +795,14 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             return
         nio.stop_packet_capture()
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
-            if port_number in self._kernel_ports:
-                await self._ubridge_send("capture stop_kernel")
+            anchor = self._kernel_ports.get(port_number)
+            if anchor is not None:
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it (a second port's stop would kill this
+                # capture while its own flag still says capturing).
+                if self._kernel_capture_owned_by(anchor):
+                    await self._ubridge_send("capture stop_kernel")
+                    self._release_kernel_capture(anchor)
             else:
                 ubridge_bridge = self._ubridge_bridge_name(port_number)
                 await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")

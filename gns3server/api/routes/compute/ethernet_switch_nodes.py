@@ -114,7 +114,16 @@ async def update_ethernet_switch(
         # place (the setter itself keeps the port-count guard)
         previous_mapping = [dict(port) for port in node.ports_mapping]
         node.ports_mapping = data["ports_mapping"]
-        await node.update_port_settings(previous_mapping)
+        try:
+            await node.update_port_settings(previous_mapping)
+        except Exception:
+            # Nothing, or only part, of the new mapping was applied — keep
+            # the old one so the failed change stays visible in GET and a
+            # retry still diffs against it. A kept-new mapping would turn
+            # the retry into a no-op that reports success with the VLANs
+            # never applied.
+            node.ports_mapping = previous_mapping
+            raise
     if "console_type" in data:
         node.console_type = data["console_type"]
     node.updated()

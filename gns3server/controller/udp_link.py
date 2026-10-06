@@ -70,7 +70,17 @@ def _is_unix_socket_docker(node):
     """
 
     environment = (node.properties or {}).get("environment") or ""
-    return "GNS3_UNIX_SOCKET_NIO" in environment and not is_iol_runner_environment(environment)
+    if is_iol_runner_environment(environment):
+        return False
+    for line in environment.splitlines():
+        line = line.strip().rstrip(",")
+        if line.startswith("GNS3_UNIX_SOCKET_NIO="):
+            # Mirror the compute's parsing exactly (VendorDockerVM): the
+            # marker must start the line, and only a truthy value enables
+            # the unix-socket wiring — with 0/false/no the container wires
+            # adapters the standard way and can carry a kernel link.
+            return line.split("=", 1)[1].strip().lower() in ("1", "true", "yes")
+    return False
 
 
 class UDPLink(Link):

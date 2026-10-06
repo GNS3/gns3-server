@@ -59,12 +59,18 @@ def kernel_anchor_type(node_type, environment=None):
     its own key unchanged.
     """
 
-    # The marker check mirrors utils.application_id.is_iol_runner_environment
-    # inline: this module sits below every node module (compute and
-    # controller alike import it during their own import), so it must not
-    # depend on anything that pulls the controller package in.
-    if node_type == "docker" and "GNS3_IOL_RUNNER=" in (environment or ""):
-        return "iol_docker"
+    # The marker check mirrors the compute's class selection
+    # (compute/docker/__init__.py, _select_node_class) inline: only a
+    # stripped, comma-trimmed line *beginning* with the marker selects
+    # IOLDockerVM, so e.g. NOTE=GNS3_IOL_RUNNER=1 must not be named as an
+    # IOL TAP anchor here. The check stays dependency-free on purpose: this
+    # module sits below every node module (compute and controller alike
+    # import it during their own import), so it must not import them back.
+    if node_type == "docker":
+        for line in (environment or "").splitlines():
+            line = line.strip().rstrip(",")
+            if line.startswith("GNS3_IOL_RUNNER="):
+                return "iol_docker"
     return node_type
 
 

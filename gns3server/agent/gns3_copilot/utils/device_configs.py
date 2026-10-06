@@ -34,7 +34,7 @@ from typing import Any
 
 
 def merge_duplicate_device_configs(
-    device_configs: list[dict[str, Any]],
+    device_configs: list[Any],
     commands_field: str,
 ) -> list[dict[str, Any]]:
     """
@@ -46,8 +46,9 @@ def merge_duplicate_device_configs(
     every row would report that same output.
 
     Args:
-        device_configs: Device config entries; each holds device_name and a
-            command list under commands_field.
+        device_configs: Device config entries (parsed tool input, validated
+            here); each holds device_name and a command list under
+            commands_field.
         commands_field: Field carrying the commands ("commands" or
             "config_commands" depending on the tool).
 
@@ -55,12 +56,18 @@ def merge_duplicate_device_configs(
         One entry per device_name, in first-appearance order. The first
         entry's extra fields are preserved; later duplicates only contribute
         their commands.
+
+    Raises:
+        ValueError: An entry is not an object or has no usable device_name.
+            Such an entry cannot be addressed; dropping it silently would
+            let a malformed batch execute partially while every returned
+            row reports success.
     """
     merged: dict[str, dict[str, Any]] = {}
-    for config in device_configs:
-        name = config.get("device_name")
-        if not name:
-            continue
+    for index, config in enumerate(device_configs):
+        if not isinstance(config, dict) or not config.get("device_name"):
+            raise ValueError(f"device_configs[{index}] must be an object with a non-empty 'device_name' field")
+        name = config["device_name"]
         commands = list(config.get(commands_field, []))
         if name in merged:
             merged[name][commands_field].extend(commands)

@@ -49,14 +49,16 @@ from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
 
-# binary identity -> parsed report (None = probed and unusable)
-_cache: dict[tuple[str, int, int], Optional[dict[str, str]]] = {}
+# binary identity (path, mtime, size, ctime — ctime catches chmod/setcap,
+# which change neither mtime nor size) -> parsed report (None = probed and
+# unusable)
+_cache: dict[tuple[str, int, int, int], Optional[dict[str, str]]] = {}
 # binary identity -> whether the tap module works (None = unknown)
-_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
+_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 # binary identity -> whether iol_bridge can bind a port to a TAP (None = unknown)
-_iol_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
+_iol_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 # binary identity -> whether the bridge module can release a named TAP NIO (None = unknown)
-_bridge_tap_cache: dict[tuple[str, int, int], Optional[bool]] = {}
+_bridge_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 _lock = asyncio.Lock()
 
 
@@ -74,7 +76,7 @@ async def probe_tc_capabilities(timeout: float = 15.0):
         return None
     try:
         stat = os.stat(path)
-        key = (path, stat.st_mtime_ns, stat.st_size)
+        key = (path, stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns)
     except OSError:
         return None
 
@@ -137,7 +139,7 @@ async def probe_tap_support(timeout: float = 15.0):
         return None
     try:
         stat = os.stat(path)
-        key = (path, stat.st_mtime_ns, stat.st_size)
+        key = (path, stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns)
     except OSError:
         return None
 
@@ -215,7 +217,7 @@ async def probe_iol_tap_support(timeout: float = 15.0):
         return None
     try:
         stat = os.stat(path)
-        key = (path, stat.st_mtime_ns, stat.st_size)
+        key = (path, stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns)
     except OSError:
         return None
 
@@ -297,7 +299,7 @@ async def probe_bridge_tap_support(timeout: float = 15.0):
         return None
     try:
         stat = os.stat(path)
-        key = (path, stat.st_mtime_ns, stat.st_size)
+        key = (path, stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns)
     except OSError:
         return None
 
@@ -346,7 +348,10 @@ async def _probe_bridge_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (OSError, asyncio.TimeoutError, ValueError) as e:
+        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+            # UbridgeError also covers hypervisor.start()/connect() failing
+            # (unlike the siblings, ask() re-raises those): an unusable
+            # binary means unknown, never a failed /capabilities response.
             log.debug("uBridge bridge-tap probe failed: %s", e)
             return None
     finally:

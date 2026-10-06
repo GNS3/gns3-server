@@ -149,6 +149,52 @@ class KernelDatapathMixin:
 
         return not (isinstance(nio, NIOBridge) and nio.bridge is None)
 
+    # The anchor whose kernel capture currently holds the uBridge process's
+    # single AF_PACKET capture slot (None = free; see _reserve_kernel_capture).
+    # Class-level default so every node type gets it without touching its
+    # __init__; BaseNode._stop_ubridge resets it when uBridge goes away.
+    _kernel_capture_ifc = None
+
+    def _reserve_kernel_capture(self, anchor):
+        """
+        Claim uBridge's single kernel-capture slot for *anchor*.
+
+        uBridge serves one AF_PACKET capture per process (a static slot: a
+        second ``capture start_kernel`` answers EALREADY) while the server
+        models captures per port — a second kernel port of the same node is
+        refused here with a clear error. Without the claim the loser's port
+        would stay marked as capturing, and its stop would issue the
+        process-wide, argument-less ``capture stop_kernel``, killing the
+        winner's capture while its own flag still says capturing.
+        """
+
+        if self._kernel_capture_ifc is not None and self._kernel_capture_ifc != anchor:
+            raise self._kernel_error(
+                f"Cannot start the packet capture: this node's uBridge already captures "
+                f"{self._kernel_capture_ifc} (one kernel capture per node); stop that capture first"
+            )
+        self._kernel_capture_ifc = anchor
+
+    def _release_kernel_capture(self, anchor):
+        """
+        Release the slot if *anchor* holds it: after a stop, or after a
+        failed start whose port must not stay marked as capturing.
+        """
+
+        if self._kernel_capture_ifc == anchor:
+            self._kernel_capture_ifc = None
+
+    def _kernel_capture_owned_by(self, anchor):
+        """
+        Whether *anchor* may issue the process-wide ``capture stop_kernel``:
+        only the port holding the slot — or a node whose slot is empty (a
+        capture predating the tracker), where stopping is the historical
+        best-effort behaviour. A second port must never reach it: the
+        command takes no interface and would stop the owner's capture.
+        """
+
+        return self._kernel_capture_ifc is None or self._kernel_capture_ifc == anchor
+
     async def _kernel_attach(self, anchor, nio):
         """
         Attach an anchor to the per-link kernel bridge carried by *nio*
@@ -181,7 +227,10 @@ class KernelDatapathMixin:
             await self._ubridge_send(f'brctl addif "{nio.bridge}" "{anchor}"')
         if nio.capturing:
             # Restore a capture that was active before a node restart
-            # (mirrors the relay path's start_capture).
+            # (mirrors the relay path's start_capture). The slot is claimed
+            # like a fresh start: a second kernel port's replay is refused
+            # with a clear error instead of an EALREADY deep in the wiring.
+            self._reserve_kernel_capture(anchor)
             await self._ubridge_send(f'capture start_kernel {anchor} "{nio.pcap_output_file}"')
         # Markers carried by the NIO attach to the anchor (AF_PACKET taps) —
         # the anchor is the interface, not a relay bridge.
@@ -404,40 +453,34 @@ class KernelDatapathMixin:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _netem_command_parts(filters):
+    def _values_of(filters, key):
         """
-        Build the ``tc netem set`` keyword sequence (in the frozen grammar
-        order: delay/jitter, loss|gemodel, dup, corrupt, reorder, rate,
-        limit, distribution, seed) plus the set of capability tokens the
-        sequence needs beyond the original netem surface. Original-surface
-        keywords (delay, jitter, loss, corrupt, dup) need no probe; the
-        extension tokens (rate, reorder, gemodel, dist, seed, limit) are
-        checked against ``tc capabilities`` by the caller. ``correl`` has no
-        token of its own in the capabilities list, so it gates on "rate" as
-        the netem-extension build marker.
+        One filter's values as a list, tolerating the legacy bare-value
+        shape ({"packet_loss": 10}).
+        """
 
-        :param filters: NIO filters dictionary ({"delay": [ms, jitter, dist], ...})
+        values = filters.get(key)
+        if isinstance(values, (list, tuple)):
+            return list(values)
+        return [values] if values else []
+
+    @staticmethod
+    def _netem_loss_parts(filters):
+        """
+        The loss keyword: gemodel when set, else packet_loss — mutually
+        exclusive, both mapping to netem's single loss argument. The gemodel
+        token is returned for the caller's capability check; a non-zero
+        packet-loss correlation gates on "rate" as the extension build
+        marker.
 
         :returns: (keyword sequence, required extension tokens)
         """
 
-        def values_of(key):
-            # tolerate the legacy bare-value shape ({"packet_loss": 10})
-            values = filters.get(key)
-            if isinstance(values, (list, tuple)):
-                return list(values)
-            return [values] if values else []
-
+        values_of = KernelDatapathMixin._values_of
         parts = []
         ext_tokens = set()
 
-        delay = values_of("delay")
-        if delay:
-            parts.append(f"delay {int(delay[0])}")
-            if len(delay) > 1 and int(delay[1]):
-                parts.append(f"jitter {int(delay[1])}")
-
-        gemodel = values_of("gemodel")
+        gemodel = values_of(filters, "gemodel")
         if gemodel:
             segment = f"loss gemodel {int(gemodel[0])}"
             if len(gemodel) > 1:
@@ -446,26 +489,71 @@ class KernelDatapathMixin:
                     segment += f" {int(gemodel[2])}"
             parts.append(segment)
             ext_tokens.add("gemodel")
-        else:
-            loss = values_of("packet_loss")
-            if loss and int(loss[0]):
-                parts.append(f"loss {int(loss[0])}")
-                if len(loss) > 1 and int(loss[1]):
-                    parts.append(f"correl {int(loss[1])}")
-                    ext_tokens.add("rate")  # correl: extension build marker
+            return parts, ext_tokens
 
-        duplicate = values_of("duplicate")
+        loss = values_of(filters, "packet_loss")
+        if loss and int(loss[0]):
+            parts.append(f"loss {int(loss[0])}")
+            if len(loss) > 1 and int(loss[1]):
+                parts.append(f"correl {int(loss[1])}")
+                ext_tokens.add("rate")  # correl: extension build marker
+        return parts, ext_tokens
+
+    @staticmethod
+    def _netem_surface_parts(filters):
+        """
+        The original netem surface in its frozen grammar order — delay/
+        jitter, loss (or gemodel), dup (+correl), corrupt — plus the
+        capability tokens it needs. Original-surface keywords need no
+        probe; ``correl`` has no token of its own in the capabilities
+        list, so it gates on "rate" as the netem-extension build marker.
+
+        :returns: (keyword sequence, required extension tokens)
+        """
+
+        values_of = KernelDatapathMixin._values_of
+        parts = []
+        ext_tokens = set()
+
+        delay = values_of(filters, "delay")
+        if delay:
+            parts.append(f"delay {int(delay[0])}")
+            if len(delay) > 1 and int(delay[1]):
+                parts.append(f"jitter {int(delay[1])}")
+
+        loss_parts, loss_tokens = KernelDatapathMixin._netem_loss_parts(filters)
+        parts.extend(loss_parts)
+        ext_tokens |= loss_tokens
+
+        duplicate = values_of(filters, "duplicate")
         if duplicate and int(duplicate[0]):
             parts.append(f"dup {int(duplicate[0])}")
             if len(duplicate) > 1 and int(duplicate[1]):
                 parts.append(f"correl {int(duplicate[1])}")
                 ext_tokens.add("rate")  # correl: extension build marker
 
-        corrupt = values_of("corrupt")
+        corrupt = values_of(filters, "corrupt")
         if corrupt and int(corrupt[0]):
             parts.append(f"corrupt {int(corrupt[0])}")
 
-        reorder = values_of("reorder")
+        return parts, ext_tokens
+
+    @staticmethod
+    def _netem_extension_parts(filters):
+        """
+        The netem extensions in their frozen grammar order — reorder, rate,
+        limit, distribution, seed — plus each keyword's capability token.
+        The tokens (rate, reorder, dist, seed, limit) are checked against
+        ``tc capabilities`` by the caller.
+
+        :returns: (keyword sequence, required extension tokens)
+        """
+
+        values_of = KernelDatapathMixin._values_of
+        parts = []
+        ext_tokens = set()
+
+        reorder = values_of(filters, "reorder")
         if reorder:
             segment = f"reorder {int(reorder[0])}"
             if len(reorder) > 1 and int(reorder[1]):
@@ -475,29 +563,49 @@ class KernelDatapathMixin:
             parts.append(segment)
             ext_tokens.add("reorder")
 
-        rate = values_of("rate")
+        rate = values_of(filters, "rate")
         if rate and str(rate[0]).strip():
             parts.append(f"rate {str(rate[0]).strip()}")
             ext_tokens.add("rate")
 
-        limit = values_of("limit")
+        limit = values_of(filters, "limit")
         if limit and int(limit[0]):
             parts.append(f"limit {int(limit[0])}")
             ext_tokens.add("limit")
 
+        delay = values_of(filters, "delay")
         if delay and len(delay) > 2 and str(delay[2]).strip().lower() not in ("", "uniform"):
             # "uniform" is the kernel default — emitting nothing keeps the
             # command compatible with the original netem surface.
             parts.append(f"distribution {str(delay[2]).strip().lower()}")
             ext_tokens.add("dist")
 
-        seed = values_of("seed")
+        seed = values_of(filters, "seed")
         if seed and int(seed[0]):
             # 0 is the "disabled" convention everywhere else — treat it so
             # here too (the controller's inactive-filter pass drops it).
             parts.append(f"seed {int(seed[0])}")
             ext_tokens.add("seed")
 
+        return parts, ext_tokens
+
+    @staticmethod
+    def _netem_command_parts(filters):
+        """
+        Build the ``tc netem set`` keyword sequence (in the frozen grammar
+        order: delay/jitter, loss|gemodel, dup, corrupt, reorder, rate,
+        limit, distribution, seed) plus the set of capability tokens the
+        sequence needs beyond the original netem surface.
+
+        :param filters: NIO filters dictionary ({"delay": [ms, jitter, dist], ...})
+
+        :returns: (keyword sequence, required extension tokens)
+        """
+
+        parts, ext_tokens = KernelDatapathMixin._netem_surface_parts(filters)
+        extension_parts, extension_tokens = KernelDatapathMixin._netem_extension_parts(filters)
+        parts.extend(extension_parts)
+        ext_tokens |= extension_tokens
         return parts, ext_tokens
 
     async def _ubridge_apply_netem(self, host_ifc, filters):
@@ -523,7 +631,12 @@ class KernelDatapathMixin:
         :param filters: NIO filters dictionary ({"delay": [ms, jitter], ...})
         """
 
-        parts, ext_tokens = self._netem_command_parts(filters)
+        try:
+            parts, ext_tokens = self._netem_command_parts(filters)
+        except (TypeError, ValueError) as e:
+            # int() on a stray value from an unvalidated direct-API update
+            # (e.g. {"delay": ["abc"]}) would otherwise surface as a 500.
+            raise self._kernel_error(f"Malformed packet filter values on a kernel-datapath link: {e}")
         if parts and ext_tokens:
             # Extension keywords need the netem-extension uBridge. Plain
             # delay/loss/corrupt/dup never probes — an old uBridge serves
@@ -587,7 +700,13 @@ class KernelDatapathMixin:
         """
 
         bpf = filters.get("bpf")
-        lines = [line.strip() for line in (bpf[0].split("\n") if bpf else []) if line.strip()]
+        # Accept the bare-value shape ({"bpf": "icmp"}): a str is the
+        # expression itself — indexing it would install its first character.
+        if isinstance(bpf, str):
+            bpf = [bpf]
+        elif not isinstance(bpf, (list, tuple)):
+            bpf = []
+        lines = [line.strip() for line in (str(bpf[0]).split("\n") if bpf else []) if line.strip()]
         if not lines and self._ubridge_tc_caps is None:
             # Nothing to add and nothing was ever installed (no tc module
             # probed yet) — skip touching an old uBridge entirely.
@@ -653,16 +772,32 @@ class KernelDatapathMixin:
         :param filters: NIO filters dictionary
         """
 
-        def values_of(key):
-            values = filters.get(key)
-            if isinstance(values, (list, tuple)):
-                return list(values)
-            return [values] if values else []
+        def numeric_values(key, minimum, maximum):
+            """
+            The filter's values as ints, refusing a malformed shape here: the
+            direct compute API is unvalidated (the controller's validation
+            does not run for it), and indexing a short list or int()-ing a
+            stray string further down would surface as a bare IndexError or
+            ValueError 500 after the bridge/netem state was already applied.
+            """
 
-        frequency = values_of("frequency_drop")
-        quota = values_of("quota")
-        window = values_of("window_drop")
-        requested = {filter_type: values_of(filter_type) for filter_type in FILTER_EBPF_MODES}
+            values = self._values_of(filters, key)
+            if not values:
+                return []
+            try:
+                numbers = [int(value) for value in values]
+            except (TypeError, ValueError):
+                raise self._kernel_error(f"Packet filter '{key}' needs integer values, got {values!r}")
+            if not minimum <= len(numbers) <= maximum:
+                raise self._kernel_error(
+                    f"Packet filter '{key}' needs between {minimum} and {maximum} integer values, got {len(numbers)}"
+                )
+            return numbers
+
+        frequency = numeric_values("frequency_drop", 1, 1)
+        quota = numeric_values("quota", 2, 2)
+        window = numeric_values("window_drop", 3, 5)
+        requested = {filter_type: self._values_of(filters, filter_type) for filter_type in FILTER_EBPF_MODES}
         if not any(requested.values()) and self._ubridge_tc_caps is None:
             # Nothing to set and nothing was ever installed (no probe yet) —
             # skip touching an old uBridge entirely.
@@ -672,41 +807,67 @@ class KernelDatapathMixin:
         # (ebpf_modes); builds predating the field keep their shipped modes.
         modes = usable_ebpf_modes(caps)
         if not any(requested.values()):
-            # Only modes this build declares can ever have been installed —
-            # sending "off" for an undeclared mode would hit an unknown
-            # command; "off" is idempotent in uBridge.
-            for filter_type, mode in FILTER_EBPF_MODES.items():
-                if mode in modes:
-                    await self._ubridge_send(f'tc {mode}_drop "{host_ifc}" off')
+            await self._ebpf_turn_off_modes(host_ifc, modes)
             return
         unsupported = sorted(f for f, values in requested.items() if values and FILTER_EBPF_MODES[f] not in modes)
         if unsupported:
-            if not modes:
-                raise self._kernel_error(
-                    "Packet filter(s) {} on a kernel-datapath link need a uBridge with eBPF support "
-                    "(tc capabilities reports no ebpf; setcap cap_bpf,cap_net_admin,cap_net_raw=ep on "
-                    "the uBridge binary); upgrade uBridge on this compute or keep the link on the "
-                    "relay datapath".format(", ".join(unsupported))
-                )
+            self._reject_unsupported_ebpf_modes(unsupported, modes)
+        await self._ebpf_apply_modes(host_ifc, frequency, quota, window, modes)
+
+    async def _ebpf_turn_off_modes(self, host_ifc, modes):
+        """
+        Turn off every mode this build declares. Only declared modes can
+        ever have been installed — sending "off" for an undeclared mode
+        would hit an unknown command; "off" is idempotent in uBridge.
+        """
+
+        for mode in FILTER_EBPF_MODES.values():
+            if mode in modes:
+                await self._ubridge_send(f'tc {mode}_drop "{host_ifc}" off')
+
+    def _reject_unsupported_ebpf_modes(self, unsupported, modes):
+        """
+        Refuse filters whose mode this uBridge cannot run: a clear error
+        naming the missing capability (no eBPF at all vs. an older build)
+        beats a late uBridge failure.
+        """
+
+        if not modes:
             raise self._kernel_error(
-                "Packet filter(s) {} on a kernel-datapath link need a newer uBridge (tc capabilities "
-                "reports ebpf_modes={}); upgrade uBridge on this compute or keep the link on the "
-                "relay datapath".format(", ".join(unsupported), ",".join(modes))
+                "Packet filter(s) {} on a kernel-datapath link need a uBridge with eBPF support "
+                "(tc capabilities reports no ebpf; setcap cap_bpf,cap_net_admin,cap_net_raw=ep on "
+                "the uBridge binary); upgrade uBridge on this compute or keep the link on the "
+                "relay datapath".format(", ".join(unsupported))
             )
+        raise self._kernel_error(
+            "Packet filter(s) {} on a kernel-datapath link need a newer uBridge (tc capabilities "
+            "reports ebpf_modes={}); upgrade uBridge on this compute or keep the link on the "
+            "relay datapath".format(", ".join(unsupported), ",".join(modes))
+        )
+
+    async def _ebpf_apply_modes(self, host_ifc, frequency, quota, window, modes):
+        """
+        Set the requested modes (and clear the absent ones) in the
+        classifier's fixed order nth → quota → window. A mode left absent
+        is turned off explicitly (idempotent) so a removed filter stops
+        dropping; for window_drop this means the schedule restarts on every
+        apply (the first window opens Start-ms from the moment of the call).
+        """
+
         if frequency:
             # relay semantics: -1 = drop everything, N = every Nth packet
-            nth = 1 if int(frequency[0]) == -1 else int(frequency[0])
+            nth = 1 if frequency[0] == -1 else frequency[0]
             await self._ubridge_send(f'tc nth_drop "{host_ifc}" {nth}')
         elif "nth" in modes:
             await self._ubridge_send(f'tc nth_drop "{host_ifc}" off')
         if quota:
-            await self._ubridge_send(f'tc quota_drop "{host_ifc}" {int(quota[0])} {int(quota[1])}')
+            await self._ubridge_send(f'tc quota_drop "{host_ifc}" {quota[0]} {quota[1]}')
         elif "quota" in modes:
             await self._ubridge_send(f'tc quota_drop "{host_ifc}" off')
         if window:
             # [start, outage, chance, period?, jitter?] — start is relative
             # to this apply (the schedule restarts on every reconcile).
-            params = " ".join(str(int(v)) for v in window)
+            params = " ".join(str(v) for v in window)
             await self._ubridge_send(f'tc window_drop "{host_ifc}" {params}')
         elif "window" in modes:
             await self._ubridge_send(f'tc window_drop "{host_ifc}" off')
