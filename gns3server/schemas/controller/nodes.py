@@ -19,6 +19,8 @@ from typing import List, Optional, Union
 from enum import Enum
 from uuid import UUID, uuid4
 
+from ..update import PartialUpdateModel
+
 from .labels import Label
 from ..common import ConsoleType, NodeStatus, CustomAdapter
 
@@ -165,14 +167,12 @@ class NodeCreate(NodeBase):
     node_id: UUID = Field(default_factory=uuid4)
 
 
-class NodeUpdate(NodeBase):
+class NodeUpdate(PartialUpdateModel, NodeBase):
     """
     Data to update a node.
     """
 
-    compute_id: Optional[Union[UUID, str]] = None
-    name: Optional[str] = None
-    node_type: Optional[NodeType] = None
+    update_excluded_fields = ("node_id", "compute_id", "node_type")
 
 
 class Node(NodeBase):

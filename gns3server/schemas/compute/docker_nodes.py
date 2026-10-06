@@ -19,6 +19,7 @@ from typing import Optional, List
 from uuid import UUID
 
 from ..common import NodeStatus, CustomAdapter, ConsoleType, AuxType, ExtraConfig
+from ..update import PartialUpdateModel
 
 
 class DockerBase(BaseModel):
@@ -88,10 +89,12 @@ class DockerCreate(DockerBase):
     )
 
 
-class DockerUpdate(DockerBase):
+class DockerUpdate(PartialUpdateModel, DockerBase):
     """
     Properties to update a Docker node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     image: Optional[str] = Field(None, description="Docker image name")

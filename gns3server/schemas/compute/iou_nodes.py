@@ -19,6 +19,7 @@ from typing import Optional
 from uuid import UUID
 
 from ..common import NodeStatus, ConsoleType
+from ..update import PartialUpdateModel
 
 
 class IOUBase(BaseModel):
@@ -55,10 +56,12 @@ class IOUCreate(IOUBase):
     pass
 
 
-class IOUUpdate(IOUBase):
+class IOUUpdate(PartialUpdateModel, IOUBase):
     """
     Properties to update an IOU node.
     """
+
+    update_excluded_fields = ("node_id", "application_id")
 
     name: Optional[str] = None
     path: Optional[str] = Field(None, description="IOU executable path")

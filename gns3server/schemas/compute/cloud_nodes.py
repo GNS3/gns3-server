@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class HostInterfaceType(str, Enum):
@@ -147,10 +148,12 @@ class CloudCreate(CloudBase):
     pass
 
 
-class CloudUpdate(CloudBase):
+class CloudUpdate(PartialUpdateModel, CloudBase):
     """
     Properties to update a cloud node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 

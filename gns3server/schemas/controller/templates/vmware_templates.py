@@ -25,6 +25,7 @@ from gns3server.schemas.compute.vmware_nodes import (
 
 from pydantic import Field
 from typing import Optional, List
+from ...update import PartialUpdateModel
 
 
 class VMwareTemplate(TemplateBase):
@@ -57,5 +58,7 @@ class VMwareTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VMwareTemplateUpdate(VMwareTemplate):
+class VMwareTemplateUpdate(PartialUpdateModel, VMwareTemplate):
+    update_excluded_fields = ("template_id",)
+
     vmx_path: Optional[str] = Field(None, description="Path to the vmx file")

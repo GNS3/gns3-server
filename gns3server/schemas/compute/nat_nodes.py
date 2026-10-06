@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class HostInterfaceType(str, Enum):
@@ -105,10 +106,12 @@ class NATCreate(NATBase):
     pass
 
 
-class NATUpdate(NATBase):
+class NATUpdate(PartialUpdateModel, NATBase):
     """
     Properties to update a NAT node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 

@@ -20,6 +20,7 @@ from gns3server.schemas.compute.vpcs_nodes import ConsoleType
 
 from pydantic import Field
 from typing import Optional
+from ...update import PartialUpdateModel
 
 
 class VPCSTemplate(TemplateBase):
@@ -33,5 +34,5 @@ class VPCSTemplate(TemplateBase):
     )
 
 
-class VPCSTemplateUpdate(VPCSTemplate):
-    pass
+class VPCSTemplateUpdate(PartialUpdateModel, VPCSTemplate):
+    update_excluded_fields = ("template_id",)

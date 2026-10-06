@@ -29,6 +29,7 @@ from gns3server.schemas.compute.qemu_nodes import (
 
 from pydantic import Field
 from typing import Optional, List
+from ...update import PartialUpdateModel
 
 
 class QemuTemplate(TemplateBase):
@@ -100,5 +101,5 @@ class QemuTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class QemuTemplateUpdate(QemuTemplate):
-    pass
+class QemuTemplateUpdate(PartialUpdateModel, QemuTemplate):
+    update_excluded_fields = ("template_id",)

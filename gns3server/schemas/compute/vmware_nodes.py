@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus, CustomAdapter
+from ..update import PartialUpdateModel
 
 
 class VMwareConsoleType(str, Enum):
@@ -86,10 +87,12 @@ class VMwareCreate(VMwareBase):
     pass
 
 
-class VMwareUpdate(VMwareBase):
+class VMwareUpdate(PartialUpdateModel, VMwareBase):
     """
     Properties to update a VMware node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     vmx_path: Optional[str] = None

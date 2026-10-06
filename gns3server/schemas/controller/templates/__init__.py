@@ -21,6 +21,7 @@ from uuid import UUID
 
 from ..nodes import NodeType
 from ..base import DateTimeModelMixin
+from ...update import PartialUpdateModel
 
 
 class Category(str, Enum):
@@ -97,7 +98,8 @@ class TemplateCreate(TemplateBase):
     model_config = ConfigDict(extra="allow")
 
 
-class TemplateUpdate(TemplateBase):
+class TemplateUpdate(PartialUpdateModel, TemplateBase):
+    update_excluded_fields = ("template_id",)
     model_config = ConfigDict(extra="allow")
 
 

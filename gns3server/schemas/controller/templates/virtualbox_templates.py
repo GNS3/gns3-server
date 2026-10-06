@@ -24,6 +24,7 @@ from gns3server.schemas.compute.virtualbox_nodes import (
 
 from pydantic import Field
 from typing import Optional, List
+from ...update import PartialUpdateModel
 
 
 class VirtualBoxTemplate(TemplateBase):
@@ -59,5 +60,7 @@ class VirtualBoxTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VirtualBoxTemplateUpdate(VirtualBoxTemplate):
+class VirtualBoxTemplateUpdate(PartialUpdateModel, VirtualBoxTemplate):
+    update_excluded_fields = ("template_id",)
+
     vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")

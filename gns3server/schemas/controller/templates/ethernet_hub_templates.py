@@ -19,6 +19,7 @@ from gns3server.schemas.compute.ethernet_hub_nodes import EthernetHubPort
 
 from pydantic import Field
 from typing import Optional, List
+from ...update import PartialUpdateModel
 
 
 DEFAULT_PORTS = [
@@ -40,5 +41,5 @@ class EthernetHubTemplate(TemplateBase):
     ports_mapping: Optional[List[EthernetHubPort]] = Field(DEFAULT_PORTS, description="Ports")
 
 
-class EthernetHubTemplateUpdate(EthernetHubTemplate):
-    pass
+class EthernetHubTemplateUpdate(PartialUpdateModel, EthernetHubTemplate):
+    update_excluded_fields = ("template_id",)

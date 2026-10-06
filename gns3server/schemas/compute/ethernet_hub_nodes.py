@@ -19,6 +19,7 @@ from typing import Optional, List
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class EthernetHubPort(BaseModel):
@@ -45,12 +46,12 @@ class EthernetHubCreate(EthernetHubBase):
     name: str
 
 
-class EthernetHubUpdate(EthernetHubBase):
+class EthernetHubUpdate(PartialUpdateModel, EthernetHubBase):
     """
     Properties to update an Ethernet hub node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
 
 
 class EthernetHub(EthernetHubBase):

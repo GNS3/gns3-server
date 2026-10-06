@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus, CustomAdapter
+from ..update import PartialUpdateModel
 
 
 class VirtualBoxConsoleType(str, Enum):
@@ -81,10 +82,12 @@ class VirtualBoxCreate(VirtualBoxBase):
     pass
 
 
-class VirtualBoxUpdate(VirtualBoxBase):
+class VirtualBoxUpdate(PartialUpdateModel, VirtualBoxBase):
     """
     Properties to update a VirtualBox node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     vmname: Optional[str] = None

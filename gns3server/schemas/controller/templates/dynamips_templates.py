@@ -28,6 +28,7 @@ from gns3server.schemas.compute.dynamips_nodes import (
 from pydantic import Field
 from typing import Optional
 from enum import Enum
+from ...update import PartialUpdateModel
 
 
 class DynamipsTemplate(TemplateBase):
@@ -75,7 +76,9 @@ class C7200DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C7200DynamipsTemplateUpdate(C7200DynamipsTemplate):
+class C7200DynamipsTemplateUpdate(PartialUpdateModel, C7200DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -87,7 +90,9 @@ class C3725DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3725DynamipsTemplateUpdate(C3725DynamipsTemplate):
+class C3725DynamipsTemplateUpdate(PartialUpdateModel, C3725DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -99,7 +104,9 @@ class C3745DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3745DynamipsTemplateUpdate(C3745DynamipsTemplate):
+class C3745DynamipsTemplateUpdate(PartialUpdateModel, C3745DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -118,7 +125,9 @@ class C3600DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3600DynamipsTemplateUpdate(C3600DynamipsTemplate):
+class C3600DynamipsTemplateUpdate(PartialUpdateModel, C3600DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -130,7 +139,9 @@ class C2691DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C2691DynamipsTemplateUpdate(C2691DynamipsTemplate):
+class C2691DynamipsTemplateUpdate(PartialUpdateModel, C2691DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -155,7 +166,9 @@ class C2600DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C2600DynamipsTemplateUpdate(C2600DynamipsTemplate):
+class C2600DynamipsTemplateUpdate(PartialUpdateModel, C2600DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")
 
@@ -176,6 +189,8 @@ class C1700DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(False, description="Sparse memory feature")
 
 
-class C1700DynamipsTemplateUpdate(C1700DynamipsTemplate):
+class C1700DynamipsTemplateUpdate(PartialUpdateModel, C1700DynamipsTemplate):
+    update_excluded_fields = ("template_id",)
+
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     image: Optional[str] = Field(None, description="Path to the IOS image")

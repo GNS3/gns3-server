@@ -21,6 +21,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class DynamipsPlatform(str, Enum):
@@ -180,12 +181,12 @@ class DynamipsCreate(DynamipsBase):
     ram: int = Field(..., gt=0, description="Amount of RAM in MB")
 
 
-class DynamipsUpdate(DynamipsBase):
+class DynamipsUpdate(PartialUpdateModel, DynamipsBase):
     """
     Properties to update a Dynamips node.
     """
 
-    pass
+    update_excluded_fields = ("node_id", "dynamips_id")
 
 
 class Dynamips(DynamipsBase):

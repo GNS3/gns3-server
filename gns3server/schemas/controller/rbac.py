@@ -69,7 +69,8 @@ class ACEUpdate(ACEBase):
     Properties to update an ACE.
     """
 
-    pass
+    propagate: Optional[bool] = None
+    allowed: Optional[bool] = None
 
 
 class ACE(DateTimeModelMixin, ACEBase):

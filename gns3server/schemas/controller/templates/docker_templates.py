@@ -20,6 +20,7 @@ from ...common import ConsoleType, AuxType, CustomAdapter, ExtraConfig
 
 from pydantic import Field
 from typing import Optional, List
+from ...update import PartialUpdateModel
 
 
 class DockerTemplate(TemplateBase):
@@ -58,5 +59,7 @@ class DockerTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class DockerTemplateUpdate(DockerTemplate):
+class DockerTemplateUpdate(PartialUpdateModel, DockerTemplate):
+    update_excluded_fields = ("template_id",)
+
     image: Optional[str] = Field(None, description="Docker image name")

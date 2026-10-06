@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus, CustomAdapter
+from ..update import PartialUpdateModel
 
 
 class QemuPlatform(str, Enum):
@@ -225,10 +226,12 @@ class QemuCreate(QemuBase):
     )
 
 
-class QemuUpdate(QemuBase):
+class QemuUpdate(PartialUpdateModel, QemuBase):
     """
     Properties to update a Qemu node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 

@@ -20,6 +20,7 @@ from uuid import UUID
 from enum import Enum
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class EthernetSwitchPortType(str, Enum):
@@ -82,12 +83,12 @@ class EthernetSwitchCreate(EthernetSwitchBase):
     name: str
 
 
-class EthernetSwitchUpdate(EthernetSwitchBase):
+class EthernetSwitchUpdate(PartialUpdateModel, EthernetSwitchBase):
     """
     Properties to update an Ethernet hub node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
 
 
 class EthernetSwitch(EthernetSwitchBase):

@@ -19,6 +19,7 @@ from typing import Optional
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class FrameRelaySwitchBase(BaseModel):
@@ -40,10 +41,12 @@ class FrameRelaySwitchCreate(FrameRelaySwitchBase):
     node_id: Optional[UUID] = None
 
 
-class FrameRelaySwitchUpdate(FrameRelaySwitchBase):
+class FrameRelaySwitchUpdate(PartialUpdateModel, FrameRelaySwitchBase):
     """
     Properties to update an Frame Relay node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     node_id: Optional[UUID] = None

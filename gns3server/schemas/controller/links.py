@@ -19,6 +19,8 @@ from typing import List, Optional, Tuple
 from enum import Enum
 from uuid import UUID, uuid4
 
+from ..update import PartialUpdateModel
+
 from .labels import Label
 
 
@@ -72,7 +74,7 @@ class LinkCreate(LinkBase):
     nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
 
 
-class LinkUpdate(LinkBase):
+class LinkUpdate(PartialUpdateModel, LinkBase):
     pass
 
 

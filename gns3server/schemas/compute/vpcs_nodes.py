@@ -20,6 +20,7 @@ from enum import Enum
 from uuid import UUID
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class ConsoleType(str, Enum):
@@ -53,10 +54,12 @@ class VPCSCreate(VPCSBase):
     pass
 
 
-class VPCSUpdate(VPCSBase):
+class VPCSUpdate(PartialUpdateModel, VPCSBase):
     """
     Properties to update a VPCS node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 
