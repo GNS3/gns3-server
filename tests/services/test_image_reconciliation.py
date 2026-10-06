@@ -707,3 +707,131 @@ async def test_delete_preserves_replacement_created_while_waiting_for_lock(inven
                 assert await repository.prune_images() == 0
     assert path.read_bytes() == replacement
     assert (await rows(inventory))[0]["image_id"] == replacement_id
+
+
+async def upload_stream(inventory, config, stream, *, subdirectory, filename="router.qcow2"):
+    async with AsyncSession(inventory.engine) as session:
+        return await write_image(
+            filename,
+            str(Path(config.settings.Server.images_path) / filename),
+            stream,
+            ImagesRepository(session),
+            subdirectory=subdirectory,
+        )
+
+
+async def test_upload_rejects_directory_swap_and_cleans_anchored_temporary(inventory, config, tmp_path):
+    if os.open not in os.supports_dir_fd:
+        pytest.skip("Requires directory descriptor support")
+    root = Path(config.settings.Server.images_path)
+    folder = root / "QEMU" / "vendor"
+    moved = root / "QEMU" / "original-vendor"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+
+    async def swapping_stream():
+        yield QCOW
+        folder.rename(moved)
+        folder.symlink_to(outside, target_is_directory=True)
+        yield b"more bytes"
+
+    with pytest.raises(OSError):
+        await upload_stream(inventory, config, swapping_stream(), subdirectory="vendor")
+    assert not list(outside.iterdir())
+    assert not list(moved.iterdir())
+    assert not await rows(inventory)
+
+
+async def test_cancelled_nested_upload_cleans_temporary(inventory, config):
+    root = Path(config.settings.Server.images_path)
+
+    async def cancelled_stream():
+        yield QCOW
+        raise asyncio.CancelledError
+
+    with pytest.raises(asyncio.CancelledError):
+        await upload_stream(inventory, config, cancelled_stream(), subdirectory="Vendor/Version")
+    assert not list((root / "QEMU/Vendor/Version").iterdir())
+    assert not await rows(inventory)
+
+
+async def test_nested_appliance_reference_selects_correct_same_named_image(inventory, config):
+    from gns3server.controller.appliance_manager import ApplianceManager
+    from gns3server.db.repositories.templates import TemplatesRepository
+
+    image_file(config, "QEMU/other/router.qcow2", QCOW + b"other")
+    path = image_file(config, "QEMU/vendor/router.qcow2", QCOW + b"required")
+    await scan(inventory)
+    checksum = hashlib.md5(path.read_bytes(), usedforsecurity=False).hexdigest()
+    appliance = SimpleNamespace(images=[{"filename": path.name, "md5sum": checksum}])
+    version = {"images": {"hda_disk_image": path.name}}
+    async with AsyncSession(inventory.engine, expire_on_commit=False) as session:
+        await ApplianceManager()._find_appliance_version_images(
+            appliance, version, ImagesRepository(session), str(path.parent)
+        )
+        reference = version["images"]["hda_disk_image"]
+        assert reference == "vendor/router.qcow2"
+        resolved = await TemplatesRepository(session).get_image(reference)
+        assert resolved.path == str(path)
+        assert resolved.checksum == checksum
+
+
+@pytest.mark.parametrize("anchored", [True, False])
+async def test_upload_directory_publication_is_no_overwrite_in_both_modes(config, anchored):
+    from gns3server.utils.image_inventory import ImageUploadDirectory
+
+    root = Path(config.settings.Server.images_path)
+    directory = ImageUploadDirectory(str(root), str(root / "QEMU/Vendor/Version"))
+    if anchored and not directory.anchored:
+        pytest.skip("Requires directory descriptor support")
+    directory.anchored = anchored
+    with directory:
+        fd, temporary = directory.temporary()
+        os.write(fd, QCOW)
+        os.close(fd)
+        directory.publish(temporary, "router.qcow2")
+        fd, temporary = directory.temporary()
+        os.write(fd, QCOW + b"replacement")
+        os.close(fd)
+        with pytest.raises(FileExistsError):
+            directory.publish(temporary, "router.qcow2")
+        directory.remove(temporary)
+    assert (root / "QEMU/Vendor/Version/router.qcow2").read_bytes() == QCOW
+
+
+@pytest.mark.parametrize("anchored", [True, False])
+@pytest.mark.parametrize("inside", [True, False])
+async def test_upload_directory_rejects_symlink_before_creating_children(config, tmp_path, anchored, inside):
+    from gns3server.utils.image_inventory import ImageUploadDirectory
+
+    root = Path(config.settings.Server.images_path)
+    (root / "QEMU").mkdir(parents=True, exist_ok=True)
+    target = root / "target" if inside else tmp_path / "outside"
+    target.mkdir()
+    (root / "QEMU/link").symlink_to(target, target_is_directory=True)
+    directory = ImageUploadDirectory(str(root), str(root / "QEMU/link/child"))
+    if anchored and not directory.anchored:
+        pytest.skip("Requires directory descriptor support")
+    directory.anchored = anchored
+    with pytest.raises(OSError), directory:
+        pytest.fail("A symlink folder must not be accepted")
+    assert not list(target.iterdir())
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permission bits and umask")
+async def test_upload_restores_executable_permissions_under_restrictive_umask(inventory, config):
+    import stat
+
+    root = Path(config.settings.Server.images_path)
+    (root / "IOU/Vendor").mkdir(parents=True)
+    (Path(config.config_dir) / ".image-locks").mkdir(parents=True, exist_ok=True)
+
+    async def stream():
+        yield b"\x7fELF\x02\x01\x01"
+
+    previous_umask = os.umask(0o777)
+    try:
+        image = await upload_stream(inventory, config, stream(), filename="router.bin", subdirectory="Vendor")
+    finally:
+        os.umask(previous_umask)
+    assert stat.S_IMODE(os.stat(image.path).st_mode) == 0o700

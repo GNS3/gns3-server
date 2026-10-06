@@ -15,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+import json
 import uuid
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -160,3 +165,67 @@ async def test_install_version_not_found(monkeypatch):
 
     with pytest.raises(ControllerNotFoundError):
         await manager.install_appliance(uuid.UUID(appliance.id), "9.9", None, None, None, None)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "dependency_state",
+    ["missing", "selected", "existing", "downloadable"],
+)
+async def test_image_compatibility_accounts_for_dependencies_without_installing(dependency_state):
+    data = json.loads(Path("gns3server/appliances/empty-vm.gns3a").read_text())
+    primary, dependency = data["images"][:2]
+    if dependency_state != "downloadable":
+        dependency.pop("direct_download_url")
+    data["images"] = [primary, dependency]
+    data["versions"] = [
+        {
+            "name": primary["version"],
+            "images": {"hda_disk_image": primary["filename"], "hdb_disk_image": dependency["filename"]},
+        }
+    ]
+    original = copy.deepcopy(data)
+    appliance = Appliance("test.gns3a", data)
+    manager = ApplianceManager()
+    manager._appliances[appliance.id] = appliance
+    repo = AsyncMock()
+    repo.get_image_by_checksum.return_value = object() if dependency_state == "existing" else None
+    manager._download_image = AsyncMock()
+    manager._create_template = AsyncMock()
+    checksums = [primary["md5sum"]]
+    if dependency_state == "selected":
+        checksums.append(dependency["md5sum"])
+    result = await manager.check_image_compatibility(checksums, repo)
+    match = result[0]["matches"][0]
+    assert match["name"] == "Empty VM"
+    assert match["version"] == primary["version"]
+    assert match["missing_images"] == ([dependency["filename"]] if dependency_state == "missing" else [])
+    assert match["downloadable_images"] == ([dependency["filename"]] if dependency_state == "downloadable" else [])
+    manager._download_image.assert_not_awaited()
+    manager._create_template.assert_not_awaited()
+    assert appliance._data == original
+
+
+@pytest.mark.asyncio
+async def test_image_compatibility_returns_no_matches_for_custom_checksum():
+    manager = ApplianceManager()
+    repo = AsyncMock()
+    result = await manager.check_image_compatibility(["A" * 32, "a" * 32], repo)
+    assert result == [{"checksum": "a" * 32, "matches": []}]
+    repo.get_image_by_checksum.assert_not_awaited()
+
+
+def test_image_catalog_filter_is_conservative_and_does_not_match_by_filename():
+    manager = ApplianceManager()
+    manager._appliances = {
+        "a": SimpleNamespace(
+            images=[
+                {"md5sum": "a" * 32, "filesize": 123, "filename": "router.qcow2"},
+                {"md5sum": "b" * 32, "filesize": 123},
+                {"filesize": 456},
+            ]
+        )
+    }
+    assert manager.image_compatibility_catalog() == {"image_sizes": [123], "has_unknown_sizes": False}
+    manager._appliances["a"].images.append({"md5sum": "c" * 32})
+    assert manager.image_compatibility_catalog()["has_unknown_sizes"] is True

@@ -44,8 +44,21 @@ from gns3server.controller.controller_error import (
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.schemas.controller.images import (
+    ImageCompatibility,
+    ImageCompatibilityCatalog,
+    ImageCompatibilityRequest,
+)
 from gns3server.services.image_reconciliation import get_image_reconciliation_service
-from gns3server.utils.image_inventory import ImageLockBusy, contained_path, fingerprint, image_lock, publish_image
+from gns3server.utils.image_inventory import (
+    ImageLockBusy,
+    contained_path,
+    fingerprint,
+    image_lock,
+    publish_image,
+    validate_image_subdirectory,
+    validate_image_upload_name,
+)
 from gns3server.utils.images import (
     InvalidImageError,
     default_images_directory,
@@ -69,6 +82,29 @@ def image_destination(image_path):
     if not contained_path(os.path.realpath(full_path), root):
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
     return full_path
+
+
+@router.get(
+    "/compatibility/catalog",
+    response_model=ImageCompatibilityCatalog,
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
+async def image_compatibility_catalog() -> dict:
+    """List known catalog image sizes so clients can avoid hashing obvious nonmatches."""
+    return Controller.instance().appliance_manager.image_compatibility_catalog()
+
+
+@router.post(
+    "/compatibility",
+    response_model=list[ImageCompatibility],
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
+async def check_image_compatibility(
+    request: ImageCompatibilityRequest,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+) -> list[dict]:
+    """Check catalog matches for locally computed MD5 checksums without uploading files."""
+    return await Controller.instance().appliance_manager.check_image_compatibility(request.checksums, images_repo)
 
 
 @router.post(
@@ -171,7 +207,8 @@ async def get_images(
 
 @router.post(
     "/upload/{image_path:path}",
-    response_model=schemas.Image,
+    response_model=schemas.ImageUpload,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
@@ -183,7 +220,12 @@ async def upload_image(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     install_appliances: Optional[bool] = False,
-) -> models.Image:
+    subdirectory: Optional[str] = Query(
+        None,
+        max_length=512,
+        description="Relative subfolder below the detected image type directory; use a plain filename",
+    ),
+) -> models.Image | schemas.ImageUpload:
     """
     Upload an image.
 
@@ -194,13 +236,19 @@ async def upload_image(
     """
 
     image_path = urllib.parse.unquote(image_path)
-    image_dir, image_name = os.path.split(image_path)
+    if subdirectory is not None:
+        try:
+            validate_image_subdirectory(subdirectory)
+            validate_image_upload_name(image_path)
+        except ValueError as e:
+            raise ControllerBadRequestError(str(e)) from e
+    image_dir = os.path.dirname(image_path)
     # check if the path is within the default images directory
     full_path = image_destination(image_path)
 
     # If the client sends X-MD5-Checksum, check for a duplicate before consuming the upload stream
     checksum_header = request.headers.get("X-MD5-Checksum")
-    if checksum_header:
+    if checksum_header and subdirectory is None:
         check_dir = os.path.dirname(full_path) if image_dir else None
         duplicate = await images_repo.get_image_by_checksum(checksum_header, check_dir)
         if duplicate:
@@ -209,7 +257,14 @@ async def upload_image(
 
     try:
         allow_raw_image = Config.instance().settings.Server.allow_raw_images
-        image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)
+        image = await write_image(
+            image_path,
+            full_path,
+            request.stream(),
+            images_repo,
+            allow_raw_image=allow_raw_image,
+            subdirectory=subdirectory,
+        )
     except (OSError, InvalidImageError, ClientDisconnect, SQLAlchemyError) as e:
         service = getattr(request.app.state, "image_reconciliation", None)
         if service:
@@ -217,16 +272,30 @@ async def upload_image(
         raise ControllerError(f"Could not save image '{image_path}': {e}")
 
     if install_appliances:
-        # attempt to automatically create templates based on image checksum
-        await Controller.instance().appliance_manager.install_appliances_from_image(
-            image_path,
-            image.checksum,
-            images_repo,
-            templates_repo,
-            rbac_repo,
-            current_user,
-            os.path.dirname(image.path),
-        )
+        # Snapshot before template operations can roll back and expire ORM attributes.
+        uploaded_image = schemas.Image.model_validate(image).model_dump()
+        # Matching requires the checksum computed from the uploaded contents.
+        try:
+            results = await Controller.instance().appliance_manager.install_appliances_from_image(
+                image_path,
+                image.checksum,
+                images_repo,
+                templates_repo,
+                rbac_repo,
+                current_user,
+                os.path.dirname(image.path),
+            )
+        except (ControllerError, InvalidImageError, OSError, SQLAlchemyError) as e:
+            results = [{"status": "skipped", "reason": f"Template creation failed: {e}"}]
+        if not results:
+            results = [
+                {
+                    "status": "skipped",
+                    "reason": "No compatible appliance definition found in the server's catalog for this image. "
+                    "Manually create a template to use this image.",
+                }
+            ]
+        return schemas.ImageUpload.model_validate({**uploaded_image, "template_results": results})
 
     return image
 
