@@ -34,6 +34,9 @@ A node type using this mixin provides:
   or None when the adapter has none (a vendor container without a veth);
 * ``_kernel_anchors()`` — every anchor it currently owns, used to recognise
   the polymorphic marker anchor;
+* ``_tap_name(adapter_number, port_number)`` — the deterministic anchor TAP
+  name of a port (the shared utils.kernel_anchor contract), for the node
+  types whose anchor is a persistent TAP;
 * optionally ``_relay_carrier_bridge(adapter_number, port_number)`` — the
   uBridge bridge carrying the adapter's TAP relay, for node types whose relay
   datapath still rides a uBridge-owned TAP instead of an anchor;
@@ -91,6 +94,15 @@ class KernelDatapathMixin:
 
         return None
 
+    def _tap_name(self, adapter_number, port_number=0):
+        """
+        Returns the deterministic anchor TAP name of a port (the shared
+        utils.kernel_anchor naming contract — the controller names a peer's
+        anchor with the same function when an Ethernet switch absorbs it).
+        """
+
+        raise NotImplementedError
+
     def _kernel_error(self, message):
         """
         Returns the node module's error for a kernel-datapath failure
@@ -129,6 +141,86 @@ class KernelDatapathMixin:
             return
         state = "on" if connected else "off"
         await self._ubridge_send(f"bridge set_nio_tap_carrier {bridge_name} {state}")
+
+    # ------------------------------------------------------------------
+    # Anchor TAP lifecycle
+    # ------------------------------------------------------------------
+
+    async def _probe_persistent_taps(self, probe_name):
+        """
+        Probe the node's uBridge for the persistent-TAP module with a
+        scratch TAP that is deleted again. Returns None when the module
+        works, or the UbridgeError that refused it — an old build answers
+        "Unknown command"/"Unknown module", a build without CAP_NET_ADMIN
+        fails outright. The caller composes its own warning and fallback:
+        the legacy relay datapath keeps working either way.
+        """
+
+        try:
+            await self._ubridge_send(f'tap create "{probe_name}"')
+        except UbridgeError as e:
+            return e
+        with contextlib.suppress(UbridgeError):
+            await self._ubridge_send(f'tap delete "{probe_name}"')
+        return None
+
+    async def _create_anchor_taps(self, ports, set_owner=False, keep_existing=False):
+        """
+        Create the persistent anchor TAP of every port, named through
+        ``_tap_name`` and registered in ``_kernel_taps``.
+
+        *ports* is an iterable of ``(adapter_number, port_number)`` keys — a
+        node type enumerates whichever of its ports anchor (QEMU's whole
+        adapters, IOU's bay/units, Dynamips' Ethernet slot ports, the IOL
+        container's bay/units). A persistent TAP outlives its creator, so a
+        leftover of a previous run (crash, kill) is swept first; each TAP is
+        created and starts DOWN (carrier off until a link attaches).
+        ``set_owner`` hands the device to this user for the node types whose
+        unprivileged emulator opens it itself (QEMU, Dynamips);
+        ``keep_existing`` leaves ports that already hold an anchor alone —
+        for a node whose anchors outlive its stop (Dynamips) or an adapter
+        hot-added to a running node, where an anchor must never be recreated
+        under a live link.
+        """
+
+        for key in ports:
+            if keep_existing and key in self._kernel_taps:
+                continue
+            tap = self._tap_name(*key)
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'tap delete "{tap}"')
+            await self._ubridge_send(f'tap create "{tap}"')
+            if set_owner:
+                try:
+                    await self._ubridge_send(f"tap set_owner {tap} {os.getuid()}")
+                except UbridgeError as e:
+                    # Only root could open the TAP then: the emulator would
+                    # fail to attach its netdev, which is worth surfacing
+                    # here rather than as a launch failure.
+                    log.warning(
+                        "Node '%s' [%s]: could not hand TAP %s to uid %s: %s", self._name, self._id, tap, os.getuid(), e
+                    )
+            await self._ubridge_send(f'link set "{tap}" down')
+            self._kernel_taps[key] = tap
+            log.debug("Node '%s' [%s]: anchor TAP %s created for port %s", self._name, self._id, tap, key)
+
+    async def _delete_anchor_taps(self):
+        """
+        Delete every registered anchor TAP and the per-link kernel bridges
+        this node still holds, then drop the registry. The caller releases
+        whatever holds each TAP's fd first (the QEMU process, the IOL
+        bridge, the hypervisor's NIO bindings, the container port bridges):
+        a held device answers EBADFD and the best-effort delete below would
+        leak it. The sweep is suppressed per TAP — an anchor already gone
+        is not an error — and the registry is cleared either way.
+        """
+
+        if self.ubridge:
+            for tap in self._kernel_taps.values():
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'tap delete "{tap}"')
+            await self._remove_kernel_bridges()
+        self._kernel_taps.clear()
 
     # ------------------------------------------------------------------
     # Link attach / detach

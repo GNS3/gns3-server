@@ -929,27 +929,15 @@ class IOUVM(KernelDatapathMixin, BaseNode):
             return
 
         self._tap_datapath = True
-        await self._create_taps()
-
-    async def _create_taps(self):
-        """
-        Create the persistent TAP every Ethernet bay/unit owns (four units
-        per bay, the IOU adapter model). uBridge holds a device's fd only
-        while a kernel link binds the port to it (``iol_bridge
-        add_nio_tap``); until then the TAP sits DOWN with no holder, and it
-        survives link churn untouched — links attach to it, never recreate
-        it. A persistent TAP outlives its creator, so a leftover from a
-        previous run (crash, kill) is swept first.
-        """
-
-        for adapter_number, adapter in enumerate(self._ethernet_adapters):
-            for port_number in adapter.ports.keys():
-                tap = self._tap_name(adapter_number, port_number)
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-                await self._ubridge_send(f'tap create "{tap}"')
-                await self._ubridge_send(f'link set "{tap}" down')
-                self._kernel_taps[(adapter_number, port_number)] = tap
+        # Every Ethernet bay/unit anchors (four units per bay, the IOU
+        # adapter model; serial bays never do). No set_owner: uBridge holds
+        # these fds itself, and only while a kernel link binds the port —
+        # until then, and after, the TAP survives link churn untouched.
+        await self._create_anchor_taps(
+            (adapter_number, port_number)
+            for adapter_number, adapter in enumerate(self._ethernet_adapters)
+            for port_number in adapter.ports.keys()
+        )
 
     async def _attach_kernel_nio(self, adapter_number, port_number, nio):
         """
@@ -988,11 +976,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         if self.ubridge:
             with contextlib.suppress(UbridgeError):
                 await self._ubridge_send(f"iol_bridge delete {self._iol_bridge_name()}")
-            for tap in self._kernel_taps.values():
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-            await self._remove_kernel_bridges()
-        self._kernel_taps.clear()
+        await self._delete_anchor_taps()
         self._ubridge_tc_caps = None
         await super()._stop_ubridge()
 

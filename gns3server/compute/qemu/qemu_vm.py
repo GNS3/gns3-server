@@ -20,7 +20,6 @@ order to run a QEMU VM.
 """
 
 import asyncio
-import contextlib
 import json
 import logging
 import math
@@ -54,7 +53,6 @@ from ..kernel_datapath import KernelDatapathMixin
 from ..nios.nio_bridge import NIOBridge
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_udp import NIOUDP
-from ..ubridge.ubridge_error import UbridgeError
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
 from .utils.ziputils import pack_zip, unpack_zip
@@ -1565,65 +1563,26 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if not self.ubridge:
             return
 
-        probe = f"gq{self._id.replace('-', '')[:8]}prob"
-        try:
-            await self._ubridge_send(f'tap create "{probe}"')
-        except UbridgeError as e:
-            log.warning("QEMU VM '%s': uBridge cannot create persistent TAPs (%s)", self._name, e)
+        probe_error = await self._probe_persistent_taps(f"gq{self._id.replace('-', '')[:8]}prob")
+        if probe_error is not None:
+            log.warning("QEMU VM '%s': uBridge cannot create persistent TAPs (%s)", self._name, probe_error)
             self.project.emit(
                 "log.warning",
                 {
-                    "message": f"QEMU VM '{self._name}': uBridge does not support persistent TAPs ({e}); "
+                    "message": f"QEMU VM '{self._name}': uBridge does not support persistent TAPs ({probe_error}); "
                     "this node runs on the legacy relay datapath and cannot carry kernel links"
                 },
             )
             return
-        with contextlib.suppress(UbridgeError):
-            await self._ubridge_send(f'tap delete "{probe}"')
 
         self._tap_datapath = True
-        await self._create_taps()
-
-    async def _create_taps(self):
-        """
-        Create the persistent TAP every adapter owns. Each adapter is born as
-        a TAP whatever its NIO type — the anchor role Docker's veth host end
-        plays — so a link attaches to (or detaches from) a running VM without
-        touching its interfaces. uBridge creates the device and hands
-        ownership to this user, so the unprivileged QEMU process can open it;
-        the TAP starts DOWN (carrier off until a link attaches). A persistent
-        TAP outlives its creator, so a leftover from a previous run (crash,
-        kill) is swept first.
-        """
-
-        for adapter_number, adapter in enumerate(self._ethernet_adapters):
-            tap = self._tap_name(adapter_number)
-            with contextlib.suppress(UbridgeError):
-                await self._ubridge_send(f'tap delete "{tap}"')
-            await self._ubridge_send(f'tap create "{tap}"')
-            try:
-                await self._ubridge_send(f"tap set_owner {tap} {os.getuid()}")
-            except UbridgeError as e:
-                # Only root could open the TAP now: the VM would fail to
-                # attach its netdev, which is worth surfacing here rather
-                # than as a launch failure.
-                log.warning("QEMU VM '%s': could not hand TAP %s to uid %s: %s", self._name, tap, os.getuid(), e)
-            await self._ubridge_send(f'link set "{tap}" down')
-            self._kernel_taps[(adapter_number, 0)] = tap
-
-    async def _remove_taps(self):
-        """
-        Delete the adapter TAPs together with the per-link kernel bridges
-        this VM still holds: a stopped VM has no links attached, so those
-        bridges are orphans whose ports just disappeared.
-        """
-
-        if self.ubridge:
-            for tap in self._kernel_taps.values():
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-            await self._remove_kernel_bridges()
-        self._kernel_taps.clear()
+        # Every adapter anchors (port 0 only — QEMU adapters are
+        # single-port). The shared lifecycle sweeps leftovers first, creates
+        # each TAP and hands it to this user (unprivileged QEMU opens it
+        # itself), leaving it down until a link attaches.
+        await self._create_anchor_taps(
+            ((adapter_number, 0) for adapter_number, _adapter in enumerate(self._ethernet_adapters)), set_owner=True
+        )
 
     async def _stop_ubridge(self):
         """
@@ -1635,8 +1594,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         probed again.
         """
 
-        if self.ubridge:
-            await self._remove_taps()
+        await self._delete_anchor_taps()
         self._ubridge_tc_caps = None
         await super()._stop_ubridge()
 

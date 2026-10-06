@@ -489,25 +489,13 @@ class IOLDockerVM(VendorDockerVM):
             return
 
         self._tap_datapath = True
-        for adapter_number in range(0, len(self._ethernet_adapters)):
-            for port_number in range(0, self._ethernet_adapters[adapter_number].interfaces):
-                tap = self._tap_name(adapter_number, port_number)
-                # A persistent TAP outlives a crash: sweep any leftover of a
-                # previous run before recreating it (a surviving device would
-                # also keep its stale tc qdisc).
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-                await self._ubridge_send(f'tap create "{tap}"')
-                # Carrier off until a link attaches (the anchor contract).
-                await self._ubridge_send(f'link set "{tap}" down')
-                self._kernel_taps[(adapter_number, port_number)] = tap
-                log.debug(
-                    "IOL container '%s': anchor TAP %s created for bay %d unit %d",
-                    self._name,
-                    tap,
-                    adapter_number,
-                    port_number,
-                )
+        # Every bay/unit anchors. No set_owner: the container port bridges
+        # hold these fds, and only while a kernel link is attached.
+        await self._create_anchor_taps(
+            (adapter_number, port_number)
+            for adapter_number in range(0, len(self._ethernet_adapters))
+            for port_number in range(0, self._ethernet_adapters[adapter_number].interfaces)
+        )
 
     async def _ensure_anchor(self, adapter_number, port_number):
         """
@@ -650,11 +638,7 @@ class IOLDockerVM(VendorDockerVM):
                 for port_number in range(0, adapter.interfaces):
                     with contextlib.suppress(UbridgeError):
                         await self._ubridge_send(f"bridge delete {self._bridge_name(adapter_number, port_number)}")
-            for tap in self._kernel_taps.values():
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-            await self._remove_kernel_bridges()
-        self._kernel_taps.clear()
+        await self._delete_anchor_taps()
         self._tap_datapath = False
         self._ubridge_tc_caps = None
         await super()._stop_ubridge()

@@ -42,7 +42,6 @@ from ...base_node import BaseNode
 from ...error import NodeError
 from ...kernel_datapath import KernelDatapathMixin
 from ...nios.nio_bridge import NIOBridge
-from ...ubridge.ubridge_error import UbridgeError
 from ..adapters.adapter import ETHERNET_ADAPTERS, ETHERNET_WICS
 from ..dynamips_error import DynamipsError
 from ..nios.nio_tap import NIOTAP
@@ -1648,19 +1647,15 @@ class Router(KernelDatapathMixin, BaseNode):
         # uBridge (re)started: the tc capabilities must be probed again.
         self._ubridge_tc_caps = None
         if not self._tap_datapath:
-            probe = f"gd{self._id.replace('-', '')[:8]}prob"
-            try:
-                await self._ubridge_send(f'tap create "{probe}"')
-            except UbridgeError as e:
+            probe_error = await self._probe_persistent_taps(f"gd{self._id.replace('-', '')[:8]}prob")
+            if probe_error is not None:
                 message = (
-                    f"Router '{self._name}': uBridge cannot create persistent TAPs ({e}); "
+                    f"Router '{self._name}': uBridge cannot create persistent TAPs ({probe_error}); "
                     "this node runs on the relay datapath and cannot carry kernel links"
                 )
                 log.warning(message)
                 self.project.emit("log.warning", {"message": message})
                 return
-            with contextlib.suppress(UbridgeError):
-                await self._ubridge_send(f'tap delete "{probe}"')
             self._tap_datapath = True
 
         await self._create_taps()
@@ -1675,31 +1670,15 @@ class Router(KernelDatapathMixin, BaseNode):
 
     async def _create_taps(self):
         """
-        Create the persistent TAP every Ethernet slot/port owns. Each TAP
-        starts DOWN (carrier off until a kernel link attaches); uBridge
-        creates the device and hands ownership to this user, so the
-        unprivileged Dynamips hypervisor can open it. A port whose anchor
-        already exists (a restart, or an adapter hot-added to a running
-        router) keeps it — an anchor is never recreated under a live link.
-        A persistent TAP outlives its creator, so a leftover from a previous
-        run (crash, kill) is swept first.
+        Create the persistent TAP every Ethernet slot/port owns (WIC ports
+        included), handed to this user so the unprivileged Dynamips
+        hypervisor can open the device. Unlike QEMU's, these anchors outlive
+        a node stop — the hypervisor keeps its NIO bindings — so a port that
+        already holds one keeps it: an anchor is never recreated under a
+        live link (a restart, or an adapter hot-added to a running router).
         """
 
-        for slot_number, port_number in self._ethernet_slot_ports():
-            if (slot_number, port_number) in self._kernel_taps:
-                continue
-            tap = self._tap_name(slot_number, port_number)
-            with contextlib.suppress(UbridgeError):
-                await self._ubridge_send(f'tap delete "{tap}"')
-            await self._ubridge_send(f'tap create "{tap}"')
-            try:
-                await self._ubridge_send(f"tap set_owner {tap} {os.getuid()}")
-            except UbridgeError as e:
-                # Only root could open the TAP now: the hypervisor would fail
-                # to bind its NIO, which is worth surfacing at that point.
-                log.warning("Router '%s': could not hand TAP %s to uid %s: %s", self._name, tap, os.getuid(), e)
-            await self._ubridge_send(f'link set "{tap}" down')
-            self._kernel_taps[(slot_number, port_number)] = tap
+        await self._create_anchor_taps(self._ethernet_slot_ports(), set_owner=True, keep_existing=True)
 
     async def _attach_kernel_nio(self, slot_number, port_number, nio):
         """
@@ -1792,11 +1771,7 @@ class Router(KernelDatapathMixin, BaseNode):
                 with contextlib.suppress(DynamipsError, OSError):
                     await tap_nio.delete()
             self._tap_nios.clear()
-            for tap in self._kernel_taps.values():
-                with contextlib.suppress(UbridgeError):
-                    await self._ubridge_send(f'tap delete "{tap}"')
-            await self._remove_kernel_bridges()
-        self._kernel_taps.clear()
+        await self._delete_anchor_taps()
         self._ubridge_tc_caps = None
         await super()._stop_ubridge()
 
