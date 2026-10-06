@@ -10,6 +10,8 @@ overwriting each other's commands and outputs.
 import json
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from gns3server.agent.gns3_copilot.utils.device_configs import (
     merge_duplicate_device_configs,
 )
@@ -334,6 +336,27 @@ class TestDuplicateDeviceMerging:
         assert result[0]["status"] == "partial_success"
         assert set(result[0]["blocked_commands"]) == {"debug ip routing", "debug ospf events"}
 
+    def test_entry_without_device_name_fails_the_whole_batch(self):
+        """An unaddressable entry must abort with an error, not vanish."""
+        from gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir import (
+            ExecuteMultipleDeviceCommands,
+        )
+
+        result = ExecuteMultipleDeviceCommands()._run(
+            json.dumps(
+                {
+                    "project_id": PROJECT_ID,
+                    "device_configs": [
+                        {"device_name": "R1", "commands": ["show version"]},
+                        {"commands": ["show clock"]},
+                    ],
+                }
+            )
+        )
+
+        assert result[0]["status"] == "failed"
+        assert "device_configs[1]" in result[0]["error"]
+
 
 class TestMergeDuplicateDeviceConfigs:
     """Unit tests for the shared normalization helper."""
@@ -361,12 +384,21 @@ class TestMergeDuplicateDeviceConfigs:
         assert merged == [{"device_name": "R1", "commands": ["a", "b"], "extra": 1}]
         assert original[0]["commands"] == ["a"]
 
-    def test_entry_without_device_name_is_dropped(self):
-        merged = merge_duplicate_device_configs(
-            [{"commands": ["a"]}, {"device_name": "R1", "commands": ["b"]}],
-            commands_field="commands",
-        )
-        assert merged == [{"device_name": "R1", "commands": ["b"]}]
+    def test_entry_without_device_name_is_rejected(self):
+        # Silently dropping it would let the batch execute partially while
+        # every returned row reports success.
+        with pytest.raises(ValueError, match=r"device_configs\[0\]"):
+            merge_duplicate_device_configs(
+                [{"commands": ["a"]}, {"device_name": "R1", "commands": ["b"]}],
+                commands_field="commands",
+            )
+
+    def test_entry_that_is_not_an_object_is_rejected(self):
+        with pytest.raises(ValueError, match=r"device_configs\[1\]"):
+            merge_duplicate_device_configs(
+                [{"device_name": "R1", "commands": ["a"]}, "R2"],
+                commands_field="commands",
+            )
 
     def test_missing_commands_field_defaults_to_empty(self):
         merged = merge_duplicate_device_configs(

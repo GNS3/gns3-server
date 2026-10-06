@@ -26,9 +26,13 @@ import pytest
 
 from gns3server.config import Config
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.link import FILTERS
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
+from gns3server.controller.ports.serial_port import SerialPort
 from gns3server.controller.udp_link import UDPLink
+from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_cascade_names
+from tests.utils import AsyncioMagicMock
 
 
 def _node(project, compute, name, node_type="docker", status="stopped", environment=None):
@@ -231,8 +235,6 @@ async def test_kernel_datapath_not_eligible_for_dynamips_serial_ports(project):
     decided by the controller's port matrix.
     """
 
-    from gns3server.controller.ports.serial_port import SerialPort
-
     compute = MagicMock()
     compute.id = "compute-1"
     compute.capabilities = {"ubridge_tap": True}
@@ -252,8 +254,6 @@ async def test_kernel_datapath_not_eligible_for_serial_ports(project):
     relay whatever the compute's capabilities — dispatching it to the
     kernel path would fail at the compute (no anchor on a serial bay).
     """
-
-    from gns3server.controller.ports.serial_port import SerialPort
 
     compute = MagicMock()
     compute.id = "compute-1"
@@ -432,6 +432,33 @@ async def test_kernel_datapath_not_eligible_for_unix_socket_containers(project):
 
 
 @pytest.mark.asyncio
+async def test_kernel_datapath_eligible_when_unix_socket_marker_is_falsy(project):
+    """
+    GNS3_UNIX_SOCKET_NIO=0 (like false/no) leaves the container on the
+    standard veth wiring — the compute parses the value, so the controller
+    must not exclude it with a substring match, or the link silently stays
+    on the relay forever.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    node2._properties = {"environment": "GNS3_UNIX_SOCKET_NIO=0"}
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_when_the_marker_is_mid_line(project):
+    """
+    A mid-line mention (NOTE=GNS3_UNIX_SOCKET_NIO=1) is not the marker:
+    the compute's line-based parsing does not select VendorDockerVM for it,
+    so the controller must not exclude the node either.
+    """
+
+    link, node1, node2 = await _kernel_link(project)
+    node2._properties = {"environment": "NOTE=GNS3_UNIX_SOCKET_NIO=1"}
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
 async def test_iol_runner_containers_gate_on_the_bridge_tap_capabilities(project):
     """
     The IOL runner marker selects a container whose guest leg is unix
@@ -475,8 +502,6 @@ async def test_iol_runner_container_on_a_switch_gates_and_names_the_iol_docker_a
     node must not fail), so a gate miss here is a silently dead cable, not
     a late error.
     """
-
-    from gns3server.utils.kernel_anchor import kernel_anchor_name
 
     compute = MagicMock()
     compute.id = "compute-1"
@@ -880,8 +905,6 @@ async def test_available_filters_unconstrained_without_report(project):
     validation is the guard.
     """
 
-    from gns3server.controller.link import FILTERS
-
     link, _node1, _node2 = await _kernel_link(project)
     link._link_data = [{"type": "nio_bridge"}]
     assert [f["type"] for f in link.available_filters()] == [f["type"] for f in FILTERS]
@@ -946,8 +969,6 @@ async def test_switch_link_prepare_emits_anchor_and_external_bridge(project):
     interface.
     """
 
-    from gns3server.utils.kernel_anchor import kernel_anchor_name
-
     compute = MagicMock()
     compute.id = "compute-1"
     switch = _node(project, compute, "sw1", node_type="ethernet_switch")
@@ -986,8 +1007,6 @@ async def test_switch_link_repushes_the_switch_nio_on_node_start(project):
     which completes a deferred join (or re-joins an anchor a peer restart
     replaced). Relay links do nothing.
     """
-
-    from tests.utils import AsyncioMagicMock
 
     compute = MagicMock()
     compute.id = "compute-1"
@@ -1031,8 +1050,6 @@ async def test_prepare_cascade_link_emits_paired_anchor_nios(project):
     once like any other kernel link.
     """
 
-    from gns3server.utils.kernel_anchor import kernel_cascade_names
-
     compute = MagicMock()
     compute.id = "compute-1"
     sw1 = _node(project, compute, "sw1", node_type="ethernet_switch")
@@ -1070,8 +1087,6 @@ async def test_node_started_repushes_both_cascade_ends(project):
     half's membership), both ends are re-pushed — each switch's update
     re-checks and re-joins its own half.
     """
-
-    from tests.utils import AsyncioMagicMock
 
     compute = MagicMock()
     compute.id = "compute-1"

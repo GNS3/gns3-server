@@ -899,7 +899,6 @@ async def test_update_nio_kernel_clears_netem(vm):
 async def test_apply_netem_reset_tolerates_missing_qdisc(vm):
 
     vm._ubridge_hypervisor = MagicMock()
-    from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
     async def refuse(command):
         raise UbridgeError("207-Could not reset qdisc on gv0: No such file or directory")
@@ -914,7 +913,6 @@ async def test_apply_netem_reset_tolerates_missing_qdisc(vm):
 async def test_apply_netem_reset_reraises_real_errors(vm):
 
     vm._ubridge_hypervisor = MagicMock()
-    from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
     async def refuse(command):
         raise UbridgeError("206-Could not reset qdisc on gv0: Operation not permitted")
@@ -996,6 +994,79 @@ async def test_start_capture_second_concurrent_fails(vm):
 
     with pytest.raises(UbridgeError, match="already in progress"):
         await vm.start_capture(0, "/tmp/capture.pcap")
+
+    # the failed start must not leave the port marked as capturing: a stuck
+    # flag refuses the retry and lets this port's stop kill the winner
+    assert nio.capturing is False
+    assert vm._kernel_capture_ifc is None
+
+
+@pytest.mark.asyncio
+async def test_start_capture_second_port_on_the_same_node_is_refused(vm):
+    """
+    uBridge serves one kernel capture per process while the server models
+    captures per port: a second port's capture must be refused with a clear
+    error and its flag rolled back — otherwise its stop would issue the
+    process-wide, argument-less ``capture stop_kernel`` and kill the first
+    port's capture while its own flag still says capturing.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    vm._ethernet_adapters.append(type(vm._ethernet_adapters[0])())
+    host_ifc1, _ = vm._veth_names(0, 0)
+    host_ifc2, _ = vm._veth_names(1, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc1
+    vm._kernel_veths[(1, 0)] = host_ifc2
+    nio1 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    nio2 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio1)
+    vm._ethernet_adapters[1].add_nio(0, nio2)
+
+    await vm.start_capture(0, "/tmp/capture.pcap")
+
+    with pytest.raises(DockerError, match="one kernel capture per node"):
+        await vm.start_capture(1, "/tmp/capture2.pcap")
+
+    assert nio1.capturing is True
+    assert nio2.capturing is False
+    vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc1} "/tmp/capture.pcap"')
+    assert not any("stop_kernel" in str(c) for c in vm._ubridge_send.call_args_list)
+
+
+@pytest.mark.asyncio
+async def test_stop_capture_on_a_port_that_does_not_own_the_slot_skips_stop_kernel(vm):
+    """
+    ``capture stop_kernel`` is process-wide and takes no interface: a stop on
+    a port whose flag says capturing while another port owns the slot must
+    not reach uBridge — it would stop the owner's capture.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    vm._ethernet_adapters.append(type(vm._ethernet_adapters[0])())
+    host_ifc1, _ = vm._veth_names(0, 0)
+    host_ifc2, _ = vm._veth_names(1, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc1
+    vm._kernel_veths[(1, 0)] = host_ifc2
+    nio1 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    nio2 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    vm._ethernet_adapters[0].add_nio(0, nio1)
+    vm._ethernet_adapters[1].add_nio(0, nio2)
+
+    await vm.start_capture(0, "/tmp/capture.pcap")  # port 0 owns the slot
+    nio2.start_packet_capture("/tmp/capture2.pcap")  # a stale second flag
+
+    await vm.stop_capture(1)
+
+    assert nio2.capturing is False
+    assert not any("stop_kernel" in str(c) for c in vm._ubridge_send.call_args_list)
+
+    # the owner's capture is untouched and still stoppable
+    await vm.stop_capture(0)
+    vm._ubridge_send.assert_any_call("capture stop_kernel")
 
 
 @pytest.mark.asyncio

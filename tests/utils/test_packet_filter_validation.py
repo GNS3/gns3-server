@@ -360,8 +360,13 @@ class TestNetemExtensionFilters:
             {"delay": [100, 20, ""], "packet_loss": [10, 0], "corrupt": [2], "bpf": ["icmp"]}
         )
         assert dropped == set()
-        # zero correlation and empty distribution are kept as-is (no-ops)
-        assert clean == {"delay": [100, 20, ""], "packet_loss": [10, 0], "corrupt": [2], "bpf": ["icmp"]}
+        # Zero correlation and an empty distribution carry no feature, so
+        # neither is reported as dropped. The packet_loss correlation slot
+        # is stripped all the same: the relay filter takes exactly one
+        # argument (ubridge's packet_loss_setup rejects argc != 1), while
+        # the delay's empty 3rd value is an unquoted empty token that
+        # tokenizes away — harmless kept as-is.
+        assert clean == {"delay": [100, 20, ""], "packet_loss": [10], "corrupt": [2], "bpf": ["icmp"]}
 
     def test_kernel_only_features_empty(self):
         assert split_kernel_only_features({}) == ({}, set())

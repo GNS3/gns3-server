@@ -251,7 +251,8 @@ def _llprobe():
     if cc is None:
         pytest.skip("cannot build the raw-frame probe (no C compiler found)")
     try:
-        subprocess.run([cc, "-static", "-O2", "-o", binary, source], check=True, capture_output=True)
+        # S603: resolved compiler path, fixed argv, no shell
+        subprocess.run([cc, "-static", "-O2", "-o", binary, source], check=True, capture_output=True)  # noqa: S603
     except subprocess.CalledProcessError as e:
         pytest.skip(f"cannot build the raw-frame probe (cc -static): {e}")
     return binary

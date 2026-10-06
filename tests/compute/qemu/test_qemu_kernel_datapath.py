@@ -377,6 +377,73 @@ async def test_stop_stops_the_process_before_deleting_the_taps(vm):
 
 
 @pytest.mark.asyncio
+async def test_stop_releases_the_datapath_even_when_the_stop_body_raises(vm):
+    """
+    The finally keeps a mid-stop raise (an export error here) from skipping
+    the uBridge/TAP release — the datapath would otherwise outlive a failed
+    stop with nothing left to reclaim it.
+    """
+
+    _running(vm)
+    stopped = AsyncioMagicMock()
+
+    async def failing_export():
+        raise QemuError("qemu-img is missing")
+
+    with (
+        patch("gns3server.utils.asyncio.wait_for_process_termination", new=AsyncioMagicMock()),
+        patch.object(vm, "_export_config", new=failing_export),
+        patch.object(vm, "_stop_ubridge", new=stopped),
+        asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._clear_save_vm_stated"),
+    ):
+        with pytest.raises(QemuError, match="qemu-img is missing"):
+            await vm.stop()
+
+    assert stopped.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_start_failure_before_the_launch_tears_down_the_datapath(vm):
+    """
+    A raise before the QEMU launch (a broken qemu_path in _build_command)
+    must take the uBridge/TAP datapath down again: a node reporting a failed
+    start must not keep a uBridge process and the anchor TAPs alive.
+    """
+
+    stopped = AsyncioMagicMock()
+    with (
+        patch.object(vm, "check_available_ram"),
+        patch.object(vm, "_prepare_tap_datapath", new=AsyncioMagicMock()),
+        patch.object(vm, "_build_command", new=AsyncioMagicMock(side_effect=QemuError("qemu-img is missing"))),
+        patch.object(vm, "_stop_ubridge", new=stopped),
+    ):
+        with pytest.raises(QemuError, match="qemu-img is missing"):
+            await vm.start()
+
+    assert stopped.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_add_nio_binding_refuses_an_occupied_adapter(vm):
+    """
+    The compute-side backstop of the controller's duplicate-port guard: a
+    second NIO for an adapter that already carries one is refused instead of
+    silently overwriting the binding the first link's teardown still needs.
+    """
+
+    vm._tap_datapath = True
+    vm._kernel_taps[(0, 0)] = TAP0
+    first = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
+    await vm.adapter_add_nio_binding(0, first)
+
+    second = vm.manager.create_nio({"type": "nio_bridge", "bridge": "gns3otherbridge"})
+    with pytest.raises(QemuError, match="already has a link"):
+        await vm.adapter_add_nio_binding(0, second)
+
+    assert vm._ethernet_adapters[0].get_nio(0) is first
+
+
+@pytest.mark.asyncio
 async def test_concurrent_stops_sweep_every_tap_exactly_once(vm):
     """
     The process monitor calls stop() by itself when QEMU dies, so an API stop

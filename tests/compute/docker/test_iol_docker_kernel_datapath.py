@@ -22,6 +22,7 @@ import pytest_asyncio
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
+from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_anchor_type
 from tests.utils import AsyncioMagicMock
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -384,8 +385,6 @@ def test_anchor_names_follow_the_iol_docker_key():
     the same function the compute creates it under — the iol_docker key,
     never the docker veth namespace.
     """
-
-    from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_anchor_type
 
     environment = "GNS3_IOL_RUNNER=1\nGNS3_IOL_STARTUP_CONFIG=cfg.txt"
     assert kernel_anchor_type("docker", environment) == "iol_docker"

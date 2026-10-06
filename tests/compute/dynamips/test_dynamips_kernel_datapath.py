@@ -310,6 +310,35 @@ async def test_slot_add_nio_binding_attach_failure_leaves_the_port_unbound(route
 
 
 @pytest.mark.asyncio
+async def test_attach_kernel_nio_failure_undoes_the_binding_so_a_retry_works(router):
+    """
+    A failure after the hypervisor binding (the enslave step here) must undo
+    the half-attach: the _tap_nios entry would otherwise short-circuit every
+    retry, and a link delete reads the still-unbound adapter as "nothing to
+    do" — a silent black hole until the router restarts.
+    """
+
+    router.status = "started"
+    router._kernel_taps[(0, 0)] = TAP00
+    nio = await _nio(router)
+
+    real_attach = router._kernel_attach
+    router._kernel_attach = AsyncioMagicMock(side_effect=UbridgeError("208-Device or resource busy"))
+    with pytest.raises(UbridgeError):
+        await router._attach_kernel_nio(0, 0, nio)
+    router._kernel_attach = real_attach
+
+    # the half-attach went away with the failure...
+    assert (0, 0) not in router._tap_nios
+    assert any("slot_remove_nio_binding" in c for c in _hypervisor_commands(router))
+
+    # ...so the retry wires the port for real
+    await router._attach_kernel_nio(0, 0, nio)
+    assert (0, 0) in router._tap_nios
+    router._ubridge_send.assert_any_call(f'brctl addif "{BRIDGE}" "{TAP00}"')
+
+
+@pytest.mark.asyncio
 async def test_attach_kernel_nio_without_anchor_on_a_running_node_raises(router):
     """
     A kernel link on a serial port (or a router that never anchored) is an

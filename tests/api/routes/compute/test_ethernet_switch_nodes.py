@@ -22,7 +22,9 @@ import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
+from gns3server.compute.error import NodeError
 from gns3server.compute.project import Project
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from tests.utils import asyncio_patch
 
 # The builtin Ethernet switch talks to uBridge (brctl/bridge modules) instead of
@@ -927,8 +929,6 @@ class TestEthernetSwitchNodesRoutes:
         proceeds — a lost race is not an error.
         """
 
-        from gns3server.compute.ubridge.ubridge_error import UbridgeError
-
         anchor, peer = "gs1a2b3c4d5e0", "gs1a2b3c4d5e1"
         node = compute_project.get_node(ethernet_switch["node_id"])
         exists = {"value": False}
@@ -1217,8 +1217,93 @@ class TestEthernetSwitchNodesRoutes:
         with self._sysfs(anchor_exists=True):
             await compute_client.post(url, json=self._anchor_params(anchor))
 
+            node = compute_project.get_node(ethernet_switch["node_id"])
+            node._ubridge_send.reset_mock()
+
+            ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
+            ports[0]["vlan"] = 10
+            response = await compute_client.put(
+                app.url_path_for(
+                    "compute:update_ethernet_switch",
+                    project_id=ethernet_switch["project_id"],
+                    node_id=ethernet_switch["node_id"],
+                ),
+                json={"ports_mapping": ports},
+            )
+            assert response.status_code == status.HTTP_200_OK
+
+        br = node._bridge_name
+        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+        assert commands == [
+            f'brctl vlan_del "{br}" "{anchor}" 1',
+            f'brctl vlan_add "{br}" "{anchor}" 10 pvid untagged',
+        ], commands
+        assert not any("delif" in c or "addif" in c for c in commands)
+
+    async def test_ethernet_switch_update_ports_skips_a_deferred_anchor(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        A kernel port whose peer is stopped has no interface yet (the join is
+        deferred by design): a VLAN change must not send commands that would
+        fail ENODEV and abort the whole reconcile — the port keeps the new
+        settings in the mapping and they apply when the peer starts.
+        """
+
+        anchor = "gv00010203e0p0"
+        url = app.url_path_for(
+            "compute:create_ethernet_switch_nio",
+            project_id=ethernet_switch["project_id"],
+            node_id=ethernet_switch["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+        with self._sysfs(anchor_exists=False):
+            await compute_client.post(url, json=self._anchor_params(anchor))
+
         node = compute_project.get_node(ethernet_switch["node_id"])
+        assert node._kernel_ports.get(0) == anchor  # deferred but registered
         node._ubridge_send.reset_mock()
+
+        ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
+        ports[0]["vlan"] = 10
+        with self._sysfs(anchor_exists=False):
+            response = await compute_client.put(
+                app.url_path_for(
+                    "compute:update_ethernet_switch",
+                    project_id=ethernet_switch["project_id"],
+                    node_id=ethernet_switch["node_id"],
+                ),
+                json={"ports_mapping": ports},
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
+        assert not any("vlan_" in c for c in commands), commands
+
+    async def test_ethernet_switch_update_ports_rolls_the_mapping_back_on_failure(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
+    ) -> None:
+        """
+        A failed VLAN reconcile must not keep the new mapping: the retry would
+        then diff it against itself and report success with the VLANs never
+        applied.
+        """
+
+        await compute_client.post(
+            app.url_path_for(
+                "compute:create_ethernet_switch_nio",
+                project_id=ethernet_switch["project_id"],
+                node_id=ethernet_switch["node_id"],
+                adapter_number="0",
+                port_number="0",
+            ),
+            json=self._udp_params(),
+        )
+
+        node = compute_project.get_node(ethernet_switch["node_id"])
+        before = [dict(port) for port in node.ports_mapping]
+        node._ubridge_send.side_effect = NodeError("207-reconcile failed")
 
         ports = [{"name": f"Ethernet{i}", "port_number": i, "type": "access", "vlan": 1} for i in range(8)]
         ports[0]["vlan"] = 10
@@ -1230,12 +1315,7 @@ class TestEthernetSwitchNodesRoutes:
             ),
             json={"ports_mapping": ports},
         )
-        assert response.status_code == status.HTTP_200_OK
 
-        br = node._bridge_name
-        commands = [c.args[0] for c in node._ubridge_send.call_args_list]
-        assert commands == [
-            f'brctl vlan_del "{br}" "{anchor}" 1',
-            f'brctl vlan_add "{br}" "{anchor}" 10 pvid untagged',
-        ], commands
-        assert not any("delif" in c or "addif" in c for c in commands)
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["message"] == "207-reconcile failed"
+        assert [dict(port) for port in node.ports_mapping] == before

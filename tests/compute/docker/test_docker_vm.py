@@ -1643,6 +1643,24 @@ async def test_adapter_add_nio_binding_1(vm):
 
 
 @pytest.mark.asyncio
+async def test_adapter_add_nio_binding_refuses_an_occupied_port(vm):
+    """
+    The compute-side backstop of the controller's duplicate-port guard: a
+    second NIO for a port that already carries one is refused instead of
+    silently overwriting the binding the first link's teardown still needs.
+    """
+
+    first = vm.manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
+    await vm.adapter_add_nio_binding(0, first)
+
+    second = vm.manager.create_nio({"type": "nio_udp", "lport": 4244, "rport": 4345, "rhost": "127.0.0.1"})
+    with pytest.raises(DockerError, match="already has a link"):
+        await vm.adapter_add_nio_binding(0, second)
+
+    assert vm._ethernet_adapters[0].get_nio(0) is first
+
+
+@pytest.mark.asyncio
 async def test_adapter_add_nio_binding_sets_carrier(vm):
 
     nio = vm.manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})

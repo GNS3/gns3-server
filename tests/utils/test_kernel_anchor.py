@@ -45,8 +45,11 @@ def test_anchor_type_keys_iol_runner_containers_apart():
 
     assert kernel_anchor_type("docker", "GNS3_IOL_RUNNER=1") == "iol_docker"
     assert kernel_anchor_type("docker", "GNS3_IOL_STARTUP_CONFIG=cfg.txt\nGNS3_IOL_RUNNER=1") == "iol_docker"
+    assert kernel_anchor_type("docker", "GNS3_IOL_RUNNER=1,") == "iol_docker"
     assert kernel_anchor_type("docker") == "docker"
     assert kernel_anchor_type("docker", "GNS3_UNIX_SOCKET_NIO=1") == "docker"
+    # a mid-line mention is not the marker (mirrors _select_node_class)
+    assert kernel_anchor_type("docker", "NOTE=GNS3_IOL_RUNNER=1") == "docker"
     assert kernel_anchor_type("qemu") == "qemu"
 
 

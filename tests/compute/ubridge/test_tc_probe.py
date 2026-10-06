@@ -19,6 +19,8 @@ The standalone `tc capabilities` probe behind the compute /capabilities
 payload: spawn a throwaway uBridge, ask once, cache by binary identity.
 """
 
+import os
+
 import pytest
 
 from gns3server.compute.ubridge import tc_probe
@@ -91,11 +93,13 @@ def probe_env(monkeypatch, tmp_path):
     tc_probe._iol_tap_cache.clear()
     tc_probe._bridge_tap_cache.clear()
     FakeHypervisor.last = None
-    # a real file on disk: the cache is keyed on its (path, mtime, size)
+    # a real file on disk: the cache is keyed on its (path, mtime, size,
+    # ctime)
     binary = tmp_path / "ubridge"
     binary.write_bytes(b"")
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: str(binary))
     monkeypatch.setattr(tc_probe, "Hypervisor", FakeHypervisor)
+    return str(binary)
 
 
 async def test_probe_returns_parsed_report():
@@ -132,6 +136,28 @@ async def test_probe_missing_binary_means_unknown(monkeypatch):
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
     assert await probe_tc_capabilities() is None
     assert FakeHypervisor.spawned == 0
+
+
+async def test_probe_reprobes_when_the_binary_attributes_change(probe_env):
+
+    assert await probe_tc_capabilities() is not None
+    # chmod touches ctime but neither mtime nor size: a setcap/chmod remedy
+    # after a permission-related probe failure must be able to flip the
+    # cached verdict without a server restart.
+    os.chmod(probe_env, 0o600)
+    assert await probe_tc_capabilities() is not None
+    assert FakeHypervisor.spawned == 2
+
+
+async def test_probe_bridge_tap_unknown_when_ubridge_will_not_start(monkeypatch):
+    """start() can raise UbridgeError (unusable binary): unknown, never a
+    failed /capabilities response."""
+
+    async def failing_start(self):
+        raise UbridgeError("uBridge executable version must be >= 2.4.0")
+
+    monkeypatch.setattr(FakeHypervisor, "start", failing_start)
+    assert await probe_bridge_tap_support() is None
 
 
 async def test_probe_empty_reply_means_unknown():
