@@ -33,7 +33,7 @@ from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.nios.nio_bridge import NIOBridge
-from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from tests.utils import AsyncioMagicMock
 
 BRIDGE = "gns3a1b2c3d4e5f"
@@ -259,6 +259,32 @@ async def test_add_ubridge_kernel_connection_cleans_up_on_failure(vm):
     host_ifc, _ = vm._veth_names(0, 0)
     vm._ubridge_send.assert_any_call(f'docker delete_veth "{host_ifc}"')
     assert (0, 0) not in vm._kernel_veths
+
+
+@pytest.mark.asyncio
+async def test_create_veth_cleans_up_when_the_namespace_move_fails(vm):
+    """
+    ``move_to_ns`` failing (the container died between create and move)
+    raises UbridgeNamespaceError — and must take the same cleanup path as
+    any other failure: the old branch re-raised before the delete_veth,
+    leaving the half-created pair behind until the next start's sweep.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+
+    async def failing_send(command):
+        if command.startswith("docker move_to_ns"):
+            raise UbridgeError("Could not move interface: No such process")
+
+    vm._ubridge_send = AsyncioMagicMock(side_effect=failing_send)
+
+    with pytest.raises(UbridgeNamespaceError):
+        await vm._create_veth(0)
+
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._ubridge_send.assert_any_call(f'docker delete_veth "{host_ifc}"')
+    assert vm._kernel_veths == {}
 
 
 # ---------------------------------------------------------------------------

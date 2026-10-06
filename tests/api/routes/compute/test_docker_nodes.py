@@ -226,6 +226,31 @@ class TestDockerNodesRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
 
+    async def test_docker_nio_create_bridge_requires_the_field_but_takes_null(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        BridgeNIO.bridge is required-but-nullable: an omitted key is a 422
+        (the NIO factories read it, and the routes drop unset fields — an
+        omitted key used to pass validation and die as a KeyError during
+        binding), while an explicit null is the absorbed-link shape.
+        """
+
+        url = app.url_path_for(
+            "compute:create_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+
+        response = await compute_client.post(url, json={"type": "nio_bridge"})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        response = await compute_client.post(url, json={"type": "nio_bridge", "bridge": None})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["bridge"] is None
+
     async def test_docker_nio_batch_create(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
         """
         Exercise the project-wide batch NIO endpoint: bind two NIOs on the same
