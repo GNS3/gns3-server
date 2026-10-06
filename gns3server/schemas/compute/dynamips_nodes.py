@@ -22,6 +22,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class DynamipsPlatform(str, Enum):
@@ -180,10 +181,12 @@ class DynamipsCreate(DynamipsBase):
     ram: int = Field(..., gt=0, description="Amount of RAM in MB")
 
 
-class DynamipsUpdate(DynamipsBase):
+class DynamipsUpdate(PartialUpdateModel, DynamipsBase):
     """
     Properties to update a Dynamips node.
     """
+
+    update_excluded_fields = ("node_id", "dynamips_id")
 
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
 

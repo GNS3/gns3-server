@@ -22,6 +22,7 @@ from pydantic import Field
 
 from gns3server.schemas.compute.ethernet_switch_nodes import EthernetSwitchPort
 
+from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 DEFAULT_PORTS = [
@@ -53,5 +54,5 @@ class EthernetSwitchTemplate(TemplateBase):
     console_type: Optional[ConsoleType] = Field(ConsoleType.none, description="Console type")
 
 
-class EthernetSwitchTemplateUpdate(EthernetSwitchTemplate):
-    pass
+class EthernetSwitchTemplateUpdate(PartialUpdateModel, EthernetSwitchTemplate):
+    update_excluded_fields = ("template_id",)

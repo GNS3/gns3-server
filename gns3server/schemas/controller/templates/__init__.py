@@ -20,6 +20,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ...update import PartialUpdateModel
 from ..base import DateTimeModelMixin
 from ..nodes import NodeType
 
@@ -98,7 +99,8 @@ class TemplateCreate(TemplateBase):
     model_config = ConfigDict(extra="allow")
 
 
-class TemplateUpdate(TemplateBase):
+class TemplateUpdate(PartialUpdateModel, TemplateBase):
+    update_excluded_fields = ("template_id",)
     model_config = ConfigDict(extra="allow")
 
 
