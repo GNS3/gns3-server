@@ -50,12 +50,12 @@ def _generate_api_key(api_key_id: UUID | None = None) -> tuple[str, str, str, UU
     return raw_key, key_hash, key_prefix, api_key_id
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.ApiKeyCreated, status_code=status.HTTP_201_CREATED)
 async def create_api_key(
     api_key_data: schemas.ApiKeyCreate,
     current_user: schemas.User = Depends(get_current_active_user),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-) -> dict:
+) -> schemas.ApiKeyCreated:
     """Create a new API key. The full key is returned only once."""
 
     raw_key, key_hash, key_prefix, new_key_id = _generate_api_key()
@@ -66,42 +66,42 @@ async def create_api_key(
         key_hash=key_hash,
         key_prefix=key_prefix,
     )
-    return {
-        "api_key_id": str(db_key.api_key_id),
-        "api_key": raw_key,
-        "name": db_key.name,
-        "key_prefix": db_key.key_prefix,
-        "created_at": db_key.created_at.isoformat() if db_key.created_at else None,
-    }
+    return schemas.ApiKeyCreated(
+        api_key_id=db_key.api_key_id,
+        api_key=raw_key,
+        name=db_key.name,
+        key_prefix=db_key.key_prefix,
+        created_at=db_key.created_at.isoformat() if db_key.created_at else None,
+    )
 
 
-@router.get("")
+@router.get("", response_model=list[schemas.ApiKey])
 async def list_api_keys(
     current_user: schemas.User = Depends(get_current_active_user),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-) -> list[dict]:
+) -> list[schemas.ApiKey]:
     """List all API keys for the current user."""
 
     keys = await api_keys_repo.get_api_keys_by_user(current_user.user_id)
     return [
-        {
-            "api_key_id": str(k.api_key_id),
-            "name": k.name,
-            "key_prefix": k.key_prefix,
-            "created_at": k.created_at.isoformat() if k.created_at else None,
-            "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
-            "revoked": k.revoked,
-        }
+        schemas.ApiKey(
+            api_key_id=k.api_key_id,
+            name=k.name,
+            key_prefix=k.key_prefix,
+            created_at=k.created_at.isoformat() if k.created_at else None,
+            last_used_at=k.last_used_at.isoformat() if k.last_used_at else None,
+            revoked=k.revoked,
+        )
         for k in keys
     ]
 
 
-@router.post("/{api_key_id}/revoke", status_code=status.HTTP_200_OK)
+@router.post("/{api_key_id}/revoke", response_model=schemas.ApiKeyMessage, status_code=status.HTTP_200_OK)
 async def revoke_api_key(
     api_key_id: UUID,
     current_user: schemas.User = Depends(get_current_active_user),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-) -> dict:
+) -> schemas.ApiKeyMessage:
     """Revoke an API key. It will immediately stop working, but can be restored."""
 
     key = await api_keys_repo.get_api_key(api_key_id)
@@ -111,15 +111,15 @@ async def revoke_api_key(
         raise HTTPException(status_code=403, detail="Cannot modify another user's API key")
 
     await api_keys_repo.revoke_api_key(api_key_id)
-    return {"message": f"API key '{key.name}' revoked"}
+    return schemas.ApiKeyMessage(message=f"API key '{key.name}' revoked")
 
 
-@router.post("/{api_key_id}/restore", status_code=status.HTTP_200_OK)
+@router.post("/{api_key_id}/restore", response_model=schemas.ApiKeyMessage, status_code=status.HTTP_200_OK)
 async def restore_api_key(
     api_key_id: UUID,
     current_user: schemas.User = Depends(get_current_active_user),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-) -> dict:
+) -> schemas.ApiKeyMessage:
     """Restore a previously revoked API key."""
 
     key = await api_keys_repo.get_api_key(api_key_id)
@@ -129,7 +129,7 @@ async def restore_api_key(
         raise HTTPException(status_code=403, detail="Cannot modify another user's API key")
 
     await api_keys_repo.restore_api_key(api_key_id)
-    return {"message": f"API key '{key.name}' restored"}
+    return schemas.ApiKeyMessage(message=f"API key '{key.name}' restored")
 
 
 @router.delete("/{api_key_id}", status_code=status.HTTP_204_NO_CONTENT)

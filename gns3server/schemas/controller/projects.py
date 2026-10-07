@@ -126,3 +126,15 @@ class ProjectCompression(str, Enum):
     bzip2 = "bzip2"
     lzma = "lzma"
     zstd = "zstd"
+
+
+class ProjectStats(BaseModel):
+    """
+    Project object counts.
+    """
+
+    nodes: int
+    links: int
+    drawings: int
+    snapshots: int
+    markers: int

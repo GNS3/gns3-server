@@ -21,7 +21,7 @@ API routes for symbols.
 
 import logging
 import os
-from typing import List
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import FileResponse
@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("", dependencies=[Depends(has_privilege("Symbol.Audit"))])
+@router.get("", response_model=List[schemas.SymbolInfo], dependencies=[Depends(has_privilege("Symbol.Audit"))])
 def get_symbols() -> List[dict]:
     """
     Return all symbols.
@@ -78,6 +78,7 @@ async def get_symbol(symbol_id: str, request: Request) -> Response:
 
 @router.get(
     "/{symbol_id:path}/dimensions",
+    response_model=schemas.SymbolDimensions,
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
     dependencies=[Depends(has_privilege("Symbol.Audit"))],
 )
@@ -97,7 +98,11 @@ async def get_symbol_dimensions(symbol_id: str) -> dict:
         raise ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
-@router.get("/default_symbols", dependencies=[Depends(has_privilege("Symbol.Audit"))])
+@router.get(
+    "/default_symbols",
+    response_model=Dict[str, Dict[str, str]],
+    dependencies=[Depends(has_privilege("Symbol.Audit"))],
+)
 def get_default_symbols() -> dict:
     """
     Return all default symbols.

@@ -161,3 +161,11 @@ class AutoIdlePC(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={"example": {"platform": "c7200", "image": "/path/to/c7200_image.bin", "ram": 256}}
     )
+
+
+class IdlePC(BaseModel):
+    """
+    Result of an Idle-PC computation.
+    """
+
+    idlepc: Optional[str] = Field(None, description="Idle-PC value, null when none was found")

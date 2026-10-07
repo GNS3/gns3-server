@@ -161,7 +161,12 @@ async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULice
     return current_iou_license
 
 
-@router.get("/statistics", dependencies=[Depends(get_current_active_user)])
+@router.get(
+    "/statistics",
+    response_model=schemas.ServerStatistics,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(get_current_active_user)],
+)
 async def statistics() -> dict:
     """
     Return server statistics including compute resources, projects, and nodes.
