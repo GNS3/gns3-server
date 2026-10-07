@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import Annotated, List, Literal, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Discriminator, Field, field_validator
 
 from ..update import PartialUpdateModel
 from .labels import Label
@@ -107,6 +107,7 @@ class UDPPortInfo(BaseModel):
     rhost: str
     rport: int
     type: str
+    kind: Literal["udp"]
 
 
 class EthernetPortInfo(BaseModel):
@@ -117,6 +118,10 @@ class EthernetPortInfo(BaseModel):
     node_id: UUID
     interface: str
     type: str
+    kind: Literal["ethernet"]
+
+
+LinkIfaceInfo = Annotated[Union[UDPPortInfo, EthernetPortInfo], Discriminator("kind")]
 
 
 class LinkCapture(BaseModel):
