@@ -40,6 +40,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
+from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
 from gns3server.controller import Controller, marker_replay
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.controller.export_project import export_project as export_controller_project
@@ -523,10 +524,20 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     return project.asdict()
 
 
-@router.get("/{project_id}/notifications", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/notifications",
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+    response_class=NDJSONResponse,
+    responses=NOTIFICATION_STREAM_RESPONSES,
+)
 async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
-    Receive project notifications about the controller from HTTP stream.
+    Receive project notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
+
+    The same messages are available as WebSocket text frames on `/v3/projects/{project_id}/notifications/ws`.
+    Marker events (`marker.match`) are not sent here, they are only available on
+    `/v3/projects/{project_id}/notifications/markers/ws`.
+    Project actions: `node.*`, `link.*`, `drawing.*`, `project.updated`, `snapshot.restored`, `log.*` and `ping`.
 
     Required privilege: Project.Audit
     """
@@ -555,7 +566,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
                     log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                     await project.close()
 
-    return StreamingResponse(event_stream(), media_type="application/json")
+    return StreamingResponse(event_stream(), media_type=NDJSON_MEDIA_TYPE)
 
 
 @router.websocket("/{project_id}/notifications/ws")
@@ -565,7 +576,8 @@ async def project_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive project notifications about the controller from WebSocket.
+    Receive project notifications from a WebSocket, one Notification JSON object per text frame.
+    Same messages as the HTTP stream `/v3/projects/{project_id}/notifications`.
 
     Required privilege: Project.Audit
     """
@@ -603,8 +615,8 @@ async def project_marker_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive marker notifications (e.g. marker.match) for a project on a
-    dedicated WebSocket, separate from the main project stream so high-frequency
+    Receive marker notifications (`marker.match`, see the Notification schema) for a project on a
+    dedicated WebSocket, one JSON object per text frame, separate from the main project stream so high-frequency
     marker.matches do not block topology events (node.*/link.*).
 
     Required privilege: Project.Audit
