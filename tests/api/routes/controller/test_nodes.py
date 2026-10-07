@@ -250,6 +250,77 @@ class TestNodeRoutes:
         assert "name" not in response.json()["properties"]
         assert response.json()["tags"] == ["tag1", "tag2"]
 
+    async def test_node_etag_on_get_and_put(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert etag.startswith('"') and etag.endswith('"')
+        assert (await client.get(url)).headers["ETag"] == etag
+
+        response = await client.put(url, json={"name": "renamed"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["ETag"] != etag
+        assert (await client.get(url)).headers["ETag"] == response.headers["ETag"]
+
+    async def test_update_node_with_matching_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "renamed"}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["name"] == "renamed"
+        assert response.headers["ETag"] != etag
+
+    async def test_update_node_with_stale_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        stale_etag = (await client.get(url)).headers["ETag"]
+        assert (await client.put(url, json={"name": "first"})).status_code == status.HTTP_200_OK
+
+        response = await client.put(url, json={"name": "second"}, headers={"If-Match": stale_etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert node.name == "first"
+
+    async def test_update_node_without_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        assert (await client.put(url, json={"name": "first"})).status_code == status.HTTP_200_OK
+        assert (await client.put(url, json={"name": "second"})).status_code == status.HTTP_200_OK
+        assert node.name == "second"
+
+    async def test_update_node_with_wildcard_and_list_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "a"}, headers={"If-Match": "*"})
+        assert response.status_code == status.HTTP_200_OK
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "b"}, headers={"If-Match": f'"other", {etag}'})
+        assert response.status_code == status.HTTP_200_OK
+
     async def test_start_all_nodes(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
         compute.post = AsyncioMagicMock()

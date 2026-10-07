@@ -20,12 +20,12 @@ API routes for links.
 
 import logging
 import os
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 from uuid import UUID, uuid4
 
 import aiohttp
 import multidict
-from fastapi import APIRouter, Depends, Request, WebSocket, status
+from fastapi import APIRouter, Depends, Request, Response, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 
@@ -39,6 +39,14 @@ from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
 from gns3server.utils.websocket_to_websocket import websocket_proxy
 
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
@@ -138,43 +146,58 @@ async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
+    responses=GET_RESPONSES,
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
-async def get_link(link: Link = Depends(dep_link)) -> schemas.Link:
+async def get_link(response: Response, link: Link = Depends(dep_link)) -> schemas.Link:
     """
     Return a link.
 
     Required privilege: Link.Audit
     """
 
-    return link.asdict()
+    link_dict = link.asdict()
+    set_etag(response, link_dict)
+    return link_dict
 
 
 @router.put(
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Link.Modify"))],
 )
-async def update_link(link_update: schemas.LinkUpdate, link: Link = Depends(dep_link)) -> schemas.Link:
+async def update_link(
+    link_update: schemas.LinkUpdate,
+    response: Response,
+    link: Link = Depends(dep_link),
+    if_match: Optional[str] = Depends(if_match_header),
+) -> schemas.Link:
     """
     Update a link.
+
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
 
     Required privilege: Link.Modify
     """
 
     link_data = jsonable_encoder(link_update, exclude_unset=True)
-    if "filters" in link_data:
-        await link.update_filters(link_data["filters"])
-    if "link_style" in link_data:
-        await link.update_link_style(link_data["link_style"])
-    if "suspend" in link_data:
-        await link.update_suspend(link_data["suspend"])
-    if "show_filters_icon" in link_data:
-        await link.update_show_filters_icon(link_data["show_filters_icon"])
-    if "nodes" in link_data:
-        await link.update_nodes(link_data["nodes"])
-    return link.asdict()
+    async with serialize_updates(f"link:{link.id}"):
+        check_if_match(if_match, link.asdict())
+        if "filters" in link_data:
+            await link.update_filters(link_data["filters"])
+        if "link_style" in link_data:
+            await link.update_link_style(link_data["link_style"])
+        if "suspend" in link_data:
+            await link.update_suspend(link_data["suspend"])
+        if "show_filters_icon" in link_data:
+            await link.update_show_filters_icon(link_data["show_filters_icon"])
+        if "nodes" in link_data:
+            await link.update_nodes(link_data["nodes"])
+    link_dict = link.asdict()
+    set_etag(response, link_dict)
+    return link_dict
 
 
 @router.delete(

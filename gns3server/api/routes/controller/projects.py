@@ -34,7 +34,18 @@ log = logging.getLogger()
 from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -55,6 +66,14 @@ from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 
 from .dependencies.authentication import get_current_active_user
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
@@ -150,34 +169,51 @@ async def create_project(
     return project.asdict()
 
 
-@router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(has_privilege("Project.Audit"))])
-def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
+@router.get(
+    "/{project_id}",
+    response_model=schemas.Project,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+def get_project(response: Response, project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
 
     Required privilege: Project.Audit
     """
 
-    return project.asdict()
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.put(
     "/{project_id}",
     response_model=schemas.Project,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def update_project(
-    project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)
+    project_data: schemas.ProjectUpdate,
+    response: Response,
+    project: Project = Depends(dep_project),
+    if_match: Optional[str] = Depends(if_match_header),
 ) -> schemas.Project:
     """
     Update a project.
 
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
+
     Required privilege: Project.Modify
     """
 
-    await project.update(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.asdict()
+    async with serialize_updates(f"project:{project.id}"):
+        check_if_match(if_match, project.asdict())
+        await project.update(**jsonable_encoder(project_data, exclude_unset=True))
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.delete(
