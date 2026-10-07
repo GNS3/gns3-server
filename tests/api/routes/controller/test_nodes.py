@@ -34,6 +34,7 @@ from pydantic import SecretStr
 from gns3server.api.routes.controller.nodes import vnc_console, ws_console
 from gns3server.config import Config
 from gns3server.controller.compute import Compute
+from gns3server.controller.controller_error import ComputeError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.services import auth_service
@@ -244,7 +245,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
 
     async def test_stop_node(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
@@ -252,6 +254,84 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "stopped"
+
+    async def test_start_node_wait(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock()
+        response = await client.post(
+            app.url_path_for("start_node", project_id=project.id, node_id=node.id) + "?wait=true&timeout=5", json={}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
+        response = await client.get(app.url_path_for("get_node", project_id=project.id, node_id=node.id))
+        assert response.json()["status"] == "started"
+
+    async def test_start_node_reports_starting_while_in_flight(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        seen = []
+
+        async def post(*args, **kwargs):
+            seen.append(node.asdict()["status"])
+
+        compute.post = post
+        response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
+        assert response.status_code == status.HTTP_200_OK
+        assert seen == ["starting"]
+        assert response.json()["status"] == "started"
+
+    async def test_stop_node_reports_stopping_while_in_flight(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        seen = []
+
+        async def post(*args, **kwargs):
+            seen.append(node.asdict()["status"])
+
+        compute.post = post
+        node._status = "started"
+        response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert seen == ["stopping"]
+        assert response.json()["status"] == "stopped"
+
+    async def test_start_node_wait_timeout(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        async def post(*args, **kwargs):
+            await asyncio.sleep(10)
+
+        compute.post = post
+        response = await client.post(
+            app.url_path_for("start_node", project_id=project.id, node_id=node.id) + "?wait=true&timeout=1", json={}
+        )
+        assert response.status_code == status.HTTP_408_REQUEST_TIMEOUT
+        assert "message" in response.json()
+        assert node.asdict()["status"] == "stopped"
+
+    async def test_stop_node_reports_compute_error(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ComputeError("compute unreachable"))
+        node._status = "started"
+        response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert node.asdict()["status"] == "started"
+
+    async def test_stop_all_nodes_tolerates_compute_error(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ComputeError("compute unreachable"))
+        response = await client.post(app.url_path_for("stop_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_suspend_node(
@@ -260,7 +340,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("suspend_node", project_id=project.id, node_id=node.id))
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "suspended"
 
     async def test_suspend_node_unsupported(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
@@ -290,7 +371,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("reload_node", project_id=project.id, node_id=node.id))
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
 
     async def test_isolate_node(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
