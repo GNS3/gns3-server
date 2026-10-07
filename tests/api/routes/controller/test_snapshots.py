@@ -72,7 +72,7 @@ class TestSnapshotRoutes:
         response = await client.post(
             app.url_path_for("restore_snapshot", project_id=project.id, snapshot_id=snapshot.id)
         )
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == project.name
 
     async def test_create_snapshot(self, app: FastAPI, client: AsyncClient, project: Project) -> None:

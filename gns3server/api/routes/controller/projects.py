@@ -495,7 +495,7 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
 
 @router.post(
     "/{project_id}/open",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
     dependencies=[Depends(has_privilege("Project.Allocate"))],
