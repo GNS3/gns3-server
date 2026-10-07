@@ -151,9 +151,12 @@ async def redoc_html():
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
     log.error(f"Controller error in {request.url.path} ({request.method}): {exc}")
+    content = {"message": str(exc)}
+    if exc.code:
+        content["code"] = exc.code
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
-        content={"message": str(exc)},
+        content=content,
     )
 
 

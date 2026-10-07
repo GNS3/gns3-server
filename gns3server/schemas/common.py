@@ -26,6 +26,7 @@ class ErrorMessage(BaseModel):
     """
 
     message: str
+    code: Optional[str] = None
 
 
 class NodeStatus(str, Enum):

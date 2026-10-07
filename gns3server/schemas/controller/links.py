@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ..update import PartialUpdateModel
 from .labels import Label
@@ -33,6 +33,32 @@ class LinkNode(BaseModel):
     adapter_number: int
     port_number: int
     label: Optional[Label] = None
+
+
+class LinkNodeCreate(BaseModel):
+    """
+    Link node data for link creation.
+
+    The port is given either by adapter_number and port_number, by port_name
+    or by port set to "auto" (first free compatible port).
+    """
+
+    node_id: UUID
+    adapter_number: Optional[int] = None
+    port_number: Optional[int] = None
+    port_name: Optional[str] = Field(None, description="Name of the port on the node")
+    port: Optional[Literal["auto"]] = Field(None, description='Use "auto" to select the first free compatible port')
+    label: Optional[Label] = None
+
+    @model_validator(mode="after")
+    def check_port_selector(self):
+        numbered = self.adapter_number is not None or self.port_number is not None
+        if numbered and (self.adapter_number is None or self.port_number is None):
+            raise ValueError("adapter_number and port_number must be given together")
+        forms = sum([numbered, self.port_name is not None, self.port is not None])
+        if forms != 1:
+            raise ValueError("exactly one of adapter_number and port_number, port_name or port must be given")
+        return self
 
 
 class LinkType(str, Enum):
@@ -71,7 +97,8 @@ class LinkBase(BaseModel):
 
 class LinkCreate(LinkBase):
     link_id: UUID = Field(default_factory=uuid4)
-    nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
+    # LinkNodeCreate narrows the port selector, so it cannot be a LinkNode subclass
+    nodes: List[LinkNodeCreate] = Field(..., min_length=2, max_length=2)  # type: ignore[assignment]
 
 
 class LinkUpdate(PartialUpdateModel, LinkBase):

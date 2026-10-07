@@ -17,9 +17,14 @@
 
 
 class ControllerError(Exception):
-    def __init__(self, message: str):
+    def __init__(self, message: str, code: str | None = None):
         super().__init__()
         self._message = message
+        self._code = code
+
+    @property
+    def code(self):
+        return self._code
 
     def __repr__(self):
         return self._message
