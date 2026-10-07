@@ -117,7 +117,11 @@ class AsyncioSSHServer:
 
         try:
             while True:
-                data = await process.stdin.read(READ_SIZE)
+                try:
+                    data = await process.stdin.read(READ_SIZE)
+                except asyncssh.TerminalSizeChanged:
+                    # The upstream serial stream has no terminal size to update.
+                    continue
                 if not data:
                     break
 
