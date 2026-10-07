@@ -36,6 +36,7 @@ docs/
 ├── openapi.json                                 # OpenAPI specification
 ├── features/                                    # Feature documentation
 │   ├── compute-controller-setup.md              # Controller + Compute architecture & configuration
+│   ├── packet-filters.md                        # Link impairment filters: 13 kernel types + relay
 │   ├── statistics-api.md                        # Aggregated statistics API for monitoring
 │   ├── vnc-websocket-console.md                 # Browser-based VNC console via WebSocket
 │   └── web-wireshark-business-process.md        # Web Wireshark (Docker + xpra packet capture)
@@ -89,6 +90,9 @@ Real-time traffic insight via per-link BPF markers and project-level inherited d
 
 ### Marker Tag Replay (`features/marker-tag-replay.md`)
 Aggregate playback across links keyed by `tag`: once every marker under a tag is paused, their pcaps merge into one timestamp-ordered timeline; frames are decoded on demand via tshark into an isomorphic JSON protocol tree. The cross-link delta of the same packet measures the intermediate node's forwarding latency.
+
+### Packet Filters (`features/packet-filters.md`)
+Link impairment filters on both datapaths: the 13 kernel types (one netem qdisc, cls_bpf match-drop, the eBPF stateful classifier) with the per-frame evaluation order, plus the 5 relay userspace types; reconcile semantics, capability gating through `available_filters`, and the window/quota drop models.
 
 ### Docker exec Console (Vendor NOS) (`features/docker-exec-console.md`)
 Console for vendor NOS containers (SR Linux, XRd, …) whose CLI is a TUI off PID 1: runs the vendor CLI via the Docker exec API, plus `GNS3_SKIP_INIT`/`GNS3_INTERFACE_NAMES` boot knobs and SKIP_INIT volume persistence.

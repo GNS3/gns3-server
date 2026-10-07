@@ -232,7 +232,7 @@ The attach above is `_attach_kernel_link`; its ensures are the frozen ensure-the
 
 ## Capture, markers, filters
 
-Inherited from `KernelDatapathMixin` unchanged — everything is keyed on the anchor interface name, which is why a TAP and a veth host end are interchangeable there: `capture start_kernel` / `marker add_kernel` (AF_PACKET), one tc netem qdisc (the full netem surface plus the extensions), `bpf` as cls_bpf match-drop, `frequency_drop`/`quota`/`window_drop` as the eBPF stateful classifier — all capability-gated per compute exactly like the Docker veth datapath (the filter semantics live in `docker-kernel-datapath.md`).
+Inherited from `KernelDatapathMixin` unchanged — everything is keyed on the anchor interface name, which is why a TAP and a veth host end are interchangeable there: `capture start_kernel` / `marker add_kernel` (AF_PACKET), one tc netem qdisc (the full netem surface plus the extensions), `bpf` as cls_bpf match-drop, `frequency_drop`/`quota`/`window_drop` as the eBPF stateful classifier — all capability-gated per compute exactly like the Docker veth datapath (the filter semantics live in `packet-filters.md`).
 
 Suspend semantics: anchor admin-down. The port bridge's TAP writes fail EIO (tolerated by the delivered uBridge hardening) and its reads fall silent — traffic stops both ways. The runner itself is unaware of the link state (netiomux has no carrier signal), exactly as on the relay datapath where suspend rode the synthetic frequency_drop filter instead.
 
