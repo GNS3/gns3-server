@@ -100,7 +100,9 @@ class Node:
         "default_password",
     ]
 
-    def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
+    def __init__(
+        self, project, compute, name, node_id=None, node_type=None, template_id=None, strict_names=False, **kwargs
+    ):
         """
         :param project: Project of the node
         :param compute: Compute where the server will run
@@ -108,6 +110,7 @@ class Node:
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
         :param template_id: Template ID used to create this node
+        :param strict_names: Fail instead of renaming the node when the name is already used
         :param kwargs: Node properties
         """
 
@@ -125,7 +128,7 @@ class Node:
         self._label = None
         self._links = set()
         self._name = None
-        self.name = name
+        self._name = project.update_node_name(self, name, strict=strict_names)
         self._console = None
         self._console_type = None
         self._aux = None

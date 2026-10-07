@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from ..common import ErrorMessage
 from ..update import PartialUpdateModel
 from .labels import Label
 
@@ -95,6 +96,16 @@ class Link(LinkBase):
     wireshark: Optional[bool] = Field(
         False, description="Read only property. True if a Web Wireshark session is active on the link"
     )
+
+
+class LinkBatchResult(BaseModel):
+    """
+    Outcome of one link of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    link: Optional[Link] = Field(None, description="The created link, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the link could not be created")
 
 
 class UDPPortInfo(BaseModel):

@@ -35,6 +35,7 @@ from .controller.images import Image, ImageSyncJob, ImageSyncRequest, ImageType,
 from .controller.links import (
     EthernetPortInfo,
     Link,
+    LinkBatchResult,
     LinkCapture,
     LinkCreate,
     LinkUpdate,
@@ -43,7 +44,7 @@ from .controller.links import (
     MarkerUpdate,
     UDPPortInfo,
 )
-from .controller.nodes import Node, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
+from .controller.nodes import Node, NodeBatchResult, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
 from .controller.projects import (
     NodeFile,
     Project,
@@ -242,6 +243,7 @@ __all__ = [
     "LLMModelConfigUpdate",
     "LLMModelConfigWithSource",
     "Link",
+    "LinkBatchResult",
     "LinkCapture",
     "LinkCreate",
     "LinkUpdate",
@@ -256,6 +258,7 @@ __all__ = [
     "NetmikoDeviceType",
     "NetmikoDeviceTypeList",
     "Node",
+    "NodeBatchResult",
     "NodeCapture",
     "NodeCreate",
     "NodeDuplicate",

@@ -1119,6 +1119,46 @@ async def test_node_name(project):
 
 
 @pytest.mark.asyncio
+async def test_node_name_strict(project):
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert node.name == "R1"
+    with pytest.raises(ControllerError):
+        await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert len(project.nodes) == 1
+
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=False)
+    assert node.name == "R2"
+    node = await project.add_node(compute, "T{0}", None, node_type="vpcs", strict_names=True)
+    assert node.name == "T1"
+    node = await project.add_node(compute, "T{0}", None, node_type="vpcs", strict_names=True)
+    assert node.name == "T2"
+
+
+@pytest.mark.asyncio
+async def test_node_name_released_when_creation_fails(project):
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.post = AsyncioMagicMock(side_effect=ControllerError("failure"))
+
+    with pytest.raises(ControllerError):
+        await project.add_node(compute, "R1", None, node_type="vpcs")
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert node.name == "R1"
+
+
+@pytest.mark.asyncio
 async def test_duplicate_node(project):
 
     compute = MagicMock()

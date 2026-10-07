@@ -34,7 +34,12 @@ from fastapi.routing import APIRoute
 from gns3server import schemas
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerForbiddenError
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    controller_error_status_code,
+)
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.db.repositories.rbac import RbacRepository
@@ -128,18 +133,60 @@ def _check_node_type(node: Node, *required_types: str) -> None:
     },
     dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
-async def create_node(node_create: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
+async def create_node(node_create: schemas.NodeCreate, project: Project = Depends(dep_project)) -> dict:
     """
     Create a new node.
 
+    Set strict_names to get a 409 error instead of an automatic rename when the node name is already used.
+
     Required privilege: Node.Allocate
     """
+
+    return await _create_node(project, node_create)
+
+
+async def _create_node(project: Project, node_create: schemas.NodeCreate) -> dict:
 
     controller = Controller.instance()
     compute = controller.get_compute(str(node_create.compute_id))
     node_data = jsonable_encoder(node_create, exclude_unset=True)
     node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
     return node.asdict()
+
+
+@router.post(
+    "/batch",
+    response_model=List[schemas.NodeBatchResult],
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+    },
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
+)
+async def create_nodes(
+    nodes_create: List[schemas.NodeCreate], project: Project = Depends(dep_project)
+) -> List[schemas.NodeBatchResult]:
+    """
+    Create several nodes in the order they are listed.
+
+    The response lists one result per node in the same order. A node that fails to be created
+    does not stop the following ones.
+
+    Required privilege: Node.Allocate
+    """
+
+    results = []
+    for node_create in nodes_create:
+        try:
+            node = await _create_node(project, node_create)
+            results.append(schemas.NodeBatchResult(status_code=status.HTTP_201_CREATED, node=node))
+        except ControllerError as e:
+            log.error(f"Could not create node {node_create.name} in batch: {e}")
+            results.append(
+                schemas.NodeBatchResult(
+                    status_code=controller_error_status_code(e), error=schemas.ErrorMessage(message=str(e))
+                )
+            )
+    return results
 
 
 @router.get(

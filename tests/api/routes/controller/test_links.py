@@ -81,6 +81,45 @@ class TestLinkRoutes:
         assert len(project.links) == 1
         assert list(project.links.values())[0].filters == filters
 
+    async def test_create_links_batch(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        valid = {
+            "nodes": [
+                {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+            ]
+        }
+        same_node = {
+            "nodes": [
+                {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+            ]
+        }
+        unknown_node = {
+            "nodes": [
+                {"node_id": str(uuid.uuid4()), "adapter_number": 0, "port_number": 3},
+                {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+            ]
+        }
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_links", project_id=project.id), json=[same_node, unknown_node, valid]
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.json()
+        assert [r["status_code"] for r in results] == [409, 404, 201]
+        assert results[0]["link"] is None
+        assert results[0]["error"]["message"]
+        assert results[1]["error"]["message"]
+        assert results[2]["error"] is None
+        assert results[2]["link"]["link_id"] in project.links
+        assert len(project.links) == 1
+
     async def test_create_link_failure(
         self, app: FastAPI, client: AsyncClient, compute: Compute, project: Project
     ) -> None:
