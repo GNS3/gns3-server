@@ -274,9 +274,22 @@ class Link:
 
         port = node.get_port(adapter_number, port_number)
         if port is None:
-            raise ControllerNotFoundError(f"Port {adapter_number}/{port_number} for {node.name} not found")
+            raise ControllerNotFoundError(
+                f"Port {adapter_number}/{port_number} for {node.name} not found",
+                code="port_not_found",
+                details={"node_id": node.id, "adapter_number": adapter_number, "port_number": port_number},
+            )
         if port.link is not None:
-            raise ControllerError("Port is already used")
+            raise ControllerError(
+                "Port is already used",
+                code="port_in_use",
+                details={
+                    "node_id": node.id,
+                    "adapter_number": adapter_number,
+                    "port_number": port_number,
+                    "link_id": port.link.id,
+                },
+            )
 
         self._link_type = port.link_type
 

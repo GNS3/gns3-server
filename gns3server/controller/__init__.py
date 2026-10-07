@@ -710,7 +710,9 @@ class Controller:
         except KeyError:
             if compute_id == "vm":
                 raise ControllerNotFoundError("Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
-            raise ControllerNotFoundError(f"Compute ID {compute_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Compute ID {compute_id} doesn't exist", code="compute_not_found", details={"compute_id": compute_id}
+            )
 
     def has_compute(self, compute_id):
         """
@@ -748,7 +750,9 @@ class Controller:
         try:
             return self._projects[project_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Project ID {project_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Project ID {project_id} doesn't exist", code="project_not_found", details={"project_id": project_id}
+            )
 
     async def get_loaded_project(self, project_id):
         """
