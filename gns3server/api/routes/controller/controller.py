@@ -146,7 +146,7 @@ def get_iou_license() -> schemas.IOULicense:
 @router.put(
     "/iou_license",
     dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.IOULicense,
 )
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:

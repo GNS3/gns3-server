@@ -80,7 +80,7 @@ def _iter_route_paths(routes: Sequence[BaseRoute], prefix: str = "", include_mou
                 yield from _iter_route_paths(mounted_routes, _join_paths(prefix, route.path), include_mounted_routes)
 
 
-@router.get("/endpoints", status_code=status.HTTP_201_CREATED, dependencies=[Depends(has_privilege("ACE.Audit"))])
+@router.get("/endpoints", dependencies=[Depends(has_privilege("ACE.Audit"))])
 async def endpoints(
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),

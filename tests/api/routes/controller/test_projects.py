@@ -196,7 +196,7 @@ class TestControllerProjectRoutes:
 
         with asyncio_patch("gns3server.controller.project.Project.open", return_value=True) as mock:
             response = await client.post(app.url_path_for("open_project", project_id=project.id))
-            assert response.status_code == status.HTTP_201_CREATED
+            assert response.status_code == status.HTTP_200_OK
             assert mock.called
 
     async def test_load_project(self, app: FastAPI, client: AsyncClient, project: Project, config) -> None:
