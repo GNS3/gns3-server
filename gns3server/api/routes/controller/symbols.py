@@ -27,6 +27,7 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import FileResponse
 
 from gns3server import schemas
+from gns3server.api.openapi import binary_request_body, binary_response
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 from gns3server.utils.get_resource import get_resource
@@ -53,7 +54,11 @@ def get_symbols() -> List[dict]:
 
 @router.get(
     "/{symbol_id:path}/raw",
-    responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
+    response_class=FileResponse,
+    responses={
+        200: binary_response(description="Symbol file"),
+        404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"},
+    },
     dependencies=[Depends(has_privilege("Symbol.Audit"))],
 )
 async def get_symbol(symbol_id: str, request: Request) -> Response:
@@ -112,6 +117,7 @@ def get_default_symbols() -> dict:
 @router.post(
     "/{symbol_id:path}/raw",
     status_code=status.HTTP_204_NO_CONTENT,
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Symbol.Allocate"))],
 )
 async def upload_symbol(symbol_id: str, request: Request) -> None:

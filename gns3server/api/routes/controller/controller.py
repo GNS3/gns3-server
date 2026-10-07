@@ -30,6 +30,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
 from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
+from gns3server.api.openapi import ndjson_response
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
@@ -254,7 +255,12 @@ async def statistics() -> dict:
     }
 
 
-@router.get("/notifications", dependencies=[Depends(get_current_active_user)])
+@router.get(
+    "/notifications",
+    response_class=StreamingResponse,
+    responses={200: ndjson_response()},
+    dependencies=[Depends(get_current_active_user)],
+)
 async def controller_http_notifications(request: Request) -> StreamingResponse:
     """
     Receive controller notifications about the controller from HTTP stream.
