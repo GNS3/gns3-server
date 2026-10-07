@@ -52,7 +52,14 @@ No relay control twin here: on the relay datapath a cascade is just two
 per-port uBridge UDP relays, the machinery
 ``test_ethernet_switch_kernel_datapath.py::test_ethernet_switch_relay_control``
 already drives.
+
+Every checkpoint runs dual-stack: each router interface carries a ULA v6
+address next to its v4 one and every ping is doubled (both VLANs tagged
+across the trunk in both families, the mode flip and suspend killing both,
+the two-sided delay measured on both).
 """
+
+import time
 
 import pytest
 
@@ -68,6 +75,9 @@ ETH20 = (1, 1)
 
 IP10 = "10.1.10.%s"
 IP20 = "10.1.20.%s"
+# the dual-stack half: ULAs mirroring the v4 subnets
+IP10_6 = "fd00:1:10::%s"
+IP20_6 = "fd00:1:20::%s"
 
 
 def _pick_image(server):
@@ -110,10 +120,12 @@ def _set_ports(compute, pid, switch_id, cascade_type):
     compute.call("PUT", f"/projects/{pid}/nodes/{switch_id}", {"properties": {"ports_mapping": _ports(cascade_type)}})
 
 
-def _add_eth(console, ip, ifname):
+def _add_eth(console, ip, ifname, ipv6=None):
     console.run("conf t")
     console.run(f"interface {ifname}")
     console.run(f"ip address {ip} 255.255.255.0")
+    if ipv6:
+        console.run(f"ipv6 address {ipv6}/64")
     console.run("no shutdown")
     console.run("end")
 
@@ -202,18 +214,23 @@ def test_ethernet_switch_cascade_kernel_datapath():
             harness.bridge_members(br2)
         )
 
-        harness.configure_ios(c1, "R1", eth_ip=IP10 % 1, eth_if="f1/0")
-        _add_eth(c1, IP20 % 1, "f1/1")
-        harness.configure_ios(c2, "R2", eth_ip=IP10 % 2, eth_if="f1/0")
-        _add_eth(c2, IP20 % 2, "f1/1")
+        harness.configure_ios(c1, "R1", eth_ip=IP10 % 1, eth_if="f1/0", eth_ipv6=IP10_6 % 1)
+        _add_eth(c1, IP20 % 1, "f1/1", ipv6=IP20_6 % 1)
+        harness.configure_ios(c2, "R2", eth_ip=IP10 % 2, eth_if="f1/0", eth_ipv6=IP10_6 % 2)
+        _add_eth(c2, IP20 % 2, "f1/1", ipv6=IP20_6 % 2)
         print(".. both routers configured, pinging across the cascade")
 
         # A trunk cascade carries both VLANs at once — two simultaneous
-        # adjacencies over the same veth pair is the tagged-frames proof.
+        # adjacencies over the same veth pair is the tagged-frames proof —
+        # in both families.
         baseline10 = harness.wait_ping(c1, IP10 % 2)
         assert baseline10["success"] == 100, baseline10["raw"]
         baseline20 = harness.wait_ping(c1, IP20 % 2)
         assert baseline20["success"] == 100, baseline20["raw"]
+        baseline10_6 = harness.wait_ping(c1, IP10_6 % 2)
+        assert baseline10_6["success"] == 100, baseline10_6["raw"]
+        baseline20_6 = harness.wait_ping(c1, IP20_6 % 2)
+        assert baseline20_6["success"] == 100, baseline20_6["raw"]
 
         # L2-anchor spec §E.2: with all four router interfaces shut, every
         # host-side device of this fabric stays silent for 5 s — the four
@@ -228,6 +245,8 @@ def test_ethernet_switch_cascade_kernel_datapath():
                 _eth_shutdown(console, shut=False)
             assert harness.wait_ping(c1, IP10 % 2, attempts=5)["success"] == 100
             assert harness.wait_ping(c1, IP20 % 2, attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, IP10_6 % 2, attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, IP20_6 % 2, attempts=5)["success"] == 100
         else:
             print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
@@ -251,12 +270,17 @@ def test_ethernet_switch_cascade_kernel_datapath():
         assert harness.bridge_members(br1) == sorted([a1_10, a1_20, e0]), harness.bridge_members(br1)
         assert harness.bridge_members(br2) == sorted([a2_10, a2_20, e1]), harness.bridge_members(br2)
         assert harness.wait_ping(c1, IP10 % 2)["success"] == 100
+        assert harness.wait_ping(c1, IP10_6 % 2)["success"] == 100
         isolated = harness.ping(c1, IP20 % 2, repeat=3)
         assert isolated["success"] == 0, isolated["raw"]
+        isolated6 = harness.ping(c1, IP20_6 % 2, repeat=3)
+        assert isolated6["success"] == 0, isolated6["raw"]
         _set_ports(compute, pid, sw1_id, "dot1q")
         _set_ports(compute, pid, sw2_id, "dot1q")
         rejoined = harness.wait_ping(c1, IP20 % 2, attempts=5)
         assert rejoined["success"] == 100, rejoined["raw"]
+        rejoined6 = harness.wait_ping(c1, IP20_6 % 2, attempts=5)
+        assert rejoined6["success"] == 100, rejoined6["raw"]
 
         # Two-sided impairment: each veth end is its own interface, so the
         # filter lands on both — one netem per direction, RTT ~= 2 x delay.
@@ -266,20 +290,38 @@ def test_ethernet_switch_cascade_kernel_datapath():
         delayed = harness.wait_ping(c1, IP10 % 2)
         assert delayed["success"] == 100, delayed["raw"]
         assert 150 <= delayed["avg"] <= 350, (baseline10, delayed)
+        # the v6 twin reads the capture's own timestamps: the guest's
+        # ping ipv6 under-reports a delayed round trip on dynamips (see
+        # test_dynamips_kernel_datapath), so this asserts the wire itself
+        capture = compute.call(
+            "POST", f"/projects/{pid}/links/{cascade['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+        )
+        harness.ping(c1, IP10_6 % 2)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{cascade['link_id']}/capture/stop")
+        wire6 = harness.pcap_icmp_rtt(capture["capture_file_path"], "86dd")
+        print(f"..   delay 100: v4 {baseline10['avg']}->{delayed['avg']} ms, v6 wire {wire6:.0f} ms")
+        assert wire6 is not None and wire6 >= 60, wire6
         compute.call("PUT", f"/projects/{pid}/links/{cascade['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(e0) and "netem" not in harness.qdiscs(e1)
         fast = harness.wait_ping(c1, IP10 % 2)
         assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
+        fast6 = harness.wait_ping(c1, IP10_6 % 2)
+        assert fast6["success"] == 100 and fast6["avg"] < harness.FAST_RTT_MS, fast6
 
         # suspend: both ends admin-down, both VLANs die; resume restores.
         compute.call("PUT", f"/projects/{pid}/links/{cascade['link_id']}", {"suspend": True})
         assert not harness.tap_up(e0) and not harness.tap_up(e1)
         assert harness.ping(c1, IP10 % 2, repeat=3)["success"] == 0
         assert harness.ping(c1, IP20 % 2, repeat=3)["success"] == 0
+        assert harness.ping(c1, IP10_6 % 2, repeat=3)["success"] == 0
+        assert harness.ping(c1, IP20_6 % 2, repeat=3)["success"] == 0
         compute.call("PUT", f"/projects/{pid}/links/{cascade['link_id']}", {"suspend": False})
         assert harness.tap_up(e0) and harness.tap_up(e1)
         assert harness.wait_ping(c1, IP10 % 2, attempts=5)["success"] == 100
         assert harness.wait_ping(c1, IP20 % 2, attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, IP10_6 % 2, attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, IP20_6 % 2, attempts=5)["success"] == 100
 
         # Cascade link fault: the whole veth pair dies with the link (either
         # side's teardown), the host links and their anchors survive; a
@@ -290,6 +332,7 @@ def test_ethernet_switch_cascade_kernel_datapath():
         assert harness.bridge_members(br1) == sorted([a1_10, a1_20]), harness.bridge_members(br1)
         assert harness.bridge_members(br2) == sorted([a2_10, a2_20]), harness.bridge_members(br2)
         assert harness.ping(c1, IP10 % 2, repeat=3)["success"] == 0
+        assert harness.ping(c1, IP10_6 % 2, repeat=3)["success"] == 0
         cascade = compute.create_link(pid, (sw1_id, 0, 2), (sw2_id, 0, 2))
         assert cascade["kernel_datapath"] is True, cascade
         n0, n1 = harness.cascade_end_names(cascade["link_id"])
@@ -297,6 +340,8 @@ def test_ethernet_switch_cascade_kernel_datapath():
         assert harness.wait_until(lambda: harness.bridge_members(br2) == sorted([a2_10, a2_20, n1]), timeout=10)
         assert harness.wait_ping(c1, IP10 % 2, attempts=5)["success"] == 100
         assert harness.wait_ping(c1, IP20 % 2, attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, IP10_6 % 2, attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, IP20_6 % 2, attempts=5)["success"] == 100
 
         c1.close()
         c2.close()

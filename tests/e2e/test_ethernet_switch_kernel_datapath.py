@@ -43,6 +43,10 @@ Real ICMP crossing the switch proves the datapath:
 isolated relay-configured instance: the same topology rides the per-port
 uBridge relays (the switch bridge's members are its own relay TAPs, never
 the routers' anchors) and still pings.
+
+Every checkpoint runs dual-stack: the routers carry a ULA v6 address next
+to their v4 one and each checkpoint pings both families (VLAN isolation
+and suspend kill both; the netem delays and the capture window carry both).
 """
 
 import time
@@ -56,6 +60,10 @@ pytestmark = pytest.mark.e2e
 # c7200 slot 0 is the fixed IO slot; the Ethernet PA goes in slot 1.
 SLOTS = {"slot1": "PA-2FE-TX"}
 ETH = (1, 0)
+
+# the dual-stack half: a ULA mirroring 10.1.1.x
+R1_IP6 = "fd00:1:1::1"
+R2_IP6 = "fd00:1:1::2"
 
 
 def _pick_image(server):
@@ -161,11 +169,13 @@ def test_ethernet_switch_kernel_fast_path():
             harness.bridge_members(sw_bridge)
         )
 
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_ipv6=R2_IP6)
         print(".. both routers configured, pinging through the switch")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+        baseline6 = harness.wait_ping(c1, R2_IP6)
+        assert baseline6["success"] == 100, baseline6["raw"]
 
         # L2-anchor spec §E.2: with both routers shut, the absorbed anchors
         # and the switch bridge stay silent for 5 s (the bridge is created
@@ -177,6 +187,7 @@ def test_ethernet_switch_kernel_fast_path():
             for console in (c1, c2):
                 _eth_shutdown(console, shut=False)
             assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
         else:
             print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
@@ -209,6 +220,8 @@ def test_ethernet_switch_kernel_fast_path():
         assert harness.bridge_members(sw_bridge) == sorted([a1, a2]), harness.bridge_members(sw_bridge)
         isolated = harness.ping(c1, "10.1.1.2", repeat=3)
         assert isolated["success"] == 0, isolated["raw"]
+        isolated6 = harness.ping(c1, R2_IP6, repeat=3)
+        assert isolated6["success"] == 0, isolated6["raw"]
         assert harness.bridge_members(sw_bridge) == sorted([a1, a2]), harness.bridge_members(sw_bridge)
         compute.call(
             "PUT",
@@ -224,6 +237,8 @@ def test_ethernet_switch_kernel_fast_path():
         )
         rejoined = harness.wait_ping(c1, "10.1.1.2")
         assert rejoined["success"] == 100, rejoined["raw"]
+        rejoined6 = harness.wait_ping(c1, R2_IP6)
+        assert rejoined6["success"] == 100, rejoined6["raw"]
 
         # Single-owned impairment: the filter lands on the absorbed anchor
         # (one interface — the switch's), RTT grows by ~100 ms one-way.
@@ -233,10 +248,25 @@ def test_ethernet_switch_kernel_fast_path():
         delayed = harness.wait_ping(c1, "10.1.1.2")
         assert delayed["success"] == 100, delayed["raw"]
         assert 60 <= delayed["avg"] <= 250, (baseline, delayed)
+        # the v6 twin reads the capture's own timestamps: the guest's
+        # ping ipv6 under-reports a delayed round trip on dynamips (see
+        # test_dynamips_kernel_datapath), and here the single-owned delay
+        # is small enough that the quirk swallows most of the signal
+        capture = compute.call(
+            "POST", f"/projects/{pid}/links/{link1['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+        )
+        harness.ping(c1, R2_IP6)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{link1['link_id']}/capture/stop")
+        wire6 = harness.pcap_icmp_rtt(capture["capture_file_path"], "86dd")
+        print(f"..   delay 100: v4 {baseline['avg']}->{delayed['avg']} ms, v6 wire {wire6:.0f} ms")
+        assert wire6 is not None and wire6 >= 60, wire6
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
+        fast6 = harness.wait_ping(c1, R2_IP6)
+        assert fast6["success"] == 100 and fast6["avg"] < harness.FAST_RTT_MS, fast6
 
         # The same single-owned impairment on link2 — created switch-first,
         # the order whose peer NIO update runs LAST. The passive end's empty
@@ -249,31 +279,54 @@ def test_ethernet_switch_kernel_fast_path():
         delayed2 = harness.wait_ping(c1, "10.1.1.2")
         assert delayed2["success"] == 100, delayed2["raw"]
         assert 60 <= delayed2["avg"] <= 250, (baseline, delayed2)
+        # the capture must sit on the pinging node's anchor (link1's, i.e.
+        # R1's): a TX copy is timestamped post-qdisc, so on link2's own
+        # anchor — where this window's delay impairs the request direction —
+        # the request copy would already carry the delay and the measured
+        # delta would collapse to the turnaround. R1's anchor sees the
+        # request before the delay and the reply after it.
+        capture = compute.call(
+            "POST", f"/projects/{pid}/links/{link1['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+        )
+        harness.ping(c1, R2_IP6)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{link1['link_id']}/capture/stop")
+        wire2_6 = harness.pcap_icmp_rtt(capture["capture_file_path"], "86dd")
+        print(f"..   delay 100 (link2): v4 {baseline['avg']}->{delayed2['avg']} ms, v6 wire {wire2_6:.0f} ms")
+        assert wire2_6 is not None and wire2_6 >= 60, wire2_6
         compute.call("PUT", f"/projects/{pid}/links/{link2['link_id']}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a2)
         fast2 = harness.wait_ping(c1, "10.1.1.2")
         assert fast2["success"] == 100 and fast2["avg"] < harness.FAST_RTT_MS, fast2
+        fast2_6 = harness.wait_ping(c1, R2_IP6)
+        assert fast2_6["success"] == 100 and fast2_6["avg"] < harness.FAST_RTT_MS, fast2_6
 
         # suspend: the anchor admin-downs, the link is dead; resume restores
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"suspend": True})
         assert not harness.tap_up(a1)
         dead = harness.ping(c1, "10.1.1.2", repeat=3)
         assert dead["success"] == 0, dead["raw"]
+        dead6 = harness.ping(c1, R2_IP6, repeat=3)
+        assert dead6["success"] == 0, dead6["raw"]
         compute.call("PUT", f"/projects/{pid}/links/{link1['link_id']}", {"suspend": False})
         assert harness.tap_up(a1)
         assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6)["success"] == 100
 
         # capture (the controller hosts it on the switch — always-on local
-        # builtin): a pcap of ICMP records written off the absorbed anchor
+        # builtin): a pcap of ICMP records written off the absorbed anchor,
+        # both families inside the window
         capture = compute.call(
             "POST", f"/projects/{pid}/links/{link1['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
         )
         harness.ping(c1, "10.1.1.2")
+        harness.ping(c1, R2_IP6)
         time.sleep(1)
         compute.call("POST", f"/projects/{pid}/links/{link1['link_id']}/capture/stop")
         count, ethertypes = harness.pcap_records(capture["capture_file_path"])
-        assert count >= 4, capture["capture_file_path"]
+        assert count >= 8, capture["capture_file_path"]
         assert "0800" in ethertypes, ethertypes
+        assert "86dd" in ethertypes, ethertypes
 
         # link delete detaches the anchor (it survives — the router owns
         # it); re-creating re-joins it
@@ -284,6 +337,7 @@ def test_ethernet_switch_kernel_fast_path():
         assert link2["kernel_datapath"] is True, link2
         assert harness.wait_until(lambda: harness.bridge_members(sw_bridge) == sorted([a1, a2]), timeout=10)
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         # router stop/start keeps the wiring: a Dynamips stop only halts the
         # emulated router — the hypervisor, the anchor and its bridge
@@ -297,8 +351,9 @@ def test_ethernet_switch_kernel_fast_path():
         c1.close()
         c1 = _boot(server, pid, r1_id)
         assert harness.wait_until(lambda: harness.bridge_members(sw_bridge) == sorted([a1, a2]), timeout=15)
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         c1.close()
         c2.close()
@@ -351,10 +406,12 @@ def test_ethernet_switch_relay_control():
                 harness.assert_pure_l2(member)
             harness.assert_pure_l2(sw_bridge)
 
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_ipv6=R2_IP6)
         relay_ping = harness.wait_ping(c1, "10.1.1.2")
         assert relay_ping["success"] == 100, relay_ping["raw"]
+        relay_ping6 = harness.wait_ping(c1, R2_IP6)
+        assert relay_ping6["success"] == 100, relay_ping6["raw"]
 
         c1.close()
         c2.close()

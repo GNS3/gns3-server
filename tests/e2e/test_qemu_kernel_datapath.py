@@ -39,6 +39,9 @@ relay attaches the anchor itself as an AF_PACKET endpoint, so it stays up
 and carrying while the link rides the uBridge relay. This differs from
 IOU's relay, where the fabric socket carries the traffic and the anchors
 sit idle: QEMU has no other leg, the TAP is the netdev either way.
+
+Every checkpoint runs dual-stack: the IOSv guests carry a ULA v6 address
+next to their v4 one and each checkpoint pings both families.
 """
 
 import re
@@ -60,6 +63,10 @@ BOOT_TIMEOUT = 480
 # is the image on this host the kernel datapath was validated with.
 IMAGE_PREFERENCE = ("vios-adventerprisek9-m.spa.159-3.m12.qcow2",)
 GUEST_ETH_IF = "GigabitEthernet0/0"
+
+# the dual-stack half: a ULA mirroring 10.1.1.x
+R1_IP6 = "fd00:1:1::1"
+R2_IP6 = "fd00:1:1::2"
 
 
 def _pick_image(server):
@@ -154,13 +161,17 @@ def test_qemu_kernel_datapath():
         harness.assert_forwarding(a1)
         harness.assert_forwarding(a2)
 
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF)
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if=GUEST_ETH_IF)
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF, eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if=GUEST_ETH_IF, eth_ipv6=R2_IP6)
         out = c1.run("show ip int brief")
         assert re.search(r"GigabitEthernet0/0\s+10\.1\.1\.1\s+\S+\s+\S+\s+up\s+up", out), out
+        out = c1.run("show ipv6 interface brief")
+        assert R1_IP6.upper() in out.upper(), out  # IOS prints v6 upper-case
         print(".. both routers configured, pinging through the anchor TAPs")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+        baseline6 = harness.wait_ping(c1, R2_IP6)
+        assert baseline6["success"] == 100, baseline6["raw"]
 
         # L2-anchor spec §E.2: with the guests shut the anchors (QEMU's own
         # netdevs) and the per-link bridge stay silent for 5 s.
@@ -171,6 +182,7 @@ def test_qemu_kernel_datapath():
             for console in (c1, c2):
                 _eth_shutdown(console, shut=False)
             assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
         else:
             print(".. uBridge without link l2only: skipping the §E.2 assertion")
 
@@ -184,10 +196,15 @@ def test_qemu_kernel_datapath():
         delayed = harness.wait_ping(c1, "10.1.1.2")
         assert delayed["success"] == 100, delayed["raw"]
         assert delayed["avg"] >= 150, (baseline, delayed)
+        delayed6 = harness.wait_ping(c1, R2_IP6)
+        assert delayed6["success"] == 100, delayed6["raw"]
+        assert delayed6["avg"] >= 150, (baseline6, delayed6)
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
+        fast6 = harness.wait_ping(c1, R2_IP6)
+        assert fast6["success"] == 100 and fast6["avg"] < harness.FAST_RTT_MS, fast6
 
         # suspend: anchor admin-down — the e1000 loses carrier, the bridge
         # port is disabled and nothing crosses; resume restores
@@ -195,19 +212,24 @@ def test_qemu_kernel_datapath():
         assert not harness.tap_up(a1)
         dead = harness.ping(c1, "10.1.1.2", repeat=3)
         assert dead["success"] == 0, dead["raw"]
+        dead6 = harness.ping(c1, R2_IP6, repeat=3)
+        assert dead6["success"] == 0, dead6["raw"]
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": False})
         assert harness.tap_up(a1)
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
-        # capture: on the anchor, a real pcap
+        # capture: on the anchor, a real pcap — both families inside the window
         capture = compute.call("POST", f"/projects/{pid}/links/{lid}/capture/start", {"data_link_type": "DLT_EN10MB"})
         harness.ping(c1, "10.1.1.2")
+        harness.ping(c1, R2_IP6)
         time.sleep(1)
         compute.call("POST", f"/projects/{pid}/links/{lid}/capture/stop")
         path = capture["capture_file_path"]
         count, ethertypes = harness.pcap_records(path)
-        assert count >= 4, f"{path}: {count} records"
+        assert count >= 8, f"{path}: {count} records"
         assert "0800" in ethertypes, (path, ethertypes)
+        assert "86dd" in ethertypes, (path, ethertypes)
 
         # delete / re-create the kernel link: the anchor leaves the bridge
         # but survives (the running VM holds it open — this is QEMU's own
@@ -220,6 +242,7 @@ def test_qemu_kernel_datapath():
         bridge = harness.link_bridge_name(lid)
         assert link["kernel_datapath"] is True, link
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         # node stop: QEMU exits and uBridge deletes every anchor of the
         # node together with the orphan bridges (a stopped node must not
@@ -240,8 +263,9 @@ def test_qemu_kernel_datapath():
         c1 = _boot(server, pid, n1_id)
         assert harness.tap_exists(a1)
         assert harness.bridge_members(bridge) == sorted([a1, a2]), harness.bridge_members(bridge)
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF)
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF, eth_ipv6=R1_IP6)
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         c1.close()
         c2.close()
@@ -307,10 +331,12 @@ def test_qemu_relay_control():
             # the L2 hardening is a creation-time property, not a datapath
             # one: relay anchors are pure L2 too
             harness.assert_pure_l2(a1)
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF)
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if=GUEST_ETH_IF)
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_if=GUEST_ETH_IF, eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_if=GUEST_ETH_IF, eth_ipv6=R2_IP6)
         relay_ping = harness.wait_ping(c1, "10.1.1.2")
         assert relay_ping["success"] == 100, relay_ping["raw"]
+        relay_ping6 = harness.wait_ping(c1, R2_IP6)
+        assert relay_ping6["success"] == 100, relay_ping6["raw"]
 
         c1.close()
         c2.close()
