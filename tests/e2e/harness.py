@@ -702,9 +702,14 @@ def ios_console(server, project_id, node_id):
     return IOSConsole(host, node["console"])
 
 
-def configure_ios(console, hostname, eth_ip=None, serial_ip=None, clock=False, eth_if="f1/0", serial_if="s2/0"):
+def configure_ios(
+    console, hostname, eth_ip=None, eth_ipv6=None, serial_ip=None, clock=False, eth_if="f1/0", serial_if="s2/0"
+):
     """Baseline config on a freshly booted router: hostname, no console spam,
-    optional interface addresses."""
+    optional interface addresses. ``eth_ipv6`` configures the same interface
+    dual-stack (a /64 prefix); ipv6 unicast-routing is deliberately left off —
+    the routers stay pure hosts, so no RAs go out and the link stays quiet
+    (directly connected pings need no forwarding)."""
     console.run("enable")
     console.run("conf t")
     console.run(f"hostname {hostname}")
@@ -712,9 +717,12 @@ def configure_ios(console, hostname, eth_ip=None, serial_ip=None, clock=False, e
     # global form: console logging off in one step, no line sub-mode to lose
     # characters in
     console.run("no logging console")
-    if eth_ip:
+    if eth_ip or eth_ipv6:
         console.run(f"interface {eth_if}")
-        console.run(f"ip address {eth_ip} 255.255.255.0")
+        if eth_ip:
+            console.run(f"ip address {eth_ip} 255.255.255.0")
+        if eth_ipv6:
+            console.run(f"ipv6 address {eth_ipv6}/64")
         console.run("no shutdown")
         console.run("exit")
     if serial_ip:
@@ -737,8 +745,12 @@ FAST_RTT_MS = 100
 
 
 def ping(console, target, repeat=3, timeout=1):
-    """Run an IOS ping; returns {success, avg, raw} (success in percent)."""
-    out = console.run(f"ping {target} repeat {repeat} timeout {timeout}", timeout=repeat * timeout + 20)
+    """Run an IOS ping; returns {success, avg, raw} (success in percent).
+
+    An IPv6 literal needs IOS's ``ping ipv6`` form; the summary lines the
+    parsers read are the same shape for both families."""
+    family = "ipv6 " if ":" in target else ""
+    out = console.run(f"ping {family}{target} repeat {repeat} timeout {timeout}", timeout=repeat * timeout + 20)
     success = re.search(r"Success rate is (\d+) percent", out)
     rtt = re.search(r"round-trip min/avg/max = (\d+)/(\d+)/(\d+)", out)
     return {"success": int(success.group(1)) if success else 0, "avg": int(rtt.group(2)) if rtt else None, "raw": out}
@@ -968,7 +980,10 @@ def configure_docker_interfaces(node, address, netmask="255.255.255.0", adapter=
     user does: write the persistent ``/etc/network/interfaces`` the server
     bind-mounts into the container and init.sh applies with busybox ifup at
     boot (CIDR is not understood — separate address/netmask lines). Call
-    before starting the node."""
+    before starting the node.
+
+    IPv4 only: an inet6 stanza would never apply — see
+    ``docker_bring_up_ipv6``."""
     directory = node.get("node_directory")
     if not directory or not os.path.isdir(directory):
         pytest.skip(f"cannot reach the node directory {directory!r} — this scenario needs the compute on this host")
@@ -978,12 +993,45 @@ def configure_docker_interfaces(node, address, netmask="255.255.255.0", adapter=
         f.write(f"auto eth{adapter}\niface eth{adapter} inet static\n\taddress {address}\n\tnetmask {netmask}\n")
 
 
-def docker_wait_address(daemon, container_id, address, timeout=30):
-    """Wait until the container's eth0 carries *address* — init.sh applies
-    the interfaces file (busybox ifup) a moment after container start."""
+def docker_bring_up_ipv6(daemon, container_id, address6, adapter=0):
+    """Give the container's eth{adapter} its global IPv6 address. Call
+    after every container start (the address does not survive a stop: the
+    netns is rebuilt).
+
+    IPv6 cannot ride the interfaces file here: on bridge networks without
+    IPv6 the Docker daemon leaves the container interface with
+    ``disable_ipv6=1``, which makes busybox ifup's ``ip -6 addr add`` fail
+    with EPERM before init.sh's ``ifup -a`` ever finishes the stanza — the
+    interface must be switched on by hand first. DAD transmissions are
+    silenced before the address is added: the kernel still holds the
+    address tentative for ~1 s (measured; ~2 s with the default one DAD
+    solicitation), but nothing here tests DAD and the solicitations are one
+    less source of boot-time chatter on the wire."""
+    code, output = daemon.exec(
+        container_id,
+        [
+            "sh",
+            "-c",
+            f"echo 0 > /proc/sys/net/ipv6/conf/eth{adapter}/dad_transmits"
+            f" && echo 0 > /proc/sys/net/ipv6/conf/eth{adapter}/disable_ipv6"
+            f" && ip -6 addr add {address6}/64 dev eth{adapter}",
+        ],
+    )
+    assert code == 0, output
+
+
+def docker_wait_address(daemon, container_id, address, timeout=30, adapter=0):
+    """Wait until the container's eth{adapter} carries *address* (either
+    family) — init.sh applies the interfaces file (busybox ifup) a moment
+    after container start. A v6 address also has to leave the tentative
+    state (a tentative address answers no neighbour solicitation, so pings
+    to it cannot resolve)."""
+    family = "-6" if ":" in address else "-4"
 
     def present():
-        _code, output = daemon.exec(container_id, ["ip", "-4", "-o", "addr", "show", "dev", "eth0"])
+        _code, output = daemon.exec(container_id, ["ip", family, "-o", "addr", "show", "dev", f"eth{adapter}"])
+        if family == "-6":
+            return address.lower() in output.lower() and "tentative" not in output.lower()
         return address in output
 
     if not wait_until(present, timeout=timeout, interval=0.5):
@@ -1319,11 +1367,14 @@ def wait_until(predicate, timeout=10, interval=0.3):
 
 
 def pcap_records(path):
-    """Count the records of a pcap file and collect the ethertype of the
-    first few (hex, e.g. '0800') — enough to prove a capture is real."""
+    """Count the records of a pcap file and collect the distinct ethertypes
+    across all of them (hex, e.g. '0800') — enough to prove a capture is
+    real. Scans every record, not a leading sample: a dual-stack host's
+    own IPv6 control frames (DAD/MLD) can precede the traffic under test,
+    and a truncated sample would let them mask it."""
     import struct
 
-    ethertypes = []
+    ethertypes = set()
     with open(path, "rb") as f:
         header = f.read(24)
         if len(header) < 24:
@@ -1339,6 +1390,49 @@ def pcap_records(path):
             if len(data) < caplen:
                 break
             count += 1
-            if len(ethertypes) < 5 and caplen >= 14:
-                ethertypes.append(data[12:14].hex())
+            if caplen >= 14:
+                ethertypes.add(data[12:14].hex())
     return count, ethertypes
+
+
+def pcap_icmp_rtt(path, ethertype):
+    """The mean echo request->reply RTT (ms) in a capture, from the
+    capture's own timestamps — the wire truth, independent of whatever a
+    guest's ping reports (the dynamips-emulated classic IOS under-reports
+    its ``ping ipv6`` RTT by roughly 40 % of a delayed round trip; this
+    primitive is what the dynamips-family scenarios assert instead).
+
+    Pairs each echo request with the next echo reply (``ethertype`` is
+    '0800' or '86dd'; ICMP echo type 8/0 for v4, 128/129 for v6 with the
+    fixed 40-byte IPv6 header — no extension headers in these pings).
+    Returns None when the capture holds no complete exchange."""
+    import struct
+
+    rows = []
+    with open(path, "rb") as f:
+        header = f.read(24)
+        if len(header) < 24:
+            return None
+        endian = "<" if header[:4] in (b"\xd4\xc3\xb2\xa1", b"\x4d\x3c\xb2\xa1") else ">"
+        while True:
+            rec = f.read(16)
+            if len(rec) < 16:
+                break
+            ts_s, ts_us, caplen, _orig = struct.unpack(endian + "IIII", rec)
+            data = f.read(caplen)
+            if len(data) < caplen:
+                break
+            if caplen < 14 or data[12:14].hex() != ethertype:
+                continue
+            icmp_off = 14 + ((data[14] & 0xF) * 4 if ethertype == "0800" else 40)
+            if caplen >= icmp_off + 1:
+                rows.append((ts_s + ts_us / 1e6, data[icmp_off]))
+    request_type = 8 if ethertype == "0800" else 128
+    deltas, pending = [], None
+    for ts, icmp_type in rows:
+        if icmp_type == request_type:
+            pending = ts
+        elif icmp_type == request_type + 1 and pending is not None:
+            deltas.append((ts - pending) * 1000)
+            pending = None
+    return sum(deltas) / len(deltas) if deltas else None

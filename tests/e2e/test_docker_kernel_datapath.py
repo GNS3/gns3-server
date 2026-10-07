@@ -49,6 +49,13 @@ server itself uses. The scenarios cover:
 The image is pinned by digest (``harness.ensure_docker_image``): a cached
 copy costs no network, a miss pulls through the server's own pull route,
 and no cache + no registry skips the scenario.
+
+Every traffic assertion runs dual-stack: the guests carry a ULA IPv6
+address next to their IPv4 one and each checkpoint pings both families —
+including the filter matrix (netem and the classifiers are family-blind;
+the libpcap bpf drops are deliberately not) and the relay markers (a v6
+twin marker with an echo-specific expression, since a bare ``icmp6``
+would also match the guests' own DAD/MLD control frames).
 """
 
 import os
@@ -65,6 +72,16 @@ pytestmark = pytest.mark.e2e
 ETH = (0, 0)
 R1_IP = "10.1.1.1"
 R2_IP = "10.1.1.2"
+# the dual-stack half: a ULA mirroring the v4 addressing (10.1.1.x -> fd00:1:1::x)
+R1_IP6 = "fd00:1:1::1"
+R2_IP6 = "fd00:1:1::2"
+
+# exact ICMPv6 echo match for markers: a bare "icmp6" would also match the
+# guests' own DAD/MLD/NS/NA control frames and break the exact-count asserts
+_ICMP6_ECHO_BPF = "icmp6 and (ip6[40] == 128 or ip6[40] == 129)"
+# busybox ping frame lengths (56 data bytes): 14 Ethernet + 20/40 IP + 8 ICMP + 56
+PING_FRAME_LEN = 98
+PING_FRAME_LEN6 = 118
 
 
 def _resolve_container(daemon, node):
@@ -78,8 +95,9 @@ def _resolve_container(daemon, node):
 
 
 def _create_topology(server, pid, image, name):
-    """Two containers with addressed eth0s. The harness reaches their guests
-    through the Docker daemon socket — the same socket the server uses."""
+    """Two containers with dual-stack addressed eth0s. The harness reaches
+    their guests through the Docker daemon socket — the same socket the
+    server uses."""
     compute = server.compute
     daemon = harness.DockerDaemon()
     nodes = []
@@ -91,12 +109,17 @@ def _create_topology(server, pid, image, name):
 
 
 def _start_addresses(compute, pid, daemon, nodes, addresses):
-    """Start the containers and wait for init.sh to have applied their
-    addresses (busybox ifup runs a moment after container start)."""
+    """Start the containers and wait for init.sh to have applied their v4
+    addresses (busybox ifup runs a moment after container start); the v6
+    addresses are brought up by the harness after each start (see
+    ``harness.docker_bring_up_ipv6`` — an interface-side disable_ipv6 the
+    Docker daemon sets makes the interfaces-file route impossible)."""
     for node in nodes:
         compute.call("POST", f"/projects/{pid}/nodes/{node['node_id']}/start")
-    for node, address in zip(nodes, addresses, strict=False):
+    for node, (address, address6) in zip(nodes, addresses, strict=False):
         harness.docker_wait_address(daemon, node["container_id"], address)
+        harness.docker_bring_up_ipv6(daemon, node["container_id"], address6)
+        harness.docker_wait_address(daemon, node["container_id"], address6)
 
 
 def _put_filters(compute, pid, lid, filters):
@@ -134,9 +157,14 @@ def _silence_guest(daemon, container_id):
     assert code == 0, output
 
 
-def _unsilence_guest(daemon, container_id):
+def _unsilence_guest(daemon, container_id, address6):
+    """Reverse of ``_silence_guest``. disable_ipv6=1 removed the v6
+    addresses and busybox ifup does not re-run, so the guest's global
+    address must be brought up again by hand (the v4 address stayed
+    configured throughout)."""
     code, output = daemon.exec(container_id, ["ip", "link", "set", "eth0", "up"])
     assert code == 0, output
+    harness.docker_bring_up_ipv6(daemon, container_id, address6)
 
 
 def test_docker_kernel_fast_path():
@@ -164,7 +192,7 @@ def test_docker_kernel_fast_path():
         assert not harness.tap_exists(a1), "the veth pair is born at container start"
 
         print(".. starting containers")
-        _start_addresses(compute, pid, daemon, (n1, n2), (R1_IP, R2_IP))
+        _start_addresses(compute, pid, daemon, (n1, n2), ((R1_IP, R1_IP6), (R2_IP, R2_IP6)))
 
         # Kernel objects: the veth host ends exist and the per-link bridge
         # enslaves exactly the two of them.
@@ -187,6 +215,9 @@ def test_docker_kernel_fast_path():
         baseline = harness.docker_wait_ping(daemon, c1, R2_IP)
         assert baseline["loss"] == 0, baseline["raw"]
         assert baseline["avg"] is not None and baseline["avg"] < 50, baseline
+        baseline6 = harness.docker_wait_ping(daemon, c1, R2_IP6)
+        assert baseline6["loss"] == 0, baseline6["raw"]
+        assert baseline6["avg"] is not None and baseline6["avg"] < 50, baseline6
 
         # §E.2: with the guests silenced the segment is silent for 5 s —
         # the host anchors do not generate the MLD/DAD flood an unhardened
@@ -195,12 +226,14 @@ def test_docker_kernel_fast_path():
             _silence_guest(daemon, c1)
             _silence_guest(daemon, c2)
             harness.assert_idle_silence(a1, a2, bridge)
-            _unsilence_guest(daemon, c1)
-            _unsilence_guest(daemon, c2)
+            _unsilence_guest(daemon, c1, R1_IP6)
+            _unsilence_guest(daemon, c2, R2_IP6)
             assert harness.docker_wait_ping(daemon, c1, R2_IP, attempts=5)["loss"] == 0
+            assert harness.docker_wait_ping(daemon, c1, R2_IP6, attempts=5)["loss"] == 0
 
         # delay 100: netem on both host ends (each impairs one direction),
-        # one-way ~100 ms => RTT grows by ~200 ms
+        # one-way ~100 ms => RTT grows by ~200 ms — netem is family-blind,
+        # both families ride the same qdisc
         _put_filters(compute, pid, lid, {"delay": [100]})
         assert "netem" in harness.qdiscs(a1) and "netem" in harness.qdiscs(a2), (
             harness.qdiscs(a1),
@@ -208,10 +241,14 @@ def test_docker_kernel_fast_path():
         )
         delayed = harness.docker_wait_ping(daemon, c1, R2_IP)
         assert delayed["loss"] == 0 and delayed["avg"] >= 150, (baseline, delayed)
+        delayed6 = harness.docker_wait_ping(daemon, c1, R2_IP6)
+        assert delayed6["loss"] == 0 and delayed6["avg"] >= 150, (baseline6, delayed6)
         _put_filters(compute, pid, lid, {})
         assert "netem" not in harness.qdiscs(a1), harness.qdiscs(a1)
         fast = harness.docker_wait_ping(daemon, c1, R2_IP)
         assert fast["loss"] == 0 and fast["avg"] < 50, fast
+        fast6 = harness.docker_wait_ping(daemon, c1, R2_IP6)
+        assert fast6["loss"] == 0 and fast6["avg"] < 50, fast6
 
         # suspend: the host end admin-downs (carrier loss into the
         # container), the link is dead; resume restores
@@ -219,19 +256,25 @@ def test_docker_kernel_fast_path():
         assert not harness.tap_up(a1)
         dead = harness.docker_ping(daemon, c1, R2_IP, count=3, timeout=1)
         assert dead["loss"] == 100, dead["raw"]
+        dead6 = harness.docker_ping(daemon, c1, R2_IP6, count=3, timeout=1)
+        assert dead6["loss"] == 100, dead6["raw"]
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": False})
         assert harness.tap_up(a1)
         assert harness.docker_wait_ping(daemon, c1, R2_IP)["loss"] == 0
+        assert harness.docker_wait_ping(daemon, c1, R2_IP6)["loss"] == 0
 
-        # capture: AF_PACKET on the anchor writes a real pcap
+        # capture: AF_PACKET on the anchor writes a real pcap — both
+        # families inside the window, both ethertypes on the wire
         capture = compute.call("POST", f"/projects/{pid}/links/{lid}/capture/start", {"data_link_type": "DLT_EN10MB"})
         harness.docker_ping(daemon, c1, R2_IP)
+        harness.docker_ping(daemon, c1, R2_IP6)
         time.sleep(1)
         compute.call("POST", f"/projects/{pid}/links/{lid}/capture/stop")
         path = capture["capture_file_path"]
         count, ethertypes = harness.pcap_records(path)
-        assert count >= 4, f"{path}: {count} records"
+        assert count >= 8, f"{path}: {count} records"
         assert "0800" in ethertypes, (path, ethertypes)
+        assert "86dd" in ethertypes, (path, ethertypes)
 
         # link delete detaches both ends (the veths survive — they are the
         # adapters); re-creating enslaves them again and the traffic returns
@@ -243,6 +286,7 @@ def test_docker_kernel_fast_path():
         bridge = harness.link_bridge_name(lid)
         assert link["kernel_datapath"] is True, link
         assert harness.docker_wait_ping(daemon, c1, R2_IP, attempts=5)["loss"] == 0
+        assert harness.docker_wait_ping(daemon, c1, R2_IP6, attempts=5)["loss"] == 0
 
         # container stop: the veth host ends are deleted explicitly (a veth
         # outlives its container's netns) and the bridge goes with them; a
@@ -253,9 +297,12 @@ def test_docker_kernel_fast_path():
         assert harness.bridge_members(bridge) in (None, [a2]), harness.bridge_members(bridge)
         compute.call("POST", f"/projects/{pid}/nodes/{n1_id}/start")
         harness.docker_wait_address(daemon, c1, R1_IP)
+        harness.docker_bring_up_ipv6(daemon, c1, R1_IP6)
+        harness.docker_wait_address(daemon, c1, R1_IP6)
         assert harness.tap_exists(a1)
         assert harness.wait_until(lambda: harness.bridge_members(bridge) == sorted([a1, a2]), timeout=15)
         assert harness.docker_wait_ping(daemon, c1, R2_IP, attempts=5)["loss"] == 0
+        assert harness.docker_wait_ping(daemon, c1, R2_IP6, attempts=5)["loss"] == 0
     except BaseException:
         harness.release(server, pid, failed=True)
         raise
@@ -293,9 +340,11 @@ def test_docker_kernel_filter_matrix():
         lid = link["link_id"]
         assert link["kernel_datapath"] is True, link
 
-        _start_addresses(compute, pid, daemon, (n1, n2), (R1_IP, R2_IP))
+        _start_addresses(compute, pid, daemon, (n1, n2), ((R1_IP, R1_IP6), (R2_IP, R2_IP6)))
         baseline = harness.docker_wait_ping(daemon, c1, R2_IP)
         assert baseline["loss"] == 0, baseline["raw"]
+        baseline6 = harness.docker_wait_ping(daemon, c1, R2_IP6)
+        assert baseline6["loss"] == 0, baseline6["raw"]
 
         # The kernel link offers the kernel-only types the compute's uBridge
         # reports it can run (all of them on this uBridge).
@@ -314,6 +363,9 @@ def test_docker_kernel_filter_matrix():
         delayed = harness.docker_ping(daemon, c1, R2_IP)
         print(f"..   {delayed['avg']} ms RTT")
         assert delayed["loss"] == 0 and delayed["avg"] >= 150, (baseline, delayed)
+        delayed6 = harness.docker_ping(daemon, c1, R2_IP6)
+        print(f"..   {delayed6['avg']} ms RTT (v6)")
+        assert delayed6["loss"] == 0 and delayed6["avg"] >= 150, (baseline6, delayed6)
 
         print(".. delay 50 jitter 20 distribution normal")
         _put_filters(compute, pid, lid, {"delay": [50, 20, "normal"]})
@@ -325,6 +377,9 @@ def test_docker_kernel_filter_matrix():
         jittered = harness.docker_ping(daemon, c1, R2_IP, count=10)
         print(f"..   {jittered['avg']} ms RTT")
         assert jittered["loss"] == 0 and jittered["avg"] >= 65, jittered
+        jittered6 = harness.docker_ping(daemon, c1, R2_IP6, count=10)
+        print(f"..   {jittered6['avg']} ms RTT (v6)")
+        assert jittered6["loss"] == 0 and jittered6["avg"] >= 65, jittered6
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. packet_loss 30")
@@ -334,6 +389,9 @@ def test_docker_kernel_filter_matrix():
         # round trip = 1 - 0.7^2 ~ 51 %; the stochastic draw must land
         # somewhere between "clearly lossy" and "not a black hole"
         assert 20 <= lossy["loss"] <= 80, lossy["raw"]
+        lossy6 = harness.docker_ping(daemon, c1, R2_IP6, count=20)
+        print(f"..   {lossy6['loss']} % round-trip loss (v6)")
+        assert 20 <= lossy6["loss"] <= 80, lossy6["raw"]
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. corrupt 30")
@@ -344,6 +402,9 @@ def test_docker_kernel_filter_matrix():
         corrupt = harness.docker_ping(daemon, c1, R2_IP, count=20)
         print(f"..   {corrupt['loss']} % round-trip loss")
         assert 20 <= corrupt["loss"] <= 80, corrupt["raw"]
+        corrupt6 = harness.docker_ping(daemon, c1, R2_IP6, count=20)
+        print(f"..   {corrupt6['loss']} % round-trip loss (v6)")
+        assert 20 <= corrupt6["loss"] <= 80, corrupt6["raw"]
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. duplicate 50")
@@ -352,6 +413,8 @@ def test_docker_kernel_filter_matrix():
         # duplicated frames are absorbed by the stack: no loss, traffic flows
         dups = harness.docker_ping(daemon, c1, R2_IP, count=5)
         assert dups["loss"] == 0, dups["raw"]
+        dups6 = harness.docker_ping(daemon, c1, R2_IP6, count=5)
+        assert dups6["loss"] == 0, dups6["raw"]
         _clear_filters(compute, pid, lid, a1, a2)
 
         # -- netem extensions (kernel-only) --------------------------------
@@ -360,6 +423,8 @@ def test_docker_kernel_filter_matrix():
         assert "reorder" in harness.qdiscs(a1), harness.qdiscs(a1)
         reordered = harness.docker_ping(daemon, c1, R2_IP, count=10)
         assert reordered["loss"] <= 60, reordered["raw"]
+        reordered6 = harness.docker_ping(daemon, c1, R2_IP6, count=10)
+        assert reordered6["loss"] <= 60, reordered6["raw"]
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. delay 50 + seed 42 + limit 5000")
@@ -367,6 +432,8 @@ def test_docker_kernel_filter_matrix():
         assert "limit 5000" in harness.qdiscs(a1), harness.qdiscs(a1)
         seeded = harness.docker_ping(daemon, c1, R2_IP)
         assert seeded["loss"] == 0 and seeded["avg"] >= 80, seeded
+        seeded6 = harness.docker_ping(daemon, c1, R2_IP6)
+        assert seeded6["loss"] == 0 and seeded6["avg"] >= 80, seeded6
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. gemodel 100/0/30 (steady-state bad, 30 % loss)")
@@ -375,6 +442,9 @@ def test_docker_kernel_filter_matrix():
         gemodel = harness.docker_ping(daemon, c1, R2_IP, count=20)
         print(f"..   {gemodel['loss']} % round-trip loss")
         assert 20 <= gemodel["loss"] <= 90, gemodel["raw"]
+        gemodel6 = harness.docker_ping(daemon, c1, R2_IP6, count=20)
+        print(f"..   {gemodel6['loss']} % round-trip loss (v6)")
+        assert 20 <= gemodel6["loss"] <= 90, gemodel6["raw"]
         _clear_filters(compute, pid, lid, a1, a2)
 
         print(".. rate 512kbit (1400-byte pings)")
@@ -384,15 +454,28 @@ def test_docker_kernel_filter_matrix():
         rated = harness.docker_ping(daemon, c1, R2_IP, size=1400)
         print(f"..   {rated['avg']} ms RTT")
         assert rated["loss"] == 0 and rated["avg"] >= 30, (baseline, rated)
+        rated6 = harness.docker_ping(daemon, c1, R2_IP6, size=1400)
+        print(f"..   {rated6['avg']} ms RTT (v6)")
+        assert rated6["loss"] == 0 and rated6["avg"] >= 30, (baseline6, rated6)
         _clear_filters(compute, pid, lid, a1, a2)
 
         # -- cls_bpf match-drop --------------------------------------------
         if caps.get("cbpf"):
-            print(".. bpf 'icmp' drops everything")
+            print(".. bpf 'icmp' drops v4 ICMP only")
             _put_filters(compute, pid, lid, {"bpf": ["icmp"]})
             assert "clsact" in harness.qdiscs(a1), harness.qdiscs(a1)
             dropped = harness.docker_ping(daemon, c1, R2_IP, count=4)
             assert dropped["loss"] == 100, dropped["raw"]
+            # the libpcap expression is family-specific: v6 ICMP sails through
+            v6_alive = harness.docker_ping(daemon, c1, R2_IP6, count=4)
+            assert v6_alive["loss"] == 0, v6_alive["raw"]
+
+            print(".. bpf 'icmp6' drops v6 ICMP only")
+            _put_filters(compute, pid, lid, {"bpf": ["icmp6"]})
+            v4_alive = harness.docker_ping(daemon, c1, R2_IP, count=4)
+            assert v4_alive["loss"] == 0, v4_alive["raw"]
+            dropped6 = harness.docker_ping(daemon, c1, R2_IP6, count=4)
+            assert dropped6["loss"] == 100, dropped6["raw"]
 
             print(".. bpf 'greater 150' discriminates by frame size")
             _put_filters(compute, pid, lid, {"bpf": ["greater 150"]})
@@ -400,6 +483,12 @@ def test_docker_kernel_filter_matrix():
             assert small["loss"] == 0, small["raw"]
             big = harness.docker_ping(daemon, c1, R2_IP, count=4, size=300)
             assert big["loss"] == 100, big["raw"]
+            # the v6 echo frame is 118 bytes — still under the threshold;
+            # size=300 pushes it to 362, over it
+            small6 = harness.docker_ping(daemon, c1, R2_IP6, count=4)
+            assert small6["loss"] == 0, small6["raw"]
+            big6 = harness.docker_ping(daemon, c1, R2_IP6, count=4, size=300)
+            assert big6["loss"] == 100, big6["raw"]
             _clear_filters(compute, pid, lid, a1, a2)
         else:
             print(".. uBridge reports no cbpf: skipping the bpf filter checks")
@@ -413,9 +502,16 @@ def test_docker_kernel_filter_matrix():
             print(f"..   {nth['loss']} % round-trip loss")
             # kernel counts per direction: 1 - (2/3)^2 = 55.6 % round trip
             assert 30 <= nth["loss"] <= 80, nth["raw"]
+            # the classifier draws per packet, not per header — v6 rides
+            # the same distribution
+            nth6 = harness.docker_ping(daemon, c1, R2_IP6, count=20)
+            print(f"..   {nth6['loss']} % round-trip loss (v6)")
+            assert 30 <= nth6["loss"] <= 80, nth6["raw"]
             _put_filters(compute, pid, lid, {"frequency_drop": [-1]})
             all_dropped = harness.docker_ping(daemon, c1, R2_IP, count=4)
             assert all_dropped["loss"] == 100, all_dropped["raw"]
+            all_dropped6 = harness.docker_ping(daemon, c1, R2_IP6, count=4)
+            assert all_dropped6["loss"] == 100, all_dropped6["raw"]
             _clear_filters(compute, pid, lid, a1, a2)
         if "quota" in modes:
             print(".. quota 3000 bytes hard cutoff")
@@ -426,8 +522,13 @@ def test_docker_kernel_filter_matrix():
             assert cut["loss"] >= 40, cut["raw"]
             after = harness.docker_ping(daemon, c1, R2_IP, count=4)
             assert after["loss"] == 100, after["raw"]
+            cut6 = harness.docker_ping(daemon, c1, R2_IP6, count=5, size=1400)
+            assert cut6["loss"] >= 40, cut6["raw"]
+            after6 = harness.docker_ping(daemon, c1, R2_IP6, count=4)
+            assert after6["loss"] == 100, after6["raw"]
             _clear_filters(compute, pid, lid, a1, a2)
             assert harness.docker_ping(daemon, c1, R2_IP, count=4)["loss"] == 0
+            assert harness.docker_ping(daemon, c1, R2_IP6, count=4)["loss"] == 0
         if "window" in modes:
             print(".. window_drop [1000, 2000, 100] — one outage with passes on both sides")
             _put_filters(compute, pid, lid, {"window_drop": [1000, 2000, 100]})
@@ -438,8 +539,19 @@ def test_docker_kernel_filter_matrix():
             missing = set(range(25)) - replied
             assert 0 in replied and 24 in replied, (sorted(replied), output)
             assert missing and max(missing) - min(missing) >= 5, (sorted(replied), output)
+            # the outage window is one-shot from the moment the filter is
+            # applied (documented semantics), so the v6 stream needs the
+            # schedule re-armed — re-sending the same window is a no-op
+            # except that it restarts the schedule
+            _put_filters(compute, pid, lid, {"window_drop": [1000, 2000, 100]})
+            code, output = daemon.exec(c1, ["ping", "-c", "25", "-i", "0.2", "-W", "1", R2_IP6], timeout=30)
+            replied6 = {int(m.group(1)) for m in re.finditer(r"seq=(\d+)", output)}
+            missing6 = set(range(25)) - replied6
+            assert 0 in replied6 and 24 in replied6, (sorted(replied6), output)
+            assert missing6 and max(missing6) - min(missing6) >= 5, (sorted(replied6), output)
             _clear_filters(compute, pid, lid, a1, a2)
             assert harness.docker_ping(daemon, c1, R2_IP, count=4)["loss"] == 0
+            assert harness.docker_ping(daemon, c1, R2_IP6, count=4)["loss"] == 0
     except BaseException:
         harness.release(server, pid, failed=True)
         raise
@@ -471,7 +583,7 @@ def test_docker_relay_control():
         link = compute.create_link(pid, (n1_id, *ETH), (n2_id, *ETH))
         assert link["kernel_datapath"] is False, link
 
-        _start_addresses(compute, pid, daemon, (n1, n2), (R1_IP, R2_IP))
+        _start_addresses(compute, pid, daemon, (n1, n2), ((R1_IP, R1_IP6), (R2_IP, R2_IP6)))
 
         # No kernel wiring: no per-link bridge, the veth host end is just a
         # relay endpoint (up, pure L2 — the hardening is a creation-time
@@ -484,6 +596,8 @@ def test_docker_relay_control():
 
         relay_ping = harness.docker_wait_ping(daemon, n1["container_id"], R2_IP)
         assert relay_ping["loss"] == 0, relay_ping["raw"]
+        relay_ping6 = harness.docker_wait_ping(daemon, n1["container_id"], R2_IP6)
+        assert relay_ping6["loss"] == 0, relay_ping6["raw"]
 
         # available_filters hides the kernel-only types on the relay
         offered = _filter_types(compute, pid, link["link_id"])
@@ -502,9 +616,14 @@ def test_docker_relay_control():
         delayed = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)
         assert delayed["loss"] == 0, delayed["raw"]
         assert delayed["avg"] >= 150, (relay_ping, delayed)
+        delayed6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=5)
+        assert delayed6["loss"] == 0, delayed6["raw"]
+        assert delayed6["avg"] >= 150, (relay_ping6, delayed6)
         _put_filters(compute, pid, link["link_id"], {})
         fast = harness.docker_wait_ping(daemon, n1["container_id"], R2_IP)
         assert fast["loss"] == 0 and fast["avg"] < 50, (relay_ping, fast)
+        fast6 = harness.docker_wait_ping(daemon, n1["container_id"], R2_IP6)
+        assert fast6["loss"] == 0 and fast6["avg"] < 50, (relay_ping6, fast6)
 
         # frequency_drop counts every packet crossing the bridge, both
         # directions sharing one counter, so on an alternating ping stream
@@ -516,24 +635,43 @@ def test_docker_relay_control():
         dropped = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=10)
         print(f"..   {dropped['loss']} % round-trip loss")
         assert dropped["loss"] >= 50, dropped["raw"]
+        dropped6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=10)
+        print(f"..   {dropped6['loss']} % round-trip loss (v6)")
+        assert dropped6["loss"] >= 50, dropped6["raw"]
         _put_filters(compute, pid, link["link_id"], {"frequency_drop": [-1]})
         blackholed = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
         assert blackholed["loss"] == 100, blackholed["raw"]
+        blackholed6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=4)
+        assert blackholed6["loss"] == 100, blackholed6["raw"]
 
         # bpf on the relay is uBridge's libpcap userspace match-drop — a
-        # different engine from the kernel datapath's cls_bpf
-        print(".. relay filters: bpf 'icmp' drops every ICMP frame")
+        # different engine from the kernel datapath's cls_bpf, same
+        # family-specific expression semantics
+        print(".. relay filters: bpf 'icmp' drops v4 ICMP only")
         _put_filters(compute, pid, link["link_id"], {"bpf": ["icmp"]})
         icmp_dropped = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
         assert icmp_dropped["loss"] == 100, icmp_dropped["raw"]
+        v6_alive = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=4)
+        assert v6_alive["loss"] == 0, v6_alive["raw"]
+        print(".. relay filters: bpf 'icmp6' drops v6 ICMP only")
+        _put_filters(compute, pid, link["link_id"], {"bpf": ["icmp6"]})
+        v4_alive = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
+        assert v4_alive["loss"] == 0, v4_alive["raw"]
+        icmp6_dropped = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=4)
+        assert icmp6_dropped["loss"] == 100, icmp6_dropped["raw"]
         print(".. relay filters: bpf 'greater 150' discriminates by frame size")
         _put_filters(compute, pid, link["link_id"], {"bpf": ["greater 150"]})
         small = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4)
         assert small["loss"] == 0, small["raw"]
         big = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=4, size=300)
         assert big["loss"] == 100, big["raw"]
+        small6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=4)
+        assert small6["loss"] == 0, small6["raw"]
+        big6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=4, size=300)
+        assert big6["loss"] == 100, big6["raw"]
         _put_filters(compute, pid, link["link_id"], {})
         assert harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)["loss"] == 0
+        assert harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=5)["loss"] == 0
 
         # capture on the relay: the same REST call as the kernel datapath's,
         # hosted by the relay node's uBridge bridge (bridge start_capture)
@@ -543,18 +681,20 @@ def test_docker_relay_control():
             "POST", f"/projects/{pid}/links/{link['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
         )
         harness.docker_ping(daemon, n1["container_id"], R2_IP)
+        harness.docker_ping(daemon, n1["container_id"], R2_IP6)
         time.sleep(1)
         compute.call("POST", f"/projects/{pid}/links/{link['link_id']}/capture/stop")
         path = capture["capture_file_path"]
         count, ethertypes = harness.pcap_records(path)
-        assert count >= 4, f"{path}: {count} records"
+        assert count >= 8, f"{path}: {count} records"
         assert "0800" in ethertypes, (path, ethertypes)
+        assert "86dd" in ethertypes, (path, ethertypes)
 
         # markers on the relay are uBridge's `mark` packet filter on the
         # relay bridge (bridge add_packet_filter ... mark), signalled over
         # the same dedicated marker WS — the relay engine's observability
         # path (the kernel datapath's marker add_kernel is the other one)
-        print(".. relay marker: 5 ICMP echoes through a mark filter on the relay bridge")
+        print(".. relay markers: 5 v4 + 5 v6 ICMP echoes through mark filters on the relay bridge")
         marker_ws = harness.WebSocketCollector(server, f"/projects/{pid}/notifications/markers/ws")
         try:
             m = compute.call(
@@ -563,25 +703,54 @@ def test_docker_relay_control():
                 {"name": "m-icmp", "bpf": "icmp", "tag": 4242, "capture_node_id": n1_id},
             )
             assert m["capture_node_id"] == n1_id and m["enabled"] is True, m
+            m6 = compute.call(
+                "POST",
+                f"/projects/{pid}/links/{link['link_id']}/markers",
+                {"name": "m-icmp6", "bpf": _ICMP6_ECHO_BPF, "tag": 4243, "capture_node_id": n1_id},
+            )
+            assert m6["capture_node_id"] == n1_id and m6["enabled"] is True, m6
             result = harness.docker_ping(daemon, n1["container_id"], R2_IP, count=5)
             assert result["loss"] == 0, result["raw"]
-            harness.wait_until(lambda: len(_matches(marker_ws, "m-icmp")) >= 10, timeout=10)
+            result6 = harness.docker_ping(daemon, n1["container_id"], R2_IP6, count=5)
+            assert result6["loss"] == 0, result6["raw"]
+            harness.wait_until(
+                lambda: len(_matches(marker_ws, "m-icmp")) >= 10 and len(_matches(marker_ws, "m-icmp6")) >= 10,
+                timeout=10,
+            )
+            # exact counts prove the two filters do not cross-fire: each
+            # marker sees its own family's 5 requests + 5 replies and
+            # nothing of the other's
             icmp = _matches(marker_ws, "m-icmp")
             assert len(icmp) == 10, len(icmp)  # 5 requests + 5 replies
+            icmp6 = _matches(marker_ws, "m-icmp6")
+            assert len(icmp6) == 10, len(icmp6)
             assert {e["dir"] for e in icmp} == {"tx", "rx"}, [e["dir"] for e in icmp]
+            assert {e["dir"] for e in icmp6} == {"tx", "rx"}, [e["dir"] for e in icmp6]
             for event in icmp:
                 assert event["node_id"] == n1_id, event
                 assert event["link_id"] == link["link_id"], event
                 assert event["tag"] == 4242, event
-                assert event["len"] == 98, event  # busybox ping frame
-            # the marker's pcap on the host holds exactly the matched frames
+                assert event["len"] == PING_FRAME_LEN, event  # busybox ping frame
+            for event in icmp6:
+                assert event["node_id"] == n1_id, event
+                assert event["link_id"] == link["link_id"], event
+                assert event["tag"] == 4243, event
+                assert event["len"] == PING_FRAME_LEN6, event  # v6 echo is 20 bytes longer
+            # each marker's pcap on the host holds exactly its matched frames
             markers_dir = os.path.join(compute.call("GET", f"/projects/{pid}")["path"], "project-files", "markers")
             pcap = os.path.join(markers_dir, f"{n1_id}_{link['link_id']}_m-icmp.pcap")
+            pcap6 = os.path.join(markers_dir, f"{n1_id}_{link['link_id']}_m-icmp6.pcap")
             assert os.path.exists(pcap), os.listdir(markers_dir)
+            assert os.path.exists(pcap6), os.listdir(markers_dir)
             count, ethertypes = harness.pcap_records(pcap)
             assert count == 10, count
             assert set(ethertypes) == {"0800"}, ethertypes
-            # deleting the marker removes its pcap with it
+            count6, ethertypes6 = harness.pcap_records(pcap6)
+            assert count6 == 10, count6
+            assert set(ethertypes6) == {"86dd"}, ethertypes6
+            # deleting a marker removes its pcap with it
+            compute.call("DELETE", f"/projects/{pid}/links/{link['link_id']}/markers/m-icmp6")
+            assert harness.wait_until(lambda: not os.path.exists(pcap6), timeout=10), pcap6
             compute.call("DELETE", f"/projects/{pid}/links/{link['link_id']}/markers/m-icmp")
             assert harness.wait_until(lambda: not os.path.exists(pcap), timeout=10), pcap
         finally:
@@ -618,9 +787,10 @@ def test_docker_relay_to_kernel_reopen_upgrade():
         assert link["kernel_datapath"] is False, link
         bridge = harness.link_bridge_name(link["link_id"])
 
-        _start_addresses(compute, pid, daemon, (n1, n2), (R1_IP, R2_IP))
+        _start_addresses(compute, pid, daemon, (n1, n2), ((R1_IP, R1_IP6), (R2_IP, R2_IP6)))
         assert harness.bridge_members(bridge) is None
         assert harness.docker_wait_ping(daemon, n1["container_id"], R2_IP)["loss"] == 0
+        assert harness.docker_wait_ping(daemon, n1["container_id"], R2_IP6)["loss"] == 0
 
         # Flip the datapath choice and reopen the project: every link
         # re-runs _prepare, which re-evaluates eligibility live.
@@ -634,9 +804,10 @@ def test_docker_relay_to_kernel_reopen_upgrade():
         assert link["kernel_datapath"] is True, link
         assert not harness.tap_exists(a1), "containers are stopped after the reopen"
 
-        _start_addresses(compute, pid, daemon, (n1, n2), (R1_IP, R2_IP))
+        _start_addresses(compute, pid, daemon, (n1, n2), ((R1_IP, R1_IP6), (R2_IP, R2_IP6)))
         assert harness.wait_until(lambda: harness.bridge_members(bridge) == sorted([a1, a2]), timeout=15)
         assert harness.docker_wait_ping(daemon, n1["container_id"], R2_IP, attempts=5)["loss"] == 0
+        assert harness.docker_wait_ping(daemon, n1["container_id"], R2_IP6, attempts=5)["loss"] == 0
     except BaseException:
         harness.release(server, pid, failed=True)
         raise

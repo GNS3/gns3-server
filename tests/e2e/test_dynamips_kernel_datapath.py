@@ -39,6 +39,10 @@ per-link bridge, nothing enslaved — and still pings, so the kernel objects
 above can only come from the kernel datapath. (The anchors themselves exist
 on both: they are the adapter's port interfaces, created by node start
 whenever the tap module is available, exactly like QEMU's TAPs.)
+
+Every Ethernet checkpoint runs dual-stack (the routers carry a ULA v6
+address next to their v4 one and each checkpoint pings both families); the
+serial leg stays v4-only — it is HDLC on the relay, not an Ethernet wire.
 """
 
 import re
@@ -55,6 +59,11 @@ pytestmark = pytest.mark.e2e
 SLOTS = {"slot1": "PA-2FE-TX", "slot2": "PA-4T+"}
 ETH = (1, 0)
 SERIAL = (2, 0)
+
+# the dual-stack half of the Ethernet leg: a ULA mirroring 10.1.1.x. The
+# serial leg stays v4-only (HDLC, not an Ethernet wire).
+R1_IP6 = "fd00:1:1::1"
+R2_IP6 = "fd00:1:1::2"
 
 
 def _pick_image(server):
@@ -134,13 +143,19 @@ def test_dynamips_kernel_datapath():
         harness.assert_forwarding(t1)
         harness.assert_forwarding(t2)
 
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_ipv6=R2_IP6)
         out = c1.run("show ip int brief")
         assert re.search(r"FastEthernet1/0\s+10\.1\.1\.1\s+\S+\s+\S+\s+up\s+up", out), out
+        out = c1.run("show ipv6 interface brief")
+        # IOS prints v6 addresses upper-case (and on their own line): match
+        # the literal case-insensitively
+        assert R1_IP6.upper() in out.upper(), out
         print(".. both routers configured, pinging over the kernel link")
         baseline = harness.wait_ping(c1, "10.1.1.2")
         assert baseline["success"] == 100, baseline["raw"]
+        baseline6 = harness.wait_ping(c1, R2_IP6)
+        assert baseline6["success"] == 100, baseline6["raw"]
 
         # L2-anchor spec §E.2: shut the guest interfaces (silencing IOS's own
         # CDP/keepalives — the only legitimate speakers on the segment) and
@@ -153,9 +168,11 @@ def test_dynamips_kernel_datapath():
             for console in (c1, c2):
                 _eth_shutdown(console, shut=False)
             assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+            assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         # delay 100: netem on both anchors (each impairs one direction),
-        # one-way ~100 ms => RTT grows by ~200 ms
+        # one-way ~100 ms => RTT grows by ~200 ms — netem is family-blind,
+        # both families ride the same qdisc
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {"delay": [100]}})
         assert "netem" in harness.qdiscs(t1) and "netem" in harness.qdiscs(t2), (
             harness.qdiscs(t1),
@@ -163,30 +180,54 @@ def test_dynamips_kernel_datapath():
         )
         delayed = harness.wait_ping(c1, "10.1.1.2")
         assert delayed["success"] == 100, delayed["raw"]
+        delayed6 = harness.wait_ping(c1, R2_IP6)
+        assert delayed6["success"] == 100, delayed6["raw"]
+        print(f"..   delay 100: v4 {baseline['avg']}->{delayed['avg']} ms, v6 {baseline6['avg']}->{delayed6['avg']} ms")
         assert delayed["avg"] >= 150, (baseline, delayed)
+        # The v6 twin is asserted from the capture's own timestamps, not from
+        # the guest's report: the dynamips-emulated classic IOS under-reports
+        # its ping ipv6 RTT by ~40 % of a delayed round trip (reproducible:
+        # report ~125-135 ms while a pcap on the anchor shows the v6 echo
+        # request->reply taking the same ~230 ms as v4 — the wire is correct,
+        # the reporter is not; the pings' order does not matter).
+        capture = compute.call("POST", f"/projects/{pid}/links/{lid}/capture/start", {"data_link_type": "DLT_EN10MB"})
+        harness.ping(c1, R2_IP6)
+        time.sleep(1)
+        compute.call("POST", f"/projects/{pid}/links/{lid}/capture/stop")
+        wire6 = harness.pcap_icmp_rtt(capture["capture_file_path"], "86dd")
+        print(f"..   delay 100 (capture): v6 wire round trip {wire6:.0f} ms")
+        assert wire6 is not None and wire6 >= 60, wire6
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"filters": {}})
         assert "netem" not in harness.qdiscs(t1), harness.qdiscs(t1)
         fast = harness.wait_ping(c1, "10.1.1.2")
         assert fast["success"] == 100 and fast["avg"] < harness.FAST_RTT_MS, fast
+        fast6 = harness.wait_ping(c1, R2_IP6)
+        assert fast6["success"] == 100 and fast6["avg"] < harness.FAST_RTT_MS, fast6
 
         # suspend: anchor admin-down, traffic dead; resume restores it
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": True})
         assert not harness.tap_up(t1)
         dead = harness.ping(c1, "10.1.1.2", repeat=3)
         assert dead["success"] == 0, dead["raw"]
+        dead6 = harness.ping(c1, R2_IP6, repeat=3)
+        assert dead6["success"] == 0, dead6["raw"]
         compute.call("PUT", f"/projects/{pid}/links/{lid}", {"suspend": False})
         assert harness.tap_up(t1)
         assert harness.wait_ping(c1, "10.1.1.2")["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6)["success"] == 100
 
-        # capture: AF_PACKET on the anchor writes a real pcap
+        # capture: AF_PACKET on the anchor writes a real pcap — both
+        # families inside the window, both ethertypes on the wire
         capture = compute.call("POST", f"/projects/{pid}/links/{lid}/capture/start", {"data_link_type": "DLT_EN10MB"})
         harness.ping(c1, "10.1.1.2")
+        harness.ping(c1, R2_IP6)
         time.sleep(1)
         compute.call("POST", f"/projects/{pid}/links/{lid}/capture/stop")
         path = capture["capture_file_path"]
         count, ethertypes = harness.pcap_records(path)
-        assert count >= 4, f"{path}: {count} records"
+        assert count >= 8, f"{path}: {count} records"
         assert "0800" in ethertypes, (path, ethertypes)
+        assert "86dd" in ethertypes, (path, ethertypes)
 
         # serial link between the same routers: per-port exclusion keeps it
         # on the relay, where the real traffic still crosses
@@ -208,6 +249,7 @@ def test_dynamips_kernel_datapath():
         bridge = harness.link_bridge_name(lid)
         assert link["kernel_datapath"] is True, link
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         # stop / start keeps the whole wiring (the Dynamips hypervisor
         # outlives ``vm stop``); the restarted router just reboots and is
@@ -220,8 +262,9 @@ def test_dynamips_kernel_datapath():
         c1.close()
         c1 = _boot(server, pid, r1_id)
         assert harness.bridge_members(bridge) == sorted([t1, t2])
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
         assert harness.wait_ping(c1, "10.1.1.2", attempts=5)["success"] == 100
+        assert harness.wait_ping(c1, R2_IP6, attempts=5)["success"] == 100
 
         c1.close()
         c2.close()
@@ -281,10 +324,12 @@ def test_dynamips_relay_control():
                 # datapath one: relay anchors are pure L2 too
                 harness.assert_pure_l2(t1)
 
-        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1")
-        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2")
+        harness.configure_ios(c1, "R1", eth_ip="10.1.1.1", eth_ipv6=R1_IP6)
+        harness.configure_ios(c2, "R2", eth_ip="10.1.1.2", eth_ipv6=R2_IP6)
         relay_ping = harness.wait_ping(c1, "10.1.1.2")
         assert relay_ping["success"] == 100, relay_ping["raw"]
+        relay_ping6 = harness.wait_ping(c1, R2_IP6)
+        assert relay_ping6["success"] == 100, relay_ping6["raw"]
 
         c1.close()
         c2.close()

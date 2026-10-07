@@ -36,7 +36,12 @@ asserts, through the server's own wiring path:
 * the bridge-level ``group_fwd_mask`` stays 0 (the fix is per-port only);
 * the live matrix from the guest: ordinary multicast crosses (wire sanity),
   STP / LACP / EAPOL / LLDP cross, and PAUSE does not — ``br_handle_frame``'s
-  ``case 0x01`` drops it unconditionally, so PFC stays unsupported by design;
+  ``case 0x01`` drops it unconditionally, so PFC stays unsupported by design.
+  The matrix is dual-stack at the frame level: the v4 all-hosts control row
+  has a v6 twin over ethertype 0x86dd (the all-nodes multicast MAC), and the
+  guests deliberately stay v4-addressed — a dual-stack guest's own MLD
+  report would target exactly that MAC and contaminate the per-MAC count
+  window the row is measured with;
 * a container stop/start replays the NIO wiring and the mask is re-applied
   (the reconnect story), with a fresh LACP round surviving it.
 
@@ -65,15 +70,18 @@ ETH = (0, 0)
 R1_IP = "10.2.1.1"
 R2_IP = "10.2.1.2"
 
-# (destination MAC, ethertype) — what the guest protocol would emit
+# (destination MAC, ethertype) — what the guest protocol would emit. The
+# v4 control frame's v6 twin is the all-nodes multicast: the same "ordinary
+# multicast crosses" sanity, over the v6 ethertype.
 CONTROL = ("01005e000001", "0800")  # ordinary multicast: must always cross
+CONTROL6 = ("333300000001", "86dd")  # ordinary v6 multicast (ff02::1): must always cross
 STP = ("0180c2000000", "0026")  # STP BPDU
 LACP = ("0180c2000002", "8809")  # LACP / slow protocols
 EAPOL = ("0180c2000003", "888e")  # 802.1X EAPOL
 LLDP = ("0180c200000e", "88cc")  # LLDP / DCBX
 PAUSE = ("0180c2000001", "8808")  # 802.3x PAUSE — kernel hard-drop
 
-MUST_CROSS = [CONTROL, STP, LACP, EAPOL, LLDP]
+MUST_CROSS = [CONTROL, CONTROL6, STP, LACP, EAPOL, LLDP]
 MUST_NOT_CROSS = [PAUSE]
 
 RECV_WINDOW = 12
