@@ -17,6 +17,7 @@
 
 import os
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 import pytest_asyncio
@@ -54,6 +55,9 @@ class TestSnapshotRoutes:
         response = await client.get(app.url_path_for("get_snapshots", project_id=project.id))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 1
+        data = response.json()[0]
+        assert isinstance(data["created_at"], int)
+        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=timezone.utc)
 
     async def test_delete_snapshot(
         self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
@@ -80,3 +84,15 @@ class TestSnapshotRoutes:
         response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})
         assert response.status_code == status.HTTP_201_CREATED
         assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 2
+        data = response.json()
+        assert isinstance(data["created_at"], int)
+        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=timezone.utc)
+
+    async def test_snapshot_schema_timestamps(self, app: FastAPI) -> None:
+
+        schemas = app.openapi()["components"]["schemas"]
+        assert schemas["Snapshot"]["properties"]["created"]["format"] == "date-time"
+        assert schemas["Snapshot"]["properties"]["created_at"]["type"] == "integer"
+        assert schemas["Snapshot"]["properties"]["created_at"]["deprecated"] is True
+        for field in ("created_at", "modified_at"):
+            assert {"type": "string", "format": "date-time"} in schemas["NodeFile"]["properties"][field]["anyOf"]
