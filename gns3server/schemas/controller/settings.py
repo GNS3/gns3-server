@@ -103,6 +103,7 @@ class ServerSettingsUpdate(BaseModel):
 
     local: Optional[bool] = None
     enable_http_auth: Optional[bool] = None
+    openapi_include_ai: Optional[bool] = None
     name: Optional[str] = None
     protocol: Optional[ServerProtocol] = None
     host: Optional[str] = None
