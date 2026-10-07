@@ -83,7 +83,7 @@ class ImagesRepository(BaseRepository):
         except (OSError, InvalidImageError):
             return False
 
-    async def get_images(self, image_type=None, availability=None) -> List[models.Image]:
+    async def get_images(self, image_type=None, availability=None, name=None) -> List[models.Image]:
         """
         Get all images.
         """
@@ -94,6 +94,8 @@ class ImagesRepository(BaseRepository):
             query = select(models.Image)
         if availability:
             query = query.where(models.Image.availability == availability)
+        if name is not None:
+            query = query.where(models.Image.filename == name)
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
 

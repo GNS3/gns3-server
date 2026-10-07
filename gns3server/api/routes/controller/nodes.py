@@ -151,6 +151,7 @@ async def create_node(node_create: schemas.NodeCreate, project: Project = Depend
 def get_nodes(
     project: Project = Depends(dep_project),
     tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
+    name: Optional[str] = Query(None, description="Return only nodes whose name exactly matches (case-sensitive)"),
 ) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
@@ -160,6 +161,7 @@ def get_nodes(
     Query Parameters:
     - tags: Filter by tags. Multiple tags are ANDed together.
             Example: ?tags=vendor:cisco&tags=model:7200
+    - name: Exact, case-sensitive match on the node name. Combined with other filters using AND.
     """
 
     if project.status == "closed":
@@ -167,6 +169,9 @@ def get_nodes(
         nodes = list(project.nodes.values())
     else:
         nodes = [v.asdict() for v in project.nodes.values()]
+
+    if name is not None:
+        nodes = [node for node in nodes if node.get("name") == name]
 
     # Filter by tags if provided (all filter tags have to match the node tags)
     if tags:

@@ -195,6 +195,7 @@ async def get_templates(
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
     current_user: schemas.User = Depends(get_current_active_user),
     tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
+    name: Optional[str] = Query(None, description="Return only templates whose name exactly matches (case-sensitive)"),
 ) -> List[dict]:
     """
     Return all templates.
@@ -204,9 +205,13 @@ async def get_templates(
     Query Parameters:
     - tags: Filter by tags. Multiple tags are ANDed together.
             Example: ?tags=vendor:cisco&tags=model:7200
+    - name: Exact, case-sensitive match on the template name. Combined with other filters using AND.
     """
 
     templates = await TemplatesService(templates_repo).get_templates()
+
+    if name is not None:
+        templates = [template for template in templates if template.get("name") == name]
 
     # Filter by tags if provided (all filter tags have to match the node tags)
     if tags:
