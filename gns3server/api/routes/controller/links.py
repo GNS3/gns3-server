@@ -123,8 +123,13 @@ async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> sche
     return link.asdict()
 
 
-@router.get("/{link_id}/available_filters", dependencies=[Depends(has_privilege("Link.Audit"))])
-async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
+@router.get(
+    "/{link_id}/available_filters",
+    response_model=List[schemas.LinkFilterDefinition],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Link.Audit"))],
+)
+async def get_filters(link: Link = Depends(dep_link)) -> List[schemas.LinkFilterDefinition]:
     """
     Return all filters available for a given link.
 
