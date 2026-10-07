@@ -168,6 +168,21 @@ class TestImageRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 5  # 4 valid images uploaded before + 1 created
 
+    async def test_image_list_filter_by_name(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
+
+        image_name = os.path.basename(qcow2_image)
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name})
+        assert response.status_code == status.HTTP_200_OK
+        assert [i["filename"] for i in response.json()] == [image_name]
+
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name.upper()})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name, "image_type": "iou"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
     async def test_image_get(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)

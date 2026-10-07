@@ -156,6 +156,54 @@ class TestNodeRoutes:
         else:
             assert len(response.json()) == 0
 
+    @pytest.mark.parametrize(
+        "name, tags, expected_names",
+        (
+            (None, None, ["test", "test2"]),
+            ("test", None, ["test"]),
+            ("test2", None, ["test2"]),
+            ("TEST", None, []),
+            ("missing", None, []),
+            ("test", ["tag1"], ["test"]),
+            ("test", ["tag3"], []),
+            ("test2", ["tag3", "tag4"], ["test2"]),
+        ),
+    )
+    async def test_list_nodes_filter_by_name(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        name: Optional[str],
+        tags: Optional[list],
+        expected_names: list,
+    ) -> None:
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+
+        for node_name, node_tags in (("test", ["tag1", "tag2"]), ("test2", ["tag3", "tag4"])):
+            await client.post(
+                app.url_path_for("create_node", project_id=project.id),
+                json={
+                    "name": node_name,
+                    "node_type": "vpcs",
+                    "compute_id": "example.com",
+                    "tags": node_tags,
+                    "properties": {"startup_script": "echo test"},
+                },
+            )
+
+        params = {}
+        if name is not None:
+            params["name"] = name
+        if tags is not None:
+            params["tags"] = tags
+        response = await client.get(app.url_path_for("get_nodes", project_id=project.id), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        assert sorted(n["name"] for n in response.json()) == expected_names
+
     async def test_get_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
         response = MagicMock()

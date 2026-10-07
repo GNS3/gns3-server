@@ -164,6 +164,26 @@ class TestControllerProjectRoutes:
         projects = response.json()
         assert projects[0]["name"] == "test"
 
+    async def test_list_projects_filter_by_name(
+        self, app: FastAPI, client: AsyncClient, controller: Controller
+    ) -> None:
+
+        for name in ("test", "other"):
+            params = {"name": name, "project_id": str(uuid.uuid4())}
+            response = await client.post(app.url_path_for("create_project"), json=params)
+            assert response.status_code == status.HTTP_201_CREATED
+
+        response = await client.get(app.url_path_for("get_projects"), params={"name": "test"})
+        assert response.status_code == status.HTTP_200_OK
+        assert [p["name"] for p in response.json()] == ["test"]
+
+        response = await client.get(app.url_path_for("get_projects"), params={"name": "TEST"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+        response = await client.get(app.url_path_for("get_projects"))
+        assert len(response.json()) == 2
+
     async def test_get_project(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         response = await client.get(app.url_path_for("get_project", project_id=project.id))

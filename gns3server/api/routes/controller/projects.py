@@ -34,7 +34,7 @@ log = logging.getLogger()
 from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -78,11 +78,15 @@ def dep_project(project_id: UUID) -> Project:
 async def get_projects(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    name: Optional[str] = Query(None, description="Return only projects whose name exactly matches (case-sensitive)"),
 ) -> List[schemas.Project]:
     """
     Return all projects.
 
     Required privilege: Project.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the project name.
     """
 
     controller = Controller.instance()
@@ -91,7 +95,7 @@ async def get_projects(
 
     if current_user.is_superadmin:
         # super admin sees all projects
-        return [p.asdict() for p in controller.projects.values()]
+        return [p.asdict() for p in controller.projects.values() if name is None or p.name == name]
 
     # Batch ACE + resource pool check (3 DB queries regardless of project count)
     all_project_ids = list(controller.projects.keys())
@@ -102,6 +106,8 @@ async def get_projects(
     # Step 2: Filter direct ACE projects by created_by
     # Direct project sharing is only available through resource pools
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in direct_ace_ids and p.created_by == current_user.username:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
@@ -109,6 +115,8 @@ async def get_projects(
 
     # Step 3: Resource pool projects (no created_by filter)
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in pool_accessible_ids:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
