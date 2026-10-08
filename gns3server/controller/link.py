@@ -54,7 +54,9 @@ FILTERS = [
         "type": "packet_loss",
         "name": "Packet loss",
         "description": "The percentage represents the chance for a packet to be lost. The optional correlation "
-        "(kernel-datapath links only) makes consecutive losses dependent, like a bursty real network",
+        "(kernel-datapath links only) makes consecutive losses dependent, like a bursty real network. "
+        "Kernel caveat: a chance at or below the correlation value collapses toward zero effective loss "
+        "(netem correlated-RNG bias) — use gemodel for bursty loss at a known mean rate",
         "parameters": [
             {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
             {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},

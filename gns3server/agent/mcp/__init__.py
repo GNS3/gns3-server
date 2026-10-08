@@ -808,7 +808,10 @@ async def link_update(
       * frequency_drop: [N] - Drop every Nth packet (N: -1 to 32767; -1 = drop
         everything). Exact on kernel links (eBPF counter)
       * packet_loss: [chance, correl?] - Loss percentage (0-100); correl (K)
-        makes consecutive losses dependent (bursty)
+        makes consecutive losses dependent (bursty). CAVEAT: the kernel netem
+        correl suppresses small rates — a chance below ~the correl value drops
+        almost nothing (1% + correl 25% ≈ zero loss); use gemodel for bursty
+        loss at a known mean rate
       * delay: [ms, jitter?, distribution?] - Latency 1-32767 ms, jitter 0-32767
         ms; distribution (K) one of uniform|normal|pareto|paretonormal, needs
         jitter > 0
