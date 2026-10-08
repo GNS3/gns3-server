@@ -20,7 +20,11 @@ MCP tool handlers for GNS3 drawing management.
 """
 
 import logging
+import re
+from math import ceil
 from typing import Any
+from xml.etree import ElementTree as ET
+from xml.sax.saxutils import escape
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +71,101 @@ def create_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> 
     }
     result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
     return {"message": "Drawing created", "drawing": result}
+
+
+# ── Text drawing ───────────────────────────────────────────────────────────
+
+# The Web UI renders font-size as pt (1pt = 4/3 px) and monospace glyphs advance
+# ~0.6em, so one character is ~0.8 x font_size in canvas pixels. Proportional
+# fonts get a wider worst-case factor so the selection box does not clip the text.
+_MONOSPACE_CHAR_FACTOR = 0.8
+_PROPORTIONAL_CHAR_FACTOR = 1.0
+# The Web UI stacks lines at dy=1.4em, i.e. 1.4 x 4/3 ~ 1.87 px per pt of font size.
+_LINE_HEIGHT_FACTOR = 1.9
+_MAX_TEXT_LENGTH = 500
+
+_COLOR_RE = re.compile(r"^#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
+_FONT_FAMILY_RE = re.compile(r"^[A-Za-z0-9 ,.'-]+$")
+
+
+def build_text_svg(
+    text: str, font_size: int = 13, color: str = "#000000", bold: bool = False, font_family: str = "monospace"
+) -> tuple[str, int, int, int]:
+    """
+    Build a Web UI compatible single <text> SVG for a canvas label.
+
+    The output mirrors what the Web UI itself serializes for text drawings:
+    root <svg height width> with one <text> child and no x/y (the Web UI parser
+    ignores them and positions the text itself).
+
+    :returns: (svg, width, height, line_height) with the computed drawing size
+    """
+
+    lines = text.split("\n")
+    factor = _MONOSPACE_CHAR_FACTOR if "monospace" in font_family.lower() else _PROPORTIONAL_CHAR_FACTOR
+    width = max(1, ceil(max(len(line) for line in lines) * font_size * factor))
+    line_height = ceil(font_size * _LINE_HEIGHT_FACTOR)
+    height = len(lines) * line_height
+    weight = "bold" if bold else "normal"
+    svg = (
+        f'<svg height="{height}" width="{width}">'
+        f'<text fill="{color}" fill-opacity="1.0" '
+        f'font-family="{font_family}" font-size="{font_size}" '
+        f'font-weight="{weight}">{escape(text)}</text></svg>'
+    )
+    # Fail loudly here: the controller silently keeps the previous (empty) SVG
+    # when handed an unparseable string of 500+ characters.
+    ET.fromstring(svg)
+    return svg, width, height, line_height
+
+
+def create_text_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    project_id = params.get("project_id")
+    text = params.get("text")
+    if not project_id:
+        return {"error": "project_id is required"}
+    if not text:
+        return {"error": "text is required"}
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip("\n")
+    if not text:
+        return {"error": "text is required"}
+    if len(text) > _MAX_TEXT_LENGTH:
+        return {"error": f"text is too long (max {_MAX_TEXT_LENGTH} characters)"}
+    if any(ord(ch) < 32 and ch != "\n" for ch in text) or "\x7f" in text:
+        return {"error": "text contains control characters (only newlines are allowed)"}
+
+    font_size = params.get("font_size", 13)
+    if isinstance(font_size, bool) or not isinstance(font_size, int) or not 1 <= font_size <= 200:
+        return {"error": "font_size must be an integer between 1 and 200"}
+    color = params.get("color", "#000000")
+    if not _COLOR_RE.match(color):
+        return {"error": "color must be a hex value like #RRGGBB"}
+    font_family = params.get("font_family", "monospace")
+    if not _FONT_FAMILY_RE.match(font_family):
+        return {"error": "font_family contains invalid characters (allowed: letters, digits, spaces, . ' -)"}
+
+    try:
+        svg, width, height, line_height = build_text_svg(
+            text, font_size=font_size, color=color, bold=params.get("bold", False), font_family=font_family
+        )
+    except ET.ParseError as e:
+        return {"error": f"generated SVG is not valid XML: {e}"}
+
+    conn = _get_connector(gns3_ctx)
+    data = {
+        "svg": svg,
+        "x": params.get("x", 0),
+        "y": params.get("y", 0),
+        "z": params.get("z", 1),
+    }
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {
+        "message": "Text drawing created",
+        "drawing": result,
+        "width": width,
+        "height": height,
+        "line_height": line_height,
+    }
 
 
 def get_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:

@@ -110,6 +110,7 @@ from .device_config import (
 )
 from .drawings import (
     create_drawing_handler,
+    create_text_drawing_handler,
     delete_drawing_handler,
     get_drawing_handler,
     get_drawings_handler,
@@ -1548,20 +1549,24 @@ async def drawing_create(
     locked: Annotated[bool, Field(description="Lock the drawing (default: false)")] = False,
     rotation: Annotated[int, Field(description="Rotation angle in degrees, -359 to 359 (default: 0)")] = 0,
 ) -> list[dict[str, Any]]:
-    """Create a new drawing (label, shape, or image) on a project canvas.
+    """Create a new drawing (label, shape, or image) on a project canvas from raw SVG.
 
-    GNS3 SVG rendering notes:
-    - <rect> MUST have a solid fill color (e.g. fill=\"#FF0000\") to render.
-      fill=\"none\" or fill=\"transparent\" will be invisible in the GUI.
-    - <ellipse> works correctly with or without fill.
-    - <line> and <text> work normally.
+    Web UI compatibility rules (it re-parses the SVG instead of rendering it raw):
+    - Root must be <svg width="W" height="H">; W/H set the selection box size and are required.
+    - Exactly ONE child element, from: text, image, rect, line, ellipse, path.
+      <g> is not supported; extra children are dropped (first recognized child wins).
+    - <path> is re-drawn as a freehand curve from the points in d — not a faithful render.
+    - <rect>: omit x/y (ignored, the rect sits at the drawing origin) and give a solid fill.
+    - <ellipse>: cx/cy are offsets inside the drawing box, not canvas coordinates.
+    - font-size is displayed in pt units by the Web UI (1pt = 4/3 px).
+
+    For text labels use drawing_create_text instead — it handles escaping and sizing.
 
     SVG examples:
-      Text label:  <svg><text x=\"10\" y=\"20\" font-size=\"14\">R1</text></svg>
-      Rectangle:   <svg><rect x=\"10\" y=\"10\" width=\"80\" height=\"50\" fill=\"#4A90D9\" stroke=\"black\"/></svg>
-      Ellipse:     <svg><ellipse cx=\"50\" cy=\"50\" rx=\"40\" ry=\"20\" fill=\"red\" stroke=\"black\"/></svg>
-      Line:        <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-width=\"2\"/></svg>
-      Dashed line: <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-dasharray=\"5,5\"/></svg>
+      Rectangle:   <svg width="80" height="50"><rect width="80" height="50" fill="#4A90D9"/></svg>
+      Ellipse:     <svg width="80" height="40"><ellipse cx="40" cy="20" rx="40" ry="20" fill="red"/></svg>
+      Line:        <svg width="100" height="100"><line x2="100" y2="100" stroke="black" stroke-width="2"/></svg>
+      Dashed line: <svg width="100" height="100"><line x2="100" y2="100" stroke="black" stroke-dasharray="5,5"/></svg>
     """
     return await asyncio.to_thread(
         _run_handler_sync,
@@ -1574,6 +1579,50 @@ async def drawing_create(
             "z": z,
             "locked": locked,
             "rotation": rotation,
+        },
+    )
+
+
+@mcp.tool()
+async def drawing_create_text(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    x: Annotated[int, Field(description="X coordinate of the text top-left corner on the canvas")],
+    y: Annotated[int, Field(description="Y coordinate of the text top-left corner on the canvas")],
+    text: Annotated[str, Field(description="Label text; newlines (\\n) start additional lines")],
+    font_size: Annotated[int, Field(description="Font size, 1-200 (default: 13)")] = 13,
+    color: Annotated[str, Field(description="Text color, hex like #RRGGBB (default: #000000)")] = "#000000",
+    bold: Annotated[bool, Field(description="Bold text (default: false)")] = False,
+    font_family: Annotated[str, Field(description="Font family name (default: monospace)")] = "monospace",
+    z: Annotated[int, Field(description="Z layer; 1 keeps text above links (default: 1)")] = 1,
+) -> list[dict[str, Any]]:
+    """Add a text label to a project canvas.
+
+    The SVG is assembled server-side in the Web UI compatible format; prefer this
+    over hand-writing SVG for drawing_create.
+
+    - XML characters (& < >) are escaped automatically.
+    - Multi-line: embed newlines (\\n) in text; each line renders below the previous one.
+    - The drawing width/height are computed from the text and returned, so labels
+      can be laid out without guessing the selection box size.
+    - Constraints: color must be hex like #RRGGBB; font_family accepts plain names
+      (letters, digits, spaces, . ' -); text capped at 500 characters.
+
+    Example: bold red label at (100, 80):
+        drawing_create_text(project_id="demo", x=100, y=80, text="R1 management", color="#CC0000", bold=True)
+    """
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_text_drawing_handler,
+        {
+            "project_id": project_id,
+            "text": text,
+            "x": x,
+            "y": y,
+            "z": z,
+            "font_size": font_size,
+            "color": color,
+            "bold": bold,
+            "font_family": font_family,
         },
     )
 

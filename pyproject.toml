@@ -165,6 +165,8 @@ extend-immutable-calls = [
 "gns3server/agent/gns3_copilot/utils/parse_tool_content.py" = ["C901", "DTZ003"]
 "gns3server/agent/mcp/__init__.py" = ["RUF003"]
 "gns3server/agent/mcp/device_config.py" = ["E741"]
+# Parses self-generated SVG (validated inputs) like controller/drawing.py does.
+"gns3server/agent/mcp/drawings.py" = ["S314"]
 "gns3server/agent/web_wireshark/manager.py" = ["C901"]
 "gns3server/agent/web_wireshark/setup_wireshark_image.py" = ["PLW1510", "S603", "S607"]
 "gns3server/agent/web_wireshark/stats.py" = ["ASYNC221", "PLW1510", "S603", "S607"]
@@ -234,6 +236,7 @@ extend-immutable-calls = [
 "scripts/extract_mermaid.py" = ["C901", "PLW1510", "S603", "S607"]
 "scripts/tag.py" = ["S603", "S607"]
 "scripts/welcome.py" = ["C901", "E722", "PLW1510", "S108", "S112", "S603", "S605", "S606", "S607"]
+"tests/agent/mcp/test_drawings.py" = ["S314"]
 "tests/agent/mcp/test_handlers.py" = ["B905"]
 "tests/agent/mcp/test_tool_params.py" = ["C901"]
 "tests/api/test_openapi_spec.py" = ["S603"]

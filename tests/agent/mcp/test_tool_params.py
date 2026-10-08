@@ -81,6 +81,7 @@ HANDLER_FILES = {
     "restore_snapshot_handler": "snapshots.py",
     "get_drawings_handler": "drawings.py",
     "create_drawing_handler": "drawings.py",
+    "create_text_drawing_handler": "drawings.py",
     "get_drawing_handler": "drawings.py",
     "update_drawing_handler": "drawings.py",
     "delete_drawing_handler": "drawings.py",
