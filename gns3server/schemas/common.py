@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,6 +26,11 @@ class ErrorMessage(BaseModel):
     """
 
     message: str
+    code: Optional[str] = Field(
+        None,
+        description="Stable machine-readable error code, for example port_in_use or node_not_found",
+    )
+    details: Optional[dict[str, Any]] = Field(None, description="Optional structured data about the error")
 
 
 class NodeStatus(str, Enum):
@@ -36,6 +41,8 @@ class NodeStatus(str, Enum):
     stopped = "stopped"
     started = "started"
     suspended = "suspended"
+    starting = "starting"
+    stopping = "stopping"
 
 
 class CustomAdapter(BaseModel):

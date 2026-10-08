@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import contextlib
 import copy
 import html
 import logging
@@ -134,6 +135,8 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
+        self._status_changed = asyncio.Event()
+        self._transition = None
         self._template_id = template_id
         self._x = 0
         self._y = 0
@@ -785,7 +788,7 @@ class Node:
             elif key == "command_line":
                 self._command_line = value
             elif key == "status":
-                self._status = value
+                self._set_status(value)
             elif key == "console_type":
                 self._console_type = value
             elif key == "aux_type":
@@ -901,6 +904,30 @@ class Node:
     async def destroy(self):
         await self.delete()
 
+    @contextlib.asynccontextmanager
+    async def _transitioning(self, transition):
+        """
+        Report a transitional status while a lifecycle call is in flight
+        """
+
+        self._transition = transition
+        self.project.emit_notification("node.updated", self.asdict())
+        try:
+            yield
+        finally:
+            self._transition = None
+
+    async def wait_for_status(self, status):
+        """
+        Wait until the controller side status of the node matches
+
+        :param status: expected status
+        """
+
+        while self._status != status:
+            self._status_changed.clear()
+            await self._status_changed.wait()
+
     async def start(self, data=None):
         """
         Start a node
@@ -924,32 +951,56 @@ class Node:
                     f"Cannot start node '{self._name}': {len(failed_links)} deferred link(s) "
                     "could not be restored. Please try again."
                 )
-        try:
-            # For IOU: we need to send the licence everytime we start a node
-            if self.node_type == "iou":
-                license_check = self._project.controller.iou_license.get("license_check", True)
-                iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                await self.post(
-                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
-                )
-            else:
-                await self.post("/start", data=data, timeout=240)
-        except asyncio.TimeoutError:
-            raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+        async with self._transitioning("starting"):
+            try:
+                # For IOU: we need to send the licence everytime we start a node
+                if self.node_type == "iou":
+                    license_check = self._project.controller.iou_license.get("license_check", True)
+                    iourc_content = self._project.controller.iou_license.get("iourc_content", None)
+                    await self.post(
+                        "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+                    )
+                else:
+                    await self.post("/start", data=data, timeout=240)
+            except asyncio.TimeoutError:
+                raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+        self._confirm_status("started")
 
-    async def stop(self):
+    async def stop(self, strict=False):
         """
         Stop a node
+
+        :param strict: Raise the errors reported by the compute instead of ignoring them
         """
         if self.missing_image:
             return
-        try:
-            await self.post("/stop", timeout=240, dont_connect=True)
-        # We don't care if a node is down at this step
-        except (ComputeError, ControllerError):
-            pass
-        except asyncio.TimeoutError:
-            raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
+        stopped = False
+        async with self._transitioning("stopping"):
+            try:
+                await self.post("/stop", timeout=240, dont_connect=True)
+                stopped = True
+            except (ComputeError, ControllerError):
+                # We don't care if a node is down at this step
+                if strict:
+                    raise
+            except asyncio.TimeoutError:
+                raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
+        if stopped:
+            self._confirm_status("stopped")
+
+    def _set_status(self, status):
+        self._status = status
+        self._status_changed.set()
+
+    def _confirm_status(self, status):
+        """
+        Record the state reached once the compute accepted a lifecycle call,
+        without waiting for the asynchronous compute notification
+        """
+
+        if not self.is_always_running():
+            self._set_status(status)
+        self.project.emit_notification("node.updated", self.asdict())
 
     async def suspend(self):
         """
@@ -958,7 +1009,8 @@ class Node:
         try:
             await self.post("/suspend", timeout=240)
         except asyncio.TimeoutError:
-            raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
+            raise ControllerTimeoutError(f"Timeout when suspending {self._name}")
+        self._confirm_status("suspended")
 
     async def reload(self):
         """
@@ -968,6 +1020,7 @@ class Node:
             await self.post("/reload", timeout=240)
         except asyncio.TimeoutError:
             raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
+        self._confirm_status("started")
 
     async def reset_console(self):
         """
@@ -1142,6 +1195,27 @@ class Node:
                 return port
         return None
 
+    def get_port_by_name(self, name):
+        """
+        Return the port with this name or None if the port is not found
+        """
+        for port in self.ports:
+            if port.name == name:
+                return port
+        return None
+
+    def get_free_port(self, link_type=None):
+        """
+        Return the lowest free port, optionally restricted to a link type,
+        or None if there is no such port
+        """
+        free_ports = [
+            port for port in self.ports if port.link is None and (link_type is None or port.link_type == link_type)
+        ]
+        if not free_ports:
+            return None
+        return min(free_ports, key=lambda port: (port.adapter_number, port.port_number))
+
     def _list_ports(self):
         """
         Generate the list of port display in the client
@@ -1280,7 +1354,7 @@ class Node:
         additional_data = {
             "project_id": self._project.id,
             "command_line": self._command_line,
-            "status": self._status,
+            "status": self._transition or self._status,
             "console_host": str(self._compute.console_host),
             "node_directory": self._node_directory,
             "ports": [port.asdict() for port in self.ports],

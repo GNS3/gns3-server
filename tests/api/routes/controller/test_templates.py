@@ -20,6 +20,7 @@ import os
 import unittest.mock
 import uuid
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from fastapi import FastAPI, status
@@ -88,6 +89,27 @@ class TestTemplateRoutes:
                 assert len(response.json()) == 1
         else:
             assert len(response.json()) == 0
+
+    @pytest.mark.parametrize(
+        "name, tags, expected_names",
+        (
+            ("VPCS_TEST", None, ["VPCS_TEST"]),
+            ("vpcs_test", None, []),
+            ("missing", None, []),
+            ("VPCS_TEST", ["tag1"], ["VPCS_TEST"]),
+            ("VPCS_TEST", ["tag42"], []),
+        ),
+    )
+    async def test_template_list_filter_by_name(
+        self, app: FastAPI, client: AsyncClient, name: str, tags: Optional[list], expected_names: list
+    ) -> None:
+
+        params = {"name": name}
+        if tags is not None:
+            params["tags"] = tags
+        response = await client.get(app.url_path_for("get_templates"), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        assert [t["name"] for t in response.json()] == expected_names
 
     async def test_template_get(self, app: FastAPI, client: AsyncClient) -> None:
 
