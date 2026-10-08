@@ -17,7 +17,7 @@
 # General schemas
 from .common import ErrorMessage
 from .config import ServerConfig
-from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionV8
+from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionCreate, ApplianceVersionV8
 from .controller.computes import (
     AutoIdlePC,
     Compute,
@@ -42,6 +42,7 @@ from .controller.links import (
     LinkFilterParameter,
     LinkFilters,
     LinkFilterType,
+    LinkIfaceInfo,
     LinkUpdate,
     MarkerCreate,
     MarkerDefinitionCreate,
@@ -168,6 +169,7 @@ __all__ = [
     "ApiKeyCreate",
     "Appliance",
     "ApplianceVersion",
+    "ApplianceVersionCreate",
     "ApplianceVersionV8",
     "AutoIdlePC",
     "BatchNIOCreate",
@@ -255,6 +257,7 @@ __all__ = [
     "LinkFilterParameter",
     "LinkFilterType",
     "LinkFilters",
+    "LinkIfaceInfo",
     "LinkUpdate",
     "LoggedInUserUpdate",
     "MarkerCreate",

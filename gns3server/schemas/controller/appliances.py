@@ -20,7 +20,7 @@ from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Discriminator, EmailStr, Field, Tag
+from pydantic import AnyUrl, BaseModel, BeforeValidator, Discriminator, EmailStr, Field, Tag
 
 from ..common import ExtraConfig
 
@@ -646,6 +646,39 @@ class ApplianceVersionV8(BaseModel):
     default_password: Optional[str] = Field(None, title="Default password for the version")
     symbol: Optional[str] = Field(None, title="An optional symbol for the version")
     images: Optional[ApplianceVersionImages] = Field(None, title="Images used for this version")
+
+
+_V8_VERSION_ONLY_FIELDS = frozenset(set(ApplianceVersionV8.model_fields) - set(ApplianceVersion.model_fields))
+
+
+class ApplianceVersionCreateV1_6(ApplianceVersion):
+    """Request body to add a version to an appliance with registry version 1-6"""
+
+    registry_version: Literal[1, 2, 3, 4, 5, 6] = Field(
+        1, title="Version of the registry compatible with the appliance receiving the version"
+    )
+
+
+class ApplianceVersionCreateV8(ApplianceVersionV8):
+    """Request body to add a version to an appliance with registry version 8"""
+
+    registry_version: Literal[8] = Field(
+        8, title="Version of the registry compatible with the appliance receiving the version"
+    )
+
+
+def _infer_version_registry_version(data):
+    if isinstance(data, dict) and "registry_version" not in data:
+        data = dict(data)
+        data["registry_version"] = 8 if _V8_VERSION_ONLY_FIELDS.intersection(data) else 1
+    return data
+
+
+ApplianceVersionCreate = Annotated[
+    Union[ApplianceVersionCreateV1_6, ApplianceVersionCreateV8],
+    BeforeValidator(_infer_version_registry_version),
+    Discriminator("registry_version"),
+]
 
 
 # ============================================================================

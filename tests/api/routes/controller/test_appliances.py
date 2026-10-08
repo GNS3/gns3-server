@@ -101,3 +101,33 @@ class TestApplianceRoutes:
             app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version
         )
         assert response.status_code == status.HTTP_409_CONFLICT
+
+    async def test_add_v8_version_appliance(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
+        new_version = {"name": "v8-99G", "category": "guest", "images": {"hda_disk_image": "empty99G.qcow2"}}
+        response = await client.post(
+            app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert new_version in response.json()["versions"]
+
+    async def test_add_version_appliance_with_registry_version(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
+        stored_version = {"name": "explicit-99G", "images": {"hda_disk_image": "empty99G.qcow2"}}
+        response = await client.post(
+            app.url_path_for("add_appliance_version", appliance_id=appliance_id),
+            json=dict(stored_version, registry_version=3),
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert stored_version in response.json()["versions"]
+
+    async def test_add_version_appliance_unknown_registry_version(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
+        response = await client.post(
+            app.url_path_for("add_appliance_version", appliance_id=appliance_id),
+            json={"name": "bad", "registry_version": 7, "images": {"hda_disk_image": "empty99G.qcow2"}},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

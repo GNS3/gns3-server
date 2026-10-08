@@ -39,6 +39,7 @@ from gns3server.agent import MCP_AVAILABLE
 from gns3server.api.errors import customize_openapi_errors, error_response
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
+from gns3server.config import Config
 from gns3server.controller.controller_error import (
     ComputeConflictError,
     ControllerBadRequestError,
@@ -49,6 +50,7 @@ from gns3server.controller.controller_error import (
     ControllerUnauthorizedError,
 )
 from gns3server.core import tasks
+from gns3server.version import __api_version__
 
 if MCP_AVAILABLE:
     from gns3server.agent import mcp
@@ -59,7 +61,7 @@ else:
 
     _mcp_router = APIRouter(prefix="/mcp", tags=["MCP"])
 
-    @_mcp_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
+    @_mcp_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
     async def mcp_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -84,15 +86,9 @@ def get_application() -> FastAPI:
     application = ControllerAPI(
         lifespan=tasks.lifespan,
         title="GNS3 controller API",
-        description="This page describes the public controller API for GNS3.\n\n"
-        "## Notification streams\n\n"
-        "Notifications are available as HTTP streams of newline delimited JSON objects (`GET /v3/notifications` and "
-        "`GET /v3/projects/{project_id}/notifications`) and as WebSockets sending one JSON object per text frame "
-        "(`/v3/notifications/ws`, `/v3/projects/{project_id}/notifications/ws` and "
-        "`/v3/projects/{project_id}/notifications/markers/ws`). "
-        "OpenAPI cannot describe WebSocket routes, they carry the same `Notification` messages as the HTTP streams. "
-        "Marker events (`marker.match`) are only sent on the markers WebSocket.",
-        version="3.0.0",
+        description="This page describes the public controller API for GNS3",
+        version=__api_version__,
+        servers=[{"url": "/"}],
         docs_url=None,
         redoc_url=None,
     )
@@ -111,7 +107,12 @@ def get_application() -> FastAPI:
     application.mount("/v3/compute", compute_api, name="compute")
 
     # Register MCP routes (stub returns 501 if MCP dependencies are not installed)
-    application.include_router(_mcp_router, prefix="/v3", tags=["MCP"])
+    application.include_router(
+        _mcp_router,
+        prefix="/v3",
+        tags=["MCP"],
+        include_in_schema=Config.instance().settings.Server.openapi_include_ai,
+    )
 
     return application
 

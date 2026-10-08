@@ -155,6 +155,9 @@ class ServerSettings(BaseModel):
         False, description="Local server mode, set by the --local command line argument (not meant to be set by hand)"
     )
     enable_http_auth: bool = Field(True, description="Enable compute HTTP authentication")
+    openapi_include_ai: bool = Field(
+        True, description="Include the AI Copilot, LLM and MCP routes in the generated OpenAPI specification"
+    )
     name: str = Field(
         f"{socket.gethostname()} (controller)",
         description="Server name, default is what is returned by socket.gethostname()",
