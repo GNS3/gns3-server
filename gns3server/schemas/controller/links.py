@@ -140,6 +140,17 @@ class LinkFilterParameter(BaseModel):
     unit: Optional[str] = None
 
 
+class LinkFilterInfo(BaseModel):
+    """
+    A packet filter that can be applied to a link.
+    """
+
+    type: str = Field(..., description="Filter identifier used as key in the link 'filters' property")
+    name: str
+    description: str
+    parameters: List[LinkFilterParameter]
+
+
 class LinkFilterDefinition(BaseModel):
     """
     Packet filter available on a link.
@@ -432,26 +443,3 @@ class LinkWiresharkRestart(BaseModel):
     """
 
     status: str
-
-
-class LinkFilterParameter(BaseModel):
-    """
-    A parameter of a packet filter.
-    """
-
-    name: str
-    type: str
-    minimum: Optional[int] = None
-    maximum: Optional[int] = None
-    unit: Optional[str] = None
-
-
-class LinkFilterInfo(BaseModel):
-    """
-    A packet filter that can be applied to a link.
-    """
-
-    type: str = Field(..., description="Filter identifier used as key in the link 'filters' property")
-    name: str
-    description: str
-    parameters: List[LinkFilterParameter]
