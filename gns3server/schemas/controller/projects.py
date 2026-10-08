@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 from uuid import UUID
@@ -111,8 +112,8 @@ class NodeFile(BaseModel):
 
     path: str = Field(..., description="File name")
     size: int = Field(..., description="File size in bytes")
-    created_at: str = Field(..., description="File creation time (ISO 8601)")
-    modified_at: str = Field(..., description="File modification time (ISO 8601)")
+    created_at: Optional[datetime] = Field(None, description="File creation time (ISO 8601)")
+    modified_at: Optional[datetime] = Field(None, description="File modification time (ISO 8601)")
     file_type: str = Field(..., description="File type determined by the file command")
 
 

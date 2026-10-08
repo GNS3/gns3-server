@@ -36,7 +36,12 @@ from gns3server.services.access_tickets import TICKET_PREFIX
 from .database import get_repository
 
 log = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/access/users/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/v3/access/users/login",
+    auto_error=False,
+    description="Send the access token as a bearer token. "
+    "An API key (gns3_<api_key_id>_<secret>) is also accepted as the bearer token.",
+)
 
 
 def _reject_refresh_token(token_data) -> None:

@@ -15,16 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Any
+
 
 class ControllerError(Exception):
-    def __init__(self, message: str, code: str | None = None):
+    default_code = "conflict"
+
+    def __init__(self, message: str, code: str | None = None, details: dict[str, Any] | None = None):
         super().__init__()
         self._message = message
-        self._code = code
-
-    @property
-    def code(self):
-        return self._code
+        self._code = code or self.default_code
+        self._details = details
 
     def __repr__(self):
         return self._message
@@ -32,30 +33,33 @@ class ControllerError(Exception):
     def __str__(self):
         return self._message
 
+    @property
+    def code(self) -> str:
+        return self._code
+
+    @property
+    def details(self) -> dict[str, Any] | None:
+        return self._details
+
 
 class ControllerNotFoundError(ControllerError):
-    def __init__(self, message: str):
-        super().__init__(message)
+    default_code = "not_found"
 
 
 class ControllerBadRequestError(ControllerError):
-    def __init__(self, message: str):
-        super().__init__(message)
+    default_code = "bad_request"
 
 
 class ControllerUnauthorizedError(ControllerError):
-    def __init__(self, message: str):
-        super().__init__(message)
+    default_code = "unauthorized"
 
 
 class ControllerForbiddenError(ControllerError):
-    def __init__(self, message: str):
-        super().__init__(message)
+    default_code = "forbidden"
 
 
 class ControllerTimeoutError(ControllerError):
-    def __init__(self, message: str):
-        super().__init__(message)
+    default_code = "timeout"
 
 
 class ComputeError(ControllerError):
@@ -70,8 +74,10 @@ class ComputeConflictError(ComputeError):
     :param response: compute JSON response
     """
 
+    default_code = "compute_conflict"
+
     def __init__(self, url, response):
-        super().__init__(response["message"])
+        super().__init__(response["message"], code=response.get("code"), details=response.get("details"))
         self._url = url
         self._response = response
 

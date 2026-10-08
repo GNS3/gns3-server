@@ -247,6 +247,43 @@ class TestLinkRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["nodes"][0]["label"]["x"] == 42
 
+    async def test_link_etag_and_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+        link_id = response.json()["link_id"]
+        url = app.url_path_for("get_link", project_id=project.id, link_id=link_id)
+
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert (await client.get(url)).headers["ETag"] == etag
+
+        response = await client.put(url, json={"show_filters_icon": False}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["ETag"] != etag
+        assert (await client.get(url)).headers["ETag"] == response.headers["ETag"]
+
+        response = await client.put(url, json={"show_filters_icon": True}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert (await client.get(url)).json()["show_filters_icon"] is False
+
+        response = await client.put(url, json={"show_filters_icon": True})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["show_filters_icon"] is True
+
     async def test_update_link_suspend(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
     ) -> None:
@@ -438,6 +475,97 @@ class TestLinkRoutes:
         assert mock.called
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == FILTERS
+
+    async def test_update_link_filters(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        filters = {
+            "frequency_drop": [50],
+            "packet_loss": [10],
+            "delay": [10, 5],
+            "corrupt": [3],
+            "bpf": ["icmp"],
+        }
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": filters}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == filters
+        assert link.filters == filters
+
+    async def test_update_link_disabled_filters(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"delay": [0, 0], "packet_loss": [0], "corrupt": [], "bpf": [""]}},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == {}
+
+    @pytest.mark.parametrize(
+        "filters",
+        [
+            {"packet_loss": [101]},
+            {"packet_loss": [-1]},
+            {"corrupt": [101]},
+            {"frequency_drop": [-2]},
+            {"frequency_drop": [32768]},
+            {"delay": [32768, 0]},
+            {"delay": [10, -1]},
+            {"packet_loss": [1, 2]},
+            {"bpf": [1]},
+            {"packet_loss": ["abc"]},
+        ],
+    )
+    async def test_update_link_invalid_filter_values(
+        self, app: FastAPI, client: AsyncClient, project: Project, filters: dict
+    ) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": filters}
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert "message" in response.json()
+        assert link.filters == {}
+
+    async def test_update_link_unknown_filter_type(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"unknown": [1]}},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert "message" in response.json()
+        assert link.filters == {}
+
+    async def test_update_link_invalid_delay_latency(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": {"delay": [0, 5]}}
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+    async def test_openapi_link_filters(self, app: FastAPI) -> None:
+
+        schemas = app.openapi()["components"]["schemas"]
+        link_filters = schemas["LinkFilters"]
+        assert link_filters["additionalProperties"] is False
+        assert set(link_filters["properties"]) == {"frequency_drop", "packet_loss", "delay", "corrupt", "bpf"}
+        assert schemas["LinkFilterDefinition"]["properties"]["parameters"]["items"] == {
+            "$ref": "#/components/schemas/LinkFilterParameter"
+        }
+        path = "/v3/projects/{project_id}/links/{link_id}/available_filters"
+        responses = app.openapi()["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert responses["items"] == {"$ref": "#/components/schemas/LinkFilterDefinition"}
 
     async def test_get_udp_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
         """
