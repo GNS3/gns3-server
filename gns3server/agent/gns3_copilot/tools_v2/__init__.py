@@ -40,6 +40,7 @@ Main modules:
 - vpcs_tools_netmiko: VPCS device configuration tool using Netmiko
 - gns3_create_node: GNS3 node creation tool
 - gns3_create_link: GNS3 link creation tool
+- gns3_create_drawing: GNS3 canvas drawing tools (text, rectangle, ellipse)
 - gns3_start_node: GNS3 node startup tool (immediate return, no boot wait)
 - gns3_wait: Wait timer tool (pair with node start to let devices boot)
 - gns3_get_node_temp: GNS3 template retrieval tool
@@ -54,6 +55,11 @@ Author: Yue Guobin (岳国宾)
 # Import main tool classes
 from .config_tools_nornir import ExecuteMultipleDeviceConfigCommands
 from .display_tools_nornir import ExecuteMultipleDeviceCommands
+from .gns3_create_drawing import (
+    GNS3CreateEllipseDrawingTool,
+    GNS3CreateRectangleDrawingTool,
+    GNS3CreateTextDrawingTool,
+)
 from .gns3_create_link import GNS3LinkTool
 from .gns3_create_node import GNS3CreateNodeTool
 from .gns3_get_node_temp import GNS3TemplateTool
@@ -81,7 +87,10 @@ __url__ = "https://github.com/yueguobin/gns3-copilot"
 __all__ = [
     "ExecuteMultipleDeviceCommands",
     "ExecuteMultipleDeviceConfigCommands",
+    "GNS3CreateEllipseDrawingTool",
     "GNS3CreateNodeTool",
+    "GNS3CreateRectangleDrawingTool",
+    "GNS3CreateTextDrawingTool",
     "GNS3LinkTool",
     "GNS3PacketFilterTool",
     "GNS3StartNodeQuickTool",
