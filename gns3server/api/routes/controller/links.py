@@ -20,7 +20,7 @@ API routes for links.
 
 import logging
 import os
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
 import aiohttp
