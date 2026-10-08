@@ -112,7 +112,6 @@ from .device_config import (
     vpcs_config_set_handler,
 )
 from .drawings import (
-    create_drawing_handler,
     delete_drawing_handler,
     get_drawing_handler,
     get_drawings_handler,
@@ -1542,50 +1541,6 @@ async def drawing_list(
 
 
 @mcp.tool()
-async def drawing_create(
-    project_id: Annotated[str, Field(description="Project name or UUID")],
-    svg: Annotated[str, Field(description="SVG content for the drawing")],
-    x: Annotated[int, Field(description="X coordinate (default: 0)")] = 0,
-    y: Annotated[int, Field(description="Y coordinate (default: 0)")] = 0,
-    z: Annotated[int, Field(description="Z layer (default: 0)")] = 0,
-    locked: Annotated[bool, Field(description="Lock the drawing (default: false)")] = False,
-    rotation: Annotated[int, Field(description="Rotation angle in degrees, -359 to 359 (default: 0)")] = 0,
-) -> list[dict[str, Any]]:
-    """Create a new drawing (label, shape, or image) on a project canvas from raw SVG.
-
-    Web UI compatibility rules (it re-parses the SVG instead of rendering it raw):
-    - Root must be <svg width="W" height="H">; W/H set the selection box size and are required.
-    - Exactly ONE child element, from: text, image, rect, line, ellipse, path.
-      <g> is not supported; extra children are dropped (first recognized child wins).
-    - <path> is re-drawn as a freehand curve from the points in d — not a faithful render.
-    - <rect>: omit x/y (ignored, the rect sits at the drawing origin) and give a solid fill.
-    - <ellipse>: cx/cy are offsets inside the drawing box, not canvas coordinates.
-    - font-size is displayed in pt units by the Web UI (1pt = 4/3 px).
-
-    For text labels use drawing_create_text instead — it handles escaping and sizing.
-
-    SVG examples:
-      Rectangle:   <svg width="80" height="50"><rect width="80" height="50" fill="#4A90D9"/></svg>
-      Ellipse:     <svg width="80" height="40"><ellipse cx="40" cy="20" rx="40" ry="20" fill="red"/></svg>
-      Line:        <svg width="100" height="100"><line x2="100" y2="100" stroke="black" stroke-width="2"/></svg>
-      Dashed line: <svg width="100" height="100"><line x2="100" y2="100" stroke="black" stroke-dasharray="5,5"/></svg>
-    """
-    return await asyncio.to_thread(
-        _run_handler_sync,
-        create_drawing_handler,
-        {
-            "project_id": project_id,
-            "svg": svg,
-            "x": x,
-            "y": y,
-            "z": z,
-            "locked": locked,
-            "rotation": rotation,
-        },
-    )
-
-
-@mcp.tool()
 async def drawing_create_text(
     project_id: Annotated[str, Field(description="Project name or UUID")],
     x: Annotated[int, Field(description="X coordinate of the text top-left corner on the canvas")],
@@ -1599,8 +1554,8 @@ async def drawing_create_text(
 ) -> list[dict[str, Any]]:
     """Add a text label to a project canvas.
 
-    The SVG is assembled server-side in the Web UI compatible format; prefer this
-    over hand-writing SVG for drawing_create.
+    The SVG is assembled server-side in the Web UI compatible format
+    (validation, escaping and sizing included).
 
     - XML characters (& < >) are escaped automatically.
     - Multi-line: embed newlines (\\n) in text; each line renders below the previous one.
@@ -1647,8 +1602,8 @@ async def drawing_create_rectangle(
 ) -> list[dict[str, Any]]:
     """Add a rectangle to a project canvas.
 
-    The SVG is assembled server-side in the Web UI compatible format; prefer this
-    over hand-writing SVG for drawing_create.
+    The SVG is assembled server-side in the Web UI compatible format
+    (validation included).
 
     - fill "none" renders an outline-only box (stroke recommended then).
     - Border attributes are only emitted when stroke is given.
