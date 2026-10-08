@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 from unittest.mock import MagicMock
 
 import pytest
@@ -417,3 +418,67 @@ async def test_update_link_style(project, compute):
     }
     link._project.emit_notification.assert_called_with("link.updated", link.asdict())
     assert project.dump.called
+
+
+@pytest.mark.asyncio
+async def test_add_node_concurrent_same_port(project, compute):
+    project.dump = MagicMock()
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4), EthernetPort("E1", 0, 0, 5)]
+    node3 = Node(project, compute, "node3", node_type="qemu")
+    node3._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    async def slow_create():
+        await asyncio.sleep(0)
+
+    async def connect(other, other_port):
+        link = Link(project)
+        link.create = slow_create
+        try:
+            await link.add_node(other, 0, other_port)
+            await link.add_node(node1, 0, 4)
+        except ControllerError as e:
+            return e
+        return link
+
+    results = await asyncio.gather(connect(node2, 4), connect(node3, 4))
+    errors = [r for r in results if isinstance(r, ControllerError)]
+    assert len(errors) == 1
+    assert errors[0].code == "port_in_use"
+    assert node1._ports[0].link in results
+
+
+@pytest.mark.asyncio
+async def test_add_node_create_failure_releases_ports(project, compute):
+    project.dump = MagicMock()
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock(side_effect=ControllerError("boom"))
+    await link.add_node(node1, 0, 4)
+    with pytest.raises(ControllerError):
+        await link.add_node(node2, 0, 4)
+
+    assert node1._ports[0].link is None
+    assert node2._ports[0].link is None
+    assert not node1.links
+    assert not node2.links
+
+
+def test_node_get_port_by_name_and_free_port(project, compute):
+    node = Node(project, compute, "node1", node_type="qemu")
+    node._ports = [EthernetPort("E1", 0, 0, 1), EthernetPort("E0", 0, 0, 0), SerialPort("S0", 0, 1, 0)]
+
+    assert node.get_port_by_name("E0") is node._ports[1]
+    assert node.get_port_by_name("nope") is None
+    assert node.get_free_port() is node._ports[1]
+    assert node.get_free_port("serial") is node._ports[2]
+    node._ports[1].link = object()
+    assert node.get_free_port("ethernet") is node._ports[0]
+    node._ports[0].link = object()
+    assert node.get_free_port("ethernet") is None

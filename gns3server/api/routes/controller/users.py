@@ -65,12 +65,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = schemas.Token(
-        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
-        token_type="bearer",
-        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
-    )
-    return token
+    return auth_service.create_token_response(user)
 
 
 @router.post("/authenticate", response_model=schemas.Token)
@@ -91,12 +86,7 @@ async def authenticate(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = schemas.Token(
-        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
-        token_type="bearer",
-        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
-    )
-    return token
+    return auth_service.create_token_response(user)
 
 
 @router.post("/refresh", response_model=schemas.Token)
@@ -135,11 +125,7 @@ async def refresh_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return schemas.Token(
-        access_token=auth_service.create_access_token(user.username, token_version=user.token_version),
-        token_type="bearer",
-        refresh_token=auth_service.create_refresh_token(user.username, token_version=user.token_version),
-    )
+    return auth_service.create_token_response(user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Annotated, List, Literal, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Discriminator, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..update import PartialUpdateModel
 from .labels import Label
@@ -33,6 +33,32 @@ class LinkNode(BaseModel):
     adapter_number: int
     port_number: int
     label: Optional[Label] = None
+
+
+class LinkNodeCreate(BaseModel):
+    """
+    Link node data for link creation.
+
+    The port is given either by adapter_number and port_number, by port_name
+    or by port set to "auto" (first free compatible port).
+    """
+
+    node_id: UUID
+    adapter_number: Optional[int] = None
+    port_number: Optional[int] = None
+    port_name: Optional[str] = Field(None, description="Name of the port on the node")
+    port: Optional[Literal["auto"]] = Field(None, description='Use "auto" to select the first free compatible port')
+    label: Optional[Label] = None
+
+    @model_validator(mode="after")
+    def check_port_selector(self):
+        numbered = self.adapter_number is not None or self.port_number is not None
+        if numbered and (self.adapter_number is None or self.port_number is None):
+            raise ValueError("adapter_number and port_number must be given together")
+        forms = sum([numbered, self.port_name is not None, self.port is not None])
+        if forms != 1:
+            raise ValueError("exactly one of adapter_number and port_number, port_name or port must be given")
+        return self
 
 
 class LinkType(str, Enum):
@@ -54,6 +80,77 @@ class LinkStyle(BaseModel):
     control_offset: Optional[Tuple[float, float]] = None
 
 
+class LinkFilterType(str, Enum):
+    """
+    Packet filter type.
+    """
+
+    frequency_drop = "frequency_drop"
+    packet_loss = "packet_loss"
+    delay = "delay"
+    corrupt = "corrupt"
+    bpf = "bpf"
+
+
+class LinkFilters(BaseModel):
+    """
+    Packet filters applied on a link. Each filter is an array of positional values.
+    A filter set to an empty array or to its disabled value (0, 0 for delay, empty text for bpf) is not applied.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    frequency_drop: Optional[List[Annotated[int, Field(ge=-1, le=32767)]]] = Field(
+        None,
+        max_length=1,
+        description="[frequency]: -1 drops every packet, N > 0 drops every Nth packet, 0 disables the filter",
+    )
+    packet_loss: Optional[List[Annotated[int, Field(ge=0, le=100)]]] = Field(
+        None,
+        max_length=1,
+        description="[chance]: percentage chance for a packet to be lost, 0 disables the filter",
+    )
+    delay: Optional[List[Annotated[int, Field(ge=0, le=32767)]]] = Field(
+        None,
+        max_length=2,
+        description="[latency, jitter] in milliseconds: latency must be 1 to 32767 unless both values are 0, "
+        "which disables the filter; jitter is 0 to 32767",
+    )
+    corrupt: Optional[List[Annotated[int, Field(ge=0, le=100)]]] = Field(
+        None,
+        max_length=1,
+        description="[chance]: percentage chance for a packet to be corrupted, 0 disables the filter",
+    )
+    bpf: Optional[List[str]] = Field(
+        None,
+        max_length=1,
+        description="[expressions]: BPF expressions, one per line, matching packets are dropped",
+    )
+
+
+class LinkFilterParameter(BaseModel):
+    """
+    Parameter of a packet filter.
+    """
+
+    name: str
+    type: Literal["int", "text"]
+    minimum: Optional[int] = None
+    maximum: Optional[int] = None
+    unit: Optional[str] = None
+
+
+class LinkFilterDefinition(BaseModel):
+    """
+    Packet filter available on a link.
+    """
+
+    type: LinkFilterType
+    name: str
+    description: str
+    parameters: List[LinkFilterParameter]
+
+
 class LinkBase(BaseModel):
     """
     Link data.
@@ -62,7 +159,7 @@ class LinkBase(BaseModel):
     nodes: Optional[List[LinkNode]] = Field(None, min_length=0, max_length=2)
     suspend: Optional[bool] = None
     link_style: Optional[LinkStyle] = None
-    filters: Optional[dict] = None
+    filters: Optional[LinkFilters] = None
     markers: Optional[dict] = Field(
         None, description="Traffic-insight markers on this link: name → {bpf, tag, enabled}"
     )
@@ -71,7 +168,8 @@ class LinkBase(BaseModel):
 
 class LinkCreate(LinkBase):
     link_id: UUID = Field(default_factory=uuid4)
-    nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
+    # LinkNodeCreate narrows the port selector, so it cannot be a LinkNode subclass
+    nodes: List[LinkNodeCreate] = Field(..., min_length=2, max_length=2)  # type: ignore[assignment]
 
 
 class LinkUpdate(PartialUpdateModel, LinkBase):

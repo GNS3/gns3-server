@@ -106,7 +106,7 @@ async def delete_snapshot(
 
 @router.post(
     "/{snapshot_id}/restore",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.Project,
     dependencies=[Depends(has_privilege("Snapshot.Restore"))],
 )
