@@ -34,7 +34,11 @@ from fastapi.routing import APIRoute
 from gns3server import schemas
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerForbiddenError
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerForbiddenError,
+    ControllerTimeoutError,
+)
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.db.repositories.rbac import RbacRepository
@@ -363,46 +367,88 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
     return new_node.asdict()
 
 
+LIFECYCLE_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_408_REQUEST_TIMEOUT: {"model": schemas.ErrorMessage, "description": "Timeout waiting for the node"},
+}
+
+
+async def _run_lifecycle(
+    node: Node, action: Callable, target: str, wait: bool, timeout: int, tolerate_unsupported: bool = True
+) -> dict:
+    async def _run():
+        try:
+            await action()
+        except HTTPException as e:
+            if not tolerate_unsupported or not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+                raise
+            return
+        if wait and not node.is_always_running():
+            await node.wait_for_status(target)
+
+    if not wait:
+        await _run()
+        return node.asdict()
+    try:
+        await asyncio.wait_for(_run(), timeout)
+    except asyncio.TimeoutError:
+        raise ControllerTimeoutError(f"Timeout when waiting for {node.name} to be {target}")
+    return node.asdict()
+
+
 @router.post(
-    "/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/start",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep_node)) -> None:
+async def start_node(
+    start_data: Optional[dict] = None,
+    wait: bool = Query(False, description="Return only when the node status is 'started'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Start a node.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.start(data=start_data)
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, lambda: node.start(data=start_data), "started", wait, timeout)
 
 
 @router.post(
-    "/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/stop",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def stop_node(node: Node = Depends(dep_node)) -> None:
+async def stop_node(
+    wait: bool = Query(False, description="Return only when the node status is 'stopped'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Stop a node.
+
+    Errors reported while stopping are returned to the caller.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.stop()
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, lambda: node.stop(strict=True), "stopped", wait, timeout)
 
 
 @router.post(
     "/{node_id}/suspend",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
     dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def suspend_node(node: Node = Depends(dep_node)) -> None:
+async def suspend_node(
+    wait: bool = Query(False, description="Return only when the node status is 'suspended'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Suspend a node.
 
@@ -412,24 +458,27 @@ async def suspend_node(node: Node = Depends(dep_node)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await node.suspend()
+    return await _run_lifecycle(node, node.suspend, "suspended", wait, timeout, tolerate_unsupported=False)
 
 
 @router.post(
-    "/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/reload",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def reload_node(node: Node = Depends(dep_node)) -> None:
+async def reload_node(
+    wait: bool = Query(False, description="Return only when the node status is 'started'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Reload a node.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.reload()
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, node.reload, "started", wait, timeout)
 
 
 @router.post(

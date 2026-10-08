@@ -41,6 +41,8 @@ class NodeStatus(str, Enum):
     stopped = "stopped"
     started = "started"
     suspended = "suspended"
+    starting = "starting"
+    stopping = "stopping"
 
 
 class CustomAdapter(BaseModel):
