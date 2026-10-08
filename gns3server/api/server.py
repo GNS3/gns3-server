@@ -76,7 +76,14 @@ def get_application() -> FastAPI:
     application = FastAPI(
         lifespan=tasks.lifespan,
         title="GNS3 controller API",
-        description="This page describes the public controller API for GNS3",
+        description="This page describes the public controller API for GNS3.\n\n"
+        "## Notification streams\n\n"
+        "Notifications are available as HTTP streams of newline delimited JSON objects (`GET /v3/notifications` and "
+        "`GET /v3/projects/{project_id}/notifications`) and as WebSockets sending one JSON object per text frame "
+        "(`/v3/notifications/ws`, `/v3/projects/{project_id}/notifications/ws` and "
+        "`/v3/projects/{project_id}/notifications/markers/ws`). "
+        "OpenAPI cannot describe WebSocket routes, they carry the same `Notification` messages as the HTTP streams. "
+        "Marker events (`marker.match`) are only sent on the markers WebSocket.",
         version="3.0.0",
         docs_url=None,
         redoc_url=None,
