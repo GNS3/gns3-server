@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 # Check AI Copilot availability
 from gns3server.agent import AI_COPILOT_AVAILABLE
+from gns3server.api.operation_ids import add_stub_routes
 from gns3server.config import Config
 
 # Conditionally import AI-dependent routes
@@ -43,6 +44,10 @@ else:
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
+
+    add_stub_routes(_chat_router, ai_not_available, "chat_not_available")
+    add_stub_routes(_copilot_router, ai_not_available, "copilot_not_available")
+    add_stub_routes(_llm_router, ai_not_available, "llm_not_available")
 
 
 from . import (

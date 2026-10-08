@@ -37,6 +37,7 @@ from uvicorn.main import Server as UvicornServer
 # MCP is an optional feature — import only if dependencies are installed
 from gns3server.agent import MCP_AVAILABLE
 from gns3server.api.errors import customize_openapi_errors, error_response
+from gns3server.api.operation_ids import add_stub_routes, generate_operation_id
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.config import Config
@@ -68,6 +69,8 @@ else:
             detail="MCP is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
 
+    add_stub_routes(_mcp_router, mcp_not_available, "not_available")
+
 
 import logging
 
@@ -91,6 +94,7 @@ def get_application() -> FastAPI:
         servers=[{"url": "/"}],
         docs_url=None,
         redoc_url=None,
+        generate_unique_id_function=generate_operation_id,
     )
 
     application.add_middleware(
