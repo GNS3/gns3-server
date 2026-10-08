@@ -31,6 +31,7 @@ from gns3server.compute.compute_error import (
 from gns3server.compute.error import ImageMissingError, NodeError
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
+from gns3server.version import __api_version__
 
 from . import (
     atm_switch_nodes,
@@ -60,7 +61,8 @@ log = logging.getLogger(__name__)
 compute_api = FastAPI(
     title="GNS3 compute API",
     description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
-    version="3.0.0",
+    version=__api_version__,
+    servers=[{"url": "/v3/compute"}],
 )
 
 compute_api.state.controller_host = None
