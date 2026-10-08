@@ -31,6 +31,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+from gns3server.api.openapi import PCAP_MEDIA_TYPE, binary_response
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from gns3server.controller.link import _UNSET, Link
@@ -330,7 +331,12 @@ async def restart_wireshark(http_request: Request, link: Link = Depends(dep_link
     return {"status": "restarted"}
 
 
-@router.get("/{link_id}/capture/stream", dependencies=[Depends(has_privilege("Link.Capture"))])
+@router.get(
+    "/{link_id}/capture/stream",
+    response_class=StreamingResponse,
+    responses={200: binary_response(PCAP_MEDIA_TYPE, "Packet capture stream")},
+    dependencies=[Depends(has_privilege("Link.Capture"))],
+)
 async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> StreamingResponse:
     """
     Stream the PCAP capture file from compute.

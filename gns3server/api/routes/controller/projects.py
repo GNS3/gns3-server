@@ -51,6 +51,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
+from gns3server.api.openapi import ZIP_MEDIA_TYPE, binary_request_body, binary_response
 from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
 from gns3server.controller import Controller, marker_replay
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
@@ -688,7 +689,12 @@ async def project_marker_ws_notifications(
         log.warning(f"Error while sending marker event to WebSocket client: {e}")
 
 
-@router.get("/{project_id}/export", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/export",
+    response_class=StreamingResponse,
+    responses={200: binary_response(ZIP_MEDIA_TYPE, "Portable project archive")},
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def export_project(
     project: Project = Depends(dep_project),
     include_snapshots: bool = False,
@@ -774,6 +780,7 @@ async def export_project(
     "/{project_id}/import",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
+    openapi_extra=binary_request_body(ZIP_MEDIA_TYPE),
     dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def import_project(project_id: UUID, request: Request, name: Optional[str] = None) -> schemas.Project:
@@ -898,7 +905,12 @@ async def unlock_project(project: Project = Depends(dep_project)) -> None:
     project.unlock()
 
 
-@router.get("/{project_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/files/{file_path:path}",
+    response_class=FileResponse,
+    responses={200: binary_response(description="File content")},
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def get_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return a file from a project.
@@ -920,7 +932,17 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
     return FileResponse(path, media_type="application/octet-stream")
 
 
-@router.get("/{project_id}/gns3file", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/gns3file",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "description": "Project topology file",
+            "content": {"application/json": {"schema": {"type": "object"}}},
+        }
+    },
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def get_project_gns3_file(project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return the .gns3 topology file of a project.
@@ -938,6 +960,7 @@ async def get_project_gns3_file(project: Project = Depends(dep_project)) -> File
 @router.post(
     "/{project_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
