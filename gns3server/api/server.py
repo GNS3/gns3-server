@@ -36,8 +36,8 @@ from uvicorn.main import Server as UvicornServer
 
 # MCP is an optional feature — import only if dependencies are installed
 from gns3server.agent import MCP_AVAILABLE
-from gns3server.api.operation_ids import add_stub_routes, generate_operation_id
 from gns3server.api.errors import customize_openapi_errors, error_response
+from gns3server.api.operation_ids import add_stub_routes, generate_operation_id
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.config import Config
