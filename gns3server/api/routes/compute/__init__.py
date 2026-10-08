@@ -21,6 +21,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from gns3server.api.operation_ids import generate_operation_id
 from gns3server.compute.compute_error import (
     ComputeError,
     ComputeForbiddenError,
@@ -61,6 +62,7 @@ log = logging.getLogger(__name__)
 compute_api = FastAPI(
     title="GNS3 compute API",
     description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
+    generate_unique_id_function=generate_operation_id,
     version=__api_version__,
     servers=[{"url": "/v3/compute"}],
 )
