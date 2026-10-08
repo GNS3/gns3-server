@@ -17,10 +17,21 @@
 
 import pydantic
 import pytest
+from pydantic import TypeAdapter
 
 from gns3server.controller.appliance import Appliance
 from gns3server.controller.appliance_to_template import ApplianceToTemplate
-from gns3server.schemas.controller.appliances import ApplianceModel
+from gns3server.schemas.controller.appliances import (
+    ApplianceModel,
+    ApplianceVersionCreate,
+    ApplianceVersionCreateV1_6,
+    ApplianceVersionCreateV8,
+    DockerTemplateSetting,
+    DynamipsTemplateSetting,
+    IouTemplateSetting,
+    QemuTemplateSetting,
+    TemplateSetting,
+)
 
 # v8 mirror of the XRd Control Plane appliance shape (docker, custom_adapters, no versions)
 XRD_V8 = {
@@ -242,3 +253,44 @@ def test_v8_netmiko_device_type_empty_string_clears():
     appliance = dict(XRD_V8, netmiko_device_type="")
     model = ApplianceModel.model_validate(appliance)
     assert model.netmiko_device_type == ""
+
+
+@pytest.mark.parametrize(
+    "template_type, properties, expected",
+    [
+        ("qemu", {"ram": 512}, QemuTemplateSetting),
+        ("dynamips", {"platform": "c7200", "ram": 256}, DynamipsTemplateSetting),
+        ("iou", {"ram": 256}, IouTemplateSetting),
+        ("docker", {"image": "alpine:latest"}, DockerTemplateSetting),
+    ],
+)
+def test_template_setting_decoded_through_discriminator(template_type, properties, expected):
+    setting = TypeAdapter(TemplateSetting).validate_python(
+        {"name": "a", "template_type": template_type, "template_properties": properties}
+    )
+    assert type(setting) is expected
+    assert setting.template_type == template_type
+
+
+def test_template_setting_unknown_template_type_rejected():
+    with pytest.raises(pydantic.ValidationError):
+        TypeAdapter(TemplateSetting).validate_python({"template_type": "vpcs", "template_properties": {}})
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        ({"name": "1", "registry_version": 1}, ApplianceVersionCreateV1_6),
+        ({"name": "6", "registry_version": 6}, ApplianceVersionCreateV1_6),
+        ({"name": "8", "registry_version": 8}, ApplianceVersionCreateV8),
+        ({"name": "plain", "images": {"hda_disk_image": "a.qcow2"}}, ApplianceVersionCreateV1_6),
+        ({"name": "v8", "category": "guest"}, ApplianceVersionCreateV8),
+    ],
+)
+def test_appliance_version_decoded_through_discriminator(data, expected):
+    assert type(TypeAdapter(ApplianceVersionCreate).validate_python(data)) is expected
+
+
+def test_appliance_version_unknown_registry_version_rejected():
+    with pytest.raises(pydantic.ValidationError):
+        TypeAdapter(ApplianceVersionCreate).validate_python({"name": "x", "registry_version": 7})
