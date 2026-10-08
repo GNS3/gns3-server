@@ -143,6 +143,43 @@ class TestLinkRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["nodes"][0]["label"]["x"] == 42
 
+    async def test_link_etag_and_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+        link_id = response.json()["link_id"]
+        url = app.url_path_for("get_link", project_id=project.id, link_id=link_id)
+
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert (await client.get(url)).headers["ETag"] == etag
+
+        response = await client.put(url, json={"show_filters_icon": False}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["ETag"] != etag
+        assert (await client.get(url)).headers["ETag"] == response.headers["ETag"]
+
+        response = await client.put(url, json={"show_filters_icon": True}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert (await client.get(url)).json()["show_filters_icon"] is False
+
+        response = await client.put(url, json={"show_filters_icon": True})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["show_filters_icon"] is True
+
     async def test_update_link_suspend(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
     ) -> None:

@@ -41,6 +41,14 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
 
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
@@ -256,8 +264,13 @@ async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
 _HOST_INTERFACE_NODE_TYPES = {"cloud", "nat"}
 
 
-@router.get("/{node_id}", response_model=schemas.Node, dependencies=[Depends(has_privilege("Node.Audit"))])
-async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
+@router.get(
+    "/{node_id}",
+    response_model=schemas.Node,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.Audit"))],
+)
+async def get_node(response: Response, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Return a node from a given project.
 
@@ -266,31 +279,50 @@ async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
 
     if node.node_type in _HOST_INTERFACE_NODE_TYPES:
         try:
-            response = await node.get()
-            await node.parse_node_response(response.json)
+            node_response = await node.get()
+            await node.parse_node_response(node_response.json)
         except Exception:
             # If compute is unreachable, still return cached data
             log.warning(f"Could not refresh node {node.id} from compute, returning cached data")
-    return node.asdict()
+    node_dict = node.asdict()
+    set_etag(response, node_dict)
+    return node_dict
 
 
 @router.put(
     "/{node_id}",
     response_model=schemas.Node,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Node.Modify"))],
 )
-async def update_node(node_update: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
+async def update_node(
+    node_update: schemas.NodeUpdate,
+    response: Response,
+    node: Node = Depends(dep_node),
+    if_match: Optional[str] = Depends(if_match_header),
+) -> schemas.Node:
     """
     Update a node.
+
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
 
     Required privilege: Node.Modify
     """
 
     node_data = jsonable_encoder(node_update, exclude_unset=True)
 
-    await node.update(**node_data)
-    return node.asdict()
+    # Ignore these because we only use them when creating a node
+    node_data.pop("node_id", None)
+    node_data.pop("node_type", None)
+    node_data.pop("compute_id", None)
+
+    async with serialize_updates(f"node:{node.id}"):
+        check_if_match(if_match, node.asdict())
+        await node.update(**node_data)
+    node_dict = node.asdict()
+    set_etag(response, node_dict)
+    return node_dict
 
 
 @router.delete(
