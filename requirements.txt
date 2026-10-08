@@ -11,8 +11,7 @@ sentry-sdk>=2.70.0,<3  # optional dependency
 psutil>=7.2.2
 distro>=1.9.0
 py-cpuinfo>=9.0.0,<10.0
-greenlet==3.5.3; python_version >= '3.13' # necessary to run sqlalchemy on Python >= 3.13
-sqlalchemy==2.1.4
+sqlalchemy[asyncio]==2.1.4
 aiosqlite==0.22.1
 alembic==1.20
 bcrypt==5.0.0
