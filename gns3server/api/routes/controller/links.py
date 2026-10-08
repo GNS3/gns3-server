@@ -32,7 +32,11 @@ from fastapi.responses import FileResponse, StreamingResponse
 from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, controller_error_status_code
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    controller_error_status_code,
+)
 from gns3server.controller.link import _UNSET, Link
 from gns3server.controller.project import Project
 from gns3server.db.repositories.rbac import RbacRepository
@@ -204,7 +208,7 @@ async def create_links(project_id: UUID, links_create: List[schemas.LinkCreate])
             )
     return results
 
-  
+
 @router.get(
     "/{link_id}/available_filters",
     response_model=List[schemas.LinkFilterDefinition],
