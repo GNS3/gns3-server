@@ -34,7 +34,7 @@ from pydantic import SecretStr
 from gns3server.api.routes.controller.nodes import vnc_console, ws_console
 from gns3server.config import Config
 from gns3server.controller.compute import Compute
-from gns3server.controller.controller_error import ControllerError, ComputeError
+from gns3server.controller.controller_error import ComputeError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.services import auth_service
