@@ -23,13 +23,11 @@ This module handles Docker API operations via aiohttp Unix socket.
 
 import asyncio
 import logging
-import sys
+from asyncio import timeout as async_timeout
 from typing import Any
 
 import aiohttp
 
-
-from asyncio import timeout as async_timeout
 from gns3server.utils import parse_version
 
 logger = logging.getLogger(__name__)
