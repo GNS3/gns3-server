@@ -608,6 +608,7 @@ class TestLinkRoutes:
         assert result["rhost"] == "127.0.0.1"
         assert result["rport"] == 30000
         assert result["type"] == "udp"
+        assert result["kind"] == "udp"
 
     async def test_get_ethernet_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
         """
@@ -638,3 +639,4 @@ class TestLinkRoutes:
         assert result["node_id"] == cloud_node.id
         assert result["interface"] == "eth0"
         assert result["type"] == "ethernet"
+        assert result["kind"] == "ethernet"

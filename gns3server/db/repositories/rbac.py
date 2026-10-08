@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import List, Optional, Union, cast
+from typing import Any, List, Optional, Union, cast
 from urllib.parse import urlparse
 from uuid import UUID
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import Select, delete, select, update
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -331,7 +331,7 @@ class RbacRepository(BaseRepository):
         Retrieve all user ACEs matching the user_id and privilege name.
         """
 
-        query = (
+        query: Select[Any, Any, Any, Any] = (
             select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
             .join(models.Privilege.roles)
             .join(models.Role.acl_entries)
@@ -349,7 +349,7 @@ class RbacRepository(BaseRepository):
         Retrieve all group ACEs matching the user_id and privilege name.
         """
 
-        query = (
+        query: Select[Any, Any, Any, Any] = (
             select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
             .join(models.Privilege.roles)
             .join(models.Role.acl_entries)
