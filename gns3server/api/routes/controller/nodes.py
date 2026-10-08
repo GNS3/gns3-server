@@ -32,6 +32,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 
 from gns3server import schemas
+from gns3server.api.openapi import binary_request_body, binary_response
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
@@ -632,7 +633,12 @@ async def list_node_files(
     return res.json
 
 
-@router.get("/{node_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Node.Audit"))])
+@router.get(
+    "/{node_id}/files/{file_path:path}",
+    response_class=StreamingResponse,
+    responses={200: binary_response(description="File content")},
+    dependencies=[Depends(has_privilege("Node.Audit"))],
+)
 async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     """
     Return a file from the node directory.
@@ -673,6 +679,13 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
 @router.post(
     "/{node_id}/files/{file_path:path}",
     status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {
+            "description": "File written",
+            "content": {"application/json": {"schema": {"type": "null"}}},
+        }
+    },
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Node.Modify"))],
 )
 async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):

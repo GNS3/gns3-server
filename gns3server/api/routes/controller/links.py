@@ -20,7 +20,7 @@ API routes for links.
 
 import logging
 import os
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -31,6 +31,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+from gns3server.api.openapi import PCAP_MEDIA_TYPE, binary_response
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from gns3server.controller.link import _UNSET, Link
@@ -330,7 +331,12 @@ async def restart_wireshark(http_request: Request, link: Link = Depends(dep_link
     return {"status": "restarted"}
 
 
-@router.get("/{link_id}/capture/stream", dependencies=[Depends(has_privilege("Link.Capture"))])
+@router.get(
+    "/{link_id}/capture/stream",
+    response_class=StreamingResponse,
+    responses={200: binary_response(PCAP_MEDIA_TYPE, "Packet capture stream")},
+    dependencies=[Depends(has_privilege("Link.Capture"))],
+)
 async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> StreamingResponse:
     """
     Stream the PCAP capture file from compute.
@@ -539,7 +545,7 @@ async def update_marker(marker_name: str, marker_data: schemas.MarkerUpdate, lin
 
 @router.get(
     "/{link_id}/iface",
-    response_model=Union[schemas.UDPPortInfo, schemas.EthernetPortInfo],
+    response_model=schemas.LinkIfaceInfo,
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_iface(link: Link = Depends(dep_link)) -> dict:
@@ -570,6 +576,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> dict:
                 port_type = port.get("type", "")
                 if "udp" in port_type.lower():
                     ifaces_info = {
+                        "kind": "udp",
                         "node_id": node.id,
                         "type": f"{port_type}",
                         "lport": port["lport"],
@@ -578,6 +585,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> dict:
                     }
                 else:
                     ifaces_info = {
+                        "kind": "ethernet",
                         "node_id": node.id,
                         "type": f"{port_type}",
                         "interface": port["interface"],

@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 # Check AI Copilot availability
 from gns3server.agent import AI_COPILOT_AVAILABLE
 from gns3server.api.operation_ids import add_stub_routes
+from gns3server.config import Config
 
 # Conditionally import AI-dependent routes
 if AI_COPILOT_AVAILABLE:
@@ -33,6 +34,11 @@ else:
     _copilot_router = APIRouter()
     _llm_router = APIRouter()
 
+    @_chat_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
+    @_copilot_router.api_route(
+        "/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False
+    )
+    @_llm_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
     async def ai_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -68,6 +74,8 @@ from . import (
     users,
 )
 from .dependencies.authentication import get_current_active_user
+
+_include_ai_in_schema = Config.instance().settings.Server.openapi_include_ai
 
 router = APIRouter()
 
@@ -118,11 +126,19 @@ router.include_router(
 )
 
 router.include_router(
-    _llm_router, prefix="/access", dependencies=[Depends(get_current_active_user)], tags=["LLM Model Configurations"]
+    _llm_router,
+    prefix="/access",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["LLM Model Configurations"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(
-    _copilot_router, prefix="/copilot", dependencies=[Depends(get_current_active_user)], tags=["GNS3 Copilot"]
+    _copilot_router,
+    prefix="/copilot",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["GNS3 Copilot"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(
@@ -130,6 +146,7 @@ router.include_router(
     prefix="/copilot/projects/{project_id}/chat",
     dependencies=[Depends(get_current_active_user)],
     tags=["GNS3 Copilot"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(api_keys.router, dependencies=[Depends(get_current_active_user)], tags=["API Keys"])
