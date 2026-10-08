@@ -32,7 +32,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from gns3server.controller.link import _UNSET, Link
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils.http_client import HTTPClient
@@ -57,6 +57,29 @@ responses: dict[int | str, dict[str, Any]] = {
 }
 
 router = APIRouter(responses=responses)
+
+
+def _select_port(node, endpoint, other_port):
+    if endpoint.get("port_name") is not None:
+        port = node.get_port_by_name(endpoint["port_name"])
+        if port is None:
+            raise ControllerNotFoundError(f"Port named {endpoint['port_name']} for {node.name} not found")
+        return port
+    if endpoint.get("port") == "auto":
+        port = node.get_free_port(other_port.link_type if other_port else None)
+        if port is None:
+            raise ControllerError(f"No free port available on {node.name}", code="no_free_port")
+        return port
+    return None
+
+
+def _peer_port(project, endpoint):
+    if endpoint.get("port") == "auto":
+        return None
+    node = project.get_node(endpoint["node_id"])
+    if endpoint.get("port_name") is not None:
+        return node.get_port_by_name(endpoint["port_name"])
+    return node.get_port(endpoint["adapter_number"], endpoint["port_number"])
 
 
 async def dep_link(project_id: UUID, link_id: UUID) -> Link:
@@ -118,14 +141,18 @@ async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> sche
     if "show_filters_icon" in link_data:
         await link.update_show_filters_icon(link_data["show_filters_icon"])
     try:
-        for node in link_data["nodes"]:
-            await link.add_node(
-                project.get_node(node["node_id"]),
-                node.get("adapter_number", 0),
-                node.get("port_number", 0),
-                label=node.get("label"),
-            )
+        endpoints = link_data["nodes"]
+        attached_port = None
+        for index, endpoint in enumerate(endpoints):
+            node = project.get_node(endpoint["node_id"])
+            peer_port = attached_port or _peer_port(project, endpoints[1 - index])
+            port = _select_port(node, endpoint, peer_port)
+            adapter_number = port.adapter_number if port else endpoint["adapter_number"]
+            port_number = port.port_number if port else endpoint["port_number"]
+            await link.add_node(node, adapter_number, port_number, label=endpoint.get("label"))
+            attached_port = node.get_port(adapter_number, port_number)
     except ControllerError as e:
+        link.release_ports()
         await project.delete_link(link.id)
         raise e
     return link.asdict()

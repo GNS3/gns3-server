@@ -115,6 +115,110 @@ class TestLinkRoutes:
         assert response.status_code == status.HTTP_409_CONFLICT
         assert len(project.links) == 0
 
+    async def test_create_link_by_port_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "port_name": "E0"},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        first, second = response.json()["nodes"]
+        assert (first["adapter_number"], first["port_number"]) == (0, 3)
+        assert (second["adapter_number"], second["port_number"]) == (2, 4)
+
+    async def test_create_link_unknown_port_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+
+        response = await client.post(
+            app.url_path_for("create_link", project_id=project.id),
+            json={
+                "nodes": [
+                    {"node_id": node1.id, "port_name": "nope"},
+                    {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                ]
+            },
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert len(project.links) == 0
+
+    async def test_create_link_auto_port(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        node1._ports = [EthernetPort("E1", 0, 0, 5), EthernetPort("E0", 0, 0, 3)]
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={"nodes": [{"node_id": node1.id, "port": "auto"}, {"node_id": node2.id, "port": "auto"}]},
+            )
+            assert response.status_code == status.HTTP_201_CREATED
+            assert response.json()["nodes"][0]["port_number"] == 3
+
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={"nodes": [{"node_id": node1.id, "port": "auto"}, {"node_id": node2.id, "port": "auto"}]},
+            )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["code"] == "no_free_port"
+        assert len(project.links) == 1
+
+    async def test_create_link_port_in_use_code(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        body = {
+            "nodes": [
+                {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+            ]
+        }
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            first = await client.post(app.url_path_for("create_link", project_id=project.id), json=body)
+            second = await client.post(app.url_path_for("create_link", project_id=project.id), json=body)
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_409_CONFLICT
+        assert second.json()["code"] == "port_in_use"
+        assert len(project.links) == 1
+
+    async def test_create_link_invalid_port_selector(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        valid = {"node_id": node2.id, "adapter_number": 2, "port_number": 4}
+
+        for bad in (
+            {"node_id": node1.id},
+            {"node_id": node1.id, "adapter_number": 0},
+            {"node_id": node1.id, "port_name": "E0", "port": "auto"},
+            {"node_id": node1.id, "adapter_number": 0, "port_number": 3, "port_name": "E0"},
+        ):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id), json={"nodes": [bad, valid]}
+            )
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
     async def test_get_link(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
     ) -> None:

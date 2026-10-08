@@ -1195,6 +1195,27 @@ class Node:
                 return port
         return None
 
+    def get_port_by_name(self, name):
+        """
+        Return the port with this name or None if the port is not found
+        """
+        for port in self.ports:
+            if port.name == name:
+                return port
+        return None
+
+    def get_free_port(self, link_type=None):
+        """
+        Return the lowest free port, optionally restricted to a link type,
+        or None if there is no such port
+        """
+        free_ports = [
+            port for port in self.ports if port.link is None and (link_type is None or port.link_type == link_type)
+        ]
+        if not free_ports:
+            return None
+        return min(free_ports, key=lambda port: (port.adapter_number, port.port_number))
+
     def _list_ports(self):
         """
         Generate the list of port display in the client

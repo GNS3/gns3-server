@@ -326,16 +326,28 @@ class Link:
             {"node": node, "adapter_number": adapter_number, "port_number": port_number, "port": port, "label": label}
         )
 
+        if not batch:
+            port.link = self
+
         if len(self._nodes) == 2 and not batch:
-            await self.create()
+            try:
+                await self.create()
+            except BaseException:
+                self.release_ports()
+                raise
             for n in self._nodes:
                 n["node"].add_link(self)
-                n["port"].link = self
             self._created = True
             self._project.emit_notification("link.created", self.asdict())
 
         if dump:
             self._project.dump()
+
+    def release_ports(self):
+        for n in self._nodes:
+            if n["port"].link == self:
+                n["port"].link = None
+            n["node"].links.discard(self)
 
     async def update_nodes(self, nodes):
         for node_data in nodes:
@@ -365,11 +377,7 @@ class Link:
         """
         Delete the link
         """
-        for n in self._nodes:
-            # It could be different of self if we rollback an already existing link
-            if n["port"].link == self:
-                n["port"].link = None
-                n["node"].remove_link(self)
+        self.release_ports()
 
     async def reset(self):
         """
