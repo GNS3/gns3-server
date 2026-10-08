@@ -29,7 +29,7 @@ from joserfc.jwk import OctKey
 from pydantic import ValidationError
 
 from gns3server.config import Config
-from gns3server.schemas.controller.tokens import TokenData
+from gns3server.schemas.controller.tokens import Token, TokenData
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,9 @@ def _extract_alg(token: str) -> str:
         return "<undecodable>"
 
 
+BEARER_TOKEN_TYPE = "bearer"
+
+
 class AuthService:
     def hash_password(self, password: str) -> str:
 
@@ -61,8 +64,9 @@ class AuthService:
     def _create_token(self, username, token_version, token_type, expires_in, secret_key=None) -> str:
         """Shared helper to create any kind of signed JWT token."""
 
-        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_in)
-        to_encode = {"sub": username, "exp": expire, "ver": token_version, "type": token_type}
+        issued_at = datetime.now(timezone.utc)
+        expire = issued_at + timedelta(minutes=expires_in)
+        to_encode = {"sub": username, "iat": issued_at, "exp": expire, "ver": token_version, "type": token_type}
         if secret_key is None:
             secret_key = Config.instance().settings.Controller.jwt_secret_key
         if secret_key is None:
@@ -88,6 +92,17 @@ class AuthService:
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_refresh_token_expire_minutes
         return self._create_token(username, token_version, "refresh", expires_in, secret_key)
+
+    def create_token_response(self, user) -> Token:
+
+        settings = Config.instance().settings.Controller
+        return Token(
+            access_token=self.create_access_token(user.username, token_version=user.token_version),
+            token_type=BEARER_TOKEN_TYPE,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
+            refresh_token=self.create_refresh_token(user.username, token_version=user.token_version),
+            refresh_expires_in=settings.jwt_refresh_token_expire_minutes * 60,
+        )
 
     def get_token_data(self, token: str, secret_key: Optional[str] = None) -> TokenData:
 

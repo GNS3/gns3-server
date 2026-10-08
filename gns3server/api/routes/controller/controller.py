@@ -30,6 +30,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
 from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
+from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
@@ -146,7 +147,7 @@ def get_iou_license() -> schemas.IOULicense:
 @router.put(
     "/iou_license",
     dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.IOULicense,
 )
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
@@ -254,10 +255,19 @@ async def statistics() -> dict:
     }
 
 
-@router.get("/notifications", dependencies=[Depends(get_current_active_user)])
+@router.get(
+    "/notifications",
+    dependencies=[Depends(get_current_active_user)],
+    response_class=NDJSONResponse,
+    responses=NOTIFICATION_STREAM_RESPONSES,
+)
 async def controller_http_notifications(request: Request) -> StreamingResponse:
     """
-    Receive controller notifications about the controller from HTTP stream.
+    Receive controller notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
+
+    The same messages are available as WebSocket text frames on `/v3/notifications/ws`.
+    Controller actions: `compute.*`, `template.*`, `project.created`, `project.updated`, `project.opened`,
+    `project.closed`, `project.deleted`, `settings.updated`, `log.*` and `ping`.
     """
 
     from gns3server.api.server import app
@@ -274,7 +284,7 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
         finally:
             log.info(f"Client {client} has disconnected from controller HTTP notification stream")
 
-    return StreamingResponse(event_stream(), media_type="application/json")
+    return StreamingResponse(event_stream(), media_type=NDJSON_MEDIA_TYPE)
 
 
 @router.websocket("/notifications/ws")
@@ -282,7 +292,8 @@ async def controller_ws_notifications(
     websocket: WebSocket, current_user: schemas.User = Depends(get_current_active_user_from_websocket)
 ) -> None:
     """
-    Receive project notifications about the controller from WebSocket.
+    Receive controller notifications from a WebSocket, one Notification JSON object per text frame.
+    Same messages as the HTTP stream `/v3/notifications`.
     """
 
     if current_user is None:

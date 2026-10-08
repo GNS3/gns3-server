@@ -38,6 +38,10 @@ from .controller.links import (
     LinkBatchResult,
     LinkCapture,
     LinkCreate,
+    LinkFilterDefinition,
+    LinkFilterParameter,
+    LinkFilters,
+    LinkFilterType,
     LinkUpdate,
     MarkerCreate,
     MarkerDefinitionCreate,
@@ -110,6 +114,7 @@ from .compute.vpcs_nodes import VPCS, VPCSCreate, VPCSUpdate
 from .controller.capabilities import Capabilities
 from .controller.iou_license import IOULicense
 from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
+from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
 from .controller.rbac import ACE, ACECreate, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
 from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
@@ -246,6 +251,10 @@ __all__ = [
     "LinkBatchResult",
     "LinkCapture",
     "LinkCreate",
+    "LinkFilterDefinition",
+    "LinkFilterParameter",
+    "LinkFilterType",
+    "LinkFilters",
     "LinkUpdate",
     "LoggedInUserUpdate",
     "MarkerCreate",
@@ -264,6 +273,8 @@ __all__ = [
     "NodeDuplicate",
     "NodeFile",
     "NodeUpdate",
+    "Notification",
+    "NotificationAction",
     "OpenAIMessage",
     "OpenAIToolCall",
     "Privilege",
