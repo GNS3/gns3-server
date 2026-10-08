@@ -19,7 +19,7 @@
 FastAPI app
 """
 
-from typing import cast
+from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -29,14 +29,15 @@ from fastapi.openapi.docs import (
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn.main import Server as UvicornServer
 
 # MCP is an optional feature — import only if dependencies are installed
 from gns3server.agent import MCP_AVAILABLE
 from gns3server.api.operation_ids import add_stub_routes, generate_operation_id
+from gns3server.api.errors import customize_openapi_errors, error_response
 from gns3server.api.routes import controller, index
 from gns3server.api.routes.compute import compute_api
 from gns3server.controller.controller_error import (
@@ -73,12 +74,26 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class ControllerAPI(FastAPI):
+    def openapi(self) -> dict[str, Any]:
+        if self.openapi_schema is None:
+            customize_openapi_errors(super().openapi())
+        return cast(dict[str, Any], self.openapi_schema)
+
+
 def get_application() -> FastAPI:
 
-    application = FastAPI(
+    application = ControllerAPI(
         lifespan=tasks.lifespan,
         title="GNS3 controller API",
-        description="This page describes the public controller API for GNS3",
+        description="This page describes the public controller API for GNS3.\n\n"
+        "## Notification streams\n\n"
+        "Notifications are available as HTTP streams of newline delimited JSON objects (`GET /v3/notifications` and "
+        "`GET /v3/projects/{project_id}/notifications`) and as WebSockets sending one JSON object per text frame "
+        "(`/v3/notifications/ws`, `/v3/projects/{project_id}/notifications/ws` and "
+        "`/v3/projects/{project_id}/notifications/markers/ws`). "
+        "OpenAPI cannot describe WebSocket routes, they carry the same `Notification` messages as the HTTP streams. "
+        "Marker events (`marker.match`) are only sent on the markers WebSocket.",
         version="3.0.0",
         docs_url=None,
         redoc_url=None,
@@ -154,82 +169,65 @@ async def redoc_html():
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
     log.error(f"Controller error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ControllerTimeoutError):
     log.error(f"Controller timeout error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_408_REQUEST_TIMEOUT,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_408_REQUEST_TIMEOUT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ControllerUnauthorizedError):
     log.error(f"Controller unauthorized error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_401_UNAUTHORIZED, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ControllerForbiddenError):
     log.error(f"Controller forbidden error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_403_FORBIDDEN, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
     log.error(f"Controller not found error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_404_NOT_FOUND, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerBadRequestError)
 async def controller_bad_request_error_handler(request: Request, exc: ControllerBadRequestError):
     log.error(f"Controller bad request error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_400_BAD_REQUEST, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ComputeConflictError)
 async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
     log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"message": str(exc)},
-    )
+    return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
-# make sure the content key is "message", not "detail" per default
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail}, headers=exc.headers)
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return error_response(exc.status_code, exc.detail, headers=exc.headers)
 
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
     log.error(f"Controller database error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"message": "Database error detected, please check logs to find details"},
+    return error_response(
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "Database error detected, please check logs to find details",
+        "database_error",
     )
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"message": str(exc)})
+    errors = [
+        {"loc": list(error.get("loc", ())), "msg": error.get("msg"), "type": error.get("type")}
+        for error in exc.errors()
+    ]
+    return error_response(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc), "validation_error", {"errors": errors})

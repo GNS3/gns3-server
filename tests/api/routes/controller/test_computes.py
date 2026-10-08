@@ -68,6 +68,31 @@ class TestComputeRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) > 0
 
+    async def test_compute_list_filter_by_name(self, app: FastAPI, client: AsyncClient) -> None:
+
+        for name, port in (("compute-a", 85), ("compute-b", 86)):
+            params = {
+                "name": name,
+                "protocol": "http",
+                "host": "localhost",
+                "port": port,
+                "user": "julien",
+                "password": "secure",
+            }
+            response = await client.post(app.url_path_for("create_compute"), json=params)
+            assert response.status_code == status.HTTP_201_CREATED
+
+        response = await client.get(app.url_path_for("get_computes"), params={"name": "compute-a"})
+        assert response.status_code == status.HTTP_200_OK
+        assert [c["name"] for c in response.json()] == ["compute-a"]
+
+        response = await client.get(app.url_path_for("get_computes"), params={"name": "COMPUTE-A"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+        response = await client.get(app.url_path_for("get_computes"))
+        assert len(response.json()) >= 2
+
     async def test_compute_get(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
         response = await client.get(app.url_path_for("get_compute", compute_id=test_compute.compute_id))

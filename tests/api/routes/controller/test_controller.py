@@ -70,3 +70,10 @@ class TestControllerRoutes:
 
         response = await client.get(app.url_path_for("statistics"))
         assert response.status_code == status.HTTP_200_OK
+
+    async def test_update_iou_license(self, app: FastAPI, client: AsyncClient) -> None:
+
+        license_settings = {"iourc_content": "[license]\ngns3vm = 1234567890abcdef;", "license_check": False}
+        response = await client.put(app.url_path_for("update_iou_license"), json=license_settings)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == license_settings

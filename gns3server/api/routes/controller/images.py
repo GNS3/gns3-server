@@ -195,14 +195,18 @@ async def get_images(
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     image_type: Optional[schemas.ImageType] = None,
     availability: Optional[Literal["unknown", "available", "missing", "unavailable", "invalid"]] = None,
+    name: Optional[str] = Query(None, description="Return only images whose filename exactly matches (case-sensitive)"),
 ) -> List[models.Image]:
     """
     Return all images.
 
     Required privilege: Image.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the image filename.
     """
 
-    return await images_repo.get_images(image_type, availability)
+    return await images_repo.get_images(image_type, availability, name)
 
 
 @router.post(
