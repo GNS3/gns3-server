@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gns3-server"
-description = "GNS3 graphical interface for the GNS3 server."
+description = "GNS3 server (controller and compute) for GNS3 network simulator"
 license-files = ["LICENSE"]
 authors = [
   { name = "Jeremy Grossmann", email = "developers@gns3.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -21,10 +21,10 @@ classifiers = [
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python :: Implementation :: CPython"
 ]
 
@@ -219,6 +219,7 @@ extend-immutable-calls = [
 "scripts/welcome.py" = ["C901", "E722", "PLW1510", "S108", "S112", "S603", "S605", "S606", "S607"]
 "tests/agent/mcp/test_handlers.py" = ["B905"]
 "tests/agent/mcp/test_tool_params.py" = ["C901"]
+"tests/api/test_openapi_spec.py" = ["S603"]
 "tests/api/routes/controller/test_images.py" = ["S324", "W292"]
 "tests/api/routes/controller/test_links.py" = ["RUF015", "W292"]
 "tests/api/routes/controller/test_users.py" = ["F811"]

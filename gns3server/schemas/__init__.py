@@ -17,7 +17,7 @@
 # General schemas
 from .common import ErrorMessage
 from .config import ServerConfig
-from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionV8
+from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionCreate, ApplianceVersionV8
 from .controller.computes import (
     AutoIdlePC,
     Compute,
@@ -49,6 +49,10 @@ from .controller.links import (
     LinkCreate,
     LinkFilterInfo,
     LinkFilterParameter,
+    LinkFilterParameter,
+    LinkFilters,
+    LinkFilterType,
+    LinkIfaceInfo,
     LinkUpdate,
     LinkWiresharkRestart,
     Marker,
@@ -136,6 +140,7 @@ from .controller.marker_replay import (
     ReplayTreeNode,
 )
 from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
+from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
 from .controller.rbac import ACE, ACECreate, ACEEndpoint, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
 from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
@@ -204,6 +209,7 @@ __all__ = [
     "ApiKeyMessage",
     "Appliance",
     "ApplianceVersion",
+    "ApplianceVersionCreate",
     "ApplianceVersionV8",
     "AutoIdlePC",
     "BatchNIOCreate",
@@ -297,6 +303,10 @@ __all__ = [
     "LinkFilterInfo",
     "LinkFilterParameter",
     "LinkStatistics",
+    "LinkFilterParameter",
+    "LinkFilterType",
+    "LinkFilters",
+    "LinkIfaceInfo",
     "LinkUpdate",
     "LinkWiresharkRestart",
     "LoggedInUserUpdate",
@@ -319,6 +329,8 @@ __all__ = [
     "NodeFile",
     "NodeStatistics",
     "NodeUpdate",
+    "Notification",
+    "NotificationAction",
     "OpenAIMessage",
     "OpenAIToolCall",
     "Privilege",

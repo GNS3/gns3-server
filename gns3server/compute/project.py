@@ -480,11 +480,13 @@ class Project:
                 stat_info = await wait_run_in_executor(lambda e=entry: e.stat())
                 is_dir = await wait_run_in_executor(lambda e=entry: e.is_dir())
                 if is_dir:
+                    created_at: str | None = None
+                    modified_at: str | None = None
                     try:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,
@@ -506,7 +508,7 @@ class Project:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,
@@ -537,7 +539,7 @@ class Project:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": os.path.relpath(dir_full_path, base_path),
@@ -567,7 +569,7 @@ class Project:
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError) as e:
                         log.warning(f"Invalid timestamp for '{rel_path}': {e}")
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,

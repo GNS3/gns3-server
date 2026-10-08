@@ -35,3 +35,5 @@ if "dev" in __version__:
             __version__ += "+" + r
     except Exception as e:
         print(e)
+
+__api_version__ = __version__.split("+", 1)[0]
