@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Annotated, List, Literal, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..update import PartialUpdateModel
 from .labels import Label
