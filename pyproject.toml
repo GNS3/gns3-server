@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gns3-server"
-description = "GNS3 graphical interface for the GNS3 server."
+description = "GNS3 server (controller and compute) for GNS3 network simulator"
 license-files = ["LICENSE"]
 authors = [
   { name = "Jeremy Grossmann", email = "developers@gns3.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -21,10 +21,11 @@ classifiers = [
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: 3.15",
         "Programming Language :: Python :: Implementation :: CPython"
 ]
 
@@ -58,7 +59,7 @@ packages = ["gns3server"]
 
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 120
 extend-exclude = [
     "*.md",

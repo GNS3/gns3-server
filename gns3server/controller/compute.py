@@ -25,10 +25,7 @@ import sys
 import aiohttp
 from fastapi import HTTPException
 
-if sys.version_info >= (3, 11):
-    from asyncio import timeout as asynctimeout
-else:
-    from async_timeout import timeout as asynctimeout
+from asyncio import timeout as asynctimeout
 
 import logging
 

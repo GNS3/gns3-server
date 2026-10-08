@@ -28,11 +28,8 @@ from typing import Any
 
 import aiohttp
 
-if sys.version_info >= (3, 11):
-    from asyncio import timeout as async_timeout
-else:
-    from async_timeout import timeout as async_timeout
 
+from asyncio import timeout as async_timeout
 from gns3server.utils import parse_version
 
 logger = logging.getLogger(__name__)
