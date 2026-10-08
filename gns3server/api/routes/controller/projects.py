@@ -34,13 +34,25 @@ log = logging.getLogger()
 from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
-from gns3server.api.openapi import ZIP_MEDIA_TYPE, binary_request_body, binary_response, ndjson_response
+from gns3server.api.openapi import ZIP_MEDIA_TYPE, binary_request_body, binary_response
+from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
 from gns3server.controller import Controller, marker_replay
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.controller.export_project import export_project as export_controller_project
@@ -56,6 +68,14 @@ from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 
 from .dependencies.authentication import get_current_active_user
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
@@ -79,11 +99,15 @@ def dep_project(project_id: UUID) -> Project:
 async def get_projects(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    name: Optional[str] = Query(None, description="Return only projects whose name exactly matches (case-sensitive)"),
 ) -> List[schemas.Project]:
     """
     Return all projects.
 
     Required privilege: Project.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the project name.
     """
 
     controller = Controller.instance()
@@ -92,7 +116,7 @@ async def get_projects(
 
     if current_user.is_superadmin:
         # super admin sees all projects
-        return [p.asdict() for p in controller.projects.values()]
+        return [p.asdict() for p in controller.projects.values() if name is None or p.name == name]
 
     # Batch ACE + resource pool check (3 DB queries regardless of project count)
     all_project_ids = list(controller.projects.keys())
@@ -103,6 +127,8 @@ async def get_projects(
     # Step 2: Filter direct ACE projects by created_by
     # Direct project sharing is only available through resource pools
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in direct_ace_ids and p.created_by == current_user.username:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
@@ -110,6 +136,8 @@ async def get_projects(
 
     # Step 3: Resource pool projects (no created_by filter)
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in pool_accessible_ids:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
@@ -143,34 +171,51 @@ async def create_project(
     return project.asdict()
 
 
-@router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(has_privilege("Project.Audit"))])
-def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
+@router.get(
+    "/{project_id}",
+    response_model=schemas.Project,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+def get_project(response: Response, project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
 
     Required privilege: Project.Audit
     """
 
-    return project.asdict()
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.put(
     "/{project_id}",
     response_model=schemas.Project,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def update_project(
-    project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)
+    project_data: schemas.ProjectUpdate,
+    response: Response,
+    project: Project = Depends(dep_project),
+    if_match: Optional[str] = Depends(if_match_header),
 ) -> schemas.Project:
     """
     Update a project.
 
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
+
     Required privilege: Project.Modify
     """
 
-    await project.update(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.asdict()
+    async with serialize_updates(f"project:{project.id}"):
+        check_if_match(if_match, project.asdict())
+        await project.update(**jsonable_encoder(project_data, exclude_unset=True))
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.delete(
@@ -488,7 +533,7 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
 
 @router.post(
     "/{project_id}/open",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
     dependencies=[Depends(has_privilege("Project.Allocate"))],
@@ -526,13 +571,18 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
 
 @router.get(
     "/{project_id}/notifications",
-    response_class=StreamingResponse,
-    responses={200: ndjson_response()},
     dependencies=[Depends(has_privilege("Project.Audit"))],
+    response_class=NDJSONResponse,
+    responses=NOTIFICATION_STREAM_RESPONSES,
 )
 async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
-    Receive project notifications about the controller from HTTP stream.
+    Receive project notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
+
+    The same messages are available as WebSocket text frames on `/v3/projects/{project_id}/notifications/ws`.
+    Marker events (`marker.match`) are not sent here, they are only available on
+    `/v3/projects/{project_id}/notifications/markers/ws`.
+    Project actions: `node.*`, `link.*`, `drawing.*`, `project.updated`, `snapshot.restored`, `log.*` and `ping`.
 
     Required privilege: Project.Audit
     """
@@ -561,7 +611,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
                     log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                     await project.close()
 
-    return StreamingResponse(event_stream(), media_type="application/json")
+    return StreamingResponse(event_stream(), media_type=NDJSON_MEDIA_TYPE)
 
 
 @router.websocket("/{project_id}/notifications/ws")
@@ -571,7 +621,8 @@ async def project_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive project notifications about the controller from WebSocket.
+    Receive project notifications from a WebSocket, one Notification JSON object per text frame.
+    Same messages as the HTTP stream `/v3/projects/{project_id}/notifications`.
 
     Required privilege: Project.Audit
     """
@@ -609,8 +660,8 @@ async def project_marker_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive marker notifications (e.g. marker.match) for a project on a
-    dedicated WebSocket, separate from the main project stream so high-frequency
+    Receive marker notifications (`marker.match`, see the Notification schema) for a project on a
+    dedicated WebSocket, one JSON object per text frame, separate from the main project stream so high-frequency
     marker.matches do not block topology events (node.*/link.*).
 
     Required privilege: Project.Audit

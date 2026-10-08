@@ -161,3 +161,8 @@ class TestACLRoutes:
 
         # the ACE should have been deleted after deleting the project
         assert not await rbac_repo.get_ace_by_path(path)
+
+    async def test_get_endpoints(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("endpoints"))
+        assert response.status_code == status.HTTP_200_OK

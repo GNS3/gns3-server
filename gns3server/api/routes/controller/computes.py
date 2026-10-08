@@ -21,7 +21,7 @@ API routes for computes.
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Body, Depends, Query, status
 
 import gns3server.db.models as models
 from gns3server import schemas
@@ -106,14 +106,21 @@ async def get_compute(
 )
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
+    name: Optional[str] = Query(None, description="Return only computes whose name exactly matches (case-sensitive)"),
 ) -> List[models.Compute]:
     """
     Return all computes known by the controller.
 
     Required privilege: Compute.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the compute name.
     """
 
-    return await ComputesService(computes_repo).get_computes()
+    computes = await ComputesService(computes_repo).get_computes()
+    if name is not None:
+        computes = [compute for compute in computes if compute.name == name]
+    return computes
 
 
 @router.put(
