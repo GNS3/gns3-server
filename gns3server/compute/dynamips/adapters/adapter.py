@@ -15,6 +15,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+# Adapter and WIC models whose ports carry Ethernet frames (by __str__
+# name, matching the controller's port matrix). Only these ports get a
+# kernel-datapath anchor TAP: a TAP cannot carry the serial/ATM/POS
+# encapsulations the other models speak.
+ETHERNET_ADAPTERS = frozenset(
+    {
+        "C1700-MB-1FE",
+        "C2600-MB-1E",
+        "C2600-MB-1FE",
+        "C2600-MB-2E",
+        "C2600-MB-2FE",
+        "C7200-IO-2FE",
+        "C7200-IO-FE",
+        "C7200-IO-GE-E",
+        "GT96100-FE",
+        "Leopard-2FE",
+        "NM-16ESW",
+        "NM-1E",
+        "NM-1FE-TX",
+        "NM-4E",
+        "PA-2FE-TX",
+        "PA-4E",
+        "PA-8E",
+        "PA-FE-TX",
+        "PA-GE",
+    }
+)
+
+ETHERNET_WICS = frozenset({"WIC-1ENET"})
+
+
 class Adapter:
     """
     Base class for adapters.

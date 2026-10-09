@@ -260,12 +260,15 @@ async def duplicate_docker_node(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
-) -> schemas.UDPNIO:
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Docker node is always 0.
@@ -279,12 +282,15 @@ async def create_docker_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
-) -> schemas.UDPNIO:
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Docker node is always 0.

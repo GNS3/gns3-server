@@ -186,6 +186,12 @@ class ServerSettings(BaseModel):
         description='Default symbol theme, e.g. "Classic" or "Affinity-square-blue"',
     )
     allow_raw_images: bool = Field(True, description="Allow raw images to be uploaded to the server")
+    enable_kernel_datapath: bool = Field(
+        True,
+        description="Wire eligible links (both endpoints on one compute, both able to anchor: Docker veth, "
+        "or QEMU when the compute's uBridge supports persistent TAPs) through kernel interfaces instead "
+        "of the uBridge UDP relay",
+    )
     auto_discover_images: bool = Field(True, description="Automatically discover images in the images directory")
     image_sync_interval: int = Field(900, ge=10, description="Seconds between automatic image inventory scans")
     report_errors: bool = Field(True, description="Automatically send crash reports to the GNS3 team")

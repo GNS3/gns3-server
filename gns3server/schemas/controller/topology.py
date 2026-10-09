@@ -34,7 +34,7 @@ from .projects import Supplier, Variable
 
 class TopologyLink(Link):
     # Legacy topology files store filters as untyped dicts
-    filters: Optional[dict] = None  # type: ignore[assignment]
+    filters: Optional[dict] = None
 
 
 class TopologyType(str, Enum):

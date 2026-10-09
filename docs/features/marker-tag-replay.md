@@ -314,6 +314,12 @@ All error bodies are `{"message": "…"}` (the app's unified format).
 
 ## Notes
 
+- **In-repo e2e coverage (2026-10).** `tests/e2e/test_marker_kernel_datapath.py` exercises
+  the whole contract against a paused tag on real marker pcaps: the `range` aggregate
+  (frame_count, sources inventory with the node/link/marker identity, first-frame
+  src/dst/proto from sharkd), the display filter narrowing (`icmp.type == 8`), the
+  unknown-link empty stream, the `frames` window endpoint, and the 409 gate while a
+  marker under the tag is still capturing.
 - **Heterogeneous link types coexist.** Frames are never merged into a single pcap
   (mergecap is deliberately not used) — each frame carries its source and is decoded
   individually, so Ethernet and serial (cHDLC/PPP) markers can share one timeline.

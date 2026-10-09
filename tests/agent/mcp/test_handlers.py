@@ -425,6 +425,21 @@ class TestLink:
             result = get_links_handler({"project_id": "p1", "fields": ["link_id"]}, ctx)
             assert result["links"] == [{"link_id": "l1"}]
 
+    def test_list_can_ask_for_kernel_datapath(self, ctx):
+        """
+        The datapath is a field the tool descriptions always advertised, so
+        it has to be requestable: a whitelist missing it rejected
+        fields=["kernel_datapath"] and made link_list unable to report which
+        links run on kernel interfaces.
+        """
+
+        from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_links_handler
+
+        with patch(f"{AH}._get_connector") as m:
+            m.return_value = _mock_conn([{"link_id": "l1", "link_type": "ethernet", "kernel_datapath": True}])
+            result = get_links_handler({"project_id": "p1", "fields": ["link_id", "kernel_datapath"]}, ctx)
+            assert result["links"] == [{"link_id": "l1", "kernel_datapath": True}]
+
     def test_get(self, ctx):
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_link_handler
 

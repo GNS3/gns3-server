@@ -1057,6 +1057,10 @@ class BaseNode:
         # than skipping them as "already installed".
         self._marker_filter_bridges.clear()
         self._marker_specs.clear()
+        # ...and so is the kernel capture, uBridge's single AF_PACKET slot
+        # (meaningful for the kernel-datapath node types; see
+        # KernelDatapathMixin._reserve_kernel_capture).
+        self._kernel_capture_ifc = None
 
     async def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
@@ -1108,19 +1112,45 @@ class BaseNode:
         :param filters: Array of filter dictionary
         """
 
+        self._guard_kernel_only_filters(filters)
         await self._ubridge_send("bridge reset_packet_filters " + bridge_name)
         for packet_filter in self._build_filter_list(filters):
-            cmd = f"bridge add_packet_filter {bridge_name} {packet_filter}"
-            try:
-                await self._ubridge_send(cmd)
-            except UbridgeError as e:
-                match = re.search(r"Cannot compile filter '(.*)': syntax error", str(e))
-                if match:
-                    message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {match.group(1)}"
-                    log.warning(message)
-                    self.project.emit("log.warning", {"message": message})
-                else:
-                    raise
+            await self._ubridge_add_packet_filter(f"bridge add_packet_filter {bridge_name} {packet_filter}")
+
+    def _guard_kernel_only_filters(self, filters):
+        """
+        The netem-extension filters (rate, reorder, gemodel…) only exist on
+        the kernel datapath. The controller keeps them off relay links; this
+        is the second guard for direct compute API use.
+        """
+
+        from gns3server.utils.packet_filter_validation import kernel_only_features
+
+        kernel_only = kernel_only_features(filters)
+        if kernel_only:
+            raise NodeError(
+                "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
+                "veth host end); the uBridge relay has no equivalent".format(", ".join(sorted(kernel_only)))
+            )
+
+    async def _ubridge_add_packet_filter(self, cmd):
+        """
+        Send one relay filter command, degrading a BPF expression that no
+        longer compiles on this uBridge's libpcap to a warning instead of
+        breaking the link (the controller already validated the syntax with
+        tcpdump at create/update time).
+        """
+
+        try:
+            await self._ubridge_send(cmd)
+        except UbridgeError as e:
+            match = re.search(r"Cannot compile filter '(.*)': syntax error", str(e))
+            if match:
+                message = f"Warning: ignoring BPF packet filter '{self.name}' due to syntax error: {match.group(1)}"
+                log.warning(message)
+                self.project.emit("log.warning", {"message": message})
+            else:
+                raise
 
     def _build_filter_list(self, filters):
         """
@@ -1164,6 +1194,24 @@ class BaseNode:
             dlt = dlt[4:]
         return None if dlt == "EN10MB" else dlt
 
+    @staticmethod
+    def _validate_marker_name(name):
+        """
+        Defense-in-depth marker-name check shared by every add path (relay
+        ``mark`` filter and kernel ``marker add_kernel``). The name travels
+        from the controller REST layer (MarkerCreate schema) but is validated
+        here too against hand-edited topology files. Note: "global-*" names are
+        legitimate — they come from project-level marker definitions
+        (inherit_marker). The prefix is only forbidden at the user-facing
+        schema layer, not at the uBridge boundary. The user-facing name is
+        capped at 32 by the schema; inherited copies carry a ``global-``
+        prefix (≤ 39), so allow up to 48 here.
+        """
+
+        _MARKER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+        if not _MARKER_NAME_RE.match(name) or len(name) > 48:
+            raise UbridgeError(f"Invalid marker name: {name!r}")
+
     async def _ubridge_add_marker_filter(
         self, bridge_name, name, bpf, pcap_path, tag=None, link_id=None, direction=None, data_link_type=None
     ):
@@ -1176,7 +1224,11 @@ class BaseNode:
         and it is added/removed on its own (not via reset_packet_filters) so the
         pcap is not closed/reopened on unrelated filter changes.
 
-        :param bridge_name: uBridge bridge carrying the link's traffic
+        ``bridge_name`` is the anchor the marker attaches to: the uBridge relay
+        bridge here, or the kernel veth host interface on the kernel datapath
+        (DockerVM overrides this to emit ``marker add_kernel``).
+
+        :param bridge_name: anchor carrying the link's traffic
         :param name: stable, gns3server-chosen filter name (pcap identity + echoed in signals)
         :param bpf: libpcap BPF expression
         :param pcap_path: absolute path ubridge appends matched packets to
@@ -1184,17 +1236,7 @@ class BaseNode:
         """
 
         # mark <bpf> [tag <id>] [pcap <path>] — tag/pcap keyword pairs, any order.
-        # name travels from the controller REST layer (MarkerCreate schema) but is
-        # validated here too as defense-in-depth against hand-edited topology files.
-        # Note: "global-*" names are legitimate here — they come from project-level
-        # marker definitions (inherit_marker). The prefix is only forbidden at the
-        # user-facing schema layer, not at the uBridge boundary.
-        _MARKER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
-        # Defense-in-depth vs hand-edited topology: the user-facing name is capped
-        # at 32 by the schema; inherited copies carry a ``global-`` prefix (≤ 39),
-        # so allow up to 48 here.
-        if not _MARKER_NAME_RE.match(name) or len(name) > 48:
-            raise UbridgeError(f"Invalid marker name: {name!r}")
+        self._validate_marker_name(name)
         cmd = f'bridge add_packet_filter {bridge_name} {name} mark "{bpf}"'
         if tag is not None:
             cmd += f" tag {tag}"
@@ -1282,6 +1324,12 @@ class BaseNode:
         Reconcile the traffic-insight markers carried by *nio* onto bridge
         *bridge_name* with what is already installed there.
 
+        ``bridge_name`` is the marker anchor: the uBridge relay bridge on the
+        relay datapath, or the kernel veth host interface on the kernel
+        datapath (DockerVM passes the veth name; its add/delete/enable
+        primitive overrides translate the commands to ``marker *_kernel``).
+        The reconcile itself is datapath-agnostic.
+
         uBridge's ``reset_packet_filters`` preserves mark filters (contract), so
         a plain re-add would duplicate them; instead this diffs the desired
         ``nio.markers`` against the installed ``_marker_specs``:
@@ -1295,8 +1343,9 @@ class BaseNode:
           * desired and new                    → add
 
         Called from ``add_ubridge_udp_connection`` (fresh bridge, empty maps →
-        installs all) and ``update_ubridge_udp_connection`` / the batch NIO
-        update path (incremental reconcile).
+        installs all), ``update_ubridge_udp_connection`` / the batch NIO
+        update path (incremental reconcile), and DockerVM's kernel-datapath
+        connection paths (veth anchor).
         """
         from gns3server.compute.marker.marker_manager import MarkerManager
 
@@ -1373,12 +1422,13 @@ class BaseNode:
                 raise
             # A disabled marker is installed but turned off (a paused tap), not
             # dropped — so the UI can flip it back on instantly with
-            # enable_packet_filter, no NIO rebuild (ubridge contract §3.2).
+            # enable_packet_filter / marker enable_kernel, no NIO rebuild
+            # (ubridge contract §3.2).
             if not enabled:
                 try:
-                    await self._ubridge_send(f"bridge enable_packet_filter {bridge_name} {name} off")
+                    await self._ubridge_enable_marker_filter(bridge_name, name, "off")
                 except UbridgeError as e:
-                    # Old ubridge without enable_packet_filter: leave it installed
+                    # Old ubridge without the enable command: leave it installed
                     # (on) rather than fail the whole link/marker apply.
                     log.warning(f"Could not turn marker '{name}' off on {bridge_name}: {e}")
             manager.register(str(self.project.id), self._id, name, link_id, tag)
@@ -1388,15 +1438,30 @@ class BaseNode:
             self._marker_filter_bridges[name, link_id] = bridge_name
             self._marker_specs[name, link_id] = spec
 
+    async def _ubridge_enable_marker_filter(self, anchor, name, state):
+        """
+        Flip one installed marker's on/off state with a single uBridge command
+        (``bridge enable_packet_filter … on|off``). ``anchor`` is the uBridge
+        relay bridge, or the kernel veth host interface on the kernel datapath
+        (DockerVM overrides this to emit ``marker enable_kernel``).
+
+        :param anchor: relay bridge name or kernel veth host interface
+        :param name: marker filter name
+        :param state: "on" or "off"
+        """
+
+        await self._ubridge_send(f"bridge enable_packet_filter {anchor} {name} {state}")
+
     async def _ubridge_set_marker_filter_state(self, name, enabled):
         """
         Toggle an installed marker filter on/off with a single uBridge command
-        (``bridge enable_packet_filter … on|off``) — no NIO reset/reapply, so the
-        pcap identity and emitted counter are preserved (ubridge contract §3.2).
-        The bridge is resolved from the (name, link_id)→bridge map populated at
+        — no NIO reset/reapply, so the pcap identity and emitted counter are
+        preserved (ubridge contract §3.2).
+        The anchor is resolved from the (name, link_id)→bridge map populated at
         apply time; entries are iterated so a node that hosts the same marker name
         on several links (e.g. IOU with one IOL-BRIDGE per node) toggles every
-        copy. IOU overrides this for its ``iol_bridge`` command shape.
+        copy. IOU's ``iol_bridge`` command shape lives in its
+        ``_ubridge_enable_marker_filter`` override.
 
         :param name: marker filter name
         :param enabled: True = on (signal+pcap), False = off (paused tap)
@@ -1405,7 +1470,7 @@ class BaseNode:
         state = "on" if enabled else "off"
         for (n, lid), bridge_name in list(self._marker_filter_bridges.items()):
             if n == name:
-                await self._ubridge_send(f"bridge enable_packet_filter {bridge_name} {name} {state}")
+                await self._ubridge_enable_marker_filter(bridge_name, name, state)
 
     async def _ubridge_marker_pause(self):
         """

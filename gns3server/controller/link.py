@@ -26,6 +26,7 @@ from gns3server.config import Config
 from gns3server.utils.packet_filter_validation import (
     FilterValidationError,
     filter_inactive_filters,
+    kernel_only_features,
     validate_all_filters,
 )
 
@@ -45,22 +46,31 @@ FILTERS = [
     {
         "type": "frequency_drop",
         "name": "Frequency drop",
-        "description": "It will drop everything with a -1 frequency, drop every Nth packet with a positive frequency, or drop nothing",
+        "description": "It will drop everything with a -1 frequency, drop every Nth packet with a positive "
+        "frequency, or drop nothing. On kernel-datapath links this is exact (eBPF every-Nth counter)",
         "parameters": [{"name": "Frequency", "minimum": -1, "maximum": 32767, "type": "int", "unit": "th packet"}],
     },
     {
         "type": "packet_loss",
         "name": "Packet loss",
-        "description": "The percentage represents the chance for a packet to be lost",
-        "parameters": [{"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"}],
+        "description": "The percentage represents the chance for a packet to be lost. The optional correlation "
+        "(kernel-datapath links only) makes consecutive losses dependent, like a bursty real network. "
+        "Kernel caveat: a chance at or below the correlation value collapses toward zero effective loss "
+        "(netem correlated-RNG bias) — use gemodel for bursty loss at a known mean rate",
+        "parameters": [
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
     },
     {
         "type": "delay",
         "name": "Delay",
-        "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
+        "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay, and "
+        "(kernel-datapath links only) shape the jitter with a distribution",
         "parameters": [
             {"name": "Latency", "minimum": 1, "maximum": 32767, "unit": "ms", "type": "int"},
             {"name": "Jitter (-/+)", "minimum": 0, "maximum": 32767, "unit": "ms", "type": "int"},
+            {"name": "Distribution", "type": "str", "unit": "uniform|normal|pareto|paretonormal"},
         ],
     },
     {
@@ -74,6 +84,86 @@ FILTERS = [
         "name": "Berkeley Packet Filter (BPF)",
         "description": "This filter will drop any packet matching a BPF expression. Put one expression per line",
         "parameters": [{"name": "Filters", "type": "text"}],
+    },
+    # Everything below runs on kernel-datapath links only (tc netem on the
+    # veth host end; the uBridge relay has no equivalent).
+    {
+        "type": "rate",
+        "name": "Bandwidth limit",
+        "description": "Shape the link to a maximum bandwidth, tc-style value (kernel-datapath links only)",
+        "parameters": [{"name": "Rate", "type": "str", "unit": "e.g. 512kbit, 10mbit"}],
+    },
+    {
+        "type": "reorder",
+        "name": "Reorder",
+        "description": "The percentage represents the chance for a packet to be reordered (held until a later "
+        "packet passes it). Requires the delay filter; kernel-datapath links only",
+        "parameters": [
+            {"name": "Reorder", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Gap", "minimum": 1, "maximum": 1000, "type": "int", "unit": "packets"},
+        ],
+    },
+    {
+        "type": "gemodel",
+        "name": "Gilbert-Elliot loss",
+        "description": "Bursty loss model: p is the chance of moving from the good to the bad state, r the chance "
+        "of moving back, and 1-h the loss chance while in the bad state (the good state loses nothing) — the "
+        "steady-state mean loss is p/(p+r) x (1-h). Mutually exclusive with packet loss; kernel-datapath links "
+        "only",
+        "parameters": [
+            {"name": "p (good-to-bad)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "r (bad-to-good)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "1-h (bad-state loss)", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
+    },
+    {
+        "type": "duplicate",
+        "name": "Duplicate",
+        "description": "The percentage represents the chance for a packet to be duplicated; the optional "
+        "correlation makes consecutive duplicates dependent (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Correlation", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
+    },
+    {
+        "type": "seed",
+        "name": "Random seed",
+        "description": "Make the netem random draws (loss, duplication, jitter) reproducible for repeated "
+        "experiments (kernel-datapath links only)",
+        "parameters": [{"name": "Seed", "minimum": 0, "maximum": 4294967295, "type": "int", "unit": ""}],
+    },
+    {
+        "type": "limit",
+        "name": "Queue limit",
+        "description": "Queue depth of the impairment qdisc in packets — raise it above the 1000 default when "
+        "combining a low rate with a long delay (kernel-datapath links only)",
+        "parameters": [{"name": "Limit", "minimum": 1, "maximum": 1000000, "type": "int", "unit": "packets"}],
+    },
+    {
+        "type": "quota",
+        "name": "Byte quota",
+        "description": "After the byte quota is consumed, each further packet drops with the given chance "
+        "(100 = hard cutoff) — a data cap, like a mobile plan (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Quota", "minimum": 1, "maximum": 1000000000000000, "type": "int", "unit": "bytes"},
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+        ],
+    },
+    {
+        "type": "window_drop",
+        "name": "Time window drop",
+        "description": "Drop packets with the given chance inside a time window starting Start ms from the "
+        "moment the filter is applied — a single outage (traffic passes before and after), or with a "
+        "period recurring flaps whose per-cycle timing a jitter randomizes (kernel-datapath links only)",
+        "parameters": [
+            {"name": "Start", "minimum": 0, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Outage", "minimum": 1, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Chance", "minimum": 0, "maximum": 100, "type": "int", "unit": "%"},
+            {"name": "Period", "minimum": 1, "maximum": 1000000000000, "type": "int", "unit": "ms"},
+            {"name": "Jitter", "minimum": 0, "maximum": 1000000000, "type": "int", "unit": "ms"},
+        ],
     },
 ]
 
@@ -110,6 +200,21 @@ class Link:
         Get an array of filters
         """
         return self._filters
+
+    @property
+    def kernel_datapath(self):
+        """
+        Whether this link is wired on the kernel datapath (no uBridge relay
+        in the forwarding path): either both endpoints enslave their
+        anchors into a per-link Linux bridge (``nio_bridge``), or an
+        Ethernet switch absorbs the peer's anchor into its own kernel
+        bridge (``nio_anchor`` on the switch end, ``nio_bridge`` with no
+        bridge on the peer end), or two switches are cascaded through a
+        veth pair (``nio_anchor`` on both ends). Impairment filters run as
+        tc netem on the anchors; markers and capture are served by
+        uBridge's AF_PACKET module.
+        """
+        return any(d.get("type") in ("nio_bridge", "nio_anchor") for d in (getattr(self, "_link_data", None) or []))
 
     @property
     def markers(self):
@@ -224,7 +329,27 @@ class Link:
         except FilterValidationError as e:
             raise ControllerError(f"Invalid packet filter parameters: {e!s}")
 
-        if new_filters != self.filters:
+        if self._created and not self.kernel_datapath:
+            # Kernel-only filters (the netem extensions, the eBPF quota and
+            # window modes)
+            # have no relay equivalent. Only enforced on created links — while
+            # loading a project the datapath is not decided yet (a link that
+            # will be wired on the kernel datapath must accept them), and the
+            # relay prepare path drops what it cannot run with a warning.
+            conflicts = kernel_only_features(new_filters)
+            if conflicts:
+                raise ControllerError(
+                    "Packet filter(s) {} only run on a kernel-datapath link (tc netem on the "
+                    "veth host end); this link is wired on the uBridge relay — delete and "
+                    "recreate the link to switch it to the kernel datapath".format(", ".join(sorted(conflicts)))
+                )
+
+        # An unchanged filters dict is normally a no-op skip, but a PUT that
+        # still carries window_drop must reconcile: the outage schedule is
+        # measured from the apply, so re-sending the same window has to
+        # re-arm the one-shot outage (the documented contract is that any
+        # filter update restarts the schedule).
+        if new_filters != self.filters or "window_drop" in new_filters:
             self._filters = new_filters
             if self._created:
                 await self.update()
@@ -335,8 +460,7 @@ class Link:
             except BaseException:
                 self.release_ports()
                 raise
-            for n in self._nodes:
-                n["node"].add_link(self)
+            self._bind_members()
             self._created = True
             self._project.emit_notification("link.created", self.asdict())
 
@@ -345,8 +469,12 @@ class Link:
 
     def release_ports(self):
         for n in self._nodes:
-            if n["port"].link == self:
-                n["port"].link = None
+            # The live port, for the same staleness reason as _bind_members;
+            # the link could be different from self if we rollback an
+            # already existing link
+            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
+            if port.link == self:
+                port.link = None
             n["node"].links.discard(self)
 
     async def update_nodes(self, nodes):
@@ -372,6 +500,21 @@ class Link:
         Update a link
         """
         raise NotImplementedError
+
+    def _bind_members(self):
+        """
+        Wire the back-references on every member: the node's link set and the
+        port's link. The port is resolved live, through the node's current
+        port list — the object stored at add_node time goes stale whenever a
+        node update rebuilds that list (``parse_node_response``), and a
+        back-reference set on the stale object is invisible to the "Port is
+        already used" guard in add_node, which reads the live one.
+        """
+
+        for n in self._nodes:
+            n["node"].add_link(self)
+            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
+            port.link = self
 
     async def delete(self):
         """
@@ -585,6 +728,14 @@ class Link:
         """
         raise NotImplementedError
 
+    async def node_started(self, node):
+        """
+        Called after a node member of the link reached the started state.
+        The base link has nothing to re-synchronise; UDPLink uses it for
+        the Ethernet-switch fast path (the switch must re-join a peer anchor
+        that only comes into existence when the peer starts).
+        """
+
     def default_capture_file_name(self):
         """
         :returns: File name for a capture on this link
@@ -642,8 +793,57 @@ class Link:
         """
         filter_node = self._get_filter_node()
         if filter_node:
-            return FILTERS
+            if self.kernel_datapath:
+                # Kernel-datapath links serve every filter type in principle:
+                # netem for delay/loss/corrupt and the netem extensions,
+                # cls_bpf for bpf, the eBPF classifier for frequency_drop,
+                # quota and window_drop. What is offered is gated on the
+                # endpoints' computes reporting a uBridge that can run each
+                # type; computes that report nothing (older servers, failed
+                # probe) keep the full list — update_filters still rejects
+                # with 409 on apply.
+                return [f for f in FILTERS if self._filter_supported_by_computes(f["type"])]
+            # Relay links: hide the kernel-only types the relay cannot run
+            # (they would be rejected with 409 on update).
+            from gns3server.utils.packet_filter_validation import KERNEL_ONLY_FILTERS
+
+            return [f for f in FILTERS if f["type"] not in KERNEL_ONLY_FILTERS]
         return []
+
+    def _filter_supported_by_computes(self, filter_type):
+        """
+        Whether every endpoint's compute reports a uBridge able to run
+        *filter_type* on a kernel-datapath link (both ends apply their own
+        filters, so one incapable compute is enough to hide the type).
+        Computes without a uBridge tc report impose no constraint.
+        """
+
+        from gns3server.utils.tc_capabilities import FILTER_EBPF_MODES, FILTER_NETEM_KEYWORDS
+
+        reported = []
+        for side in self._nodes:
+            capabilities = side["node"].compute.capabilities
+            if isinstance(capabilities, dict) and capabilities.get("ubridge_tc"):
+                reported.append(capabilities["ubridge_tc"])
+        if not reported:
+            return True
+        for caps in reported:
+            # Field-wise .get: the controller stores the compute's raw
+            # capabilities verbatim, so a divergent or hand-crafted payload
+            # with a partial ubridge_tc dict must read as "not supported"
+            # rather than raising a KeyError into the API response.
+            if filter_type in FILTER_EBPF_MODES:
+                if FILTER_EBPF_MODES[filter_type] not in (caps.get("ebpf_modes") or []):
+                    return False
+            elif filter_type == "bpf":
+                if not caps.get("cbpf"):
+                    return False
+            elif filter_type in FILTER_NETEM_KEYWORDS:
+                if FILTER_NETEM_KEYWORDS[filter_type] not in (caps.get("netem") or []):
+                    return False
+            # the remaining types (delay, packet_loss, corrupt) run on any
+            # build that reports tc capabilities at all
+        return True
 
     def _get_filter_node(self):
         """
@@ -709,6 +909,11 @@ class Link:
             "capture_file_path": self.capture_file_path,
             "capture_compute_id": self.capture_compute_id,
             "link_type": self._link_type,
+            # runtime fact, not persisted: recomputed from the NIO wiring on
+            # every load (tells clients which datapath impairs this link —
+            # kernel-only filter types absent from available_filters are
+            # then distinguishable from capability gaps)
+            "kernel_datapath": self.kernel_datapath,
             "filters": self._filters,
             "markers": self._markers,
             "suspend": self._suspended,

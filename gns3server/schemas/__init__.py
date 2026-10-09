@@ -107,7 +107,17 @@ from .compute.iou_nodes import IOU, IOUCreate, IOUStart, IOUUpdate
 from .compute.nat_nodes import NAT, NATCreate, NATUpdate
 
 # Compute schemas
-from .compute.nios import TAPNIO, UDPNIO, BatchNIOCreate, BatchNIOEntry, EthernetNIO, MarkerRebuild, MarkerToggle
+from .compute.nios import (
+    TAPNIO,
+    UDPNIO,
+    AnchorNIO,
+    BatchNIOCreate,
+    BatchNIOEntry,
+    BridgeNIO,
+    EthernetNIO,
+    MarkerRebuild,
+    MarkerToggle,
+)
 from .compute.qemu_nodes import Qemu, QemuCreate, QemuUpdate
 from .compute.virtualbox_nodes import VirtualBox, VirtualBoxCreate, VirtualBoxUpdate
 from .compute.vmware_nodes import VMware, VMwareCreate, VMwareUpdate
@@ -166,6 +176,7 @@ __all__ = [
     "ATMSwitch",
     "ATMSwitchCreate",
     "ATMSwitchUpdate",
+    "AnchorNIO",
     "ApiKeyCreate",
     "Appliance",
     "ApplianceVersion",
@@ -174,6 +185,7 @@ __all__ = [
     "AutoIdlePC",
     "BatchNIOCreate",
     "BatchNIOEntry",
+    "BridgeNIO",
     "C1700DynamipsTemplate",
     "C1700DynamipsTemplateUpdate",
     "C2600DynamipsTemplate",

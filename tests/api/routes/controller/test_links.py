@@ -282,9 +282,36 @@ class TestLinkRoutes:
         assert mock.called
         link_id = response.json()["link_id"]
         assert response.json()["nodes"][0]["label"]["x"] == 42
+        # the runtime datapath fact survives the response model on both POST and GET
+        assert response.json()["kernel_datapath"] is False
         response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["nodes"][0]["label"]["x"] == 42
+        assert response.json()["kernel_datapath"] is False
+
+    async def test_get_link_kernel_datapath(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+        """A kernel-wired link reports kernel_datapath true (was dropped by the schema)."""
+
+        node1, node2 = nodes
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+
+        link_id = response.json()["link_id"]
+        link = project.get_link(link_id)
+        link._link_data = [{"type": "nio_bridge"}]
+        response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["kernel_datapath"] is True
 
     async def test_link_etag_and_if_match(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
@@ -554,7 +581,10 @@ class TestLinkRoutes:
             {"frequency_drop": [32768]},
             {"delay": [32768, 0]},
             {"delay": [10, -1]},
-            {"packet_loss": [1, 2]},
+            # a second packet_loss value (correlation) is valid — it is a
+            # kernel-datapath parameter the controller accepts; gemodel out
+            # of range stands in for the invalid slot instead
+            {"gemodel": [101, 50, 50]},
             {"bpf": [1]},
             {"packet_loss": ["abc"]},
         ],
@@ -568,7 +598,9 @@ class TestLinkRoutes:
         response = await client.put(
             app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": filters}
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        # The filter vocabulary is capability-gated per link, so values are
+        # validated by the controller (409), not by a strict request schema
+        assert response.status_code == status.HTTP_409_CONFLICT
         assert "message" in response.json()
         assert link.filters == {}
 
@@ -580,9 +612,23 @@ class TestLinkRoutes:
             app.url_path_for("update_link", project_id=project.id, link_id=link.id),
             json={"filters": {"unknown": [1]}},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == status.HTTP_409_CONFLICT
         assert "message" in response.json()
         assert link.filters == {}
+
+    async def test_update_link_packet_loss_correlation(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
+        # The optional packet_loss correlation (second value) is a
+        # kernel-datapath parameter accepted by the controller
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"packet_loss": [1, 2]}},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == {"packet_loss": [1, 2]}
 
     async def test_update_link_invalid_delay_latency(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
@@ -596,9 +642,12 @@ class TestLinkRoutes:
     async def test_openapi_link_filters(self, app: FastAPI) -> None:
 
         schemas = app.openapi()["components"]["schemas"]
-        link_filters = schemas["LinkFilters"]
-        assert link_filters["additionalProperties"] is False
-        assert set(link_filters["properties"]) == {"frequency_drop", "packet_loss", "delay", "corrupt", "bpf"}
+        # The filters vocabulary is capability-gated per link and validated by
+        # the controller, so the Link schema carries it as a free-form object
+        # (no strict LinkFilters model on the request path)
+        assert "LinkFilters" not in schemas
+        filters_property = schemas["Link"]["properties"]["filters"]
+        assert filters_property["anyOf"][0] == {"additionalProperties": True, "type": "object"}
         assert schemas["LinkFilterDefinition"]["properties"]["parameters"]["items"] == {
             "$ref": "#/components/schemas/LinkFilterParameter"
         }

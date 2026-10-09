@@ -625,6 +625,22 @@ async def test_build_command(vm, fake_qemu_binary):
 
 
 @pytest.mark.asyncio
+async def test_build_command_console_none(vm):
+    """
+    A headless QEMU node (console_type none) builds a command line without a
+    serial device: the console options for "none" used to fall through and
+    return None, which made node start fail with a TypeError.
+    """
+
+    vm.console_type = "none"
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        cmd = await vm._build_command()
+    assert "-serial" not in cmd
+    assert "-netdev" in cmd
+
+
+@pytest.mark.asyncio
 async def test_build_command_manual_uuid(vm):
     """
     If user has set a uuid we keep it

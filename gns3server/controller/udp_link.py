@@ -19,8 +19,15 @@
 import asyncio
 import logging
 
-from gns3server.utils.packet_filter_validation import validate_bpf_syntax
+from gns3server.config import Config
+from gns3server.utils.application_id import is_iol_runner_environment
+from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_anchor_type, kernel_cascade_names
+from gns3server.utils.packet_filter_validation import (
+    split_kernel_only_features,
+    validate_bpf_syntax,
+)
 
+from .compute import ComputeError
 from .controller_error import ControllerError, ControllerNotFoundError
 from .link import _UNSET, Link
 from .node_types import BUILTIN_NODE_TYPES
@@ -46,6 +53,36 @@ _MARKER_CAPABLE_TYPES = frozenset(
 log = logging.getLogger(__name__)
 
 
+def _is_unix_socket_docker(node):
+    """
+    Best-effort detection of vendor containers bridged through AF_UNIX
+    socket pairs with no anchor of their own: the generic
+    GNS3_UNIX_SOCKET_NIO knob. IOL runner containers also bridge through
+    unix sockets (their class forces the wiring), but their anchors are
+    persistent TAPs — they graduate through _kernel_endpoint_ready's
+    capability gate instead of this exclusion. When both markers are present
+    the IOL runner one wins the compute's class selection, so the exclusion
+    must not fire for it. The compute side independently rejects
+    kernel-datapath NIOs on anchor-less containers, so a missed detection
+    surfaces as a clearer-late error — except on the switch fast path, where
+    an absent anchor is deferred forever by design (a link to a stopped node
+    must not fail), making the miss a silently dead cable.
+    """
+
+    environment = (node.properties or {}).get("environment") or ""
+    if is_iol_runner_environment(environment):
+        return False
+    for line in environment.splitlines():
+        line = line.strip().rstrip(",")
+        if line.startswith("GNS3_UNIX_SOCKET_NIO="):
+            # Mirror the compute's parsing exactly (VendorDockerVM): the
+            # marker must start the line, and only a truthy value enables
+            # the unix-socket wiring — with 0/false/no the container wires
+            # adapters the standard way and can carry a kernel link.
+            return line.split("=", 1)[1].strip().lower() in ("1", "true", "yes")
+    return False
+
+
 class UDPLink(Link):
     def __init__(self, project, link_id=None):
         super().__init__(project, link_id=link_id)
@@ -68,16 +105,62 @@ class UDPLink(Link):
         """Whether NIO creation is waiting for missing node images."""
         return self._deferred
 
-    def _get_node_filters(self, node1, node2):
+    def _get_node_filters(self, node1, node2, kernel=None):
         """
         Determine which node gets the active filters applied.
 
+        :param kernel: explicit datapath decision for the caller's context.
+            ``_prepare`` must pass it: it clears ``_link_data`` (the source
+            of the ``kernel_datapath`` property) before rebuilding the NIO
+            specs, so deriving the datapath there would read the previous
+            run's. Callers operating on established link data (``update``)
+            derive it from the property.
+
         :returns: Tuple of (node1_filters, node2_filters)
         """
+        # Kernel-datapath links implement suspend natively (interface carrier
+        # driven by the NIO suspend flag). The synthetic frequency_drop filter
+        # that get_active_filters() injects for suspended links is a
+        # relay-datapath emulation mechanism, so kernel links push the *real*
+        # filters straight from storage. Both endpoints receive them: each
+        # end's compute attaches one tc netem qdisc to its veth host end
+        # (egress = traffic entering that container), so every direction of
+        # the link is impaired exactly once — the same net effect as the
+        # relay, where both directions cross the single filtered bridge.
+        if kernel is None:
+            kernel = self.kernel_datapath
+        if kernel:
+            # Ethernet switch fast path: the link's tc impairments apply on
+            # the absorbed anchor, which is a single interface — exactly one
+            # end may own them, and that end is the switch (it owns the
+            # anchor's bridge membership and port VLANs). A cascade link is
+            # two interfaces (one veth end per switch), so it takes the
+            # normal two-sided treatment like any other kernel link.
+            switch = self._switch_endpoint()
+            both_switches = (
+                self._nodes[0]["node"].node_type == "ethernet_switch"
+                and self._nodes[1]["node"].node_type == "ethernet_switch"
+            )
+            if switch is not None and not both_switches:
+                return (self._filters, {}) if switch[0] == 0 else ({}, self._filters)
+            return self._filters, self._filters
+        # Relay datapath: the netem-extension filters (rate, reorder, gemodel…)
+        # have no relay equivalent. update_filters rejects them on created
+        # relay links, but a project loaded with such filters on a link that
+        # cannot be kernel-wired (cross-compute, non-docker node, relay-only
+        # filter mix…) reaches this point — drop what cannot run with a
+        # warning, exactly like invalid filters are dropped at load time.
+        relay_filters, dropped = split_kernel_only_features(self.get_active_filters())
+        if dropped:
+            log.warning(
+                "Link %s: dropping packet filter(s) %s — no kernel datapath available on this link (uBridge relay wiring)",
+                self._id,
+                ", ".join(sorted(dropped)),
+            )
         filter_node = self._get_filter_node()
         return (
-            self.get_active_filters() if filter_node == node1 else {},
-            self.get_active_filters() if filter_node == node2 else {},
+            relay_filters if filter_node == node1 else {},
+            relay_filters if filter_node == node2 else {},
         )
 
     def _markers_for_node(self, node):
@@ -110,6 +193,106 @@ class UDPLink(Link):
         """
         return self._markers_for_node(node1), self._markers_for_node(node2)
 
+    def _kernel_datapath_eligible(self, node1, node2):
+        """
+        Whether this link can be wired on the kernel datapath (the adapters'
+        host-side anchors enslaved into a per-link Linux bridge) instead of
+        the uBridge UDP relay. Every GNS3 filter type has a kernel equivalent
+        — netem for delay/packet_loss/corrupt and the netem extensions,
+        cls_bpf for bpf, the eBPF stateful classifier for frequency_drop — so
+        filters no longer disqualify the kernel path. Capture and markers are
+        served by uBridge's AF_PACKET modules on the anchor.
+
+        Every adapter owns an anchor, so the datapath is a runtime decision —
+        links attach to running nodes too: the compute side enslaves the
+        anchor (brctl) or attaches the relay to it (add_nio_ethernet) without
+        touching the interfaces the node itself uses. Both endpoints must be
+        on the same compute (there is no kernel link across hosts) and both
+        must be able to anchor: Docker adapters are born as veth pairs, and
+        IOL runner containers — whose guest leg is unix sockets, not a veth —
+        anchor on persistent TAPs reached through the bridge module's
+        swappable TAP leg (its own capability pair, see
+        _kernel_endpoint_ready). QEMU adapters are persistent TAPs, which
+        need uBridge's tap module —
+        asked of that compute, since an old uBridge leaves QEMU on the relay
+        datapath and cannot carry a kernel link at all. IOU's Ethernet
+        bays anchor on persistent TAPs too, bound to its IOL fabric
+        (``iol_bridge add_nio_tap``) — a separate capability, since it can
+        be present or absent independently of the tap module. Dynamips
+        Ethernet slot ports anchor on persistent TAPs the hypervisor opens
+        (the tap module again — the Dynamips binary itself creates nothing),
+        so it gates like QEMU. A kernel link is an Ethernet segment, so
+        non-Ethernet ports (IOU serial, Dynamips serial/ATM/POS adapters)
+        stay on the relay whatever the node's capabilities.
+        """
+
+        if not Config.instance().settings.Server.enable_kernel_datapath:
+            return False
+        if node1.compute.id != node2.compute.id:
+            return False
+        if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
+            return False
+        for side in self._nodes:
+            port = side.get("port")
+            if port is not None and port.link_type != "ethernet":
+                return False
+        # Ethernet switch fast path: the switch absorbs the peer's anchor
+        # into its own kernel bridge, so the switch side needs no anchoring
+        # capability of its own (its bridge and brctl already exist) — only
+        # the peer must be able to anchor. Two switches cascade instead: a
+        # veth pair joins the two kernel bridges, each side enslaving its
+        # own end (a kernel interface belongs to exactly one bridge, so the
+        # pair is the only shape a bridge-to-bridge cable can take).
+        switch = self._switch_endpoint()
+        if switch is not None:
+            if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
+                return True
+            peer = node2 if switch[0] == 0 else node1
+            return self._kernel_endpoint_ready(peer)
+        return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
+
+    def _switch_endpoint(self):
+        """
+        The Ethernet switch endpoint of this link as ``(index, node)``, or
+        None — the fast path where the switch owns the kernel bridge.
+        """
+
+        for index, side in enumerate(self._nodes):
+            if side["node"].node_type == "ethernet_switch":
+                return index, side["node"]
+        return None
+
+    @staticmethod
+    def _kernel_endpoint_ready(node):
+        """
+        Whether a node can anchor a kernel link on its compute.
+        """
+
+        if node.node_type == "docker":
+            environment = (node.properties or {}).get("environment") or ""
+            if is_iol_runner_environment(environment):
+                # IOL runner containers anchor on persistent TAPs like IOU,
+                # through the bridge module's swappable TAP leg — both
+                # capabilities strict True: an unreported one (old uBridge,
+                # failed probe) keeps the link on the relay, where it always
+                # works.
+                capabilities = node.compute.capabilities or {}
+                return capabilities.get("ubridge_bridge_tap") is True and capabilities.get("ubridge_tap") is True
+            return True
+        capabilities = node.compute.capabilities or {}
+        if node.node_type == "qemu":
+            # Strict True: an unreported capability (old uBridge, failed
+            # probe) keeps the link on the relay, where it always works.
+            return capabilities.get("ubridge_tap") is True
+        if node.node_type == "iou":
+            return capabilities.get("ubridge_iol_tap") is True
+        if node.node_type == "dynamips":
+            # The anchors are uBridge-created TAPs the Dynamips hypervisor
+            # merely opens (nio create_tap) — the same tap-module capability
+            # QEMU needs, not a Dynamips-specific one.
+            return capabilities.get("ubridge_tap") is True
+        return False
+
     async def _prepare(self):
         """
         Local-only link setup: resolve peer addresses, reserve UDP ports and
@@ -135,6 +318,125 @@ class UDPLink(Link):
         adapter_number2 = self._nodes[1]["adapter_number"]
         port_number2 = self._nodes[1]["port_number"]
 
+        if self._kernel_datapath_eligible(node1, node2):
+            node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
+            node1_markers, node2_markers = self._get_node_markers(node1, node2)
+            switch = self._switch_endpoint()
+            if switch is not None:
+                if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
+                    # Switch-to-switch cascade: one veth pair joins the two
+                    # kernel bridges, each side enslaving its own end into
+                    # its own bridge and applying its own port mode to it —
+                    # the kernel-native shape of a cable between two
+                    # bridges (an interface belongs to exactly one bridge,
+                    # so the pair is the only way to express it). The names
+                    # derive from the link id (utils.kernel_anchor) and both
+                    # sides carry the other end's name: each creates the
+                    # pair when its end is missing (the two uBridge
+                    # processes may race — one create wins, the other's
+                    # failure is re-checked against the kernel), and either
+                    # side's teardown may destroy it (deleting one veth end
+                    # takes the whole pair), so no ordering between the two
+                    # NIO posts is needed. Filters are two-sided (each end
+                    # is its own interface, so each direction is impaired
+                    # exactly once, like any other kernel link — not the
+                    # single-sided absorbed-anchor case).
+                    end0, end1 = kernel_cascade_names(self._id)
+                    self._link_data = [
+                        {
+                            "type": "nio_anchor",
+                            "anchor": end0,
+                            "peer": end1,
+                            "filters": node1_filters,
+                            "markers": node1_markers,
+                            "suspend": self._suspended,
+                        },
+                        {
+                            "type": "nio_anchor",
+                            "anchor": end1,
+                            "peer": end0,
+                            "filters": node2_filters,
+                            "markers": node2_markers,
+                            "suspend": self._suspended,
+                        },
+                    ]
+                    return [
+                        (node1, adapter_number1, port_number1, self._link_data[0]),
+                        (node2, adapter_number2, port_number2, self._link_data[1]),
+                    ]
+                # Ethernet switch fast path: the switch absorbs the peer's
+                # anchor into its own kernel bridge — no per-link bridge at
+                # all, so the peer end carries no bridge name (its anchor is
+                # bridged by the switch; it only keeps its own interface,
+                # markers it hosts and its carrier). The switch end gets the
+                # anchor's name to join: the name is the shared naming
+                # contract (utils.kernel_anchor), a pure function of the
+                # peer's node type/id/adapter/port — valid whether or not
+                # the peer is currently running, which is what makes links
+                # to stopped nodes wireable (the switch joins once the
+                # anchor exists, re-pushed by node_started).
+                index = switch[0]
+                peer_index = 1 - index
+                peer = self._nodes[peer_index]["node"]
+                peer_anchor = kernel_anchor_name(
+                    kernel_anchor_type(peer.node_type, (peer.properties or {}).get("environment")),
+                    peer.id,
+                    self._nodes[peer_index]["adapter_number"],
+                    self._nodes[peer_index]["port_number"],
+                )
+                peer_data = {
+                    "type": "nio_bridge",
+                    "bridge": None,
+                    "filters": node1_filters if peer_index == 0 else node2_filters,
+                    "markers": node1_markers if peer_index == 0 else node2_markers,
+                    "suspend": self._suspended,
+                }
+                switch_data = {
+                    "type": "nio_anchor",
+                    "anchor": peer_anchor,
+                    "filters": node1_filters if index == 0 else node2_filters,
+                    "markers": node1_markers if index == 0 else node2_markers,
+                    "suspend": self._suspended,
+                }
+                self._link_data = [switch_data, peer_data] if index == 0 else [peer_data, switch_data]
+                return [
+                    (node1, adapter_number1, port_number1, self._link_data[0]),
+                    (node2, adapter_number2, port_number2, self._link_data[1]),
+                ]
+            # Kernel datapath: each endpoint enslaves its veth host end into
+            # a per-link Linux bridge. The name derives from the link id so
+            # both ends compute it independently (no coordinator) and crash
+            # leftovers sweep deterministically; 11 hex chars fill IFNAMSIZ
+            # (15), pushing name-collision probability to irrelevance.
+            # Markers ride the NIO like on the relay datapath, routed by
+            # capture node; they attach to the veth host end via uBridge's
+            # AF_PACKET marker module instead of a relay `mark` filter.
+            # Filters become one tc netem qdisc per veth host end (the netem
+            # surface and its extensions), plus cls_bpf match-drop (bpf) and
+            # the eBPF stateful classifier (frequency_drop, quota) — every
+            # GNS3 filter type has a kernel equivalent now.
+            bridge_name = "gns3" + self._id.replace("-", "")[:11]
+            self._link_data = [
+                {
+                    "type": "nio_bridge",
+                    "bridge": bridge_name,
+                    "filters": node1_filters,
+                    "markers": node1_markers,
+                    "suspend": self._suspended,
+                },
+                {
+                    "type": "nio_bridge",
+                    "bridge": bridge_name,
+                    "filters": node2_filters,
+                    "markers": node2_markers,
+                    "suspend": self._suspended,
+                },
+            ]
+            return [
+                (node1, adapter_number1, port_number1, self._link_data[0]),
+                (node2, adapter_number2, port_number2, self._link_data[1]),
+            ]
+
         # Get an IP allowing communication between both host
         try:
             (node1_host, node2_host) = await node1.compute.get_ip_on_same_subnet(node2.compute)
@@ -155,7 +457,7 @@ class UDPLink(Link):
             _allocate_port(node1.compute), _allocate_port(node2.compute)
         )
 
-        node1_filters, node2_filters = self._get_node_filters(node1, node2)
+        node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=False)
         node1_markers, node2_markers = self._get_node_markers(node1, node2)
 
         # Build the tunnel specs for both sides. Index 0 is always node1 so
@@ -200,8 +502,12 @@ class UDPLink(Link):
 
         # The two ends are independent once the ports and peer addresses are
         # known — each node talks to its own compute/uBridge with no shared
-        # lock between them — so the two POSTs overlap. If either fails, roll
-        # back whichever side succeeded before re-raising the first error.
+        # lock between them — so the two POSTs overlap. That includes a
+        # cascade link: both sides create the veth pair when their end is
+        # missing (a race one side is designated to lose benignly), so
+        # neither post depends on the other's completion. If either fails,
+        # roll back whichever side succeeded before re-raising the first
+        # error.
         results = await asyncio.gather(
             node1.post(f"/adapters/{adapter_number1}/ports/{port_number1}/nio", data=nio_data1, timeout=120),
             node2.post(f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=nio_data2, timeout=120),
@@ -263,7 +569,7 @@ class UDPLink(Link):
         self._link_data[1]["suspend"] = self._suspended
         if node2.node_type != "ethernet_hub":
             await node2.put(
-                f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=self._link_data[1], timeout=221
+                f"/adapters/{adapter_number2}/ports/{port_number2}/nio", data=self._link_data[1], timeout=120
             )
 
     async def delete(self):
@@ -428,6 +734,47 @@ class UDPLink(Link):
         # _ubridge_apply_markers in add_ubridge_udp_connection).  The user
         # explicitly deletes a marker via the REST API, and a marker is torn
         # down automatically only when its link is deleted.
+
+    async def node_started(self, node):
+        """
+        Called after a node of this link reached the started state.
+
+        The Ethernet switch fast path wires itself on the switch side, but a
+        peer's anchor only comes into existence when the peer starts (and a
+        peer restart can replace the interface under the same name — e.g.
+        QEMU recreates its TAPs at every start). The switch cannot observe
+        that, so the controller re-pushes its NIO: the switch completes a
+        join it had to defer (or re-joins an anchor that disappeared),
+        then re-applies the link state it owns.
+        """
+
+        if not self._created:
+            return
+        switch = self._switch_endpoint()
+        if switch is None or not self.kernel_datapath:
+            return
+        both_switches = (
+            self._nodes[0]["node"].node_type == "ethernet_switch"
+            and self._nodes[1]["node"].node_type == "ethernet_switch"
+        )
+        # A cascade link has a switch on both ends and each end is its own
+        # veth half: either switch starting (recreating its bridge) can
+        # leave its own half unjoined, so both ends are re-pushed.
+        indices = [0, 1] if both_switches else [switch[0]]
+        for index in indices:
+            switch_node = self._nodes[index]["node"]
+            adapter_number = self._nodes[index]["adapter_number"]
+            port_number = self._nodes[index]["port_number"]
+            try:
+                await switch_node.put(
+                    f"/adapters/{adapter_number}/ports/{port_number}/nio",
+                    data=self._link_data[index],
+                    timeout=120,
+                )
+            except (ComputeError, ControllerError):
+                # The link keeps its stored NIO; the next node start or link
+                # update retries. A failure here must not fail the node start.
+                log.warning("Could not re-push switch NIO for link %s after node start", self.id)
 
     async def start_marker(
         self,
