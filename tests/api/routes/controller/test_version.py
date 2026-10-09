@@ -17,6 +17,7 @@
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from starlette.routing import Mount
 
 from gns3server.version import __version__
 
@@ -25,6 +26,14 @@ pytestmark = pytest.mark.asyncio
 
 class TestVersionRoutes:
     async def test_version_output(self, app: FastAPI, client: AsyncClient) -> None:
+
+        # controller_host is recorded on the mounted compute sub-application
+        # when the controller queries the compute capabilities. Set it
+        # directly so this test does not depend on another test having made
+        # that call first (it failed when run on its own).
+        for route in app.routes:
+            if isinstance(route, Mount) and route.name == "compute":
+                route.app.state.controller_host = "127.0.0.1"
 
         response = await client.get(app.url_path_for("get_version"))
         assert response.status_code == status.HTTP_200_OK
