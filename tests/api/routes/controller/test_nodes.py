@@ -34,7 +34,7 @@ from pydantic import SecretStr
 from gns3server.api.routes.controller.nodes import vnc_console, ws_console
 from gns3server.config import Config
 from gns3server.controller.compute import Compute
-from gns3server.controller.controller_error import ComputeError
+from gns3server.controller.controller_error import ComputeError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.services import auth_service
@@ -72,6 +72,103 @@ class TestNodeRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "test"
         assert "name" not in response.json()["properties"]
+
+    async def test_create_node_taken_name_is_renamed(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        payload = {"name": "R1", "node_type": "vpcs", "compute_id": "example.com"}
+
+        first = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+        second = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+
+        assert first.json()["name"] == "R1"
+        assert second.status_code == status.HTTP_201_CREATED
+        assert second.json()["name"] == "R2"
+
+    async def test_create_node_strict_names(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        payload = {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True}
+
+        first = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+        second = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_409_CONFLICT
+        assert "R1" in second.json()["message"]
+        assert len(project.nodes) == 1
+
+    async def test_create_nodes_batch(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        nodes = [{"name": "R{0}", "node_type": "vpcs", "compute_id": "example.com"} for _ in range(3)]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.json()
+        assert [r["status_code"] for r in results] == [201, 201, 201]
+        assert [r["node"]["name"] for r in results] == ["R1", "R2", "R3"]
+        assert all(r["error"] is None for r in results)
+        assert len(project.nodes) == 3
+
+    async def test_create_nodes_batch_item_failures_keep_order(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        nodes = [
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "unknown"},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com"},
+        ]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.json()
+        assert [r["status_code"] for r in results] == [201, 409, 404, 201]
+        assert results[0]["node"]["name"] == "R1"
+        assert results[1]["node"] is None
+        assert "R1" in results[1]["error"]["message"]
+        assert results[2]["error"]["message"]
+        assert results[3]["node"]["name"] == "R2"
+        assert len(project.nodes) == 2
+
+    async def test_create_nodes_batch_failed_node_releases_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ControllerError("compute failure"))
+        nodes = [{"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True}]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.json()[0]["status_code"] == status.HTTP_409_CONFLICT
+        assert len(project.nodes) == 0
+
+        response_ok = MagicMock()
+        response_ok.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response_ok)
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.json()[0]["status_code"] == status.HTTP_201_CREATED
+        assert response.json()[0]["node"]["name"] == "R1"
 
     async def test_list_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 

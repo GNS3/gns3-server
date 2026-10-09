@@ -557,17 +557,20 @@ class Project:
         if name in self._allocated_node_names:
             self._allocated_node_names.remove(name)
 
-    def update_allocated_node_name(self, base_name):
+    def update_allocated_node_name(self, base_name, strict=False):
         """
         Updates a node name or generate a new if no node
         name is available.
 
         :param base_name: new node base name
+        :param strict: raise an error instead of renaming when the name is already taken
         """
 
         if base_name is None:
             return None
         base_name = re.sub(r"[ ]", "", base_name)  # remove spaces in node name
+        if strict and base_name in self._allocated_node_names:
+            raise ControllerError(f"Node name {base_name} is already used")
         if base_name in self._allocated_node_names:
             base_name = re.sub(r"[0-9]+$", "{0}", base_name)
 
@@ -595,11 +598,11 @@ class Project:
                     return name
         raise ControllerError("A node name could not be allocated (node limit reached?)")
 
-    def update_node_name(self, node, new_name):
+    def update_node_name(self, node, new_name, strict=False):
 
         if new_name and node.name != new_name:
             self.remove_allocated_node_name(node.name)
-            return self.update_allocated_node_name(new_name)
+            return self.update_allocated_node_name(new_name, strict=strict)
         return new_name
 
     @open_required
@@ -630,26 +633,32 @@ class Project:
         node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
-    async def _create_node(self, compute, name, node_id, node_type=None, allow_missing_image=False, **kwargs):
+    async def _create_node(
+        self, compute, name, node_id, node_type=None, allow_missing_image=False, strict_names=False, **kwargs
+    ):
 
-        node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
-        # Hold the lock across the check + POST + register so that concurrent
-        # node creations on the same compute don't all race past the check and
-        # each POST /projects (the compute-side sync handler then instantiated
-        # the Project N times). Once one creation registers the compute, the
-        # rest see it in the set and return immediately.
-        async with self._create_node_lock:
-            if compute not in self._project_created_on_compute:
-                if compute.id == "local":
-                    data = {"name": self._name, "project_id": self._id, "path": self._path}
-                else:
-                    data = {"name": self._name, "project_id": self._id}
-                if self._variables:
-                    data["variables"] = self._variables
-                await compute.post("/projects", data=data)
-                self._project_created_on_compute.add(compute)
+        node = Node(self, compute, name, node_id=node_id, node_type=node_type, strict_names=strict_names, **kwargs)
+        try:
+            # Hold the lock across the check + POST + register so that concurrent
+            # node creations on the same compute don't all race past the check and
+            # each POST /projects (the compute-side sync handler then instantiated
+            # the Project N times). Once one creation registers the compute, the
+            # rest see it in the set and return immediately.
+            async with self._create_node_lock:
+                if compute not in self._project_created_on_compute:
+                    if compute.id == "local":
+                        data = {"name": self._name, "project_id": self._id, "path": self._path}
+                    else:
+                        data = {"name": self._name, "project_id": self._id}
+                    if self._variables:
+                        data["variables"] = self._variables
+                    await compute.post("/projects", data=data)
+                    self._project_created_on_compute.add(compute)
 
-        await node.create(allow_missing_image=allow_missing_image)
+            await node.create(allow_missing_image=allow_missing_image)
+        except BaseException:
+            self.remove_allocated_node_name(node.name)
+            raise
         self._nodes[node.id] = node
 
         return node
