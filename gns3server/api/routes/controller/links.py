@@ -20,25 +20,34 @@ API routes for links.
 
 import logging
 import os
-from typing import Any, List, Union
+from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
 import aiohttp
 import multidict
-from fastapi import APIRouter, Depends, Request, WebSocket, status
+from fastapi import APIRouter, Depends, Request, Response, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 
 from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
+from gns3server.api.openapi import PCAP_MEDIA_TYPE, binary_response
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from gns3server.controller.link import _UNSET, Link
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
 from gns3server.utils.websocket_to_websocket import websocket_proxy
 
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
@@ -49,6 +58,29 @@ responses: dict[int | str, dict[str, Any]] = {
 }
 
 router = APIRouter(responses=responses)
+
+
+def _select_port(node, endpoint, other_port):
+    if endpoint.get("port_name") is not None:
+        port = node.get_port_by_name(endpoint["port_name"])
+        if port is None:
+            raise ControllerNotFoundError(f"Port named {endpoint['port_name']} for {node.name} not found")
+        return port
+    if endpoint.get("port") == "auto":
+        port = node.get_free_port(other_port.link_type if other_port else None)
+        if port is None:
+            raise ControllerError(f"No free port available on {node.name}", code="no_free_port")
+        return port
+    return None
+
+
+def _peer_port(project, endpoint):
+    if endpoint.get("port") == "auto":
+        return None
+    node = project.get_node(endpoint["node_id"])
+    if endpoint.get("port_name") is not None:
+        return node.get_port_by_name(endpoint["port_name"])
+    return node.get_port(endpoint["adapter_number"], endpoint["port_number"])
 
 
 async def dep_link(project_id: UUID, link_id: UUID) -> Link:
@@ -110,21 +142,30 @@ async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> sche
     if "show_filters_icon" in link_data:
         await link.update_show_filters_icon(link_data["show_filters_icon"])
     try:
-        for node in link_data["nodes"]:
-            await link.add_node(
-                project.get_node(node["node_id"]),
-                node.get("adapter_number", 0),
-                node.get("port_number", 0),
-                label=node.get("label"),
-            )
+        endpoints = link_data["nodes"]
+        attached_port = None
+        for index, endpoint in enumerate(endpoints):
+            node = project.get_node(endpoint["node_id"])
+            peer_port = attached_port or _peer_port(project, endpoints[1 - index])
+            port = _select_port(node, endpoint, peer_port)
+            adapter_number = port.adapter_number if port else endpoint["adapter_number"]
+            port_number = port.port_number if port else endpoint["port_number"]
+            await link.add_node(node, adapter_number, port_number, label=endpoint.get("label"))
+            attached_port = node.get_port(adapter_number, port_number)
     except ControllerError as e:
+        link.release_ports()
         await project.delete_link(link.id)
         raise e
     return link.asdict()
 
 
-@router.get("/{link_id}/available_filters", dependencies=[Depends(has_privilege("Link.Audit"))])
-async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
+@router.get(
+    "/{link_id}/available_filters",
+    response_model=List[schemas.LinkFilterDefinition],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Link.Audit"))],
+)
+async def get_filters(link: Link = Depends(dep_link)) -> List[schemas.LinkFilterDefinition]:
     """
     Return all filters available for a given link.
 
@@ -138,43 +179,58 @@ async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
+    responses=GET_RESPONSES,
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
-async def get_link(link: Link = Depends(dep_link)) -> schemas.Link:
+async def get_link(response: Response, link: Link = Depends(dep_link)) -> schemas.Link:
     """
     Return a link.
 
     Required privilege: Link.Audit
     """
 
-    return link.asdict()
+    link_dict = link.asdict()
+    set_etag(response, link_dict)
+    return link_dict
 
 
 @router.put(
     "/{link_id}",
     response_model=schemas.Link,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Link.Modify"))],
 )
-async def update_link(link_update: schemas.LinkUpdate, link: Link = Depends(dep_link)) -> schemas.Link:
+async def update_link(
+    link_update: schemas.LinkUpdate,
+    response: Response,
+    link: Link = Depends(dep_link),
+    if_match: Optional[str] = Depends(if_match_header),
+) -> schemas.Link:
     """
     Update a link.
+
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
 
     Required privilege: Link.Modify
     """
 
     link_data = jsonable_encoder(link_update, exclude_unset=True)
-    if "filters" in link_data:
-        await link.update_filters(link_data["filters"])
-    if "link_style" in link_data:
-        await link.update_link_style(link_data["link_style"])
-    if "suspend" in link_data:
-        await link.update_suspend(link_data["suspend"])
-    if "show_filters_icon" in link_data:
-        await link.update_show_filters_icon(link_data["show_filters_icon"])
-    if "nodes" in link_data:
-        await link.update_nodes(link_data["nodes"])
-    return link.asdict()
+    async with serialize_updates(f"link:{link.id}"):
+        check_if_match(if_match, link.asdict())
+        if "filters" in link_data:
+            await link.update_filters(link_data["filters"])
+        if "link_style" in link_data:
+            await link.update_link_style(link_data["link_style"])
+        if "suspend" in link_data:
+            await link.update_suspend(link_data["suspend"])
+        if "show_filters_icon" in link_data:
+            await link.update_show_filters_icon(link_data["show_filters_icon"])
+        if "nodes" in link_data:
+            await link.update_nodes(link_data["nodes"])
+    link_dict = link.asdict()
+    set_etag(response, link_dict)
+    return link_dict
 
 
 @router.delete(
@@ -275,7 +331,12 @@ async def restart_wireshark(http_request: Request, link: Link = Depends(dep_link
     return {"status": "restarted"}
 
 
-@router.get("/{link_id}/capture/stream", dependencies=[Depends(has_privilege("Link.Capture"))])
+@router.get(
+    "/{link_id}/capture/stream",
+    response_class=StreamingResponse,
+    responses={200: binary_response(PCAP_MEDIA_TYPE, "Packet capture stream")},
+    dependencies=[Depends(has_privilege("Link.Capture"))],
+)
 async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> StreamingResponse:
     """
     Stream the PCAP capture file from compute.
@@ -484,7 +545,7 @@ async def update_marker(marker_name: str, marker_data: schemas.MarkerUpdate, lin
 
 @router.get(
     "/{link_id}/iface",
-    response_model=Union[schemas.UDPPortInfo, schemas.EthernetPortInfo],
+    response_model=schemas.LinkIfaceInfo,
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
 async def get_iface(link: Link = Depends(dep_link)) -> dict:
@@ -515,6 +576,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> dict:
                 port_type = port.get("type", "")
                 if "udp" in port_type.lower():
                     ifaces_info = {
+                        "kind": "udp",
                         "node_id": node.id,
                         "type": f"{port_type}",
                         "lport": port["lport"],
@@ -523,6 +585,7 @@ async def get_iface(link: Link = Depends(dep_link)) -> dict:
                     }
                 else:
                     ifaces_info = {
+                        "kind": "ethernet",
                         "node_id": node.id,
                         "type": f"{port_type}",
                         "interface": port["interface"],

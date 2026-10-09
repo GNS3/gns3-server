@@ -115,6 +115,110 @@ class TestLinkRoutes:
         assert response.status_code == status.HTTP_409_CONFLICT
         assert len(project.links) == 0
 
+    async def test_create_link_by_port_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "port_name": "E0"},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        first, second = response.json()["nodes"]
+        assert (first["adapter_number"], first["port_number"]) == (0, 3)
+        assert (second["adapter_number"], second["port_number"]) == (2, 4)
+
+    async def test_create_link_unknown_port_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+
+        response = await client.post(
+            app.url_path_for("create_link", project_id=project.id),
+            json={
+                "nodes": [
+                    {"node_id": node1.id, "port_name": "nope"},
+                    {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                ]
+            },
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert len(project.links) == 0
+
+    async def test_create_link_auto_port(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        node1._ports = [EthernetPort("E1", 0, 0, 5), EthernetPort("E0", 0, 0, 3)]
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={"nodes": [{"node_id": node1.id, "port": "auto"}, {"node_id": node2.id, "port": "auto"}]},
+            )
+            assert response.status_code == status.HTTP_201_CREATED
+            assert response.json()["nodes"][0]["port_number"] == 3
+
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={"nodes": [{"node_id": node1.id, "port": "auto"}, {"node_id": node2.id, "port": "auto"}]},
+            )
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["code"] == "no_free_port"
+        assert len(project.links) == 1
+
+    async def test_create_link_port_in_use_code(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        body = {
+            "nodes": [
+                {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+            ]
+        }
+
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            first = await client.post(app.url_path_for("create_link", project_id=project.id), json=body)
+            second = await client.post(app.url_path_for("create_link", project_id=project.id), json=body)
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_409_CONFLICT
+        assert second.json()["code"] == "port_in_use"
+        assert len(project.links) == 1
+
+    async def test_create_link_invalid_port_selector(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        valid = {"node_id": node2.id, "adapter_number": 2, "port_number": 4}
+
+        for bad in (
+            {"node_id": node1.id},
+            {"node_id": node1.id, "adapter_number": 0},
+            {"node_id": node1.id, "port_name": "E0", "port": "auto"},
+            {"node_id": node1.id, "adapter_number": 0, "port_number": 3, "port_name": "E0"},
+        ):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id), json={"nodes": [bad, valid]}
+            )
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
     async def test_get_link(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
     ) -> None:
@@ -169,6 +273,43 @@ class TestLinkRoutes:
         response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["kernel_datapath"] is True
+
+    async def test_link_etag_and_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
+    ) -> None:
+
+        node1, node2 = nodes
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+            response = await client.post(
+                app.url_path_for("create_link", project_id=project.id),
+                json={
+                    "nodes": [
+                        {"node_id": node1.id, "adapter_number": 0, "port_number": 3},
+                        {"node_id": node2.id, "adapter_number": 2, "port_number": 4},
+                    ]
+                },
+            )
+        link_id = response.json()["link_id"]
+        url = app.url_path_for("get_link", project_id=project.id, link_id=link_id)
+
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert (await client.get(url)).headers["ETag"] == etag
+
+        response = await client.put(url, json={"show_filters_icon": False}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["ETag"] != etag
+        assert (await client.get(url)).headers["ETag"] == response.headers["ETag"]
+
+        response = await client.put(url, json={"show_filters_icon": True}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert (await client.get(url)).json()["show_filters_icon"] is False
+
+        response = await client.put(url, json={"show_filters_icon": True})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["show_filters_icon"] is True
 
     async def test_update_link_suspend(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]
@@ -362,6 +503,119 @@ class TestLinkRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == FILTERS
 
+    async def test_update_link_filters(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        filters = {
+            "frequency_drop": [50],
+            "packet_loss": [10],
+            "delay": [10, 5],
+            "corrupt": [3],
+            "bpf": ["icmp"],
+        }
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": filters}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == filters
+        assert link.filters == filters
+
+    async def test_update_link_disabled_filters(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"delay": [0, 0], "packet_loss": [0], "corrupt": [], "bpf": [""]}},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == {}
+
+    @pytest.mark.parametrize(
+        "filters",
+        [
+            {"packet_loss": [101]},
+            {"packet_loss": [-1]},
+            {"corrupt": [101]},
+            {"frequency_drop": [-2]},
+            {"frequency_drop": [32768]},
+            {"delay": [32768, 0]},
+            {"delay": [10, -1]},
+            # a second packet_loss value (correlation) is valid — it is a
+            # kernel-datapath parameter the controller accepts; gemodel out
+            # of range stands in for the invalid slot instead
+            {"gemodel": [101, 50, 50]},
+            {"bpf": [1]},
+            {"packet_loss": ["abc"]},
+        ],
+    )
+    async def test_update_link_invalid_filter_values(
+        self, app: FastAPI, client: AsyncClient, project: Project, filters: dict
+    ) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": filters}
+        )
+        # The filter vocabulary is capability-gated per link, so values are
+        # validated by the controller (409), not by a strict request schema
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "message" in response.json()
+        assert link.filters == {}
+
+    async def test_update_link_unknown_filter_type(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"unknown": [1]}},
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert "message" in response.json()
+        assert link.filters == {}
+
+    async def test_update_link_packet_loss_correlation(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
+        # The optional packet_loss correlation (second value) is a
+        # kernel-datapath parameter accepted by the controller
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id),
+            json={"filters": {"packet_loss": [1, 2]}},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["filters"] == {"packet_loss": [1, 2]}
+
+    async def test_update_link_invalid_delay_latency(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        link = Link(project)
+        project._links = {link.id: link}
+        response = await client.put(
+            app.url_path_for("update_link", project_id=project.id, link_id=link.id), json={"filters": {"delay": [0, 5]}}
+        )
+        assert response.status_code == status.HTTP_409_CONFLICT
+
+    async def test_openapi_link_filters(self, app: FastAPI) -> None:
+
+        schemas = app.openapi()["components"]["schemas"]
+        # The filters vocabulary is capability-gated per link and validated by
+        # the controller, so the Link schema carries it as a free-form object
+        # (no strict LinkFilters model on the request path)
+        assert "LinkFilters" not in schemas
+        filters_property = schemas["Link"]["properties"]["filters"]
+        assert filters_property["anyOf"][0] == {"additionalProperties": True, "type": "object"}
+        assert schemas["LinkFilterDefinition"]["properties"]["parameters"]["items"] == {
+            "$ref": "#/components/schemas/LinkFilterParameter"
+        }
+        path = "/v3/projects/{project_id}/links/{link_id}/available_filters"
+        responses = app.openapi()["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert responses["items"] == {"$ref": "#/components/schemas/LinkFilterDefinition"}
+
     async def test_get_udp_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
         """
         Test getting UDP tunnel interface information from a link.
@@ -403,6 +657,7 @@ class TestLinkRoutes:
         assert result["rhost"] == "127.0.0.1"
         assert result["rport"] == 30000
         assert result["type"] == "udp"
+        assert result["kind"] == "udp"
 
     async def test_get_ethernet_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
         """
@@ -433,3 +688,4 @@ class TestLinkRoutes:
         assert result["node_id"] == cloud_node.id
         assert result["interface"] == "eth0"
         assert result["type"] == "ethernet"
+        assert result["kind"] == "ethernet"

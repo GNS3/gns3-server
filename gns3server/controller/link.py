@@ -399,9 +399,22 @@ class Link:
 
         port = node.get_port(adapter_number, port_number)
         if port is None:
-            raise ControllerNotFoundError(f"Port {adapter_number}/{port_number} for {node.name} not found")
+            raise ControllerNotFoundError(
+                f"Port {adapter_number}/{port_number} for {node.name} not found",
+                code="port_not_found",
+                details={"node_id": node.id, "adapter_number": adapter_number, "port_number": port_number},
+            )
         if port.link is not None:
-            raise ControllerError("Port is already used")
+            raise ControllerError(
+                "Port is already used",
+                code="port_in_use",
+                details={
+                    "node_id": node.id,
+                    "adapter_number": adapter_number,
+                    "port_number": port_number,
+                    "link_id": port.link.id,
+                },
+            )
 
         self._link_type = port.link_type
 
@@ -438,14 +451,31 @@ class Link:
             {"node": node, "adapter_number": adapter_number, "port_number": port_number, "port": port, "label": label}
         )
 
+        if not batch:
+            port.link = self
+
         if len(self._nodes) == 2 and not batch:
-            await self.create()
+            try:
+                await self.create()
+            except BaseException:
+                self.release_ports()
+                raise
             self._bind_members()
             self._created = True
             self._project.emit_notification("link.created", self.asdict())
 
         if dump:
             self._project.dump()
+
+    def release_ports(self):
+        for n in self._nodes:
+            # The live port, for the same staleness reason as _bind_members;
+            # the link could be different from self if we rollback an
+            # already existing link
+            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
+            if port.link == self:
+                port.link = None
+            n["node"].links.discard(self)
 
     async def update_nodes(self, nodes):
         for node_data in nodes:
@@ -490,14 +520,7 @@ class Link:
         """
         Delete the link
         """
-        for n in self._nodes:
-            # The live port, for the same staleness reason as _bind_members;
-            # the link could be different from self if we rollback an
-            # already existing link
-            port = n["node"].get_port(n["adapter_number"], n["port_number"]) or n["port"]
-            if port.link == self:
-                port.link = None
-                n["node"].remove_link(self)
+        self.release_ports()
 
     async def reset(self):
         """

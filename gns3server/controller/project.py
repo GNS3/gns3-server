@@ -748,7 +748,9 @@ class Project:
         try:
             return self._nodes[node_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Node ID {node_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Node ID {node_id} doesn't exist", code="node_not_found", details={"node_id": node_id}
+            )
 
     def _get_closed_data(self, section, id_key):
         """
@@ -817,7 +819,9 @@ class Project:
         try:
             return self._drawings[drawing_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Drawing ID {drawing_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Drawing ID {drawing_id} doesn't exist", code="drawing_not_found", details={"drawing_id": drawing_id}
+            )
 
     @open_required
     async def delete_drawing(self, drawing_id):
@@ -1099,7 +1103,9 @@ class Project:
         try:
             return self._links[link_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Link ID {link_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Link ID {link_id} doesn't exist", code="link_not_found", details={"link_id": link_id}
+            )
 
     @property
     def links(self):
@@ -1460,7 +1466,11 @@ class Project:
         try:
             return self._snapshots[snapshot_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Snapshot ID {snapshot_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Snapshot ID {snapshot_id} doesn't exist",
+                code="snapshot_not_found",
+                details={"snapshot_id": snapshot_id},
+            )
 
     def _load_snapshot_config(self):
 

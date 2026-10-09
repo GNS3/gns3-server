@@ -32,6 +32,7 @@ from starlette.requests import ClientDisconnect
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.api.openapi import binary_request_body
 from gns3server.compute.qemu import Qemu
 from gns3server.config import Config
 from gns3server.controller import Controller
@@ -214,6 +215,7 @@ async def get_images(
     response_model=schemas.ImageUpload,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
 async def upload_image(

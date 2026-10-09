@@ -17,7 +17,7 @@
 # General schemas
 from .common import ErrorMessage
 from .config import ServerConfig
-from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionV8
+from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionCreate, ApplianceVersionV8
 from .controller.computes import (
     AutoIdlePC,
     Compute,
@@ -37,6 +37,11 @@ from .controller.links import (
     Link,
     LinkCapture,
     LinkCreate,
+    LinkFilterDefinition,
+    LinkFilterParameter,
+    LinkFilters,
+    LinkFilterType,
+    LinkIfaceInfo,
     LinkUpdate,
     MarkerCreate,
     MarkerDefinitionCreate,
@@ -119,6 +124,7 @@ from .compute.vpcs_nodes import VPCS, VPCSCreate, VPCSUpdate
 from .controller.capabilities import Capabilities
 from .controller.iou_license import IOULicense
 from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
+from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
 from .controller.rbac import ACE, ACECreate, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
 from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
@@ -173,6 +179,7 @@ __all__ = [
     "ApiKeyCreate",
     "Appliance",
     "ApplianceVersion",
+    "ApplianceVersionCreate",
     "ApplianceVersionV8",
     "AutoIdlePC",
     "BatchNIOCreate",
@@ -256,6 +263,11 @@ __all__ = [
     "Link",
     "LinkCapture",
     "LinkCreate",
+    "LinkFilterDefinition",
+    "LinkFilterParameter",
+    "LinkFilterType",
+    "LinkFilters",
+    "LinkIfaceInfo",
     "LinkUpdate",
     "LoggedInUserUpdate",
     "MarkerCreate",
@@ -273,6 +285,8 @@ __all__ = [
     "NodeDuplicate",
     "NodeFile",
     "NodeUpdate",
+    "Notification",
+    "NotificationAction",
     "OpenAIMessage",
     "OpenAIToolCall",
     "Privilege",

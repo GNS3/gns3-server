@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class SnapshotBase(BaseModel):
@@ -44,4 +45,14 @@ class Snapshot(SnapshotBase):
     name: str = Field(..., description="Name of the snapshot")
     filename: str = Field(..., description="Filename of the snapshot")
     description: str = Field(..., description="Description of the snapshot")
-    created_at: int = Field(..., description="Date of the snapshot (UTC timestamp)")
+    created_at: int = Field(
+        ..., description="Date of the snapshot (UTC timestamp). Deprecated: use created", deprecated=True
+    )
+    created: datetime = Field(..., description="Date of the snapshot (ISO 8601, UTC)")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _derive_created(cls, data):
+        if isinstance(data, dict) and "created" not in data and data.get("created_at") is not None:
+            data = {**data, "created": datetime.fromtimestamp(data["created_at"], tz=timezone.utc)}
+        return data

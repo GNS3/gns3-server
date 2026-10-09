@@ -32,6 +32,11 @@ from .nodes import Node
 from .projects import Supplier, Variable
 
 
+class TopologyLink(Link):
+    # Legacy topology files store filters as untyped dicts
+    filters: Optional[dict] = None
+
+
 class TopologyType(str, Enum):
     topology = "topology"
 
@@ -39,7 +44,7 @@ class TopologyType(str, Enum):
 class TopologyContent(BaseModel):
     computes: List[Compute] = Field(..., description="List of computes")
     drawings: List[Drawing] = Field(..., description="List of drawings")
-    links: List[Link] = Field(..., description="List of links")
+    links: List[TopologyLink] = Field(..., description="List of links")
     nodes: List[Node] = Field(..., description="List of nodes")
 
 

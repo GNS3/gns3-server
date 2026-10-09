@@ -671,11 +671,7 @@ class BaseNode:
                 )
 
         # keep forwarding websocket data in both direction
-        if sys.version_info >= (3, 11, 0):
-            # Starting with Python 3.11, passing coroutine objects to wait() directly is forbidden.
-            aws = [asyncio.create_task(ws_forward(telnet_writer)), asyncio.create_task(telnet_forward(telnet_reader))]
-        else:
-            aws = [ws_forward(telnet_writer), telnet_forward(telnet_reader)]
+        aws = [asyncio.create_task(ws_forward(telnet_writer)), asyncio.create_task(telnet_forward(telnet_reader))]
 
         done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:
@@ -762,11 +758,7 @@ class BaseNode:
                 log.warning(f"Exception while forwarding VNC data to WebSocket: {e!r}")
 
         # Keep forwarding WebSocket data in both directions
-        if sys.version_info >= (3, 11, 0):
-            # Starting with Python 3.11, passing coroutine objects to wait() directly is forbidden.
-            aws = [asyncio.create_task(ws_forward(vnc_writer)), asyncio.create_task(vnc_forward(vnc_reader))]
-        else:
-            aws = [ws_forward(vnc_writer), vnc_forward(vnc_reader)]
+        aws = [asyncio.create_task(ws_forward(vnc_writer)), asyncio.create_task(vnc_forward(vnc_reader))]
 
         done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:

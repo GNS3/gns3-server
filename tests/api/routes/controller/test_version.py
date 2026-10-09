@@ -42,7 +42,10 @@ class TestVersionRoutes:
         params = {"version": "0.4.2"}
         response = await client.post(app.url_path_for("check_version"), json=params)
         assert response.status_code == status.HTTP_409_CONFLICT
-        assert response.json() == {"message": f"Client version 0.4.2 is not the same as server version {__version__}"}
+        assert response.json() == {
+            "message": f"Client version 0.4.2 is not the same as server version {__version__}",
+            "code": "conflict",
+        }
 
     async def test_version_invalid_input_schema(self, app: FastAPI, client: AsyncClient) -> None:
 
