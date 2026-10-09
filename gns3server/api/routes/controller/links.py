@@ -151,13 +151,6 @@ async def _create_link(project: Project, link_create: schemas.LinkCreate) -> dic
             await link.update_suspend(link_data["suspend"])
         if "show_filters_icon" in link_data:
             await link.update_show_filters_icon(link_data["show_filters_icon"])
-        for node in link_data["nodes"]:
-            await link.add_node(
-                project.get_node(node["node_id"]),
-                node.get("adapter_number", 0),
-                node.get("port_number", 0),
-                label=node.get("label"),
-            )
         endpoints = link_data["nodes"]
         attached_port = None
         for index, endpoint in enumerate(endpoints):
