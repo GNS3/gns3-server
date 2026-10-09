@@ -486,7 +486,7 @@ class TestNodeRoutes:
         response = await client.get(app.url_path_for("get_node", project_id=project.id, node_id=node.id))
         assert response.json()["status"] == "started"
 
-    async def test_start_node_reports_starting_while_in_flight(
+    async def test_start_node_keeps_real_status_while_in_flight(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
@@ -498,10 +498,11 @@ class TestNodeRoutes:
         compute.post = post
         response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
         assert response.status_code == status.HTTP_200_OK
-        assert seen == ["starting"]
+        # no transitional status is reported while the call is in flight
+        assert seen == ["stopped"]
         assert response.json()["status"] == "started"
 
-    async def test_stop_node_reports_stopping_while_in_flight(
+    async def test_stop_node_keeps_real_status_while_in_flight(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
 
@@ -514,7 +515,8 @@ class TestNodeRoutes:
         node._status = "started"
         response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
         assert response.status_code == status.HTTP_200_OK
-        assert seen == ["stopping"]
+        # no transitional status is reported while the call is in flight
+        assert seen == ["started"]
         assert response.json()["status"] == "stopped"
 
     async def test_start_node_wait_timeout(
