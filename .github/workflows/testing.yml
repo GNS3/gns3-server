@@ -34,15 +34,17 @@ jobs:
         python -m pip install .[ai-features,dev]
 
     - name: Cache APT packages
+      id: apt-cache
       uses: actions/cache@v6
       with:
         path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('**/apt-packages.txt') }}
+        key: ${{ runner.os }}-apt-packages-${{ hashFiles('**/apt-packages.txt') }}
         restore-keys: |
-          ${{ runner.os }}-apt-packages
+          ${{ runner.os }}-apt-packages-
 
     - name: Install sharkd (marker replay engine)
       run: |
+        echo "Cache Hit Status: ${{ steps.apt-cache.outputs.cache-hit }}"
         sudo apt-get update
         sudo apt-get install -y wireshark-common
 
