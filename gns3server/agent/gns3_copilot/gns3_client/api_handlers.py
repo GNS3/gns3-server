@@ -55,6 +55,7 @@ from typing import Any
 from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
 from gns3server.services import access_ticket_service
 from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
+from gns3server.utils.drawings import build_ellipse_svg, build_rectangle_svg, build_text_svg
 
 log = logging.getLogger(__name__)
 
@@ -1076,3 +1077,95 @@ def marker_definition_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     # action == "delete"
     conn.http_call("delete", url)
     return {"message": f"Marker definition '{def_name}' deleted", "project_id": project_id, "def_name": def_name}
+
+
+# ── Drawing handlers ──────────────────────────────────────────────────────
+# SVG assembly and validation live in gns3server.utils.drawings (Web UI
+# compatible format); these handlers only carry params and do the REST call.
+
+
+def create_text_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas text label; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    try:
+        svg, width, height, line_height = build_text_svg(
+            params.get("text"),
+            font_size=params.get("font_size", 13),
+            color=params.get("color", "#000000"),
+            bold=params.get("bold", False),
+            font_family=params.get("font_family", "monospace"),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 1)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {
+        "message": "Text drawing created",
+        "drawing": result,
+        "width": width,
+        "height": height,
+        "line_height": line_height,
+    }
+
+
+def create_rectangle_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas rectangle; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    width = params.get("width")
+    height = params.get("height")
+    if width is None or height is None:
+        return {"error": "width and height are required"}
+    try:
+        svg, width, height = build_rectangle_svg(
+            width,
+            height,
+            fill=params.get("fill", "#FFFFFF"),
+            fill_opacity=params.get("fill_opacity", 1.0),
+            stroke=params.get("stroke"),
+            stroke_width=params.get("stroke_width", 1),
+            dashed=params.get("dashed", False),
+            dasharray=params.get("dasharray"),
+            rx=params.get("rx", 0),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 0)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {"message": "Rectangle drawing created", "drawing": result, "width": width, "height": height}
+
+
+def create_ellipse_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas ellipse from a bounding box; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    width = params.get("width")
+    height = params.get("height")
+    if width is None or height is None:
+        return {"error": "width and height are required"}
+    try:
+        svg, width, height = build_ellipse_svg(
+            width,
+            height,
+            fill=params.get("fill", "#FFFFFF"),
+            fill_opacity=params.get("fill_opacity", 1.0),
+            stroke=params.get("stroke"),
+            stroke_width=params.get("stroke_width", 1),
+            dashed=params.get("dashed", False),
+            dasharray=params.get("dasharray"),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 0)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {"message": "Ellipse drawing created", "drawing": result, "width": width, "height": height}

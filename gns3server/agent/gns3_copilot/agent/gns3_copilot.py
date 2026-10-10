@@ -77,7 +77,10 @@ from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 from gns3server.agent.gns3_copilot.tools_v2 import (
     ExecuteMultipleDeviceCommands,
     ExecuteMultipleDeviceConfigCommands,
+    GNS3CreateEllipseDrawingTool,
     GNS3CreateNodeTool,
+    GNS3CreateRectangleDrawingTool,
+    GNS3CreateTextDrawingTool,
     GNS3LinkTool,
     GNS3PacketFilterTool,
     GNS3StartNodeTool,
@@ -103,6 +106,9 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
     GNS3TemplateTool(),  # Get GNS3 node templates
     GNS3CreateNodeTool(),  # Create new nodes in GNS3
     GNS3LinkTool(),  # Create links between nodes
+    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
+    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
+    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
     GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
     GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
     GNS3UpdateNodeNameTool(),  # Update node name
@@ -118,6 +124,9 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     GNS3TemplateTool(),  # Get GNS3 node templates
     GNS3CreateNodeTool(),  # Create new nodes in GNS3
     GNS3LinkTool(),  # Create links between nodes
+    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
+    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
+    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
     GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
     GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
     GNS3StopNodeTool(),  # Stop GNS3 nodes

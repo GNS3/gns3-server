@@ -51,24 +51,6 @@ def get_drawings_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
     return {"drawings": drawings, "count": len(drawings)}
 
 
-def create_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
-    project_id = params.get("project_id")
-    svg = params.get("svg")
-    if not project_id or not svg:
-        return {"error": "project_id and svg are required"}
-    conn = _get_connector(gns3_ctx)
-    data = {
-        "svg": svg,
-        "x": params.get("x", 0),
-        "y": params.get("y", 0),
-        "z": params.get("z", 0),
-        "locked": params.get("locked", False),
-        "rotation": params.get("rotation", 0),
-    }
-    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
-    return {"message": "Drawing created", "drawing": result}
-
-
 def get_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     project_id = params.get("project_id")
     drawing_id = params.get("drawing_id")

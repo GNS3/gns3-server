@@ -187,7 +187,9 @@ All subsequent tool handler REST API calls use this JWT → zero extra bcrypt
 |------|-------------|
 | `drawing_list` | List drawings on canvas |
 | `drawing_get` | Get drawing details |
-| `drawing_create` | Create drawing (SVG label/shape/image) |
+| `drawing_create_text` | Create a text label (SVG assembled server-side, Web UI compatible) |
+| `drawing_create_rectangle` | Create a rectangle annotation |
+| `drawing_create_ellipse` | Create an ellipse/circle annotation |
 | `drawing_update` | Update drawing (position, rotation, SVG) |
 | `drawing_delete` | Delete a drawing |
 
