@@ -30,7 +30,7 @@ from gns3server.controller import Controller
 router = APIRouter()
 
 
-@router.get("/engines")
+@router.get("/engines", response_model=List[schemas.GNS3VMEngineInfo])
 async def get_engines() -> List[dict]:
     """
     Return the list of supported engines for the GNS3VM.
@@ -40,7 +40,7 @@ async def get_engines() -> List[dict]:
     return gns3_vm.engine_list()
 
 
-@router.get("/engines/{engine}/vms")
+@router.get("/engines/{engine}/vms", response_model=List[schemas.GNS3VMInfo])
 async def get_vms(engine: str) -> List[dict]:
     """
     Return all the available VMs for a specific virtualization engine.

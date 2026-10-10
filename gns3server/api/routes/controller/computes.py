@@ -212,7 +212,7 @@ async def vmware_vms(compute_id: Union[str, UUID]) -> List[schemas.ComputeVMware
     return result
 
 
-@router.post("/{compute_id}/dynamips/auto_idlepc")
+@router.post("/{compute_id}/dynamips/auto_idlepc", response_model=schemas.IdlePC)
 async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC):
     """
     Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.

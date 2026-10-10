@@ -329,7 +329,12 @@ async def prune_images(
     )
 
 
-@router.post("/install", status_code=status.HTTP_200_OK, dependencies=[Depends(has_privilege("Image.Allocate"))])
+@router.post(
+    "/install",
+    response_model=schemas.ImageInstallResult,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
 async def install_images(
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),

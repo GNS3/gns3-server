@@ -26,10 +26,20 @@ from .controller.computes import (
     ComputeUpdate,
     ComputeVirtualBoxVM,
     ComputeVMwareVM,
+    IdlePC,
 )
 from .controller.drawings import Drawing
-from .controller.gns3vm import GNS3VM
-from .controller.images import Image, ImageSyncJob, ImageSyncRequest, ImageType, ImageUpload
+from .controller.gns3vm import GNS3VM, GNS3VMEngineInfo, GNS3VMInfo
+from .controller.images import (
+    Image,
+    ImageInstallCreated,
+    ImageInstallResult,
+    ImageInstallSkipped,
+    ImageSyncJob,
+    ImageSyncRequest,
+    ImageType,
+    ImageUpload,
+)
 
 # Controller schemas
 from .controller.links import (
@@ -38,15 +48,20 @@ from .controller.links import (
     LinkBatchResult,
     LinkCapture,
     LinkCreate,
-    LinkFilterDefinition,
+    LinkFilterInfo,
     LinkFilterParameter,
     LinkFilters,
     LinkFilterType,
     LinkIfaceInfo,
     LinkUpdate,
+    LinkWiresharkRestart,
+    Marker,
     MarkerCreate,
+    MarkerDefinition,
     MarkerDefinitionCreate,
+    MarkerDefinitionWithLinks,
     MarkerUpdate,
+    ProjectMarker,
     UDPPortInfo,
 )
 from .controller.nodes import Node, NodeBatchResult, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
@@ -57,6 +72,7 @@ from .controller.projects import (
     ProjectCreate,
     ProjectDuplicate,
     ProjectFile,
+    ProjectStats,
     ProjectUpdate,
 )
 from .controller.templates import Template, TemplateCreate, TemplateUpdate, TemplateUsage
@@ -124,12 +140,32 @@ from .compute.vmware_nodes import VMware, VMwareCreate, VMwareUpdate
 from .compute.vpcs_nodes import VPCS, VPCSCreate, VPCSUpdate
 from .controller.capabilities import Capabilities
 from .controller.iou_license import IOULicense
+from .controller.marker_replay import (
+    ReplayFrame,
+    ReplayFrameDetail,
+    ReplayFrames,
+    ReplayFrameSource,
+    ReplaySource,
+    ReplayTimeline,
+    ReplayTreeNode,
+)
 from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
 from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
-from .controller.rbac import ACE, ACECreate, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
+from .controller.rbac import ACE, ACECreate, ACEEndpoint, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
 from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
 from .controller.snapshots import Snapshot, SnapshotCreate
+from .controller.statistics import (
+    ComputeStatistics,
+    ComputeStatisticsEntry,
+    LinkStatistics,
+    NodeStatistics,
+    ProjectCountStatistics,
+    ServerStatistics,
+    WebWiresharkContainer,
+    WebWiresharkStatistics,
+)
+from .controller.symbols import SymbolDimensions, SymbolInfo
 from .controller.templates.cloud_templates import CloudTemplate, CloudTemplateUpdate
 from .controller.templates.docker_templates import DockerTemplate, DockerTemplateUpdate
 from .controller.templates.dynamips_templates import (
@@ -158,7 +194,7 @@ from .controller.templates.vmware_templates import VMwareTemplate, VMwareTemplat
 
 # Controller template schemas
 from .controller.templates.vpcs_templates import VPCSTemplate, VPCSTemplateUpdate
-from .controller.tokens import ApiKeyCreate, RefreshTokenRequest, Token
+from .controller.tokens import ApiKey, ApiKeyCreate, ApiKeyCreated, ApiKeyMessage, RefreshTokenRequest, Token
 
 # Schemas for both controller and compute
 from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageFormat, QemuDiskImageUpdate
@@ -172,12 +208,16 @@ __all__ = [
     "UDPNIO",
     "VPCS",
     "ACECreate",
+    "ACEEndpoint",
     "ACEUpdate",
     "ATMSwitch",
     "ATMSwitchCreate",
     "ATMSwitchUpdate",
     "AnchorNIO",
+    "ApiKey",
     "ApiKeyCreate",
+    "ApiKeyCreated",
+    "ApiKeyMessage",
     "Appliance",
     "ApplianceVersion",
     "ApplianceVersionCreate",
@@ -212,6 +252,8 @@ __all__ = [
     "Compute",
     "ComputeCreate",
     "ComputeDockerImage",
+    "ComputeStatistics",
+    "ComputeStatisticsEntry",
     "ComputeUpdate",
     "ComputeVMwareVM",
     "ComputeVirtualBoxVM",
@@ -243,13 +285,19 @@ __all__ = [
     "FrameRelaySwitch",
     "FrameRelaySwitchCreate",
     "FrameRelaySwitchUpdate",
+    "GNS3VMEngineInfo",
+    "GNS3VMInfo",
     "IOUCreate",
     "IOULicense",
     "IOUStart",
     "IOUTemplate",
     "IOUTemplateUpdate",
     "IOUUpdate",
+    "IdlePC",
     "Image",
+    "ImageInstallCreated",
+    "ImageInstallResult",
+    "ImageInstallSkipped",
     "ImageSyncJob",
     "ImageSyncRequest",
     "ImageType",
@@ -265,15 +313,20 @@ __all__ = [
     "LinkBatchResult",
     "LinkCapture",
     "LinkCreate",
-    "LinkFilterDefinition",
+    "LinkFilterInfo",
     "LinkFilterParameter",
     "LinkFilterType",
     "LinkFilters",
     "LinkIfaceInfo",
+    "LinkStatistics",
     "LinkUpdate",
+    "LinkWiresharkRestart",
     "LoggedInUserUpdate",
+    "Marker",
     "MarkerCreate",
+    "MarkerDefinition",
     "MarkerDefinitionCreate",
+    "MarkerDefinitionWithLinks",
     "MarkerRebuild",
     "MarkerToggle",
     "MarkerUpdate",
@@ -287,6 +340,7 @@ __all__ = [
     "NodeCreate",
     "NodeDuplicate",
     "NodeFile",
+    "NodeStatistics",
     "NodeUpdate",
     "Notification",
     "NotificationAction",
@@ -295,9 +349,12 @@ __all__ = [
     "Privilege",
     "Project",
     "ProjectCompression",
+    "ProjectCountStatistics",
     "ProjectCreate",
     "ProjectDuplicate",
     "ProjectFile",
+    "ProjectMarker",
+    "ProjectStats",
     "ProjectUpdate",
     "Qemu",
     "QemuCreate",
@@ -309,6 +366,13 @@ __all__ = [
     "QemuUpdate",
     "RefreshTokenRequest",
     "RenameSession",
+    "ReplayFrame",
+    "ReplayFrameDetail",
+    "ReplayFrameSource",
+    "ReplayFrames",
+    "ReplaySource",
+    "ReplayTimeline",
+    "ReplayTreeNode",
     "Resource",
     "ResourceCreate",
     "ResourcePool",
@@ -318,11 +382,14 @@ __all__ = [
     "RoleCreate",
     "RoleUpdate",
     "ServerConfig",
+    "ServerStatistics",
     "SettingsResponse",
     "SettingsUpdate",
     "SettingsUpdateResponse",
     "Snapshot",
     "SnapshotCreate",
+    "SymbolDimensions",
+    "SymbolInfo",
     "Template",
     "TemplateCreate",
     "TemplateUpdate",
@@ -350,4 +417,6 @@ __all__ = [
     "VirtualBoxTemplate",
     "VirtualBoxTemplateUpdate",
     "VirtualBoxUpdate",
+    "WebWiresharkContainer",
+    "WebWiresharkStatistics",
 ]

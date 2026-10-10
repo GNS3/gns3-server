@@ -19,6 +19,8 @@ HTTP-route tests for the traffic-insight marker endpoints: per-link markers,
 project-level definitions, and the project-wide aggregation view.
 """
 
+from unittest.mock import DEFAULT
+
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -43,6 +45,25 @@ def _inherited(link, name="arp"):
     }
 
 
+def _record_marker(link):
+    """Side effect for a mocked ``start_marker`` that stores the marker like the real one does."""
+
+    def side_effect(*, name, bpf, tag=None, color=None, highlight_duration=None, direction=None, **kwargs):
+        link._markers[name] = {
+            "bpf": bpf,
+            "tag": tag,
+            "enabled": True,
+            "color": color,
+            "highlight_duration": highlight_duration,
+            "capture_node_id": "node-id",
+            "direction": direction,
+            "data_link_type": kwargs.get("data_link_type", "DLT_EN10MB"),
+        }
+        return DEFAULT
+
+    return side_effect
+
+
 class TestMarkerRoutes:
     # -----------------------------------------------------------------------
     # Per-link markers
@@ -53,13 +74,25 @@ class TestMarkerRoutes:
         link = UDPLink(project)
         project._links = {link.id: link}
 
-        with asyncio_patch("gns3server.controller.udp_link.UDPLink.start_marker") as mock:
+        with asyncio_patch(
+            "gns3server.controller.udp_link.UDPLink.start_marker", side_effect=_record_marker(link)
+        ) as mock:
             response = await client.post(
                 app.url_path_for("create_marker", project_id=project.id, link_id=link.id),
                 json={"bpf": "icmp", "tag": 3, "color": "#ff5722", "highlight_duration": 800},
             )
 
         assert response.status_code == status.HTTP_201_CREATED
+        assert response.json() == {
+            "bpf": "icmp",
+            "tag": 3,
+            "enabled": True,
+            "color": "#ff5722",
+            "highlight_duration": 800,
+            "capture_node_id": "node-id",
+            "direction": None,
+            "data_link_type": "DLT_EN10MB",
+        }
         mock.assert_called_once()
         _, kwargs = mock.call_args
         assert kwargs["bpf"] == "icmp"
@@ -73,12 +106,15 @@ class TestMarkerRoutes:
         link = UDPLink(project)
         project._links = {link.id: link}
 
-        with asyncio_patch("gns3server.controller.udp_link.UDPLink.start_marker") as mock:
+        with asyncio_patch(
+            "gns3server.controller.udp_link.UDPLink.start_marker", side_effect=_record_marker(link)
+        ) as mock:
             response = await client.post(
                 app.url_path_for("create_marker", project_id=project.id, link_id=link.id),
                 json={"name": "web", "bpf": "tcp port 80"},
             )
         assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["bpf"] == "tcp port 80"
         _, kwargs = mock.call_args
         assert kwargs["name"] == "web"
 
@@ -141,6 +177,16 @@ class TestMarkerRoutes:
     async def test_update_marker(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         link = UDPLink(project)
+        link._markers["web"] = {
+            "bpf": "udp port 53",
+            "tag": None,
+            "enabled": True,
+            "color": None,
+            "highlight_duration": 1500,
+            "capture_node_id": "node-id",
+            "direction": None,
+            "data_link_type": "DLT_EN10MB",
+        }
         project._links = {link.id: link}
 
         with asyncio_patch("gns3server.controller.udp_link.UDPLink.update_marker") as mock:
@@ -149,6 +195,7 @@ class TestMarkerRoutes:
                 json={"bpf": "udp port 53", "highlight_duration": 1500},
             )
         assert response.status_code == status.HTTP_200_OK
+        assert response.json() == link._markers["web"]
         _, kwargs = mock.call_args
         assert kwargs["bpf"] == "udp port 53"
         assert kwargs["highlight_duration"] == 1500
@@ -195,12 +242,27 @@ class TestMarkerRoutes:
 
     async def test_create_marker_definition(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
-        with asyncio_patch("gns3server.controller.project.Project.create_marker_definition") as mock:
+        def store_definition(*, name, bpf, highlight_duration=None, **kwargs):
+            project._marker_definitions[name] = {
+                "bpf": bpf,
+                "tag": None,
+                "direction": None,
+                "color": None,
+                "highlight_duration": highlight_duration,
+                "data_link_type": "DLT_EN10MB",
+                "paused": False,
+            }
+            return DEFAULT
+
+        with asyncio_patch(
+            "gns3server.controller.project.Project.create_marker_definition", side_effect=store_definition
+        ) as mock:
             response = await client.post(
                 app.url_path_for("create_marker_definition", project_id=project.id),
                 json={"name": "arp", "bpf": "arp", "highlight_duration": 1200},
             )
         assert response.status_code == status.HTTP_201_CREATED
+        assert response.json() == project._marker_definitions["arp"]
         _, kwargs = mock.call_args
         assert kwargs["name"] == "arp"
         assert kwargs["bpf"] == "arp"
@@ -220,12 +282,15 @@ class TestMarkerRoutes:
 
     async def test_update_marker_definition(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
+        project._marker_definitions["arp"] = {"bpf": "arp or rarp", "tag": None, "highlight_duration": 900}
+
         with asyncio_patch("gns3server.controller.project.Project.update_marker_definition") as mock:
             response = await client.put(
                 app.url_path_for("update_marker_definition", project_id=project.id, def_name="arp"),
                 json={"bpf": "arp or rarp", "highlight_duration": 900},
             )
         assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {"bpf": "arp or rarp", "tag": None, "highlight_duration": 900}
         _, kwargs = mock.call_args
         assert kwargs["bpf"] == "arp or rarp"
         assert kwargs["highlight_duration"] == 900
