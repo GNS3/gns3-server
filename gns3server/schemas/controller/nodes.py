@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ..common import ConsoleType, CustomAdapter, NodeStatus
+from ..common import ConsoleType, CustomAdapter, ErrorMessage, NodeStatus
 from ..update import PartialUpdateModel
 from .labels import Label
 
@@ -168,6 +168,10 @@ class NodeCreate(NodeBase):
     name: str
     node_type: NodeType
     node_id: UUID = Field(default_factory=uuid4)
+    strict_names: bool = Field(
+        False,
+        description="Return a 409 error instead of renaming the node when the requested name is already used",
+    )
 
 
 class NodeUpdate(PartialUpdateModel, NodeBase):
@@ -203,6 +207,16 @@ class Node(NodeBase):
     missing_images: List[MissingImage] = Field(
         default_factory=list, description="List of missing images referenced by the node. Read only"
     )
+
+
+class NodeBatchResult(BaseModel):
+    """
+    Outcome of one node of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    node: Optional[Node] = Field(None, description="The created node, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the node could not be created")
 
 
 class NodeDuplicate(BaseModel):

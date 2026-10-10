@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Discriminator, Field, field_validator, model_validator
 
+from ..common import ErrorMessage
 from ..update import PartialUpdateModel
 from .labels import Label
 
@@ -138,29 +139,6 @@ class LinkFilters(BaseModel):
     )
 
 
-class LinkFilterParameter(BaseModel):
-    """
-    Parameter of a packet filter.
-    """
-
-    name: str
-    type: Literal["int", "text", "str"]
-    minimum: Optional[int] = None
-    maximum: Optional[int] = None
-    unit: Optional[str] = None
-
-
-class LinkFilterDefinition(BaseModel):
-    """
-    Packet filter available on a link.
-    """
-
-    type: LinkFilterType
-    name: str
-    description: str
-    parameters: List[LinkFilterParameter]
-
-
 class LinkBase(BaseModel):
     """
     Link data.
@@ -214,6 +192,16 @@ class Link(LinkBase):
     wireshark: Optional[bool] = Field(
         False, description="Read only property. True if a Web Wireshark session is active on the link"
     )
+
+
+class LinkBatchResult(BaseModel):
+    """
+    Outcome of one link of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    link: Optional[Link] = Field(None, description="The created link, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the link could not be created")
 
 
 class UDPPortInfo(BaseModel):
@@ -398,3 +386,81 @@ class MarkerDefinitionCreate(BaseModel):
     @classmethod
     def _both_to_none(cls, v):
         return None if v == "both" else v
+
+
+class Marker(BaseModel):
+    """
+    A traffic-insight marker attached to a link.
+    """
+
+    bpf: str = Field(..., description="libpcap BPF expression")
+    tag: Optional[int] = Field(None, description="Correlation id shared by markers replayed together")
+    enabled: bool = Field(True, description="Whether the marker is capturing")
+    color: Optional[str] = Field(None, description="Hex color used by the Web UI")
+    highlight_duration: Optional[int] = Field(None, description="Web UI highlight duration in milliseconds")
+    capture_node_id: Optional[str] = Field(None, description="Node whose uBridge hosts the marker")
+    direction: Optional[str] = Field(None, description="'tx' or 'rx', null for both directions")
+    data_link_type: Optional[str] = Field(None, description="pcap link-layer type of the capture file")
+    inherited_from: Optional[str] = Field(None, description="Project marker definition this marker was copied from")
+
+
+class ProjectMarker(Marker):
+    """
+    A marker in the project-wide aggregation, with the link and node it belongs to.
+    """
+
+    link_id: str
+    node_id: Optional[str] = None
+
+
+class MarkerDefinition(BaseModel):
+    """
+    A project-level marker definition inherited by every link.
+    """
+
+    bpf: str = Field(..., description="libpcap BPF expression")
+    tag: Optional[int] = Field(None, description="Correlation id shared by markers replayed together")
+    direction: Optional[str] = Field(None, description="'tx' or 'rx', null for both directions")
+    color: Optional[str] = Field(None, description="Hex color used by the Web UI")
+    highlight_duration: Optional[int] = Field(None, description="Web UI highlight duration in milliseconds")
+    data_link_type: Optional[str] = Field(None, description="pcap link-layer type of inherited markers")
+    paused: bool = Field(False, description="Whether the inherited markers are paused")
+
+
+class MarkerDefinitionWithLinks(MarkerDefinition):
+    """
+    A project-level marker definition with the links currently carrying a copy of it.
+    """
+
+    link_ids: List[str] = Field(..., description="Links carrying an inherited copy of the definition")
+
+
+class LinkWiresharkRestart(BaseModel):
+    """
+    Result of restarting the Wireshark window of a link capture.
+    """
+
+    status: str
+
+
+class LinkFilterParameter(BaseModel):
+    """
+    A parameter of a packet filter.
+    """
+
+    name: str
+    type: str
+    minimum: Optional[int] = None
+    maximum: Optional[int] = None
+    unit: Optional[str] = None
+
+
+class LinkFilterInfo(BaseModel):
+    """
+    A packet filter that can be applied to a link.
+    """
+
+    type: str = Field(..., description="Filter identifier used as key in the link 'filters' property")
+    name: str
+    description: str
+    parameters: List[LinkFilterParameter]

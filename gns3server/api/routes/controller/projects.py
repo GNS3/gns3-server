@@ -31,7 +31,7 @@ import gns3server.utils.zipfile_zstd as zipfile
 
 log = logging.getLogger()
 
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import (
@@ -237,7 +237,9 @@ async def delete_project(
     await rbac_repo.delete_all_ace_starting_with_path(f"/projects/{project.id}")
 
 
-@router.get("/{project_id}/stats", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/stats", response_model=schemas.ProjectStats, dependencies=[Depends(has_privilege("Project.Audit"))]
+)
 def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
     Return a project statistics.
@@ -248,7 +250,12 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     return project.stats()
 
 
-@router.get("/{project_id}/markers", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/markers",
+    response_model=Dict[str, schemas.ProjectMarker],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 def get_project_markers(project: Project = Depends(dep_project)) -> dict:
     """
     Return all traffic-insight markers across every link in the project.
@@ -279,6 +286,7 @@ async def _replay_response(awaitable):
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/range",
+    response_model=schemas.ReplayTimeline,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_range(
@@ -319,6 +327,7 @@ async def replay_tag_range(
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/frames",
+    response_model=schemas.ReplayFrames,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_frames(
@@ -359,6 +368,8 @@ async def replay_tag_frames(
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/frame/detail",
+    response_model=schemas.ReplayFrameDetail,
+    response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_frame_detail(
@@ -397,7 +408,12 @@ async def replay_tag_frame_detail(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/{project_id}/marker-definitions", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/marker-definitions",
+    response_model=Dict[str, schemas.MarkerDefinitionWithLinks],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
     """
     Return all project-level marker definitions with their bound link IDs.
@@ -419,6 +435,8 @@ def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
 
 @router.post(
     "/{project_id}/marker-definitions",
+    response_model=schemas.MarkerDefinition,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
@@ -446,7 +464,12 @@ async def create_marker_definition(
     return project.marker_definitions.get(name, {})
 
 
-@router.put("/{project_id}/marker-definitions/{def_name}", dependencies=[Depends(has_privilege("Project.Modify"))])
+@router.put(
+    "/{project_id}/marker-definitions/{def_name}",
+    response_model=schemas.MarkerDefinition,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Modify"))],
+)
 async def update_marker_definition(
     def_name: str, def_data: schemas.MarkerDefinitionCreate, project: Project = Depends(dep_project)
 ) -> dict:
