@@ -170,43 +170,50 @@ async def redoc_html():
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
-    log.error(f"Controller error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ControllerTimeoutError):
-    log.error(f"Controller timeout error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller timeout error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_408_REQUEST_TIMEOUT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ControllerUnauthorizedError):
-    log.error(f"Controller unauthorized error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller unauthorized error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_401_UNAUTHORIZED, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ControllerForbiddenError):
-    log.error(f"Controller forbidden error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller forbidden error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_403_FORBIDDEN, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
-    log.error(f"Controller not found error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller not found error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_404_NOT_FOUND, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerBadRequestError)
 async def controller_bad_request_error_handler(request: Request, exc: ControllerBadRequestError):
-    log.error(f"Controller bad request error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller bad request error in {request.url.path} ({method}): {exc}")
     return error_response(status.HTTP_400_BAD_REQUEST, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ComputeConflictError)
 async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
-    log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller received error from compute for request '{exc.url()}' ({method}): {exc}")
     return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
@@ -217,7 +224,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
-    log.error(f"Controller database error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller database error in {request.url.path} ({method}): {exc}")
     return error_response(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         "Database error detected, please check logs to find details",
@@ -227,7 +235,8 @@ async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Request validation error in {request.url.path} ({method}): {exc}")
     errors = [
         {"loc": list(error.get("loc", ())), "msg": error.get("msg"), "type": error.get("type")}
         for error in exc.errors()
