@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
 import copy
 import html
 import logging
@@ -139,7 +138,6 @@ class Node:
         self._node_directory = None
         self._status = "stopped"
         self._status_changed = asyncio.Event()
-        self._transition = None
         self._template_id = template_id
         self._x = 0
         self._y = 0
@@ -907,19 +905,6 @@ class Node:
     async def destroy(self):
         await self.delete()
 
-    @contextlib.asynccontextmanager
-    async def _transitioning(self, transition):
-        """
-        Report a transitional status while a lifecycle call is in flight
-        """
-
-        self._transition = transition
-        self.project.emit_notification("node.updated", self.asdict())
-        try:
-            yield
-        finally:
-            self._transition = None
-
     async def wait_for_status(self, status):
         """
         Wait until the controller side status of the node matches
@@ -954,19 +939,18 @@ class Node:
                     f"Cannot start node '{self._name}': {len(failed_links)} deferred link(s) "
                     "could not be restored. Please try again."
                 )
-        async with self._transitioning("starting"):
-            try:
-                # For IOU: we need to send the licence everytime we start a node
-                if self.node_type == "iou":
-                    license_check = self._project.controller.iou_license.get("license_check", True)
-                    iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                    await self.post(
-                        "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
-                    )
-                else:
-                    await self.post("/start", data=data, timeout=240)
-            except asyncio.TimeoutError:
-                raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+        try:
+            # For IOU: we need to send the licence everytime we start a node
+            if self.node_type == "iou":
+                license_check = self._project.controller.iou_license.get("license_check", True)
+                iourc_content = self._project.controller.iou_license.get("iourc_content", None)
+                await self.post(
+                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+                )
+            else:
+                await self.post("/start", data=data, timeout=240)
+        except asyncio.TimeoutError:
+            raise ControllerTimeoutError(f"Timeout when starting {self._name}")
         self._confirm_status("started")
         # A started node may have brought kernel anchors into existence that
         # a link needs to finish wiring (the Ethernet-switch fast path joins
@@ -983,16 +967,15 @@ class Node:
         if self.missing_image:
             return
         stopped = False
-        async with self._transitioning("stopping"):
-            try:
-                await self.post("/stop", timeout=240, dont_connect=True)
-                stopped = True
-            except (ComputeError, ControllerError):
-                # We don't care if a node is down at this step
-                if strict:
-                    raise
-            except asyncio.TimeoutError:
-                raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
+        try:
+            await self.post("/stop", timeout=240, dont_connect=True)
+            stopped = True
+        except (ComputeError, ControllerError):
+            # We don't care if a node is down at this step
+            if strict:
+                raise
+        except asyncio.TimeoutError:
+            raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
         if stopped:
             self._confirm_status("stopped")
 
@@ -1388,7 +1371,7 @@ class Node:
         additional_data = {
             "project_id": self._project.id,
             "command_line": self._command_line,
-            "status": self._transition or self._status,
+            "status": self._status,
             "console_host": str(self._compute.console_host),
             "node_directory": self._node_directory,
             "ports": [port.asdict() for port in self.ports],

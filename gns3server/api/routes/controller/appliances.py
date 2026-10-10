@@ -82,6 +82,8 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
 
 @router.post(
     "/{appliance_id}/version",
+    response_model=schemas.Appliance,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Appliance.Allocate"))],
 )

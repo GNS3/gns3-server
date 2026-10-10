@@ -45,8 +45,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
     available_filters_handler,
+    create_ellipse_drawing_handler,
     create_link_handler,
     create_node_handler,
+    create_rectangle_drawing_handler,
+    create_text_drawing_handler,
     delete_link_handler,
     delete_node_file_handler,
     delete_node_handler,
@@ -109,7 +112,6 @@ from .device_config import (
     vpcs_config_set_handler,
 )
 from .drawings import (
-    create_drawing_handler,
     delete_drawing_handler,
     get_drawing_handler,
     get_drawings_handler,
@@ -1539,41 +1541,142 @@ async def drawing_list(
 
 
 @mcp.tool()
-async def drawing_create(
+async def drawing_create_text(
     project_id: Annotated[str, Field(description="Project name or UUID")],
-    svg: Annotated[str, Field(description="SVG content for the drawing")],
-    x: Annotated[int, Field(description="X coordinate (default: 0)")] = 0,
-    y: Annotated[int, Field(description="Y coordinate (default: 0)")] = 0,
-    z: Annotated[int, Field(description="Z layer (default: 0)")] = 0,
-    locked: Annotated[bool, Field(description="Lock the drawing (default: false)")] = False,
-    rotation: Annotated[int, Field(description="Rotation angle in degrees, -359 to 359 (default: 0)")] = 0,
+    x: Annotated[int, Field(description="X coordinate of the text top-left corner on the canvas")],
+    y: Annotated[int, Field(description="Y coordinate of the text top-left corner on the canvas")],
+    text: Annotated[str, Field(description="Label text; newlines (\\n) start additional lines")],
+    font_size: Annotated[int, Field(description="Font size, 1-200 (default: 13)")] = 13,
+    color: Annotated[str, Field(description="Text color, hex like #RRGGBB (default: #000000)")] = "#000000",
+    bold: Annotated[bool, Field(description="Bold text (default: false)")] = False,
+    font_family: Annotated[str, Field(description="Font family name (default: monospace)")] = "monospace",
+    z: Annotated[int, Field(description="Z layer; 1 keeps text above links (default: 1)")] = 1,
 ) -> list[dict[str, Any]]:
-    """Create a new drawing (label, shape, or image) on a project canvas.
+    """Add a text label to a project canvas.
 
-    GNS3 SVG rendering notes:
-    - <rect> MUST have a solid fill color (e.g. fill=\"#FF0000\") to render.
-      fill=\"none\" or fill=\"transparent\" will be invisible in the GUI.
-    - <ellipse> works correctly with or without fill.
-    - <line> and <text> work normally.
+    The SVG is assembled server-side in the Web UI compatible format
+    (validation, escaping and sizing included).
 
-    SVG examples:
-      Text label:  <svg><text x=\"10\" y=\"20\" font-size=\"14\">R1</text></svg>
-      Rectangle:   <svg><rect x=\"10\" y=\"10\" width=\"80\" height=\"50\" fill=\"#4A90D9\" stroke=\"black\"/></svg>
-      Ellipse:     <svg><ellipse cx=\"50\" cy=\"50\" rx=\"40\" ry=\"20\" fill=\"red\" stroke=\"black\"/></svg>
-      Line:        <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-width=\"2\"/></svg>
-      Dashed line: <svg><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"100\" stroke=\"black\" stroke-dasharray=\"5,5\"/></svg>
+    - XML characters (& < >) are escaped automatically.
+    - Multi-line: embed newlines (\\n) in text; each line renders below the previous one.
+    - The drawing width/height are computed from the text and returned, so labels
+      can be laid out without guessing the selection box size.
+    - Constraints: color must be hex like #RRGGBB; font_family accepts plain names
+      (letters, digits, spaces, . ' -); text capped at 500 characters.
+
+    Example: bold red label at (100, 80):
+        drawing_create_text(project_id="demo", x=100, y=80, text="R1 management", color="#CC0000", bold=True)
     """
     return await asyncio.to_thread(
         _run_handler_sync,
-        create_drawing_handler,
+        create_text_drawing_handler,
         {
             "project_id": project_id,
-            "svg": svg,
+            "text": text,
             "x": x,
             "y": y,
             "z": z,
-            "locked": locked,
-            "rotation": rotation,
+            "font_size": font_size,
+            "color": color,
+            "bold": bold,
+            "font_family": font_family,
+        },
+    )
+
+
+@mcp.tool()
+async def drawing_create_rectangle(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    x: Annotated[int, Field(description="X coordinate of the rectangle top-left corner on the canvas")],
+    y: Annotated[int, Field(description="Y coordinate of the rectangle top-left corner on the canvas")],
+    width: Annotated[int, Field(description="Rectangle width in px, 1-2000")],
+    height: Annotated[int, Field(description="Rectangle height in px, 1-2000")],
+    fill: Annotated[str, Field(description='Fill color, hex like #RRGGBB or "none" (default: #FFFFFF)')] = "#FFFFFF",
+    fill_opacity: Annotated[float, Field(description="Fill opacity, 0-1 (default: 1.0)")] = 1.0,
+    stroke: Annotated[str | None, Field(description="Border color, hex like #RRGGBB; omit for no border")] = None,
+    stroke_width: Annotated[int, Field(description="Border width, 1-20 (default: 1)")] = 1,
+    dashed: Annotated[bool, Field(description="Dashed border, uses the default 10,6 pattern (default: false)")] = False,
+    dasharray: Annotated[str | None, Field(description='Custom dash pattern like "4,2"; requires stroke')] = None,
+    rx: Annotated[int, Field(description="Corner radius, 0 to min(width, height)/2 (default: 0)")] = 0,
+    z: Annotated[int, Field(description="Z layer; 0 keeps shapes behind nodes and text (default: 0)")] = 0,
+) -> list[dict[str, Any]]:
+    """Add a rectangle to a project canvas.
+
+    The SVG is assembled server-side in the Web UI compatible format
+    (validation included).
+
+    - fill "none" renders an outline-only box (stroke recommended then).
+    - Border attributes are only emitted when stroke is given.
+    - dasharray must be plain "on,off" numbers; the Qt-remapped patterns
+      ("25, 25", "5, 25", ...) are rejected because the Web UI rewrites them.
+
+    Example: semi-transparent outline box at (200, 150):
+        drawing_create_rectangle(project_id="demo", x=200, y=150, width=400, height=200,
+                                 fill="none", stroke="#333333", dashed=True)
+    """
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_rectangle_drawing_handler,
+        {
+            "project_id": project_id,
+            "x": x,
+            "y": y,
+            "z": z,
+            "width": width,
+            "height": height,
+            "fill": fill,
+            "fill_opacity": fill_opacity,
+            "stroke": stroke,
+            "stroke_width": stroke_width,
+            "dashed": dashed,
+            "dasharray": dasharray,
+            "rx": rx,
+        },
+    )
+
+
+@mcp.tool()
+async def drawing_create_ellipse(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    x: Annotated[int, Field(description="X coordinate of the bounding box top-left corner on the canvas")],
+    y: Annotated[int, Field(description="Y coordinate of the bounding box top-left corner on the canvas")],
+    width: Annotated[int, Field(description="Bounding box width in px, 2-2000; equal to height gives a circle")],
+    height: Annotated[int, Field(description="Bounding box height in px, 2-2000")],
+    fill: Annotated[str, Field(description='Fill color, hex like #RRGGBB or "none" (default: #FFFFFF)')] = "#FFFFFF",
+    fill_opacity: Annotated[float, Field(description="Fill opacity, 0-1 (default: 1.0)")] = 1.0,
+    stroke: Annotated[str | None, Field(description="Border color, hex like #RRGGBB; omit for no border")] = None,
+    stroke_width: Annotated[int, Field(description="Border width, 1-20 (default: 1)")] = 1,
+    dashed: Annotated[bool, Field(description="Dashed border, uses the default 10,6 pattern (default: false)")] = False,
+    dasharray: Annotated[str | None, Field(description='Custom dash pattern like "4,2"; requires stroke')] = None,
+    z: Annotated[int, Field(description="Z layer; 0 keeps shapes behind nodes and text (default: 0)")] = 0,
+) -> list[dict[str, Any]]:
+    """Add an ellipse (or circle) to a project canvas.
+
+    The SVG is assembled server-side in the Web UI compatible format. cx/cy are
+    derived from the bounding box (the Web UI treats them as offsets inside the
+    drawing, not canvas coordinates); for odd width/height the drawing is 1 px
+    smaller than requested and the actual size is returned.
+
+    Example: circle of diameter 160 at (300, 300):
+        drawing_create_ellipse(project_id="demo", x=300, y=300, width=160, height=160,
+                               fill="#5AA9DD", fill_opacity=0.8)
+    """
+    return await asyncio.to_thread(
+        _run_handler_sync,
+        create_ellipse_drawing_handler,
+        {
+            "project_id": project_id,
+            "x": x,
+            "y": y,
+            "z": z,
+            "width": width,
+            "height": height,
+            "fill": fill,
+            "fill_opacity": fill_opacity,
+            "stroke": stroke,
+            "stroke_width": stroke_width,
+            "dashed": dashed,
+            "dasharray": dasharray,
         },
     )
 

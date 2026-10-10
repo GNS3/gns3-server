@@ -33,6 +33,8 @@ Supports ellipse and rectangle shapes for two-node annotations.
 import math
 from typing import Any, Literal
 
+from gns3server.utils.drawings import build_ellipse_svg, build_rectangle_svg, build_text_svg
+
 # Default parameters
 DEFAULT_DEVICE_WIDTH = 50
 DEFAULT_DEVICE_HEIGHT = 50
@@ -144,10 +146,16 @@ def calculate_two_node_shape(
     center_y = (node1_center_y + node2_center_y) / 2
 
     color_scheme = _get_color_scheme(area_name)
-    text_svg = generate_text_svg(area_name, color_scheme)
 
-    text_svg_width = len(area_name) * 8 + 20
-    text_svg_height = DEFAULT_FONT_SIZE + 16
+    # Shared builder: Web UI compatible SVG plus the computed label size
+    # (the old len * 8 + 20 estimate ignored the Web UI's pt-based rendering).
+    text_svg, text_svg_width, text_svg_height, _ = build_text_svg(
+        area_name,
+        font_size=DEFAULT_FONT_SIZE,
+        color=color_scheme["stroke"],
+        bold=True,
+        font_family="TypeWriter",
+    )
 
     if shape_type == "ellipse":
         rx = distance / 2
@@ -236,8 +244,9 @@ def generate_ellipse_svg(
     svg_width: int,
     svg_height: int,
 ) -> str:
-    """Generate SVG for ellipse."""
-    return f"""<svg width="{svg_width}" height="{svg_height}"><ellipse cx="{rx}" cy="{ry}" rx="{rx}" ry="{ry}" fill="{color_scheme["fill"]}" fill-opacity="{color_scheme["fill_opacity"]}"/></svg>"""
+    """Generate SVG for ellipse (delegates to the shared Web UI compatible builder)."""
+    svg, _, _ = build_ellipse_svg(rx * 2, ry * 2, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"])
+    return svg
 
 
 def generate_rectangle_svg(
@@ -245,16 +254,21 @@ def generate_rectangle_svg(
     height: int,
     color_scheme: dict[str, Any],
 ) -> str:
-    """Generate SVG for rectangle."""
-    return f"""<svg width="{width}" height="{height}"><rect x="0" y="0" width="{width}" height="{height}" fill="{color_scheme["fill"]}" fill-opacity="{color_scheme["fill_opacity"]}"/></svg>"""
+    """Generate SVG for rectangle (delegates to the shared Web UI compatible builder)."""
+    svg, _, _ = build_rectangle_svg(width, height, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"])
+    return svg
 
 
 def generate_text_svg(text: str, color_scheme: dict[str, Any]) -> str:
-    """Generate SVG for text label."""
-    text_width = len(text) * 8 + 20
-    text_height = DEFAULT_FONT_SIZE + 16
-
-    return f"""<svg width="{text_width}" height="{text_height}"><text font-family="TypeWriter" font-size="{DEFAULT_FONT_SIZE}.0" font-weight="bold" fill="{color_scheme["stroke"]}" text-anchor="middle" x="{text_width / 2}" y="{text_height / 2 + 4}">{text}</text></svg>"""
+    """Generate SVG for text label (delegates to the shared Web UI compatible builder)."""
+    svg, _, _, _ = build_text_svg(
+        text,
+        font_size=DEFAULT_FONT_SIZE,
+        color=color_scheme["stroke"],
+        bold=True,
+        font_family="TypeWriter",
+    )
+    return svg
 
 
 def _hsv_to_hex(h: int, s: int, v: int) -> str:

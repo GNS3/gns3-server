@@ -109,3 +109,13 @@ class Role(DateTimeModelMixin, RoleBase):
     is_builtin: bool
     privileges: List[Privilege]
     model_config = ConfigDict(from_attributes=True)
+
+
+class ACEEndpoint(BaseModel):
+    """
+    An endpoint that can be used in an ACL entry.
+    """
+
+    endpoint: str = Field(..., description="Endpoint path to use as the ACE path")
+    name: str = Field(..., description="Human readable name of the endpoint")
+    endpoint_type: str = Field(..., description="Kind of resource the endpoint refers to")
