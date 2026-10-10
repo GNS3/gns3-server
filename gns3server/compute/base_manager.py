@@ -41,6 +41,8 @@ from ..utils import force_unix_path
 from ..utils.images import default_images_directory, images_directories, list_images, md5sum, remove_checksum
 from .base_node import BaseNode
 from .error import ImageMissingError, NodeError
+from .nios.nio_anchor import NIOAnchor
+from .nios.nio_bridge import NIOBridge
 from .nios.nio_ethernet import NIOEthernet
 from .nios.nio_tap import NIOTAP
 from .nios.nio_udp import NIOUDP
@@ -355,6 +357,36 @@ class BaseManager:
             except OSError as e:
                 raise ComputeError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(lport, rhost, rport)
+            # The netem-extension filters (rate, reorder, gemodel…) have no
+            # uBridge relay equivalent — reject them here (the controller
+            # already keeps them off relay links; this is the second guard
+            # for direct compute API use, mirroring the kernel-NIO guard).
+            from gns3server.utils.packet_filter_validation import kernel_only_features
+
+            kernel_only = kernel_only_features(nio_settings.get("filters") or {})
+            if kernel_only:
+                raise ComputeError(
+                    "Packet filter(s) {} only run on a kernel-datapath link "
+                    "(tc netem on the veth host end); the uBridge relay has no equivalent".format(
+                        ", ".join(sorted(kernel_only))
+                    )
+                )
+            nio.filters = nio_settings.get("filters", {})
+            nio.markers = nio_settings.get("markers", {})
+            nio.suspend = nio_settings.get("suspend", False)
+        elif nio_settings["type"] == "nio_bridge":
+            nio = NIOBridge(nio_settings["bridge"])
+            nio.filters = nio_settings.get("filters", {})
+            # Markers ride the NIO and attach to the veth host interface via
+            # uBridge's AF_PACKET marker module (marker add_kernel).
+            nio.markers = nio_settings.get("markers", {})
+            nio.suspend = nio_settings.get("suspend", False)
+        elif nio_settings["type"] == "nio_anchor":
+            # The node-owned-bridge mirror of nio_bridge: the Ethernet
+            # switch joins the named foreign anchor to its own kernel
+            # bridge (AnchorNIO/NIOAnchor). A cascade link carries the
+            # other veth end's name in "peer" on the owning side.
+            nio = NIOAnchor(nio_settings["anchor"], nio_settings.get("peer"))
             nio.filters = nio_settings.get("filters", {})
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)

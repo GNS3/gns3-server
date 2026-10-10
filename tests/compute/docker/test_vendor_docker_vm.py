@@ -314,7 +314,7 @@ async def test_move_to_ns_uses_renamed_interface(compute_project, manager):
     # adapter 0 should be renamed to mgmt0
     move_calls = [c for c in vm._ubridge_hypervisor.method_calls if "move_to_ns" in str(c)]
     assert move_calls, "move_to_ns was not sent"
-    assert call.send("docker move_to_ns tap-gns3-e0 42 mgmt0") in move_calls
+    assert call.send(f"docker move_to_ns {vm._veth_names(0, 0)[1]} 42 mgmt0") in move_calls
 
 
 @pytest.mark.asyncio
@@ -326,7 +326,7 @@ async def test_move_to_ns_falls_back_to_eth(compute_project, manager):
     nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
     await vm._add_ubridge_connection(nio, 1)
     move_calls = [c for c in vm._ubridge_hypervisor.method_calls if "move_to_ns" in str(c)]
-    assert call.send("docker move_to_ns tap-gns3-e0 42 eth1") in move_calls
+    assert call.send(f"docker move_to_ns {vm._veth_names(1, 0)[1]} 42 eth1") in move_calls
 
 
 # ---------------------------------------------------------------------------
@@ -902,3 +902,19 @@ async def test_create_reparse_refreshes_env_knobs(compute_project, manager):
 
     assert vm._stop_timeout == 5
     assert vm._gns3_init is True  # removed entry reset to default
+
+
+# ---------------------------------------------------------------------------
+# Kernel-datapath (NIOBridge) rejection
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_unix_socket_nio_rejects_kernel_datapath_link(compute_project, manager):
+
+    vm = _make_vm(compute_project, manager, environment="GNS3_UNIX_SOCKET_NIO=1")
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    nio = manager.create_nio({"type": "nio_bridge", "bridge": "gns3a1b2c3d4e5f"})
+    with pytest.raises(DockerError, match="kernel-datapath"):
+        await vm._add_ubridge_connection(nio, 0)

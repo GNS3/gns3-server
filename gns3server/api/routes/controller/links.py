@@ -33,8 +33,13 @@ from gns3server import schemas
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 from gns3server.api.openapi import PCAP_MEDIA_TYPE, binary_response
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    controller_error_status_code,
+)
 from gns3server.controller.link import _UNSET, Link
+from gns3server.controller.project import Project
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.port_allocator import link_id_to_port
@@ -123,7 +128,7 @@ async def get_links(project_id: UUID) -> List[schemas.Link]:
     },
     dependencies=[Depends(has_privilege("Link.Allocate"))],
 )
-async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> schemas.Link:
+async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> dict:
     """
     Create a new link.
 
@@ -131,17 +136,22 @@ async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> sche
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
+    return await _create_link(project, link_create)
+
+
+async def _create_link(project: Project, link_create: schemas.LinkCreate) -> dict:
+
     link = await project.add_link()
     link_data = jsonable_encoder(link_create, exclude_unset=True)
-    if "filters" in link_data:
-        await link.update_filters(link_data["filters"])
-    if "link_style" in link_data:
-        await link.update_link_style(link_data["link_style"])
-    if "suspend" in link_data:
-        await link.update_suspend(link_data["suspend"])
-    if "show_filters_icon" in link_data:
-        await link.update_show_filters_icon(link_data["show_filters_icon"])
     try:
+        if "filters" in link_data:
+            await link.update_filters(link_data["filters"])
+        if "link_style" in link_data:
+            await link.update_link_style(link_data["link_style"])
+        if "suspend" in link_data:
+            await link.update_suspend(link_data["suspend"])
+        if "show_filters_icon" in link_data:
+            await link.update_show_filters_icon(link_data["show_filters_icon"])
         endpoints = link_data["nodes"]
         attached_port = None
         for index, endpoint in enumerate(endpoints):
@@ -157,6 +167,40 @@ async def create_link(project_id: UUID, link_create: schemas.LinkCreate) -> sche
         await project.delete_link(link.id)
         raise e
     return link.asdict()
+
+
+@router.post(
+    "/batch",
+    response_model=List[schemas.LinkBatchResult],
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+    },
+    dependencies=[Depends(has_privilege("Link.Allocate"))],
+)
+async def create_links(project_id: UUID, links_create: List[schemas.LinkCreate]) -> List[schemas.LinkBatchResult]:
+    """
+    Create several links in the order they are listed.
+
+    The response lists one result per link in the same order. A link that fails to be created
+    does not stop the following ones.
+
+    Required privilege: Link.Allocate
+    """
+
+    project = await Controller.instance().get_loaded_project(str(project_id))
+    results = []
+    for link_create in links_create:
+        try:
+            link = await _create_link(project, link_create)
+            results.append(schemas.LinkBatchResult(status_code=status.HTTP_201_CREATED, link=link))
+        except ControllerError as e:
+            log.error(f"Could not create link in batch: {e}")
+            results.append(
+                schemas.LinkBatchResult(
+                    status_code=controller_error_status_code(e), error=schemas.ErrorMessage(message=str(e))
+                )
+            )
+    return results
 
 
 @router.get(

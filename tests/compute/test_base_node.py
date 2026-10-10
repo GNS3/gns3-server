@@ -170,6 +170,20 @@ async def test_ubridge_apply_filters(node):
 
 
 @pytest.mark.asyncio
+async def test_ubridge_apply_filters_rejects_kernel_only(node):
+    """
+    Netem-extension filters have no relay equivalent: applying them on a
+    relay bridge must fail loudly instead of pushing an unknown filter type
+    to uBridge.
+    """
+
+    node._ubridge_send = AsyncioMagicMock()
+    with pytest.raises(NodeError, match="kernel-datapath"):
+        await node._ubridge_apply_filters("VPCS-10", {"delay": [100, 10], "rate": ["512kbit"]})
+    node._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_ubridge_apply_bpf_filters(node):
 
     filters = {"bpf": ["icmp[icmptype] == 8\ntcp src port 53"]}

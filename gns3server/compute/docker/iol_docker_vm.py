@@ -35,6 +35,17 @@ linked nodes get distinct MACs; starting a node without an allocation is an
 error, not a fallback — an uncoordinated id could collide with the pool and
 blackhole traffic as a MAC loop.
 
+Kernel datapath: the unix-socket pair is this container's only physical
+layer, so one userspace hop on its leg is irreducible — but the *link
+segment* need not ride the relay. Every Ethernet bay/unit owns a persistent
+TAP anchor (``gx`` names, created at node start like IOU's), and the
+per-port uBridge bridge swaps its topology leg between UDP (relay) and the
+anchor (kernel link) through ``bridge add_nio_tap`` / ``bridge
+delete_nio_tap`` — stop → delete → add → start, the c-socket binding
+surviving the swap. Eligibility needs the compute's uBridge to report both
+``ubridge_tap`` (the tap module) and ``ubridge_bridge_tap`` (the swappable
+leg); anything less keeps the node relay-only, exactly as before.
+
 This class is selected by the ``GNS3_IOL_RUNNER=1`` environment marker.
 """
 
@@ -51,6 +62,11 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Err
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.compute.iou.utils.iou_export import nvram_export
 from gns3server.compute.iou.utils.iou_import import nvram_import
+from gns3server.compute.kernel_datapath import KernelDatapathMixin
+from gns3server.compute.nios.nio_bridge import NIOBridge
+from gns3server.compute.ubridge.tc_probe import probe_bridge_tap_support, probe_tap_support
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 log = logging.getLogger(__name__)
 
@@ -94,6 +110,15 @@ class IOLDockerVM(VendorDockerVM):
     _application_id: int | None = None
     _startup_config_content: str | None = None
     _startup_config_dirty = False
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        # Kernel datapath (see KernelDatapathMixin): one persistent TAP per
+        # Ethernet bay/unit, held by uBridge's port bridge while a kernel
+        # link binds the port (bridge add_nio_tap).
+        self._kernel_taps = {}
+        self._tap_datapath = False
 
     def _parse_vendor_environment(self):
 
@@ -383,3 +408,251 @@ class IOLDockerVM(VendorDockerVM):
         """
 
         self._permissions_fixed = True
+
+    # ------------------------------------------------------------------
+    # Kernel datapath (see KernelDatapathMixin)
+    # ------------------------------------------------------------------
+
+    def _kernel_host_ifc(self, adapter_number, port_number=0):
+        """
+        The persistent TAP this Ethernet bay/unit owns (one 4-port unit per
+        adapter, the IOU model), or None before the node started — or on a
+        uBridge that cannot serve the anchor lifecycle, in which case the
+        node runs relay-only.
+        """
+
+        return self._kernel_taps.get((adapter_number, port_number))
+
+    def _kernel_anchors(self):
+        """
+        Every anchor TAP this node currently owns.
+        """
+
+        return set(self._kernel_taps.values())
+
+    def _kernel_error(self, message):
+        return DockerError(message)
+
+    def _tap_name(self, adapter_number, port_number):
+        """
+        Deterministic anchor TAP name for an Ethernet bay/unit — the shared
+        utils.kernel_anchor naming contract under the ``iol_docker`` key, so
+        the controller names a peer's anchor with the same function when an
+        Ethernet switch absorbs it.
+        """
+
+        return kernel_anchor_name("iol_docker", self._id, adapter_number, port_number)
+
+    async def _start_ubridge(self, require_privileged_access=False):
+        """
+        Override: with the control channel up, give every Ethernet bay/unit
+        its persistent TAP anchor — before the first link can attach (the
+        start loop calls _add_ubridge_connection right after this). The
+        anchors exist whether or not any link ever uses them: an anchor born
+        with the link would leave the switch fast path's deferred join
+        waiting forever (a link to a stopped node must not fail — and one to
+        a just-started node must not silently miss its anchor either).
+        """
+
+        await super()._start_ubridge(require_privileged_access=require_privileged_access)
+        await self._prepare_tap_datapath()
+
+    async def _prepare_tap_datapath(self):
+        """
+        Probe uBridge for the commands the anchor lifecycle needs — the tap
+        module (``tap create``/``tap delete``, the ``ubridge_tap``
+        capability) and the bridge module's swappable TAP leg
+        (``bridge delete_nio_tap``, ``ubridge_bridge_tap``) — and when both
+        answer, create the persistent TAP every Ethernet bay/unit owns.
+        A uBridge missing either keeps this node on the relay datapath:
+        every link rides unix ↔ UDP through the port bridges, exactly as
+        before the kernel datapath existed.
+        """
+
+        self._tap_datapath = False
+        self._kernel_taps.clear()
+
+        if await probe_bridge_tap_support() is not True:
+            log.info(
+                "IOL container '%s': this compute's uBridge cannot swap a bridge's TAP leg "
+                "(bridge delete_nio_tap); the node runs on the relay datapath and cannot "
+                "carry kernel links",
+                self._name,
+            )
+            return
+        if await probe_tap_support() is not True:
+            log.info(
+                "IOL container '%s': this compute's uBridge has no persistent-TAP module; "
+                "the node runs on the relay datapath and cannot carry kernel links",
+                self._name,
+            )
+            return
+
+        self._tap_datapath = True
+        # Every bay/unit anchors. No set_owner: the container port bridges
+        # hold these fds, and only while a kernel link is attached.
+        await self._create_anchor_taps(
+            (adapter_number, port_number)
+            for adapter_number in range(0, len(self._ethernet_adapters))
+            for port_number in range(0, self._ethernet_adapters[adapter_number].interfaces)
+        )
+
+    async def _ensure_anchor(self, adapter_number, port_number):
+        """
+        The ensure half of the frozen ensure-then-add contract: ``bridge
+        add_nio_tap`` deliberately opens a *transient* TAP when the name is
+        absent (cloud's bridge-interface path depends on it), so a persistent
+        anchor swept away between the node's start and the link's attach
+        would silently become a device that dies with the fd. ``tap create``
+        is strictly create-only (``IFF_TUN_EXCL`` — re-creating an existing
+        persistent device answers EBUSY), so the existence check is local:
+        uBridge runs on this host, and /sys/class/net names every device.
+        The repair create starts DOWN like every anchor at birth, so the
+        carrier pass in the attach flow is what brings it up.
+        """
+
+        tap = self._tap_name(adapter_number, port_number)
+        if os.path.exists(os.path.join("/sys/class/net", tap)):
+            return
+        await self._ubridge_send(f'tap create "{tap}"')
+
+    async def _add_ubridge_connection(self, nio, adapter_number, port_number=0):
+        """
+        Override: the vendor rejection of kernel-datapath NIOs does not
+        apply here — IOL runner adapters own persistent TAP anchors, so a
+        NIOBridge wires the port bridge's topology leg to the anchor instead
+        of raising (_connect_nio routes it; the port bridge and its unix NIO
+        are ensured inside).
+        """
+
+        if isinstance(nio, NIOBridge):
+            await self._connect_nio(adapter_number, nio, port_number)
+            return
+        await super()._add_ubridge_connection(nio, adapter_number, port_number)
+
+    async def _connect_nio(self, adapter_number, nio, port_number=0):
+        """
+        Override: route the NIO onto the port bridge's topology leg. A
+        kernel link (NIOBridge) swaps that leg to the port's anchor TAP and
+        runs the shared mixin flow on it; a relay NIO keeps the unix ↔ UDP
+        shape of the base class (the port bridge and its unix NIO ensured
+        first, so the base path only adds the UDP half).
+        """
+
+        if isinstance(nio, NIOBridge):
+            await self._attach_kernel_link(adapter_number, port_number, nio)
+            return
+
+        await self._ensure_unix_port_bridge(adapter_number, port_number)
+        await super()._connect_nio(adapter_number, nio, port_number)
+
+    async def _attach_kernel_link(self, adapter_number, port_number, nio):
+        """
+        Wire a kernel link's NIO (NIOBridge) on this port: the port bridge's
+        topology leg becomes the anchor TAP (``bridge add_nio_tap`` — uBridge
+        opens and holds the fd, relaying the unix-socket guest leg onto the
+        device), then the anchor is enslaved into the per-link kernel bridge
+        — the shared mixin flow, with the TAP playing the role Docker's veth
+        and QEMU's TAP play. The relay starts only once both NIOs are in
+        (uBridge requires two), which is also what carries the guest frames
+        onto the anchor.
+        """
+
+        anchor = self._kernel_host_ifc(adapter_number, port_number)
+        if anchor is None:
+            raise DockerError(
+                f"Bay {adapter_number}/{port_number} of IOL container '{self._name}' has no TAP anchor to carry a kernel "
+                "link (this compute's uBridge lacks the tap module or bridge delete_nio_tap, "
+                "or the node was started before the kernel-datapath support); restart the "
+                "node after upgrading uBridge"
+            )
+        await self._ensure_unix_port_bridge(adapter_number, port_number)
+        await self._ensure_anchor(adapter_number, port_number)
+        bridge_name = self._bridge_name(adapter_number, port_number)
+        await self._ubridge_send(f'bridge add_nio_tap {bridge_name} "{anchor}"')
+        # Per-link kernel bridge (brctl), capture, markers and impairment
+        # filters on the anchor — everything keyed on the interface name.
+        await self._kernel_attach(anchor, nio)
+        # Two NIOs now: start the [unix ↔ tap] relay.
+        await self._ubridge_send(f"bridge start {bridge_name}")
+        # The carrier pass refines the anchor's admin state (a suspended NIO
+        # sets it back down) — it is also what brings a born-down anchor up.
+        await self._set_adapter_carrier(adapter_number, not nio.suspend, port_number)
+
+    async def _release_port_tap(self, adapter_number, port_number):
+        """
+        The teardown half of the swap contract: stop the port bridge (its
+        relay threads hold the NIO pointers for their whole life — freeing a
+        NIO under them is a use-after-free, which is why delete_nio_tap
+        refuses while running), then release the TAP NIO by name. The anchor
+        device itself survives (the node owns it, not the link); the c-socket
+        binding survives too (stop keeps every NIO), so the container's
+        egress frames queue on the socket until a leg is swapped in again.
+        """
+
+        bridge_name = self._bridge_name(adapter_number, port_number)
+        with contextlib.suppress(UbridgeError):
+            await self._ubridge_send(f"bridge stop {bridge_name}")
+        tap = self._kernel_taps.get((adapter_number, port_number))
+        if tap is not None:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'bridge delete_nio_tap {bridge_name} "{tap}"')
+
+    async def adapter_remove_nio_binding(self, adapter_number, port_number=0):
+        """
+        Override: a kernel link leaves through the port-leg swap (stop +
+        delete_nio_tap) before the shared anchor-side teardown — markers,
+        tc reset, brctl delif and the per-link bridge deletion — runs in the
+        base path.
+        """
+
+        if self.ubridge:
+            try:
+                adapter = self._ethernet_adapters[adapter_number]
+            except IndexError:
+                adapter = None
+            if adapter is not None and isinstance(adapter.get_nio(port_number), NIOBridge):
+                await self._release_port_tap(adapter_number, port_number)
+        await super().adapter_remove_nio_binding(adapter_number, port_number)
+
+    async def _stop_ubridge(self):
+        """
+        Override: release the kernel datapath's host state while the control
+        channel is still up, in the order the fd holders dictate — the port
+        bridges hold the anchor TAP fds (``bridge add_nio_tap``), so they go
+        first (``bridge delete`` stops their relay threads and frees the
+        NIOs), then the anchors themselves (``tap delete`` answers EBADFD on
+        a device another fd still holds), then the per-link kernel bridges.
+        The port bridges die with the process anyway, but the anchors are
+        persistent: deleting them here is what keeps a stopped node from
+        littering the host with ``gx`` devices. The next start sweeps and
+        re-creates everything.
+        """
+
+        if self.ubridge:
+            # stop() clears _bridges before this point, so derive the port
+            # bridge names from the adapters (the historical naming is a
+            # pure function of adapter/port).
+            for adapter_number in range(0, len(self._ethernet_adapters)):
+                adapter = self._ethernet_adapters[adapter_number]
+                for port_number in range(0, adapter.interfaces):
+                    with contextlib.suppress(UbridgeError):
+                        await self._ubridge_send(f"bridge delete {self._bridge_name(adapter_number, port_number)}")
+        await self._delete_anchor_taps()
+        self._tap_datapath = False
+        self._ubridge_tc_caps = None
+        await super()._stop_ubridge()
+
+    async def _set_adapter_carrier(self, adapter_number, connected, port_number=0):
+        """
+        Override: refine the vendor no-op. A port with an anchor (the kernel
+        datapath) toggles the anchor's admin state — the port bridge's TAP
+        NIO writes answer EIO and its reads fall silent while it is down,
+        which is the suspend semantics of every other anchored node type. A
+        port without an anchor (relay datapath on a uBridge without the
+        swappable leg) keeps the no-op: the unix-socket pair has no carrier,
+        and the port bridge carries no TAP NIO for the base class to toggle.
+        """
+
+        if self._kernel_host_ifc(adapter_number, port_number) is not None:
+            await KernelDatapathMixin._set_adapter_carrier(self, adapter_number, connected, port_number)

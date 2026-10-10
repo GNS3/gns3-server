@@ -40,6 +40,7 @@ import gns3server
 from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import cancellable_wait_run_in_executor, subprocess_check_output
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 from ...utils import int_to_macaddress, is_ipv6_enabled, macaddress_to_int
 from ...utils.asyncio import monitor_process
@@ -48,6 +49,8 @@ from ...utils.images import md5sum
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
 from ..error import ImageMissingError, NodeError
+from ..kernel_datapath import KernelDatapathMixin
+from ..nios.nio_bridge import NIOBridge
 from ..nios.nio_tap import NIOTAP
 from ..nios.nio_udp import NIOUDP
 from .qemu_error import QemuError
@@ -61,7 +64,7 @@ FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd", "-fs
 FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS if opt.startswith("-") and not opt.startswith("--")}
 
 
-class QemuVM(BaseNode):
+class QemuVM(KernelDatapathMixin, BaseNode):
     module_name = "qemu"
 
     """
@@ -118,7 +121,12 @@ class QemuVM(BaseNode):
         self._stdout_file = ""
         self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
-        self._local_udp_tunnels = {}
+        self._local_udp_tunnels = {}  # legacy datapath only (see _tap_datapath)
+        self._kernel_taps = {}
+        self._ubridge_tc_caps = None
+        # Whether this VM runs on the TAP datapath (uBridge created the
+        # adapter TAPs) or on the legacy socket-netdev one. Decided at start.
+        self._tap_datapath = False
         self._guest_cid = None
         self._command_line_changed = False
         self._qemu_version = None
@@ -1118,9 +1126,24 @@ class QemuVM(BaseNode):
             if self._tpm:
                 await self._start_swtpm()
 
-            command = await self._build_command()
-            command_string = " ".join(shlex.quote(s) for s in command)
+            # uBridge owns the adapter TAPs and must be up before they are
+            # created — and before QEMU opens them. Unlike a container, whose
+            # veths are created after it starts, the TAP has to pre-exist the
+            # process that reads it.
+            #
+            # The try starts here rather than at the launch: every step up to
+            # the launch can fail (a broken qemu_path in _build_command, a
+            # tap create refused), and each of those failures must take the
+            # datapath down again — a node that reports stopped must not keep
+            # a uBridge process and root-namespace TAPs alive, since nothing
+            # else ever reclaims them.
+            self._ubridge_tc_caps = None
             try:
+                await self._start_ubridge()
+                await self._prepare_tap_datapath()
+
+                command = await self._build_command()
+                command_string = " ".join(shlex.quote(s) for s in command)
                 log.debug(f"Starting QEMU with: {command_string}")
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
                 log.debug(f"logging to {self._stdout_file}")
@@ -1137,7 +1160,16 @@ class QemuVM(BaseNode):
             except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
                 stdout = self.read_stdout()
                 log.error(f"Could not start QEMU {self.qemu_path}: {e}\n{stdout}")
+                # uBridge was started (and the adapter TAPs created) before
+                # the launch: don't leave either behind on a failed start.
+                await self._stop_ubridge()
                 raise QemuError(f"Could not start QEMU {self.qemu_path}: {e}\n{stdout}")
+            except Exception:
+                # The same teardown for a failure raised as anything else
+                # (QemuError from _build_command, UbridgeError from the tap
+                # setup) — re-raised unchanged so callers keep their contract.
+                await self._stop_ubridge()
+                raise
 
             await self._set_process_priority()
             if self._cpu_throttling:
@@ -1145,14 +1177,12 @@ class QemuVM(BaseNode):
             if "-enable-kvm" in command_string or "-enable-hax" in command_string:
                 self._hw_virtualization = True
 
-            await self._start_ubridge()
             set_link_commands = []
             for adapter_number, adapter in enumerate(self._ethernet_adapters):
                 nio = adapter.get_nio(0)
                 if nio:
-                    await self.add_ubridge_udp_connection(
-                        f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
-                    )
+                    await self._connect_nio(adapter_number, nio)
+                    await self._set_adapter_carrier(adapter_number, not nio.suspend)
                     if nio.suspend and self._replicate_network_connection_state:
                         set_link_commands.append(f"set_link gns3-{adapter_number} off")
                 elif self._replicate_network_connection_state:
@@ -1216,47 +1246,66 @@ class QemuVM(BaseNode):
         Stops this QEMU VM.
         """
 
-        await self._stop_ubridge()
         async with self._execute_lock:
             # stop the QEMU process
             self._hw_virtualization = False
-            if self.is_running():
-                log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
-                try:
-                    if self.on_close == "save_vm_state":
-                        await self._control_vm("stop")
-                        await self._control_vm("savevm GNS3_SAVED_STATE")
-                        wait_for_savevm = 120
-                        while wait_for_savevm:
-                            await asyncio.sleep(1)
-                            status = await self._saved_state_option()
-                            wait_for_savevm -= 1
-                            if status != []:
-                                break
+            try:
+                if self.is_running():
+                    log.debug(f'Stopping QEMU VM "{self._name}" PID={self._process.pid}')
+                    try:
+                        if self.on_close == "save_vm_state":
+                            await self._control_vm("stop")
+                            await self._control_vm("savevm GNS3_SAVED_STATE")
+                            wait_for_savevm = 120
+                            while wait_for_savevm:
+                                await asyncio.sleep(1)
+                                status = await self._saved_state_option()
+                                wait_for_savevm -= 1
+                                if status != []:
+                                    break
 
-                    if self.on_close == "shutdown_signal":
-                        await self._control_vm("system_powerdown")
-                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
-                    else:
-                        self._process.terminate()
-                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
-                except ProcessLookupError:
-                    pass
-                except asyncio.TimeoutError:
-                    if self._process:
-                        try:
-                            self._process.kill()
-                        except ProcessLookupError:
-                            pass
-                        if self._process.returncode is None:
-                            log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
-            self._process = None
-            self._stop_cpulimit()
-            self._stop_swtpm()
-            if self.on_close != "save_vm_state":
-                await self._clear_save_vm_stated()
-            await self._export_config()
-            await super().stop()
+                        if self.on_close == "shutdown_signal":
+                            await self._control_vm("system_powerdown")
+                            await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
+                        else:
+                            self._process.terminate()
+                            await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
+                    except ProcessLookupError:
+                        pass
+                    except asyncio.TimeoutError:
+                        if self._process:
+                            try:
+                                self._process.kill()
+                            except ProcessLookupError:
+                                pass
+                            if self._process.returncode is None:
+                                log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
+                self._process = None
+                self._stop_cpulimit()
+                self._stop_swtpm()
+                if self.on_close != "save_vm_state":
+                    await self._clear_save_vm_stated()
+                await self._export_config()
+                await super().stop()
+            finally:
+                # Release the datapath once QEMU is gone: the process holds
+                # the adapter TAPs open (it is the guest side), and uBridge's
+                # tap delete refuses a held device ("Device or resource
+                # busy") — deleting them while QEMU still ran leaked the
+                # persistent TAPs, because that best-effort delete is
+                # suppressed. Order: process side first, then the devices
+                # (the same lesson as IOU's reverse stop order). The finally
+                # keeps a mid-stop raise (a failed savevm, an export error)
+                # from skipping the teardown entirely.
+                #
+                # It stays under the lock: the process monitor calls stop() on
+                # its own when QEMU dies, so an API stop and a process-death
+                # stop run concurrently in the normal case — and the TAP
+                # sweep walks the adapter map across awaits, which the second
+                # stop was free to clear underneath it ("dictionary changed
+                # size during iteration"). Serialized, it finds uBridge
+                # already gone and sweeps nothing.
+                await self._stop_ubridge()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):
         """
@@ -1472,6 +1521,111 @@ class QemuVM(BaseNode):
         else:
             log.debug(f"QEMU VM is not paused to be resumed, current status is {vm_status}")
 
+    # ------------------------------------------------------------------
+    # Kernel datapath: the adapter anchor is a persistent TAP
+    # ------------------------------------------------------------------
+
+    def _tap_name(self, adapter_number, port_number=0):
+        """
+        Deterministic anchor TAP name for an adapter port (the shared
+        utils.kernel_anchor naming contract — the controller names a peer's
+        anchor with the same function when an Ethernet switch absorbs it).
+        """
+
+        return kernel_anchor_name("qemu", self._id, adapter_number, port_number)
+
+    def _kernel_host_ifc(self, adapter_number, port_number=0):
+        """
+        The persistent TAP this adapter owns, or None before the VM started
+        (or on the legacy socket-netdev datapath).
+        """
+
+        return self._kernel_taps.get((adapter_number, port_number))
+
+    def _kernel_anchors(self):
+        return set(self._kernel_taps.values())
+
+    def _kernel_error(self, message):
+        return QemuError(message)
+
+    async def _prepare_tap_datapath(self):
+        """
+        Probe uBridge's tap module and, when it answers, create the TAP every
+        adapter owns — before QEMU is launched, so the netdev is already
+        there. A build without the module (or without CAP_NET_ADMIN) keeps the
+        legacy socket-netdev datapath: the local UDP tunnels to a uBridge
+        relay this node used before the TAP work. Kernel links require the TAP
+        datapath.
+        """
+
+        self._tap_datapath = False
+        self._kernel_taps.clear()
+        if not self.ubridge:
+            return
+
+        probe_error = await self._probe_persistent_taps(f"gq{self._id.replace('-', '')[:8]}prob")
+        if probe_error is not None:
+            log.warning("QEMU VM '%s': uBridge cannot create persistent TAPs (%s)", self._name, probe_error)
+            self.project.emit(
+                "log.warning",
+                {
+                    "message": f"QEMU VM '{self._name}': uBridge does not support persistent TAPs ({probe_error}); "
+                    "this node runs on the legacy relay datapath and cannot carry kernel links"
+                },
+            )
+            return
+
+        self._tap_datapath = True
+        # Every adapter anchors (port 0 only — QEMU adapters are
+        # single-port). The shared lifecycle sweeps leftovers first, creates
+        # each TAP and hands it to this user (unprivileged QEMU opens it
+        # itself), leaving it down until a link attaches.
+        await self._create_anchor_taps(
+            ((adapter_number, 0) for adapter_number, _adapter in enumerate(self._ethernet_adapters)), set_owner=True
+        )
+
+    async def _stop_ubridge(self):
+        """
+        Stops uBridge, removing the adapter TAPs first: they live in the root
+        namespace and outlive it (the tap module needs the control channel to
+        delete them), and QEMU holding the other end keeps each device alive
+        until it exits — unpersisted here, they disappear with the process.
+        The next start spawns a fresh uBridge, so the tc capabilities must be
+        probed again.
+        """
+
+        await self._delete_anchor_taps()
+        self._ubridge_tc_caps = None
+        await super()._stop_ubridge()
+
+    async def _connect_nio(self, adapter_number, nio, port_number=0):
+        """
+        Attach a link's NIO to the adapter's TAP anchor: a kernel link
+        enslaves the TAP into the per-link kernel bridge, a relay link
+        attaches it to the uBridge relay bridge as an AF_PACKET endpoint.
+        """
+
+        bridge_name = f"QEMU-{self._id}-{adapter_number}"
+        if not self._tap_datapath:
+            if isinstance(nio, NIOBridge):
+                raise QemuError(
+                    f"Adapter {adapter_number} of QEMU VM '{self._name}' runs on the legacy relay datapath "
+                    "(this uBridge cannot create persistent TAPs) and cannot carry a kernel link"
+                )
+            await self.add_ubridge_udp_connection(bridge_name, self._local_udp_tunnels[adapter_number][1], nio)
+            return
+
+        anchor = self._kernel_host_ifc(adapter_number, port_number)
+        if anchor is None:
+            raise QemuError(
+                f"Adapter {adapter_number} port {port_number} of QEMU VM '{self._name}' has no TAP interface; "
+                "restart the node to attach a link to it"
+            )
+        if isinstance(nio, NIOBridge):
+            await self._kernel_attach(anchor, nio)
+            return
+        await self._relay_attach(anchor, bridge_name, nio)
+
     async def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
@@ -1485,15 +1639,20 @@ class QemuVM(BaseNode):
         except IndexError:
             raise QemuError(f'Adapter {adapter_number} does not exist on QEMU VM "{self._name}"')
 
+        # The compute-side backstop of the controller's duplicate-port guard:
+        # a port carries at most one NIO, and overwriting the one a link
+        # still owns orphans that link's teardown (its host state leaks).
+        if adapter.get_nio(0) is not None:
+            raise QemuError(f'Adapter {adapter_number} of QEMU VM "{self._name}" already has a link')
+
         if self.is_running():
             try:
-                await self.add_ubridge_udp_connection(
-                    f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
-                )
-                if self._replicate_network_connection_state:
-                    await self._control_vm(f"set_link gns3-{adapter_number} on")
+                await self._connect_nio(adapter_number, nio)
             except (IndexError, KeyError):
                 raise QemuError(f'Adapter {adapter_number} does not exist on QEMU VM "{self._name}"')
+            await self._set_adapter_carrier(adapter_number, not nio.suspend)
+            if self._replicate_network_connection_state:
+                await self._control_vm(f"set_link gns3-{adapter_number} on")
 
         adapter.add_nio(0, nio)
         log.debug(f'QEMU VM "{self._name}" [{self._id}]: {nio} added to adapter {adapter_number}')
@@ -1508,9 +1667,21 @@ class QemuVM(BaseNode):
 
         if self.is_running():
             try:
-                await self.update_ubridge_udp_connection(
-                    f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
-                )
+                if self._tap_datapath and isinstance(nio, NIOBridge):
+                    # Filters or markers changed on an attached kernel link:
+                    # re-apply on the anchor, no re-enslaving.
+                    anchor = self._kernel_host_ifc(adapter_number)
+                    if anchor is not None:
+                        await self._kernel_update(anchor, nio)
+                elif self._tap_datapath:
+                    # Relay link on the TAP anchor: re-apply on its bridge.
+                    await self._ubridge_apply_filters(f"QEMU-{self._id}-{adapter_number}", nio.filters)
+                    await self._ubridge_apply_markers(f"QEMU-{self._id}-{adapter_number}", nio)
+                else:
+                    await self.update_ubridge_udp_connection(
+                        f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
+                    )
+                await self._set_adapter_carrier(adapter_number, not nio.suspend)
                 if self._replicate_network_connection_state:
                     if nio.suspend:
                         await self._control_vm(f"set_link gns3-{adapter_number} off")
@@ -1533,13 +1704,15 @@ class QemuVM(BaseNode):
         except IndexError:
             raise QemuError(f'Adapter {adapter_number} does not exist on QEMU VM "{self._name}"')
 
+        nio = adapter.get_nio(0)
         await self.stop_capture(adapter_number)
         if self.is_running():
             if self._replicate_network_connection_state:
                 await self._control_vm(f"set_link gns3-{adapter_number} off")
-            await self._ubridge_send("bridge delete {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
-
-        nio = adapter.get_nio(0)
+            if isinstance(nio, NIOBridge):
+                await self._remove_kernel_nio(nio, adapter_number)
+            else:
+                await self._relay_detach(f"QEMU-{self._id}-{adapter_number}")
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
@@ -1582,11 +1755,25 @@ class QemuVM(BaseNode):
 
         nio.start_packet_capture(output_file)
         if self.ubridge:
-            await self._ubridge_send(
-                'bridge start_capture {name} "{output_file}"'.format(
-                    name=f"QEMU-{self._id}-{adapter_number}", output_file=output_file
+            anchor = self._kernel_host_ifc(adapter_number)
+            if isinstance(nio, NIOBridge) and anchor is not None:
+                # Kernel link: capture on the adapter's TAP anchor (AF_PACKET,
+                # one capture per uBridge process — see _reserve_kernel_capture;
+                # a failed start rolls the port's flag back so the port cannot
+                # later stop the winner's capture).
+                try:
+                    self._reserve_kernel_capture(anchor)
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                except Exception:
+                    self._release_kernel_capture(anchor)
+                    nio.stop_packet_capture()
+                    raise
+            else:
+                await self._ubridge_send(
+                    'bridge start_capture {name} "{output_file}"'.format(
+                        name=f"QEMU-{self._id}-{adapter_number}", output_file=output_file
+                    )
                 )
-            )
 
         log.debug(f"QEMU VM '{self.name}' [{self.id}]: starting packet capture on adapter {adapter_number}")
 
@@ -1603,7 +1790,16 @@ class QemuVM(BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
+            anchor = self._kernel_host_ifc(adapter_number)
+            if isinstance(nio, NIOBridge) and anchor is not None:
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it (a second port's stop would kill this
+                # capture while its own flag still says capturing).
+                if self._kernel_capture_owned_by(anchor):
+                    await self._ubridge_send("capture stop_kernel")
+                    self._release_kernel_capture(anchor)
+            else:
+                await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 
         log.debug(f"QEMU VM '{self.name}' [{self.id}]: stopping packet capture on adapter {adapter_number}")
 
@@ -1851,6 +2047,7 @@ class QemuVM(BaseNode):
             return self._spice_with_agent_options(self.console)
         elif self._console_type != "none":
             raise QemuError(f"Console type {self._console_type} is unknown")
+        return []
 
     def _aux_options(self):
 
@@ -2387,10 +2584,7 @@ class QemuVM(BaseNode):
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
-            # use a local UDP tunnel to connect to uBridge instead
-            if adapter_number not in self._local_udp_tunnels:
-                self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
-            nio = self._local_udp_tunnels[adapter_number][0]
+            nio = adapter.get_nio(0)
 
             custom_adapter = self._get_custom_adapter_settings(adapter_number)
             adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
@@ -2415,23 +2609,33 @@ class QemuVM(BaseNode):
                 addr = pci_device_id % 32
                 device_string = f"{device_string},bus=pci-bridge{bridge_id},addr=0x{addr:02x}"
             pci_device_id += 1
-            if nio:
-                network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
-                if isinstance(nio, NIOUDP):
-                    network_options.extend(
-                        [
-                            "-netdev",
-                            "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(
-                                adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
-                            ),
-                        ]
-                    )
-                elif isinstance(nio, NIOTAP):
-                    network_options.extend(
-                        ["-netdev", f"tap,id=gns3-{adapter_number},ifname={nio.tap_device},script=no,downscript=no"]
-                    )
+            # Every adapter is backed by its own TAP (created before launch,
+            # see _create_taps): the netdev is a kernel-side interface the
+            # link attaches to, not a UDP socket into uBridge. A legacy
+            # NIOTAP NIO still names its own device.
+            if isinstance(nio, NIOTAP):
+                tap = nio.tap_device
             else:
-                network_options.extend(["-device", device_string])
+                tap = self._kernel_host_ifc(adapter_number) or self._tap_name(adapter_number)
+            network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
+            if self._tap_datapath or isinstance(nio, NIOTAP):
+                network_options.extend(
+                    ["-netdev", f"tap,id=gns3-{adapter_number},ifname={tap},script=no,downscript=no"]
+                )
+            else:
+                # Legacy datapath (uBridge without the tap module): QEMU talks
+                # UDP to a local tunnel, and uBridge relays it to the peer.
+                if adapter_number not in self._local_udp_tunnels:
+                    self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
+                tunnel_nio = self._local_udp_tunnels[adapter_number][0]
+                network_options.extend(
+                    [
+                        "-netdev",
+                        "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(
+                            adapter_number, tunnel_nio.rhost, tunnel_nio.rport, "127.0.0.1", tunnel_nio.lport
+                        ),
+                    ]
+                )
 
         return network_options
 

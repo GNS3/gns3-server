@@ -86,3 +86,21 @@ class ComputeConflictError(ComputeError):
 
     def response(self):
         return self._response
+
+
+def controller_error_status_code(error: ControllerError) -> int:
+    """
+    HTTP status code returned by the API for a controller error.
+    """
+
+    if isinstance(error, ControllerTimeoutError):
+        return 408
+    if isinstance(error, ControllerUnauthorizedError):
+        return 401
+    if isinstance(error, ControllerForbiddenError):
+        return 403
+    if isinstance(error, ControllerNotFoundError):
+        return 404
+    if isinstance(error, ControllerBadRequestError):
+        return 400
+    return 409

@@ -650,8 +650,8 @@ async def test_generic_unix_socket_dir_honored_in_wiring(compute_project, manage
 async def test_link_operations_never_send_tap_carrier(compute_project, manager):
     """
     uBridge rejects set_nio_tap_carrier on a bridge without a TAP NIO
-    ("bridge has no TAP NIO"), and unix-socket NIO bridges never have one:
-    every link create/update/delete on a running node would fail. The
+    ("bridge has no TAP NIO"), and unix-socket NIO relay bridges never have
+    one: every link create/update/delete on a running node would fail. The
     vendor override must keep the carrier command out of all three paths.
     """
 
@@ -659,6 +659,10 @@ async def test_link_operations_never_send_tap_carrier(compute_project, manager):
     vm._ubridge_hypervisor = MagicMock()  # truthy ubridge, like a started node
     vm._ubridge_send = AsyncioMagicMock()
     vm.status = "started"
+    # A started node's port bridge exists and is registered by the start
+    # flow — record it, or the relay attach would run the ensure path
+    # (bridge create + socket wait) this fake never set up.
+    vm._bridges.add(vm._bridge_name(0, 0))
     nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
 
     await vm.adapter_add_nio_binding(0, nio, 0)

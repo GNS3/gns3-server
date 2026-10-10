@@ -101,7 +101,9 @@ class Node:
         "default_password",
     ]
 
-    def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
+    def __init__(
+        self, project, compute, name, node_id=None, node_type=None, template_id=None, strict_names=False, **kwargs
+    ):
         """
         :param project: Project of the node
         :param compute: Compute where the server will run
@@ -109,6 +111,7 @@ class Node:
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
         :param template_id: Template ID used to create this node
+        :param strict_names: Fail instead of renaming the node when the name is already used
         :param kwargs: Node properties
         """
 
@@ -126,7 +129,7 @@ class Node:
         self._label = None
         self._links = set()
         self._name = None
-        self.name = name
+        self._name = project.update_node_name(self, name, strict=strict_names)
         self._console = None
         self._console_type = None
         self._aux = None
@@ -965,6 +968,11 @@ class Node:
             except asyncio.TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when starting {self._name}")
         self._confirm_status("started")
+        # A started node may have brought kernel anchors into existence that
+        # a link needs to finish wiring (the Ethernet-switch fast path joins
+        # the peer's anchor on the switch side — see UDPLink.node_started).
+        for link in self._links:
+            await link.node_started(self)
 
     async def stop(self, strict=False):
         """
@@ -1217,6 +1225,32 @@ class Node:
         return min(free_ports, key=lambda port: (port.adapter_number, port.port_number))
 
     def _list_ports(self):
+        """
+        Rebuild the port list, preserving the link back-references.
+
+        The list is rebuilt on every node update (a property change or a
+        compute ``node.updated`` notification), which creates fresh Port
+        objects — but the links themselves are unaffected by that rebuild,
+        so a port that still exists must keep pointing at its link. Without
+        this the "Port is already used" guard in ``Link.add_node`` silently
+        stops matching after any node update and a second link gets created
+        on an occupied port (the compute then fails on the already-bound
+        NIO). Links are carried over by (adapter, port), first match wins,
+        mirroring ``get_port``.
+        """
+        preserved = {}
+        for port in self._ports or []:
+            if port.link is not None:
+                preserved.setdefault((port.adapter_number, port.port_number), port.link)
+
+        self._rebuild_ports()
+
+        for port in self._ports:
+            link = preserved.pop((port.adapter_number, port.port_number), None)
+            if link is not None and port.link is None:
+                port.link = link
+
+    def _rebuild_ports(self):
         """
         Generate the list of port display in the client
         if the compute has sent a list we return it (use by

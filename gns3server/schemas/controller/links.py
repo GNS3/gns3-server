@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Discriminator, Field, field_validator, model_validator
 
+from ..common import ErrorMessage
 from ..update import PartialUpdateModel
 from .labels import Label
 
@@ -82,7 +83,9 @@ class LinkStyle(BaseModel):
 
 class LinkFilterType(str, Enum):
     """
-    Packet filter type.
+    Packet filter type. The first five run on relay and kernel-datapath links
+    alike; the rest are kernel-datapath only (tc netem / cls_bpf / the eBPF
+    classifier on the host anchor).
     """
 
     frequency_drop = "frequency_drop"
@@ -90,6 +93,14 @@ class LinkFilterType(str, Enum):
     delay = "delay"
     corrupt = "corrupt"
     bpf = "bpf"
+    rate = "rate"
+    reorder = "reorder"
+    gemodel = "gemodel"
+    duplicate = "duplicate"
+    seed = "seed"
+    limit = "limit"
+    quota = "quota"
+    window_drop = "window_drop"
 
 
 class LinkFilters(BaseModel):
@@ -134,7 +145,7 @@ class LinkFilterParameter(BaseModel):
     """
 
     name: str
-    type: Literal["int", "text"]
+    type: Literal["int", "text", "str"]
     minimum: Optional[int] = None
     maximum: Optional[int] = None
     unit: Optional[str] = None
@@ -159,7 +170,12 @@ class LinkBase(BaseModel):
     nodes: Optional[List[LinkNode]] = Field(None, min_length=0, max_length=2)
     suspend: Optional[bool] = None
     link_style: Optional[LinkStyle] = None
-    filters: Optional[LinkFilters] = None
+    filters: Optional[dict] = Field(
+        None,
+        description="Packet filters applied on a link: filter type → array of positional values. "
+        "The vocabulary is capability-gated per link (see /available_filters) and validated by the "
+        "controller, so it is not enumerated here",
+    )
     markers: Optional[dict] = Field(
         None, description="Traffic-insight markers on this link: name → {bpf, tag, enabled}"
     )
@@ -180,6 +196,12 @@ class Link(LinkBase):
     link_id: UUID
     project_id: Optional[UUID] = None
     link_type: Optional[LinkType] = None
+    kernel_datapath: Optional[bool] = Field(
+        None,
+        description="Read only property. True when this link is wired through kernel interfaces "
+        "(veth or TAP anchors enslaved to a per-link Linux bridge, both endpoints on one compute) "
+        "instead of the uBridge UDP relay",
+    )
     capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
     capture_file_name: Optional[str] = Field(
         None, description="Read only property. The name of the capture file if a capture is running"
@@ -193,6 +215,16 @@ class Link(LinkBase):
     wireshark: Optional[bool] = Field(
         False, description="Read only property. True if a Web Wireshark session is active on the link"
     )
+
+
+class LinkBatchResult(BaseModel):
+    """
+    Outcome of one link of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    link: Optional[Link] = Field(None, description="The created link, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the link could not be created")
 
 
 class UDPPortInfo(BaseModel):

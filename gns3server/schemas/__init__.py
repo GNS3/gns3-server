@@ -45,6 +45,7 @@ from .controller.images import (
 from .controller.links import (
     EthernetPortInfo,
     Link,
+    LinkBatchResult,
     LinkCapture,
     LinkCreate,
     LinkFilterInfo,
@@ -63,7 +64,7 @@ from .controller.links import (
     ProjectMarker,
     UDPPortInfo,
 )
-from .controller.nodes import Node, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
+from .controller.nodes import Node, NodeBatchResult, NodeCapture, NodeCreate, NodeDuplicate, NodeUpdate
 from .controller.projects import (
     NodeFile,
     Project,
@@ -122,7 +123,17 @@ from .compute.iou_nodes import IOU, IOUCreate, IOUStart, IOUUpdate
 from .compute.nat_nodes import NAT, NATCreate, NATUpdate
 
 # Compute schemas
-from .compute.nios import TAPNIO, UDPNIO, BatchNIOCreate, BatchNIOEntry, EthernetNIO, MarkerRebuild, MarkerToggle
+from .compute.nios import (
+    TAPNIO,
+    UDPNIO,
+    AnchorNIO,
+    BatchNIOCreate,
+    BatchNIOEntry,
+    BridgeNIO,
+    EthernetNIO,
+    MarkerRebuild,
+    MarkerToggle,
+)
 from .compute.qemu_nodes import Qemu, QemuCreate, QemuUpdate
 from .compute.virtualbox_nodes import VirtualBox, VirtualBoxCreate, VirtualBoxUpdate
 from .compute.vmware_nodes import VMware, VMwareCreate, VMwareUpdate
@@ -203,6 +214,7 @@ __all__ = [
     "ATMSwitchCreate",
     "ATMSwitchUpdate",
     "ApiKey",
+    "AnchorNIO",
     "ApiKeyCreate",
     "ApiKeyCreated",
     "ApiKeyMessage",
@@ -213,6 +225,7 @@ __all__ = [
     "AutoIdlePC",
     "BatchNIOCreate",
     "BatchNIOEntry",
+    "BridgeNIO",
     "C1700DynamipsTemplate",
     "C1700DynamipsTemplateUpdate",
     "C2600DynamipsTemplate",
@@ -297,6 +310,7 @@ __all__ = [
     "LLMModelConfigUpdate",
     "LLMModelConfigWithSource",
     "Link",
+    "LinkBatchResult",
     "LinkCapture",
     "LinkCreate",
     "LinkFilterInfo",
@@ -321,6 +335,7 @@ __all__ = [
     "NetmikoDeviceType",
     "NetmikoDeviceTypeList",
     "Node",
+    "NodeBatchResult",
     "NodeCapture",
     "NodeCreate",
     "NodeDuplicate",

@@ -55,6 +55,9 @@ from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
 from gns3server.agent.gns3_copilot.utils.command_filter import (
     filter_forbidden_commands,
 )
+from gns3server.agent.gns3_copilot.utils.device_configs import (
+    merge_duplicate_device_configs,
+)
 
 # Explicitly register custom device types to ensure they are available
 # This is a safety measure in case the auto-registration on import doesn't work
@@ -195,6 +198,13 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
         device_configs_list, project_id = self._validate_tool_input(tool_input)
         if len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
+
+        # Merge same-device entries before anything keys by device_name
+        try:
+            device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="config_commands")
+        except ValueError as e:
+            logger.error("Invalid device_configs input: %s", e)
+            return [{"status": "failed", "error": str(e)}]
 
         # Filter forbidden commands and store blocked commands info
         device_configs_list, blocked_commands_map = self._filter_forbidden_commands_from_device_configs(
