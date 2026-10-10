@@ -16,7 +16,8 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Optional
+from typing import Annotated, List, Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -100,3 +101,32 @@ class ImageCompatibility(BaseModel):
 class ImageCompatibilityCatalog(BaseModel):
     image_sizes: list[int]
     has_unknown_sizes: bool
+
+
+class ImageInstallCreated(BaseModel):
+    """
+    A template created from an image by the automatic installation.
+    """
+
+    template_id: UUID
+    name: Optional[str] = None
+    version: Optional[str] = None
+    template_type: Optional[str] = None
+
+
+class ImageInstallSkipped(BaseModel):
+    """
+    An image or template that the automatic installation skipped.
+    """
+
+    name: Optional[str] = None
+    reason: str
+
+
+class ImageInstallResult(BaseModel):
+    """
+    Result of the automatic template installation from images.
+    """
+
+    created: List[ImageInstallCreated]
+    skipped: List[ImageInstallSkipped]

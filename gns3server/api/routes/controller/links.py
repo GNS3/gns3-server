@@ -20,7 +20,7 @@ API routes for links.
 
 import logging
 import os
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -205,11 +205,11 @@ async def create_links(project_id: UUID, links_create: List[schemas.LinkCreate])
 
 @router.get(
     "/{link_id}/available_filters",
-    response_model=List[schemas.LinkFilterDefinition],
+    response_model=List[schemas.LinkFilterInfo],
     response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Link.Audit"))],
 )
-async def get_filters(link: Link = Depends(dep_link)) -> List[schemas.LinkFilterDefinition]:
+async def get_filters(link: Link = Depends(dep_link)) -> List[dict]:
     """
     Return all filters available for a given link.
 
@@ -353,6 +353,7 @@ async def stop_capture(link: Link = Depends(dep_link)) -> None:
 
 @router.post(
     "/{link_id}/capture/wireshark/restart",
+    response_model=schemas.LinkWiresharkRestart,
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(has_privilege("Link.Capture"))],
 )
@@ -510,7 +511,12 @@ async def web_wireshark_websocket(
             pass
 
 
-@router.get("/{link_id}/markers", dependencies=[Depends(has_privilege("Link.Audit"))])
+@router.get(
+    "/{link_id}/markers",
+    response_model=Dict[str, schemas.Marker],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Link.Audit"))],
+)
 async def get_markers(link: Link = Depends(dep_link)) -> dict:
     """
     Return all traffic-insight markers configured on this link.
@@ -522,7 +528,11 @@ async def get_markers(link: Link = Depends(dep_link)) -> dict:
 
 
 @router.post(
-    "/{link_id}/markers", status_code=status.HTTP_201_CREATED, dependencies=[Depends(has_privilege("Link.Modify"))]
+    "/{link_id}/markers",
+    response_model=schemas.Marker,
+    response_model_exclude_unset=True,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Link.Modify"))],
 )
 async def create_marker(marker_data: schemas.MarkerCreate, link: Link = Depends(dep_link)) -> dict:
     """
@@ -567,7 +577,12 @@ async def delete_marker(marker_name: str, link: Link = Depends(dep_link)) -> Non
     await link.stop_marker(marker_name)
 
 
-@router.put("/{link_id}/markers/{marker_name}", dependencies=[Depends(has_privilege("Link.Modify"))])
+@router.put(
+    "/{link_id}/markers/{marker_name}",
+    response_model=schemas.Marker,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Link.Modify"))],
+)
 async def update_marker(marker_name: str, marker_data: schemas.MarkerUpdate, link: Link = Depends(dep_link)) -> dict:
     """
     Update a traffic-insight marker (change BPF, tag, or enabled).
