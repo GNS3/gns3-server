@@ -139,29 +139,6 @@ class LinkFilters(BaseModel):
     )
 
 
-class LinkFilterParameter(BaseModel):
-    """
-    Parameter of a packet filter.
-    """
-
-    name: str
-    type: Literal["int", "text", "str"]
-    minimum: Optional[int] = None
-    maximum: Optional[int] = None
-    unit: Optional[str] = None
-
-
-class LinkFilterDefinition(BaseModel):
-    """
-    Packet filter available on a link.
-    """
-
-    type: LinkFilterType
-    name: str
-    description: str
-    parameters: List[LinkFilterParameter]
-
-
 class LinkBase(BaseModel):
     """
     Link data.

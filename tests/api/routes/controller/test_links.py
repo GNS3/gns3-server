@@ -648,12 +648,12 @@ class TestLinkRoutes:
         assert "LinkFilters" not in schemas
         filters_property = schemas["Link"]["properties"]["filters"]
         assert filters_property["anyOf"][0] == {"additionalProperties": True, "type": "object"}
-        assert schemas["LinkFilterDefinition"]["properties"]["parameters"]["items"] == {
+        assert schemas["LinkFilterInfo"]["properties"]["parameters"]["items"] == {
             "$ref": "#/components/schemas/LinkFilterParameter"
         }
         path = "/v3/projects/{project_id}/links/{link_id}/available_filters"
         responses = app.openapi()["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
-        assert responses["items"] == {"$ref": "#/components/schemas/LinkFilterDefinition"}
+        assert responses["items"] == {"$ref": "#/components/schemas/LinkFilterInfo"}
 
     async def test_get_udp_interface(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
         """

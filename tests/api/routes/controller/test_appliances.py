@@ -105,7 +105,7 @@ class TestApplianceRoutes:
     async def test_add_v8_version_appliance(self, app: FastAPI, client: AsyncClient) -> None:
 
         appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
-        new_version = {"name": "v8-99G", "category": "guest", "images": {"hda_disk_image": "empty99G.qcow2"}}
+        new_version = {"name": "v8-99G", "images": {"hda_disk_image": "empty99G.qcow2"}}
         response = await client.post(
             app.url_path_for("add_appliance_version", appliance_id=appliance_id), json=new_version
         )
