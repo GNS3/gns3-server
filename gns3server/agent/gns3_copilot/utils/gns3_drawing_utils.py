@@ -245,9 +245,7 @@ def generate_ellipse_svg(
     svg_height: int,
 ) -> str:
     """Generate SVG for ellipse (delegates to the shared Web UI compatible builder)."""
-    svg, _, _ = build_ellipse_svg(
-        rx * 2, ry * 2, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"]
-    )
+    svg, _, _ = build_ellipse_svg(rx * 2, ry * 2, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"])
     return svg
 
 
@@ -257,9 +255,7 @@ def generate_rectangle_svg(
     color_scheme: dict[str, Any],
 ) -> str:
     """Generate SVG for rectangle (delegates to the shared Web UI compatible builder)."""
-    svg, _, _ = build_rectangle_svg(
-        width, height, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"]
-    )
+    svg, _, _ = build_rectangle_svg(width, height, fill=color_scheme["fill"], fill_opacity=color_scheme["fill_opacity"])
     return svg
 
 

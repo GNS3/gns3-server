@@ -203,7 +203,7 @@ def build_rectangle_svg(
 
     svg = (
         f'<svg height="{height}" width="{width}">'
-        f'<rect {_style_attrs(fill, fill_opacity, stroke, stroke_width, dash)} '
+        f"<rect {_style_attrs(fill, fill_opacity, stroke, stroke_width, dash)} "
         f'height="{height}" width="{width}" rx="{rx}" ry="{rx}"/></svg>'
     )
     ET.fromstring(svg)
@@ -241,7 +241,7 @@ def build_ellipse_svg(
 
     svg = (
         f'<svg height="{2 * ry}" width="{2 * rx}">'
-        f'<ellipse {_style_attrs(fill, fill_opacity, stroke, stroke_width, dash)} '
+        f"<ellipse {_style_attrs(fill, fill_opacity, stroke, stroke_width, dash)} "
         f'cx="{rx}" cy="{ry}" rx="{rx}" ry="{ry}"/></svg>'
     )
     ET.fromstring(svg)

@@ -108,7 +108,9 @@ class TestBuildRectangleSvg:
         assert "stroke" not in svg
 
     def test_stroke_and_dashed(self):
-        svg, _, _ = build_rectangle_svg(80, 50, fill="none", fill_opacity=0.5, stroke="#333333", stroke_width=2, dashed=True)
+        svg, _, _ = build_rectangle_svg(
+            80, 50, fill="none", fill_opacity=0.5, stroke="#333333", stroke_width=2, dashed=True
+        )
         assert 'fill="none"' in svg
         assert 'fill-opacity="0.5"' in svg
         assert 'stroke="#333333" stroke-width="2" stroke-dasharray="10,6"' in svg
