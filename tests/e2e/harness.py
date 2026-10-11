@@ -67,7 +67,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import uuid
 
 import pytest
 from websockets.sync.client import connect as ws_connect
@@ -146,15 +145,14 @@ class Compute:
             {"compute_id": "local", "name": name, "node_type": "dynamips", "properties": properties},
         )
 
-    def create_docker_node(self, project_id, name, image, adapters=1, compute_id="local"):
+    def create_docker_node(self, project_id, name, image, adapters=1):
         """A standard Docker node (the veth datapath): the scenario addresses
-        its eth0 from the host and pings through it. *compute_id* places it
-        on a remote compute (the cross-compute VXLAN scenario's peer)."""
+        its eth0 from the host and pings through it."""
         return self.call(
             "POST",
             f"/projects/{project_id}/nodes",
             {
-                "compute_id": compute_id,
+                "compute_id": "local",
                 "name": name,
                 "node_type": "docker",
                 "properties": {"image": image, "adapters": adapters, "console_type": "telnet"},
@@ -297,11 +295,10 @@ default_admin_username = admin
 default_admin_password = admin
 
 [Server]
-host = {host}
+host = 127.0.0.1
 port = {port}
 ubridge_path = {ubridge}
 enable_kernel_datapath = {kernel}
-enable_vxlan_cross_compute = {vxlan}
 report_errors = False
 projects_path = {tmp}/projects
 configs_path = {tmp}/configs
@@ -333,14 +330,10 @@ class Server:
     instance (own config dir — the controller DB and every path follow it —
     under a temporary directory removed on stop)."""
 
-    def __init__(self, compute, process=None, tmpdir=None, privilege=()):
+    def __init__(self, compute, process=None, tmpdir=None):
         self.compute = compute
         self.process = process
         self.tmpdir = tmpdir
-        # Command prefix for cleaning up the temp directory when the process
-        # ran privileged (a compute spawned inside a netns as root writes
-        # root-owned files the test user cannot remove itself).
-        self.privilege = privilege
 
     @property
     def isolated(self):
@@ -368,11 +361,6 @@ class Server:
         self._stop_process()
         if self.tmpdir:
             shutil.rmtree(self.tmpdir, ignore_errors=True)
-            if self.privilege and os.path.exists(self.tmpdir):
-                # S603: fixed argv (the privilege prefix is sudo -n or empty)
-                subprocess.run(  # noqa: S603
-                    [*self.privilege, "rm", "-rf", self.tmpdir], capture_output=True, check=False
-                )
 
     def restart(self, kernel=True):
         """Restart an isolated instance in place: stop the process — the
@@ -388,15 +376,10 @@ class Server:
         return self
 
 
-def _spawn_isolated(tmpdir, kernel, host="127.0.0.1", vxlan=False, netns=None, privilege=()):
+def _spawn_isolated(tmpdir, kernel):
     """Start one isolated instance inside *tmpdir* (its config is written
     there; a fresh free port each boot) and return ``(process, compute)``,
-    logged in. Shared by the first boot and by ``Server.restart``.
-
-    With *netns* the instance is spawned inside that network namespace
-    (through *privilege*, e.g. ``sudo -n``) and binds *host* — the pattern
-    the cross-compute VXLAN scenario uses for its second "machine".
-    """
+    logged in. Shared by the first boot and by ``Server.restart``."""
     ubridge = shutil.which("ubridge")
     dynamips = shutil.which("dynamips")
     if not ubridge:
@@ -419,15 +402,7 @@ def _spawn_isolated(tmpdir, kernel, host="127.0.0.1", vxlan=False, netns=None, p
         fork_build = os.path.expanduser("~/myCode/GNS3/vpcs/src/vpcs")
         vpcs = fork_build if os.path.isfile(fork_build) else (shutil.which("vpcs") or "vpcs")
     config = ISOLATED_CONFIG.format(
-        port=port,
-        ubridge=ubridge,
-        dynamips=dynamips,
-        images=images,
-        tmp=tmpdir,
-        kernel=kernel,
-        vpcs=vpcs,
-        vxlan=vxlan,
-        host=host,
+        port=port, ubridge=ubridge, dynamips=dynamips, images=images, tmp=tmpdir, kernel=kernel, vpcs=vpcs
     )
     config_path = os.path.join(tmpdir, "gns3_server.conf")
     with open(config_path, "w") as f:
@@ -435,15 +410,7 @@ def _spawn_isolated(tmpdir, kernel, host="127.0.0.1", vxlan=False, netns=None, p
 
     log = open(os.path.join(tmpdir, "server.log"), "a")
     # S603: fixed argv, this interpreter, no shell involvement
-    argv = [
-        *privilege,
-        *(["ip", "netns", "exec", netns] if netns else []),
-        sys.executable,
-        "-m",
-        "gns3server",
-        "--config",
-        config_path,
-    ]
+    argv = [sys.executable, "-m", "gns3server", "--config", config_path]
     if os.environ.get("GNS3_E2E_DEBUG"):
         argv.append("-d")  # debug logging — the uBridge command stream lands in server.log
     process = subprocess.Popen(  # noqa: S603
@@ -453,13 +420,13 @@ def _spawn_isolated(tmpdir, kernel, host="127.0.0.1", vxlan=False, netns=None, p
         stderr=subprocess.STDOUT,
     )
     process.log = log  # keep the file object alive with the process handle
-    compute = Compute(f"http://{host}:{port}/v3")
+    compute = Compute(f"http://127.0.0.1:{port}/v3")
 
     deadline = time.time() + 60
     while time.time() < deadline:
         try:
-            # S310: the address is ours (loopback or the scenario's veth fabric)
-            with urllib.request.urlopen(f"http://{host}:{port}/v3/version", timeout=2):
+            # S310: the port is ours, the host loopback
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/v3/version", timeout=2):
                 break
         except Exception:
             if process.poll() is not None:
@@ -479,13 +446,13 @@ def _spawn_isolated(tmpdir, kernel, host="127.0.0.1", vxlan=False, netns=None, p
     return process, compute
 
 
-def _start_isolated(kernel, vxlan=False):
+def _start_isolated(kernel):
     tmpdir = tempfile.mkdtemp(prefix="gns3-e2e-")
-    process, compute = _spawn_isolated(tmpdir, kernel, vxlan=vxlan)
+    process, compute = _spawn_isolated(tmpdir, kernel)
     return Server(compute, process, tmpdir)
 
 
-def live_server(kernel=True, vxlan=False):
+def live_server(kernel=True):
     """The server under test.
 
     With ``GNS3_E2E_URL`` set, that server is used for kernel mode (it must
@@ -508,7 +475,7 @@ def live_server(kernel=True, vxlan=False):
         ).login()
         server = Server(compute)
     else:
-        server = _start_isolated(kernel, vxlan=vxlan)
+        server = _start_isolated(kernel)
     if not wait_until(lambda: (server.compute.capabilities() or {}).get("version"), timeout=45):
         raise AssertionError(
             f"{server.compute.url}: the controller's local compute did not report capabilities within 45s"
@@ -1538,211 +1505,3 @@ def pcap_icmp_rtt(path, ethertype):
             deltas.append((ts - pending) * 1000)
             pending = None
     return sum(deltas) / len(deltas) if deltas else None
-
-
-# ---------------------------------------------------------------------------
-# Cross-compute fabric: a second "machine" for VXLAN links
-# ---------------------------------------------------------------------------
-
-# The /24 both ends of the veth "fabric" are addressed in. RFC 2544's
-# benchmarking range: never routed on a real network, so it cannot collide
-# with anything the host legitimately talks to.
-FABRIC_SUBNET_PREFIX = "198.18.7"
-
-
-def fabric_privilege():
-    """The command prefix for network-namespace operations: nothing when the
-    suite runs as root, ``sudo -n`` when passwordless sudo is configured,
-    None otherwise (the caller skips with the explanation).
-
-    A second network stack — the thing a cross-compute VXLAN link needs on
-    a single machine — is a network namespace, and Linux confines both
-    creating one and entering one to CAP_SYS_ADMIN of its owning user
-    namespace. uBridge's file capabilities do not help here (they are caps
-    for netlink *operations*, not for joining a namespace), so either the
-    whole run is root or sudo carries the two calls.
-    """
-
-    if os.geteuid() == 0:
-        return []
-    sudo = shutil.which("sudo")
-    # S603: resolved binary, fixed argv, no shell
-    if sudo and subprocess.run([sudo, "-n", "true"], capture_output=True, check=False).returncode == 0:  # noqa: S603
-        return [sudo, "-n"]
-    return None
-
-
-class CrossComputeFabric:
-    """A second "machine" on one host: a network namespace joined to the
-    host by a veth pair, both ends addressed inside ``198.18.7.0/24``.
-
-    Two computes on one machine cannot tunnel to each other from the host
-    namespace: the kernel keeps one VXLAN socket per (namespace, dstport)
-    and both ends must register the same VNI on it — the pair collides by
-    design. Distinct network namespaces give the pair its two sockets, and
-    the veth pair is the L2 fabric the tunnels ride. uBridge's file
-    capabilities make the *devices* work inside the namespace; only the
-    namespace itself needs privilege (see ``fabric_privilege``).
-    """
-
-    def __init__(self, netns, host_ifc, peer_ifc, host_ip, peer_ip, prefix):
-        self.netns = netns
-        self.host_ifc = host_ifc
-        self.peer_ifc = peer_ifc
-        self.host_ip = host_ip
-        self.peer_ip = peer_ip
-        self.prefix = prefix
-
-    def netns_run(self, *argv, **kwargs):
-        """Run a command inside the namespace (privileged, like every netns
-        access)."""
-        kwargs.setdefault("capture_output", True)
-        kwargs.setdefault("text", True)
-        # S603: fixed argv (the caller builds the netns-side command)
-        return subprocess.run(  # noqa: S603
-            [*self.prefix, "ip", "netns", "exec", self.netns, *argv], check=False, **kwargs
-        )
-
-    def iface_mtu(self, name):
-        """The MTU of an interface inside the namespace (None when absent)."""
-        out = self.netns_run("ip", "-o", "link", "show", name).stdout
-        match = re.search(r"\bmtu (\d+)", out)
-        return int(match.group(1)) if match else None
-
-    def iface_exists(self, name):
-        return self.netns_run("ip", "link", "show", name).returncode == 0
-
-    def vxlan_show(self, name):
-        """``ip -d link show`` details of an interface inside the namespace,
-        as one string (None when absent) — carries the ``vxlan id <vni>
-        ... dstport <port>`` attributes."""
-        result = self.netns_run("ip", "-d", "link", "show", name)
-        return result.stdout if result.returncode == 0 and name in result.stdout else None
-
-    def bridge_members(self, bridge):
-        """Interfaces enslaved to a bridge inside the namespace, or None
-        when the bridge does not exist."""
-        result = self.netns_run("ls", f"/sys/class/net/{bridge}/brif")
-        if result.returncode != 0:
-            return None
-        return sorted(result.stdout.split())
-
-    def brport_state(self, name):
-        """An interface's bridge-port STP state inside the namespace (None
-        when it is not enslaved; the kernel reports 3 for forwarding)."""
-        result = self.netns_run("cat", f"/sys/class/net/{name}/brport/state")
-        if result.returncode != 0:
-            return None
-        return result.stdout.strip() or None
-
-    def teardown(self):
-        """Delete the namespace (all its devices go with it) and any host
-        end a half-created pair left behind."""
-        # S603: fixed argv, resolved ip binary, no shell
-        subprocess.run(  # noqa: S603
-            [*self.prefix, "ip", "netns", "del", self.netns], capture_output=True, check=False
-        )
-        subprocess.run(  # noqa: S603
-            [*self.prefix, "ip", "link", "del", self.host_ifc], capture_output=True, check=False
-        )
-
-
-def cross_compute_fabric():
-    """Create the fabric, or skip the calling test when this host cannot.
-
-    The names carry a random suffix so concurrent runs (and leftovers of a
-    crashed one) cannot collide; the caller must call ``teardown()`` in a
-    finally."""
-
-    prefix = fabric_privilege()
-    if prefix is None:
-        pytest.skip(
-            "cross-compute VXLAN needs a second network namespace: run the suite as root, e.g. "
-            "`sudo env GNS3_E2E_IMAGES=$HOME/GNS3/images pytest -m e2e "
-            "tests/e2e/test_vxlan_cross_compute.py -s`, or configure passwordless sudo"
-        )
-
-    suffix = uuid.uuid4().hex[:6]
-    fabric = CrossComputeFabric(
-        netns=f"gns3vx{suffix}",
-        host_ifc=f"vxh{suffix}",
-        peer_ifc=f"vxp{suffix}",
-        host_ip=f"{FABRIC_SUBNET_PREFIX}.1",
-        peer_ip=f"{FABRIC_SUBNET_PREFIX}.2",
-        prefix=prefix,
-    )
-    try:
-        # S603: fixed argv, resolved ip binary, no shell
-        subprocess.run(  # noqa: S603
-            [*prefix, "ip", "netns", "add", fabric.netns], check=True, capture_output=True
-        )
-        subprocess.run(  # noqa: S603
-            [*prefix, "ip", "link", "add", fabric.host_ifc, "type", "veth", "peer", "name", fabric.peer_ifc],
-            check=True,
-            capture_output=True,
-        )
-        subprocess.run(  # noqa: S603
-            [*prefix, "ip", "link", "set", fabric.peer_ifc, "netns", fabric.netns], check=True, capture_output=True
-        )
-        subprocess.run(  # noqa: S603
-            [*prefix, "ip", "addr", "add", f"{fabric.host_ip}/24", "dev", fabric.host_ifc],
-            check=True,
-            capture_output=True,
-        )
-        subprocess.run(  # noqa: S603
-            [*prefix, "ip", "link", "set", fabric.host_ifc, "up"], check=True, capture_output=True
-        )
-        for argv in (
-            ("ip", "addr", "add", f"{fabric.peer_ip}/24", "dev", fabric.peer_ifc),
-            ("ip", "link", "set", fabric.peer_ifc, "up"),
-            ("ip", "link", "set", "lo", "up"),
-        ):
-            fabric.netns_run(*argv, check=True)
-    except subprocess.CalledProcessError:
-        fabric.teardown()
-        raise
-    return fabric
-
-
-def start_isolated_peer(fabric, kernel=True):
-    """An isolated instance on the other side of the fabric: spawned inside
-    the namespace and bound to its address, so the first server can register
-    it as a remote compute whose network stack is the second "machine"."""
-
-    tmpdir = tempfile.mkdtemp(prefix="gns3-e2e-peer-")
-    process, compute = _spawn_isolated(tmpdir, kernel, host=fabric.peer_ip, netns=fabric.netns, privilege=fabric.prefix)
-    return Server(compute, process, tmpdir, privilege=fabric.prefix)
-
-
-def register_remote_compute(server, peer, name="vxlan-peer"):
-    """Register the peer's server on the first server's controller, so links
-    between nodes on the two computes are cross-compute links. Waits until
-    the controller connected it (capabilities reported — the vxlan probe in
-    particular: the controller gates tunnel eligibility on it)."""
-
-    compute = server.compute.call(
-        "POST",
-        "/computes",
-        {
-            "name": name,
-            "protocol": "http",
-            "host": peer.compute.url.split("://", 1)[1].split(":", 1)[0],
-            "port": int(peer.compute.url.rsplit(":", 1)[1].split("/", 1)[0]),
-            "user": peer.compute.username,
-            "password": peer.compute.password,
-        },
-    )
-    compute_id = compute["compute_id"]
-    if not wait_until(lambda: (server.compute.call("GET", f"/computes/{compute_id}") or {}).get("version"), timeout=60):
-        raise AssertionError(f"controller did not connect the remote compute {compute_id} within 60s")
-    if not wait_until(
-        lambda: (
-            ((server.compute.call("GET", f"/computes/{compute_id}") or {}).get("capabilities") or {}).get(
-                "ubridge_vxlan"
-            )
-            is True
-        ),
-        timeout=60,
-    ):
-        raise AssertionError(f"remote compute {compute_id} never reported ubridge_vxlan (its netns probe failed)")
-    return compute_id
