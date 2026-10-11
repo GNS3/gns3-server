@@ -18,6 +18,7 @@
 
 import asyncio
 import logging
+import uuid
 
 from gns3server.config import Config
 from gns3server.utils.application_id import is_iol_runner_environment
@@ -26,6 +27,7 @@ from gns3server.utils.packet_filter_validation import (
     split_kernel_only_features,
     validate_bpf_syntax,
 )
+from gns3server.utils.vxlan import derive_vni, vxlan_device_name
 
 from .compute import ComputeError
 from .controller_error import ControllerError, ControllerNotFoundError
@@ -51,6 +53,10 @@ _MARKER_CAPABLE_TYPES = frozenset(
 
 
 log = logging.getLogger(__name__)
+
+# VXLAN wiring attempts per link creation (the first plus the salt-bumped
+# retries) before the link degrades to the uBridge relay.
+_VXLAN_ATTEMPTS = 3
 
 
 def _is_unix_socket_docker(node):
@@ -92,6 +98,15 @@ class UDPLink(Link):
         # of its endpoints has a missing image. The NIO creation is retried
         # once the image is resolved.
         self._deferred = False
+        # Cross-compute VXLAN wiring state: the salt is this link object's
+        # starting point in the VNI space — random per object, so a project
+        # reopen re-rolls every link's VNI and a link whose VNI collided
+        # with an unrelated device on a host is not permanently unlucky
+        # (the device *name*, which cleanup keys on, stays deterministic).
+        # _commit_vxlan bumps it for an in-flight retry; the downgrade flag
+        # marks a link degraded to the UDP relay for this object's lifetime.
+        self._vxlan_salt = uuid.uuid4().int
+        self._vxlan_downgraded = False
 
     @property
     def debug_link_data(self):
@@ -206,9 +221,13 @@ class UDPLink(Link):
         Every adapter owns an anchor, so the datapath is a runtime decision —
         links attach to running nodes too: the compute side enslaves the
         anchor (brctl) or attaches the relay to it (add_nio_ethernet) without
-        touching the interfaces the node itself uses. Both endpoints must be
-        on the same compute (there is no kernel link across hosts) and both
-        must be able to anchor: Docker adapters are born as veth pairs, and
+        touching the interfaces the node itself uses. Both endpoints must sit
+        on computes that can carry their end: on one compute the ends meet in
+        a per-link Linux bridge; across computes each end additionally rides
+        its own VXLAN device (opt-in via enable_vxlan_cross_compute, uBridge's
+        vxlan module) enslaved into the same per-link bridge, so everything
+        below the bridge — filters, markers, capture, carrier — is identical
+        either way. Both must be able to anchor: Docker adapters are born as veth pairs, and
         IOL runner containers — whose guest leg is unix sockets, not a veth —
         anchor on persistent TAPs reached through the bridge module's
         swappable TAP leg (its own capability pair, see
@@ -232,8 +251,21 @@ class UDPLink(Link):
 
         if not Config.instance().settings.Server.enable_kernel_datapath:
             return False
-        if node1.compute.id != node2.compute.id:
-            return False
+        cross_compute = node1.compute.id != node2.compute.id
+        if cross_compute:
+            # Cross-compute kernel links tunnel: each endpoint rides a VXLAN
+            # device into the same per-link bridge the same-host datapath
+            # uses. Opt-in (the tunnel caps the usable MTU at the underlay
+            # minus the outer headers, so it pays off on jumbo fabrics) and
+            # gated on both computes' uBridge being able to create the
+            # device; a link that cannot tunnel stays on the relay, where it
+            # always works. The downgrade flag is the runtime fallback: after
+            # the kernel kept refusing this link's VNI, the link stays on the
+            # relay for this object's lifetime.
+            if not Config.instance().settings.Server.enable_vxlan_cross_compute:
+                return False
+            if self._vxlan_downgraded:
+                return False
         if _is_unix_socket_docker(node1) or _is_unix_socket_docker(node2):
             return False
         for side in self._nodes:
@@ -249,10 +281,17 @@ class UDPLink(Link):
         # pair is the only shape a bridge-to-bridge cable can take).
         switch = self._switch_endpoint()
         if switch is not None:
+            if cross_compute:
+                # The fast path is a one-host shape (the peer's anchor is
+                # absorbed into the switch's bridge); a switch link across
+                # computes stays on the relay.
+                return False
             if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
                 return True
             peer = node2 if switch[0] == 0 else node1
             return self._kernel_endpoint_ready(peer)
+        if cross_compute:
+            return self._vxlan_endpoint_ready(node1) and self._vxlan_endpoint_ready(node2)
         return self._kernel_endpoint_ready(node1) and self._kernel_endpoint_ready(node2)
 
     def _switch_endpoint(self):
@@ -305,6 +344,23 @@ class UDPLink(Link):
             return capabilities.get("ubridge_tap") is True and capabilities.get("vpcs_tap") is True
         return False
 
+    @staticmethod
+    def _vxlan_endpoint_ready(node):
+        """
+        Whether a node can carry its end of a cross-compute VXLAN link: it
+        must be able to anchor (the same per-node-type capability the
+        same-host kernel datapath needs — its end of the tunnel is enslaved
+        into a per-link bridge like any kernel link's) and its compute's
+        uBridge must be able to create the VXLAN device the tunnel rides.
+        Strict True on both, like the other capability gates: an unreported
+        or failed probe keeps the link on the relay, where it always works.
+        """
+
+        if not UDPLink._kernel_endpoint_ready(node):
+            return False
+        capabilities = node.compute.capabilities or {}
+        return capabilities.get("ubridge_vxlan") is True
+
     async def _prepare(self):
         """
         Local-only link setup: resolve peer addresses, reserve UDP ports and
@@ -330,10 +386,77 @@ class UDPLink(Link):
         adapter_number2 = self._nodes[1]["adapter_number"]
         port_number2 = self._nodes[1]["port_number"]
 
-        if self._kernel_datapath_eligible(node1, node2):
+        cross_compute = node1.compute.id != node2.compute.id
+        # A cross-compute link needs the compute pair's addresses on both
+        # datapaths (the VXLAN tunnel's outer endpoints, the relay's UDP
+        # peers): resolve once, and let the no-common-subnet failure stay a
+        # ControllerError either way — it is a deployment error, not a
+        # datapath decision. Equal addresses mean both computes share one
+        # host: the kernel shares one VXLAN socket per dstport, so a tunnel
+        # pair cannot live there, and such links keep the relay, where the
+        # two ends are told apart by their UDP ports.
+        hosts = None
+        if cross_compute:
+            try:
+                hosts = await node1.compute.get_ip_on_same_subnet(node2.compute)
+            except ValueError as e:
+                raise ControllerError(f"Cannot get an IP address on same subnet: {e}")
+        same_host = hosts is not None and hosts[0] == hosts[1]
+
+        if self._kernel_datapath_eligible(node1, node2) and not same_host:
             node1_filters, node2_filters = self._get_node_filters(node1, node2, kernel=True)
             node1_markers, node2_markers = self._get_node_markers(node1, node2)
             switch = self._switch_endpoint()
+            if hosts is not None:
+                # Cross-compute VXLAN: each end gets one VXLAN device
+                # carrying the link's VNI, enslaved into the per-link kernel
+                # bridge next to the node's anchor (see _kernel_attach on
+                # the compute side). The controller derives name and VNI —
+                # both ends must agree on the VNI and neither can ask the
+                # other — and the compute resolves the underlay interface
+                # locally from the peer address, so the kernel derives the
+                # device MTU (underlay - 50) and the bridge reports the
+                # honest "what this fabric can carry" value. A VNI the
+                # kernel refuses as already registered on the shared
+                # dstport socket surfaces as a commit failure; create()
+                # retries with a bumped salt and degrades to the relay when
+                # the retries run out.
+                node1_host, node2_host = hosts
+                dstport = Config.instance().settings.Server.vxlan_dstport
+                vni = derive_vni(self._id, self._vxlan_salt)
+                bridge_name = "gns3" + self._id.replace("-", "")[:11]
+                self._link_data = [
+                    {
+                        "type": "nio_bridge",
+                        "bridge": bridge_name,
+                        "vxlan": {
+                            "name": vxlan_device_name(self._id, node1.id),
+                            "vni": vni,
+                            "remote": node2_host,
+                            "dstport": dstport,
+                        },
+                        "filters": node1_filters,
+                        "markers": node1_markers,
+                        "suspend": self._suspended,
+                    },
+                    {
+                        "type": "nio_bridge",
+                        "bridge": bridge_name,
+                        "vxlan": {
+                            "name": vxlan_device_name(self._id, node2.id),
+                            "vni": vni,
+                            "remote": node1_host,
+                            "dstport": dstport,
+                        },
+                        "filters": node2_filters,
+                        "markers": node2_markers,
+                        "suspend": self._suspended,
+                    },
+                ]
+                return [
+                    (node1, adapter_number1, port_number1, self._link_data[0]),
+                    (node2, adapter_number2, port_number2, self._link_data[1]),
+                ]
             if switch is not None:
                 if node1.node_type == "ethernet_switch" and node2.node_type == "ethernet_switch":
                     # Switch-to-switch cascade: one veth pair joins the two
@@ -449,11 +572,16 @@ class UDPLink(Link):
                 (node2, adapter_number2, port_number2, self._link_data[1]),
             ]
 
-        # Get an IP allowing communication between both host
-        try:
-            (node1_host, node2_host) = await node1.compute.get_ip_on_same_subnet(node2.compute)
-        except ValueError as e:
-            raise ControllerError(f"Cannot get an IP address on same subnet: {e}")
+        # Relay datapath: UDP tunnels between the computes' addresses —
+        # already resolved for a cross-compute pair, resolved here otherwise
+        # (a same-compute relay pair resolves to the host's own address on
+        # both sides, distinguished by their UDP ports).
+        if hosts is None:
+            try:
+                hosts = await node1.compute.get_ip_on_same_subnet(node2.compute)
+            except ValueError as e:
+                raise ControllerError(f"Cannot get an IP address on same subnet: {e}")
+        node1_host, node2_host = hosts
 
         # Reserve a UDP port on both sides in parallel. Pre-allocated ports
         # (used during batch project loading) are popped from memory; otherwise
@@ -537,16 +665,69 @@ class UDPLink(Link):
             raise errors[0]
         self._created = True
 
+    @staticmethod
+    def _has_vxlan(entries):
+        """
+        Whether any prepared NIO spec of this link carries a VXLAN tunnel.
+        """
+
+        return any(nio_data.get("vxlan") for _, _, _, nio_data in entries)
+
     async def create(self):
         """
         Create the link on the nodes (interactive path: prepare + commit).
         """
 
         entries = await self._prepare()
-        await self._commit_nios(entries)
+        if self._has_vxlan(entries):
+            await self._commit_vxlan(entries)
+        else:
+            await self._commit_nios(entries)
         # New links automatically inherit every active project-level marker
         # definition so the user doesn't have to reconfigure.
         await self._project.apply_defs_to_new_link(self)
+
+    async def _commit_vxlan(self, entries):
+        """
+        Commit a cross-compute VXLAN link, retrying with a bumped VNI salt
+        on failure and degrading the link to the UDP relay when the retries
+        run out.
+
+        The kernel refuses a VNI already registered on the shared dstport
+        socket at device creation (EEXIST) — the one conflict a freshly
+        created, deterministically named device can hit: the other end's
+        device lives on another host, and a leftover under this end's name
+        is replaced by the attach path, not refused. Any other commit
+        failure (a stopped node, a missing underlay route) is retried too,
+        harmlessly — it fails the same way every attempt, and the final
+        relay attempt surfaces the real error if the link genuinely cannot
+        be created. VXLAN is opt-in and the relay always works, so a tunnel
+        that cannot be wired degrades instead of failing the link; the
+        degradation lasts for this link object's lifetime (a project reopen
+        retries VXLAN from a clean state).
+        """
+
+        last_error = None
+        for attempt in range(_VXLAN_ATTEMPTS):
+            if attempt:
+                self._vxlan_salt += 1
+                entries = await self._prepare()
+                if not self._has_vxlan(entries):
+                    # Eligibility changed under us (a capability disappeared):
+                    # commit the relay entries as prepared.
+                    await self._commit_nios(entries)
+                    return
+            try:
+                await self._commit_nios(entries)
+                return
+            except (ComputeError, ControllerError) as e:
+                last_error = e
+        log.warning(
+            "Link %s: VXLAN wiring failed (%s) — falling back to the uBridge relay datapath", self._id, last_error
+        )
+        self._vxlan_downgraded = True
+        entries = await self._prepare()
+        await self._commit_nios(entries)
 
     async def update(self):
         """

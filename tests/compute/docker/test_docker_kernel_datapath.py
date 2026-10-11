@@ -22,6 +22,7 @@ fallback and cleanup.
 """
 
 import os
+import socket
 import uuid
 from unittest.mock import MagicMock, call, patch
 
@@ -32,6 +33,7 @@ from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.error import NodeError
 from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from tests.utils import AsyncioMagicMock
@@ -1468,3 +1470,147 @@ async def test_stop_clears_relay_bridge_registry(vm):
     await vm.stop()
     assert vm._bridges == set()
     assert vm._ubridge_tc_caps is None
+
+
+# ---------------------------------------------------------------------------
+# Cross-compute VXLAN tunnel
+# ---------------------------------------------------------------------------
+
+VXLAN_SPEC = {"name": "gvl01234567abcd", "vni": 1048577, "remote": "192.168.1.2", "dstport": 14789}
+
+
+def test_create_nio_bridge_carries_vxlan_spec(vm):
+    """
+    The vxlan sub-spec of a cross-compute NIO survives the factory and the
+    asdict round-trip (the node replays the NIO from asdict on restart).
+    """
+
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "vxlan": dict(VXLAN_SPEC)})
+    assert isinstance(nio, NIOBridge)
+    assert nio.vxlan == VXLAN_SPEC
+    assert nio.asdict()["vxlan"] == VXLAN_SPEC
+
+
+@pytest.mark.asyncio
+async def test_add_ubridge_kernel_connection_with_vxlan(vm):
+    """
+    A vxlan-carrying NIO creates this end's tunnel device (lower device
+    resolved locally from the peer address) and enslaves it into the link's
+    kernel bridge next to the anchor.
+    """
+
+    async def send(command):
+        if command.startswith("vxlan show"):
+            raise UbridgeError("VXLAN does not exist")
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_hypervisor.send = AsyncioMagicMock(side_effect=send)
+    vm._namespace = 42
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "vxlan": dict(VXLAN_SPEC)})
+
+    with patch.object(DockerVM, "_vxlan_lowerdev", return_value="eth0"):
+        await vm._add_ubridge_connection(nio, 0)
+
+    host_ifc, _ = vm._veth_names(0, 0)
+    sends = [c.args[0] for c in vm._ubridge_hypervisor.send.call_args_list]
+    show = f'vxlan show "{VXLAN_SPEC["name"]}"'
+    create = (
+        f'vxlan create "{VXLAN_SPEC["name"]}" {VXLAN_SPEC["vni"]} '
+        f"remote={VXLAN_SPEC['remote']} dstport={VXLAN_SPEC['dstport']} dev=eth0"
+    )
+    assert sends.index(show) < sends.index(create)
+    # The tunnel device is enslaved after the node's anchor, and the anchor
+    # still goes up.
+    assert sends.index(f'brctl addif "{BRIDGE}" "{host_ifc}"') < sends.index(
+        f'brctl addif "{BRIDGE}" "{VXLAN_SPEC["name"]}"'
+    )
+    assert f'link set "{host_ifc}" up' in sends
+    # A failed show (device absent) must not trigger a delete.
+    assert f'vxlan delete "{VXLAN_SPEC["name"]}"' not in sends
+
+
+@pytest.mark.asyncio
+async def test_add_ubridge_kernel_connection_replaces_vxlan_leftover(vm):
+    """
+    A device found under this link's deterministic name is this link's own
+    leftover (a crashed run, a node restart): deleted and re-created, which
+    makes wiring idempotent.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    nio = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "vxlan": dict(VXLAN_SPEC)})
+
+    with patch.object(DockerVM, "_vxlan_lowerdev", return_value="eth0"):
+        await vm._add_ubridge_connection(nio, 0)
+
+    sends = [c.args[0] for c in vm._ubridge_hypervisor.send.call_args_list]
+    show = f'vxlan show "{VXLAN_SPEC["name"]}"'
+    delete = f'vxlan delete "{VXLAN_SPEC["name"]}"'
+    create = (
+        f'vxlan create "{VXLAN_SPEC["name"]}" {VXLAN_SPEC["vni"]} '
+        f"remote={VXLAN_SPEC['remote']} dstport={VXLAN_SPEC['dstport']} dev=eth0"
+    )
+    assert sends.index(show) < sends.index(delete) < sends.index(create)
+
+
+@pytest.mark.asyncio
+async def test_remove_kernel_nio_deletes_vxlan_device(vm):
+    """
+    Link teardown deletes this end's tunnel device (the kernel un-enrolls it
+    from the bridge on unregister) before the bridge delete.
+    """
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_send = AsyncioMagicMock()
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    vm._ethernet_adapters[0].add_nio(
+        0, vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE, "vxlan": dict(VXLAN_SPEC)})
+    )
+
+    await vm.adapter_remove_nio_binding(0)
+
+    vm._ubridge_send.assert_has_calls(
+        [
+            call(f'brctl delif "{BRIDGE}" "{host_ifc}"'),
+            call(f'vxlan delete "{VXLAN_SPEC["name"]}"'),
+            call(f'brctl delete "{BRIDGE}"'),
+        ],
+        any_order=False,
+    )
+
+
+@pytest.mark.asyncio
+async def test_vxlan_lowerdev_unresolvable_peer_raises(vm):
+    """
+    A peer that cannot be resolved (or routed to) is a wiring error of this
+    link — the controller retries and then degrades it to the relay.
+    """
+
+    with patch("gns3server.compute.kernel_datapath.socket.getaddrinfo", side_effect=socket.gaierror("nope")):
+        with pytest.raises(NodeError):
+            await vm._vxlan_lowerdev("192.0.2.1")
+
+
+def test_interface_with_address_matches_the_owning_interface():
+    """
+    The route's chosen source address is matched back to its interface,
+    scope suffixes stripped (link-local IPv6).
+    """
+
+    class _Addr:
+        def __init__(self, address):
+            self.address = address
+
+    with patch(
+        "gns3server.compute.kernel_datapath.psutil.net_if_addrs",
+        return_value={
+            "eth0": [_Addr("192.168.1.1")],
+            "eth1": [_Addr("fe80::1%eth1")],
+        },
+    ):
+        assert DockerVM._interface_with_address("192.168.1.1") == "eth0"
+        assert DockerVM._interface_with_address("fe80::1%eth1") == "eth1"
+        assert DockerVM._interface_with_address("10.0.0.1") is None

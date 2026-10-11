@@ -49,7 +49,7 @@ from .link import _UNSET
 from .node import Node
 from .snapshot import Snapshot
 from .topology import load_topology, project_to_topology
-from .udp_link import UDPLink
+from .udp_link import _VXLAN_ATTEMPTS, UDPLink
 
 log = logging.getLogger(__name__)
 
@@ -1020,6 +1020,84 @@ class Project:
                 log.warning("Marker definition '%s' could not be applied to link %s: %s", def_name, link.id, e)
         entries = await link._prepare()
         return (link, entries)
+
+    async def _dispatch_nio_batch(self, compute, nio_entries):
+        """
+        POST one compute's NIO batch for this project, returning the entries
+        it refused (VXLAN entries a compute could not wire — see the batch
+        route; other NIO types fail the whole request).
+        """
+
+        response = await compute.post(
+            f"/projects/{self._id}/nios/batch",
+            data={"nios": nio_entries},
+            timeout=300,
+        )
+        return response.json.get("failed") or []
+
+    async def _redispatch_vxlan_links(self, links, downgrade):
+        """
+        Re-prepare *links* and dispatch their NIOs in a second per-compute
+        batch, returning the links the computes still refused.
+
+        With ``downgrade=False`` each link's VNI salt is bumped first — a
+        fresh VNI, since the refused one was already registered on the
+        host's shared dstport socket. With ``downgrade=True`` the links are
+        marked degraded to the uBridge relay (whose UDP NIOs cannot fail
+        this way) before re-preparing.
+        """
+
+        for link in links:
+            if downgrade:
+                log.warning(
+                    "Project '%s' [%s]: VXLAN wiring failed for link %s — falling back to the uBridge relay datapath",
+                    self._name,
+                    self._id,
+                    link.id,
+                )
+                link._vxlan_downgraded = True
+            else:
+                link._vxlan_salt += 1
+        per_compute = {}
+        by_key = {}
+        for link in links:
+            for node, adapter_number, port_number, nio_data in await link._prepare():
+                by_key[(str(node.id), adapter_number, port_number)] = link
+                per_compute.setdefault(node.compute, []).append(
+                    {
+                        "node_id": node.id,
+                        "adapter_number": adapter_number,
+                        "port_number": port_number,
+                        "nio": nio_data,
+                    }
+                )
+        if not per_compute:
+            return []
+        results = await asyncio.gather(
+            *[self._dispatch_nio_batch(compute, entries) for compute, entries in per_compute.items()]
+        )
+        failed = []
+        for item in (i for sub in results for i in sub):
+            link = by_key.get((str(item["node_id"]), item["adapter_number"], item["port_number"]))
+            if link is not None and link not in failed:
+                failed.append(link)
+        return failed
+
+    async def _heal_refused_vxlan_links(self, pending):
+        """
+        Drive the links a compute refused at open onto a working datapath:
+        fresh-VNI rounds first — the same candidate count an interactive
+        link creation tries — then, for whatever still fails, the
+        degradation to the uBridge relay (whose UDP NIOs cannot hit this
+        refusal).
+        """
+
+        for _ in range(_VXLAN_ATTEMPTS - 1):
+            if not pending:
+                return
+            pending = await self._redispatch_vxlan_links(pending, downgrade=False)
+        if pending:
+            await self._redispatch_vxlan_links(pending, downgrade=True)
 
     async def restore_deferred_links(self, node):
         """
@@ -1994,15 +2072,30 @@ class Project:
                         }
                     )
 
-            async def _dispatch_batch(compute, nio_entries):
-                await compute.post(
-                    f"/projects/{self._id}/nios/batch",
-                    data={"nios": nio_entries},
-                    timeout=300,
-                )
-
             if per_compute:
-                await asyncio.gather(*[_dispatch_batch(c, n) for c, n in per_compute.items()])
+                results = await asyncio.gather(
+                    *[self._dispatch_nio_batch(compute, entries) for compute, entries in per_compute.items()]
+                )
+                failed = [item for sub in results for item in sub]
+            else:
+                failed = []
+            # A VXLAN entry a compute refused (its VNI already registered on
+            # the host's shared socket, no route to the peer) must not fail
+            # the whole open: the refused links are healed onto a working
+            # datapath (fresh VNIs, then the relay) — see
+            # _heal_refused_vxlan_links.
+            if failed:
+                by_key = {}
+                for link, entries in valid:
+                    for node, adapter_number, port_number, nio_data in entries:
+                        if nio_data.get("vxlan"):
+                            by_key[(str(node.id), adapter_number, port_number)] = link
+                pending = []
+                for item in failed:
+                    link = by_key.get((str(item["node_id"]), item["adapter_number"], item["port_number"]))
+                    if link is not None and link not in pending:
+                        pending.append(link)
+                await self._heal_refused_vxlan_links(pending)
 
             # Finalise every link: wire node/port back-references, mark created,
             # notify clients, and apply project-level marker definitions.

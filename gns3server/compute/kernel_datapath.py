@@ -48,6 +48,9 @@ import asyncio
 import contextlib
 import logging
 import os
+import socket
+
+import psutil
 
 from gns3server.compute.error import NodeError
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
@@ -264,6 +267,86 @@ class KernelDatapathMixin:
 
         return not (isinstance(nio, NIOBridge) and nio.bridge is None)
 
+    async def _ensure_vxlan_device(self, spec):
+        """
+        Create (or replace) the cross-compute VXLAN device this link end
+        tunnels through and return the device name. The device name is a
+        pure function of the link id, so a device found under it belongs to
+        this link: either a leftover from a run that crashed without
+        cleanup, or the previous instance of a node restart — deleted and
+        re-created either way, which makes wiring idempotent. The lower
+        device is resolved locally from the peer address; the kernel
+        derives the tunnel MTU from it, which is what keeps the per-link
+        bridge honest about what the underlay can carry.
+
+        A create failure with the name just cleared can only mean the VNI —
+        the kernel refuses a VNI already registered on the shared dstport
+        socket (EEXIST) — so it is surfaced as a wiring error and the
+        controller retries the link with a fresh VNI.
+        """
+
+        name = spec["name"]
+        remote = spec["remote"]
+        try:
+            await self._ubridge_send(f'vxlan show "{name}"')
+        except UbridgeError:
+            # Not present (or uBridge cannot answer): the create below is
+            # the real gate either way.
+            pass
+        else:
+            await self._ubridge_send(f'vxlan delete "{name}"')
+        dev = await self._vxlan_lowerdev(remote)
+        try:
+            await self._ubridge_send(
+                f'vxlan create "{name}" {spec["vni"]} remote={remote} dstport={spec["dstport"]} dev={dev}'
+            )
+        except UbridgeError as e:
+            raise self._kernel_error(f"Could not create VXLAN device {name} to {remote} via {dev}: {e}")
+        return name
+
+    async def _vxlan_lowerdev(self, remote):
+        """
+        The local interface the route to *remote* egresses through — the
+        ``dev=`` a cross-compute VXLAN device needs so the kernel can derive
+        its MTU from the underlay (peer MTU - 50) and pick the outer source
+        address. A connected UDP socket makes the kernel pick the route
+        without sending anything; the chosen source address is matched back
+        to its interface.
+        """
+
+        try:
+            info = socket.getaddrinfo(remote, 9, socket.AF_UNSPEC, socket.SOCK_DGRAM)
+        except socket.gaierror as e:
+            raise self._kernel_error(f"Cannot resolve VXLAN peer {remote}: {e}")
+        last_error = None
+        for af, socktype, proto, _, sa in info:
+            try:
+                with socket.socket(af, socktype, proto) as sock:
+                    sock.connect(sa)
+                    local_ip = sock.getsockname()[0]
+            except OSError as e:
+                last_error = e
+                continue
+            dev = self._interface_with_address(local_ip)
+            if dev is not None:
+                return dev
+            raise self._kernel_error(f"No local interface owns {local_ip}, the route to VXLAN peer {remote}")
+        raise self._kernel_error(f"No route to VXLAN peer {remote}: {last_error}")
+
+    @staticmethod
+    def _interface_with_address(address):
+        """
+        The name of the interface owning *address* (scope suffix stripped
+        for link-local IPv6), or None.
+        """
+
+        plain = address.split("%")[0]
+        for name, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.address.split("%")[0] == plain:
+                    return name
+        return None
+
     async def _kernel_attach(self, anchor, nio):
         """
         Attach an anchor to the per-link kernel bridge carried by *nio*
@@ -276,6 +359,12 @@ class KernelDatapathMixin:
         bridge first: an existing bridge is success instead of a create race
         failure.
 
+        A NIO carrying a ``vxlan`` spec is a cross-compute link: this end's
+        VXLAN device is (re-)created first and enslaved into the same
+        bridge next to the anchor, so the kernel encapsulates/decapsulates
+        the frames while filters, markers, capture and carrier keep running
+        on the anchor exactly like a same-host kernel link.
+
         A NIO whose ``bridge`` is None means the anchor is bridged
         elsewhere — an Ethernet switch absorbed it into the switch's own
         bridge — so the membership work is skipped here and only the link
@@ -287,6 +376,13 @@ class KernelDatapathMixin:
         """
 
         if nio.bridge is not None:
+            vxlan_name = None
+            if nio.vxlan:
+                # Replace/refresh the device before the bridge work: a
+                # leftover device may still be enslaved to a leftover bridge
+                # (its deletion un-enrolls it), and the fresh device must be
+                # in place when the bridge's MTU auto-adjust runs.
+                vxlan_name = await self._ensure_vxlan_device(nio.vxlan)
             try:
                 await self._ubridge_send(f'brctl create "{nio.bridge}"')
             except UbridgeError:
@@ -294,6 +390,8 @@ class KernelDatapathMixin:
                 await self._ubridge_send(f'brctl show "{nio.bridge}"')
             await self._ubridge_send(f'link set "{nio.bridge}" up')
             await self._ubridge_send(f'brctl addif "{nio.bridge}" "{anchor}"')
+            if vxlan_name is not None:
+                await self._ubridge_send(f'brctl addif "{nio.bridge}" "{vxlan_name}"')
         if nio.capturing:
             # Restore a capture that was active before a node restart
             # (mirrors the relay path's start_capture).
@@ -373,6 +471,11 @@ class KernelDatapathMixin:
         enslaved fails with EBUSY, so the last endpoint to remove its port
         wins the deletion and the loser's failure is expected and suppressed.
 
+        A NIO carrying a ``vxlan`` spec is a cross-compute link: this end
+        also deletes its own tunnel device (the peer deletes its own on its
+        compute); the kernel's unregister path releases the bridge port, so
+        it goes before the bridge delete, same as the anchor.
+
         A NIO whose ``bridge`` is None owns no bridge here: the anchor is
         bridged by an Ethernet switch, which tears its own membership down
         on its side; this end only releases the link state it applied
@@ -394,6 +497,9 @@ class KernelDatapathMixin:
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
         if nio.bridge is not None:
+            if nio.vxlan:
+                with contextlib.suppress(UbridgeError):
+                    await self._ubridge_send(f'vxlan delete "{nio.vxlan["name"]}"')
             with contextlib.suppress(UbridgeError):
                 await self._ubridge_send(f'brctl delete "{nio.bridge}"')
 
@@ -407,6 +513,12 @@ class KernelDatapathMixin:
         the same contract as link deletion. A node restart re-creates the
         bridge from the NIO in the attach path, so nothing is lost by
         deleting it.
+
+        A cross-compute NIO's tunnel device is swept with its bridge: each
+        end owns its own device, and a device left behind would hold its
+        VNI on the host's shared socket until a reopen's attach path
+        replaces it by name (which it does — the sweep just frees it
+        sooner).
         """
 
         if not self.ubridge:
@@ -416,6 +528,9 @@ class KernelDatapathMixin:
                 # bridge None = externally bridged (an Ethernet switch owns
                 # the bridge); never delete a bridge this node does not own.
                 if isinstance(nio, NIOBridge) and nio.bridge is not None:
+                    if nio.vxlan:
+                        with contextlib.suppress(UbridgeError):
+                            await self._ubridge_send(f'vxlan delete "{nio.vxlan["name"]}"')
                     with contextlib.suppress(UbridgeError):
                         await self._ubridge_send(f'brctl delete "{nio.bridge}"')
 
