@@ -112,7 +112,7 @@ The `vxlan show` step is the idempotency contract: a device found under the link
 ## Verification
 
 * Unit: `tests/controller/test_kernel_datapath_link.py` (selection matrix, tunnel spec derivation, VNI retry, downgrade), `tests/utils/test_vxlan.py`, `tests/compute/docker/test_docker_kernel_datapath.py` (device lifecycle, leftover replacement, teardown ordering), `tests/api/routes/compute/test_capabilities.py`.
-* Live: `tests/e2e/test_vxlan_cross_compute.py` — two computes on one machine (a network namespace joined to the host by a veth pair as the second "machine"), real containers per compute: VNI/port agreement, bridge membership, the derived MTU and its hard egress drop, dual-stack traffic, a delay filter, leftover replacement, a VNI squatted at node start (both ends re-wired on a fresh VNI, the start succeeding), residue-free delete and a rebuild through the project-open batch path.
+* Live: no automated scenario — a second network stack on one machine means a network namespace, which needs root and host-specific routing and proved too environment-coupled for the suite. Validate on a real two-compute deployment (two machines, or a namespace-isolated second server): both ends agree on the VNI and dstport, each per-link bridge enslaves exactly `[anchor, tunnel]`, the derived MTU crosses while one past it is dropped at the bridge egress, traffic and filters behave as on the same-host datapath, and link delete plus project close/reopen leave no devices behind.
 
 ## Roadmap
 
