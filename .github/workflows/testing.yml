@@ -34,9 +34,10 @@ jobs:
         python -m pip install .[ai-features,dev]
 
     - name: Install sharkd (marker replay engine)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wireshark-common
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: wireshark-common
+        version: linux-amd64
 
     - name: Run all checks
       run: |
