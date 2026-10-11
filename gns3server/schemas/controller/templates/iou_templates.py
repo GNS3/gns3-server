@@ -38,7 +38,7 @@ class IOUTemplateBase(TemplateBase):
     startup_config: Optional[str] = Field("iou_l3_base_startup-config.txt", description="Startup-config of IOU")
     private_config: Optional[str] = Field("", description="Private-config of IOU")
     l1_keepalives: Optional[bool] = Field(
-        False,
+        True,
         description="Enable Layer 1 keepalives so IOU interfaces report accurate link state",
     )
     console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
