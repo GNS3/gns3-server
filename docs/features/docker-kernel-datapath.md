@@ -182,6 +182,7 @@ All dozen-plus GNS3 filter types ride these three kernel objects — nine of the
 `UDPLink._kernel_datapath_eligible` decides in the controller at NIO prepare time; the compute side only reacts to the NIO type:
 
 * both endpoints on the same compute, both able to anchor — Docker anchors via its veth (any class except unix-socket containers), and QEMU / IOU / Dynamips / Ethernet-switch peers anchor via their own mechanisms, so mixed links take the kernel path too
+  * cross-compute pairs take the kernel path as a **VXLAN tunnel** when `Server.enable_vxlan_cross_compute` is enabled and both computes can create the device — see [vxlan-cross-compute](vxlan-cross-compute.md); the default there is the relay, because the tunnel caps the usable MTU at the underlay minus 50 bytes
 * `Server.enable_kernel_datapath` enabled (default)
 
 Filters never disqualify the kernel path anymore — every type has a kernel equivalent (netem / cls_bpf / eBPF classifier).

@@ -73,3 +73,8 @@ class Capabilities(BaseModel):
         "keeps the guest from auto-configuring the host side of the anchor TAP); absent when the "
         "probe failed",
     )
+    ubridge_vxlan: Optional[bool] = Field(
+        None,
+        description="Whether uBridge can create VXLAN devices (the vxlan module, kernel support included) — "
+        "the tunnel a cross-compute kernel link rides; absent when the probe failed",
+    )

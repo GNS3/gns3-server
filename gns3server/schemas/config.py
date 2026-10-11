@@ -192,6 +192,24 @@ class ServerSettings(BaseModel):
         "or QEMU when the compute's uBridge supports persistent TAPs) through kernel interfaces instead "
         "of the uBridge UDP relay",
     )
+    enable_vxlan_cross_compute: bool = Field(
+        False,
+        description="Wire eligible cross-compute links through kernel VXLAN tunnels (one device per endpoint, "
+        "uBridge's vxlan module) instead of the uBridge UDP relay. The kernel encapsulates/decapsulates, so "
+        "no user-space forwarding is involved; the price is MTU: a tunnel can only carry the underlay MTU "
+        "minus 50 bytes of outer headers, so enable this where the fabric between computes carries jumbo "
+        "frames. The relay stays the default and the fallback when a tunnel cannot be wired",
+    )
+    vxlan_dstport: int = Field(
+        14789,
+        ge=1,
+        le=65535,
+        description="UDP destination port every cross-compute VXLAN tunnel listens on. The kernel shares one "
+        "socket per port across all VXLAN devices, so all links of a deployment ride this one port — chosen "
+        "off the IANA 4789 and the legacy 8472 (other VXLAN software's ports: sharing a socket would merge "
+        "their demux table with ours) and above the ephemeral range. Change it only when it collides with "
+        "a service already listening on the computes",
+    )
     auto_discover_images: bool = Field(True, description="Automatically discover images in the images directory")
     image_sync_interval: int = Field(900, ge=10, description="Seconds between automatic image inventory scans")
     report_errors: bool = Field(True, description="Automatically send crash reports to the GNS3 team")

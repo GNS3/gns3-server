@@ -31,6 +31,13 @@ veth host end (marker add_kernel / capture start_kernel).
 Ethernet switch absorbed it into the switch's own kernel bridge — and this
 node applies only the link state the anchor carries (carrier, markers,
 impairments), never bridge membership.
+
+A NIO may additionally carry ``vxlan`` (a BridgeVxlan spec): the link
+crosses computes through a VXLAN device this end creates (uBridge's
+``vxlan`` module) and enslaves into the same per-link bridge next to the
+anchor. The kernel encapsulates/decapsulates the frames; everything else —
+filters, markers, capture, carrier, suspend — still runs on the anchor, so
+the datapath behaves exactly like a same-host kernel link.
 """
 
 from .nio import NIO
@@ -42,12 +49,16 @@ class NIOBridge(NIO):
 
     :param bridge: name of the per-link Linux kernel bridge, or None when
         the anchor is bridged by an Ethernet switch (see module docstring)
+    :param vxlan: cross-compute tunnel spec (dict: name/vni/remote/dstport)
+        this end creates and enslaves into the bridge, or None for a
+        same-host kernel link
     """
 
-    def __init__(self, bridge):
+    def __init__(self, bridge, vxlan=None):
 
         super().__init__()
         self._bridge = bridge
+        self._vxlan = vxlan
 
     @property
     def bridge(self):
@@ -60,6 +71,17 @@ class NIOBridge(NIO):
 
         return self._bridge
 
+    @property
+    def vxlan(self):
+        """
+        Returns the cross-compute VXLAN tunnel spec, or None when the link
+        is wired on this host alone.
+
+        :returns: dict (name/vni/remote/dstport) or None
+        """
+
+        return self._vxlan
+
     def __str__(self):
 
         return "NIO bridge"
@@ -69,6 +91,7 @@ class NIOBridge(NIO):
         return {
             "type": "nio_bridge",
             "bridge": self._bridge,
+            "vxlan": self._vxlan,
             "suspend": self._suspended,
             "filters": self._filters,
             "markers": self._markers,
