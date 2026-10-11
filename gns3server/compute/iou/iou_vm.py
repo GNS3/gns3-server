@@ -192,7 +192,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
         self._private_config = ""
         self._ram = 1024  # Megabytes
         self._application_id = application_id
-        self._l1_keepalives = False
+        self._l1_keepalives = True
 
         # Kernel datapath (see KernelDatapathMixin): one persistent TAP per
         # Ethernet bay/unit, opened and held by uBridge's iol_bridge while a
