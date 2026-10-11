@@ -1065,7 +1065,7 @@ class TestIOUTemplate:
                 "startup_config": "iou_l3_base_startup-config.txt",
                 "symbol": unittest.mock.ANY,
                 "use_default_iou_values": False,
-                "l1_keepalives": False,
+                "l1_keepalives": True,
             }
 
             for item, value in expected_response.items():
