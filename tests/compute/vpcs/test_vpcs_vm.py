@@ -520,9 +520,7 @@ async def test_kernel_nio_attach_enslaves_the_anchor(vm):
     """
 
     await _start_on_tap_datapath(vm)
-    nio = VPCS.instance().create_nio(
-        {"type": "nio_bridge", "bridge": "gns3testbridge", "filters": {"delay": [100]}}
-    )
+    nio = VPCS.instance().create_nio({"type": "nio_bridge", "bridge": "gns3testbridge", "filters": {"delay": [100]}})
     await vm.port_add_nio_binding(0, nio)
 
     sent = [call[0][0] for call in vm._ubridge_send.call_args_list]
