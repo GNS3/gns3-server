@@ -31,16 +31,20 @@ import sys
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import monitor_process, subprocess_check_output, wait_for_process_termination
+from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
+from ..kernel_datapath import KernelDatapathMixin
+from ..nios.nio_bridge import NIOBridge
 from ..nios.nio_udp import NIOUDP
 from .vpcs_error import VPCSError
+from .vpcs_probe import probe_vpcs_tap
 
 log = logging.getLogger(__name__)
 
 
-class VPCSVM(BaseNode):
+class VPCSVM(KernelDatapathMixin, BaseNode):
     module_name = "vpcs"
 
     """
@@ -62,6 +66,13 @@ class VPCSVM(BaseNode):
         self._vpcs_version = None
         self._started = False
         self._local_udp_tunnel = None
+        self._execute_lock = asyncio.Lock()
+        # Kernel-datapath state (the anchor is a persistent TAP uBridge
+        # creates and the vpcs process attaches to — see the datapath
+        # section below).
+        self._tap_datapath = False
+        self._kernel_taps = {}
+        self._ubridge_tc_caps = None
 
         # VPCS settings
         if startup_script is not None and not self.script_file:  # We disallow override at startup
@@ -71,6 +82,15 @@ class VPCSVM(BaseNode):
     @property
     def ethernet_adapter(self):
         return self._ethernet_adapter
+
+    @property
+    def _ethernet_adapters(self):
+        """
+        The adapter list the kernel-datapath mixin walks (the per-link
+        bridge sweep): VPCS owns exactly one single-port adapter.
+        """
+
+        return [self._ethernet_adapter]
 
     async def close(self):
         """
@@ -89,10 +109,14 @@ class VPCSVM(BaseNode):
             self.manager.port_manager.release_udp_port(self._local_udp_tunnel[1].lport, self._project)
             self._local_udp_tunnel = None
 
-        await self._stop_ubridge()
-
+        # stop() tears the datapath down in the right order (the vpcs
+        # process holds the anchor TAPs open — a held device refuses
+        # deletion and would leak); the else branch covers a node that is
+        # not running but may still hold a uBridge with anchors.
         if self.is_running():
-            self._terminate_process()
+            await self.stop()
+        else:
+            await self._stop_ubridge()
 
         return True
 
@@ -225,34 +249,51 @@ class VPCSVM(BaseNode):
         await self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
-            command = self._build_command()
+            # uBridge owns the anchor TAP and must be up before it is
+            # created — and before vpcs attaches to it. The whole setup runs
+            # inside the try so a failure at any step (probe refused, tap
+            # create, launch) takes the datapath down again: a node that
+            # reports stopped must not keep a uBridge process and a
+            # root-namespace TAP alive.
+            self._ubridge_tc_caps = None
             try:
-                log.info(f"Starting VPCS: {command}")
-                self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
-                log.info(f"Logging to {self._vpcs_stdout_file}")
-                flags = 0
-                if sys.platform.startswith("win32"):
-                    flags = subprocess.CREATE_NEW_PROCESS_GROUP
-                with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
-                    self.command_line = " ".join(command)
-                    self._process = await asyncio.create_subprocess_exec(
-                        *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir, creationflags=flags
-                    )
-                    monitor_process(self._process, self._termination_callback)
-
                 await self._start_ubridge()
-                if nio:
-                    await self.add_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
+                await self._prepare_tap_datapath()
 
-                await self.start_wrap_console()
+                command = self._build_command()
+                try:
+                    log.info(f"Starting VPCS: {command}")
+                    self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
+                    log.info(f"Logging to {self._vpcs_stdout_file}")
+                    flags = 0
+                    if sys.platform.startswith("win32"):
+                        flags = subprocess.CREATE_NEW_PROCESS_GROUP
+                    with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
+                        self.command_line = " ".join(command)
+                        self._process = await asyncio.create_subprocess_exec(
+                            *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir, creationflags=flags
+                        )
+                        monitor_process(self._process, self._termination_callback)
 
-                log.info(f"VPCS instance {self.name} started PID={self._process.pid}")
-                self._started = True
-                self.status = "started"
-            except (OSError, subprocess.SubprocessError) as e:
-                vpcs_stdout = self.read_vpcs_stdout()
-                log.error(f"Could not start VPCS {self._vpcs_path()}: {e}\n{vpcs_stdout}")
-                raise VPCSError(f"Could not start VPCS {self._vpcs_path()}: {e}\n{vpcs_stdout}")
+                    if nio:
+                        # a link that outlived a stop is re-attached from its NIO
+                        await self._connect_nio(0, nio)
+                        await self._set_adapter_carrier(0, not nio.suspend)
+
+                    await self.start_wrap_console()
+
+                    log.info(f"VPCS instance {self.name} started PID={self._process.pid}")
+                    self._started = True
+                    self.status = "started"
+                except (OSError, subprocess.SubprocessError) as e:
+                    vpcs_stdout = self.read_vpcs_stdout()
+                    log.error(f"Could not start VPCS {self._vpcs_path()}: {e}\n{vpcs_stdout}")
+                    raise VPCSError(f"Could not start VPCS {self._vpcs_path()}: {e}\n{vpcs_stdout}")
+            except Exception:
+                # uBridge was started (and the anchor TAP created) before the
+                # launch: don't leave either behind on a failed start.
+                await self._stop_ubridge()
+                raise
 
     async def _termination_callback(self, returncode):
         """
@@ -263,11 +304,9 @@ class VPCSVM(BaseNode):
 
         if self._started:
             log.info("VPCS process has stopped, return code: %d", returncode)
-            self._started = False
-            self.status = "stopped"
-            self._process = None
-            await self._stop_ubridge()
-            await super().stop()
+            # stop() tears the datapath down under the execute lock (an API
+            # stop may be running concurrently) and sets the status.
+            await self.stop()
             if returncode != 0:
                 self.project.emit(
                     "log.error",
@@ -279,24 +318,156 @@ class VPCSVM(BaseNode):
         Stops the VPCS process.
         """
 
-        await self._stop_ubridge()
-        if self.is_running():
-            self._terminate_process()
-            if self._process.returncode is None:
-                try:
-                    await wait_for_process_termination(self._process, timeout=3)
-                except asyncio.TimeoutError:
-                    if self._process.returncode is None:
-                        try:
-                            self._process.kill()
-                        except OSError as e:
-                            log.error(f"Cannot stop the VPCS process: {e}")
+        async with self._execute_lock:
+            # Release the datapath once vpcs is gone: the process holds the
+            # anchor TAP open (it is the guest side), and uBridge's tap
+            # delete refuses a held device ("Device or resource busy") —
+            # deleting it while vpcs still ran leaked the persistent TAP,
+            # because that best-effort delete is suppressed. The process
+            # monitor calls stop() on its own when vpcs dies, so an API stop
+            # and a process-death stop run concurrently in the normal case;
+            # the lock serializes their TAP sweeps (the second one finds
+            # uBridge already gone and sweeps nothing).
+            if self.is_running():
+                self._terminate_process()
+                if self._process.returncode is None:
+                    try:
+                        await wait_for_process_termination(self._process, timeout=3)
+                    except asyncio.TimeoutError:
                         if self._process.returncode is None:
-                            log.warning(f'VPCS VM "{self._name}" with PID={self._process.pid} is still running')
+                            try:
+                                self._process.kill()
+                            except OSError as e:
+                                log.error(f"Cannot stop the VPCS process: {e}")
+                            if self._process.returncode is None:
+                                log.warning(f'VPCS VM "{self._name}" with PID={self._process.pid} is still running')
 
-        self._process = None
-        self._started = False
-        await super().stop()
+            self._process = None
+            self._started = False
+            await self._stop_ubridge()
+            await super().stop()
+
+    # ------------------------------------------------------------------
+    # Kernel datapath: the adapter anchor is a persistent TAP
+    # ------------------------------------------------------------------
+
+    def _tap_name(self, adapter_number, port_number=0):
+        """
+        Deterministic anchor TAP name for the adapter port (the shared
+        utils.kernel_anchor naming contract — the controller names a peer's
+        anchor with the same function when an Ethernet switch absorbs it).
+        """
+
+        return kernel_anchor_name("vpcs", self._id, adapter_number, port_number)
+
+    def _kernel_host_ifc(self, adapter_number, port_number=0):
+        """
+        The persistent TAP this adapter owns, or None before the node
+        started (or on the legacy UDP relay datapath).
+        """
+
+        return self._kernel_taps.get((adapter_number, port_number))
+
+    def _kernel_anchors(self):
+        return set(self._kernel_taps.values())
+
+    def _kernel_error(self, message):
+        return VPCSError(message)
+
+    async def _prepare_tap_datapath(self):
+        """
+        Decide this start's datapath: a vpcs build with ``-n`` (no host
+        auto-configuration) and a uBridge with the persistent-TAP module
+        anchor the adapter on a persistent TAP the vpcs process attaches to
+        (``-e -d``). Anything else (upstream vpcs, old uBridge, no
+        CAP_NET_ADMIN) keeps the legacy UDP relay datapath — kernel links
+        are refused on it.
+        """
+
+        self._tap_datapath = False
+        self._kernel_taps.clear()
+        if not self.ubridge:
+            return
+
+        vpcs_tap = await probe_vpcs_tap()
+        if vpcs_tap is not True:
+            # Without -n every guest `ip` command would ifconfig the anchor
+            # on the host — the server owns the anchor's addresses and
+            # bridge membership, so the relay datapath is the only safe
+            # shape. False (a build definitively without -n) is actionable
+            # for the user; None (probe failed) stays server-log-only.
+            log.warning(
+                "VPCS '%s': vpcs '%s' cannot anchor a kernel link (no -n support)", self._name, self._vpcs_path()
+            )
+            if vpcs_tap is False:
+                self.project.emit(
+                    "log.warning",
+                    {
+                        "message": f"VPCS '{self._name}': the vpcs binary does not support tap mode without host "
+                        "auto-configuration (-n); this node runs on the legacy relay datapath and cannot carry "
+                        "kernel links"
+                    },
+                )
+            return
+
+        probe_error = await self._probe_persistent_taps(f"gp{self._id.replace('-', '')[:8]}prob")
+        if probe_error is not None:
+            log.warning("VPCS '%s': uBridge cannot create persistent TAPs (%s)", self._name, probe_error)
+            self.project.emit(
+                "log.warning",
+                {
+                    "message": f"VPCS '{self._name}': uBridge does not support persistent TAPs ({probe_error}); "
+                    "this node runs on the legacy relay datapath and cannot carry kernel links"
+                },
+            )
+            return
+
+        self._tap_datapath = True
+        # The shared lifecycle sweeps leftovers first, creates the TAP and
+        # hands it to this user (the unprivileged vpcs process opens it
+        # itself), leaving it down until a link attaches.
+        await self._create_anchor_taps([(0, 0)], set_owner=True)
+
+    async def _stop_ubridge(self):
+        """
+        Stops uBridge, removing the anchor TAP first: it lives in the root
+        namespace and outlives the process (the tap module needs the control
+        channel to delete it), and vpcs holding the other end keeps the
+        device alive until it exits — the caller must terminate vpcs first,
+        or the suppressed tap delete leaks the anchor. The next start
+        spawns a fresh uBridge, so the tc capabilities must be probed again.
+        """
+
+        await self._delete_anchor_taps()
+        self._ubridge_tc_caps = None
+        await super()._stop_ubridge()
+
+    async def _connect_nio(self, port_number, nio):
+        """
+        Attach a link's NIO to the adapter's TAP anchor: a kernel link
+        enslaves the TAP into the per-link kernel bridge, a relay link
+        attaches it to the uBridge relay bridge as an AF_PACKET endpoint.
+        The legacy datapath (no anchor) bridges the local UDP tunnel
+        instead.
+        """
+
+        bridge_name = f"VPCS-{self._id}"
+        if not self._tap_datapath:
+            if isinstance(nio, NIOBridge):
+                raise VPCSError(
+                    f"VPCS '{self._name}' runs on the legacy relay datapath (no anchor TAP) "
+                    "and cannot carry a kernel link"
+                )
+            await self.add_ubridge_udp_connection(bridge_name, self._local_udp_tunnel[1], nio)
+            return
+
+        anchor = self._kernel_host_ifc(0, port_number)
+        if anchor is None:
+            raise VPCSError(f"VPCS '{self._name}' has no anchor TAP interface; restart the node to attach a link to it")
+        if isinstance(nio, NIOBridge):
+            await self._kernel_attach(anchor, nio)
+            return
+        await self._relay_attach(anchor, bridge_name, nio)
 
     async def reload(self):
         """
@@ -386,8 +557,15 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
 
+        # The compute-side backstop of the controller's duplicate-port guard:
+        # a port carries at most one NIO, and overwriting the one a link
+        # still owns orphans that link's teardown (its host state leaks).
+        if self._ethernet_adapter.get_nio(port_number) is not None:
+            raise VPCSError(f"Port {port_number} of VPCS '{self._name}' already has a link")
+
         if self.is_running():
-            await self.add_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
+            await self._connect_nio(port_number, nio)
+            await self._set_adapter_carrier(0, not nio.suspend)
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info(f'VPCS "{self._name}" [{self.id}]: {nio} added to port {port_number}')
@@ -405,7 +583,19 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
         if self.is_running():
-            await self.update_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
+            if self._tap_datapath and isinstance(nio, NIOBridge):
+                # Filters or markers changed on an attached kernel link:
+                # re-apply on the anchor, no re-enslaving.
+                anchor = self._kernel_host_ifc(0, port_number)
+                if anchor is not None:
+                    await self._kernel_update(anchor, nio)
+            elif self._tap_datapath:
+                # Relay link on the TAP anchor: re-apply on its bridge.
+                await self._ubridge_apply_filters(f"VPCS-{self._id}", nio.filters)
+                await self._ubridge_apply_markers(f"VPCS-{self._id}", nio)
+            else:
+                await self.update_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
+            await self._set_adapter_carrier(0, not nio.suspend)
 
     async def port_remove_nio_binding(self, port_number):
         """
@@ -419,11 +609,16 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError(f"Port {port_number} doesn't exist on adapter {self._ethernet_adapter}")
 
+        nio = self._ethernet_adapter.get_nio(port_number)
         await self.stop_capture(port_number)
         if self.is_running():
-            await self._ubridge_send("bridge delete {name}".format(name=f"VPCS-{self._id}"))
+            if self._tap_datapath and isinstance(nio, NIOBridge):
+                await self._remove_kernel_nio(nio, 0, port_number)
+            elif self._tap_datapath:
+                await self._relay_detach(f"VPCS-{self._id}")
+            else:
+                await self._ubridge_send("bridge delete {name}".format(name=f"VPCS-{self._id}"))
 
-        nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
@@ -461,9 +656,25 @@ class VPCSVM(BaseNode):
 
         nio.start_packet_capture(output_file)
         if self.ubridge:
-            await self._ubridge_send(
-                'bridge start_capture {name} "{output_file}"'.format(name=f"VPCS-{self._id}", output_file=output_file)
-            )
+            anchor = self._kernel_host_ifc(0, port_number)
+            if isinstance(nio, NIOBridge) and anchor is not None:
+                # Kernel link: capture on the adapter's TAP anchor (AF_PACKET,
+                # one capture per uBridge process — see _reserve_kernel_capture;
+                # a failed start rolls the port's flag back so the port cannot
+                # later stop the winner's capture).
+                try:
+                    self._reserve_kernel_capture(anchor)
+                    await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
+                except Exception:
+                    self._release_kernel_capture(anchor)
+                    nio.stop_packet_capture()
+                    raise
+            else:
+                await self._ubridge_send(
+                    'bridge start_capture {name} "{output_file}"'.format(
+                        name=f"VPCS-{self._id}", output_file=output_file
+                    )
+                )
 
         log.info(f"VPCS '{self.name}' [{self.id}]: starting packet capture on port {port_number}")
 
@@ -480,7 +691,16 @@ class VPCSVM(BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            await self._ubridge_send("bridge stop_capture {name}".format(name=f"VPCS-{self._id}"))
+            anchor = self._kernel_host_ifc(0, port_number)
+            if isinstance(nio, NIOBridge) and anchor is not None:
+                # Process-wide and argument-less: only the port owning the
+                # slot may stop it (a second port's stop would kill this
+                # capture while its own flag still says capturing).
+                if self._kernel_capture_owned_by(anchor):
+                    await self._ubridge_send("capture stop_kernel")
+                    self._release_kernel_capture(anchor)
+            else:
+                await self._ubridge_send("bridge stop_capture {name}".format(name=f"VPCS-{self._id}"))
 
         log.info(f"VPCS '{self.name}' [{self.id}]: stopping packet capture on port {port_number}")
 
@@ -511,6 +731,7 @@ class VPCSVM(BaseNode):
 
         tap mode options:
             -d vm  device name, works only when -i is set to 1
+            -n         do not auto-configure the host tap interface
 
         hypervisor mode option:
             -H port    run as the hypervisor listening on the tcp 'port'
@@ -532,20 +753,28 @@ class VPCSVM(BaseNode):
         else:
             log.warning("The VPCS relay feature could not be disabled because the VPCS version is below 0.8b")
 
-        # use the local UDP tunnel to uBridge instead
-        if not self._local_udp_tunnel:
-            self._local_udp_tunnel = self._create_local_udp_tunnel()
-        nio = self._local_udp_tunnel[0]
-        if nio and isinstance(nio, NIOUDP):
-            # UDP tunnel
-            command.extend(["-s", str(nio.lport)])  # source UDP port
-            command.extend(["-c", str(nio.rport)])  # destination UDP port
-            try:
-                command.extend(
-                    ["-t", socket.gethostbyname(nio.rhost)]
-                )  # destination host, we need to resolve the hostname because VPCS doesn't support it
-            except socket.gaierror as e:
-                raise VPCSError(f"Can't resolve hostname {nio.rhost}")
+        if self._tap_datapath:
+            # Kernel-datapath anchor: uBridge created the persistent TAP
+            # before the launch, vpcs attaches to it by name and must leave
+            # its host-side configuration alone (-n).
+            command.extend(["-e"])  # tap mode
+            command.extend(["-d", self._tap_name(0, 0)])  # the anchor TAP
+            command.extend(["-n"])  # no host auto-configuration on the anchor
+        else:
+            # use the local UDP tunnel to uBridge instead
+            if not self._local_udp_tunnel:
+                self._local_udp_tunnel = self._create_local_udp_tunnel()
+            nio = self._local_udp_tunnel[0]
+            if nio and isinstance(nio, NIOUDP):
+                # UDP tunnel
+                command.extend(["-s", str(nio.lport)])  # source UDP port
+                command.extend(["-c", str(nio.rport)])  # destination UDP port
+                try:
+                    command.extend(
+                        ["-t", socket.gethostbyname(nio.rhost)]
+                    )  # destination host, we need to resolve the hostname because VPCS doesn't support it
+                except socket.gaierror as e:
+                    raise VPCSError(f"Can't resolve hostname {nio.rhost}")
 
         if self.script_file:
             command.extend([os.path.basename(self.script_file)])

@@ -31,6 +31,7 @@ from gns3server.compute.ubridge.tc_probe import (
     probe_tap_support,
     probe_tc_capabilities,
 )
+from gns3server.compute.vpcs.vpcs_probe import probe_vpcs_tap
 from gns3server.utils.path import get_default_project_directory
 from gns3server.utils.tc_capabilities import usable_ebpf_modes
 from gns3server.version import __version__
@@ -70,6 +71,10 @@ async def get_capabilities(request: Request) -> dict:
     # anchor. None = unknown (probe failed or uBridge too old).
     ubridge_bridge_tap = await probe_bridge_tap_support()
 
+    # VPCS tap-mode anchoring (-e -d with -n): what lets a VPCS node carry a
+    # kernel link. None = unknown (probe failed or binary missing).
+    vpcs_tap = await probe_vpcs_tap()
+
     # record the controller hostname or IP address
     if request.client:
         request.app.state.controller_host = request.client.host
@@ -85,4 +90,5 @@ async def get_capabilities(request: Request) -> dict:
         "ubridge_tap": ubridge_tap,
         "ubridge_iol_tap": ubridge_iol_tap,
         "ubridge_bridge_tap": ubridge_bridge_tap,
+        "vpcs_tap": vpcs_tap,
     }

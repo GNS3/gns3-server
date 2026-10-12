@@ -22,10 +22,11 @@ deterministically: ``g<type>{node_id[:8]}e{adapter}p{port}`` — ``gv`` for a
 Docker veth host end, ``gq`` for a QEMU TAP, ``gi`` for an IOU port TAP,
 ``gd`` for a Dynamips port TAP, ``gx`` for an IOL runner container's port
 TAP (a Docker node whose guest leg is unix sockets, so its anchor is a TAP
-like IOU's, not a veth). The prefixes keep anchors out of the ``gns3``
-bridge/TAP name space and name-collision-free on a host; the 8 hex chars of
-the node id plus adapter/port keep every name unique and within IFNAMSIZ
-(15).
+like IOU's, not a veth), ``gp`` for a VPCS TAP (the vpcs process attaches to
+the pre-created anchor with ``-e -d`` instead of speaking UDP). The
+prefixes keep anchors out of the ``gns3`` bridge/TAP name space and
+name-collision-free on a host; the 8 hex chars of the node id plus
+adapter/port keep every name unique and within IFNAMSIZ (15).
 
 The compute classes create their anchors with these helpers (single source
 of truth), and so does the controller when a switch link has to name the
@@ -46,6 +47,7 @@ ANCHOR_PREFIX = {
     "qemu": "gq",
     "iou": "gi",
     "dynamips": "gd",
+    "vpcs": "gp",
 }
 
 

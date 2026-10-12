@@ -44,6 +44,7 @@ A node type using this mixin provides:
   failures surface as ``DockerError`` / ``QemuError`` rather than ``NodeError``.
 """
 
+import asyncio
 import contextlib
 import logging
 import os
@@ -213,12 +214,34 @@ class KernelDatapathMixin:
         a held device answers EBADFD and the best-effort delete below would
         leak it. The sweep is suppressed per TAP — an anchor already gone
         is not an error — and the registry is cleared either way.
+
+        A holder's fd can be released a moment after its process was
+        reaped (VPCS's daemon parent kills its child then exits — the
+        server reaps the parent before the child's fds are actually gone),
+        so the first delete races EBUSY. Every tap that is still on the
+        host afterwards (same-host sysfs check, zero cost on the happy
+        path) gets a small grace and up to three retries; a survivor is
+        warned about, not fatal.
         """
 
         if self.ubridge:
             for tap in self._kernel_taps.values():
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'tap delete "{tap}"')
+                for attempt in range(3):
+                    if not os.path.exists(f"/sys/class/net/{tap}"):
+                        break
+                    await asyncio.sleep(0.3)
+                    with contextlib.suppress(UbridgeError):
+                        await self._ubridge_send(f'tap delete "{tap}"')
+                else:
+                    if os.path.exists(f"/sys/class/net/{tap}"):
+                        log.warning(
+                            "Node '%s' [%s]: anchor TAP %s survived its delete — a holder still has it open",
+                            self._name,
+                            self._id,
+                            tap,
+                        )
             await self._remove_kernel_bridges()
         self._kernel_taps.clear()
 

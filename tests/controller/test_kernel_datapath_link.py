@@ -123,10 +123,11 @@ async def _link(project, node1, node2):
 @pytest.mark.asyncio
 async def test_kernel_datapath_not_eligible_for_other_node_types(project):
     """
-    A node type with no anchor of its own (VPCS, cloud, ...) keeps the relay
-    however capable the compute is — and a QEMU node on a compute whose
-    uBridge cannot create persistent TAPs does too, because it runs on the
-    legacy relay datapath there.
+    A node type with no anchor of its own (cloud, ...) keeps the relay
+    however capable the compute is — a QEMU node on a compute whose uBridge
+    cannot create persistent TAPs does too (it runs on the legacy relay
+    datapath there), and so does a VPCS node whose binary cannot anchor
+    (no -n support, so no vpcs_tap capability).
     """
 
     compute = _tap_capable_compute(tap_support=None)
@@ -223,6 +224,77 @@ async def test_dynamips_eligibility_follows_the_tap_capability(project):
     for tap_support in (None, False):
         compute = _tap_capable_compute(tap_support=tap_support)
         node1 = _node(project, compute, "r1", node_type="dynamips")
+        link = await _link(project, node1, node2)
+        assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_kernel_datapath_eligible_for_vpcs_with_tap_support(project):
+    """
+    A VPCS node anchors on a persistent TAP the vpcs process attaches to
+    (-e -d), which needs the tap module plus a vpcs build with -n — both
+    capabilities reported, and mixable with docker/qemu/iou/dynamips
+    endpoints on the same compute.
+    """
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "vpcs_tap": True, "ubridge_iol_tap": True}
+    node1 = _node(project, compute, "pc1", node_type="vpcs")
+    node2 = _node(project, compute, "pc2", node_type="vpcs")
+    link = await _link(project, node1, node2)
+    assert link._kernel_datapath_eligible(node1, node2) is True
+
+    for peer in (
+        _node(project, compute, "docker1"),
+        _node(project, compute, "qemu1", node_type="qemu"),
+        _node(project, compute, "iou1", node_type="iou"),
+        _node(project, compute, "r1", node_type="dynamips"),
+    ):
+        link = await _link(project, node1, peer)
+        assert link._kernel_datapath_eligible(node1, peer) is True
+
+
+@pytest.mark.asyncio
+async def test_vpcs_eligible_for_the_switch_fast_path(project):
+    """
+    A switch link absorbs the peer's anchor into the switch's own bridge,
+    so only the peer must be able to anchor — a capable VPCS does (the
+    controller names its gp anchor with the shared contract), an
+    incapable one stays on the switch's relay port.
+    """
+
+    switch = _node(project, _tap_capable_compute(), "sw1", node_type="ethernet_switch")
+
+    compute = MagicMock()
+    compute.id = "compute-1"
+    compute.capabilities = {"ubridge_tap": True, "vpcs_tap": True}
+    pc = _node(project, compute, "pc1", node_type="vpcs")
+    link = await _link(project, switch, pc)
+    assert link._kernel_datapath_eligible(switch, pc) is True
+
+    incapable = MagicMock()
+    incapable.id = "compute-1"
+    incapable.capabilities = {"ubridge_tap": True}
+    pc = _node(project, incapable, "pc1", node_type="vpcs")
+    link = await _link(project, switch, pc)
+    assert link._kernel_datapath_eligible(switch, pc) is False
+
+
+@pytest.mark.asyncio
+async def test_vpcs_eligibility_needs_both_capabilities(project):
+    """
+    The tap module and the vpcs -n build land independently: a compute
+    reporting only one of them keeps VPCS on the relay, and so does an
+    unreported/failed probe (strict True on both).
+    """
+
+    node2 = _node(project, _tap_capable_compute(), "docker1")
+    for capabilities in ({"vpcs_tap": True}, {"ubridge_tap": True, "vpcs_tap": None}, {"ubridge_tap": True}):
+        compute = MagicMock()
+        compute.id = "compute-1"
+        compute.capabilities = capabilities
+        node1 = _node(project, compute, "pc1", node_type="vpcs")
         link = await _link(project, node1, node2)
         assert link._kernel_datapath_eligible(node1, node2) is False
 
