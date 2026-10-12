@@ -37,8 +37,9 @@ on the relay:
 * **switch ↔ switch** cascades ride the kernel too — through a veth pair
   joining the two bridges (one end per switch, each side applying its own
   port mode to its own end); see the wire format below;
-* anchor-less peers (VPCS, cloud, the Dynamips-hosted hub, generic
-  `GNS3_UNIX_SOCKET_NIO` containers);
+* anchor-less peers (cloud, the Dynamips-hosted hub, generic
+  `GNS3_UNIX_SOCKET_NIO` containers, a VPCS binary without `-n` — see
+  `vpcs-kernel-datapath.md`);
 * cross-compute links, non-Ethernet ports: the common rules.
 
 **Relay port TAPs.** The switch's own relay-path port TAPs (the

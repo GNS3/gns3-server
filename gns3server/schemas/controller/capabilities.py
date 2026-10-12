@@ -67,3 +67,9 @@ class Capabilities(BaseModel):
         "(bridge delete_nio_tap, the swappable TAP leg an IOL runner container's per-port bridge "
         "needs to wire its links on the kernel datapath); absent when the probe failed",
     )
+    vpcs_tap: Optional[bool] = Field(
+        None,
+        description="Whether the VPCS binary can anchor a kernel link (tap mode with -n, which "
+        "keeps the guest from auto-configuring the host side of the anchor TAP); absent when the "
+        "probe failed",
+    )

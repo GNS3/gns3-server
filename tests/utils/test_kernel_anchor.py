@@ -33,6 +33,7 @@ def test_every_node_type_has_its_own_prefix():
     assert kernel_anchor_name("iou", NODE_ID, 0, 3) == "gi00010203e0p3"
     assert kernel_anchor_name("dynamips", NODE_ID, 6, 48) == "gd00010203e6p48"
     assert kernel_anchor_name("iol_docker", NODE_ID, 0, 0) == "gx00010203e0p0"
+    assert kernel_anchor_name("vpcs", NODE_ID, 0, 0) == "gp00010203e0p0"
 
 
 def test_anchor_type_keys_iol_runner_containers_apart():
@@ -55,7 +56,7 @@ def test_anchor_type_keys_iol_runner_containers_apart():
 
 def test_unknown_node_types_have_no_anchor():
     assert kernel_anchor_name("ethernet_switch", NODE_ID, 0, 0) is None
-    assert kernel_anchor_name("vpcs", NODE_ID, 0, 0) is None
+    assert kernel_anchor_name("cloud", NODE_ID, 0, 0) is None
 
 
 def test_names_fit_ifnamsiz():

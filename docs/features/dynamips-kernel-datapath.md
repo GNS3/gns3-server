@@ -238,4 +238,4 @@ enable_kernel_datapath = True
 
 ## Roadmap
 
-The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` — it absorbs the peer's anchor into its own kernel bridge, and switch-to-switch cascades with it), and so has the IOL runner container (`iol-docker-kernel-datapath.md`). Every router and switch node type now anchors; VPCS, the hub, the cloud and the NAT node stay on the relay by design. Cross-compute kernel links need VXLAN/GENEVE encapsulation — a separate, still-deferred project.
+The Ethernet switch has landed (see `ethernet-switch-kernel-datapath.md` — it absorbs the peer's anchor into its own kernel bridge, and switch-to-switch cascades with it), and so has the IOL runner container (`iol-docker-kernel-datapath.md`) and VPCS (`vpcs-kernel-datapath.md` — it attaches to a pre-created anchor with `-e -d`). Every router and switch node type now anchors, and so does VPCS; the hub, the cloud and the NAT node stay on the relay by design. Cross-compute kernel links need VXLAN/GENEVE encapsulation — a separate, still-deferred project.

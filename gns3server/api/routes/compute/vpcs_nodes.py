@@ -175,16 +175,16 @@ async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_vpcs_node_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
     node: VPCSVM = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the VPCS node is always 0.
@@ -198,16 +198,16 @@ async def create_vpcs_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_vpcs_node_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
     node: VPCSVM = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     The adapter number on the VPCS node is always 0.
@@ -217,6 +217,7 @@ async def update_vpcs_node_nio(
     nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
+    nio.suspend = nio_data.suspend
     nio.markers = nio_data.markers or {}
     await node.port_update_nio_binding(port_number, nio)
     return nio.asdict()

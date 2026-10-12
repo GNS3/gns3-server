@@ -97,7 +97,7 @@ Everything in the root namespace is built the same way: gns3-server creates the 
 
 uBridge sits off the forwarding path — the dashed edges are control and observation, never data flow. The `qdisc install` edge is uBridge configuring the kernel over netlink; the kernel then runs those qdiscs in-flight on the host end's egress (they are stages of the transmit path, not packet consumers). The `frame copies` edge is the AF_PACKET tap: bound to the host end, the kernel clones every frame the interface sends or receives to uBridge's packet socket (the tcpdump mechanism) — read-only copies; the originals never leave the kernel.
 
-Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (cross-compute wiring and an endpoint that cannot anchor — VPCS, a cloud node, … — fall back too; across computes the UDP hop rides the real network instead of loopback, the copy count unchanged):
+Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (cross-compute wiring and an endpoint that cannot anchor — a cloud node, … — fall back too; across computes the UDP hop rides the real network instead of loopback, the copy count unchanged):
 
 ```mermaid
 flowchart LR
