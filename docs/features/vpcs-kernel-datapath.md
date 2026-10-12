@@ -11,7 +11,17 @@ A VPCS node's single adapter anchors on a **persistent TAP** that the server cre
 
 ## Architecture
 
-The anchor follows the shared naming contract of `gns3server/utils/kernel_anchor.py`: `gp{node_id[:8]}e0p0` (14 chars, within the kernel's 16-byte `IFNAMSIZ`). uBridge creates it at node start (`tap create`, `tap set_owner <uid>`, `link set down`) before the vpcs process is launched; vpcs opens it by name with `-e -d` and speaks its user-space IP stack through the tap fd. The per-link bridge, filters, capture, markers and suspend all ride the same mixin paths as every other anchor-backed node type — including the Ethernet switch fast path (a switch link absorbs the `gp` anchor into the switch's own bridge).
+The anchor follows the shared naming contract of `gns3server/utils/kernel_anchor.py`: `gp{node_id[:8]}e0p0` (14 chars, within the kernel's 16-byte `IFNAMSIZ`). The startup sequence is ordered — the TAP must exist before the process that reads it:
+
+```
+server → uBridge:  tap create "gp70264b59e0p0"          open /dev/net/tun + TUNSETIFF + TUNSETPERSIST; born administratively DOWN
+server → uBridge:  tap set_owner gp70264b59e0p0 <uid>   hand the device to the server's own uid (vpcs is its child process)
+server → vpcs:     vpcs -e -d gp70264b59e0p0 -n         tap mode, attach to that device, no host-side configuration
+```
+
+vpcs's `open_tap()` opens `/dev/net/tun` and issues `TUNSETIFF` with that name: the device already exists and its owner is vpcs's own uid, so the kernel takes the *attach* path — no privileges needed. (Only *creating* a tun/tap device needs `CAP_NET_ADMIN`; attaching to an owned one does not.) uBridge is never in the data path: a frame travels `vpcs read/write ↔ tap fd ↔ gp anchor ↔ per-link bridge ↔ peer anchor`, and every interface-level operation afterwards — carrier (`link set up/down`), bridge membership, tc filters, capture, markers — is the server driving uBridge over its control channel. The per-link bridge, filters, capture, markers and suspend all ride the same mixin paths as every other anchor-backed node type — including the Ethernet switch fast path (a switch link absorbs the `gp` anchor into the switch's own bridge).
+
+The `setcap cap_net_admin` in the vpcs install target covers *standalone* use, where vpcs creates and activates its own TAP: creation always needs `CAP_NET_ADMIN`, and so does the `open_tap()` IFF_UP activation. Under GNS3 the capability is unnecessary — the activation silently no-ops without it (the server drives the anchor's carrier itself), which is why the server-side gating never asks for it.
 
 ```mermaid
 flowchart LR
