@@ -35,7 +35,7 @@ netmiko>=4.8.0
 nornir>=3.5.0
 nornir-netmiko>=1.0.1
 nornir-utils>=0.2.0
-nornir-salt>=0.23.0
+nornir-salt>=0.23.4
 
 # Environment & Configuration
 python-dotenv>=1.2.1
