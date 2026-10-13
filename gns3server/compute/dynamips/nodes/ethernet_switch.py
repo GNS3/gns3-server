@@ -19,6 +19,8 @@ Interface for Dynamips virtual Ethernet switch module ("ethsw").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 """
 
+# Note: the Dynamips Ethernet switch has been replaced by a Linux bridge
+
 import logging
 
 from gns3server.utils import parse_version

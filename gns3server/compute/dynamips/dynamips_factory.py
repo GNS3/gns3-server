@@ -46,7 +46,7 @@ PLATFORMS = {
 DEVICES = {
     "atm_switch": ATMSwitch,
     "frame_relay_switch": FrameRelaySwitch,
-    "ethernet_switch": EthernetSwitch,
+    "ethernet_switch": EthernetSwitch,  # The Dynamips Ethernet switch has been replaced by a Linux bridge
     "ethernet_hub": EthernetHub,
 }
 
