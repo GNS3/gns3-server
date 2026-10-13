@@ -66,6 +66,11 @@ class Docker(BaseManager):
         self._session = None
         self._api_version = DOCKER_MINIMUM_API_VERSION
         self._host_checked = False
+        # Image name -> (controller digest, local id) for the images synced from
+        # the controller. The controller pins the id its own daemon reports,
+        # which is not comparable with the id this daemon reports for the same
+        # content (see load_image()).
+        self._image_id_translations = {}
 
     def _select_node_class(self, **kwargs):
         """
@@ -419,11 +424,16 @@ class Docker(BaseManager):
             progress_callback(f"Success pulling image {image}")
 
     @locking
-    async def load_image(self, stream, progress_callback=None):
+    async def load_image(self, stream, image=None, digest=None, progress_callback=None):
         """
         Load a Docker image into the Docker daemon from a docker save tar stream
 
         :param stream: An async iterable of bytes (the tar produced by docker save)
+        :param image: Tag of the image in the archive. Together with digest, the
+            (controller digest, local id) pair is remembered so that node creation
+            can accept the digest the controller pinned for this image
+        :param digest: Image id as reported by the Docker daemon on the controller
+            host (the value the controller pins in the node create payload)
         :param progress_callback: A function that receive a log message about image load progress
         """
 
@@ -469,6 +479,39 @@ class Docker(BaseManager):
 
         if progress_callback:
             progress_callback("Docker image loaded")
+
+        if image and digest:
+            await self._remember_image_id_translation(image, digest)
+
+    async def _remember_image_id_translation(self, image, controller_digest):
+        """
+        Remember how the local daemon identifies an image that was just loaded
+        from the controller.
+
+        Docker ids are not comparable across image stores: for the same content
+        a classic store reports the config digest, while a containerd store (or
+        an image loaded from an OCI archive) reports the manifest digest. The
+        controller pins the id of its own daemon, so recording the pair lets
+        DockerVM accept that pin for the image it actually received instead of
+        asking for another full sync on every node creation.
+        """
+
+        try:
+            image_infos = await self.query("GET", f"images/{image}/json")
+        except DockerError as e:
+            log.warning(f"Image '{image}' has been loaded but cannot be inspected: {e}")
+            return
+        local_id = image_infos.get("Id")
+        if local_id:
+            self._image_id_translations[image] = (controller_digest, local_id)
+
+    def image_id_translation(self, image):
+        """
+        :returns: the (controller digest, local id) pair recorded the last time
+            this image was loaded from the controller, None otherwise
+        """
+
+        return self._image_id_translations.get(image)
 
     async def list_images(self):
         """

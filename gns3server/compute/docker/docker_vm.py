@@ -591,15 +591,20 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         if image_infos is None:
             raise DockerError(f"Cannot get information for image '{self._image}', please try again.")
 
-        if self._image_digest and image_infos.get("Id") != self._image_digest:
+        local_id = image_infos.get("Id")
+        if self._image_digest and local_id != self._image_digest:
             # the tag exists but points to a different image (e.g. a moved :latest):
-            # report it as missing so the controller re-syncs the expected version
-            local_id = image_infos.get("Id")
-            log.info(
-                f"Image '{self._image}' version mismatch on this compute: "
-                f"local id '{local_id}' != expected '{self._image_digest}'"
-            )
-            raise ImageMissingError(self._image)
+            # report it as missing so the controller re-syncs the expected version.
+            # Image ids are not comparable across image stores (a classic store
+            # reports the config digest where a containerd store, or an image
+            # loaded from an OCI archive, reports the manifest digest), so accept
+            # the pin for the image this compute received from the controller.
+            if self.manager.image_id_translation(self._image) != (self._image_digest, local_id):
+                log.info(
+                    f"Image '{self._image}' version mismatch on this compute: "
+                    f"local id '{local_id}' != expected '{self._image_digest}'"
+                )
+                raise ImageMissingError(self._image)
 
         available_cpus = psutil.cpu_count(logical=True)
         if self._cpus > available_cpus:

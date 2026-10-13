@@ -527,7 +527,9 @@ class Node:
                     res = False
                     if last_missing_image:
                         try:
-                            res = await self._upload_missing_image(self._node_type, last_missing_image)
+                            res = await self._upload_missing_image(
+                                self._node_type, last_missing_image, data.get("image_digest")
+                            )
                         except ControllerError as upload_error:
                             # For Docker the image is pulled from a registry: a
                             # failed pull (unknown tag, no network, private image)
@@ -1075,14 +1077,18 @@ class Node:
                 f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
             )
 
-    async def _upload_missing_image(self, type, img):
+    async def _upload_missing_image(self, type, img, image_digest=None):
         """
         Search an image on local computer and upload it to remote compute
         if the image exists
+
+        :param image_digest: digest pinned for this image in the create payload,
+            forwarded so the compute can translate it (see
+            _sync_missing_docker_image)
         """
 
         if self._node_type == "docker":
-            return await self._sync_missing_docker_image(img)
+            return await self._sync_missing_docker_image(img, image_digest)
 
         image = self._find_local_image(type, img)
         if image is None:
@@ -1119,11 +1125,17 @@ class Node:
         if image_id:
             data["image_digest"] = image_id
 
-    async def _sync_missing_docker_image(self, image):
+    async def _sync_missing_docker_image(self, image, image_digest=None):
         """
         Export a Docker image from the Docker daemon on the controller host and
         stream it to the remote compute, or ask the compute to pull it when the
         image is not available locally
+
+        :param image_digest: digest pinned for this image in the create payload.
+            It is sent along with the archive so the compute can remember how its
+            own daemon identifies the image it received: image ids are not
+            comparable across image stores, so the pin alone would keep being
+            reported as a mismatch after every sync.
         """
 
         from gns3server.compute.docker import Docker
@@ -1147,8 +1159,11 @@ class Node:
         self.project.emit_notification(
             "log.info", {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
         )
+        params = {"image": image}
+        if image_digest:
+            params["digest"] = image_digest
         try:
-            await self._compute.post("/docker/images/load", data=response.content, timeout=None)
+            await self._compute.post("/docker/images/load", data=response.content, timeout=None, params=params)
         finally:
             response.close()
         self.project.emit_notification(
