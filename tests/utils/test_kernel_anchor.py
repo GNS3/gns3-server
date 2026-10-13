@@ -21,7 +21,13 @@ Ethernet-switch link), plus the cascade veth naming for switch-to-switch
 links.
 """
 
-from gns3server.utils.kernel_anchor import anchor_suffix, kernel_anchor_name, kernel_anchor_type, kernel_cascade_names
+from gns3server.utils.kernel_anchor import (
+    anchor_suffix,
+    is_kernel_datapath_interface,
+    kernel_anchor_name,
+    kernel_anchor_type,
+    kernel_cascade_names,
+)
 
 NODE_ID = "00010203-0405-0607-0809-0a0b0c0d0e0f"
 LINK_ID = "1a2b3c4d-5e6f-4a5b-8c9d-0e1f2a3b4c5d"
@@ -86,3 +92,32 @@ def test_cascade_names_stay_out_of_the_node_anchor_namespace():
     # cascade end is never mistaken for another node's anchor
     for end in kernel_cascade_names(LINK_ID):
         assert not any(end.startswith(prefix) for prefix in ("gv", "gq", "gi", "gd", "gx"))
+
+
+def test_every_name_the_contract_produces_is_a_managed_interface():
+    for node_type in ("docker", "qemu", "iou", "dynamips", "iol_docker", "vpcs"):
+        assert is_kernel_datapath_interface(kernel_anchor_name(node_type, NODE_ID, 0, 0))
+    for end in kernel_cascade_names(LINK_ID):
+        assert is_kernel_datapath_interface(end)
+    # a cross-compute VXLAN device: "gvl" + 8 hex of the link id + 4 hex of the node id
+    assert is_kernel_datapath_interface("gvl" + LINK_ID.replace("-", "")[:8] + NODE_ID.replace("-", "")[:4])
+
+
+def test_lookalike_interfaces_are_not_managed():
+    # recognition is by exact shape, not bare prefix: user interfaces that
+    # merely start with a managed prefix stay visible to the cloud node
+    for name in (
+        "eth0",
+        "g",
+        "gs",
+        "gvl",
+        "gv0",
+        "gp1",
+        "gv00010203e0p",  # anchor without the port
+        "gv00010203Xe0p0",  # non-hex node id
+        "gs1a2b3c4d5e",  # cascade without the side digit
+        "gs1a2b3c4d5e2",  # side digit other than 0/1
+        "gvl1a2b3c4d5e",  # VXLAN with a short tail
+        "GV00010203E0P0",  # the contract only ever produces lowercase
+    ):
+        assert not is_kernel_datapath_interface(name)
