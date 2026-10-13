@@ -45,7 +45,7 @@ PyJWT>=2.10.1
 psycopg-pool>=3.1.0
 
 # Skills Repository Management
-PyYAML>=6.0.0
+PyYAML>=6.0.3
 GitPython>=3.1.0
 
 # Note: httpx is only for testing (in dev-requirements.txt)
