@@ -21,6 +21,7 @@ import sys
 import gns3server.utils.asyncio
 import gns3server.utils.interfaces
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.utils.kernel_anchor import is_kernel_datapath_interface
 
 from ...base_node import BaseNode
 from ...error import NodeError
@@ -52,7 +53,9 @@ class Cloud(BaseNode):
         if not ports or len(ports) == 0:
             self._ports_mapping = []
             for interface in self._interfaces():
-                if not interface["special"]:
+                # kernel-datapath interfaces (node anchors, cascade veths, VXLAN
+                # devices) belong to their creating link or node, never the cloud
+                if not interface["special"] and not is_kernel_datapath_interface(interface["name"]):
                     self._ports_mapping.append(
                         {
                             "interface": interface["name"],
@@ -80,8 +83,10 @@ class Cloud(BaseNode):
         host_interfaces = []
         network_interfaces = gns3server.utils.interfaces.interfaces()
         for interface in network_interfaces:
-            # Hide GNS3 internal bridges (e.g. EthernetSwitch kernel bridges)
-            if interface["name"].lower().startswith("gns3"):
+            # Hide GNS3 internal interfaces: kernel bridges ("gns3*" names) and
+            # the kernel-datapath devices (node anchors, cascade veths, VXLAN
+            # devices) a link or node of some project owns
+            if interface["name"].lower().startswith("gns3") or is_kernel_datapath_interface(interface["name"]):
                 continue
             host_interfaces.append(
                 {

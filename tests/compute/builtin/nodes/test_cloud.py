@@ -156,6 +156,36 @@ async def test_json_without_ports(on_gns3vm, compute_project, manager):
     }
 
 
+async def test_kernel_datapath_interfaces_are_hidden(linux_platform, compute_project, manager):
+    """
+    Kernel-datapath interfaces (node anchors, cascade veths, VXLAN devices)
+    are neither pre-filled as cloud ports nor listed as host interfaces,
+    while look-alike user interfaces survive both.
+    """
+
+    host_interfaces = [
+        {"name": "eth0", "special": False, "type": "ethernet"},
+        {"name": "gv00010203e0p0", "special": False, "type": "ethernet"},  # docker anchor
+        {"name": "gq00010203e0p0", "special": False, "type": "ethernet"},  # qemu anchor
+        {"name": "gi00010203e0p0", "special": False, "type": "ethernet"},  # iou anchor
+        {"name": "gd00010203e0p0", "special": False, "type": "ethernet"},  # dynamips anchor
+        {"name": "gx00010203e0p0", "special": False, "type": "ethernet"},  # iol runner anchor
+        {"name": "gp00010203e0p0", "special": False, "type": "ethernet"},  # vpcs anchor
+        {"name": "gs1a2b3c4d5e0", "special": False, "type": "ethernet"},  # cascade veth end
+        {"name": "gvl1a2b3c4d0001", "special": False, "type": "ethernet"},  # VXLAN device
+        {"name": "gv0", "special": False, "type": "ethernet"},  # look-alike user interface
+        {"name": "gs1a2b3c4d5e", "special": False, "type": "ethernet"},  # look-alike (no side digit)
+        {"name": "gvl1a2b3c4d5e", "special": False, "type": "ethernet"},  # look-alike (short tail)
+    ]
+
+    with patch("gns3server.utils.interfaces.interfaces", return_value=host_interfaces):
+        cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, manager, ports=None)
+        interfaces = [interface["name"] for interface in cloud.asdict()["interfaces"]]
+
+    assert [port["interface"] for port in cloud.ports_mapping] == ["eth0", "gv0", "gs1a2b3c4d5e", "gvl1a2b3c4d5e"]
+    assert interfaces == ["eth0", "gv0", "gs1a2b3c4d5e", "gvl1a2b3c4d5e"]
+
+
 async def test_update_port_mappings(on_gns3vm, compute_project):
     """
     We don't allow an empty interface in the middle of port list
