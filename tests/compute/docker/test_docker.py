@@ -277,6 +277,38 @@ async def test_load_image():
 
 
 @pytest.mark.asyncio
+async def test_load_image_records_image_id_translation():
+    """
+    The digest pinned by the controller is the id of its own daemon and is not
+    comparable with the id this daemon reports for the same content, so the pair
+    is remembered to accept the pin during node creation.
+    """
+
+    class Content:
+        def __init__(self):
+            self._chunks = [b'{"stream": "Loaded image: ubuntu:latest"}', b""]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    async def tar_stream():
+        yield b"tar-bytes"
+
+    controller_digest = "sha256:" + "a" * 64
+    local_id = "sha256:" + "b" * 64
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": local_id}) as query_mock:
+            await Docker.instance().load_image(tar_stream(), image="ubuntu:latest", digest=controller_digest)
+
+    query_mock.assert_called_once_with("GET", "images/ubuntu:latest/json")
+    assert Docker.instance().image_id_translation("ubuntu:latest") == (controller_digest, local_id)
+    assert Docker.instance().image_id_translation("nginx:latest") is None
+
+
+@pytest.mark.asyncio
 async def test_load_image_error():
 
     class Content:

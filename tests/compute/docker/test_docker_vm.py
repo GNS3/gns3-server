@@ -539,6 +539,49 @@ async def test_create_image_digest_mismatch(compute_project, manager):
 
 
 @pytest.mark.asyncio
+async def test_create_image_digest_translated_for_this_daemon(compute_project, manager):
+    """
+    Image ids are not comparable across image stores: the daemon on the
+    controller host may pin the config digest while this daemon reports the
+    manifest digest for the same content. An image this compute received from
+    the controller is accepted through the translation recorded at load time.
+    """
+
+    controller_digest = "sha256:" + "a" * 64
+    local_id = "sha256:" + "b" * 64
+    manager._image_id_translations["ubuntu:latest"] = (controller_digest, local_id)
+
+    response = {"Id": local_id, "Warnings": []}
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+        vm = DockerVM(
+            "test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", image_digest=controller_digest
+        )
+        await vm.create()
+        # the last query is the container creation: the translated pin let it through
+        assert mock.call_args[0] == ("POST", f"containers/create?name={vm.docker_name}")
+        assert vm._cid == local_id
+
+
+@pytest.mark.asyncio
+async def test_create_image_digest_translated_only_for_the_synced_content(compute_project, manager):
+    """
+    A tag that now points to some other image on this daemon stays missing, even
+    when this image name was synced from the controller before.
+    """
+
+    controller_digest = "sha256:" + "a" * 64
+    manager._image_id_translations["ubuntu:latest"] = (controller_digest, "sha256:" + "c" * 64)
+
+    response = {"Id": "sha256:" + "b" * 64, "Warnings": []}
+    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", image_digest=controller_digest)
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as query_mock:
+        with pytest.raises(ImageMissingError, match="ubuntu:latest"):
+            await vm.create()
+        # only the image inspect happened: no container was created from the stale image
+        query_mock.assert_called_once_with("GET", "images/ubuntu:latest/json")
+
+
+@pytest.mark.asyncio
 async def test_create_with_user(compute_project, manager):
 
     response = {
