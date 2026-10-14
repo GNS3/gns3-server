@@ -98,7 +98,7 @@ The `vxlan show` step is the idempotency contract: a device found under the link
 | Key | Default | Meaning |
 |---|---|---|
 | `Server.enable_vxlan_cross_compute` | `false` | Wire eligible cross-compute links as VXLAN tunnels |
-| `Server.vxlan_dstport` | `14789` | The UDP port all tunnels of the deployment listen on (one kernel socket per port; chosen off the IANA 4789 and the legacy 8472 so other VXLAN software cannot merge demux tables with ours) |
+| `Server.vxlan_dstport` | `4789` | The UDP port all tunnels of the deployment listen on (one kernel socket per port; the IANA-assigned VXLAN port — change it when other VXLAN software on the computes already owns it, since a shared socket merges demux tables) |
 
 ## Known caveats
 

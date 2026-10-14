@@ -319,7 +319,7 @@ async def test_probe_vxlan_scratch_port_stays_off_the_configured_one(monkeypatch
     """
 
     settings = Config.instance().settings.Server
-    for configured in (14789, 20000, 25000, 29999):
+    for configured in (4789, 20000, 25000, 29999):
         monkeypatch.setattr(settings, "vxlan_dstport", configured)
         tc_probe._vxlan_cache.clear()
         assert await probe_vxlan_support() is True
