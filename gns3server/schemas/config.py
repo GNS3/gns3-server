@@ -201,14 +201,13 @@ class ServerSettings(BaseModel):
         "frames. The relay stays the default and the fallback when a tunnel cannot be wired",
     )
     vxlan_dstport: int = Field(
-        14789,
+        4789,
         ge=1,
         le=65535,
         description="UDP destination port every cross-compute VXLAN tunnel listens on. The kernel shares one "
-        "socket per port across all VXLAN devices, so all links of a deployment ride this one port — chosen "
-        "off the IANA 4789 and the legacy 8472 (other VXLAN software's ports: sharing a socket would merge "
-        "their demux table with ours) and above the ephemeral range. Change it only when it collides with "
-        "a service already listening on the computes",
+        "socket per port across all VXLAN devices, so all links of a deployment ride this one port — the "
+        "IANA-assigned VXLAN port by default. Change it when other VXLAN software on the computes already "
+        "listens on it: a shared socket merges their demux table with ours",
     )
     auto_discover_images: bool = Field(True, description="Automatically discover images in the images directory")
     image_sync_interval: int = Field(900, ge=10, description="Seconds between automatic image inventory scans")

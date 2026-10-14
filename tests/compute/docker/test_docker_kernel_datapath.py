@@ -1503,7 +1503,7 @@ async def test_stop_clears_relay_bridge_registry(vm):
 # Cross-compute VXLAN tunnel
 # ---------------------------------------------------------------------------
 
-VXLAN_SPEC = {"name": "gvl01234567abcd", "vni": 1048577, "remote": "192.168.1.2", "dstport": 14789}
+VXLAN_SPEC = {"name": "gvl01234567abcd", "vni": 1048577, "remote": "192.168.1.2", "dstport": 4789}
 
 
 def test_create_nio_bridge_carries_vxlan_spec(vm):
