@@ -161,16 +161,16 @@ Real-network jitter is heavy-tailed because delay variation is mostly queueing �
 
 ### `duplicate` — duplicated packets (kernel-only)
 
-**Purpose**: link-layer replay, transient loops, device buffer re-sends; protocol idempotence and duplicate handling.
+**Purpose**: the real-world prototype is **wireless link-layer retransmission** — an 802.11 ARQ retransmit of a frame the receiver already got (the ACK was lost); 1–3 % duplicates are normal on WiFi captures. Transient L2 loops (the STP convergence window) and bonding failover also duplicate. Tests protocol idempotence and sequence-number/dedup handling (TCP is immune by sequence number; non-idempotent application logic executes twice).
 
 | Parameter | Meaning |
 |---|---|
-| Chance (0…100 %) | per-packet probability of being copied |
-| Correlation (0…100 %) | consecutive-duplicate correlation (small rates under high correlation collapse the same way — see Semantics) |
+| Chance (0…100 %) | per-packet probability of being copied (the original continues; a copy is added) |
+| Correlation (0…100 %) | consecutive-duplicate correlation — wireless retransmissions cluster in time (the marginal-signal periods); Chance ≲ Correlation collapses the same way, see Semantics |
 
-**Note**: the copy draws its own delay (under `delay 100` the duplicate arrives at a different time than the original).
+**Note**: the copy draws its own delay (under `delay 100` the duplicate arrives at a different time than the original); duplicates have no gemodel equivalent — for bursty duplication keep Chance at or above the Correlation.
 
-**Example**: `{"duplicate": [10]}`.
+**Example**: `{"duplicate": [2]}` — mild WiFi-like duplication; `{"duplicate": [10, 25]}` — syntax illustration (10 < 25 sits in the collapse zone, measured ≈1.8 % effective); `{"duplicate": [25, 25]}` — chance at the correlation does not collapse, ≈16.7 % effective (measured anchor).
 
 ### `rate` — bandwidth limit (kernel-only)
 
@@ -180,7 +180,7 @@ Real-network jitter is heavy-tailed because delay variation is mostly queueing �
 |---|---|
 | Rate | tc-style integer + unit: `bit`/`kbit`/`mbit`/`gbit` count bits/s, `bps`/`kbps`/`mbps` count bytes/s, ≤ 100gbit |
 
-**Note**: per-packet serialization time ≈ packet size / rate, applied once per direction → ≈2× on RTT; a large `rate` combined with a large `delay` needs `limit` raised (see `limit`).
+**Note**: the limit shapes **each direction independently** (symmetric full duplex — one shaper per endpoint, no shared budget: 10 Mbit/s each way simultaneously). Asymmetric rates (e.g. 20M down / 1M up) are not expressible through the link `filters` dict; use in-guest netem on each side. Per-packet serialization time ≈ packet size / rate, applied once per direction → ≈2× on RTT; a large `rate` combined with a large `delay` needs `limit` raised (see `limit`).
 
 **Example**: `{"rate": ["512kbit"]}`.
 
@@ -194,7 +194,7 @@ Real-network jitter is heavy-tailed because delay variation is mostly queueing �
 | Correlation (0…100 %) | consecutive-reorder correlation |
 | Gap (1…1000 packets) | reorder cadence — every gap-th packet sent immediately, the rest held back to create reordering; without it, purely probabilistic |
 
-**Note**: requires `delay` (validated with 409 — without a delay there is no timeline to hold against).
+**Note**: requires `delay` (validated with 409). The mechanism is **queue-jumping**: `delay` holds packets in the netem queue until due, and reorder lets the chosen packets skip the wait and transmit immediately, overtaking the packets still held in that same queue — the one `limit` bounds. Aggressive reorder + rate + delay overflows `limit` the same way (tail-drops no filter asked for), and the reorder depth is bounded by the delay (a packet is held at most `delay` ms).
 
 **Example**: `{"delay": [50], "reorder": [25, 25, 5]}` — 25 % reordering at a 5-packet cadence on a 50 ms path.
 
@@ -210,7 +210,14 @@ Real-network jitter is heavy-tailed because delay variation is mostly queueing �
 
 Steady-state mean one-way loss = **p/(p+r)×(1-h)** — "one-way" meaning per direction: each endpoint runs its own independent instance (uncorrelated state machines), so a round trip compounds to ≈ 1−(1−mean)²; loss in only one direction is not expressible through the link `filters` dict (it is pushed to both endpoints symmetrically — use in-guest netem for that).
 
-**Note**: mutually exclusive with `packet_loss` (one netem loss slot; 409).
+**Note**: mutually exclusive with `packet_loss` (one netem loss slot; 409). Same mean, different script — and the script is what protocols feel (scattered losses trigger TCP fast retransmit; a burst wiping a window stalls into RTO):
+
+```
+packet_loss [5] (independent): ──X───X────X───X────X───X──     5 % per packet, evenly scattered
+gemodel [1, 19, 100] (bursty): ────────▒▒▒▒▒───────────▒▒▒──   long clean runs, ≈5 packets die together ≈100 apart
+```
+
+Choosing parameters: pick the target mean M and average burst length L (packets) → r ≈ 1/L, p ≈ M·r/(1−M) (with 1-h = 100); lower 1-h to let some packets survive inside a burst.
 
 **Example**: `{"gemodel": [1, 19, 100]}` — 5 % mean loss, bursts of ≈5 packets fully lost, ≈100 packets apart.
 
@@ -222,7 +229,7 @@ Steady-state mean one-way loss = **p/(p+r)×(1-h)** — "one-way" meaning per di
 |---|---|
 | Seed (0…4294967295) | the netem PRNG seed |
 
-**Note**: pins the netem draws only — the eBPF percentage draws (quota, window) ride a PRNG seeded at program load, outside `seed`'s reach; any filter-set change resets schedules and counters.
+**Note**: pins the netem draws only — the eBPF percentage draws (quota, window) ride a PRNG seeded at program load, outside `seed`'s reach; any filter-set change resets schedules and counters. Two more boundaries: reproduction also requires the same traffic pattern (draws are consumed per arriving packet — classifier-stage drops upstream change the sequence), and a fixed seed pins one realization, not the distribution — for statistical conclusions (average throughput under loss) run several seeds.
 
 **Example**: `{"packet_loss": [10], "seed": [42]}`.
 
@@ -234,7 +241,7 @@ Steady-state mean one-way loss = **p/(p+r)×(1-h)** — "one-way" meaning per di
 |---|---|
 | Limit (1…1000000 packets) | packets the queue can hold; 1000 default |
 
-Rule of thumb: limit ≈ rate × delay / average packet size, with headroom.
+Rule of thumb: limit ≈ rate × delay / average packet size, with headroom. Symptom to watch for: with rate + delay set, measured throughput below the configured rate or loss no filter asked for usually means the 1000 default is overflowing — raise `limit`.
 
 **Example**: `{"rate": ["10mbit"], "delay": [2000], "limit": [5000]}` — 10 Mbit/s × 2 s ≈ 2.5 MB ≈ 1700 full-size packets, past the 1000 default → 5000.
 
@@ -268,8 +275,8 @@ Rule of thumb: limit ≈ rate × delay / average packet size, with headroom.
 
 | Parameter | Meaning |
 |---|---|
-| Quota (1…10¹⁵ bytes) | the byte budget, counted per direction |
-| Chance (0…100 %) | per-packet drop chance after the quota is consumed — 100 = hard cutoff, lower = degraded service |
+| Quota (1…10¹⁵ bytes) | the byte budget, counted per direction — until it is consumed the filter is fully transparent (counting only) |
+| Chance (0…100 %) | an independent per-packet drop chance after the quota is consumed — 100 = hard cutoff, lower = degraded service. The draw mathematics equal `packet_loss`, but it runs in the eBPF classifier stage: no Correlation parameter (immune to the correl collapse), outside `seed`'s reach, and its drops are invisible to captures/markers (see Semantics) |
 
 **Note**: counting starts when the filter is applied; any filter-set change resets the counters (reconcile = reset + re-apply, see Semantics). Needs `ebpf=1`.
 
@@ -283,9 +290,23 @@ Rule of thumb: limit ≈ rate × delay / average packet size, with headroom.
 |---|---|
 | Start (0…10¹² ms) | window start, relative to the moment of apply; 0 = begins immediately (valid and active) |
 | Outage (1…10¹² ms) | window length |
-| Chance (0…100 %) | per-packet drop chance inside the window — 100 = full outage, lower = degraded |
-| Period (1…10¹² ms, optional) | recurring, ≥ Outage; omitted = one-shot |
-| Jitter (0…10⁹ ms, optional) | each cycle's outage and period re-drawn uniformly in nominal ± Jitter (integer-ms grid) |
+| Chance (0…100 %) | an **independent per-packet draw** inside the window — equivalent to `packet_loss` gated to the window (per direction, a round trip compounds to ≈ 1−(1−C)²; 100 = full outage, lower = a degraded window) |
+| Period (1…10¹² ms, optional) | recurring: outages at [Start + k·Period, Start + k·Period + Outage) for k = 0, 1, 2, …; duty cycle = Outage/Period; omitted = one-shot |
+| Jitter (0…10⁹ ms, optional) | breaks the metronome phase: each cycle re-draws the outage length and the cycle gap independently, uniformly in nominal ± Jitter (integer-ms grid; 0 = the fixed schedule) — stops protocol timers from phase-locking with the outage |
+
+Timelines of the three forms (▒ = outage):
+
+```
+one-shot [1000, 1500, 100]:
+pass ────────┬▒▒▒▒▒▒▒▒┬────────────────   (down t=1.0–2.5 s, passes before and after)
+
+recurring [1000, 1500, 100, 10000]:
+pass ──┬▒down 1.5s▒┬───────────────┬▒down 1.5s▒┬──────   (every 10 s, 15 % duty cycle)
+     t=1.0s     2.5s           t=11.0s    12.5s
+
+jittered [0, 2000, 100, 10000, 500]:
+▒~1.8s▒───── ~9.7s ─────▒~2.2s▒───── ~10.4s ─────▒~1.5s▒…   (length and gap re-drawn per cycle within ±0.5 s)
+```
 
 **Note**: **any filter change, node restart or link reset restarts the schedule** — a one-shot window that has already passed must be re-armed: apply immediately before generating traffic, or use a Period. Both endpoints run their own schedule; a round trip survives only when both directions are outside their windows (see Semantics). Needs `ebpf=1` plus the uBridge mode token.
 
