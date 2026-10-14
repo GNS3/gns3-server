@@ -385,7 +385,7 @@ def test_docker_kernel_ten_concurrent_captures():
         paths = [capture["capture_file_path"] for capture in captures]
         first_counts = [harness.pcap_records(path)[0] for path in paths]
         # 2 ARP + 2 echo requests + 2 replies is the floor per link
-        assert all(count >= 4 for count in first_counts), list(zip(paths, first_counts))
+        assert all(count >= 4 for count in first_counts), list(zip(paths, first_counts, strict=True))
         print(f".. all 10 pcaps captured concurrently: {first_counts}")
 
         # stop half. A stop is synchronous (the reply follows the reader
