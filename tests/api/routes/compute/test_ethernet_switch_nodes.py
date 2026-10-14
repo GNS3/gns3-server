@@ -792,7 +792,7 @@ class TestEthernetSwitchNodesRoutes:
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        node._ubridge_send.assert_any_call("capture stop_kernel")
+        node._ubridge_send.assert_any_call(f'capture stop_kernel {anchor}')
 
     async def test_ethernet_switch_batch_create_anchor_nio(
         self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict

@@ -1758,14 +1758,11 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             anchor = self._kernel_host_ifc(adapter_number)
             if isinstance(nio, NIOBridge) and anchor is not None:
                 # Kernel link: capture on the adapter's TAP anchor (AF_PACKET,
-                # one capture per uBridge process — see _reserve_kernel_capture;
-                # a failed start rolls the port's flag back so the port cannot
-                # later stop the winner's capture).
+                # one capture per interface — a failed start rolls the port's
+                # flag back).
                 try:
-                    self._reserve_kernel_capture(anchor)
                     await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
                 except Exception:
-                    self._release_kernel_capture(anchor)
                     nio.stop_packet_capture()
                     raise
             else:
@@ -1792,12 +1789,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if self.ubridge:
             anchor = self._kernel_host_ifc(adapter_number)
             if isinstance(nio, NIOBridge) and anchor is not None:
-                # Process-wide and argument-less: only the port owning the
-                # slot may stop it (a second port's stop would kill this
-                # capture while its own flag still says capturing).
-                if self._kernel_capture_owned_by(anchor):
-                    await self._ubridge_send("capture stop_kernel")
-                    self._release_kernel_capture(anchor)
+                # Per-interface stop: only this port's capture is stopped.
+                await self._ubridge_send(f'capture stop_kernel {anchor}')
             else:
                 await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 

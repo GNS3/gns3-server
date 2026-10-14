@@ -328,7 +328,7 @@ async def test_capture_on_a_kernel_link_uses_the_anchor(vm):
     vm._ubridge_send.assert_any_call(f'capture start_kernel {TAP0} "/tmp/test.pcap"')
 
     await vm.stop_capture(0)
-    vm._ubridge_send.assert_any_call("capture stop_kernel")
+    vm._ubridge_send.assert_any_call(f'capture stop_kernel {TAP0}')
 
 
 @pytest.mark.asyncio

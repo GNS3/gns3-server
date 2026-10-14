@@ -2012,16 +2012,13 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         if isinstance(nio, NIOBridge):
             # Kernel datapath: no relay bridge exists — capture via uBridge's
             # AF_PACKET module bound to the anchor (a veth host end for the
-            # standard container, a persistent TAP for an IOL runner). One
-            # capture per uBridge process: the slot is claimed per anchor,
-            # and a failed start rolls the port's capturing flag back so the
-            # port cannot later stop the winner's capture.
+            # standard container, a persistent TAP for an IOL runner).
+            # uBridge serves one capture per interface, any number of
+            # interfaces; a failed start rolls the port's capturing flag back.
             host_ifc = self._kernel_host_ifc(adapter_number, port_number)
             try:
-                self._reserve_kernel_capture(host_ifc)
                 await self._ubridge_send(f'capture start_kernel {host_ifc} "{output_file}"')
             except Exception:
-                self._release_kernel_capture(host_ifc)
                 nio.stop_packet_capture()
                 raise
             return
@@ -2043,13 +2040,11 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             raise DockerError("Cannot stop the packet capture: uBridge is not running")
         nio = self._ethernet_adapters[adapter_number].get_nio(port_number)
         if isinstance(nio, NIOBridge):
-            # Idempotent on the uBridge side (no active capture is OK), but
-            # process-wide and argument-less: only the port owning the slot
-            # may stop it, or a second port's stop would kill this capture.
+            # Per-interface stop: only this port's capture is stopped (the
+            # capturing flag above gates it, so uBridge's 208-on-idle-
+            # interface can only surface on a genuine desync).
             host_ifc = self._kernel_host_ifc(adapter_number, port_number)
-            if self._kernel_capture_owned_by(host_ifc):
-                await self._ubridge_send("capture stop_kernel")
-                self._release_kernel_capture(host_ifc)
+            await self._ubridge_send(f'capture stop_kernel {host_ifc}')
             return
         bridge_name = self._bridge_name(adapter_number, port_number)
         await self._ubridge_send(f"bridge stop_capture {bridge_name}")

@@ -1491,15 +1491,11 @@ class Router(KernelDatapathMixin, BaseNode):
             if self.ubridge:
                 anchor = self._kernel_host_ifc(slot_number, port_number)
                 if anchor is not None:
-                    # One capture per uBridge process — see
-                    # _reserve_kernel_capture; a failed start rolls the
-                    # port's flag back so it cannot later stop the winner's
-                    # capture.
+                    # One capture per interface; a failed start rolls the
+                    # port's flag back.
                     try:
-                        self._reserve_kernel_capture(anchor)
                         await self._ubridge_send(f'capture start_kernel {anchor} "{output_file}"')
                     except Exception:
-                        self._release_kernel_capture(anchor)
                         nio.stop_packet_capture()
                         raise
             log.debug(
@@ -1538,11 +1534,9 @@ class Router(KernelDatapathMixin, BaseNode):
         if isinstance(nio, NIOBridge):
             nio.stop_packet_capture()
             anchor = self._kernel_host_ifc(slot_number, port_number)
-            if self.ubridge and anchor is not None and self._kernel_capture_owned_by(anchor):
-                # Process-wide and argument-less: only the port owning the
-                # slot may stop it.
-                await self._ubridge_send("capture stop_kernel")
-                self._release_kernel_capture(anchor)
+            if self.ubridge and anchor is not None:
+                # Per-interface stop: only this port's capture is stopped.
+                await self._ubridge_send(f'capture stop_kernel {anchor}')
             return
         await nio.stop_packet_capture()
 
