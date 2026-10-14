@@ -83,6 +83,214 @@ On the kernel datapath the 13 types ride three kernel objects on the anchor. The
 | `quota [bytes, %]` | `tc quota_drop <if> <bytes> <pct>` — after the byte quota is consumed, each further packet drops with the given chance (100 = hard cutoff) | kernel-only type; needs `ebpf=1`; per-direction byte counters |
 | `window_drop [start, outage, %, period?, jitter?]` | `tc window_drop <if> <start> <outage> <pct> [<period> [<jitter>]]` — packets drop with the given chance inside `[start, start+outage)` | kernel-only type; needs `ebpf=1`; see the window semantics below |
 
+## Parameter reference
+
+The API surface of the 13 types — parameters, ranges and cross-filter rules, validated by the controller before anything reaches uBridge (`gns3server/utils/packet_filter_validation.py`; the same data drives `available_filters`, which reports it per link). Trailing parameters are optional everywhere: a client sending only the first N values of a filter keeps working. **K** marks the kernel-datapath-only types; two further *parameters* are kernel-only and marked inline. The row order matches the Filter types table above. The **UI name** column is the display name served by `available_filters` (`gns3server/controller/link.py`, the `FILTERS` catalog) and shown by the Web UI — `gemodel` appears there as *Gilbert-Elliot loss*, not under its API type.
+
+| Filter | UI name | Parameters | Constraint |
+|---|---|---|---|
+| `delay` | Delay | Latency (1…32767 ms) · Jitter (0…32767 ms) · Distribution | Distribution kernel-only, needs Jitter > 0; the four shapes are compared in the Per-filter guide |
+| `packet_loss` | Packet loss | Chance (0…100 %) · Correlation (0…100 %) | Correlation kernel-only; Chance ≲ Correlation collapses (see Semantics) |
+| `corrupt` | Corrupt | Chance (0…100 %) | |
+| `duplicate` **K** | Duplicate | Chance (0…100 %) · Correlation (0…100 %) | |
+| `rate` **K** | Bandwidth limit | Rate — tc-style string, e.g. `"512kbit"` (≤ 100gbit) | integer + unit; bps-family units count bytes/s |
+| `reorder` **K** | Reorder | Reorder (0…100 %) · Correlation (0…100 %) · Gap (1…1000 packets) | requires `delay` |
+| `gemodel` **K** | Gilbert-Elliot loss | p (good-to-bad) · r (bad-to-good) · 1-h (bad-state loss) (each 0…100 %) | mutually exclusive with `packet_loss` |
+| `seed` **K** | Random seed | Seed (0…4294967295) | pins the netem draws only |
+| `limit` **K** | Queue limit | Limit (1…1000000 packets) | queue depth above the 1000 default |
+| `bpf` | Berkeley Packet Filter (BPF) | Filters — text, one expression per line | any match drops |
+| `frequency_drop` | Frequency drop | Frequency (−1…32767) | −1 drops everything; 0 disables |
+| `quota` **K** | Byte quota | Quota (1…10¹⁵ bytes) · Chance (0…100 %) | both required; Chance 100 = hard cutoff |
+| `window_drop` **K** | Time window drop | Start (0…10¹² ms) · Outage (1…10¹² ms) · Chance (0…100 %) · Period (1…10¹² ms) · Jitter (0…10⁹ ms) | 3/4/5 params = one-shot / recurring / randomized flap; Period ≥ Outage |
+
+Cross-filter rules (violations return 409): `reorder` requires `delay`; `gemodel` and `packet_loss` map to the same netem loss slot and are mutually exclusive; `window_drop` Period ≥ Outage; `delay` Distribution requires Jitter > 0; `rate` must be an integer plus a unit no larger than 100gbit.
+
+The disabled convention: a filter whose first value is 0 (or an empty string) reads as off and is skipped. Two exceptions — `delay [0, 0]` is the explicit off while `delay [0, X>0]` is a validation error (Latency ≥ 1), and `window_drop` is active whenever present (`Start = 0` means the outage begins immediately, not off).
+
+## Per-filter guide
+
+What each filter is for and what each parameter means. Ranges live in the Parameter reference above and are not repeated beyond the parameter names; mechanics live in the sections below. Order matches the Parameter reference table; (kernel-only) in a heading marks a type the relay cannot run.
+
+### `delay` — fixed latency with jitter
+
+**Purpose**: propagation delay — geographic distance, satellite hops; amplifying RTT to observe TCP window/BDP behaviour, protocol timers, interactive traffic; combined with `rate`, a narrowband high-latency path.
+
+| Parameter | Meaning |
+|---|---|
+| Latency (1…32767 ms) | fixed one-way delay added per direction — both endpoints apply it, so RTT ≈ 2×. Minimum 1; `[0, 0]` is the explicit off |
+| Jitter (0…32767 ms) | per-packet offset drawn in Latency ± Jitter; omitted = 0 |
+| Distribution | the shape of the jitter draw (kernel-only, needs Jitter > 0; default uniform) — see the table below |
+
+The four distributions, for Jitter = 5 ms:
+
+| Distribution | Shape | Effect | Use for |
+|---|---|---|---|
+| uniform (default) | flat rectangle | every offset in −5…+5 ms equally likely, hard bound | simplest model — worst case is exactly ±J |
+| normal | bell (Gaussian) | most offsets near 0, extremes rare, ±5 almost never reached | mild, concentrated jitter — same-DC, premium lines |
+| pareto | heavy tail (L shape) | most offsets ≈0 with occasional spikes several times the typical value | queueing spikes, congestion bursts; stress-testing timeout/retransmit logic |
+| paretonormal | bell body + Pareto tail | concentrated majority with occasional spikes | closest to measured Internet/WAN jitter; the netem-recommended default |
+
+Real-network jitter is heavy-tailed because delay variation is mostly queueing — a buffer filling up produces one large spike, "calm most of the time, occasionally wild", exactly a bell body with a heavy tail. `normal` suffices for intra-DC paths; use `pareto` / `paretonormal` for the WAN. (Implementation aside: the kernel stores a pre-sampled lookup table, not the distribution's math — which is why `tc qdisc show` cannot print the name.)
+
+**Note**: the first packet after a suspend/resume takes one extra interval (netem idle baseline; steady state exact); a large delay combined with `rate` needs `limit` raised (see `limit`).
+
+**Example**: `{"delay": [80, 5, "paretonormal"]}` — 80 ± 5 ms per direction, heavy-tailed jitter.
+
+### `packet_loss` — random loss
+
+**Purpose**: wireless loss, congestion tail-drop; observing TCP backoff and retransmission, application retries, protocol tolerance.
+
+| Parameter | Meaning |
+|---|---|
+| Chance (0…100 %) | independent per-packet loss probability, per direction — a round trip measures ≈ 1−(1−P)² |
+| Correlation (0…100 %, kernel-only) | consecutive-loss correlation — a loss raises the next packet's loss probability, forming bursts |
+
+**Note**: Chance ≲ Correlation collapses toward zero effective loss (kernel netem defect, quantified in Semantics) — for bursty loss at a chosen mean use `gemodel`. The relay strips this parameter; sending only the single chance argument keeps working.
+
+**Example**: `{"packet_loss": [2]}`; correlated `{"packet_loss": [10, 25]}` (10 < 25 sits in the collapse zone — measured ≈1.8 % effective; shown for syntax only).
+
+### `corrupt` — bit errors
+
+**Purpose**: degraded physical layer — CRC errors, wireless interference, failing optics; checksum coverage, retransmission, FEC.
+
+| Parameter | Meaning |
+|---|---|
+| Chance (0…100 %) | per-packet probability of content corruption. The damaged frame **passes** — the receiver's checksum does the dropping, and a capture on the link shows the damaged frame |
+
+**Example**: `{"corrupt": [5]}`.
+
+### `duplicate` — duplicated packets (kernel-only)
+
+**Purpose**: link-layer replay, transient loops, device buffer re-sends; protocol idempotence and duplicate handling.
+
+| Parameter | Meaning |
+|---|---|
+| Chance (0…100 %) | per-packet probability of being copied |
+| Correlation (0…100 %) | consecutive-duplicate correlation (small rates under high correlation collapse the same way — see Semantics) |
+
+**Note**: the copy draws its own delay (under `delay 100` the duplicate arrives at a different time than the original).
+
+**Example**: `{"duplicate": [10]}`.
+
+### `rate` — bandwidth limit (kernel-only)
+
+**Purpose**: narrowband access lines (512k, 2M), bandwidth bottlenecks; QoS, queuing and bulk-transfer behaviour.
+
+| Parameter | Meaning |
+|---|---|
+| Rate | tc-style integer + unit: `bit`/`kbit`/`mbit`/`gbit` count bits/s, `bps`/`kbps`/`mbps` count bytes/s, ≤ 100gbit |
+
+**Note**: per-packet serialization time ≈ packet size / rate, applied once per direction → ≈2× on RTT; a large `rate` combined with a large `delay` needs `limit` raised (see `limit`).
+
+**Example**: `{"rate": ["512kbit"]}`.
+
+### `reorder` — out-of-order delivery (kernel-only)
+
+**Purpose**: multipath forwarding (ECMP, bonding), parallel switch fabrics; TCP SACK, reordering buffers, RACK.
+
+| Parameter | Meaning |
+|---|---|
+| Reorder (0…100 %) | the chance a packet is held back until a later packet has passed it |
+| Correlation (0…100 %) | consecutive-reorder correlation |
+| Gap (1…1000 packets) | reorder cadence — every gap-th packet sent immediately, the rest held back to create reordering; without it, purely probabilistic |
+
+**Note**: requires `delay` (validated with 409 — without a delay there is no timeline to hold against).
+
+**Example**: `{"delay": [50], "reorder": [25, 25, 5]}` — 25 % reordering at a 5-packet cadence on a 50 ms path.
+
+### `gemodel` — bursty loss, Gilbert-Elliot (kernel-only)
+
+**Purpose**: real loss comes in bursts — microburst congestion, transient memory exhaustion, wireless fades. Use it for "chosen mean rate + tunable burst shape"; it is immune to the correlation collapse.
+
+| Parameter | Meaning |
+|---|---|
+| p (good-to-bad, 0…100 %) | good→bad transition — per-packet chance of entering a burst; burst spacing averages ≈ 1/p packets |
+| r (bad-to-good, 0…100 %) | bad→good transition — average burst length ≈ 1/r packets |
+| 1−h (bad-state loss, 0…100 %) | per-packet loss chance inside the bad state (the good state loses nothing) |
+
+Steady-state mean one-way loss = **p/(p+r)×(1-h)** — "one-way" meaning per direction: each endpoint runs its own independent instance (uncorrelated state machines), so a round trip compounds to ≈ 1−(1−mean)²; loss in only one direction is not expressible through the link `filters` dict (it is pushed to both endpoints symmetrically — use in-guest netem for that).
+
+**Note**: mutually exclusive with `packet_loss` (one netem loss slot; 409).
+
+**Example**: `{"gemodel": [1, 19, 100]}` — 5 % mean loss, bursts of ≈5 packets fully lost, ≈100 packets apart.
+
+### `seed` — reproducible randomness (kernel-only)
+
+**Purpose**: reproducible experiments and A/B comparisons — same seed + same filter set → the identical loss/jitter/corruption/duplication sequence.
+
+| Parameter | Meaning |
+|---|---|
+| Seed (0…4294967295) | the netem PRNG seed |
+
+**Note**: pins the netem draws only — the eBPF percentage draws (quota, window) ride a PRNG seeded at program load, outside `seed`'s reach; any filter-set change resets schedules and counters.
+
+**Example**: `{"packet_loss": [10], "seed": [42]}`.
+
+### `limit` — impairment queue depth (kernel-only)
+
+**Purpose**: the netem queue's capacity — it exists for `rate` + `delay` combinations: the backlog grows toward the bandwidth-delay product, and past `limit` it tail-drops, losing packets no filter asked to lose. Alone it does essentially nothing (no delay, no backlog).
+
+| Parameter | Meaning |
+|---|---|
+| Limit (1…1000000 packets) | packets the queue can hold; 1000 default |
+
+Rule of thumb: limit ≈ rate × delay / average packet size, with headroom.
+
+**Example**: `{"rate": ["10mbit"], "delay": [2000], "limit": [5000]}` — 10 Mbit/s × 2 s ≈ 2.5 MB ≈ 1700 full-size packets, past the 1000 default → 5000.
+
+### `bpf` — match-drop by content
+
+**Purpose**: selective blackholing — drop only ICMP (a ping blackhole), only BGP (`tcp port 179`) to watch sessions drop, OSPF hellos (`ip proto 89`) for convergence timing, VRRP advertisements (`proto 112`) to force a failover.
+
+| Parameter | Meaning |
+|---|---|
+| Filters | libpcap/tcpdump expression, **one per line**, any match drops. Each line is compiled with `tcpdump -d` before apply; a line that fails to compile on the compute is skipped with a warning |
+
+**Note**: the semantics are match-drop — only matches drop; "allow only X" is written `not <X>`. Runs on both datapaths (cls_bpf on the kernel, libpcap in the relay).
+
+**Example**: `{"bpf": "icmp"}`; multi-line `{"bpf": "tcp port 179\nip proto 89"}`.
+
+### `frequency_drop` — deterministic periodic drops
+
+**Purpose**: deterministic loss with no dice — an exact drop cadence for worst paths: retransmission, FEC, fast-fail logic; also experiments needing a steadily advancing drop counter.
+
+| Parameter | Meaning |
+|---|---|
+| Frequency (−1…32767) | positive N = drop every Nth packet; −1 = drop everything; 0 = disabled |
+
+**Note**: the two datapaths count differently — the relay runs one counter shared by both directions (phase-locked); the kernel counts per direction (N=3 → 55.6 % round-trip, measured 57 %), exact atomic counters (see Semantics).
+
+**Example**: `{"frequency_drop": [3]}` — every 3rd packet.
+
+### `quota` — traffic quota (kernel-only)
+
+**Purpose**: quota/billing — a volume budget exhausted cuts or degrades the link; application resilience to "cut off mid-stream".
+
+| Parameter | Meaning |
+|---|---|
+| Quota (1…10¹⁵ bytes) | the byte budget, counted per direction |
+| Chance (0…100 %) | per-packet drop chance after the quota is consumed — 100 = hard cutoff, lower = degraded service |
+
+**Note**: counting starts when the filter is applied; any filter-set change resets the counters (reconcile = reset + re-apply, see Semantics). Needs `ebpf=1`.
+
+**Example**: `{"quota": [1000000000, 100]}` — hard cut after 1 GB.
+
+### `window_drop` — scheduled outage (kernel-only)
+
+**Purpose**: planned outages (a maintenance window "link dies at T for M seconds"), recurring flaps (failing cable, wireless fades), link-flap convergence and failover testing.
+
+| Parameter | Meaning |
+|---|---|
+| Start (0…10¹² ms) | window start, relative to the moment of apply; 0 = begins immediately (valid and active) |
+| Outage (1…10¹² ms) | window length |
+| Chance (0…100 %) | per-packet drop chance inside the window — 100 = full outage, lower = degraded |
+| Period (1…10¹² ms, optional) | recurring, ≥ Outage; omitted = one-shot |
+| Jitter (0…10⁹ ms, optional) | each cycle's outage and period re-drawn uniformly in nominal ± Jitter (integer-ms grid) |
+
+**Note**: **any filter change, node restart or link reset restarts the schedule** — a one-shot window that has already passed must be re-armed: apply immediately before generating traffic, or use a Period. Both endpoints run their own schedule; a round trip survives only when both directions are outside their windows (see Semantics). Needs `ebpf=1` plus the uBridge mode token.
+
+**Example**: `{"window_drop": [1000, 1500, 100]}` — dead 1.5 s starting at t=1 s, one-shot; `{"window_drop": [0, 2000, 100, 10000, 500]}` — dead 2 s now, recurring every ~10 ± 0.5 s.
+
 ## Semantics
 
 * **Both endpoints** receive the filter dict and attach one qdisc to *their* anchor. The qdisc's egress covers traffic entering that node, so every direction of the link is impaired exactly once — the same net effect as the relay, where both directions cross the single filtered bridge. A `delay 100` link measures ≈200 ms RTT; `packet_loss 30` measures ≈51 % round-trip (1 − 0.7²); `rate 512kbit` adds ≈2× the per-packet serialization time to the RTT.
@@ -93,7 +301,6 @@ On the kernel datapath the 13 types ride three kernel objects on the anchor. The
 * **frequency_drop counting semantics differ per datapath.** The relay's single filtered bridge counts packets of BOTH directions through one counter; the kernel attaches one classifier per anchor, so each direction drops every Nth independently. For a round-trip measurement with every-Nth N: relay ≈ 1/N of frames (phase-locked), kernel = 1 − ((N−1)/N)² (e.g. N=3 → 55.6 % round-trip loss, measured 57 %). The kernel count is exact (atomic counter), unlike netem's stochastic loss.
 * **Classifier order** on clsact egress: the eBPF stateful filter runs at prio 1, `bpf_drop` expressions at 10–99 — a packet dropped by the stateful modes never reaches the expression drops, and dropped packets never reach netem. Within the stateful program the modes evaluate in the fixed order nth → quota → window → flow.
 * **window_drop semantics.** `start` is relative to the moment the filter is applied — and because reconcile re-sets the classifier on every apply (any filter change, node restart, link reset reloads the program after the netem reset), every such event **restarts the schedule**. 3 parameters = one single outage (`[start, start+outage)`), traffic passes before and after — the classic "link dies at T, comes back at T+outage". 4 parameters = recurring flap: `period ≥ outage` (validated), so the outage occupies `outage/period` of each cycle. 5 parameters = randomized flap: each cycle's outage and period are re-drawn uniformly in nominal ± `jitter` (integer-ms grid; jitter 0 draws nothing and equals the fixed schedule). Inside a window each packet drops with the given chance (100 = full outage, lower = degraded service during the window). Both endpoints run their own schedule, started ~simultaneously by the controller — a round trip survives only when **both** directions are outside their windows. Note `start = 0` (outage begins immediately) is a valid, active configuration — unlike other filters, a zero first parameter does not mean "disabled". A PUT re-sending an unchanged filters dict is normally a controller no-op, but one still carrying `window_drop` is reconciled anyway, so re-applying the same window re-arms a one-shot outage that has already passed (arm the filter immediately before generating traffic, or use a period for a repeatable event).
-* **Validation** mirrors the tc grammar: `reorder` requires `delay`, `gemodel` and `packet_loss` are mutually exclusive (both map to the netem loss keyword), `distribution` requires jitter > 0, rate must be integer + unit ≤ 100gbit.
 * **Node restart** restores the qdisc from the NIO (like capture and markers); **link deletion** detaches it explicitly — the anchor survives the link and an orphaned qdisc would keep impairing the next one.
 * **Suspend** keeps the qdisc (carrier-driven loss); the first packet after resume takes one extra delay interval (known netem idle-baseline behaviour) and steady state is exact.
 * **bpf reconcile = flush + re-add** (`tc bpf_drop flush`, then one add per line at priorities 10, 11, …). `tc reset` (link delete / filter clear) is the full restore in uBridge: filters → clsact → root qdisc, idempotent.
@@ -115,7 +322,38 @@ A fully-loaded example — `delay 100 jitter 10`, `packet_loss 10`, `corrupt 5`,
 
 ## REST surface
 
-Filters travel on the link API: `PUT /v3/links/{link_id}` with a `filters` dict, validated by the controller (the dependency and exclusivity rules above return 409 on violation) and pushed to both endpoints on create, update and project reopen. Each link payload carries read-only `available_filters` — the per-type intersection of what both endpoint computes can run, per the capability reporting above.
+Filters travel on the link API: a `filters` dict on the link object (`filter type → positional values`), validated by the controller (the cross-filter rules above return 409 on violation) and pushed to both endpoints on create, update and project reopen.
+
+| Method | Path | Purpose | Privilege |
+|---|---|---|---|
+| GET | `/v3/projects/{project_id}/links/{link_id}` | read the link incl. its `filters` | Link.Audit |
+| PUT | `/v3/projects/{project_id}/links/{link_id}` | replace the `filters` dict | Link.Modify |
+| GET | `/v3/projects/{project_id}/links/{link_id}/available_filters` | the per-link vocabulary with parameter names, ranges and units | Link.Audit |
+
+Setting filters is a plain link update — send only the `filters` property:
+
+```json
+PUT /v3/projects/{project_id}/links/{link_id}
+{
+    "filters": {
+        "delay": [50, 5],
+        "packet_loss": [1]
+    }
+}
+```
+
+`available_filters` is the authoritative per-link vocabulary: kernel-only types appear only on kernel-datapath links whose endpoint computes report a uBridge able to run them, and relay links list the five relay types only (per the capability reporting above).
+
+Common recipes — all values are per direction, so round trips double the delay and compound the loss (see Semantics):
+
+| Goal | `filters` value |
+|---|---|
+| WAN latency with jitter | `{"delay": [50, 5]}` |
+| 1 % random loss | `{"packet_loss": [1]}` |
+| Bursty ~5 % mean loss | `{"gemodel": [1, 19, 100]}` — mean = p/(p+r)×(1-h) = 5 % |
+| 512 kbit/s cap | `{"rate": ["512kbit"]}` |
+| Drop all ICMP | `{"bpf": "icmp"}` |
+| 1.5 s full outage starting now, one-shot | `{"window_drop": [0, 1500, 100]}` |
 
 ## Where the chain sits
 
