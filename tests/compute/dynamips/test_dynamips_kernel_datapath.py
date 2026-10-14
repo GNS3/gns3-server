@@ -581,7 +581,7 @@ async def test_capture_on_a_kernel_link_uses_the_anchor(router):
     assert not any("bind_filter" in c for c in _hypervisor_commands(router))
 
     await router.stop_capture(0, 0)
-    router._ubridge_send.assert_any_call(f'capture stop_kernel {TAP00}')
+    router._ubridge_send.assert_any_call(f"capture stop_kernel {TAP00}")
 
 
 @pytest.mark.asyncio

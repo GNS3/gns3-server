@@ -997,7 +997,7 @@ async def test_stop_capture_kernel(vm):
     await vm.stop_capture(0)
 
     assert nio.capturing is False
-    vm._ubridge_send.assert_any_call(f'capture stop_kernel {host_ifc}')
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc}")
 
 
 @pytest.mark.asyncio
@@ -1061,11 +1061,11 @@ async def test_capture_two_ports_at_once_and_stop_them_independently(vm):
 
     assert nio1.capturing is True
     assert nio2.capturing is False
-    vm._ubridge_send.assert_any_call(f'capture stop_kernel {host_ifc2}')
-    assert not any(f'stop_kernel {host_ifc1}' in str(c) for c in vm._ubridge_send.call_args_list)
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc2}")
+    assert not any(f"stop_kernel {host_ifc1}" in str(c) for c in vm._ubridge_send.call_args_list)
 
     await vm.stop_capture(0)
-    vm._ubridge_send.assert_any_call(f'capture stop_kernel {host_ifc1}')
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc1}")
 
 
 @pytest.mark.asyncio

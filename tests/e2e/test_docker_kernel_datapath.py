@@ -352,7 +352,9 @@ def test_docker_kernel_ten_concurrent_captures():
         # every later frame (up to and including the ARP each first ping
         # triggers) lands in a pcap
         captures = [
-            compute.call("POST", f"/projects/{pid}/links/{link['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"})
+            compute.call(
+                "POST", f"/projects/{pid}/links/{link['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+            )
             for link in links
         ]
 

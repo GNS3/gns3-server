@@ -795,7 +795,7 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
             anchor = self._kernel_ports.get(port_number)
             if anchor is not None:
                 # Per-interface stop: only this port's capture is stopped.
-                await self._ubridge_send(f'capture stop_kernel {anchor}')
+                await self._ubridge_send(f"capture stop_kernel {anchor}")
             else:
                 ubridge_bridge = self._ubridge_bridge_name(port_number)
                 await self._ubridge_send(f"bridge stop_capture {ubridge_bridge}")

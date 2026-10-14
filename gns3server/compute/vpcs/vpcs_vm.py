@@ -691,7 +691,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
             anchor = self._kernel_host_ifc(0, port_number)
             if isinstance(nio, NIOBridge) and anchor is not None:
                 # Per-interface stop: only this port's capture is stopped.
-                await self._ubridge_send(f'capture stop_kernel {anchor}')
+                await self._ubridge_send(f"capture stop_kernel {anchor}")
             else:
                 await self._ubridge_send("bridge stop_capture {name}".format(name=f"VPCS-{self._id}"))
 

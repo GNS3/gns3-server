@@ -2044,7 +2044,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             # capturing flag above gates it, so uBridge's 208-on-idle-
             # interface can only surface on a genuine desync).
             host_ifc = self._kernel_host_ifc(adapter_number, port_number)
-            await self._ubridge_send(f'capture stop_kernel {host_ifc}')
+            await self._ubridge_send(f"capture stop_kernel {host_ifc}")
             return
         bridge_name = self._bridge_name(adapter_number, port_number)
         await self._ubridge_send(f"bridge stop_capture {bridge_name}")

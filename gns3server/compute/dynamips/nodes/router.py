@@ -1536,7 +1536,7 @@ class Router(KernelDatapathMixin, BaseNode):
             anchor = self._kernel_host_ifc(slot_number, port_number)
             if self.ubridge and anchor is not None:
                 # Per-interface stop: only this port's capture is stopped.
-                await self._ubridge_send(f'capture stop_kernel {anchor}')
+                await self._ubridge_send(f"capture stop_kernel {anchor}")
             return
         await nio.stop_packet_capture()
 

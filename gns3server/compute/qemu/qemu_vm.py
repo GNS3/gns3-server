@@ -1790,7 +1790,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             anchor = self._kernel_host_ifc(adapter_number)
             if isinstance(nio, NIOBridge) and anchor is not None:
                 # Per-interface stop: only this port's capture is stopped.
-                await self._ubridge_send(f'capture stop_kernel {anchor}')
+                await self._ubridge_send(f"capture stop_kernel {anchor}")
             else:
                 await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 

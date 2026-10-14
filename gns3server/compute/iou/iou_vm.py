@@ -1869,7 +1869,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
                 # Per-interface stop: only this port's capture is stopped.
                 anchor = self._kernel_host_ifc(adapter_number, port_number)
                 if anchor is not None:
-                    await self._ubridge_send(f'capture stop_kernel {anchor}')
+                    await self._ubridge_send(f"capture stop_kernel {anchor}")
             else:
                 await self._ubridge_send(
                     f"iol_bridge stop_capture {self._iol_bridge_name()} {adapter_number} {port_number}"
