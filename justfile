@@ -9,6 +9,11 @@ install:
     python -m pip install --upgrade pip
     python -m pip install -e '.[ai-features,dev]'
 
+# Install the git pre-commit hook (lint + type-check on staged files)
+[group('dev')]
+install-hooks:
+    git config core.hooksPath .githooks
+
 # Apply ruff autofixes for the enforced rules
 [group('dev')]
 format:
