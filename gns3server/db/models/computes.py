@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, false
 
 from .base import GUID, BaseTable
 
@@ -30,3 +30,4 @@ class Compute(BaseTable):
     port = Column(Integer)
     user = Column(String)
     password = Column(String)
+    auto_connect = Column(Boolean, nullable=False, server_default=false())
