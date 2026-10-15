@@ -997,14 +997,16 @@ async def test_stop_capture_kernel(vm):
     await vm.stop_capture(0)
 
     assert nio.capturing is False
-    vm._ubridge_send.assert_any_call("capture stop_kernel")
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc}")
 
 
 @pytest.mark.asyncio
-async def test_start_capture_second_concurrent_fails(vm):
+async def test_start_capture_ubridge_ealready_rolls_the_flag_back(vm):
     """
-    uBridge's kernel capture is a singleton per process: a second concurrent
-    capture returns EALREADY and must surface to the caller.
+    uBridge answers EALREADY when its interface is already being captured
+    (the server's per-port flag should have refused earlier; this is the
+    desync net): the error must surface and the port must not stay marked
+    as capturing.
     """
 
     async def send(command):
@@ -1022,19 +1024,16 @@ async def test_start_capture_second_concurrent_fails(vm):
         await vm.start_capture(0, "/tmp/capture.pcap")
 
     # the failed start must not leave the port marked as capturing: a stuck
-    # flag refuses the retry and lets this port's stop kill the winner
+    # flag refuses the retry
     assert nio.capturing is False
-    assert vm._kernel_capture_ifc is None
 
 
 @pytest.mark.asyncio
-async def test_start_capture_second_port_on_the_same_node_is_refused(vm):
+async def test_capture_two_ports_at_once_and_stop_them_independently(vm):
     """
-    uBridge serves one kernel capture per process while the server models
-    captures per port: a second port's capture must be refused with a clear
-    error and its flag rolled back — otherwise its stop would issue the
-    process-wide, argument-less ``capture stop_kernel`` and kill the first
-    port's capture while its own flag still says capturing.
+    uBridge serves one kernel capture per interface: two ports of the same
+    node capture concurrently, and each port's stop names only its own
+    anchor — a sibling port's capture is never touched.
     """
 
     vm._ubridge_hypervisor = MagicMock()
@@ -1051,48 +1050,22 @@ async def test_start_capture_second_port_on_the_same_node_is_refused(vm):
     vm._ethernet_adapters[1].add_nio(0, nio2)
 
     await vm.start_capture(0, "/tmp/capture.pcap")
-
-    with pytest.raises(DockerError, match="one kernel capture per node"):
-        await vm.start_capture(1, "/tmp/capture2.pcap")
+    await vm.start_capture(1, "/tmp/capture2.pcap")
 
     assert nio1.capturing is True
-    assert nio2.capturing is False
+    assert nio2.capturing is True
     vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc1} "/tmp/capture.pcap"')
-    assert not any("stop_kernel" in str(c) for c in vm._ubridge_send.call_args_list)
-
-
-@pytest.mark.asyncio
-async def test_stop_capture_on_a_port_that_does_not_own_the_slot_skips_stop_kernel(vm):
-    """
-    ``capture stop_kernel`` is process-wide and takes no interface: a stop on
-    a port whose flag says capturing while another port owns the slot must
-    not reach uBridge — it would stop the owner's capture.
-    """
-
-    vm._ubridge_hypervisor = MagicMock()
-    vm._ubridge_send = AsyncioMagicMock()
-    vm.status = "started"
-    vm._ethernet_adapters.append(type(vm._ethernet_adapters[0])())
-    host_ifc1, _ = vm._veth_names(0, 0)
-    host_ifc2, _ = vm._veth_names(1, 0)
-    vm._kernel_veths[(0, 0)] = host_ifc1
-    vm._kernel_veths[(1, 0)] = host_ifc2
-    nio1 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
-    nio2 = vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE})
-    vm._ethernet_adapters[0].add_nio(0, nio1)
-    vm._ethernet_adapters[1].add_nio(0, nio2)
-
-    await vm.start_capture(0, "/tmp/capture.pcap")  # port 0 owns the slot
-    nio2.start_packet_capture("/tmp/capture2.pcap")  # a stale second flag
+    vm._ubridge_send.assert_any_call(f'capture start_kernel {host_ifc2} "/tmp/capture2.pcap"')
 
     await vm.stop_capture(1)
 
+    assert nio1.capturing is True
     assert nio2.capturing is False
-    assert not any("stop_kernel" in str(c) for c in vm._ubridge_send.call_args_list)
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc2}")
+    assert not any(f"stop_kernel {host_ifc1}" in str(c) for c in vm._ubridge_send.call_args_list)
 
-    # the owner's capture is untouched and still stoppable
     await vm.stop_capture(0)
-    vm._ubridge_send.assert_any_call("capture stop_kernel")
+    vm._ubridge_send.assert_any_call(f"capture stop_kernel {host_ifc1}")
 
 
 @pytest.mark.asyncio

@@ -316,6 +316,110 @@ def test_docker_kernel_fast_path():
     assert harness.wait_until(lambda: harness.bridge_members(bridge) is None, timeout=10), bridge
 
 
+def test_docker_kernel_ten_concurrent_captures():
+    """Ten kernel captures at once on one node's uBridge. The capture side
+    picks the first local started node, so all ten links capture on node 1's
+    single uBridge process — the scale the old one-capture-per-process limit
+    could never reach. Each link gets its own traffic (its own subnet on its
+    own eth), and a partial stop must leave the untouched captures running."""
+    server = harness.live_server(kernel=True)
+    compute = server.compute
+    image = harness.ensure_docker_image(server)
+
+    project = compute.create_project("docker-multicap-e2e")
+    pid = project["project_id"]
+    try:
+        daemon = harness.DockerDaemon()
+        nodes = []
+        for suffix, address in (("1", R1_IP), ("2", R2_IP)):
+            node = compute.create_docker_node(pid, f"MC-{suffix}", image, adapters=10)
+            harness.configure_docker_interfaces(node, address)
+            nodes.append(_resolve_container(daemon, node))
+        n1, n2 = nodes
+        c1, c2 = n1["container_id"], n2["container_id"]
+        n1_id, n2_id = n1["node_id"], n2["node_id"]
+
+        links = [compute.create_link(pid, (n1_id, i, 0), (n2_id, i, 0)) for i in range(10)]
+        assert all(link["kernel_datapath"] is True for link in links), links
+
+        print(".. starting containers")
+        for node in nodes:
+            compute.call("POST", f"/projects/{pid}/nodes/{node['node_id']}/start")
+        harness.docker_wait_address(daemon, c1, R1_IP)
+        harness.docker_wait_address(daemon, c2, R2_IP)
+
+        # ten captures before any of the per-link interfaces is addressed, so
+        # every later frame (up to and including the ARP each first ping
+        # triggers) lands in a pcap
+        captures = [
+            compute.call(
+                "POST", f"/projects/{pid}/links/{link['link_id']}/capture/start", {"data_link_type": "DLT_EN10MB"}
+            )
+            for link in links
+        ]
+
+        # eth1..eth9: one subnet each, wired by hand inside the guests; the
+        # settle window lets the guests' address-add chatter (each v4 addr
+        # fires two IGMP reports ~1 s apart) land inside an open capture
+        # instead of a later snapshot
+        for i in range(1, 10):
+            for container_id, host in ((c1, 1), (c2, 2)):
+                code, output = daemon.exec(
+                    container_id,
+                    ["sh", "-c", f"ip link set eth{i} up && ip addr add 10.20.{i}.{host}/24 dev eth{i}"],
+                )
+                assert code == 0, output
+        time.sleep(2)
+
+        def ping_link(i):
+            # link 0 rides the init.sh-addressed eth0; the rest their own subnet
+            if i == 0:
+                result = harness.docker_ping(daemon, c1, R2_IP, count=2)
+                assert result["loss"] == 0, result["raw"]
+            else:
+                code, output = daemon.exec(c1, ["ping", "-c", "2", "-W", "1", f"10.20.{i}.2"])
+                assert code == 0, output
+
+        for i in range(10):
+            ping_link(i)
+        time.sleep(0.5)
+
+        paths = [capture["capture_file_path"] for capture in captures]
+        first_counts = [harness.pcap_records(path)[0] for path in paths]
+        # 2 ARP + 2 echo requests + 2 replies is the floor per link
+        assert all(count >= 4 for count in first_counts), list(zip(paths, first_counts, strict=True))
+        print(f".. all 10 pcaps captured concurrently: {first_counts}")
+
+        # stop half. A stop is synchronous (the reply follows the reader
+        # thread's join), so from its return that pcap can no longer grow —
+        # the post-stop counts are an exact-freeze baseline
+        for link in links[5:]:
+            compute.call("POST", f"/projects/{pid}/links/{link['link_id']}/capture/stop")
+        stopped_base = [harness.pcap_records(paths[i])[0] for i in range(5, 10)]
+
+        # fresh traffic on ALL segments: the stopped half must stay frozen
+        # even while its links carry frames, the live half must record them
+        for i in range(10):
+            ping_link(i)
+        time.sleep(0.5)
+
+        for i in range(5, 10):
+            assert harness.pcap_records(paths[i])[0] == stopped_base[i - 5], f"stopped pcap {i} grew"
+        for i in range(5):
+            assert harness.pcap_records(paths[i])[0] >= first_counts[i] + 4, f"live pcap {i} did not grow"
+        print(".. per-interface stop froze exactly the stopped half")
+
+        for link in links[:5]:
+            compute.call("POST", f"/projects/{pid}/links/{link['link_id']}/capture/stop")
+        assert all(
+            compute.call("GET", f"/projects/{pid}/links/{link['link_id']}")["capturing"] is False for link in links
+        )
+    except BaseException:
+        harness.release(server, pid, failed=True)
+        raise
+    harness.release(server, pid, failed=False)
+
+
 def test_docker_kernel_filter_matrix():
     """One filter type at a time on a live kernel link, each asserted by its
     effect on real traffic and its tc state. Types the uBridge on this
