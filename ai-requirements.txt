@@ -24,7 +24,7 @@ langchain-deepseek>=1.0.1
 langchain-xai>=1.2.2
 
 # Token Counting
-tiktoken>=0.8.0
+tiktoken>=0.14.0
 
 # LangSmith SDK
 langsmith>=0.7.7
