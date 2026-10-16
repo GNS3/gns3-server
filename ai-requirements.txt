@@ -27,7 +27,7 @@ langchain-xai>=1.2.2
 tiktoken>=0.14.0
 
 # LangSmith SDK
-langsmith>=0.7.7
+langsmith>=0.14.7
 
 # Network Automation
 paramiko>=5.0.0  # install version >= 5.0.0 to address CVE-2026-44405
