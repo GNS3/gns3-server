@@ -49,6 +49,9 @@ class ComputeBase(BaseModel):
     user: Optional[str] = None
     password: Optional[SecretStr] = None
     name: Optional[str] = None
+    auto_connect: Optional[bool] = Field(
+        False, description="Whether to automatically connect to the compute when the controller starts"
+    )
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -87,6 +90,7 @@ class ComputeUpdate(ComputeBase):
 
     user: Optional[str] = None
     password: Optional[SecretStr] = None
+    auto_connect: Optional[bool] = None  # no default: update schemas must not publish defaults
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -107,6 +111,8 @@ class Compute(DateTimeModelMixin, ComputeBase):
     port: int = Field(..., gt=0, le=65535)
     compute_id: Union[str, uuid.UUID]
     name: str
+    # defaulted: topology files and the local compute dict may not carry it
+    auto_connect: bool = False
     connected: Optional[bool] = Field(None, description="Whether the controller is connected to the compute or not")
     cpu_usage_percent: Optional[float] = Field(None, description="CPU usage of the compute", ge=0, le=100)
     memory_usage_percent: Optional[float] = Field(None, description="Memory usage of the compute", ge=0, le=100)

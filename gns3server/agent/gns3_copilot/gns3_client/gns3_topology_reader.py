@@ -67,7 +67,7 @@ class GNS3TopologyTool(BaseTool):
     Output: Dictionary with:
     - `project_id`, `name`, `status`: Project metadata
     - `nodes`: Dict of node details (node_id, name, ports, console_port,
-               type, etc.)
+               console_host, type, etc.)
     - `links`: List of link connections
 
     Use this to understand network structure before making changes.

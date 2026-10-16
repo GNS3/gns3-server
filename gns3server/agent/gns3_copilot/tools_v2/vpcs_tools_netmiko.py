@@ -451,7 +451,7 @@ class VPCSCommands(BaseTool):
                 continue
 
             # VPCS devices use gns3_vpcs_telnet device type
-            hosts_data[device_name] = {
+            host_entry = {
                 "port": port,
                 "platform": "vpcs",
                 "groups": ["vpcs_devices"],  # All VPCS devices share one group
@@ -465,6 +465,12 @@ class VPCSCommands(BaseTool):
                     }
                 },
             }
+            # Remote computes bind console ports on their own host; carry the
+            # per-node hostname from the topology so it overrides the group's
+            # controller-wide default.
+            if "hostname" in device_ports[device_name]:
+                host_entry["hostname"] = device_ports[device_name]["hostname"]
+            hosts_data[device_name] = host_entry
 
         return hosts_data
 
