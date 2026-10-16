@@ -15,17 +15,42 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import asyncio
 from typing import List, Union
 from uuid import UUID
 
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.controller import Controller
+from gns3server.controller.compute import Compute
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
+    ControllerError,
     ControllerNotFoundError,
 )
 from gns3server.db.repositories.computes import ComputesRepository
+
+
+async def _connect_in_background(compute: Compute) -> None:
+
+    try:
+        await compute.connect()
+    except ControllerError:
+        # the connection failure is reported via compute.updated and the
+        # retry backoff is already scheduled by the connect attempt itself
+        pass
+
+
+# fire-and-forget background connections: keep a reference so the task is not
+# garbage-collected mid-flight, drop it once it is done
+_background_connect_tasks: set[asyncio.Task] = set()
+
+
+def _schedule_background_connect(compute: Compute) -> None:
+
+    task = asyncio.ensure_future(_connect_in_background(compute))
+    _background_connect_tasks.add(task)
+    task.add_done_callback(_background_connect_tasks.discard)
 
 
 class ComputesService:
@@ -50,6 +75,13 @@ class ComputesService:
             **compute_create.model_dump(exclude_unset=True, exclude={"compute_id"}),
         )
         self._controller.notification.controller_emit("compute.created", compute.asdict())
+
+        # auto_connect connects in the background — including when the compute
+        # was already registered on the controller — so the create request
+        # never waits for, or fails on, the connection. An explicit
+        # ?connect=true keeps its synchronous behavior via add_compute.
+        if compute_create.auto_connect and not compute.connected:
+            _schedule_background_connect(compute)
         return db_compute
 
     async def get_compute(self, compute_id: Union[str, UUID]) -> Union[models.Compute, dict]:
@@ -68,11 +100,26 @@ class ComputesService:
     ) -> models.Compute:
 
         compute = self._controller.get_compute(str(compute_id))
+
+        # remember the previous value to detect the false -> true transition below
+        previous_auto_connect = False
+        if compute_update.auto_connect:
+            previous_db_compute = await self._computes_repo.get_compute(compute_id)
+            if previous_db_compute:
+                previous_auto_connect = bool(previous_db_compute.auto_connect)
+
         await compute.update(**compute_update.model_dump(exclude_unset=True))
         db_compute = await self._computes_repo.update_compute(compute_id, compute_update)
         if not db_compute:
             raise ControllerNotFoundError(f"Compute '{compute_id}' not found")
         self._controller.notification.controller_emit("compute.updated", compute.asdict())
+
+        # Enabling auto_connect (false -> true) connects in the background: the
+        # request returns immediately and the connection status flips via
+        # compute.updated. The true -> true case is skipped on purpose so that
+        # saving an edit does not reconnect a manually disconnected compute.
+        if compute_update.auto_connect and not previous_auto_connect and not compute.connected:
+            _schedule_background_connect(compute)
         return db_compute
 
     async def delete_compute(self, compute_id: Union[str, UUID]) -> None:

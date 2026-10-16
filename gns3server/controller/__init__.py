@@ -201,10 +201,12 @@ class Controller:
         if computes:
             for c in computes:
                 try:
-                    # FIXME: Task exception was never retrieved
                     await self.add_compute(
                         compute_id=str(c.compute_id),
-                        connect=False,
+                        # computes flagged auto_connect connect in the
+                        # background, one second after the controller started
+                        connect=c.auto_connect,
+                        wait_connection=False,
                         **c.dict(exclude_unset=True, exclude={"compute_id", "created_at", "updated_at"}),
                         ssl_context=self._ssl_context,
                     )
@@ -625,9 +627,12 @@ class Controller:
             if connect:
                 if wait_connection:
                     await compute.connect()
-                else:
-                    # call compute.connect() later to give time to the controller to be fully started
-                    asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
+                elif not hasattr(sys, "_called_from_test"):
+                    # connect in the background to give time to the controller to be fully
+                    # started; goes through _try_reconnect so connection errors don't die
+                    # as unretrieved task exceptions. Skipped during tests: the timer would
+                    # leak the connection attempt into another test's event loop.
+                    asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute._try_reconnect()))
             self.notification.controller_emit("compute.created", compute.asdict())
             return compute
         else:
@@ -645,6 +650,17 @@ class Controller:
             if compute in project.computes:
                 await project.close()
 
+    def get_compute_open_projects(self, compute):
+        """
+        Return the opened projects using a compute.
+
+        :returns: List of opened projects
+        """
+
+        return [
+            project for project in self._projects.values() if compute in project.computes and project.status == "opened"
+        ]
+
     def compute_has_open_project(self, compute):
         """
         Check is compute has a project opened.
@@ -652,10 +668,7 @@ class Controller:
         :returns: True if a project is open
         """
 
-        for project in self._projects.values():
-            if compute in project.computes and project.status == "opened":
-                return True
-        return False
+        return bool(self.get_compute_open_projects(compute))
 
     async def delete_compute(self, compute_id):
         """
