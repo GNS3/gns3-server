@@ -711,6 +711,9 @@ class Node:
         old_properties = copy.deepcopy(self._properties)
         old_custom_adapters = copy.deepcopy(self._custom_adapters)
         old_missing_images = copy.deepcopy(self._missing_images)
+        # Values applied locally below, kept to roll the node back if the
+        # compute refuses the update (see the ComputeConflictError handler).
+        old_prop_values = {prop: getattr(self, prop) for prop in kwargs if prop != "properties"}
 
         compute_properties = None
         # Update node properties with additional elements
@@ -766,9 +769,20 @@ class Node:
             try:
                 response = await self.put(None, data=data)
             except ComputeConflictError:
+                # The compute refused the update: roll back everything applied
+                # locally. Keeping the requested values would leave the
+                # controller describing a node the compute never accepted, and
+                # the next project dump persists them — a refused change would
+                # then silently land the next time the node is created.
+                for prop, old_value in old_prop_values.items():
+                    setattr(self, prop, old_value)
                 if old_name != self.name:
                     # special case when the new name is already updated on controller but refused by the compute
                     self.name = old_name
+                self._properties = old_properties
+                self._custom_adapters = old_custom_adapters
+                self._missing_images = old_missing_images
+                self._list_ports()
                 raise
             await self.parse_node_response(response.json)
         elif old_json != self.asdict():

@@ -812,6 +812,36 @@ async def test_update_properties(node, compute, controller):
 
 
 @pytest.mark.asyncio
+async def test_update_rolls_back_when_compute_refuses(node, compute, project, controller):
+    """
+    Values applied locally before the PUT must be rolled back when the compute
+    refuses the update: kept in memory they describe a node the compute never
+    accepted, and the next project dump persists them — the refused change
+    would then silently land the next time the node is created.
+    """
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            f"/projects/{project.id}/vpcs/nodes/{node.id}",
+            {"message": '"demo" must be stopped to change the console type to telnet'},
+        )
+
+    compute.put = AsyncioMagicMock(side_effect=resp)
+    controller._notification = AsyncioMagicMock()
+    project.dump = MagicMock()
+    old_json = node.asdict()
+
+    with pytest.raises(ComputeConflictError):
+        await node.update(x=42, console_type="telnet", name="renamed", properties={"startup_script": "changed"})
+
+    assert node.name == "demo"
+    assert node.console_type == "vnc"
+    assert node.properties == {"startup_script": "echo test"}
+    assert node.asdict() == old_json
+    assert not project.dump.called
+
+
+@pytest.mark.asyncio
 async def test_update_only_controller(node, compute):
     """
     When updating property used only on controller we don't need to
