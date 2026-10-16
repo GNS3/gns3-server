@@ -1395,6 +1395,21 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             await self.stop()
         return False
 
+    async def is_up(self):
+        """
+        Checks if the container exists in a running or paused state.
+
+        Both mean the container holds live state that recreating it would
+        discard. is_running() is not usable for that question: it reports a
+        paused container as not running, and it stops a crashed container as
+        a side effect.
+
+        :returns: True or False
+        :rtype: bool
+        """
+
+        return await self._get_container_state() in ("running", "paused")
+
     async def restart(self):
         """
         Restart this Docker container.
