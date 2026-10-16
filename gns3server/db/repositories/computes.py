@@ -61,6 +61,7 @@ class ComputesRepository(BaseRepository):
             port=compute_create.port,
             user=compute_create.user,
             password=compute_create.password.get_secret_value() if compute_create.password else None,
+            auto_connect=bool(compute_create.auto_connect),
         )
         self._db_session.add(db_compute)
         await self._db_session.commit()
@@ -74,6 +75,9 @@ class ComputesRepository(BaseRepository):
         update_values = compute_update.model_dump(exclude_unset=True)
         if compute_update.password is not None:
             update_values["password"] = compute_update.password.get_secret_value()
+        if update_values.get("auto_connect") is None:
+            # the column is NOT NULL: treat an explicit null as "leave unchanged"
+            update_values.pop("auto_connect", None)
 
         query = update(models.Compute).where(models.Compute.compute_id == compute_id).values(update_values)
 
