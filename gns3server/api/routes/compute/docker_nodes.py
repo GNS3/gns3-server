@@ -28,6 +28,7 @@ from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.docker.docker_vm import DockerVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
@@ -154,15 +155,28 @@ async def update_docker_node(node_update: schemas.DockerUpdate, node: DockerVM =
         "cpus",
     ]
 
-    changed = False
     node_data = jsonable_encoder(node_update, exclude_unset=True)
-    for prop in props:
-        # hasattr: startup_config_content only exists on IOLDockerVM
-        if prop in node_data and hasattr(node, prop) and node_data[prop] != getattr(node, prop):
-            setattr(node, prop, node_data[prop])
-            changed = True
+    # hasattr: startup_config_content only exists on IOLDockerVM
+    changed_props = [
+        prop for prop in props if prop in node_data and hasattr(node, prop) and node_data[prop] != getattr(node, prop)
+    ]
+
+    # A property change is applied by destroying and recreating the container,
+    # so it discards whatever was written inside it. Refuse that while the
+    # container is up (like QEMU, IOU, Dynamips, VPCS, VirtualBox and VMware do
+    # for their own restart-requiring settings) instead of resetting a running
+    # node behind the user's back. Nothing is applied before this check: a
+    # refused update must leave the node exactly as it was.
+    if changed_props and await node.is_up():
+        raise DockerError(
+            f'"{node.name}" must be stopped to change {", ".join(sorted(changed_props))}: '
+            "the container is recreated and changes made inside it are lost"
+        )
+
+    for prop in changed_props:
+        setattr(node, prop, node_data[prop])
     # We don't call container.update for nothing because it will restart the container
-    if changed:
+    if changed_props:
         await node.update()
     node.updated()
     return node.asdict()

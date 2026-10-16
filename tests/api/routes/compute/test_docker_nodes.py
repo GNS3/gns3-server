@@ -392,6 +392,71 @@ class TestDockerNodesRoutes:
         assert response.json()["start_command"] is None
         assert response.json()["console_http_path"] == "/"
 
+    async def test_docker_update_refused_while_container_is_up(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        A property change is applied by recreating the container, which throws
+        away what was written inside it. While the container is up (running or
+        paused) the update is refused instead of resetting the node behind the
+        user's back, and the error says what stopping it would cost.
+        """
+
+        for state in ("running", "paused"):
+            with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
+                with asyncio_patch(
+                    "gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value=state
+                ):
+                    response = await compute_client.put(
+                        app.url_path_for(
+                            "compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]
+                        ),
+                        json={"console_type": "vnc"},
+                    )
+
+            assert response.status_code == 409
+            assert "must be stopped" in response.json()["message"]
+            assert "console_type" in response.json()["message"]
+            assert not mock.called
+
+        # the refused update left the node exactly as it was
+        response = await compute_client.get(
+            app.url_path_for("compute:get_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+        )
+        assert response.json()["console_type"] == "telnet"
+
+    async def test_docker_update_without_change_is_allowed_while_container_is_up(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        Clients send the whole node back on every edit: a PUT that changes
+        nothing must not be refused just because the container is running.
+        """
+
+        with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value="running"):
+            response = await compute_client.put(
+                app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+                json={"name": "DOCKER-TEST-1", "console_type": "telnet"},
+            )
+        assert response.status_code == 200
+
+    async def test_docker_update_stopped_container_is_recreated(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """A stopped container has no live state to lose: the change applies."""
+
+        with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
+            with asyncio_patch(
+                "gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value="exited"
+            ):
+                response = await compute_client.put(
+                    app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+                    json={"console_type": "vnc"},
+                )
+        assert response.status_code == 200
+        assert mock.called
+        assert response.json()["console_type"] == "vnc"
+
     async def test_docker_start_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 
         url = app.url_path_for(
