@@ -72,6 +72,11 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
     :param extra_volumes: Additional directories to make persistent
     """
 
+    # Displays already given to a node of this server: nodes are created in
+    # parallel when a project is opened, and the X socket only appears once
+    # Xvnc has started, so the filesystem alone cannot tell they are taken.
+    _reserved_displays: set[int] = set()
+
     # systemd units masked by GNS3_MASK_UDEV=1: the udev daemon, its activation
     # sockets and the coldplug/settle triggers. Masking them stops a privileged
     # systemd container from replaying device events on the host.
@@ -220,17 +225,32 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             "cpus": self.cpus,
         }
 
+    @staticmethod
+    def _display_in_use(display):
+        """
+        True if an X server owns this display (socket, or lock of a live process)
+        """
+        if os.path.exists(f"/tmp/.X11-unix/X{display}"):
+            return True
+        try:
+            with open(f"/tmp/.X{display}-lock") as f:
+                return psutil.pid_exists(int(f.read().strip()))
+        except (OSError, ValueError):
+            return False
+
     def _get_free_display_port(self):
         """
-        Search a free display port
+        Search a free display port and reserve it for this node
         """
         display = 100
-        if not os.path.exists("/tmp/.X11-unix/"):
-            return display
-        while True:
-            if not os.path.exists(f"/tmp/.X11-unix/X{display}"):
-                return display
+        while display in DockerVM._reserved_displays or self._display_in_use(display):
             display += 1
+        DockerVM._reserved_displays.add(display)
+        return display
+
+    def _release_display(self):
+        if self._display is not None:
+            DockerVM._reserved_displays.discard(self._display)
 
     @property
     def name(self):
@@ -918,8 +938,18 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             return
         else:
             if self._console_type == "vnc" and not self._vnc_process:
-                # restart the vnc process in case it had previously crashed
+                # restart the vnc process in case it had previously crashed, on
+                # the display the container was created with; the socket left by
+                # the crashed process must go, the container bind-mounts the new
+                # one when it starts
+                x11_socket = f"/tmp/.X11-unix/X{self._display}"
+                with contextlib.suppress(FileNotFoundError):
+                    os.remove(x11_socket)
                 await self._start_vnc_process(restart=True)
+                try:
+                    await wait_for_file_creation(x11_socket)
+                except asyncio.TimeoutError:
+                    raise DockerError(f'x11 socket file "{x11_socket}" does not exist')
                 monitor_process(self._vnc_process, self._vnc_callback)
 
             if self._console_websocket:
@@ -1178,7 +1208,9 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         Starts the VNC process.
         """
 
-        self._display = self._get_free_display_port()
+        # on restart, keep the display the container was created with
+        if self._display is None:
+            self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
 
         if not tigervnc_path:
@@ -1213,10 +1245,11 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         Starts a VNC server for this container
         """
 
-        self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
         if not tigervnc_path:
             raise DockerError("Please install TigerVNC server before using VNC support")
+        self._release_display()
+        self._display = self._get_free_display_port()
         await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", f"X{self._display}")
         try:
@@ -1549,13 +1582,16 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                     except ProcessLookupError:
                         pass
 
-                if self._display:
-                    display = f"/tmp/.X11-unix/X{self._display}"
-                    try:
-                        if os.path.exists(display):
-                            os.remove(display)
-                    except OSError as e:
-                        log.warning(f"Could not remove display {display}: {e}")
+                    # only remove the socket of our own Xvnc, never another node's
+                    if self._display:
+                        display = f"/tmp/.X11-unix/X{self._display}"
+                        try:
+                            if os.path.exists(display):
+                                os.remove(display)
+                        except OSError as e:
+                            log.warning(f"Could not remove display {display}: {e}")
+                self._release_display()
+                self._display = None
 
             # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
