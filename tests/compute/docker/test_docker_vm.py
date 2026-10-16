@@ -19,7 +19,7 @@ import os
 import shutil
 import uuid
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, mock_open, patch
 
 import aiohttp
 import pytest
@@ -1887,6 +1887,103 @@ async def test_start_vnc_missing(vm):
     with patch("shutil.which", return_value=None):
         with pytest.raises(DockerError):
             await vm._start_vnc()
+
+
+@pytest.mark.asyncio
+async def test_start_vnc_concurrent_nodes_get_distinct_displays(compute_project, manager, monkeypatch):
+    """
+    Nodes are created in parallel when a project is opened: the X socket of the
+    first node does not exist yet when the second node picks its display.
+    """
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+    vms = [DockerVM(f"PC{i}", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest") for i in range(3)]
+
+    async def wait_for_socket(path):
+        await asyncio.sleep(0)  # let the other nodes run, like Xvnc starting
+
+    with patch("shutil.which", return_value="/bin/Xtigervnc"), patch("os.path.exists", return_value=False):
+        with (
+            asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation", side_effect=wait_for_socket),
+            patch("psutil.pid_exists", return_value=False),
+        ):
+            with asyncio_patch("asyncio.create_subprocess_exec"):
+                with patch("gns3server.compute.docker.docker_vm.monitor_process"):
+                    await asyncio.gather(*(vm._start_vnc() for vm in vms))
+
+    assert sorted(vm._display for vm in vms) == [100, 101, 102]
+
+
+def test_get_free_display_port_skips_live_lock(vm, monkeypatch):
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+
+    def fake_open(path, *args, **kwargs):
+        if path == "/tmp/.X100-lock":
+            return mock_open(read_data=f"{os.getpid():>10}\n")()
+        raise FileNotFoundError(path)
+
+    with patch("os.path.exists", return_value=False), patch("builtins.open", side_effect=fake_open):
+        assert vm._get_free_display_port() == 101
+
+
+def test_get_free_display_port_ignores_stale_lock(vm, monkeypatch):
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+    with patch("os.path.exists", return_value=False):
+        with patch("builtins.open", mock_open(read_data="     99999\n")):
+            with patch("psutil.pid_exists", return_value=False):
+                assert vm._get_free_display_port() == 100
+
+
+@pytest.mark.asyncio
+async def test_close_vnc_crashed_keeps_other_node_socket(vm, monkeypatch):
+    """
+    When Xvnc failed, the display may belong to another node: its socket must stay.
+    """
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", {100})
+    vm._console_type = "vnc"
+    vm._display = 100
+    vm._vnc_process = None
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+            with patch("os.remove") as mock_remove:
+                await vm.close()
+
+    assert not mock_remove.called
+    assert vm._display is None
+    assert DockerVM._reserved_displays == set()
+
+
+@pytest.mark.asyncio
+async def test_start_restarts_crashed_vnc_on_same_display(vm):
+    """
+    The container is bound to the X socket of the display it was created with.
+    """
+
+    vm._console_type = "vnc"
+    vm._display = 105
+    vm._vnc_process = None
+    vm._get_container_state = AsyncioMagicMock(return_value="stopped")
+    vm._start_ubridge = AsyncioMagicMock()
+    vm._get_namespace = AsyncioMagicMock(return_value=42)
+    vm._start_console = AsyncioMagicMock()
+    vm._add_ubridge_connection = AsyncioMagicMock()
+
+    with patch("shutil.which", return_value="/bin/Xtigervnc"), patch("os.remove") as mock_remove:
+        with asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation") as mock_wait:
+            with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
+                with patch("gns3server.compute.docker.docker_vm.monitor_process"):
+                    with patch("gns3server.compute.docker.Docker.install_busybox"):
+                        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+                            await vm.start()
+
+    assert vm._display == 105
+    assert mock_exec.call_args[0][-1] == ":105"
+    mock_remove.assert_any_call("/tmp/.X11-unix/X105")
+    mock_wait.assert_called_with("/tmp/.X11-unix/X105")
 
 
 @pytest.mark.asyncio
