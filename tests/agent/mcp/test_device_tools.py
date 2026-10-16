@@ -130,6 +130,36 @@ class TestVPCSNodeTypeGuard:
         assert "output" not in result[0]
 
 
+class TestVPCSConsoleHostPropagation:
+    """
+    VPCS builds its own nornir host entries, so the per-node console
+    hostname resolved by get_device_ports_from_topology must be carried
+    over instead of silently falling back to the controller host.
+    """
+
+    def test_remote_compute_hostname_reaches_nornir_inventory(self):
+        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+
+        with patch(
+            f"{VPCS_MOD}.get_device_ports_from_topology",
+            return_value={
+                "PC1": {"port": 5000, "node_type": "vpcs", "hostname": "192.168.122.10"},
+                "PC2": {"port": 5001, "node_type": "vpcs"},
+            },
+        ):
+            hosts_data = VPCSCommands()._prepare_device_hosts_data(
+                [
+                    {"device_name": "PC1", "commands": ["ip 10.0.0.1/24"]},
+                    {"device_name": "PC2", "commands": ["ip 10.0.0.2/24"]},
+                ],
+                PROJECT_ID,
+            )
+        # remote-compute console hostname lands at host level
+        assert hosts_data["PC1"]["hostname"] == "192.168.122.10"
+        # local-compute entries keep inheriting the group hostname
+        assert "hostname" not in hosts_data["PC2"]
+
+
 class TestDeviceToolErrorContract:
     """
     Every in-band error entry carries status "failed" plus an "error"
