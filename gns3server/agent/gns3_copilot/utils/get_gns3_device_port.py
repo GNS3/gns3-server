@@ -68,7 +68,12 @@ def get_device_ports_from_topology(
                 }
             }
         }
-        Devices that don't exist or missing console_port will not be included
+        Devices that don't exist or missing console_port will not be included.
+        Nodes whose console is bound on a remote compute also carry a
+        host-level "hostname" (copied from the topology's console_host) so
+        netmiko dials the compute hosting the console port instead of the
+        controller; for everything else the field is omitted and the shared
+        group hostname (the controller host) applies.
     """
     # Log received parameters
     logger.info("Called with device_names=%s, project_id=%s", device_names, project_id)
@@ -166,6 +171,15 @@ def get_device_ports_from_topology(
                 "groups": ["network_devices"],  # For inheriting hostname, timeout, etc.
                 "connection_options": {"netmiko": {"extras": {"device_type": device_type}}},
             }
+
+            # Per-node console hostname. Remote computes bind console ports
+            # on their own host, not on the controller running this code, so
+            # the group's controller-wide hostname cannot reach them. A
+            # host-level hostname (which wins over the group in nornir) fixes
+            # that; unset or wildcard values keep the group inheritance.
+            console_host = node_info.get("console_host")
+            if console_host and console_host not in ("0.0.0.0", "::"):
+                host_entry["hostname"] = console_host
 
             # Per-node default credentials (seeded from the template appliance
             # metadata) override the group's empty fallback. Only inject when
