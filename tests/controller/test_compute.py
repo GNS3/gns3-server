@@ -29,11 +29,13 @@ from gns3server.api.server import app as gns3_app
 from gns3server.controller.compute import Compute
 from gns3server.controller.controller_error import (
     ComputeConflictError,
+    ComputeError,
     ControllerError,
     ControllerNotFoundError,
     ControllerUnauthorizedError,
 )
 from gns3server.controller.project import Project
+from gns3server.version import __version__
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
@@ -376,6 +378,7 @@ async def test_json(compute):
         "host": "example.com",
         "port": 84,
         "user": "test",
+        "auto_connect": False,
         "cpu_usage_percent": 0,
         "memory_usage_percent": 0,
         "disk_usage_percent": 0,
@@ -696,3 +699,87 @@ async def test_connect_http_error_notifies_schedules_retry_and_raises(compute, m
     actions = [c.args[0] for c in emit_mock.call_args_list]
     assert "compute.updated" in actions
     assert scheduled_delays == [5]  # first exponential backoff delay
+
+
+def test_auto_connect_constructor_default(controller):
+
+    assert Compute("default_auto_connect", controller=controller).asdict()["auto_connect"] is False
+    assert Compute("enabled_auto_connect", controller=controller, auto_connect=True).asdict()["auto_connect"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_auto_connect(compute, controller):
+
+    compute._controller._notification = MagicMock()
+    compute._controller.save = MagicMock()
+
+    assert compute.asdict()["auto_connect"] is False
+    await compute.update(auto_connect=True)
+    assert compute.asdict()["auto_connect"] is True
+    controller.notification.controller_emit.assert_called_with("compute.updated", compute.asdict())
+
+
+@pytest.mark.asyncio
+async def test_disconnect_stops_the_notification_stream(compute, controller):
+    """
+    disconnect() tears down the notification stream, marks the compute
+    disconnected and notifies clients — without scheduling any reconnection.
+    """
+
+    assert compute.connected is True
+
+    compute._controller._notification = MagicMock()
+    started = asyncio.Event()
+
+    async def fake_notification_stream():
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise
+
+    compute._notifications = asyncio.gather(asyncio.create_task(fake_notification_stream()))
+    await started.wait()
+
+    await compute.disconnect()
+    assert compute._manual_disconnect is True
+    assert compute.connected is False
+    assert compute._notifications is None
+    compute._controller._notification.controller_emit.assert_called_with("compute.updated", compute.asdict())
+
+
+@pytest.mark.asyncio
+async def test_manual_disconnect_blocks_reconnect_and_lazy_connect(compute):
+    """
+    After a manual disconnect no reconnection path may bring the compute back:
+    not the retry backoff, not the lazy connection of http_query.
+    """
+
+    await compute.disconnect()
+
+    with patch("gns3server.controller.compute.Compute.connect", new_callable=AsyncioMagicMock) as connect_mock:
+        await compute._try_reconnect()
+        connect_mock.assert_not_called()
+
+        with pytest.raises(ComputeError):
+            await compute.http_query("GET", "/capabilities")
+        connect_mock.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_connect_cancels_manual_disconnect(compute, monkeypatch):
+
+    compute._manual_disconnect = True
+
+    async def fake_capabilities(method, path, **kwargs):
+        return SimpleNamespace(json={"version": __version__})
+
+    async def fake_notification_stream():
+        return None
+
+    monkeypatch.setattr(compute, "_run_http_query", fake_capabilities)
+    monkeypatch.setattr(compute, "_connect_notification", fake_notification_stream)
+
+    await compute.connect()
+    assert compute._manual_disconnect is False
+    assert compute.connected is True

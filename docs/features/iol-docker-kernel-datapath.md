@@ -274,4 +274,4 @@ The anchor lifecycle needs no configuration of its own — the capability probes
 
 ## Roadmap
 
-Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred until every node type is kernelized; with the IOL runner container anchored, every node type in scope can now anchor (hub, cloud, NAT and VPCS stay on the relay by decision), so the encapsulation work is all that remains.
+Cross-compute kernel links need VXLAN/GENEVE encapsulation — deferred until every node type is kernelized; with the IOL runner container anchored, every node type in scope can now anchor (hub, cloud and NAT stay on the relay by decision; VPCS anchors since `vpcs-kernel-datapath.md`), so the encapsulation work is all that remains.

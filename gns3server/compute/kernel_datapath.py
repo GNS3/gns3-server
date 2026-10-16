@@ -44,6 +44,7 @@ A node type using this mixin provides:
   failures surface as ``DockerError`` / ``QemuError`` rather than ``NodeError``.
 """
 
+import asyncio
 import contextlib
 import logging
 import os
@@ -213,12 +214,34 @@ class KernelDatapathMixin:
         a held device answers EBADFD and the best-effort delete below would
         leak it. The sweep is suppressed per TAP — an anchor already gone
         is not an error — and the registry is cleared either way.
+
+        A holder's fd can be released a moment after its process was
+        reaped (VPCS's daemon parent kills its child then exits — the
+        server reaps the parent before the child's fds are actually gone),
+        so the first delete races EBUSY. Every tap that is still on the
+        host afterwards (same-host sysfs check, zero cost on the happy
+        path) gets a small grace and up to three retries; a survivor is
+        warned about, not fatal.
         """
 
         if self.ubridge:
             for tap in self._kernel_taps.values():
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'tap delete "{tap}"')
+                for attempt in range(3):
+                    if not os.path.exists(f"/sys/class/net/{tap}"):
+                        break
+                    await asyncio.sleep(0.3)
+                    with contextlib.suppress(UbridgeError):
+                        await self._ubridge_send(f'tap delete "{tap}"')
+                else:
+                    if os.path.exists(f"/sys/class/net/{tap}"):
+                        log.warning(
+                            "Node '%s' [%s]: anchor TAP %s survived its delete — a holder still has it open",
+                            self._name,
+                            self._id,
+                            tap,
+                        )
             await self._remove_kernel_bridges()
         self._kernel_taps.clear()
 
@@ -240,52 +263,6 @@ class KernelDatapathMixin:
         """
 
         return not (isinstance(nio, NIOBridge) and nio.bridge is None)
-
-    # The anchor whose kernel capture currently holds the uBridge process's
-    # single AF_PACKET capture slot (None = free; see _reserve_kernel_capture).
-    # Class-level default so every node type gets it without touching its
-    # __init__; BaseNode._stop_ubridge resets it when uBridge goes away.
-    _kernel_capture_ifc = None
-
-    def _reserve_kernel_capture(self, anchor):
-        """
-        Claim uBridge's single kernel-capture slot for *anchor*.
-
-        uBridge serves one AF_PACKET capture per process (a static slot: a
-        second ``capture start_kernel`` answers EALREADY) while the server
-        models captures per port — a second kernel port of the same node is
-        refused here with a clear error. Without the claim the loser's port
-        would stay marked as capturing, and its stop would issue the
-        process-wide, argument-less ``capture stop_kernel``, killing the
-        winner's capture while its own flag still says capturing.
-        """
-
-        if self._kernel_capture_ifc is not None and self._kernel_capture_ifc != anchor:
-            raise self._kernel_error(
-                f"Cannot start the packet capture: this node's uBridge already captures "
-                f"{self._kernel_capture_ifc} (one kernel capture per node); stop that capture first"
-            )
-        self._kernel_capture_ifc = anchor
-
-    def _release_kernel_capture(self, anchor):
-        """
-        Release the slot if *anchor* holds it: after a stop, or after a
-        failed start whose port must not stay marked as capturing.
-        """
-
-        if self._kernel_capture_ifc == anchor:
-            self._kernel_capture_ifc = None
-
-    def _kernel_capture_owned_by(self, anchor):
-        """
-        Whether *anchor* may issue the process-wide ``capture stop_kernel``:
-        only the port holding the slot — or a node whose slot is empty (a
-        capture predating the tracker), where stopping is the historical
-        best-effort behaviour. A second port must never reach it: the
-        command takes no interface and would stop the owner's capture.
-        """
-
-        return self._kernel_capture_ifc is None or self._kernel_capture_ifc == anchor
 
     async def _kernel_attach(self, anchor, nio):
         """
@@ -319,10 +296,7 @@ class KernelDatapathMixin:
             await self._ubridge_send(f'brctl addif "{nio.bridge}" "{anchor}"')
         if nio.capturing:
             # Restore a capture that was active before a node restart
-            # (mirrors the relay path's start_capture). The slot is claimed
-            # like a fresh start: a second kernel port's replay is refused
-            # with a clear error instead of an EALREADY deep in the wiring.
-            self._reserve_kernel_capture(anchor)
+            # (mirrors the relay path's start_capture).
             await self._ubridge_send(f'capture start_kernel {anchor} "{nio.pcap_output_file}"')
         # Markers carried by the NIO attach to the anchor (AF_PACKET taps) —
         # the anchor is the interface, not a relay bridge.

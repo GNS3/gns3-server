@@ -235,6 +235,21 @@ class Compute:
             },
         )
 
+    def create_vpcs_node(self, project_id, name, startup_script=None):
+        """A VPCS node: the real vpcs binary on this host behind the server's
+        TCP console (the driver sends ``ip``/``ping`` like a user would). A
+        kernel-datapath scenario additionally needs a build with ``-n``
+        (no host auto-configuration) — see GNS3_E2E_VPCS and the ``vpcs_tap``
+        capability."""
+        properties = {"console_type": "telnet"}
+        if startup_script is not None:
+            properties["startup_script"] = startup_script
+        return self.call(
+            "POST",
+            f"/projects/{project_id}/nodes",
+            {"compute_id": "local", "name": name, "node_type": "vpcs", "properties": properties},
+        )
+
     def create_link(self, project_id, a, b):
         return self.call(
             "POST",
@@ -298,6 +313,9 @@ allocate_aux_console_ports = False
 mmap_support = False
 sparse_memory_support = False
 ghost_ios_support = False
+
+[VPCS]
+vpcs_path = {vpcs}
 """
 
 
@@ -374,8 +392,17 @@ def _spawn_isolated(tmpdir, kernel):
 
     os.makedirs(os.path.join(tmpdir, "projects"), exist_ok=True)
     port = _free_port()
+    # GNS3_E2E_VPCS points at a vpcs build with -n (tap mode without host
+    # auto-configuration) — what the kernel-datapath scenario needs. The
+    # local fork build (where this feature is developed) is the default when
+    # present; otherwise the stock binary in PATH keeps the relay scenarios
+    # running (the kernel scenario skips itself on the vpcs_tap capability).
+    vpcs = os.environ.get("GNS3_E2E_VPCS")
+    if not vpcs:
+        fork_build = os.path.expanduser("~/myCode/GNS3/vpcs/src/vpcs")
+        vpcs = fork_build if os.path.isfile(fork_build) else (shutil.which("vpcs") or "vpcs")
     config = ISOLATED_CONFIG.format(
-        port=port, ubridge=ubridge, dynamips=dynamips, images=images, tmp=tmpdir, kernel=kernel
+        port=port, ubridge=ubridge, dynamips=dynamips, images=images, tmp=tmpdir, kernel=kernel, vpcs=vpcs
     )
     config_path = os.path.join(tmpdir, "gns3_server.conf")
     with open(config_path, "w") as f:
@@ -702,6 +729,13 @@ def ios_console(server, project_id, node_id):
     return IOSConsole(host, node["console"])
 
 
+def vpcs_console(server, project_id, node_id):
+    """The console of a VPCS node: the vpcs binary's own TCP daemon behind
+    the server-side console — same dumb driver (its prompt ``PC1>`` matches
+    the shared prompt regex)."""
+    return ios_console(server, project_id, node_id)
+
+
 def configure_ios(
     console, hostname, eth_ip=None, eth_ipv6=None, serial_ip=None, clock=False, eth_if="f1/0", serial_if="s2/0"
 ):
@@ -763,6 +797,34 @@ def wait_ping(console, target, attempts=4, repeat=3, timeout=1):
     result = None
     for _ in range(attempts):
         result = ping(console, target, repeat=repeat, timeout=timeout)
+        if result["success"] == 100:
+            return result
+        time.sleep(1.5)
+    return result
+
+
+def vpcs_ping(console, target, count=5, timeout=1):
+    """Run a VPCS ping; returns {success, avg, raw} (success in percent).
+    The reply lines are ``<host> icmp_seq=<n> ttl=<t> time=<ms> ms`` in both
+    families (VPCS prints the same shape for v4 and v6 targets)."""
+
+    out = console.run(f"ping {target} -c {count} -w {int(timeout * 1000)}", timeout=count * timeout + 25)
+    replies = re.findall(r"icmp_seq=\d+ ttl=\d+ time=([\d.]+) ms", out)
+    return {
+        "success": int(100 * len(replies) / count),
+        "avg": round(sum(float(rtt) for rtt in replies) / len(replies), 1) if replies else None,
+        "raw": out,
+    }
+
+
+def wait_vpcs_ping(console, target, attempts=4, count=5, timeout=1):
+    """The VPCS twin of wait_ping: the first exchange of a fresh adjacency
+    is ARP (a lost first ping is legitimate), so retry until it fully
+    succeeds; returns the last result either way."""
+
+    result = None
+    for _ in range(attempts):
+        result = vpcs_ping(console, target, count=count, timeout=timeout)
         if result["success"] == 100:
             return result
         time.sleep(1.5)
@@ -1328,6 +1390,13 @@ def qemu_anchor_name(node_id, adapter, port=0):
     the netdev QEMU itself opens by ifname (see QemuVM._tap_name and
     utils.kernel_anchor)."""
     return "gq" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
+
+
+def vpcs_anchor_name(node_id, adapter=0, port=0):
+    """The VPCS node's anchor TAP name: one persistent TAP for the single
+    adapter, attached to by name through -e -d (see VPCSVM._tap_name and
+    utils.kernel_anchor)."""
+    return "gp" + node_id.replace("-", "")[:8] + f"e{adapter}p{port}"
 
 
 def stage_iol_base_config(server):

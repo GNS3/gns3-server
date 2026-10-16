@@ -221,7 +221,11 @@ class UDPLink(Link):
         be present or absent independently of the tap module. Dynamips
         Ethernet slot ports anchor on persistent TAPs the hypervisor opens
         (the tap module again — the Dynamips binary itself creates nothing),
-        so it gates like QEMU. A kernel link is an Ethernet segment, so
+        so it gates like QEMU. A VPCS node's single adapter anchors on a
+        persistent TAP the vpcs process attaches to by name (``-e -d``),
+        which needs the tap module plus a vpcs build that keeps its hands
+        off the host side of the TAP (``-n``) — its own capability on top
+        of the tap one. A kernel link is an Ethernet segment, so
         non-Ethernet ports (IOU serial, Dynamips serial/ATM/POS adapters)
         stay on the relay whatever the node's capabilities.
         """
@@ -291,6 +295,14 @@ class UDPLink(Link):
             # merely opens (nio create_tap) — the same tap-module capability
             # QEMU needs, not a Dynamips-specific one.
             return capabilities.get("ubridge_tap") is True
+        if node.node_type == "vpcs":
+            # The anchor is a uBridge-created TAP the vpcs process attaches
+            # to (-e -d): the tap module must exist, and the binary must
+            # support -n — without it every guest `ip` command would
+            # ifconfig the anchor on the host. Both strict True: an
+            # unreported one keeps the link on the relay, where it always
+            # works.
+            return capabilities.get("ubridge_tap") is True and capabilities.get("vpcs_tap") is True
         return False
 
     async def _prepare(self):

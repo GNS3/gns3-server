@@ -1057,10 +1057,6 @@ class BaseNode:
         # than skipping them as "already installed".
         self._marker_filter_bridges.clear()
         self._marker_specs.clear()
-        # ...and so is the kernel capture, uBridge's single AF_PACKET slot
-        # (meaningful for the kernel-datapath node types; see
-        # KernelDatapathMixin._reserve_kernel_capture).
-        self._kernel_capture_ifc = None
 
     async def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """

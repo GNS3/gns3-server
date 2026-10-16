@@ -22,10 +22,11 @@ deterministically: ``g<type>{node_id[:8]}e{adapter}p{port}`` — ``gv`` for a
 Docker veth host end, ``gq`` for a QEMU TAP, ``gi`` for an IOU port TAP,
 ``gd`` for a Dynamips port TAP, ``gx`` for an IOL runner container's port
 TAP (a Docker node whose guest leg is unix sockets, so its anchor is a TAP
-like IOU's, not a veth). The prefixes keep anchors out of the ``gns3``
-bridge/TAP name space and name-collision-free on a host; the 8 hex chars of
-the node id plus adapter/port keep every name unique and within IFNAMSIZ
-(15).
+like IOU's, not a veth), ``gp`` for a VPCS TAP (the vpcs process attaches to
+the pre-created anchor with ``-e -d`` instead of speaking UDP). The
+prefixes keep anchors out of the ``gns3`` bridge/TAP name space and
+name-collision-free on a host; the 8 hex chars of the node id plus
+adapter/port keep every name unique and within IFNAMSIZ (15).
 
 The compute classes create their anchors with these helpers (single source
 of truth), and so does the controller when a switch link has to name the
@@ -35,6 +36,7 @@ is what makes links to stopped nodes wireable.
 """
 
 import logging
+import re
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +48,7 @@ ANCHOR_PREFIX = {
     "qemu": "gq",
     "iou": "gi",
     "dynamips": "gd",
+    "vpcs": "gp",
 }
 
 
@@ -111,3 +114,36 @@ def kernel_cascade_names(link_id):
 
     stem = str(link_id).replace("-", "")[:10]
     return f"gs{stem}0", f"gs{stem}1"
+
+
+# Host-side interfaces the kernel datapath owns outright, recognised by
+# exact shape — the prefix plus its fixed-length id-derived tail — never by
+# bare prefix, so a user interface that merely starts with "gv" or "gs" is
+# not swallowed. Consumers keep these out of human-facing interface lists:
+# each belongs to the link or node that created it for as long as the
+# project exists (the names are deterministic, valid whether it runs or
+# not), so nothing else may bridge to it.
+_MANAGED_ANCHOR_PREFIXES = frozenset(ANCHOR_PREFIX.values())
+_MANAGED_ANCHOR_SUFFIX_SHAPE = re.compile(r"[0-9a-f]{8}e\d{1,2}p\d{1,2}")
+_MANAGED_CASCADE_SHAPE = re.compile(r"gs[0-9a-f]{10}[01]")
+# a cross-compute VXLAN device: "gvl" + 8 hex of the link id + 4 hex of the
+# endpoint node id (the cross-compute VXLAN naming keeps its devices out of
+# the anchor and "gns3" namespaces the same deterministic way)
+_MANAGED_VXLAN_SHAPE = re.compile(r"gvl[0-9a-f]{12}")
+
+
+def is_kernel_datapath_interface(name):
+    """
+    Whether *name* is a host interface the kernel datapath manages by name —
+    a node anchor, a switch cascade veth end, or a cross-compute VXLAN
+    device. True for exactly the names the naming contract above can
+    produce: the cloud node (and any other interface picker) uses this to
+    refuse offering them, since bridging to one would race whatever link or
+    node already owns it.
+    """
+
+    # "gvl" begins with the docker anchor prefix "gv", so an anchor miss must
+    # still fall through to the VXLAN shape
+    if name[:2] in _MANAGED_ANCHOR_PREFIXES and _MANAGED_ANCHOR_SUFFIX_SHAPE.fullmatch(name[2:]):
+        return True
+    return _MANAGED_CASCADE_SHAPE.fullmatch(name) is not None or _MANAGED_VXLAN_SHAPE.fullmatch(name) is not None

@@ -97,7 +97,7 @@ Everything in the root namespace is built the same way: gns3-server creates the 
 
 uBridge sits off the forwarding path — the dashed edges are control and observation, never data flow. The `qdisc install` edge is uBridge configuring the kernel over netlink; the kernel then runs those qdiscs in-flight on the host end's egress (they are stages of the transmit path, not packet consumers). The `frame copies` edge is the AF_PACKET tap: bound to the host end, the kernel clones every frame the interface sends or receives to uBridge's packet socket (the tcpdump mechanism) — read-only copies; the originals never leave the kernel.
 
-Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (cross-compute wiring and an endpoint that cannot anchor — VPCS, a cloud node, … — fall back too; across computes the UDP hop rides the real network instead of loopback, the copy count unchanged):
+Relay link on the same unified veth and the same single compute as above — what the link becomes when `enable_kernel_datapath` is off (cross-compute wiring and an endpoint that cannot anchor — a cloud node, … — fall back too; across computes the UDP hop rides the real network instead of loopback, the copy count unchanged):
 
 ```mermaid
 flowchart LR
@@ -243,7 +243,7 @@ The veth pairs already exist at attach time — every adapter is born as a veth 
 
 ## Capture
 
-Kernel links capture via uBridge's AF_PACKET module bound to the veth host end: `capture start_kernel <if> "<pcap>" [dlt]` / `capture stop_kernel`. Single capture per uBridge process (second concurrent → EALREADY): the server tracks which anchor owns the slot, refuses a second port's capture with a clear error instead of leaving it wedged, and only the owning port's stop issues the process-wide `capture stop_kernel`. Start/stop key on the **NIO type**, not on veth presence — a relay NIO riding a veth captures at its relay bridge.
+Kernel links capture via uBridge's AF_PACKET module bound to the veth host end: `capture start_kernel <if> "<pcap>" [dlt]` / `capture stop_kernel <if>`. One capture per interface, any number of interfaces concurrently — a node can capture several ports at once; a same-interface duplicate answers EALREADY, which the server's per-port `capturing` flag already refuses before uBridge sees it. Stops are per interface too: each port's stop names its own anchor, never touching a sibling port's capture. Start/stop key on the **NIO type**, not on veth presence — a relay NIO riding a veth captures at its relay bridge.
 
 ## Markers
 

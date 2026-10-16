@@ -1110,8 +1110,87 @@ async def test_sync_missing_docker_image_from_controller_daemon(compute, control
     with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as save_mock:
         assert await node._upload_missing_image("docker", "gns3/frr:latest") is True
         save_mock.assert_called_with("GET", "images/gns3/frr:latest/get", timeout=None)
-    compute.post.assert_called_with("/docker/images/load", data=response.content, timeout=None)
+    compute.post.assert_called_with(
+        "/docker/images/load", data=response.content, timeout=None, params={"image": "gns3/frr:latest"}
+    )
     response.close.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_sync_missing_docker_image_forwards_pinned_digest(compute, controller):
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(
+        project, compute, "demo", node_id=str(uuid.uuid4()), node_type="docker", properties={"image": "gns3/frr:latest"}
+    )
+
+    digest = "sha256:" + "a" * 64
+    response = MagicMock()
+    response.content = MagicMock()
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+        assert await node._upload_missing_image("docker", "gns3/frr:latest", digest) is True
+    compute.post.assert_called_with(
+        "/docker/images/load",
+        data=response.content,
+        timeout=None,
+        params={"image": "gns3/frr:latest", "digest": digest},
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_docker_node_syncs_missing_image_with_the_pinned_digest(compute, controller):
+    """
+    When the compute reports a Docker image as missing, the create retries after
+    the sync and the load call carries the pinned digest, so the compute can
+    translate it into the id of its own daemon (image ids are not comparable
+    across image stores).
+    """
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(
+        project,
+        compute,
+        "demo",
+        node_id=str(uuid.uuid4()),
+        node_type="docker",
+        properties={"image": "gns3/frr:latest", "adapters": 1},
+    )
+
+    controller_image_id = "sha256:" + "a" * 64
+    conflict = ComputeConflictError(
+        f"/projects/{project.id}/docker/nodes",
+        {
+            "message": "The image 'gns3/frr:latest' is missing",
+            "image": "gns3/frr:latest",
+            "exception": "ImageMissingError",
+        },
+    )
+    created = MagicMock()
+    created.status = 200
+    created.json = {}
+
+    # the create call, the image sync, then the create retry
+    responses = [conflict, MagicMock(), created]
+
+    async def resp(*args, **kwargs):
+        result = responses.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+
+    load_response = MagicMock()
+    load_response.content = MagicMock()
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": controller_image_id}):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=load_response):
+            assert await node.create() is True
+
+    # first call is the node creation, then the image sync, then the retry
+    sync_call = compute.post.call_args_list[1]
+    assert sync_call[0][0] == "/docker/images/load"
+    assert sync_call[1]["params"] == {"image": "gns3/frr:latest", "digest": controller_image_id}
+    assert compute.post.call_args_list[2][1]["data"]["image_digest"] == controller_image_id
 
 
 @pytest.mark.asyncio

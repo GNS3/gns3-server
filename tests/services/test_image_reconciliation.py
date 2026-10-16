@@ -401,6 +401,7 @@ async def test_path_matching_does_not_interpret_sql_wildcards(inventory, config)
 async def test_migration_roundtrip_preserves_rows_and_relationships(inventory, config):
     from alembic import command
     from alembic.config import Config
+    from alembic.script import ScriptDirectory
 
     image_file(config)
     await scan(inventory)
@@ -414,7 +415,12 @@ async def test_migration_roundtrip_preserves_rows_and_relationships(inventory, c
         cfg = Config()
         cfg.set_main_option("script_location", "gns3server:db_migrations")
         cfg.attributes["connection"] = connection
-        command.stamp(cfg, "d9e8a2b7c401")
+        # The catalog is built from the models, so it already carries the head
+        # schema. Stamping head (not the revision that happened to be newest when
+        # this test was written) keeps the round-trip valid for later migrations:
+        # every revision above the inventory one is rolled back before it is
+        # replayed, instead of being applied on top of its own schema.
+        command.stamp(cfg, ScriptDirectory.from_config(cfg).get_current_head())
         command.downgrade(cfg, "c7e4a9f1d2b6")
         assert connection.execute(text("SELECT count(*) FROM image_template_map")).scalar_one() == 1
         assert connection.execute(text("SELECT image_id FROM images")).scalar_one() == original["image_id"]

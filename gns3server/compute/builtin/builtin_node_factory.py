@@ -30,7 +30,7 @@ BUILTIN_NODES = {"cloud": Cloud, "nat": Nat, "ethernet_hub": EthernetHub, "ether
 
 class BuiltinNodeFactory:
     """
-    Factory to create an builtin object based on the node type.
+    Factory to create a builtin object based on the node type.
     """
 
     def __new__(cls, name, node_id, project, manager, node_type, **kwargs):
