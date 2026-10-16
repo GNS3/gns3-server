@@ -41,7 +41,7 @@ nornir-salt>=0.23.4
 python-dotenv>=1.2.1
 
 # Authentication
-PyJWT>=2.10.1
+PyJWT>=2.15.1
 psycopg-pool>=3.1.0
 
 # Skills Repository Management
