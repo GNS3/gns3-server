@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional, Union
 from uuid import UUID
 
@@ -24,7 +24,7 @@ from ..common import NodeStatus
 from ..update import PartialUpdateModel
 
 
-class HostInterfaceType(str, Enum):
+class HostInterfaceType(StrEnum):
     ethernet = "ethernet"
     tap = "tap"
 
@@ -39,7 +39,7 @@ class HostInterface(BaseModel):
     special: bool = Field(..., description="Whether the interface is non standard")
 
 
-class EthernetType(str, Enum):
+class EthernetType(StrEnum):
     ethernet = "ethernet"
 
 
@@ -54,7 +54,7 @@ class EthernetPort(BaseModel):
     interface: str
 
 
-class TAPType(str, Enum):
+class TAPType(StrEnum):
     tap = "tap"
 
 
@@ -69,7 +69,7 @@ class TAPPort(BaseModel):
     interface: str
 
 
-class UDPType(str, Enum):
+class UDPType(StrEnum):
     udp = "udp"
 
 

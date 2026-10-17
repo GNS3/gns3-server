@@ -43,7 +43,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         self._system_properties = {}
         self._virtualbox_manager = VirtualBox()
 
-    async def _execute(self, subcommand, args, timeout=60):
+    async def _execute(self, subcommand, args, timeout=60):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
         try:
             result = await self._virtualbox_manager.execute(subcommand, args, timeout)
@@ -434,7 +434,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                                             return interface["ip_address"]
                         except ValueError:
                             pass
-            except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
+            except (OSError, aiohttp.ClientError, TimeoutError):
                 pass
             remaining_try -= 1
             await asyncio.sleep(1)

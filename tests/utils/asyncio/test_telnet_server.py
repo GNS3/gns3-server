@@ -24,7 +24,7 @@ def _get_listen_port(server):
     return server.sockets[0].getsockname()[1]
 
 
-async def _wait_for_connection_count(server, expected_count, timeout=2):
+async def _wait_for_connection_count(server, expected_count, timeout=2):  # noqa: ASYNC109 - mock signature must match patched API
     deadline = asyncio.get_running_loop().time() + timeout
     last_count = 0
     while asyncio.get_running_loop().time() < deadline:

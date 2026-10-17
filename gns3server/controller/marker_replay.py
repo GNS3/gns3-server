@@ -349,7 +349,7 @@ class _SharkdSession:
                 self.proc.stdin.write((json.dumps(request) + "\n").encode())
                 await self.proc.stdin.drain()
                 raw = await asyncio.wait_for(self.proc.stdout.readline(), RPC_TIMEOUT_SECONDS)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 await self._abort(f"sharkd timed out after {RPC_TIMEOUT_SECONDS:.0f}s on {method!r}")
             except (OSError, ValueError) as e:
                 # ValueError: a reply line over the StreamReader limit — the
@@ -387,7 +387,7 @@ class _SharkdSession:
                 # the caller — leak the process with a log instead.
                 try:
                     await asyncio.wait_for(self.proc.wait(), timeout=2.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning("sharkd session for %s did not exit after kill", self.pcap)
         except ProcessLookupError:
             pass

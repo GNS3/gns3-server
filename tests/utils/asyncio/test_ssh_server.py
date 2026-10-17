@@ -40,7 +40,7 @@ async def _connect(port):
     )
 
 
-async def _wait_for_session_count(server, expected_count, timeout=2):
+async def _wait_for_session_count(server, expected_count, timeout=2):  # noqa: ASYNC109 - mock signature must match patched API
     deadline = asyncio.get_running_loop().time() + timeout
     last_count = 0
     while asyncio.get_running_loop().time() < deadline:

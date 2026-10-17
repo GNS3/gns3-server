@@ -17,7 +17,7 @@
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -57,7 +57,7 @@ class TestSnapshotRoutes:
         assert len(response.json()) == 1
         data = response.json()[0]
         assert isinstance(data["created_at"], int)
-        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=timezone.utc)
+        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=UTC)
 
     async def test_delete_snapshot(
         self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
@@ -86,7 +86,7 @@ class TestSnapshotRoutes:
         assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 2
         data = response.json()
         assert isinstance(data["created_at"], int)
-        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=timezone.utc)
+        assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=UTC)
 
     async def test_snapshot_schema_timestamps(self, app: FastAPI) -> None:
 

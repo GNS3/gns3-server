@@ -58,7 +58,7 @@ class UBridgeHypervisor:
         self._reader = None
         self._writer = None
 
-    async def connect(self, timeout=10):
+    async def connect(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Connects to the hypervisor.
         """

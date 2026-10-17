@@ -4,6 +4,7 @@ Unit tests for packet filter validation.
 
 import pytest
 
+from gns3server.utils import packet_filter_validation
 from gns3server.utils.packet_filter_validation import (
     FilterValidationError,
     filter_inactive_filters,
@@ -105,15 +106,26 @@ class TestPacketFilterValidation:
         validate_filter_parameters("bpf", ["tcp port 80\nnot arp"])
         validate_filter_parameters("bpf", ["tcp and not port 22\nhost 192.168.1.1\nicmp"])
 
-    def test_bpf_multi_line_invalid(self):
+    def test_bpf_multi_line_invalid(self, monkeypatch):
         """Test multi-line BPF with invalid line."""
+        monkeypatch.setattr(
+            packet_filter_validation,
+            "validate_bpf_syntax",
+            lambda expression: {"valid": expression != "invalid!!!", "error": "syntax error"},
+        )
         with pytest.raises(FilterValidationError) as excinfo:
             validate_filter_parameters("bpf", ["tcp port 80\ninvalid!!!"])
         err = str(excinfo.value).lower()
         assert "syntax error" in err
 
-    def test_bpf_invalid(self):
+    def test_bpf_invalid(self, monkeypatch):
         """Test invalid BPF parameters."""
+        monkeypatch.setattr(
+            packet_filter_validation,
+            "validate_bpf_syntax",
+            lambda expression: {"valid": expression != "tcp port", "error": "syntax error"},
+        )
+
         # Wrong type
         with pytest.raises(FilterValidationError, match="must be a string"):
             validate_filter_parameters("bpf", [123])

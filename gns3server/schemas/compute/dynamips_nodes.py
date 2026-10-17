@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -25,7 +25,7 @@ from ..common import NodeStatus
 from ..update import PartialUpdateModel
 
 
-class DynamipsPlatform(str, Enum):
+class DynamipsPlatform(StrEnum):
     """
     Supported Dynamips Platforms.
     """
@@ -39,7 +39,7 @@ class DynamipsPlatform(str, Enum):
     c1700 = "c1700"
 
 
-class DynamipsAdapters(str, Enum):
+class DynamipsAdapters(StrEnum):
     """
     Supported Dynamips Network Modules.
     """
@@ -72,7 +72,7 @@ class DynamipsAdapters(str, Enum):
     _ = ""
 
 
-class DynamipsWics(str, Enum):
+class DynamipsWics(StrEnum):
     """
     Supported Dynamips WICs.
     """
@@ -83,7 +83,7 @@ class DynamipsWics(str, Enum):
     _ = ""
 
 
-class DynamipsConsoleType(str, Enum):
+class DynamipsConsoleType(StrEnum):
     """
     Supported Dynamips console types.
     """
@@ -93,7 +93,7 @@ class DynamipsConsoleType(str, Enum):
     none = "none"
 
 
-class DynamipsNPE(str, Enum):
+class DynamipsNPE(StrEnum):
     """
     Supported Dynamips NPE models.
     """
@@ -108,7 +108,7 @@ class DynamipsNPE(str, Enum):
     npe_g2 = "npe-g2"
 
 
-class DynamipsMidplane(str, Enum):
+class DynamipsMidplane(StrEnum):
     """
     Supported Dynamips Midplane models.
     """

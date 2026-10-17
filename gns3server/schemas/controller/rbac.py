@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -37,7 +37,7 @@ class Privilege(DateTimeModelMixin, PrivilegeBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ACEType(str, Enum):
+class ACEType(StrEnum):
     user = "user"
     group = "group"
 

@@ -283,7 +283,7 @@ class Docker(BaseManager):
         log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
         return body
 
-    async def http_query(self, method, path, data={}, params={}, timeout=300):
+    async def http_query(self, method, path, data={}, params={}, timeout=300):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Makes a query to the docker daemon
 
@@ -323,7 +323,7 @@ class Docker(BaseManager):
             )
         except aiohttp.ClientError as e:
             raise DockerError(f"Docker has returned an error: {e}")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise DockerError("Docker timeout " + method + " " + path)
         if response.status >= 300:
             body = await response.read()
@@ -391,7 +391,7 @@ class Docker(BaseManager):
                     raise DockerError(
                         f"Disconnected while pulling Docker image '{image}' from Docker repository"
                     ) from e
-                except asyncio.TimeoutError as e:
+                except TimeoutError as e:
                     raise DockerError(f"Timeout while pulling Docker image '{image}' from Docker repository") from e
                 if not chunk:
                     break
@@ -448,7 +448,7 @@ class Docker(BaseManager):
                     chunk = await response.content.read(CHUNK_SIZE)
                 except aiohttp.ServerDisconnectedError as e:
                     raise DockerError("Disconnected while loading Docker image") from e
-                except asyncio.TimeoutError as e:
+                except TimeoutError as e:
                     raise DockerError("Timeout while loading Docker image") from e
                 if not chunk:
                     break

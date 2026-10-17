@@ -62,7 +62,7 @@ _bridge_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 _lock = asyncio.Lock()
 
 
-async def probe_tc_capabilities(timeout: float = 15.0):
+async def probe_tc_capabilities(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Probe the configured uBridge's tc module once per binary identity.
 
@@ -88,7 +88,7 @@ async def probe_tc_capabilities(timeout: float = 15.0):
         return caps
 
 
-async def _probe(path, config, timeout):
+async def _probe(path, config, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Spawn a throwaway uBridge, ask ``tc capabilities``, tear it down.
     """
@@ -112,7 +112,7 @@ async def _probe(path, config, timeout):
 
         try:
             caps = await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Old uBridge builds answer "Unknown command"/"Unknown module";
             # anything else here is a broken install — either way: unknown.
             log.debug("uBridge tc capabilities probe failed: %s", e)
@@ -124,7 +124,7 @@ async def _probe(path, config, timeout):
         shutil.rmtree(working_dir, ignore_errors=True)
 
 
-async def probe_tap_support(timeout: float = 15.0):
+async def probe_tap_support(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Whether this host's uBridge can create persistent TAPs (the ``tap``
     module), probed the same way as the tc report — a throwaway uBridge, the
@@ -151,7 +151,7 @@ async def probe_tap_support(timeout: float = 15.0):
         return supported
 
 
-async def _probe_tap(path, config, timeout):
+async def _probe_tap(path, config, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Spawn a throwaway uBridge and try to create (then delete) one persistent
     TAP. The probe device is named after a uuid so a concurrent probe on the
@@ -183,7 +183,7 @@ async def _probe_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Missing module, old build, or no CAP_NET_ADMIN: unknown.
             log.debug("uBridge tap-module probe failed: %s", e)
             return None
@@ -200,7 +200,7 @@ async def _probe_tap(path, config, timeout):
 _IOL_PROBE_BRIDGE_ID = 1050
 
 
-async def probe_iol_tap_support(timeout: float = 15.0):
+async def probe_iol_tap_support(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Whether this host's uBridge can terminate an IOL port on a persistent
     TAP (``iol_bridge add_nio_tap``) — the anchor IOU's Ethernet ports need
@@ -229,7 +229,7 @@ async def probe_iol_tap_support(timeout: float = 15.0):
         return supported
 
 
-async def _probe_iol_tap(path, config, timeout):
+async def _probe_iol_tap(path, config, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Spawn a throwaway uBridge and run one add_nio_tap/delete_nio_tap cycle on
     a scratch bridge and scratch TAP — attaching works on a stopped bridge,
@@ -269,7 +269,7 @@ async def _probe_iol_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Old build ("Unknown command"), missing module, or no
             # CAP_NET_ADMIN: unknown.
             log.debug("uBridge iol-tap probe failed: %s", e)
@@ -280,7 +280,7 @@ async def _probe_iol_tap(path, config, timeout):
         shutil.rmtree(working_dir, ignore_errors=True)
 
 
-async def probe_bridge_tap_support(timeout: float = 15.0):
+async def probe_bridge_tap_support(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Whether this host's uBridge has ``bridge delete_nio_tap`` — the command
     that makes the bridge module's TAP leg swappable (stop -> delete -> add ->
@@ -311,7 +311,7 @@ async def probe_bridge_tap_support(timeout: float = 15.0):
         return supported
 
 
-async def _probe_bridge_tap(path, config, timeout):
+async def _probe_bridge_tap(path, config, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Spawn a throwaway uBridge and issue the probe command against a bridge
     name that cannot exist (uuid). The reply splits the builds: "bridge ...
@@ -348,7 +348,7 @@ async def _probe_bridge_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # UbridgeError also covers hypervisor.start()/connect() failing
             # (unlike the siblings, ask() re-raises those): an unusable
             # binary means unknown, never a failed /capabilities response.

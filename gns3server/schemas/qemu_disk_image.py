@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-class QemuDiskImageFormat(str, Enum):
+class QemuDiskImageFormat(StrEnum):
     """
     Supported Qemu disk image formats.
     """
@@ -33,7 +33,7 @@ class QemuDiskImageFormat(str, Enum):
     raw = "raw"
 
 
-class QemuDiskImagePreallocation(str, Enum):
+class QemuDiskImagePreallocation(StrEnum):
     """
     Supported Qemu disk image pre-allocation options.
     """
@@ -44,7 +44,7 @@ class QemuDiskImagePreallocation(str, Enum):
     full = "full"
 
 
-class QemuDiskImageOnOff(str, Enum):
+class QemuDiskImageOnOff(StrEnum):
     """
     Supported Qemu image on/off options.
     """
@@ -53,7 +53,7 @@ class QemuDiskImageOnOff(str, Enum):
     off = "off"
 
 
-class QemuDiskImageSubformat(str, Enum):
+class QemuDiskImageSubformat(StrEnum):
     """
     Supported Qemu disk image sub-format options.
     """
@@ -67,7 +67,7 @@ class QemuDiskImageSubformat(str, Enum):
     monolithic_flat = "monolithicFlat"
 
 
-class QemuDiskImageAdapterType(str, Enum):
+class QemuDiskImageAdapterType(StrEnum):
     """
     Supported Qemu disk image on/off options.
     """

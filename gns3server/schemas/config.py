@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, DirectoryPath, Field, FilePath, SecretStr, field_validator, model_validator
@@ -126,12 +126,12 @@ class WebWiresharkSettings(BaseModel):
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
-class ServerProtocol(str, Enum):
+class ServerProtocol(StrEnum):
     http = "http"
     https = "https"
 
 
-class UbridgeControlTransport(str, Enum):
+class UbridgeControlTransport(StrEnum):
     # TCP control channel: -H host:port. ubridge now binds loopback by default,
     # so this is reachable only locally. Retained for backward compatibility.
     tcp = "tcp"
@@ -140,7 +140,7 @@ class UbridgeControlTransport(str, Enum):
     unix = "unix"
 
 
-class BuiltinSymbolTheme(str, Enum):
+class BuiltinSymbolTheme(StrEnum):
     classic = "Classic"
     affinity_square_blue = "Affinity-square-blue"
     affinity_square_red = "Affinity-square-red"
