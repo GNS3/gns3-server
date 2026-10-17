@@ -19,7 +19,7 @@
 # This file contains the validation for checking a .gns3 file
 #
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -37,7 +37,7 @@ class TopologyLink(Link):
     filters: Optional[dict] = None
 
 
-class TopologyType(str, Enum):
+class TopologyType(StrEnum):
     topology = "topology"
 
 

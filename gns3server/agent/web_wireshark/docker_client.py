@@ -224,7 +224,7 @@ class DockerHTTPClient:
                 return None
             raise
 
-    async def stop_container(self, container_id: str, timeout: int = 0):
+    async def stop_container(self, container_id: str, timeout: int = 0):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """Stop container immediately (force kill, no graceful shutdown)."""
         await self._request("POST", f"containers/{container_id}/stop", params={"t": timeout})
 

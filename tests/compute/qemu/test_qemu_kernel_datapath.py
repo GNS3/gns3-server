@@ -358,7 +358,7 @@ async def test_stop_stops_the_process_before_deleting_the_taps(vm):
     _running(vm)
     order = []
 
-    async def fake_termination(process, timeout=None):
+    async def fake_termination(process, timeout=None):  # noqa: ASYNC109 - mock signature must match patched API
         order.append("process")
 
     async def fake_stop_ubridge():
@@ -476,7 +476,7 @@ async def test_concurrent_stops_sweep_every_tap_exactly_once(vm):
 
     vm._ubridge_send = AsyncioMagicMock(side_effect=send)
 
-    async def fake_termination(process, timeout=None):
+    async def fake_termination(process, timeout=None):  # noqa: ASYNC109 - mock signature must match patched API
         pass
 
     with (

@@ -452,7 +452,7 @@ async def test_add_ubridge_connection_timeout_is_actionable(compute_project, man
     _mock_wiring(vm)
     vm._stop_ubridge = AsyncioMagicMock()
 
-    async def raise_timeout(path, timeout=60):
+    async def raise_timeout(path, timeout=60):  # noqa: ASYNC109 - mock signature must match patched API
         raise TimeoutError()
 
     with patch("gns3server.compute.docker.vendor_docker_vm.wait_for_file_creation", side_effect=raise_timeout):

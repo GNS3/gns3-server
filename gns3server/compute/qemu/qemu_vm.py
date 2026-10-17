@@ -1307,7 +1307,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 # already gone and sweeps nothing.
                 await self._stop_ubridge()
 
-    async def _open_qemu_monitor_connection_vm(self, timeout=10):
+    async def _open_qemu_monitor_connection_vm(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Opens a connection to the QEMU monitor.
 

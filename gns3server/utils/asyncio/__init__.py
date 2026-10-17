@@ -85,7 +85,7 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
     return output.decode("utf-8", errors="ignore")
 
 
-async def wait_for_process_termination(process, timeout=10):
+async def wait_for_process_termination(process, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Wait for a process terminate, and raise asyncio.TimeoutError in case of
     timeout.
@@ -118,7 +118,7 @@ def monitor_process(process, termination_callback):
     asyncio.ensure_future(_check_process(process, termination_callback))
 
 
-async def wait_for_file_creation(path, timeout=60):
+async def wait_for_file_creation(path, timeout=60):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
     while timeout > 0:
         if os.path.exists(path):

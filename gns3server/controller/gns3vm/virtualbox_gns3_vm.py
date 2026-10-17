@@ -43,7 +43,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         self._system_properties = {}
         self._virtualbox_manager = VirtualBox()
 
-    async def _execute(self, subcommand, args, timeout=60):
+    async def _execute(self, subcommand, args, timeout=60):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
         try:
             result = await self._virtualbox_manager.execute(subcommand, args, timeout)

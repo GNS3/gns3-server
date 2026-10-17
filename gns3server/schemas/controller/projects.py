@@ -16,7 +16,7 @@
 
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from ..update import PartialUpdateModel
 
 
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     """
     Supported project statuses.
     """
@@ -117,7 +117,7 @@ class NodeFile(BaseModel):
     file_type: str = Field(..., description="File type determined by the file command")
 
 
-class ProjectCompression(str, Enum):
+class ProjectCompression(StrEnum):
     """
     Supported project compression.
     """

@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-class WhenExit(str, Enum):
+class WhenExit(StrEnum):
     """
     What to do with the VM when GNS3 VM exits.
     """
@@ -30,7 +30,7 @@ class WhenExit(str, Enum):
     keep = "keep"
 
 
-class Engine(str, Enum):
+class Engine(StrEnum):
     """
     "The engine to use for the GNS3 VM.
     """

@@ -596,7 +596,7 @@ class Compute:
         """Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
-    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):
+    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):  # noqa: ASYNC109 - operation-specific timeout is intentional
         async with asynctimeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}

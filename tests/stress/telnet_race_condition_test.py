@@ -61,7 +61,7 @@ class TelnetClient:
             log.warning(f"Client {self.client_id}: Send failed: {e}")
             return False
 
-    async def receive_response(self, timeout: float = 1.0) -> Optional[str]:
+    async def receive_response(self, timeout: float = 1.0) -> Optional[str]:  # noqa: ASYNC109 - mock signature must match patched API
         """Receive response from server (optional)."""
         if not self.reader or not self.connected:
             return None

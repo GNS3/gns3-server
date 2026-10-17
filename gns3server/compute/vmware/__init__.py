@@ -344,7 +344,7 @@ class VMware(BaseManager):
 
         return self._host_type
 
-    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         trial = 2
 
         while True:
@@ -361,7 +361,7 @@ class VMware(BaseManager):
                     trial -= 1
                     await asyncio.sleep(0.5)
 
-    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         if self.host_type is None:
             await self.check_vmware_version()
 

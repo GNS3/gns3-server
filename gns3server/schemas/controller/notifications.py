@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
@@ -28,7 +28,7 @@ from .projects import Project
 from .snapshots import Snapshot
 
 
-class NotificationAction(str, Enum):
+class NotificationAction(StrEnum):
     """
     Values of the "action" field of a notification.
     """

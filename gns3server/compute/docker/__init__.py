@@ -283,7 +283,7 @@ class Docker(BaseManager):
         log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
         return body
 
-    async def http_query(self, method, path, data={}, params={}, timeout=300):
+    async def http_query(self, method, path, data={}, params={}, timeout=300):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Makes a query to the docker daemon
 

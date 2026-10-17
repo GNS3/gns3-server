@@ -85,7 +85,7 @@ class WebWiresharkManager:
             logger.warning(f"Container {container_id[:12]} health check failed: {e}")
             return False
 
-    async def _exec_in_container(self, container_id: str, command: str, timeout: Optional[int] = None) -> tuple:
+    async def _exec_in_container(self, container_id: str, command: str, timeout: Optional[int] = None) -> tuple:  # noqa: ASYNC109 - operation-specific timeout is intentional
         """Execute command in container with timeout.
 
         Args:

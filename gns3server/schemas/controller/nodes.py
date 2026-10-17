@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -25,7 +25,7 @@ from ..update import PartialUpdateModel
 from .labels import Label
 
 
-class NodeType(str, Enum):
+class NodeType(StrEnum):
     """
     Supported node types.
     """
@@ -56,7 +56,7 @@ class Image(BaseModel):
     filesize: Optional[int] = None
 
 
-class LinkType(str, Enum):
+class LinkType(StrEnum):
     """
     Supported link types.
     """
@@ -65,7 +65,7 @@ class LinkType(str, Enum):
     serial = "serial"
 
 
-class DataLinkType(str, Enum):
+class DataLinkType(StrEnum):
     """
     Supported data link types.
     """

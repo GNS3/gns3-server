@@ -1711,7 +1711,15 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             status_line = headers.split(b"\r\n", 1)[0]
             if b" 101 " not in status_line and b" 200 " not in status_line:
                 raise DockerError(f"Docker interface monitor was rejected: {status_line.decode(errors='ignore')}")
-        except (TimeoutError, DockerError, OSError, KeyError, TypeError, RuntimeError, asyncio.IncompleteReadError) as e:
+        except (
+            TimeoutError,
+            DockerError,
+            OSError,
+            KeyError,
+            TypeError,
+            RuntimeError,
+            asyncio.IncompleteReadError,
+        ) as e:
             if "writer" in locals():
                 await self._close_interface_monitor_writer(writer)
             log.warning("Could not monitor interfaces for Docker container '%s': %s", self.name, e)

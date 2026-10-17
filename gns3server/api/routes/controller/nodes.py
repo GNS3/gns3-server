@@ -418,7 +418,12 @@ LIFECYCLE_RESPONSES: dict[int | str, dict[str, Any]] = {
 
 
 async def _run_lifecycle(
-    node: Node, action: Callable, target: str, wait: bool, timeout: int, tolerate_unsupported: bool = True
+    node: Node,
+    action: Callable,
+    target: str,
+    wait: bool,
+    timeout: int,  # noqa: ASYNC109 - operation-specific timeout is intentional
+    tolerate_unsupported: bool = True,
 ) -> dict:
     async def _run():
         try:
@@ -449,7 +454,7 @@ async def _run_lifecycle(
 async def start_node(
     start_data: Optional[dict] = None,
     wait: bool = Query(False, description="Return only when the node status is 'started'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -469,7 +474,7 @@ async def start_node(
 )
 async def stop_node(
     wait: bool = Query(False, description="Return only when the node status is 'stopped'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -491,7 +496,7 @@ async def stop_node(
 )
 async def suspend_node(
     wait: bool = Query(False, description="Return only when the node status is 'suspended'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -514,7 +519,7 @@ async def suspend_node(
 )
 async def reload_node(
     wait: bool = Query(False, description="Return only when the node status is 'started'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """

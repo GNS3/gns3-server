@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -24,7 +24,7 @@ from ..common import CustomAdapter, NodeStatus
 from ..update import PartialUpdateModel
 
 
-class QemuPlatform(str, Enum):
+class QemuPlatform(StrEnum):
     aarch64 = "aarch64"
     alpha = "alpha"
     arm = "arm"
@@ -55,7 +55,7 @@ class QemuPlatform(str, Enum):
     xtensaeb = "xtensaeb"
 
 
-class QemuConsoleType(str, Enum):
+class QemuConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -68,7 +68,7 @@ class QemuConsoleType(str, Enum):
     none = "none"
 
 
-class QemuBootPriority(str, Enum):
+class QemuBootPriority(StrEnum):
     """
     Supported boot priority types.
     """
@@ -84,7 +84,7 @@ class QemuBootPriority(str, Enum):
     nd = "nd"
 
 
-class QemuOnCloseAction(str, Enum):
+class QemuOnCloseAction(StrEnum):
     """
     Supported actions when closing Qemu VM.
     """
@@ -94,7 +94,7 @@ class QemuOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class QemuProcessPriority(str, Enum):
+class QemuProcessPriority(StrEnum):
     realtime = "realtime"
     very_high = "very high"
     high = "high"
@@ -103,7 +103,7 @@ class QemuProcessPriority(str, Enum):
     very_low = "very low"
 
 
-class QemuAdapterType(str, Enum):
+class QemuAdapterType(StrEnum):
     """
     Supported Qemu VM adapter types.
     """
@@ -135,7 +135,7 @@ class QemuAdapterType(str, Enum):
     vmxnet3 = "vmxnet3"
 
 
-class QemuDiskInterfaceType(str, Enum):
+class QemuDiskInterfaceType(StrEnum):
     """
     Supported Qemu VM disk interface types.
     """

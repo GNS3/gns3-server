@@ -57,7 +57,7 @@ class DynamipsHypervisor:
         self._writer = None
         self._io_lock = asyncio.Lock()
 
-    async def connect(self, timeout=10):
+    async def connect(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Connects to the hypervisor.
         """
