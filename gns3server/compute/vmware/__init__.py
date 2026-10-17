@@ -382,7 +382,7 @@ class VMware(BaseManager):
 
         try:
             stdout_data, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise VMwareError(
                 f"vmrun has timed out after {timeout} seconds!\nTry to run {command_string} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus."
             )

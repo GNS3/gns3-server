@@ -112,7 +112,7 @@ class VirtualBox(BaseManager):
 
             try:
                 stdout_data, stderr_data = await asyncio.wait_for(process.communicate(), timeout=timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise VirtualBoxError(f"VBoxManage has timed out after {timeout} seconds!")
 
             if process.returncode:

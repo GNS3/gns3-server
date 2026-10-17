@@ -22,7 +22,6 @@ Image-free: everything is asserted against generated files, parsed knobs and
 the uBridge command stream.
 """
 
-import asyncio
 import glob
 import json
 import os
@@ -454,7 +453,7 @@ async def test_add_ubridge_connection_timeout_is_actionable(compute_project, man
     vm._stop_ubridge = AsyncioMagicMock()
 
     async def raise_timeout(path, timeout=60):
-        raise asyncio.TimeoutError()
+        raise TimeoutError()
 
     with patch("gns3server.compute.docker.vendor_docker_vm.wait_for_file_creation", side_effect=raise_timeout):
         with pytest.raises(DockerError) as excinfo:

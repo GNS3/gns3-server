@@ -147,7 +147,7 @@ class AsyncioSSHServer:
                     try:
                         process.stdout.write(data)
                         await asyncio.wait_for(process.stdout.drain(), timeout=BROADCAST_DRAIN_TIMEOUT)
-                    except (OSError, ConnectionError, asyncio.TimeoutError, asyncssh.Error):
+                    except (TimeoutError, OSError, ConnectionError, asyncssh.Error):
                         await self._disconnect_client(process)
         except asyncio.CancelledError:
             raise

@@ -635,7 +635,7 @@ class Compute:
                 chunked=chunked,
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ComputeError(f"Timeout error for {method} call to {url} after {timeout}s")
         except (
             aiohttp.ClientError,

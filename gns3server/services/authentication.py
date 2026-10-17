@@ -18,7 +18,7 @@ import base64
 import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 import bcrypt
@@ -64,7 +64,7 @@ class AuthService:
     def _create_token(self, username, token_version, token_type, expires_in, secret_key=None) -> str:
         """Shared helper to create any kind of signed JWT token."""
 
-        issued_at = datetime.now(timezone.utc)
+        issued_at = datetime.now(UTC)
         expire = issued_at + timedelta(minutes=expires_in)
         to_encode = {"sub": username, "iat": issued_at, "exp": expire, "ver": token_version, "type": token_type}
         if secret_key is None:

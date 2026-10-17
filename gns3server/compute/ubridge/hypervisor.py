@@ -230,7 +230,7 @@ class Hypervisor(UBridgeHypervisor):
             await UBridgeHypervisor.stop(self)
             try:
                 await wait_for_process_termination(self._process, timeout=3)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if self._process and self._process.returncode is None:
                     log.warning(f"uBridge process {self._process.pid} is still running... killing it")
                     try:

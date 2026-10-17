@@ -23,7 +23,7 @@ import tempfile
 import time
 import uuid
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiofiles
 
@@ -63,19 +63,19 @@ class Snapshot:
             if created_at:
                 self._created_at = created_at
             else:
-                self._created_at = int(datetime.now(timezone.utc).timestamp())
+                self._created_at = int(datetime.now(UTC).timestamp())
             if not filename:
                 filename = self._name + ".gns3snapshot"
         else:
             self._name = filename.rsplit("_", 2)[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
             self._created_at = int(
-                datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=timezone.utc).timestamp()
+                datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=UTC).timestamp()
             )
 
         if not description:
             date = (
-                datetime.fromtimestamp(self._created_at, tz=timezone.utc)
+                datetime.fromtimestamp(self._created_at, tz=UTC)
                 .replace(tzinfo=None)
                 .strftime(DESCRIPTION_DATETIME_FORMAT)
             )

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -54,5 +54,5 @@ class Snapshot(SnapshotBase):
     @classmethod
     def _derive_created(cls, data):
         if isinstance(data, dict) and "created" not in data and data.get("created_at") is not None:
-            data = {**data, "created": datetime.fromtimestamp(data["created_at"], tz=timezone.utc)}
+            data = {**data, "created": datetime.fromtimestamp(data["created_at"], tz=UTC)}
         return data

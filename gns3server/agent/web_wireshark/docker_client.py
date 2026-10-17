@@ -21,7 +21,6 @@ Web Wireshark - Docker HTTP API client
 This module handles Docker API operations via aiohttp Unix socket.
 """
 
-import asyncio
 import logging
 from asyncio import timeout as async_timeout
 from typing import Any
@@ -142,7 +141,7 @@ class DockerHTTPClient:
                     if response.status == 204:  # No Content
                         return None
                     return await response.json()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for {endpoint}")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e
@@ -256,7 +255,7 @@ class DockerHTTPClient:
                         error_text = await response.text()
                         raise RuntimeError(f"Docker API error {response.status}: {error_text}")
                     result = await response.json()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for containers/{container_name}/top")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e

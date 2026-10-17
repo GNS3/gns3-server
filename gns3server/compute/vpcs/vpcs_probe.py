@@ -83,7 +83,7 @@ async def probe_vpcs_tap(timeout: float = 5.0) -> bool | None:
             return _cache[key]
         try:
             output = await asyncio.wait_for(subprocess_check_output(vpcs_path, "-h"), timeout=timeout)
-        except (OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, OSError, ValueError) as e:
             log.debug("VPCS tap-mode probe failed: %s", e)
             supported = None
         else:

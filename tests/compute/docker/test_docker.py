@@ -239,7 +239,7 @@ async def test_pull_image_propagates_timeout():
 
     class Content:
         async def read(self, size):
-            raise asyncio.TimeoutError
+            raise TimeoutError
 
     response = MagicMock()
     response.content = Content()

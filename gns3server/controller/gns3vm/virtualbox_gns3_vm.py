@@ -434,7 +434,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                                             return interface["ip_address"]
                         except ValueError:
                             pass
-            except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
+            except (OSError, aiohttp.ClientError, TimeoutError):
                 pass
             remaining_try -= 1
             await asyncio.sleep(1)

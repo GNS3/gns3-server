@@ -125,7 +125,7 @@ async def wait_for_file_creation(path, timeout=60):
             return
         await asyncio.sleep(0.5)
         timeout -= 0.5
-    raise asyncio.TimeoutError()
+    raise TimeoutError()
 
 
 def locking(f):

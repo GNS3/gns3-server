@@ -1272,7 +1272,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                             await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
                     except ProcessLookupError:
                         pass
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         if self._process:
                             try:
                                 self._process.kill()
@@ -1324,7 +1324,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             try:
                 log.debug(f"Connecting to Qemu monitor on {self._monitor_host}:{self._monitor}")
                 reader, writer = await asyncio.open_connection(self._monitor_host, self._monitor)
-            except (asyncio.TimeoutError, OSError) as e:
+            except (TimeoutError, OSError) as e:
                 last_exception = e
                 continue
             connection_success = True
@@ -1363,7 +1363,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         line = await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
                         if not line or cmd_byte in line:
                             break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 log.warning(f"Missing echo of command '{command}'")
             except OSError as e:
                 log.warning(f"Could not write to QEMU monitor: {e}")
@@ -1379,7 +1379,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                             if expect in line:
                                 result = line.decode("utf-8").strip()
                                 break
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning(f"Timeout while waiting for result of command '{command}'")
                 except (ConnectionError, EOFError) as e:
                     log.warning(f"Could not read from QEMU monitor: {e}")
@@ -1407,7 +1407,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         line = await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
                         if not line or cmd_byte in line:
                             break
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning(f"Missing echo of command '{command}'")
                 except OSError as e:
                     log.warning(f"Could not write to QEMU monitor: {e}")

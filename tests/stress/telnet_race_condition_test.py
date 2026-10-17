@@ -72,7 +72,7 @@ class TelnetClient:
                 response = data.decode("utf-8", errors="ignore")
                 log.debug(f"Client {self.client_id}: Received: {response[:50]}...")
                 return response
-        except asyncio.TimeoutError:
+        except TimeoutError:
             log.debug(f"Client {self.client_id}: No response (timeout)")
         except Exception as e:
             log.debug(f"Client {self.client_id}: Receive error: {e}")

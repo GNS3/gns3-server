@@ -948,7 +948,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
                 await self._start_vnc_process(restart=True)
                 try:
                     await wait_for_file_creation(x11_socket)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     raise DockerError(f'x11 socket file "{x11_socket}" does not exist')
                 monitor_process(self._vnc_process, self._vnc_callback)
 
@@ -1190,7 +1190,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             return False
         try:
             _, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             process.kill()
             await process.communicate()
             log.warning(f"Docker container '{self._name}': reclaiming '{directory}' timed out")
@@ -1254,7 +1254,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         x11_socket = os.path.join("/tmp/.X11-unix/", f"X{self._display}")
         try:
             await wait_for_file_creation(x11_socket)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise DockerError(f'x11 socket file "{x11_socket}" does not exist')
 
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
@@ -1711,15 +1711,7 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             status_line = headers.split(b"\r\n", 1)[0]
             if b" 101 " not in status_line and b" 200 " not in status_line:
                 raise DockerError(f"Docker interface monitor was rejected: {status_line.decode(errors='ignore')}")
-        except (
-            DockerError,
-            OSError,
-            KeyError,
-            TypeError,
-            RuntimeError,
-            asyncio.IncompleteReadError,
-            asyncio.TimeoutError,
-        ) as e:
+        except (TimeoutError, DockerError, OSError, KeyError, TypeError, RuntimeError, asyncio.IncompleteReadError) as e:
             if "writer" in locals():
                 await self._close_interface_monitor_writer(writer)
             log.warning("Could not monitor interfaces for Docker container '%s': %s", self.name, e)

@@ -80,7 +80,7 @@ class DynamipsHypervisor:
                 self._reader, self._writer = await asyncio.wait_for(
                     asyncio.open_connection(host, self._port), timeout=1
                 )
-            except (asyncio.TimeoutError, OSError) as e:
+            except (TimeoutError, OSError) as e:
                 last_exception = e
                 continue
             connection_success = True

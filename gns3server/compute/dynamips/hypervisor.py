@@ -144,7 +144,7 @@ class Hypervisor(DynamipsHypervisor):
             await asyncio.sleep(0.01)
             try:
                 await wait_for_process_termination(self._process, timeout=3)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if self._process.returncode is None:
                     log.warning(f"Dynamips process {self._process.pid} is still running... killing it")
                     try:

@@ -685,7 +685,7 @@ class AgentService:
                         "Checkpointer connection closed for: %s",
                         self.project_path,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning(
                         "Checkpointer connection close timeout for: %s (forcing cleanup)",
                         self.project_path,

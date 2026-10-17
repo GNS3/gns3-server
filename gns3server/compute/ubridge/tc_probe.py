@@ -112,7 +112,7 @@ async def _probe(path, config, timeout):
 
         try:
             caps = await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Old uBridge builds answer "Unknown command"/"Unknown module";
             # anything else here is a broken install — either way: unknown.
             log.debug("uBridge tc capabilities probe failed: %s", e)
@@ -183,7 +183,7 @@ async def _probe_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Missing module, old build, or no CAP_NET_ADMIN: unknown.
             log.debug("uBridge tap-module probe failed: %s", e)
             return None
@@ -269,7 +269,7 @@ async def _probe_iol_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Old build ("Unknown command"), missing module, or no
             # CAP_NET_ADMIN: unknown.
             log.debug("uBridge iol-tap probe failed: %s", e)
@@ -348,7 +348,7 @@ async def _probe_bridge_tap(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # UbridgeError also covers hypervisor.start()/connect() failing
             # (unlike the siblings, ask() re-raises those): an unusable
             # binary means unknown, never a failed /capabilities response.

@@ -59,7 +59,7 @@ class NotificationQueue(asyncio.Queue):
             try:
                 (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout - (now - self._last_ping))
                 return (action, msg, kwargs)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue  # the ping deadline has been reached
 
     def _ping(self):
