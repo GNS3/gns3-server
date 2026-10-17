@@ -42,7 +42,9 @@ class User(BaseTable):
     __tablename__ = "users"
 
     user_id = Column(GUID, primary_key=True, default=generate_uuid)
-    username = Column(String, unique=True, index=True)
+    # Mapped style so type checkers see `str` instead of `Column[str]`; the explicit
+    # nullable=True keeps the schema identical to the former Column(String) declaration.
+    username: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=True)
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
