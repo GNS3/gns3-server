@@ -375,7 +375,10 @@ class BaseManager:
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_bridge":
-            nio = NIOBridge(nio_settings["bridge"])
+            # A vxlan sub-spec marks a cross-compute link: the node creates
+            # the VXLAN device and enslaves it into the same per-link bridge
+            # next to its anchor (see KernelDatapathMixin._kernel_attach).
+            nio = NIOBridge(nio_settings["bridge"], nio_settings.get("vxlan"))
             nio.filters = nio_settings.get("filters", {})
             # Markers ride the NIO and attach to the veth host interface via
             # uBridge's AF_PACKET marker module (marker add_kernel).

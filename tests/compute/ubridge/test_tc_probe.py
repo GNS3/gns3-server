@@ -29,8 +29,10 @@ from gns3server.compute.ubridge.tc_probe import (
     probe_iol_tap_support,
     probe_tap_support,
     probe_tc_capabilities,
+    probe_vxlan_support,
 )
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.config import Config
 
 pytestmark = pytest.mark.asyncio
 
@@ -92,6 +94,7 @@ def probe_env(monkeypatch, tmp_path):
     tc_probe._tap_cache.clear()
     tc_probe._iol_tap_cache.clear()
     tc_probe._bridge_tap_cache.clear()
+    tc_probe._vxlan_cache.clear()
     FakeHypervisor.last = None
     # a real file on disk: the cache is keyed on its (path, mtime, size,
     # ctime)
@@ -275,3 +278,51 @@ async def test_probe_bridge_tap_support_missing_binary(monkeypatch):
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
     assert await probe_bridge_tap_support() is None
     assert FakeHypervisor.spawned == 0
+
+
+class _FixedUuid:
+    """A uuid4 stand-in whose .int/.hex pin the probe's random draws."""
+
+    def __init__(self, value):
+        self.int = value
+        self.hex = f"{value:032x}"
+
+
+def _probe_create_port():
+    """The dstport of the one `vxlan create` the probe issued."""
+
+    create = next(c for c in FakeHypervisor.last.commands if c.startswith("vxlan create "))
+    return int(create.rsplit("dstport=", 1)[1])
+
+
+async def test_probe_vxlan_avoids_the_configured_dstport(monkeypatch, probe_env):
+    """
+    A scratch draw landing exactly on the configured dstport must move: on
+    that port the scratch VNI shares a demux table with the live links'
+    devices, and an unlucky VNI draw would make the probe report the
+    capability unknown for the process's lifetime (the result is cached).
+    """
+
+    # int % 10000 == 9999 -> the scratch window draws its very last value
+    monkeypatch.setattr(tc_probe.uuid, "uuid4", lambda: _FixedUuid(29999))
+    settings = Config.instance().settings.Server
+    monkeypatch.setattr(settings, "vxlan_dstport", 29999)
+
+    assert await probe_vxlan_support() is True
+    assert _probe_create_port() == 20000
+
+
+async def test_probe_vxlan_scratch_port_stays_off_the_configured_one(monkeypatch, probe_env):
+    """
+    Whatever the configured dstport, the probe's socket never lands on it
+    and stays inside its scratch window.
+    """
+
+    settings = Config.instance().settings.Server
+    for configured in (4789, 20000, 25000, 29999):
+        monkeypatch.setattr(settings, "vxlan_dstport", configured)
+        tc_probe._vxlan_cache.clear()
+        assert await probe_vxlan_support() is True
+        port = _probe_create_port()
+        assert 20000 <= port <= 29999, port
+        assert port != configured, (port, configured)

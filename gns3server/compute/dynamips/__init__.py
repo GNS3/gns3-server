@@ -369,7 +369,9 @@ class Dynamips(BaseManager):
             # Kernel-datapath NIO: the router binds the port's anchor TAP to
             # a hypervisor nio_tap and enslaves it into this per-link bridge
             # (Router._attach_kernel_nio). No hypervisor NIO is created here.
-            nio = NIOBridge(nio_settings["bridge"])
+            # A vxlan sub-spec (cross-compute link) rides along untouched —
+            # the router's attach path wires it like any kernel link.
+            nio = NIOBridge(nio_settings["bridge"], nio_settings.get("vxlan"))
             nio.filters = nio_settings.get("filters", {})
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)

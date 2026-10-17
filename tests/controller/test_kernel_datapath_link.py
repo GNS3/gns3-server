@@ -20,18 +20,21 @@ Controller-side kernel-datapath link selection: eligibility of Docker-to-
 Docker links, NIO emission and the filters/markers guards.
 """
 
+from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from gns3server.config import Config
-from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.compute import ComputeError
+from gns3server.controller.controller_error import ComputeConflictError, ControllerError
 from gns3server.controller.link import FILTERS
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.ports.serial_port import SerialPort
 from gns3server.controller.udp_link import UDPLink
 from gns3server.utils.kernel_anchor import kernel_anchor_name, kernel_cascade_names
+from gns3server.utils.vxlan import vxlan_device_name
 from tests.utils import AsyncioMagicMock
 
 
@@ -1174,3 +1177,350 @@ async def test_node_started_repushes_both_cascade_ends(project):
 
     sw1.put.assert_called_once_with("/adapters/0/ports/0/nio", data=entries[0][3], timeout=120)
     sw2.put.assert_called_once_with("/adapters/0/ports/0/nio", data=entries[1][3], timeout=120)
+
+
+# ---------------------------------------------------------------------------
+# Cross-compute VXLAN links
+# ---------------------------------------------------------------------------
+
+
+@contextmanager
+def _cross_compute_enabled():
+    settings = Config.instance().settings.Server
+    original = settings.enable_vxlan_cross_compute
+    settings.enable_vxlan_cross_compute = True
+    try:
+        yield settings
+    finally:
+        settings.enable_vxlan_cross_compute = original
+
+
+def _vxlan_compute(compute_id, vxlan=True):
+    compute = MagicMock()
+    compute.id = compute_id
+    compute.capabilities = {"ubridge_vxlan": vxlan}
+    return compute
+
+
+async def _cross_compute_link(project, vxlan1=True, vxlan2=True, same_host=False):
+    """A docker↔docker link whose endpoints live on two computes, with the
+    peer resolution (and the relay fallback's port reservation) mocked."""
+
+    compute1 = _vxlan_compute("compute-1", vxlan1)
+    compute2 = _vxlan_compute("compute-2", vxlan2)
+
+    async def subnet_callback(other):
+        return ("192.168.1.1", "192.168.1.1" if same_host else "192.168.1.2")
+
+    compute1.get_ip_on_same_subnet.side_effect = subnet_callback
+
+    async def post_callback(path, data=None, **kwargs):
+        response = MagicMock()
+        response.json = {"udp_port": 1024}
+        return response
+
+    compute1.post.side_effect = post_callback
+    compute2.post.side_effect = post_callback
+    node1 = _node(project, compute1, "docker1")
+    node2 = _node(project, compute2, "docker2")
+    link = UDPLink(project)
+    await link.add_node(node1, 0, 0, batch=True, dump=False)
+    await link.add_node(node2, 0, 0, batch=True, dump=False)
+    return link, node1, node2
+
+
+@pytest.mark.asyncio
+async def test_vxlan_cross_compute_disabled_by_config(project):
+    """
+    Cross-compute links stay on the relay until the deployment opts in —
+    the VXLAN tunnel caps the usable MTU at the underlay minus the outer
+    headers, so it is opt-in.
+    """
+
+    link, node1, node2 = await _cross_compute_link(project)
+    assert link._kernel_datapath_eligible(node1, node2) is False
+
+    with _cross_compute_enabled():
+        assert link._kernel_datapath_eligible(node1, node2) is True
+
+
+@pytest.mark.asyncio
+async def test_vxlan_cross_compute_requires_the_vxlan_capability(project):
+    """
+    Both computes' uBridge must be able to create the tunnel device; an
+    unreported/failed probe (None) or an old build (False) keeps the link
+    on the relay, exactly like the other capability gates.
+    """
+
+    with _cross_compute_enabled():
+        for vxlan1, vxlan2 in ((False, True), (True, False), (True, None), (None, None)):
+            link, node1, node2 = await _cross_compute_link(project, vxlan1=vxlan1, vxlan2=vxlan2)
+            assert link._kernel_datapath_eligible(node1, node2) is False
+
+
+@pytest.mark.asyncio
+async def test_vxlan_cross_compute_switch_stays_on_relay(project):
+    """
+    The switch fast path absorbs the peer's anchor into the switch's own
+    bridge — a one-host shape; a switch link across computes keeps the
+    relay.
+    """
+
+    switch = _node(project, _vxlan_compute("compute-1"), "switch1", node_type="ethernet_switch")
+    peer = _node(project, _vxlan_compute("compute-2"), "docker2")
+    link = await _link(project, switch, peer)
+    with _cross_compute_enabled():
+        assert link._kernel_datapath_eligible(switch, peer) is False
+
+
+@pytest.mark.asyncio
+async def test_prepare_vxlan_link_emits_tunnel_specs(project):
+    """
+    Both ends get one nio_bridge sharing the per-link bridge name, each
+    carrying the same VNI/dstport (the pair must agree, and neither end can
+    ask the other) and the peer's address, with per-endpoint deterministic
+    device names.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _cross_compute_link(project)
+        entries = await link._prepare()
+
+    assert len(entries) == 2
+    expected_bridge = "gns3" + link.id.replace("-", "")[:11]
+    dstport = Config.instance().settings.Server.vxlan_dstport
+    specs = [entry[3] for entry in entries]
+    assert all(spec["type"] == "nio_bridge" for spec in specs)
+    assert all(spec["bridge"] == expected_bridge for spec in specs)
+    vxlan1, vxlan2 = specs[0]["vxlan"], specs[1]["vxlan"]
+    assert vxlan1["vni"] == vxlan2["vni"]
+    assert vxlan1["dstport"] == vxlan2["dstport"] == dstport
+    assert vxlan1["remote"] == "192.168.1.2"
+    assert vxlan2["remote"] == "192.168.1.1"
+    assert vxlan1["name"] == vxlan_device_name(link.id, node1.id)
+    assert vxlan2["name"] == vxlan_device_name(link.id, node2.id)
+    assert vxlan1["name"] != vxlan2["name"]
+
+
+@pytest.mark.asyncio
+async def test_prepare_vxlan_same_host_pair_falls_back_to_relay(project):
+    """
+    Equal resolved addresses mean both computes share one host: the kernel
+    shares one VXLAN socket per dstport, so a tunnel pair cannot live there
+    — such links keep the relay, where the ends differ by UDP port.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _cross_compute_link(project, same_host=True)
+        entries = await link._prepare()
+
+    assert all(entry[3]["type"] == "nio_udp" for entry in entries)
+
+
+@pytest.mark.asyncio
+async def test_commit_vxlan_retries_with_a_fresh_vni(project):
+    """
+    A refused commit (reactively: the VNI was already registered on the
+    host's shared socket) re-prepares the link with a bumped salt — a fresh
+    VNI, identical on both ends — and recommits.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _cross_compute_link(project)
+        vnis = []
+
+        async def commit(entries):
+            vnis.append(entries[0][3]["vxlan"]["vni"])
+            if len(vnis) == 1:
+                raise ComputeError("Could not create vxlan gvl...: File exists")
+
+        with patch.object(link, "_commit_nios", commit):
+            await link.create()
+
+    assert len(vnis) == 2
+    assert vnis[0] != vnis[1]
+    assert link._vxlan_downgraded is False
+
+
+@pytest.mark.asyncio
+async def test_commit_vxlan_degrades_to_relay_after_retries(project):
+    """
+    When every VXLAN attempt fails, the link degrades to the UDP relay —
+    the opt-in datapath must never make a link uncreatable.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _cross_compute_link(project)
+        commits = []
+
+        async def commit(entries):
+            commits.append(entries)
+            if any(entry[3].get("vxlan") for entry in entries):
+                raise ComputeError("Could not create vxlan gvl...: File exists")
+
+        with patch.object(link, "_commit_nios", commit):
+            await link.create()
+
+    assert link._vxlan_downgraded is True
+    assert len(commits) == 4  # the three VXLAN attempts, then the relay
+    assert all(entry[3].get("vxlan") for entry in commits[0])
+    assert all(entry[3]["type"] == "nio_udp" for entry in commits[-1])
+
+
+async def _prepared_vxlan_link(project):
+    """A cross-compute link with its tunnel NIOs prepared (the shape a node
+    start replays) — call inside ``_cross_compute_enabled`` so the heal's
+    re-preparation stays on the tunnel too. _bind_members mirrors the
+    project-open finalize (the node's link back-reference is what lets the
+    heal find the conflicted link)."""
+
+    link, node1, node2 = await _cross_compute_link(project)
+    await link._prepare()
+    link._bind_members()
+    link._created = True
+    return link, node1, node2
+
+
+def _vni_conflict(node, link):
+    """The compute's 409 when the kernel refuses the link's VNI on the
+    shared dstport socket — the wording KernelDatapathMixin emits."""
+
+    device = vxlan_device_name(link.id, node.id)
+    return ComputeConflictError(
+        "http://compute", {"message": f"Could not create VXLAN device {device} to 192.168.1.2 via eth0: File exists"}
+    )
+
+
+@pytest.mark.asyncio
+async def test_node_start_self_heals_a_vni_conflict(project):
+    """
+    A link wired while its nodes were stopped hits its VNI collision at
+    node start (the kernel's refusal is the first time anyone asks). The
+    start stops the half-started node, re-wires the link on a fresh VNI —
+    both ends, through the per-compute batch — and retries.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _prepared_vxlan_link(project)
+        salt = link._vxlan_salt
+        starts = []
+
+        async def post_callback(path, data=None, **kwargs):
+            if path.endswith("/start"):
+                starts.append(path)
+                if len(starts) == 1:
+                    raise _vni_conflict(node1, link)
+            response = MagicMock()
+            response.json = {"udp_port": 1024}
+            return response
+
+        node1.compute.post.side_effect = post_callback
+        await node1.start()
+
+    assert len(starts) == 2
+    assert link._vxlan_downgraded is False
+    assert link._vxlan_salt == salt + 1
+    # the half-started node was stopped before the retry (a start on a
+    # running container early-returns without wiring)
+    assert any(call.args[0].endswith("/stop") for call in node1.compute.post.call_args_list)
+    # the fresh-VNI NIOs were re-dispatched to both computes
+    for compute in (node1.compute, node2.compute):
+        batches = [c for c in compute.post.call_args_list if str(c.args[0]).endswith("/nios/batch")]
+        assert len(batches) == 1
+
+
+@pytest.mark.asyncio
+async def test_node_start_degrades_the_link_after_a_second_conflict(project):
+    """
+    A conflict that survives the fresh VNI degrades the link to the relay
+    — the start must succeed no later than that round, the same guarantee
+    create() and the project-open batch path give.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _prepared_vxlan_link(project)
+        starts = []
+
+        async def post_callback(path, data=None, **kwargs):
+            if path.endswith("/start"):
+                starts.append(path)
+                if len(starts) <= 2:
+                    raise _vni_conflict(node1, link)
+            response = MagicMock()
+            response.json = {"udp_port": 1024}
+            return response
+
+        node1.compute.post.side_effect = post_callback
+        await node1.start()
+
+    assert len(starts) == 3
+    assert link._vxlan_downgraded is True
+    assert all(nio["type"] == "nio_udp" for nio in link._link_data)
+
+
+@pytest.mark.asyncio
+async def test_node_start_does_not_retry_other_failures(project):
+    """
+    Only the VXLAN device conflict heals: any other start failure surfaces
+    unchanged, with a single attempt and no stop/redispatch side effects.
+    """
+
+    with _cross_compute_enabled():
+        link, node1, node2 = await _prepared_vxlan_link(project)
+        salt = link._vxlan_salt
+
+        async def post_callback(path, data=None, **kwargs):
+            if path.endswith("/start"):
+                raise ComputeError("DockerError: image not found")
+            response = MagicMock()
+            response.json = {}
+            return response
+
+        node1.compute.post.side_effect = post_callback
+        with pytest.raises(ComputeError):
+            await node1.start()
+
+    starts = [c for c in node1.compute.post.call_args_list if str(c.args[0]).endswith("/start")]
+    assert len(starts) == 1
+    assert not any(call.args[0].endswith("/stop") for call in node1.compute.post.call_args_list)
+    assert link._vxlan_salt == salt
+    assert link._vxlan_downgraded is False
+
+
+@pytest.mark.asyncio
+async def test_open_heal_tries_the_full_vni_candidate_count(project):
+    """
+    The project-open heal gives a refused link the same VNI candidate count
+    an interactive creation gets (fresh-salt rounds), degrading to the
+    relay only after they run out.
+    """
+
+    link, node1, node2 = await _cross_compute_link(project)
+    rounds = []
+
+    async def redispatch(links, downgrade):
+        rounds.append(downgrade)
+        return links if not downgrade else []
+
+    with patch.object(project, "_redispatch_vxlan_links", redispatch):
+        await project._heal_refused_vxlan_links([link])
+    assert rounds == [False, False, True]
+
+
+@pytest.mark.asyncio
+async def test_open_heal_stops_at_the_first_successful_vni(project):
+    """
+    A link healed by the first fresh-VNI round needs no further rounds —
+    no pointless second redispatch, no relay degradation.
+    """
+
+    link, node1, node2 = await _cross_compute_link(project)
+    rounds = []
+
+    async def redispatch(links, downgrade):
+        rounds.append(downgrade)
+        return []
+
+    with patch.object(project, "_redispatch_vxlan_links", redispatch):
+        await project._heal_refused_vxlan_links([link])
+    assert rounds == [False]

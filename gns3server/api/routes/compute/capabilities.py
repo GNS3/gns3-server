@@ -30,6 +30,7 @@ from gns3server.compute.ubridge.tc_probe import (
     probe_iol_tap_support,
     probe_tap_support,
     probe_tc_capabilities,
+    probe_vxlan_support,
 )
 from gns3server.compute.vpcs.vpcs_probe import probe_vpcs_tap
 from gns3server.utils.path import get_default_project_directory
@@ -75,6 +76,11 @@ async def get_capabilities(request: Request) -> dict:
     # kernel link. None = unknown (probe failed or binary missing).
     vpcs_tap = await probe_vpcs_tap()
 
+    # VXLAN device creation (the vxlan module): the tunnel a cross-compute
+    # kernel link rides. None = unknown (probe failed, uBridge too old, or
+    # the kernel refuses vxlan devices here).
+    ubridge_vxlan = await probe_vxlan_support()
+
     # record the controller hostname or IP address
     if request.client:
         request.app.state.controller_host = request.client.host
@@ -91,4 +97,5 @@ async def get_capabilities(request: Request) -> dict:
         "ubridge_iol_tap": ubridge_iol_tap,
         "ubridge_bridge_tap": ubridge_bridge_tap,
         "vpcs_tap": vpcs_tap,
+        "ubridge_vxlan": ubridge_vxlan,
     }
