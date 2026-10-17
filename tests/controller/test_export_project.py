@@ -413,3 +413,49 @@ async def test_export_with_ignoring_snapshots(tmpdir, project):
 
     with zipfile.ZipFile(str(tmpdir / "zipfile.zip")) as myzip:
         assert os.path.join("snapshots", "snap.gns3project") not in [f.filename for f in myzip.filelist]
+
+
+@pytest.mark.asyncio
+async def test_export_two_isos_with_identical_filenames(tmpdir, project):
+    from gns3server.compute.qemu import Qemu
+    from gns3server.controller.import_project import _import_images
+
+    root = Path(str(tmpdir)) / "QEMU"
+    installer = root / "windows/install.iso"
+    drivers = root / "drivers/install.iso"
+    for image, data in ((installer, b"installer"), (drivers, b"drivers")):
+        image.parent.mkdir(parents=True)
+        image.write_bytes(data)
+    topology = {
+        "topology": {
+            "nodes": [
+                {
+                    "node_type": "qemu",
+                    "properties": {
+                        "cdrom_image": str(installer),
+                        "cdrom2_image": str(drivers),
+                    },
+                }
+            ]
+        }
+    }
+    Path(project.path, "test.gns3").write_text(json.dumps(topology))
+    archive = str(tmpdir / "iso-project.zip")
+    with aiozipstream.ZipFile() as stream:
+        with patch.object(Qemu, "get_images_directory", return_value=str(root)):
+            await export_project(stream, project, str(tmpdir), include_images=True)
+            await write_file(archive, stream)
+    with zipfile.ZipFile(archive) as stream:
+        properties = json.loads(stream.read("project.gns3"))["topology"]["nodes"][0]["properties"]
+        assert properties["cdrom_image"] != properties["cdrom2_image"]
+        assert stream.read("images/QEMU/" + properties["cdrom_image"]) == b"installer"
+        assert stream.read("images/QEMU/" + properties["cdrom2_image"]) == b"drivers"
+        assert len(stream.namelist()) == len(set(stream.namelist()))
+        destination = Path(str(tmpdir)) / "unpacked"
+        stream.extractall(destination)
+    controller = MagicMock()
+    imported_images = Path(str(tmpdir)) / "imported-images"
+    controller.images_path.return_value = str(imported_images)
+    await _import_images(controller, str(destination / "images"))
+    assert (imported_images / "QEMU" / properties["cdrom_image"]).read_bytes() == b"installer"
+    assert (imported_images / "QEMU" / properties["cdrom2_image"]).read_bytes() == b"drivers"

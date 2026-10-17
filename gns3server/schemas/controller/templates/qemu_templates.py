@@ -79,7 +79,8 @@ class QemuTemplate(TemplateBase):
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(
         QemuDiskInterfaceType.none, description="QEMU hdd interface"
     )
-    cdrom_image: Optional[str] = Field("", description="QEMU cdrom image path")
+    cdrom_image: Optional[str] = Field("", description="QEMU first cdrom image path")
+    cdrom2_image: Optional[str] = Field("", description="QEMU second cdrom image path")
     initrd: Optional[str] = Field("", description="QEMU initrd path")
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
     bios_image: Optional[str] = Field("", description="QEMU bios image path")

@@ -37,6 +37,9 @@ class ImageBase(BaseModel):
 
     filename: str = Field(..., description="Image filename")
     path: str = Field(..., description="Image path")
+    reference: Optional[str] = Field(
+        None, description="Image reference relative to its emulator directory, or an absolute additional-root path"
+    )
     image_type: ImageType = Field(..., description="Image type")
     image_size: int = Field(..., description="Image size in bytes")
     checksum: str = Field(..., description="Checksum value")
