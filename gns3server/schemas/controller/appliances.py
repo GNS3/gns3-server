@@ -425,7 +425,8 @@ class ApplianceVersionImages(BaseModel):
     hdb_disk_image: Optional[str] = Field(None, title="Hdc disk image")
     hdc_disk_image: Optional[str] = Field(None, title="Hdd disk image")
     hdd_disk_image: Optional[str] = Field(None, title="Hdd diskimage")
-    cdrom_image: Optional[str] = Field(None, title="cdrom image")
+    cdrom_image: Optional[str] = Field(None, title="First cdrom image")
+    cdrom2_image: Optional[str] = Field(None, title="Second cdrom image")
 
 
 class ApplianceVersion(BaseModel):

@@ -201,6 +201,7 @@ class QemuTemplate(Template):
     hdd_disk_image = Column(String)
     hdd_disk_interface = Column(String)
     cdrom_image = Column(String)
+    cdrom2_image = Column(String)
     initrd = Column(String)
     kernel_image = Column(String)
     bios_image = Column(String)

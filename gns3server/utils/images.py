@@ -49,6 +49,9 @@ from . import force_unix_path
 
 log = logging.getLogger(__name__)
 
+# Include the first ISO 9660 volume descriptor in image type detection.
+IMAGE_HEADER_SIZE = 16 * 2048 + 7
+
 
 async def list_images(image_type):
     """
@@ -145,7 +148,7 @@ def inspect_image_file(path, expected_image_type=None, allow_raw_image=False, st
         info = os.fstat(f.fileno())
         if not stat.S_ISREG(info.st_mode) or stat_fingerprint(info) != before:
             raise ImageChangedError(f"Image changed while opening: {path}")
-        header = f.read(7)
+        header = f.read(IMAGE_HEADER_SIZE)
         if len(header) < 7:
             raise InvalidImageError(f"Image '{path}' is too small to be valid")
         image_type = check_valid_image_header(path, header, allow_raw_image)
@@ -359,6 +362,8 @@ def check_valid_image_header(path: str, data: bytes, allow_raw_image: bool = Fal
     elif data[:4] == b"QFI\xfb" or data[:4] == b"KDMV":
         # for Qemy images: file must be QCOW2 or VMDK
         return "qemu"
+    elif data[16 * 2048 + 1 : 16 * 2048 + 6] == b"CD001":
+        return "qemu"
     else:
         if allow_raw_image is True:
             return "qemu"
@@ -380,12 +385,14 @@ async def write_image(
     if subdirectory is not None:
         validate_image_upload_name(image_filename)
         subfolders = validate_image_subdirectory(subdirectory)
-    # HTTP chunk boundaries need not align with the seven-byte image header.
+    # HTTP chunk boundaries need not align with the image header or ISO descriptor.
     iterator = stream.__aiter__()
     prefix = bytearray()
     async for chunk in iterator:
         prefix.extend(chunk)
-        if len(prefix) >= 7:
+        # Known disk formats keep their original early detection behavior.
+        header_size = 7 if prefix.startswith((b"\x7fELF", b"QFI\xfb", b"KDMV")) else IMAGE_HEADER_SIZE
+        if len(prefix) >= header_size:
             break
     if len(prefix) < 7:
         raise InvalidImageError("The image content is empty or too small to be valid")

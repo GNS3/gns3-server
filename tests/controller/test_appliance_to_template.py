@@ -628,3 +628,22 @@ def test_no_appliance_metadata_when_appliance_has_none():
     template = ApplianceToTemplate().new_template(appliance, None, "local")
 
     assert "appliance_metadata" not in template
+
+
+@pytest.mark.parametrize("version", [6, 8])
+def test_second_cdrom_survives_appliance_conversion(version):
+    from copy import deepcopy
+
+    from gns3server.schemas.controller.appliances import ApplianceVersionImages
+
+    slots = {"cdrom_image": "installer.iso", "cdrom2_image": "drivers.iso"}
+    validated = ApplianceVersionImages.model_validate(slots).model_dump(exclude_none=True)
+    assert validated == slots
+    appliance = deepcopy(VYOS_V8)
+    appliance["versions"][0]["images"] = validated
+    if version == 6:
+        appliance["registry_version"] = 6
+        appliance["qemu"] = {"arch": "x86_64", "ram": 512, "adapters": 1, "kvm": "allow"}
+    converted = ApplianceToTemplate().new_template(appliance, appliance["versions"][0], "local")
+    assert converted["cdrom_image"] == "installer.iso"
+    assert converted["cdrom2_image"] == "drivers.iso"
