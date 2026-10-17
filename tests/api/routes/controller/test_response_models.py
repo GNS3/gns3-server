@@ -458,7 +458,14 @@ class TestReplayFrameDetail:
             "end": None,
             "frame_count": 0,
             "sources": [
-                {"node_id": "n1", "link_id": link.id, "marker": "icmp", "data_link_type": "DLT_EN10MB", "count": 0}
+                {
+                    "node_id": "n1",
+                    "link_id": link.id,
+                    "marker": "icmp",
+                    "data_link_type": "DLT_EN10MB",
+                    "count": 0,
+                    "error": None,
+                }
             ],
             "frames": [],
         }

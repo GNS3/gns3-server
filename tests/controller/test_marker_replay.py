@@ -30,7 +30,13 @@ Unit tests for the tag-keyed aggregate replay module (sharkd edition):
   invalidation, LRU bound (idle-only eviction), single spawn under
   concurrent acquires, timeout/stale-reply aborts — against the real sharkd
   where installed, plus the frame detail end-to-end (hex + renamed tree +
-  filter expressions, same-microsecond disambiguation).
+  filter expressions, same-microsecond disambiguation)
+* remote capture sources — markers whose capture node runs on another
+  compute are fetched over HTTP into the bounded cache: merged timelines
+  span both computes, a compute with no file is a zero-count source (not an
+  error), an unreachable compute flags its source instead of shrinking the
+  inventory, unchanged refetches keep the cached file identity (resident
+  sharkd sessions survive), and the local compute is never queried.
 """
 
 import asyncio
@@ -38,6 +44,7 @@ import os
 import shutil
 import struct
 import sys
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -45,6 +52,7 @@ import pytest
 
 from gns3server.controller import marker_replay
 from gns3server.controller.controller_error import (
+    ComputeError,
     ControllerBadRequestError,
     ControllerError,
     ControllerNotFoundError,
@@ -880,3 +888,254 @@ class TestDecodeFrame:
             assert seen <= known, f"unknown sharkd keys appeared: {seen - known}"
         finally:
             await manager.close_all()
+
+
+# ---------------------------------------------------------------------------
+# remote capture sources (fetch from the compute hosting the capture node)
+# ---------------------------------------------------------------------------
+
+
+def _pcap_bytes(frames, magic=PCAP_MAGIC_US, snaplen=65535):
+    """In-memory twin of _write_pcap: the bytes a compute serves for a marker
+    pcap."""
+
+    buf = bytearray(struct.pack("<IHHiIII", magic, 2, 4, 0, 0, snaplen, 1))
+    for sec, frac, payload in frames:
+        buf += struct.pack("<IIII", sec, frac, len(payload), len(payload))
+        buf += payload
+    return bytes(buf)
+
+
+class _FakeRemoteContent:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    def iter_any(self):
+        async def _gen():
+            for chunk in self._chunks:
+                yield chunk
+
+        return _gen()
+
+
+class _FakeRemoteResponse:
+    """Duck-typed aiohttp response: streaming content + release()."""
+
+    def __init__(self, body):
+        self.status = 200
+        self.content = _FakeRemoteContent([body] if body else [])
+
+    async def release(self):
+        pass
+
+
+class _FakeRemoteCompute:
+    """Duck-typed Compute: answers GETs on /projects/{id}/files/{rel} from a
+    dict (missing key → 404), or raises a fixed failure on every call."""
+
+    def __init__(self, compute_id="remote-1", files=None, failure=None):
+        self.id = compute_id
+        self.requests = []
+        self.files = dict(files or {})
+        self.failure = failure
+
+    async def http_query(self, method, path, stream=False, **kwargs):
+        self.requests.append((method, path))
+        if self.failure is not None:
+            raise self.failure
+        rel = path.split("/files/", 1)[1]
+        if rel not in self.files:
+            raise ControllerNotFoundError(f"{method} {path} not found")
+        return _FakeRemoteResponse(self.files[rel])
+
+
+def _remote_project(tmp_path, markers, computes_by_node, markers_dir=None):
+    """_fake_project plus id and get_node resolving to the fake computes."""
+
+    project = _fake_project(tmp_path, markers, markers_dir)
+    project.id = "proj-1"
+
+    def get_node(node_id):
+        try:
+            return SimpleNamespace(compute=computes_by_node[node_id])
+        except KeyError:
+            raise ControllerNotFoundError(f"Node ID {node_id} doesn't exist")
+
+    project.get_node = get_node
+    return project
+
+
+_REL = "project-files/markers/remotenode_linkB_icmp.pcap"
+
+
+class TestRemoteSources:
+    @pytest.fixture(autouse=True)
+    def _fresh_cache(self, monkeypatch, tmp_path):
+        cache_dir = tmp_path / "marker-cache"
+        monkeypatch.setattr(marker_replay, "_remote_cache", {})
+        monkeypatch.setattr(marker_replay, "_remote_locks", {})
+        monkeypatch.setattr(marker_replay, "_remote_cache_dir", str(cache_dir))
+        return cache_dir
+
+    def _markers(self, tag=7):
+        return {
+            "linkA/icmp": _marker_entry(tag=tag, enabled=False, node_id="localnode"),
+            "linkB/icmp": _marker_entry(tag=tag, enabled=False, node_id="remotenode"),
+        }
+
+    async def test_remote_source_fetched_and_merged(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        _write_pcap(tmp_path / "localnode_linkA_icmp.pcap", [(1693472000, 100000, _icmp_frame())])
+        compute = _FakeRemoteCompute(files={_REL: _pcap_bytes([(1693472000, 200000, _icmp_frame())])})
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        timeline = await build_timeline(project, tag=7)
+
+        assert timeline["frame_count"] == 2
+        assert [f["node_id"] for f in timeline["frames"]] == ["localnode", "remotenode"]  # merged by ts
+        assert all(s["count"] == 1 for s in timeline["sources"])
+        assert not any("error" in s for s in timeline["sources"])
+        # the remote pcap was fetched through the compute project-files API
+        assert compute.requests == [("GET", f"/projects/proj-1/files/{_REL}")]
+
+    async def test_remote_missing_file_is_zero_count_without_error(self, tmp_path):
+        compute = _FakeRemoteCompute()  # no files: the marker never matched anything
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        timeline = await build_timeline(project, tag=7)
+
+        by_node = {s["node_id"]: s for s in timeline["sources"]}
+        assert by_node["remotenode"]["count"] == 0
+        assert "error" not in by_node["remotenode"]
+        assert timeline["frame_count"] == 0
+
+    async def test_unreachable_compute_flags_source(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        _write_pcap(tmp_path / "localnode_linkA_icmp.pcap", [(1693472000, 100000, _icmp_frame())])
+        compute = _FakeRemoteCompute(failure=ComputeError("Cannot connect to compute 'remote-1'"))
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        timeline = await build_timeline(project, tag=7)
+
+        by_node = {s["node_id"]: s for s in timeline["sources"]}
+        assert by_node["localnode"]["count"] == 1
+        assert "error" not in by_node["localnode"]
+        assert by_node["remotenode"]["count"] == 0
+        assert "remote-1" in by_node["remotenode"]["error"]
+        # the timeline still carries the reachable sources' frames
+        assert timeline["frame_count"] == 1
+
+    async def test_local_compute_is_never_queried(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        _write_pcap(tmp_path / "localnode_linkA_icmp.pcap", [(1693472000, 0, _icmp_frame())])
+        compute = _FakeRemoteCompute(compute_id="local")
+        markers = {
+            "linkA/icmp": _marker_entry(tag=7, enabled=False, node_id="localnode"),  # file on disk
+            "linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="localnode2"),  # no file ever
+        }
+        project = _remote_project(tmp_path, markers, {"localnode": compute, "localnode2": compute})
+
+        timeline = await build_timeline(project, tag=7)
+
+        assert compute.requests == []
+        by_link = {s["link_id"]: s for s in timeline["sources"]}
+        assert by_link["linkA"]["count"] == 1
+        assert by_link["linkB"]["count"] == 0
+        assert "error" not in by_link["linkB"]
+
+    async def test_unchanged_refetch_preserves_cache_file(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        compute = _FakeRemoteCompute(files={_REL: _pcap_bytes([(1693472000, 0, _icmp_frame())])})
+        markers = {"linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="remotenode")}
+        project = _remote_project(tmp_path, markers, {"remotenode": compute})
+
+        await build_timeline(project, tag=7)
+        entry = marker_replay._remote_cache[("proj-1", "remote-1", _REL)]
+        first = os.stat(entry["path"])
+
+        await build_timeline(project, tag=7)  # refetch with identical bytes
+        assert os.stat(entry["path"]).st_ino == first.st_ino  # same file: resident sessions stay valid
+
+        compute.files[_REL] = _pcap_bytes([(1693473000, 0, _icmp_frame())])  # rebuilt capture
+        await build_timeline(project, tag=7)
+        assert os.stat(entry["path"]).st_ino != first.st_ino  # replaced copy
+
+    async def test_cache_evicts_idle_entries(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        monkeypatch.setattr(marker_replay, "_REMOTE_CACHE_MAX", 2)
+        compute = _FakeRemoteCompute(
+            files={
+                f"project-files/markers/remotenode_link{i}_icmp.pcap": _pcap_bytes([(1693472000 + i, 0, _icmp_frame())])
+                for i in range(3)
+            }
+        )
+        markers = {f"link{i}/icmp": _marker_entry(tag=7, enabled=False, node_id="remotenode") for i in range(3)}
+        project = _remote_project(tmp_path, markers, {"remotenode": compute})
+
+        await build_timeline(project, tag=7)
+
+        assert len(marker_replay._remote_cache) == 2
+        assert all(os.path.exists(entry["path"]) for entry in marker_replay._remote_cache.values())
+
+    async def test_decode_remote_missing_is_not_matched_404(self, tmp_path):
+        compute = _FakeRemoteCompute()
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        with pytest.raises(ControllerNotFoundError, match="nothing ever matched"):
+            await decode_frame(
+                project, tag=7, ts="1693472000.000000", node_id="remotenode", link_id="linkB", marker="icmp"
+            )
+
+    async def test_decode_remote_unreachable_raises_compute_error(self, tmp_path):
+        compute = _FakeRemoteCompute(failure=ComputeError("Cannot connect to compute 'remote-1'"))
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        with pytest.raises(ComputeError, match="Could not fetch capture file"):
+            await decode_frame(
+                project, tag=7, ts="1693472000.000000", node_id="remotenode", link_id="linkB", marker="icmp"
+            )
+
+    async def test_decode_remote_frame_uses_cached_copy(self, tmp_path, monkeypatch):
+        compute = _FakeRemoteCompute(files={_REL: _pcap_bytes([(1693472000, 123456, _icmp_frame())])})
+        project = _remote_project(tmp_path, self._markers(), {"remotenode": compute})
+
+        class _FakeManager:
+            def __init__(self):
+                self.seen_pcap = None
+
+            @asynccontextmanager
+            async def session(self, pcap):
+                self.seen_pcap = pcap
+
+                async def rpc(method, params):
+                    assert (method, params) == ("frame", {"frame": 1, "proto": True})
+                    return {"tree": []}
+
+                yield SimpleNamespace(rpc=rpc)
+
+        manager = _FakeManager()
+        monkeypatch.setattr(marker_replay, "_get_manager", lambda: manager)
+
+        detail = await decode_frame(
+            project, tag=7, ts="1693472000.123456", node_id="remotenode", link_id="linkB", marker="icmp"
+        )
+
+        assert detail["hex"] == _icmp_frame().hex()
+        cached = {entry["path"] for entry in marker_replay._remote_cache.values()}
+        assert manager.seen_pcap in cached
+
+    async def test_close_sessions_removes_cache_dir(self, tmp_path, monkeypatch):
+        _fake_columns(monkeypatch, {})
+        compute = _FakeRemoteCompute(files={_REL: _pcap_bytes([(1693472000, 0, _icmp_frame())])})
+        project = _remote_project(
+            tmp_path, {"linkB/icmp": _marker_entry(tag=7, enabled=False, node_id="remotenode")}, {"remotenode": compute}
+        )
+
+        await build_timeline(project, tag=7)
+        cache_dir = marker_replay._remote_cache_dir
+        assert os.path.isdir(cache_dir)
+
+        await marker_replay.close_sessions()
+
+        assert not os.path.exists(cache_dir)
+        assert marker_replay._remote_cache == {}
