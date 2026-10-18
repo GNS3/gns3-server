@@ -23,6 +23,7 @@ from gns3server.schemas.compute.qemu_nodes import (
     CustomAdapter,
     QemuAdapterType,
     QemuBootPriority,
+    QemuCdromInterface,
     QemuConsoleType,
     QemuDiskInterfaceType,
     QemuOnCloseAction,
@@ -80,6 +81,8 @@ class QemuTemplate(TemplateBase):
         QemuDiskInterfaceType.none, description="QEMU hdd interface"
     )
     cdrom_image: Optional[str] = Field("", description="QEMU first cdrom image path")
+    cdrom_interface: QemuCdromInterface = Field("ide", description="First CD/DVD interface")
+    cdrom2_interface: QemuCdromInterface = Field("ide", description="Second CD/DVD interface")
     cdrom2_image: Optional[str] = Field("", description="QEMU second cdrom image path")
     initrd: Optional[str] = Field("", description="QEMU initrd path")
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")

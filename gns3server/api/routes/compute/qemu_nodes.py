@@ -135,6 +135,10 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
     """
 
     data = jsonable_encoder(node_data, exclude_unset=True)
+    # Reject interface changes before applying any other property or changing live media.
+    for name in ("cdrom_interface", "cdrom2_interface"):
+        if name in data:
+            node.validate_cdrom_interface(name, data[name])
     # update the console first to avoid issue if updating console type
     node.console = data.pop("console", node.console)
     for name, value in data.items():

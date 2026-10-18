@@ -146,10 +146,14 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
+                        from gns3server.db_migrations.versions.e2a7c9d4b601_add_cdrom_interfaces import (
+                            upgrade as upgrade_cdrom_interfaces,
+                        )
 
                         with Operations.context(MigrationContext.configure(connection)):
                             upgrade()
                             upgrade_cdrom()
+                            upgrade_cdrom_interfaces()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)

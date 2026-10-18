@@ -647,3 +647,33 @@ def test_second_cdrom_survives_appliance_conversion(version):
     converted = ApplianceToTemplate().new_template(appliance, appliance["versions"][0], "local")
     assert converted["cdrom_image"] == "installer.iso"
     assert converted["cdrom2_image"] == "drivers.iso"
+
+
+@pytest.mark.parametrize("name", ["cdrom_interface", "cdrom2_interface"])
+def test_v8_cdrom_interface_survives_validation_and_conversion(name):
+    import copy
+
+    appliance = copy.deepcopy(VYOS_V8)
+    appliance["settings"][0]["template_properties"][name] = "sata"
+    validated = ApplianceModel.model_validate(appliance).model_dump(mode="json", exclude_none=True)
+    template = ApplianceToTemplate().new_template(validated, validated["versions"][1], "local")
+    assert template[name] == "sata"
+
+
+def test_legacy_cdrom_interfaces_are_qemu_settings():
+    from gns3server.schemas.controller.appliances import Qemu
+
+    settings = Qemu.model_validate(
+        {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "ram": 512,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "kvm": "allow",
+            "cdrom_interface": "sata",
+            "cdrom2_interface": "sata",
+        }
+    )
+    assert settings.model_dump()["cdrom_interface"] == "sata"
+    assert settings.model_dump()["cdrom2_interface"] == "sata"
