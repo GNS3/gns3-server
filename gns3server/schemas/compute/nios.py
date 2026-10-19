@@ -73,6 +73,26 @@ class BridgeNIOType(StrEnum):
     bridge = "nio_bridge"
 
 
+class BridgeVxlan(BaseModel):
+    """
+    VXLAN tunnel spec carried by a cross-compute BridgeNIO. Each endpoint
+    creates one VXLAN device (uBridge ``vxlan create``) and enslaves it into
+    the link's per-link kernel bridge next to the node's anchor; the kernel
+    encapsulates/decapsulates the frames. The controller derives the name
+    and VNI (utils.vxlan) and resolves the peer address, so both endpoints
+    agree on the VNI without ever talking to each other.
+
+    The device's MTU is derived by the kernel from the underlay interface
+    the route to ``remote`` picks (MTU - 50 for the outer headers), which is
+    what the link's bridge then reports as "what this fabric can carry".
+    """
+
+    name: str = Field(..., max_length=15, description="VXLAN device name on this endpoint's host (IFNAMSIZ-1)")
+    vni: int = Field(..., ge=1, le=16777215, description="VXLAN network identifier, identical on both endpoints")
+    remote: str = Field(..., description="Peer compute's address (unicast tunnel endpoint)")
+    dstport: int = Field(..., ge=1, le=65535, description="UDP destination port, identical on both endpoints")
+
+
 class BridgeNIO(BaseModel):
     """
     Kernel-datapath bridge Network Input/Output properties. The NIO tells the
@@ -98,6 +118,11 @@ class BridgeNIO(BaseModel):
         ...,
         description="Kernel bridge name e.g. gns3a1b2c3d4e5; None when an Ethernet switch "
         "owns the anchor's bridge membership (absorbed link)",
+    )
+    vxlan: Optional[BridgeVxlan] = Field(
+        None,
+        description="Cross-compute tunnel: the VXLAN device this end creates and enslaves into the bridge "
+        "next to the anchor; absent for same-host kernel links",
     )
     suspend: Optional[bool] = Field(None, description="Suspend the NIO")
     filters: Optional[dict] = Field(

@@ -41,11 +41,16 @@ graph TB
     TMP["/tmp scratch copies<br/>(hardened-profile workaround)"]
     SK["sharkd -<br/>(resident JSON-RPC on stdio)"]
 
+    subgraph Remote["Remote compute"]
+        RFS[("its markers dir")]
+    end
+
     UI -->|"GET range / frames [?filter=&link=]"| GATE
     GATE --> SCAN
     SCAN -->|"columns / filter matches"| SESS
     SESS --> TMP --> SK
     SCAN -->|"hex: raw bytes"| FS
+    RFS -->|"HTTP fetch → local cache"| SCAN
     UI -->|"GET frame detail (lazy)"| SESS
 ```
 
@@ -75,6 +80,8 @@ column customization) — hardened profiles (AppArmor &c.) deny it the project d
 and the user's home even though the server process can read both. The pcap copy runs
 off the event loop, and server shutdown kills every session so no scratch copy leaks
 into `/tmp` across restarts.
+
+Capture-file locality: a marker's pcap is written by uBridge on the compute hosting the capture node, so only local markers' pcaps sit in the controller's project directory. A remote marker's pcap is fetched through the compute's project-files API on every acquire into a bounded cache (32 idle files under `/tmp`, wiped at shutdown) — a paused marker's pcap holds matched packets only, so the refetch stays cheap. The cached copy is replaced only when the bytes changed, so an unchanged refetch keeps the previous file's mtime and the resident sharkd session keyed by it survives; for remote sources the per-request `(mtime, size)` validation runs against the cache copy. A compute that cannot be reached flags its source (`count: 0` plus an `error` message in `sources`) instead of silently shrinking the timeline; the frame-detail endpoint then answers 409 with the fetch failure.
 
 ### Resource bounds
 
@@ -171,7 +178,7 @@ without it.
   "frame_count": 29,
   "sources": [
     { "node_id": "47703cad…", "link_id": "2697a7c6…", "marker": "global-ospf",
-      "data_link_type": "DLT_EN10MB", "count": 4 }
+      "data_link_type": "DLT_EN10MB", "count": 4, "error": null }
   ],
   "frames": [
     { "ts": "1788369209.406812", "len": 114,
@@ -218,7 +225,10 @@ design:
 
 - **`sources` is the stable inventory of the tag**: every capture source is always
   listed, with engine-free **total** counts, unaffected by `link` / `filter` — a
-  source dropdown must not shrink when the view narrows.
+  source dropdown must not shrink when the view narrows. A source whose capture file
+  could not be fetched from its compute keeps its entry with `count: 0` and an `error`
+  message (compute unreachable) — a partial timeline must be visible as partial, never
+  mistaken for the whole capture.
 - **An unknown `link_id` matches nothing**: `frame_count: 0`, `start: null`, empty
   `frames` — the same shape as a zero-match display filter, deliberately not a 404.
 
@@ -308,7 +318,7 @@ All error bodies are `{"message": "…"}` (the app's unified format).
 | 400 | Invalid display filter (sharkd's filter rejection only; message carries its original text) or filter longer than 2000 chars |
 | 401 | Not authenticated |
 | 404 | Tag has no markers in the project; detail source unknown; `ts`/`frame_number` do not match the file (the capture may have been rebuilt); or the pcap vanished mid-request |
-| 409 | Tag gate: a marker under the tag is still `enabled: true` (the response lists them) |
+| 409 | Tag gate: a marker under the tag is still `enabled: true` (the response lists them); detail endpoint only — the compute hosting the capture file could not be reached (message names the compute) |
 | 501 | sharkd not installed / unavailable — replay is unavailable, no degraded mode |
 | 502 | sharkd failed, timed out (10 s per RPC), or answered out of sync — the session is killed and re-spawned on the next request |
 
@@ -348,8 +358,4 @@ All error bodies are `{"message": "…"}` (the app's unified format).
   directory — nothing accumulates across restarts.
 - **Tag type.** REST and the `marker.match` WS event both carry `tag` as `int` (the
   listener normalizes); replay keys on that int value.
-- **Follow-ups.** Remote-compute support via the existing capture-file proxy pattern;
-  convenience APIs (`GET …/markers/tags` to list tags, `POST …/markers/tags/{tag}/pause`
-  to batch-pause — a one-call path to the replayable state); uBridge-side
-  `pcap_dump_open_append` (with a linktype-header check on the existing file) so capture
-  history survives node restarts instead of being truncated on every reinstall.
+- **Follow-ups.** Convenience APIs (`GET …/markers/tags` to list tags, `POST …/markers/tags/{tag}/pause` to batch-pause — a one-call path to the replayable state); uBridge-side `pcap_dump_open_append` (with a linktype-header check on the existing file) so capture history survives node restarts instead of being truncated on every reinstall.

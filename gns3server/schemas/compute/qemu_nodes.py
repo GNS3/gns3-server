@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import StrEnum
-from typing import List, Optional
+from enum import Enum
+from typing import List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -152,6 +152,9 @@ class QemuDiskInterfaceType(StrEnum):
     none = "none"
 
 
+QemuCdromInterface = Literal["ide", "sata"]
+
+
 class QemuBase(BaseModel):
     """
     Common Qemu node properties.
@@ -183,8 +186,12 @@ class QemuBase(BaseModel):
     hdd_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hdd backing file disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
-    cdrom_image: Optional[str] = Field(None, description="QEMU cdrom image path")
-    cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU cdrom image checksum")
+    cdrom_image: Optional[str] = Field(None, description="QEMU first cdrom image path")
+    cdrom_interface: QemuCdromInterface = Field("ide", description="First CD/DVD interface")
+    cdrom2_interface: QemuCdromInterface = Field("ide", description="Second CD/DVD interface")
+    cdrom2_image: Optional[str] = Field(None, description="QEMU second cdrom image path")
+    cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU first cdrom image checksum")
+    cdrom2_image_md5sum: Optional[str] = Field(None, description="QEMU second cdrom image checksum")
     bios_image: Optional[str] = Field(None, description="QEMU bios image path")
     bios_image_md5sum: Optional[str] = Field(None, description="QEMU bios image checksum")
     initrd: Optional[str] = Field(None, description="QEMU initrd path")

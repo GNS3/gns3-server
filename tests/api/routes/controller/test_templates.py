@@ -1112,6 +1112,28 @@ class TestDockerTemplate:
 
 
 class TestQemuTemplate:
+    async def test_cdrom_interfaces_persist_on_template_update(self, app, client):
+        params = {
+            "name": "SATA installer",
+            "compute_id": "local",
+            "template_type": "qemu",
+            "cdrom_interface": "sata",
+            "cdrom2_interface": "sata",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        template_id = response.json()["template_id"]
+        url = app.url_path_for("get_template", template_id=template_id)
+        saved = (await client.get(url)).json()
+        assert saved["cdrom_interface"] == saved["cdrom2_interface"] == "sata"
+        response = await client.put(
+            app.url_path_for("update_template", template_id=template_id), json={"cdrom_interface": "ide"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        saved = (await client.get(url)).json()
+        assert saved["cdrom_interface"] == "ide"
+        assert saved["cdrom2_interface"] == "sata"
+
     async def test_qemu_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {

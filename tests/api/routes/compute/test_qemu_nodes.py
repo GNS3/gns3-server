@@ -370,6 +370,36 @@ class TestQemuNodesRoutes:
         assert response.json()["hdb_disk_image"] == "linux载.img"
         assert response.json()["ram"] == 1024
 
+    async def test_cdrom_interfaces_update_and_read_back(
+        self, app: FastAPI, compute_client: AsyncClient, qemu_vm: dict
+    ) -> None:
+        url = app.url_path_for("compute:update_qemu_node", project_id=qemu_vm["project_id"], node_id=qemu_vm["node_id"])
+        response = await compute_client.put(url, json={"cdrom_interface": "sata", "cdrom2_interface": "sata"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["cdrom_interface"] == "sata"
+        assert response.json()["cdrom2_interface"] == "sata"
+        response = await compute_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["cdrom_interface"] == "sata"
+        assert response.json()["cdrom2_interface"] == "sata"
+
+    @pytest.mark.parametrize("name", ["cdrom_interface", "cdrom2_interface"])
+    async def test_cdrom_interface_rejection_does_not_partially_update(self, app, compute_client, qemu_vm, name):
+        url = app.url_path_for("compute:update_qemu_node", project_id=qemu_vm["project_id"], node_id=qemu_vm["node_id"])
+        original = (await compute_client.get(url)).json()
+        with patch("gns3server.compute.qemu.qemu_vm.QemuVM.is_running", return_value=True):
+            response = await compute_client.put(url, json={"ram": original["ram"] + 128, name: "sata"})
+        assert response.status_code == status.HTTP_409_CONFLICT
+        saved = (await compute_client.get(url)).json()
+        assert saved["ram"] == original["ram"]
+        assert saved[name] == original[name]
+
+    @pytest.mark.parametrize("name", ["cdrom_interface", "cdrom2_interface"])
+    async def test_cdrom_interface_rejects_null(self, app, compute_client, qemu_vm, name):
+        url = app.url_path_for("compute:update_qemu_node", project_id=qemu_vm["project_id"], node_id=qemu_vm["node_id"])
+        response = await compute_client.put(url, json={name: None})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
     async def test_qemu_nio_create_udp(self, app: FastAPI, compute_client: AsyncClient, qemu_vm: dict) -> None:
 
         params = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}

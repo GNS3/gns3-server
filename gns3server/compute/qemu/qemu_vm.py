@@ -158,6 +158,9 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         self._hdc_disk_interface = "none"
         self._hdd_disk_interface = "none"
         self._cdrom_image = ""
+        self._cdrom2_image = ""
+        self._cdrom_interface = "ide"
+        self._cdrom2_interface = "ide"
         self._bios_image = ""
         self._boot_priority = "c"
         self._mac_address = ""
@@ -524,33 +527,101 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         else:
             self._cdrom_image = ""
 
+    @property
+    def cdrom2_image(self):
+        return self._cdrom2_image
+
+    @cdrom2_image.setter
+    def cdrom2_image(self, image):
+        self._cdrom2_image = self.manager.get_abs_image_path(image, self.working_dir) if image else ""
+
+    @property
+    def cdrom_interface(self):
+        return self._cdrom_interface
+
+    @cdrom_interface.setter
+    def cdrom_interface(self, interface):
+        self.validate_cdrom_interface("cdrom_interface", interface)
+        self._cdrom_interface = interface
+
+    @property
+    def cdrom2_interface(self):
+        return self._cdrom2_interface
+
+    @cdrom2_interface.setter
+    def cdrom2_interface(self, interface):
+        self.validate_cdrom_interface("cdrom2_interface", interface)
+        self._cdrom2_interface = interface
+
+    def validate_cdrom_interface(self, name, interface):
+        """Validate without mutating the VM, including during API preflight."""
+        if interface not in ("ide", "sata"):
+            raise QemuError("CD/DVD interface must be ide or sata")
+        if interface != getattr(self, name) and self.is_running():
+            raise QemuError("Stop the VM before changing a CD/DVD interface")
+
     async def update_property(self, name, value):
         """
         Update Qemu VM properties.
         """
 
+        previous = getattr(self, name)
         setattr(self, name, value)
-        if name == "cdrom_image":
-            # let the guest know about the new cdrom image
-            await self._update_cdrom_image()
+        try:
+            if name in {"cdrom_image", "cdrom2_image"}:
+                await self._update_cdrom_image(name)
+        except (Exception, asyncio.CancelledError):
+            # Old media may have been deleted while QEMU still has it open.
+            # Restore the stored path without resolving it again.
+            setattr(self, f"_{name}", previous)
+            raise
         self._command_line_changed = True
 
-    async def _update_cdrom_image(self):
-        """
-        Update the cdrom image path for the Qemu guest OS
-        """
+    async def _update_cdrom_image(self, name="cdrom_image"):
+        """Change media only on an existing drive, validating the affected slot."""
+        if not self.is_running():
+            return
+        image = getattr(self, name)
+        self._cdrom_option(name)
+        slot = 0 if name == "cdrom_image" else 1
+        interface = self.cdrom_interface if slot == 0 else self.cdrom2_interface
+        device = f"sata-cdrom{slot}" if interface == "sata" else f"ide1-cd{slot}"
+        reader, writer = await self._open_qemu_monitor_connection_vm()
+        if reader is None or writer is None:
+            raise QemuError("Could not connect to the QEMU monitor to change CD/DVD media")
 
-        if self.is_running():
-            if self._cdrom_image:
-                self._cdrom_option()  # this will check the cdrom image is accessible
-                await self._control_vm("eject -f ide1-cd0")
-                await self._control_vm(f"change ide1-cd0 {self._cdrom_image}")
-                log.debug(
-                    f'QEMU VM "{self._name}" [{self._id}] has changed the cdrom image path to {self._cdrom_image}'
-                )
+        async def command(text):
+            writer.write((text + "\n").encode("utf-8"))
+            await writer.drain()
+            # Consume the echo first: a filename may itself contain "(qemu) ".
+            await asyncio.wait_for(reader.readline(), timeout=3)
+            output = await asyncio.wait_for(reader.readuntil(b"(qemu) "), timeout=3)
+            response = output.decode("utf-8", errors="replace")
+            response = response.removesuffix("(qemu) ").strip()
+            if "Error:" in response or (text != "info block" and response):
+                raise QemuError(response)
+            return response
+
+        try:
+            await asyncio.wait_for(reader.readuntil(b"(qemu) "), timeout=3)
+            blocks = await command("info block")
+            if not re.search(rf"(?m)^{re.escape(device)}(?:\s+\([^\r\n]*\))?:", blocks):
+                raise QemuError("Stop the VM before adding this CD/DVD drive")
+            if image:
+                filename = image
+                if not image.isascii() or any(ord(char) < 32 for char in image):
+                    # HMP's line editor cannot reliably handle non-ASCII bytes.
+                    # A JSON block filename carries them as ASCII escapes, which
+                    # the block layer decodes after the HMP parser has run.
+                    filename = "json:" + json.dumps({"driver": "raw", "file": {"driver": "file", "filename": image}})
+                await command(f"change {device} -f {json.dumps(filename)}")
             else:
-                await self._control_vm("eject -f ide1-cd0")
-                log.debug(f'QEMU VM "{self._name}" [{self._id}] has ejected the cdrom image')
+                await command(f"eject -f {device}")
+            log.debug('QEMU VM "%s" has changed %s to %s', self._name, name, image)
+        except (asyncio.TimeoutError, asyncio.IncompleteReadError, OSError) as e:
+            raise QemuError(f"Could not change CD/DVD media: {e}") from e
+        finally:
+            writer.close()
 
     @property
     def bios_image(self):
@@ -2387,20 +2458,45 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         return options
 
-    def _cdrom_option(self):
-
+    def _cdrom_option(self, name=None):
         options = []
-        if self._cdrom_image:
-            if not os.path.isfile(self._cdrom_image) or not os.path.exists(self._cdrom_image):
-                if os.path.islink(self._cdrom_image):
-                    raise QemuError(
-                        f"cdrom image '{self._cdrom_image}' linked to '{os.path.realpath(self._cdrom_image)}' is not accessible"
-                    )
-                else:
-                    raise QemuError(f"cdrom image '{self._cdrom_image}' is not accessible")
-            if self._hdc_disk_image:
-                raise QemuError("You cannot use a disk image on hdc disk and a CDROM image at the same time")
-            options.extend(["-cdrom", self._cdrom_image.replace(",", ",,")])
+        for slot, image_name in enumerate(("cdrom_image", "cdrom2_image")):
+            image = getattr(self, image_name)
+            if name not in (None, image_name) or not image:
+                continue
+            if not os.path.isfile(image):
+                if os.path.islink(image):
+                    raise QemuError(f"cdrom image '{image}' linked to '{os.path.realpath(image)}' is not accessible")
+                raise QemuError(f"cdrom image '{image}' is not accessible")
+            interface = self.cdrom_interface if slot == 0 else self.cdrom2_interface
+            if interface == "sata":
+                # Separate IDs avoid collisions with SATA hard disk controllers.
+                options.extend(
+                    [
+                        "-device",
+                        f"ich9-ahci,id=cdrom-ahci{slot}",
+                        "-drive",
+                        f"file={image.replace(',', ',,')},if=none,id=sata-cdrom{slot},media=cdrom,readonly=on",
+                        "-device",
+                        f"ide-cd,drive=sata-cdrom{slot},bus=cdrom-ahci{slot}.0",
+                    ]
+                )
+            elif slot == 0:
+                if self._hdc_disk_image and self._hdc_disk_interface == "ide":
+                    raise QemuError("You cannot use an IDE hdc disk and a CDROM image at the same time")
+                options.extend(["-cdrom", image.replace(",", ",,")])
+            else:
+                disk_interface = self._hdd_disk_interface
+                if self._create_config_disk and disk_interface == "none":
+                    disk_interface = self._hda_disk_interface
+                if (self._hdd_disk_image or self._create_config_disk) and disk_interface == "ide":
+                    raise QemuError("You cannot use an IDE hdd disk and a second CDROM image at the same time")
+                options.extend(
+                    [
+                        "-drive",
+                        f"file={image.replace(',', ',,')},if=ide,index=3,media=cdrom,readonly=on",
+                    ]
+                )
         return options
 
     def _bios_option(self):
@@ -2868,6 +2964,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image, self.working_dir)
         answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image, self.working_dir)
+        answer["cdrom2_image"] = self.manager.get_relative_image_path(self._cdrom2_image, self.working_dir)
+        answer["cdrom2_image_md5sum"] = md5sum(self._cdrom2_image, self.working_dir)
         answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image, self.working_dir)
         answer["bios_image_md5sum"] = md5sum(self._bios_image, self.working_dir)
         answer["initrd"] = self.manager.get_relative_image_path(self._initrd, self.working_dir)

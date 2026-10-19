@@ -43,6 +43,7 @@ from typing import Optional
 
 from gns3server.config import Config
 from gns3server.utils.tc_capabilities import parse_tc_capabilities
+from gns3server.utils.vxlan import VXLAN_VNI_MAX, VXLAN_VNI_MIN
 
 from .hypervisor import Hypervisor
 from .ubridge_error import UbridgeError
@@ -59,6 +60,8 @@ _tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 _iol_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 # binary identity -> whether the bridge module can release a named TAP NIO (None = unknown)
 _bridge_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
+# binary identity -> whether the vxlan module can create a device (None = unknown)
+_vxlan_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 _lock = asyncio.Lock()
 
 
@@ -353,6 +356,96 @@ async def _probe_bridge_tap(path, config, timeout):  # noqa: ASYNC109 - operatio
             # (unlike the siblings, ask() re-raises those): an unusable
             # binary means unknown, never a failed /capabilities response.
             log.debug("uBridge bridge-tap probe failed: %s", e)
+            return None
+    finally:
+        with contextlib.suppress(Exception):
+            await hypervisor.stop()
+        shutil.rmtree(working_dir, ignore_errors=True)
+
+
+async def probe_vxlan_support(timeout: float = 15.0):
+    """
+    Whether this host's uBridge can create a VXLAN device (the ``vxlan``
+    module) — the carrier a cross-compute kernel link tunnels through.
+    Probed on a scratch device with a scratch VNI on a scratch dstport
+    (never the deployment's configured port, so the probe cannot disturb
+    live tunnels; a device on the port would still be harmless — the kernel
+    shares one socket — but the probe has no business joining it) and
+    deleted again, cached by binary identity like the other probes. Any
+    failure — old build, missing module, no CAP_NET_ADMIN, an unloadable
+    kernel module — means unknown, reported as None and cached as such;
+    the controller reads unknown as "keep this link on the relay".
+    """
+
+    config = Config.instance()
+    path = shutil.which(config.settings.Server.ubridge_path)
+    if not path:
+        return None
+    try:
+        stat = os.stat(path)
+        key = (path, stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns)
+    except OSError:
+        return None
+
+    async with _lock:
+        if key in _vxlan_cache:
+            return _vxlan_cache[key]
+        supported = await _probe_vxlan(path, config, timeout)
+        _vxlan_cache[key] = supported
+        return supported
+
+
+async def _probe_vxlan(path, config, timeout):
+    """
+    Spawn a throwaway uBridge and run one ``vxlan create``/``delete`` cycle.
+    The scratch name (uuid suffix) cannot collide with a real link's
+    deterministic name; the scratch VNI and dstport are drawn from uuids so
+    two concurrent probes on one host (two servers, one uBridge user) cannot
+    fight over either. No ``dev=``: this probe answers "can this binary and
+    kernel create a VXLAN device at all" — resolving the real underlay
+    interface belongs to the link attach path, where an unroutable peer
+    means this particular link falls back to the relay, not that the
+    capability is absent.
+    """
+
+    working_dir = tempfile.mkdtemp(prefix="gns3-vxlan-probe-")
+    hypervisor = Hypervisor(
+        None,
+        path,
+        working_dir,
+        config.settings.Server.ubridge_control_transport,
+        config.settings.Server.host,
+        str(uuid.uuid4()),
+    )
+    name = f"gvx{uuid.uuid4().hex[:8]}"
+    # VNI in the deployment's own derived range (utils.vxlan) so the probe
+    # exercises exactly the kernel path real links use.
+    vni = VXLAN_VNI_MIN + uuid.uuid4().int % (VXLAN_VNI_MAX - VXLAN_VNI_MIN + 1)
+    dstport = 20000 + uuid.uuid4().int % 10000
+    # The scratch socket must never be the configured dstport: on it the
+    # scratch VNI shares a demux table with the live links' devices, and an
+    # unlucky draw would make the probe report the capability unknown for
+    # the process's lifetime (the result is cached).
+    if dstport == config.settings.Server.vxlan_dstport:
+        dstport = 20000 if dstport == 29999 else dstport + 1
+    try:
+
+        async def ask():
+            await hypervisor.start()
+            await hypervisor.connect()
+            await hypervisor.send(f"vxlan create {name} {vni} remote=127.0.0.1 dstport={dstport}")
+            try:
+                await hypervisor.send(f"vxlan delete {name}")
+            except UbridgeError as e:
+                log.warning("Probe VXLAN %s could not be deleted: %s", name, e)
+            return True
+
+        try:
+            return await asyncio.wait_for(ask(), timeout=timeout)
+        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+            # Old build ("Unknown command"), missing module, or no
+            # CAP_NET_ADMIN: unknown.
+            log.debug("uBridge vxlan-module probe failed: %s", e)
             return None
     finally:
         with contextlib.suppress(Exception):

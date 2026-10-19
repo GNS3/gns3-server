@@ -35,6 +35,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 
 from gns3server import schemas
+from gns3server.compute.error import NodeError
 from gns3server.compute.project import Project
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.utils.path import is_safe_path
@@ -271,16 +272,35 @@ async def create_batch_nios(
         # count (standard == 1, Dynamips == 2) and await the async variant.
         sig = inspect.signature(node.manager.create_nio)
         dynamips_style = len(sig.parameters) >= 2
+        failed = []
         for entry in entries:
             nio_settings = jsonable_encoder(entry.nio, exclude_unset=True)
-            if dynamips_style:
-                nio = await node.manager.create_nio(node, nio_settings)
-            else:
-                nio = node.manager.create_nio(nio_settings)
-            await _add_nio_binding(node, entry.adapter_number, entry.port_number, nio)
+            try:
+                if dynamips_style:
+                    nio = await node.manager.create_nio(node, nio_settings)
+                else:
+                    nio = node.manager.create_nio(nio_settings)
+                await _add_nio_binding(node, entry.adapter_number, entry.port_number, nio)
+            except NodeError:
+                # A VXLAN entry that cannot be wired (its VNI already
+                # registered on the host's shared socket, no route to the
+                # peer) must not fail the whole project open: report it so
+                # the controller can degrade that link to the uBridge relay.
+                # Every other NIO type keeps the fail-the-batch semantics.
+                if not nio_settings.get("vxlan"):
+                    raise
+                failed.append(
+                    {
+                        "node_id": entry.node_id,
+                        "adapter_number": entry.adapter_number,
+                        "port_number": entry.port_number,
+                    }
+                )
+        return failed
 
-    await asyncio.gather(*[_create_one_node(nid, ents) for nid, ents in per_node.items()])
-    return {"added": len(batch.nios)}
+    results = await asyncio.gather(*[_create_one_node(nid, ents) for nid, ents in per_node.items()])
+    failed = [item for node_failed in results for item in node_failed]
+    return {"added": len(batch.nios) - len(failed), "failed": failed}
 
 
 @router.put(

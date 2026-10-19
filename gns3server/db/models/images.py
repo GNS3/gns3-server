@@ -45,6 +45,23 @@ class Image(BaseTable):
     last_error = Column(String)
     templates = relationship("Template", secondary=image_template_map, back_populates="images")
 
+    @property
+    def reference(self):
+        """An emulator-relative reference, or an absolute additional-root path."""
+        import os
+
+        from gns3server.utils import force_unix_path
+        from gns3server.utils.images import default_images_directory
+
+        root = os.path.abspath(default_images_directory(self.image_type))
+        path = os.path.abspath(self.path)
+        try:
+            if os.path.commonpath([root, path]) == root:
+                return force_unix_path(os.path.relpath(path, root))
+        except ValueError:  # Different drives on Windows.
+            pass
+        return force_unix_path(path)
+
 
 class ImageSyncJob(BaseTable):
     __tablename__ = "image_sync_jobs"

@@ -29,6 +29,9 @@ class ReplaySource(BaseModel):
     marker: str
     data_link_type: str
     count: int = Field(..., description="Total frames in the capture, unaffected by filters")
+    error: Optional[str] = Field(
+        None, description="Set when the capture file could not be fetched from the compute hosting it"
+    )
 
 
 class ReplayFrame(BaseModel):

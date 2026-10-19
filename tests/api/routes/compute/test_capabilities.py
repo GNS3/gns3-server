@@ -45,6 +45,7 @@ class TestCapabilitiesRoutes:
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_iol_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vpcs_tap", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vxlan_support", _no_tap_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
@@ -73,6 +74,7 @@ class TestCapabilitiesRoutes:
             "ubridge_iol_tap": None,
             "ubridge_bridge_tap": None,
             "vpcs_tap": None,
+            "ubridge_vxlan": None,
         }
 
     async def test_get_on_gns3vm(self, app: FastAPI, compute_client: AsyncClient, on_gns3vm, monkeypatch) -> None:
@@ -85,6 +87,7 @@ class TestCapabilitiesRoutes:
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_iol_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vpcs_tap", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vxlan_support", _no_tap_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
@@ -113,6 +116,7 @@ class TestCapabilitiesRoutes:
             "ubridge_iol_tap": None,
             "ubridge_bridge_tap": None,
             "vpcs_tap": None,
+            "ubridge_vxlan": None,
         }
 
     async def test_get_reports_ubridge_tc(self, app: FastAPI, compute_client: AsyncClient, monkeypatch) -> None:
@@ -199,6 +203,25 @@ class TestCapabilitiesRoutes:
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_iol_tap_support", _no_tap_probe)
         monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vxlan_support", _no_tap_probe)
         response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["vpcs_tap"] is True
+
+    async def test_get_reports_ubridge_vxlan(self, app: FastAPI, compute_client: AsyncClient, monkeypatch) -> None:
+        """
+        The vxlan capability is what makes a cross-compute link tunnel-
+        eligible, so it travels with the other compute capabilities.
+        """
+
+        async def fake_vxlan_probe():
+            return True
+
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vxlan_support", fake_vxlan_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_tap_support", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_iol_tap_support", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_bridge_tap_support", _no_tap_probe)
+        monkeypatch.setattr("gns3server.api.routes.compute.capabilities.probe_vpcs_tap", _no_tap_probe)
+        response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["ubridge_vxlan"] is True
