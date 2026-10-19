@@ -202,6 +202,11 @@ class Cloud(BaseNode):
 
         self._remote_console_http_path = remote_console_http_path
 
+    @staticmethod
+    def _normalize_ports_mapping(ports):
+        # API responses include bridge=None; legacy projects omit it.
+        return [{key: value for key, value in port.items() if key != "bridge" or value is not None} for port in ports]
+
     @property
     def ports_mapping(self):
         """
@@ -211,11 +216,6 @@ class Cloud(BaseNode):
         """
 
         return self._ports_mapping
-
-    @staticmethod
-    def _normalize_ports_mapping(ports):
-        # API responses include bridge=None; legacy projects omit it.
-        return [{key: value for key, value in port.items() if key != "bridge" or value is not None} for port in ports]
 
     @ports_mapping.setter
     def ports_mapping(self, ports):
