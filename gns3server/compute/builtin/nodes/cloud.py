@@ -15,12 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import re
 import subprocess
 import sys
 
 import gns3server.utils.asyncio
 import gns3server.utils.interfaces
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.schemas.compute.cloud_nodes import LINUX_TAP_NAME_PATTERN
 from gns3server.utils.kernel_anchor import is_kernel_datapath_interface
 
 from ...base_node import BaseNode
@@ -69,7 +72,7 @@ class Cloud(BaseNode):
             for port in ports:
                 port["port_number"] = port_number
                 port_number += 1
-            self._ports_mapping = ports
+            self._ports_mapping = self._normalize_ports_mapping(ports)
 
     @property
     def nios(self):
@@ -100,6 +103,9 @@ class Cloud(BaseNode):
                     "flags": interface.get("flags", []),
                 }
             )
+
+            if sys.platform.startswith("linux") and gns3server.utils.interfaces.is_interface_bridge(interface["name"]):
+                host_interfaces[-1]["is_bridge"] = True
 
         return {
             "name": self.name,
@@ -206,6 +212,11 @@ class Cloud(BaseNode):
 
         return self._ports_mapping
 
+    @staticmethod
+    def _normalize_ports_mapping(ports):
+        # API responses include bridge=None; legacy projects omit it.
+        return [{key: value for key, value in port.items() if key != "bridge" or value is not None} for port in ports]
+
     @ports_mapping.setter
     def ports_mapping(self, ports):
         """
@@ -214,6 +225,7 @@ class Cloud(BaseNode):
         :param ports: ports info
         """
 
+        ports = self._normalize_ports_mapping(ports)
         if ports != self._ports_mapping:
             if len(self._nios) > 0:
                 raise NodeError("Cannot modify a cloud that is already connected.")
@@ -314,7 +326,9 @@ class Cloud(BaseNode):
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         await self._ubridge_apply_markers(bridge_name, nio)
         if port_info["type"] in ("ethernet", "tap"):
-            if not self.manager.has_privileged_access(self.ubridge_path):
+            if not self.manager.has_privileged_access(
+                self.ubridge_path, require_net_admin=bool(port_info.get("bridge"))
+            ):
                 raise NodeError(
                     "uBridge requires root access or the capability to interact with Ethernet and TAP adapters"
                 )
@@ -334,9 +348,7 @@ class Cloud(BaseNode):
                     await self._add_windows_ethernet(port_info, bridge_name)
 
             elif port_info["type"] == "tap":
-                await self._ubridge_send(
-                    'bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
-                )
+                await self._add_tap_interface(port_info, bridge_name)
 
         elif port_info["type"] == "udp":
             await self._ubridge_send(
@@ -349,6 +361,32 @@ class Cloud(BaseNode):
             await self._ubridge_send(f'bridge start_capture {bridge_name} "{nio.pcap_output_file}"')
 
         await self._ubridge_send(f"bridge start {bridge_name}")
+
+    async def _add_tap_interface(self, port_info, bridge_name):
+        """Open a TAP and restore its optional host bridge assignment."""
+        target_bridge = port_info.get("bridge")
+        if target_bridge:
+            self._validate_tap_bridge(port_info["interface"], target_bridge)
+        await self._ubridge_send(
+            'bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
+        )
+
+        if target_bridge:
+            await self._ubridge_send(f'brctl addif "{target_bridge}" "{port_info["interface"]}"')
+
+    def _validate_tap_bridge(self, tap, target_bridge):
+        """Validate host resources before creating or attaching a Cloud TAP."""
+        if not sys.platform.startswith("linux"):
+            raise NodeError("TAP bridge assignments are only supported on Linux")
+        if not all(re.fullmatch(LINUX_TAP_NAME_PATTERN, name) for name in (target_bridge, tap)):
+            raise NodeError("Invalid TAP or bridge interface name")
+        if target_bridge not in {
+            interface["name"] for interface in self._interfaces()
+        } or not gns3server.utils.interfaces.is_interface_bridge(target_bridge):
+            raise NodeError(f"Bridge '{target_bridge}' is missing or not allowed on this server")
+        master_path = os.path.join("/sys/class/net", tap, "master")
+        if os.path.exists(master_path) and os.path.basename(os.path.realpath(master_path)) != target_bridge:
+            raise NodeError(f"TAP '{tap}' already belongs to another bridge")
 
     async def _add_linux_ethernet(self, port_info, bridge_name):
         """

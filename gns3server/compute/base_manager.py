@@ -297,11 +297,12 @@ class BaseManager:
         return node
 
     @staticmethod
-    def has_privileged_access(executable):
+    def has_privileged_access(executable, *, require_net_admin=False):
         """
         Check if an executable have the right to attach to Ethernet and TAP adapters.
 
         :param executable: executable path
+        :param require_net_admin: also require CAP_NET_ADMIN for network configuration
 
         :returns: True or False
         """
@@ -324,8 +325,8 @@ class BaseManager:
         try:
             if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
-                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
-                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                required = (1 << 13) | ((1 << 12) if require_net_admin else 0)
+                if struct.unpack("<IIIII", caps)[1] & required == required:
                     return True
         except (AttributeError, OSError) as e:
             log.error(f"Could not determine if CAP_NET_RAW capability is set for {executable}: {e}")

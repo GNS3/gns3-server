@@ -14,14 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..common import NodeStatus
 from ..update import PartialUpdateModel
+
+LINUX_TAP_NAME_PATTERN = r"^[a-zA-Z0-9_.:-]{1,15}$"
 
 
 class HostInterfaceType(str, Enum):
@@ -57,6 +60,7 @@ class HostInterface(BaseModel):
     name: str = Field(..., description="Interface name")
     type: HostInterfaceType = Field(..., description="Interface type")
     special: bool = Field(..., description="Whether the interface is non standard")
+    is_bridge: bool = Field(False, description="Whether this is a Linux bridge")
     ip_addresses: List[HostInterfaceIPAddress] = Field(
         default_factory=list, description="All IPv4 and IPv6 addresses on this interface"
     )
@@ -94,6 +98,19 @@ class TAPPort(BaseModel):
     port_number: int
     type: TAPType
     interface: str
+    bridge: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=15,
+        pattern=LINUX_TAP_NAME_PATTERN,
+        description="Existing Linux bridge to attach the TAP to",
+    )
+
+    @model_validator(mode="after")
+    def validate_bridged_interface(self):
+        if self.bridge and not re.fullmatch(LINUX_TAP_NAME_PATTERN, self.interface):
+            raise ValueError("A bridged TAP name must be 1-15 letters, digits, underscores, dots, colons or hyphens")
+        return self
 
 
 class UDPType(str, Enum):
