@@ -324,7 +324,7 @@ class AsyncioTelnetServer:
                     try:
                         connection.writer.write(data)
                         await asyncio.wait_for(connection.writer.drain(), timeout=BROADCAST_DRAIN_TIMEOUT)
-                    except (OSError, ConnectionError, asyncio.TimeoutError) as e:
+                    except (TimeoutError, OSError, ConnectionError) as e:
                         client_info = self._get_peername(network_writer)
                         log.debug(
                             "Error sending data to client %s: %s, closing and removing from connection table.",
@@ -352,7 +352,7 @@ class AsyncioTelnetServer:
                         log.debug("Sending keepalive to client %s", client_info)
                         connection.writer.send_iac(IAC + NOP)
                         await asyncio.wait_for(connection.writer.drain(), timeout=BROADCAST_DRAIN_TIMEOUT)
-                    except (OSError, ConnectionError, asyncio.TimeoutError) as e:
+                    except (TimeoutError, OSError, ConnectionError) as e:
                         log.debug(
                             "Keepalive failed for client %s: %s, closing connection.",
                             client_info,

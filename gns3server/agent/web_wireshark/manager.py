@@ -75,7 +75,7 @@ class WebWiresharkManager:
             )
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=self.CONTAINER_EXEC_TIMEOUT)
             return proc.returncode == 0 and b"ping" in stdout
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"Container {container_id[:12]} health check timeout")
             return False
         except FileNotFoundError:
@@ -85,7 +85,7 @@ class WebWiresharkManager:
             logger.warning(f"Container {container_id[:12]} health check failed: {e}")
             return False
 
-    async def _exec_in_container(self, container_id: str, command: str, timeout: Optional[int] = None) -> tuple:
+    async def _exec_in_container(self, container_id: str, command: str, timeout: Optional[int] = None) -> tuple:  # noqa: ASYNC109 - operation-specific timeout is intentional
         """Execute command in container with timeout.
 
         Args:
@@ -113,12 +113,12 @@ class WebWiresharkManager:
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
                 return (proc.returncode, stdout.decode().strip(), stderr.decode().strip())
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.error(f"Command timeout after {timeout}s: {command}")
                 proc.terminate()
                 try:
                     await asyncio.wait_for(proc.wait(), timeout=2)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     proc.kill()
                 return (-1, "", f"timeout after {timeout}s")
         except Exception as e:

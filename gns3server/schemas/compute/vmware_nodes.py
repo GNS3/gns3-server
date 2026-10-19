@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
 
@@ -24,7 +24,7 @@ from ..common import CustomAdapter, NodeStatus
 from ..update import PartialUpdateModel
 
 
-class VMwareConsoleType(str, Enum):
+class VMwareConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -34,7 +34,7 @@ class VMwareConsoleType(str, Enum):
     none = "none"
 
 
-class VMwareOnCloseAction(str, Enum):
+class VMwareOnCloseAction(StrEnum):
     """
     Supported actions when closing VMware VM.
     """
@@ -44,7 +44,7 @@ class VMwareOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class VMwareAdapterType(str, Enum):
+class VMwareAdapterType(StrEnum):
     """
     Supported VMware VM adapter types.
     """

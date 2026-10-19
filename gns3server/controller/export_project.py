@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import json
 import logging
 import os
@@ -134,7 +133,7 @@ async def export_project(
                         while True:
                             try:
                                 data = await response.content.read(CHUNK_SIZE)
-                            except asyncio.TimeoutError:
+                            except TimeoutError:
                                 raise ControllerTimeoutError(
                                     "Timeout when downloading file '{}' from remote compute {}:{}".format(
                                         compute_file["path"], compute.host, compute.port
@@ -353,7 +352,7 @@ async def _export_remote_images(
         while True:
             try:
                 data = await response.content.read(CHUNK_SIZE)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ControllerTimeoutError(
                     f"Timeout when downloading image '{image}' from remote compute {compute.host}:{compute.port}"
                 )

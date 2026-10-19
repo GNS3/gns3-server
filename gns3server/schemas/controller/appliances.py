@@ -16,7 +16,7 @@
 
 # Unified Pydantic model supporting both appliance registry versions using discriminated unions
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
 
@@ -30,7 +30,7 @@ from ..compute.qemu_nodes import QemuCdromInterface
 # ============================================================================
 
 
-class Category(str, Enum):
+class Category(StrEnum):
     """Appliance category enum"""
 
     router = "router"
@@ -40,7 +40,7 @@ class Category(str, Enum):
     guest = "guest"
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Appliance status enum"""
 
     stable = "stable"
@@ -48,7 +48,7 @@ class Status(str, Enum):
     broken = "broken"
 
 
-class Availability(str, Enum):
+class Availability(StrEnum):
     """Image availability enum"""
 
     free = "free"
@@ -57,7 +57,7 @@ class Availability(str, Enum):
     service_contract = "service-contract"
 
 
-class Compression(str, Enum):
+class Compression(StrEnum):
     """Compression type enum"""
 
     bzip2 = "bzip2"
@@ -69,7 +69,7 @@ class Compression(str, Enum):
     field_7z = "7z"
 
 
-class DynamipsPlatform(str, Enum):
+class DynamipsPlatform(StrEnum):
     """Dynamips platform enum"""
 
     c1700 = "c1700"
@@ -81,7 +81,7 @@ class DynamipsPlatform(str, Enum):
     c7200 = "c7200"
 
 
-class DynamipsChassis(str, Enum):
+class DynamipsChassis(StrEnum):
     """Dynamips chassis enum"""
 
     chassis_1720 = "1720"
@@ -104,7 +104,7 @@ class DynamipsChassis(str, Enum):
     _ = ""
 
 
-class DynamipsSlot(str, Enum):
+class DynamipsSlot(StrEnum):
     """Dynamips slot enum"""
 
     C7200_IO_2FE = "C7200-IO-2FE"
@@ -135,7 +135,7 @@ class DynamipsSlot(str, Enum):
     _ = ""
 
 
-class DynamipsWic(str, Enum):
+class DynamipsWic(StrEnum):
     """Dynamips WIC enum"""
 
     WIC_1ENET = "WIC-1ENET"
@@ -144,14 +144,14 @@ class DynamipsWic(str, Enum):
     _ = ""
 
 
-class DynamipsMidplane(str, Enum):
+class DynamipsMidplane(StrEnum):
     """Dynamips midplane enum"""
 
     std = "std"
     vxr = "vxr"
 
 
-class DynamipsNpe(str, Enum):
+class DynamipsNpe(StrEnum):
     """Dynamips NPE enum"""
 
     npe_100 = "npe-100"
@@ -164,7 +164,7 @@ class DynamipsNpe(str, Enum):
     npe_g2 = "npe-g2"
 
 
-class QemuConsoleType(str, Enum):
+class QemuConsoleType(StrEnum):
     """Qemu console type enum"""
 
     telnet = "telnet"
@@ -175,7 +175,7 @@ class QemuConsoleType(str, Enum):
     none = "none"
 
 
-class QemuAdapterType(str, Enum):
+class QemuAdapterType(StrEnum):
     """Qemu adapter type enum"""
 
     e1000 = "e1000"
@@ -201,7 +201,7 @@ class QemuAdapterType(str, Enum):
     vmxnet3 = "vmxnet3"
 
 
-class QemuPlatform(str, Enum):
+class QemuPlatform(StrEnum):
     """Qemu platform enum"""
 
     aarch64 = "aarch64"
@@ -234,7 +234,7 @@ class QemuPlatform(str, Enum):
     xtensaeb = "xtensaeb"
 
 
-class QemuDiskInterface(str, Enum):
+class QemuDiskInterface(StrEnum):
     """Disk interface enum"""
 
     ide = "ide"
@@ -249,7 +249,7 @@ class QemuDiskInterface(str, Enum):
     none = "none"
 
 
-class QemuBootPriority(str, Enum):
+class QemuBootPriority(StrEnum):
     """Boot priority enum"""
 
     c = "c"
@@ -263,7 +263,7 @@ class QemuBootPriority(str, Enum):
     nd = "nd"
 
 
-class QemuOnClose(str, Enum):
+class QemuOnClose(StrEnum):
     """Qemu on_close action enum"""
 
     power_off = "power_off"
@@ -271,7 +271,7 @@ class QemuOnClose(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class QemuProcessPriority(str, Enum):
+class QemuProcessPriority(StrEnum):
     """Qemu process priority enum"""
 
     realtime = "realtime"
@@ -282,7 +282,7 @@ class QemuProcessPriority(str, Enum):
     very_low = "very low"
 
 
-class DockerConsoleType(str, Enum):
+class DockerConsoleType(StrEnum):
     """Docker console type enum"""
 
     telnet = "telnet"
@@ -294,13 +294,13 @@ class DockerConsoleType(str, Enum):
     docker_exec = "docker_exec"
 
 
-class ChecksumType(str, Enum):
+class ChecksumType(StrEnum):
     """Checksum type enum"""
 
     md5 = "md5"
 
 
-class TemplateType(str, Enum):
+class TemplateType(StrEnum):
     """Template type enum"""
 
     docker = "docker"
@@ -314,7 +314,7 @@ class TemplateType(str, Enum):
 # ============================================================================
 
 
-class Kvm(str, Enum):
+class Kvm(StrEnum):
     """KVM requirements enum"""
 
     require = "require"

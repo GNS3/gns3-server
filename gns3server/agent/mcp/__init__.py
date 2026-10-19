@@ -215,7 +215,7 @@ async def wait_for_mcp_ready() -> bool:
         await asyncio.wait_for(_mcp_ready_event.wait(), timeout=5.0)
         log.debug("MCP server is now ready, proceeding with connection")
         return True
-    except asyncio.TimeoutError:
+    except TimeoutError:
         log.warning("MCP server ready check timed out after 5 seconds - GNS3 server initialization may have issues")
         return False
 

@@ -60,7 +60,7 @@ async def vm(compute_project, manager):
 def _capable(vm, monkeypatch):
     """Make the iol-tap capability probe answer True."""
 
-    async def probe(timeout=15.0):
+    async def probe(timeout=15.0):  # noqa: ASYNC109 - mock signature must match patched API
         return True
 
     monkeypatch.setattr("gns3server.compute.iou.iou_vm.probe_iol_tap_support", probe)
@@ -99,7 +99,7 @@ async def test_prepare_tap_datapath_falls_back_without_the_command(vm, monkeypat
     datapath — it still starts, it just cannot carry kernel links.
     """
 
-    async def probe(timeout=15.0):
+    async def probe(timeout=15.0):  # noqa: ASYNC109 - mock signature must match patched API
         return None
 
     monkeypatch.setattr("gns3server.compute.iou.iou_vm.probe_iol_tap_support", probe)

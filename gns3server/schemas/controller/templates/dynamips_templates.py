@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from pydantic import Field
@@ -123,7 +123,7 @@ class C3745DynamipsTemplate(C3745DynamipsTemplateBase):
     image: str = Field(..., description="Path to the IOS image")
 
 
-class C3600ChassisType(str, Enum):
+class C3600ChassisType(StrEnum):
     chassis_3620 = "3620"
     chassis_3640 = "3640"
     chassis_3660 = "3660"
@@ -162,7 +162,7 @@ class C2691DynamipsTemplate(C2691DynamipsTemplateBase):
     image: str = Field(..., description="Path to the IOS image")
 
 
-class C2600ChassisType(str, Enum):
+class C2600ChassisType(StrEnum):
     chassis_2610 = "2610"
     chassis_2620 = "2620"
     chassis_2610xm = "2610XM"
@@ -191,7 +191,7 @@ class C2600DynamipsTemplate(C2600DynamipsTemplateBase):
     image: str = Field(..., description="Path to the IOS image")
 
 
-class C1700ChassisType(str, Enum):
+class C1700ChassisType(StrEnum):
     chassis_1720 = "1720"
     chassis_1721 = "1721"
     chassis_1750 = "1750"

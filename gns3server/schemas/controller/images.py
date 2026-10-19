@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, List, Literal, Optional
 from uuid import UUID
 
@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .base import DateTimeModelMixin
 
 
-class ImageType(str, Enum):
+class ImageType(StrEnum):
     qemu = "qemu"
     ios = "ios"
     iou = "iou"

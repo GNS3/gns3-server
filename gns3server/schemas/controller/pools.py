@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 from uuid import UUID
 
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .base import DateTimeModelMixin
 
 
-class ResourceType(str, Enum):
+class ResourceType(StrEnum):
     project = "project"
 
 

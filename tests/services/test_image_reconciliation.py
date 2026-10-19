@@ -586,7 +586,7 @@ async def test_periodic_scan_recovers_without_watcher_events(inventory, config):
         # Consume/close the unused Event.wait coroutine, then simulate a timeout.
         args[0].close()
         await real_sleep(0.01)
-        raise asyncio.TimeoutError
+        raise TimeoutError
 
     with (
         patch.object(inventory, "_watch", new=AsyncMock()),

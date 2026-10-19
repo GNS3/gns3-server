@@ -344,7 +344,7 @@ class VMware(BaseManager):
 
         return self._host_type
 
-    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         trial = 2
 
         while True:
@@ -361,7 +361,7 @@ class VMware(BaseManager):
                     trial -= 1
                     await asyncio.sleep(0.5)
 
-    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         if self.host_type is None:
             await self.check_vmware_version()
 
@@ -382,7 +382,7 @@ class VMware(BaseManager):
 
         try:
             stdout_data, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise VMwareError(
                 f"vmrun has timed out after {timeout} seconds!\nTry to run {command_string} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus."
             )

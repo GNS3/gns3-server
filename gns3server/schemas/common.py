@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -33,7 +33,7 @@ class ErrorMessage(BaseModel):
     details: Optional[dict[str, Any]] = Field(None, description="Optional structured data about the error")
 
 
-class NodeStatus(str, Enum):
+class NodeStatus(StrEnum):
     """
     Supported node statuses.
     """
@@ -85,7 +85,7 @@ class ExtraConfig(BaseModel):
         return v
 
 
-class ConsoleType(str, Enum):
+class ConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -101,7 +101,7 @@ class ConsoleType(str, Enum):
     docker_exec = "docker_exec"
 
 
-class AuxType(str, Enum):
+class AuxType(StrEnum):
     """
     Supported auxiliary console types.
     """

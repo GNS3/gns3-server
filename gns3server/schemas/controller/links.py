@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, List, Literal, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
@@ -62,7 +62,7 @@ class LinkNodeCreate(BaseModel):
         return self
 
 
-class LinkType(str, Enum):
+class LinkType(StrEnum):
     """
     Link type.
     """
@@ -81,7 +81,7 @@ class LinkStyle(BaseModel):
     control_offset: Optional[Tuple[float, float]] = None
 
 
-class LinkFilterType(str, Enum):
+class LinkFilterType(StrEnum):
     """
     Packet filter type. The first five run on relay and kernel-datapath links
     alike; the rest are kernel-datapath only (tc netem / cls_bpf / the eBPF

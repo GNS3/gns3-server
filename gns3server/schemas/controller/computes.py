@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -29,7 +29,7 @@ from .base import DateTimeModelMixin
 from .capabilities import Capabilities
 
 
-class Protocol(str, Enum):
+class Protocol(StrEnum):
     """
     Protocol supported to communicate with a compute.
     """

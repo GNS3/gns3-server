@@ -418,7 +418,12 @@ LIFECYCLE_RESPONSES: dict[int | str, dict[str, Any]] = {
 
 
 async def _run_lifecycle(
-    node: Node, action: Callable, target: str, wait: bool, timeout: int, tolerate_unsupported: bool = True
+    node: Node,
+    action: Callable,
+    target: str,
+    wait: bool,
+    timeout: int,  # noqa: ASYNC109 - operation-specific timeout is intentional
+    tolerate_unsupported: bool = True,
 ) -> dict:
     async def _run():
         try:
@@ -435,7 +440,7 @@ async def _run_lifecycle(
         return node.asdict()
     try:
         await asyncio.wait_for(_run(), timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         raise ControllerTimeoutError(f"Timeout when waiting for {node.name} to be {target}")
     return node.asdict()
 
@@ -449,7 +454,7 @@ async def _run_lifecycle(
 async def start_node(
     start_data: Optional[dict] = None,
     wait: bool = Query(False, description="Return only when the node status is 'started'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -469,7 +474,7 @@ async def start_node(
 )
 async def stop_node(
     wait: bool = Query(False, description="Return only when the node status is 'stopped'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -491,7 +496,7 @@ async def stop_node(
 )
 async def suspend_node(
     wait: bool = Query(False, description="Return only when the node status is 'suspended'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -514,7 +519,7 @@ async def suspend_node(
 )
 async def reload_node(
     wait: bool = Query(False, description="Return only when the node status is 'started'"),
-    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
     node: Node = Depends(dep_node),
 ) -> dict:
     """
@@ -711,7 +716,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
         try:
             async for chunk in compute_resp.content.iter_chunked(65536):
                 yield chunk
-        except (OSError, asyncio.TimeoutError) as e:
+        except (TimeoutError, OSError) as e:
             log.error(f"Error streaming file '{path}' from compute: {e}")
             raise
         finally:

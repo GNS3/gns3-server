@@ -57,7 +57,7 @@ class DynamipsHypervisor:
         self._writer = None
         self._io_lock = asyncio.Lock()
 
-    async def connect(self, timeout=10):
+    async def connect(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Connects to the hypervisor.
         """
@@ -80,7 +80,7 @@ class DynamipsHypervisor:
                 self._reader, self._writer = await asyncio.wait_for(
                     asyncio.open_connection(host, self._port), timeout=1
                 )
-            except (asyncio.TimeoutError, OSError) as e:
+            except (TimeoutError, OSError) as e:
                 last_exception = e
                 continue
             connection_success = True

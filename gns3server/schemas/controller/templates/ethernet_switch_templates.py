@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional
 
 from pydantic import Field
@@ -37,7 +37,7 @@ DEFAULT_PORTS = [
 ]
 
 
-class ConsoleType(str, Enum):
+class ConsoleType(StrEnum):
     """
     Supported console types for Ethernet switch nodes.
     """

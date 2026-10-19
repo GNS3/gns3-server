@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Callable, List, Optional, cast
 
 from sqlalchemy import delete, select, update
@@ -166,8 +166,8 @@ class ImagesRepository(BaseRepository):
         values.update(
             availability="available",
             last_error=None,
-            last_seen_at=datetime.now(timezone.utc).replace(tzinfo=None),
-            last_verified_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            last_seen_at=datetime.now(UTC).replace(tzinfo=None),
+            last_verified_at=datetime.now(UTC).replace(tzinfo=None),
         )
         for attempt in range(2):
             try:

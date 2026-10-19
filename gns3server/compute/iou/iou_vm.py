@@ -1034,7 +1034,7 @@ class IOUVM(KernelDatapathMixin, BaseNode):
             if self._iou_process.returncode is None:
                 try:
                     await gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     if self._iou_process.returncode is None:
                         log.warning(f"IOU process {self._iou_process.pid} is still running... killing it")
                         try:

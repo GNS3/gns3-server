@@ -41,7 +41,7 @@ class VMwareGNS3VM(BaseGNS3VM):
     def vmx_path(self):
         return self._vmx_path
 
-    async def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
         try:
             result = await self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)

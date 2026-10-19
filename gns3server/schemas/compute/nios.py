@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 
-class UDPNIOType(str, Enum):
+class UDPNIOType(StrEnum):
     udp = "nio_udp"
 
 
@@ -43,7 +43,7 @@ class UDPNIO(BaseModel):
     markers: Optional[dict] = Field(None, description="Traffic-insight markers")
 
 
-class EthernetNIOType(str, Enum):
+class EthernetNIOType(StrEnum):
     ethernet = "nio_ethernet"
 
 
@@ -56,7 +56,7 @@ class EthernetNIO(BaseModel):
     ethernet_device: str = Field(..., description="Ethernet device name e.g. eth0")
 
 
-class TAPNIOType(str, Enum):
+class TAPNIOType(StrEnum):
     tap = "nio_tap"
 
 
@@ -69,7 +69,7 @@ class TAPNIO(BaseModel):
     tap_device: str = Field(..., description="TAP device name e.g. tap0")
 
 
-class BridgeNIOType(str, Enum):
+class BridgeNIOType(StrEnum):
     bridge = "nio_bridge"
 
 
@@ -133,7 +133,7 @@ class BridgeNIO(BaseModel):
     markers: Optional[dict] = Field(None, description="Traffic-insight markers (attached to the veth host end)")
 
 
-class AnchorNIOType(str, Enum):
+class AnchorNIOType(StrEnum):
     anchor = "nio_anchor"
 
 

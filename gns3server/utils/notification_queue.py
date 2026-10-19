@@ -38,7 +38,7 @@ class NotificationQueue(asyncio.Queue):
         self._first = True
         self._last_ping = None
 
-    async def get(self, timeout):
+    async def get(self, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Return a notification, or a ping notification with server information
         at least every `timeout` seconds. The ping used to be generated only
@@ -59,7 +59,7 @@ class NotificationQueue(asyncio.Queue):
             try:
                 (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout - (now - self._last_ping))
                 return (action, msg, kwargs)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue  # the ping deadline has been reached
 
     def _ping(self):
@@ -84,7 +84,7 @@ class NotificationQueue(asyncio.Queue):
             log.warning(f"Could not get CPU and memory usage from psutil: {e}")
         return msg
 
-    async def get_json(self, timeout):
+    async def get_json(self, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Get a message as a JSON
         """

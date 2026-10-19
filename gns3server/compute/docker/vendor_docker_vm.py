@@ -459,7 +459,7 @@ class VendorDockerVM(DockerVM):
             # setup; wait instead of silently blackholing the adapter.
             try:
                 await wait_for_file_creation(remote_sock, timeout=30)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise DockerError(
                     f"Socket '{remote_sock}' for adapter {adapter_number} of container "
                     f"'{self._name}' did not appear within 30 seconds. Check that the "
@@ -806,7 +806,7 @@ class _LazyExecTelnetServer(AsyncioTelnetServer):
         await writer.drain()
         try:
             headers = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=5)
-        except (asyncio.IncompleteReadError, asyncio.TimeoutError) as e:
+        except (TimeoutError, asyncio.IncompleteReadError) as e:
             writer.close()
             raise DockerError(f"Docker exec start failed: {e}")
         status_line = headers.split(b"\r\n", 1)[0]

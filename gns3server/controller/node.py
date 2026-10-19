@@ -976,7 +976,7 @@ class Node:
             try:
                 await self._start_on_compute(data)
                 break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when starting {self._name}")
             except ComputeError as e:
                 conflicted = self._vxlan_conflicted_link(e)
@@ -1057,7 +1057,7 @@ class Node:
             # We don't care if a node is down at this step
             if strict:
                 raise
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
         if stopped:
             self._confirm_status("stopped")
@@ -1082,7 +1082,7 @@ class Node:
         """
         try:
             await self.post("/suspend", timeout=240)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ControllerTimeoutError(f"Timeout when suspending {self._name}")
         self._confirm_status("suspended")
 
@@ -1092,7 +1092,7 @@ class Node:
         """
         try:
             await self.post("/reload", timeout=240)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
         self._confirm_status("started")
 
@@ -1104,7 +1104,7 @@ class Node:
         if self._console and self._console_type in ("telnet", "ssh"):
             try:
                 await self.post("/console/reset", timeout=240)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when reset console {self._name}")
 
     async def get(self, path="", **kwargs):

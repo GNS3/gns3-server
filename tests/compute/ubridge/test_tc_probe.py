@@ -19,6 +19,7 @@ The standalone `tc capabilities` probe behind the compute /capabilities
 payload: spawn a throwaway uBridge, ask once, cache by binary identity.
 """
 
+import asyncio
 import os
 
 import pytest
@@ -143,10 +144,14 @@ async def test_probe_missing_binary_means_unknown(monkeypatch):
 
 async def test_probe_reprobes_when_the_binary_attributes_change(probe_env):
 
+    # Ensure following chmod changes mode even under restrictive test-process umasks.
+    os.chmod(probe_env, 0o700)
     assert await probe_tc_capabilities() is not None
     # chmod touches ctime but neither mtime nor size: a setcap/chmod remedy
     # after a permission-related probe failure must be able to flip the
-    # cached verdict without a server restart.
+    # cached verdict without a server restart. Wait for this filesystem's
+    # timestamp clock to advance before changing mode.
+    await asyncio.sleep(0.02)
     os.chmod(probe_env, 0o600)
     assert await probe_tc_capabilities() is not None
     assert FakeHypervisor.spawned == 2

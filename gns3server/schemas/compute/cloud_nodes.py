@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional, Union
 from uuid import UUID
 
@@ -27,17 +27,17 @@ from ..update import PartialUpdateModel
 LINUX_TAP_NAME_PATTERN = r"^[a-zA-Z0-9_.:-]{1,15}$"
 
 
-class HostInterfaceType(str, Enum):
+class HostInterfaceType(StrEnum):
     ethernet = "ethernet"
     tap = "tap"
 
 
-class IPAddressFamily(str, Enum):
+class IPAddressFamily(StrEnum):
     ipv4 = "ipv4"
     ipv6 = "ipv6"
 
 
-class InterfaceStatus(str, Enum):
+class InterfaceStatus(StrEnum):
     up = "up"
     down = "down"
 
@@ -70,7 +70,7 @@ class HostInterface(BaseModel):
     flags: List[str] = Field(default_factory=list, description="Interface flags")
 
 
-class EthernetType(str, Enum):
+class EthernetType(StrEnum):
     ethernet = "ethernet"
 
 
@@ -85,7 +85,7 @@ class EthernetPort(BaseModel):
     interface: str
 
 
-class TAPType(str, Enum):
+class TAPType(StrEnum):
     tap = "tap"
 
 
@@ -113,7 +113,7 @@ class TAPPort(BaseModel):
         return self
 
 
-class UDPType(str, Enum):
+class UDPType(StrEnum):
     udp = "udp"
 
 
@@ -130,7 +130,7 @@ class UDPPort(BaseModel):
     rport: int = Field(..., gt=0, le=65535, description="Remote port")
 
 
-class CloudConsoleType(str, Enum):
+class CloudConsoleType(StrEnum):
     telnet = "telnet"
     ssh = "ssh"
     vnc = "vnc"

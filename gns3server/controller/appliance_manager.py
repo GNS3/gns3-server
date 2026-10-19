@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import copy
 import json
 import logging
@@ -221,7 +220,7 @@ class ApplianceManager:
             raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
         except ClientError as e:
             raise ControllerError(f"Could not connect to download '{image_name}': {e}")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ControllerError(f"Timeout while downloading '{image_name}' from '{image_url}'")
 
     async def _find_appliance_version_images(
@@ -551,7 +550,7 @@ class ApplianceManager:
                     log.info(f"Saving {symbol} symbol to {destination_path}")
                     with open(destination_path, "wb") as f:
                         f.write(symbol_data)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning(f"Timeout while downloading '{symbol_url}'")
                 except OSError as e:
                     log.warning(f"Could not write appliance symbol '{destination_path}': {e}")
@@ -601,7 +600,7 @@ class ApplianceManager:
                             continue
                         try:
                             appliance_data = await response.read()
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
                             continue
                         path = os.path.join(appliances_dir, appliance_name)

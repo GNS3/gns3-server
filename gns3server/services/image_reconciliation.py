@@ -6,7 +6,7 @@ import os
 import stat
 import threading
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +44,7 @@ RAW_EXTENSIONS = {".raw", ".img", ".iso", ".fd", ".vhd", ".vdi", ".bin"}
 
 
 def utcnow():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def ignored(name):
@@ -476,7 +476,7 @@ class ImageReconciliationService:
                 try:
                     await asyncio.wait_for(self.dirty.wait(), Config.instance().settings.Server.image_sync_interval)
                     await asyncio.sleep(1)  # debounce bursts of file/directory events
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
             except asyncio.CancelledError:
                 break

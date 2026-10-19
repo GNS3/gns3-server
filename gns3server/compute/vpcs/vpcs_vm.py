@@ -333,7 +333,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
                 if self._process.returncode is None:
                     try:
                         await wait_for_process_termination(self._process, timeout=3)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         if self._process.returncode is None:
                             try:
                                 self._process.kill()
