@@ -23,6 +23,7 @@ from uuid import UUID
 from pydantic import AnyUrl, BaseModel, BeforeValidator, Discriminator, EmailStr, Field, Tag
 
 from ..common import ExtraConfig
+from ..compute.qemu_nodes import QemuCdromInterface
 
 # ============================================================================
 # Shared Enums
@@ -398,6 +399,8 @@ class Qemu(BaseModel):
     hdc_disk_interface: Optional[QemuDiskInterface] = Field(
         None, title="Disk interface for the installed hdc_disk_image"
     )
+    cdrom_interface: Optional[QemuCdromInterface] = Field(None, title="First CD/DVD interface")
+    cdrom2_interface: Optional[QemuCdromInterface] = Field(None, title="Second CD/DVD interface")
     hdd_disk_interface: Optional[QemuDiskInterface] = Field(
         None, title="Disk interface for the installed hdd_disk_image"
     )
@@ -425,7 +428,8 @@ class ApplianceVersionImages(BaseModel):
     hdb_disk_image: Optional[str] = Field(None, title="Hdc disk image")
     hdc_disk_image: Optional[str] = Field(None, title="Hdd disk image")
     hdd_disk_image: Optional[str] = Field(None, title="Hdd diskimage")
-    cdrom_image: Optional[str] = Field(None, title="cdrom image")
+    cdrom_image: Optional[str] = Field(None, title="First cdrom image")
+    cdrom2_image: Optional[str] = Field(None, title="Second cdrom image")
 
 
 class ApplianceVersion(BaseModel):
@@ -578,6 +582,8 @@ class QemuPropertiesV8(BaseModel):
     hdc_disk_interface: Optional[QemuDiskInterface] = Field(
         None, title="Disk interface for the installed hdc_disk_image"
     )
+    cdrom_interface: Optional[QemuCdromInterface] = Field(None, title="First CD/DVD interface")
+    cdrom2_interface: Optional[QemuCdromInterface] = Field(None, title="Second CD/DVD interface")
     hdd_disk_interface: Optional[QemuDiskInterface] = Field(
         None, title="Disk interface for the installed hdd_disk_image"
     )

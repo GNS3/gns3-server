@@ -15,9 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import json
 import os
 import stat
 import sys
+from pathlib import Path
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -1039,3 +1041,225 @@ async def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
         vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):
             await vm._run_with_hardware_acceleration("qemu-system-x86_64", "")
+
+
+@pytest.mark.asyncio
+async def test_two_cdrom_images(vm, images_dir):
+    installer = Path(images_dir) / "installer.iso"
+    drivers = Path(images_dir) / "virtio,drivers.iso"
+    installer.touch()
+    drivers.touch()
+    vm.cdrom_image = str(installer)
+    vm.cdrom2_image = str(drivers)
+    assert vm._cdrom_option() == [
+        "-cdrom",
+        str(installer),
+        "-drive",
+        f"file={str(drivers).replace(',', ',,')},if=ide,index=3,media=cdrom,readonly=on",
+    ]
+    assert vm.asdict()["cdrom2_image"].endswith("virtio,drivers.iso")
+    vm.cdrom2_image = ""
+    assert vm._cdrom_option() == ["-cdrom", str(installer)]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("config_disk", [False, True])
+async def test_second_cdrom_ide_conflict(vm, images_dir, config_disk):
+    iso = Path(images_dir) / "drivers.iso"
+    iso.touch()
+    vm.cdrom2_image = str(iso)
+    vm._hdd_disk_interface = "ide"
+    vm._create_config_disk = config_disk
+    if not config_disk:
+        vm._hdd_disk_image = str(iso)
+    with pytest.raises(QemuError, match="second CDROM"):
+        vm._cdrom_option()
+
+
+@pytest.mark.asyncio
+async def test_first_cdrom_ide_conflict(vm, images_dir):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm.cdrom_image = str(iso)
+    vm._hdc_disk_image = str(iso)
+    vm._hdc_disk_interface = "ide"
+    with pytest.raises(QemuError, match="IDE hdc disk"):
+        vm._cdrom_option()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interface", ["virtio", "scsi", "sata", "nvme"])
+@pytest.mark.parametrize("cdrom_count", [1, 2])
+async def test_four_non_ide_disks_with_cdroms(vm, images_dir, interface, cdrom_count):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm.cdrom_image = str(iso)
+    for drive in "abcd":
+        disk = Path(images_dir) / f"hd{drive}.qcow2"
+        disk.touch()
+        setattr(vm, f"_hd{drive}_disk_image", str(disk))
+        setattr(vm, f"_hd{drive}_disk_interface", interface)
+    expected = ["-cdrom", str(iso)]
+    if cdrom_count == 2:
+        vm.cdrom2_image = str(iso)
+        expected.extend(["-drive", f"file={iso},if=ide,index=3,media=cdrom,readonly=on"])
+    assert vm._cdrom_option() == expected
+    vm.linked_clone = False
+    with patch.object(vm, "_qemu_img_exec", new_callable=AsyncioMagicMock, return_value=0):
+        disk_options = await vm._disk_options()
+    assert sum(option.startswith("file=") for option in disk_options) == 4
+
+
+@pytest.fixture
+def cdrom_monitor(vm):
+    reader = asyncio.StreamReader()
+    reader.feed_data(b"QEMU monitor\r\n(qemu) ")
+    writer = MagicMock()
+    writer.drain = AsyncioMagicMock()
+    state = {"blocks": "ide1-cd0: installer.iso\r\nide1-cd1: drivers.iso\r\n", "error": ""}
+
+    def respond(data):
+        command = data.decode("utf-8").strip()
+        output = state["blocks"] if command == "info block" else state["error"]
+        reader.feed_data(data.rstrip(b"\n") + b"\r\n" + output.encode("utf-8") + b"(qemu) ")
+
+    writer.write.side_effect = respond
+    with (
+        patch.object(vm, "is_running", return_value=True),
+        patch.object(
+            vm, "_open_qemu_monitor_connection_vm", new_callable=AsyncioMagicMock, return_value=(reader, writer)
+        ),
+    ):
+        yield state, writer
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("filename", ["drivers with spaces.iso", "drivers-雪.iso", "drivers (qemu) .iso"])
+async def test_second_cdrom_update(vm, images_dir, cdrom_monitor, filename):
+    iso = Path(images_dir) / filename
+    iso.touch()
+    state, writer = cdrom_monitor
+    await vm.update_property("cdrom2_image", str(iso))
+    assert writer.write.call_args_list[0] == mock.call(b"info block\n")
+    command = writer.write.call_args_list[1].args[0].decode("ascii")
+    encoded_filename = json.loads(command.removeprefix("change ide1-cd1 -f ").strip())
+    if encoded_filename.startswith("json:"):
+        assert json.loads(encoded_filename[5:])["file"]["filename"] == str(iso)
+    else:
+        assert encoded_filename == str(iso)
+    assert vm.cdrom2_image == str(iso)
+    writer.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_second_cdrom_eject(vm, cdrom_monitor):
+    state, writer = cdrom_monitor
+    await vm.update_property("cdrom2_image", "")
+    writer.write.assert_called_with(b"eject -f ide1-cd1\n")
+
+
+@pytest.mark.asyncio
+async def test_second_cdrom_hot_add_requires_restart(vm, images_dir, cdrom_monitor):
+    iso = Path(images_dir) / "drivers.iso"
+    iso.touch()
+    state, writer = cdrom_monitor
+    state["blocks"] = "ide1-cd0: installer.iso\r\n"
+    vm._command_line_changed = False
+    with pytest.raises(QemuError, match="Stop the VM"):
+        await vm.update_property("cdrom2_image", str(iso))
+    assert vm.cdrom2_image == ""
+    assert not vm._command_line_changed
+    assert writer.write.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_other_iso_does_not_block_media_swap(vm, images_dir, cdrom_monitor):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm._cdrom2_image = str(Path(images_dir) / "deleted.iso")
+    await vm.update_property("cdrom_image", str(iso))
+    assert vm.cdrom_image == str(iso)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error", ["Error: media change failed", "change: filename expected"])
+@pytest.mark.parametrize("original_deleted", [False, True])
+async def test_cdrom_monitor_error_preserves_previous_image(vm, images_dir, cdrom_monitor, error, original_deleted):
+    original = Path(images_dir) / "original.iso"
+    original.touch()
+    replacement = Path(images_dir) / "replacement.iso"
+    replacement.touch()
+    vm.cdrom2_image = str(original)
+    if original_deleted:
+        original.unlink()
+    state, writer = cdrom_monitor
+    state["error"] = error + "\r\n"
+    with pytest.raises(QemuError, match=error):
+        await vm.update_property("cdrom2_image", str(replacement))
+    assert vm.cdrom2_image == str(original)
+    writer.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_with_ide_disks(vm, images_dir, slot):
+    iso = Path(images_dir) / "installer,drivers.iso"
+    iso.touch()
+    image_name = "cdrom_image" if slot == 0 else "cdrom2_image"
+    interface_name = "cdrom_interface" if slot == 0 else "cdrom2_interface"
+    setattr(vm, image_name, str(iso))
+    setattr(vm, interface_name, "sata")
+    vm._hdc_disk_image = vm._hdd_disk_image = str(iso)
+    vm._hdc_disk_interface = vm._hdd_disk_interface = "ide"
+    assert vm._cdrom_option() == [
+        "-device",
+        f"ich9-ahci,id=cdrom-ahci{slot}",
+        "-drive",
+        f"file={str(iso).replace(',', ',,')},if=none,id=sata-cdrom{slot},media=cdrom,readonly=on",
+        "-device",
+        f"ide-cd,drive=sata-cdrom{slot},bus=cdrom-ahci{slot}.0",
+    ]
+    assert vm.asdict()[interface_name] == "sata"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["cdrom_interface", "cdrom2_interface"])
+async def test_cdrom_interface_change_requires_stopped_vm(vm, name):
+    with patch.object(vm, "is_running", return_value=True):
+        with pytest.raises(QemuError, match="Stop the VM"):
+            await vm.update_property(name, "sata")
+    assert getattr(vm, name) == "ide"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_media_update(vm, images_dir, cdrom_monitor, slot):
+    state, writer = cdrom_monitor
+    setattr(vm, "_cdrom_interface" if slot == 0 else "_cdrom2_interface", "sata")
+    state["blocks"] = f"sata-cdrom{slot} (#block123): old.iso\r\n"
+    iso = Path(images_dir) / "new.iso"
+    iso.touch()
+    await vm.update_property("cdrom_image" if slot == 0 else "cdrom2_image", str(iso))
+    writer.write.assert_called_with(f'change sata-cdrom{slot} -f "{iso}"\n'.encode())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["cdrom_image", "cdrom2_image"])
+async def test_cdrom_broken_symlink_error_includes_target(vm, images_dir, name):
+    target = Path(images_dir) / "missing.iso"
+    link = Path(images_dir) / "linked.iso"
+    link.symlink_to(target)
+    setattr(vm, f"_{name}", str(link))
+    with pytest.raises(QemuError, match="linked to") as error:
+        vm._cdrom_option()
+    assert str(target) in str(error.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_eject(vm, cdrom_monitor, slot):
+    state, writer = cdrom_monitor
+    setattr(vm, "_cdrom_interface" if slot == 0 else "_cdrom2_interface", "sata")
+    state["blocks"] = f"sata-cdrom{slot}: empty\r\n"
+    await vm.update_property("cdrom_image" if slot == 0 else "cdrom2_image", "")
+    writer.write.assert_called_with(f"eject -f sata-cdrom{slot}\n".encode())

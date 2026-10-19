@@ -476,3 +476,40 @@ class TestImageRoutes:
         assert len(templates) == 1
         assert templates[0].name == "Empty VM"
         await templates_repo.delete_template(templates[0].template_id)
+
+
+class TestIsoImages:
+    async def test_iso_uploads_can_be_used_together_in_a_template(self, app, client, config, images_dir):
+        config.settings.Server.allow_raw_images = False
+        references = []
+        for index, name in enumerate(("installer.ISO", "drivers.iso")):
+            content = bytes(16 * 2048) + b"\x01CD001\x01" + bytes([index]) * 2041
+            response = await client.post(
+                app.url_path_for("upload_image", image_path=name),
+                params={"subdirectory": "installers"} if index == 0 else {},
+                content=content,
+            )
+            assert response.status_code == status.HTTP_201_CREATED, response.text
+            assert response.json()["image_type"] == "qemu"
+            relative = "installers/" + name if index == 0 else name
+            assert response.json()["path"] == os.path.join(images_dir, "QEMU", relative)
+            assert response.json()["reference"] == relative
+            assert Qemu.instance().get_abs_image_path(relative) == response.json()["path"]
+            references.append(relative)
+
+        response = await client.post(
+            app.url_path_for("create_template"),
+            json={
+                "name": "Windows installer with drivers",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "cdrom_image": references[0],
+                "cdrom2_image": references[1],
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        template_id = response.json()["template_id"]
+        response = await client.get(app.url_path_for("get_template", template_id=template_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["cdrom_image"] == references[0]
+        assert response.json()["cdrom2_image"] == references[1]

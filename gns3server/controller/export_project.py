@@ -208,6 +208,7 @@ async def _patch_project_file(
 
     # image files that we need to include in the exported archive
     images = []
+    portable_references = []
 
     try:
         with open(path) as f:
@@ -249,32 +250,54 @@ async def _patch_project_file(
                         if value is None or value.strip() == "":
                             continue
 
-                        if not keep_compute_ids:  # If we keep the original compute we can keep the image path
+                        if not keep_compute_ids:
                             node["properties"][prop] = os.path.basename(value)
 
-                        if include_images is True:
-                            images.append({"compute_id": compute_id, "image": value, "image_type": node["node_type"]})
+                        if include_images:
+                            image = {"compute_id": compute_id, "image": value, "image_type": node["node_type"]}
+                            images.append(image)
+                            if not keep_compute_ids:
+                                portable_references.append((node["properties"], prop, image))
 
         if not keep_compute_ids:
             topology["topology"][
                 "computes"
             ] = []  # Strip compute information because could contain secret info like password
 
-    local_images = {i["image"] for i in images if i["compute_id"] == "local"}
+    destinations = _image_export_names(images)
+    for properties, prop, image in portable_references:
+        properties[prop] = destinations[(image["compute_id"], image["image_type"], image["image"])]
 
-    for image in local_images:
-        _export_local_image(image, zstream)
-
-    remote_images = {(i["compute_id"], i["image_type"], i["image"]) for i in images if i["compute_id"] != "local"}
-
-    for compute_id, image_type, image in remote_images:
-        await _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
+    for (compute_id, image_type, image), export_name in destinations.items():
+        if compute_id == "local":
+            _export_local_image(image, zstream, export_name, image_type)
+        else:
+            await _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir, export_name)
 
     zstream.writestr("project.gns3", json.dumps(topology, indent=4, sort_keys=True).encode())
     return images
 
 
-def _export_local_image(image, zstream):
+def _image_export_names(images):
+    """Allocate distinct portable names without changing ordinary image names."""
+    destinations = {}
+    used = set()
+    for image in images:
+        key = (image["compute_id"], image["image_type"], image["image"])
+        if key in destinations:
+            continue
+        filename = os.path.basename(image["image"])
+        stem, extension = os.path.splitext(filename)
+        index = 1
+        while (image["image_type"], filename) in used:
+            index += 1
+            filename = f"{stem}-{index}{extension}"
+        used.add((image["image_type"], filename))
+        destinations[key] = filename
+    return destinations
+
+
+def _export_local_image(image, zstream, export_name=None, image_type=None):
     """
     Exports a local image to the zip file.
 
@@ -285,6 +308,8 @@ def _export_local_image(image, zstream):
     from ..compute import MODULES
 
     for module in MODULES:
+        if image_type and getattr(module, "_NODE_TYPE", None) != image_type:
+            continue
         try:
             images_directory = module.instance().get_images_directory()
         except NotImplementedError:
@@ -298,13 +323,15 @@ def _export_local_image(image, zstream):
             path = os.path.join(images_directory, image)
 
         if os.path.exists(path):
-            arcname = os.path.join("images", directory, os.path.basename(image))
+            arcname = os.path.join("images", directory, export_name or os.path.basename(image))
             _patch_mtime(path)
             zstream.write(path, arcname)
             return
 
 
-async def _export_remote_images(project, compute_id, image_type, image, project_zipfile, temporary_dir):
+async def _export_remote_images(
+    project, compute_id, image_type, image, project_zipfile, temporary_dir, export_name=None
+):
     """
     Export specific image from remote compute.
     """
@@ -334,5 +361,6 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
                 break
             await f.write(data)
     response.close()
-    arcname = os.path.join("images", image_type, image)
+    directory = "QEMU" if image_type == "qemu" else image_type
+    arcname = os.path.join("images", directory, export_name or image)
     project_zipfile.write(temp_path, arcname=arcname, compress_type=zipfile.ZIP_DEFLATED)
