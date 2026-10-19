@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from enum import Enum
+from enum import StrEnum
 from typing import List, Optional, Union
 from uuid import UUID
 

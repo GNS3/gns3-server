@@ -976,7 +976,7 @@ class Node:
             try:
                 await self._start_on_compute(data)
                 break
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when starting {self._name}")
             except ComputeError as e:
                 conflicted = self._vxlan_conflicted_link(e)

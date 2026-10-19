@@ -331,7 +331,7 @@ class RbacRepository(BaseRepository):
         Retrieve all user ACEs matching the user_id and privilege name.
         """
 
-        query: Select[tuple[Any, Any, Any, Any]] = (
+        query: Select[Any, Any, Any, Any] = (
             select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
             .join(models.Privilege.roles)
             .join(models.Role.acl_entries)
@@ -349,7 +349,7 @@ class RbacRepository(BaseRepository):
         Retrieve all group ACEs matching the user_id and privilege name.
         """
 
-        query: Select[tuple[Any, Any, Any, Any]] = (
+        query: Select[Any, Any, Any, Any] = (
             select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
             .join(models.Privilege.roles)
             .join(models.Role.acl_entries)

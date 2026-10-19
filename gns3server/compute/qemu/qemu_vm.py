@@ -618,7 +618,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             else:
                 await command(f"eject -f {device}")
             log.debug('QEMU VM "%s" has changed %s to %s', self._name, name, image)
-        except (asyncio.TimeoutError, asyncio.IncompleteReadError, OSError) as e:
+        except (TimeoutError, asyncio.IncompleteReadError, OSError) as e:
             raise QemuError(f"Could not change CD/DVD media: {e}") from e
         finally:
             writer.close()

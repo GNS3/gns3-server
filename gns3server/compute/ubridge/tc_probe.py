@@ -363,7 +363,7 @@ async def _probe_bridge_tap(path, config, timeout):  # noqa: ASYNC109 - operatio
         shutil.rmtree(working_dir, ignore_errors=True)
 
 
-async def probe_vxlan_support(timeout: float = 15.0):
+async def probe_vxlan_support(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Whether this host's uBridge can create a VXLAN device (the ``vxlan``
     module) — the carrier a cross-compute kernel link tunnels through.
@@ -395,7 +395,7 @@ async def probe_vxlan_support(timeout: float = 15.0):
         return supported
 
 
-async def _probe_vxlan(path, config, timeout):
+async def _probe_vxlan(path, config, timeout):  # noqa: ASYNC109 - operation-specific timeout is intentional
     """
     Spawn a throwaway uBridge and run one ``vxlan create``/``delete`` cycle.
     The scratch name (uuid suffix) cannot collide with a real link's
@@ -442,7 +442,7 @@ async def _probe_vxlan(path, config, timeout):
 
         try:
             return await asyncio.wait_for(ask(), timeout=timeout)
-        except (UbridgeError, OSError, asyncio.TimeoutError, ValueError) as e:
+        except (TimeoutError, UbridgeError, OSError, ValueError) as e:
             # Old build ("Unknown command"), missing module, or no
             # CAP_NET_ADMIN: unknown.
             log.debug("uBridge vxlan-module probe failed: %s", e)
