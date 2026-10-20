@@ -830,7 +830,13 @@ async def import_project(
                 async for chunk in request.stream():
                     await f.write(chunk)
             with open(temp_project_path, "rb") as f:
-                project = await import_controller_project(controller, str(project_id), f, name=name, user=current_user.username)
+                project = await import_controller_project(
+                    controller,
+                    str(project_id),
+                    f,
+                    name=name,
+                    user=current_user.username,
+                )
 
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
