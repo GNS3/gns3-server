@@ -99,15 +99,26 @@ def is_ipv6_enabled() -> bool:
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.bind(("::1", 0))
-        return True
     except OSError as e:
         if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT):
             # EADDRNOTAVAIL is the errno if IPv6 modules/drivers are loaded but disabled.
             # EAFNOSUPPORT is the errno if IPv6 modules/drivers are not loaded at all.
             return False
         if e.errno == errno.EADDRINUSE:
-            return True
-        raise
+            pass
+        else:
+            raise
+
+    # Applications like SPICE resolve the listen address with AI_ADDRCONFIG,
+    # which fails (EAI_ADDRFAMILY) for "::" when the IPv6 stack is loaded but no
+    # non-loopback IPv6 address is configured on the host.
+    try:
+        socket.getaddrinfo(
+            "::", None, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE | socket.AI_ADDRCONFIG
+        )
+    except (socket.gaierror, UnicodeError):
+        return False
+    return True
 
 
 def md5sum(filename):

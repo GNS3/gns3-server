@@ -481,7 +481,7 @@ async def test_spice_option(vm, fake_qemu_img_binary):
     vm._console_type = "spice"
     vm._console = 5905
     options = await vm._build_command()
-    assert "-spice addr=127.0.0.1,port=5905,disable-ticketing" in " ".join(options)
+    assert "-spice addr=127.0.0.1,port=5905,disable-ticketing=on" in " ".join(options)
     assert "-vga qxl" in " ".join(options)
 
 
