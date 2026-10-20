@@ -28,7 +28,7 @@
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "allow",
-        "options": "-nographic --machine pc-i440fx-4.2"
+        "options": "-nographic --machine pc-i440fx-6.2"
     },
     "images": [
         {
@@ -39,59 +39,18 @@
             "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=e6a7676d-85a7-4374-8961-c68aacb74921"
         },
         {
-            "filename": "WeOS-zero-5.30.0.disk",
-            "version": "5.30.0",
-            "filesize": 81788928,
-            "md5sum": "a0eb21084bfa2b39ea42c2e5b59a3eb1",
-            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=ee83b507-927d-4421-a1d5-fa60f7b00328"
-        },
-        {
-            "filename": "WeOS-zero-5.29.0.disk",
-            "version": "5.29.0",
-            "filesize": 81788928,
-            "md5sum": "f464de7b2b424f4a8ad7c650108fee3d",
-            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=52655074-0fab-4119-ba01-b68200a733ab"
-        },
-        {
-            "filename": "WeOS-zero-5.28.0.disk",
-            "version": "5.28.0",
-            "md5sum": "7b4e29761091c12ec2cd482f7c1a0bea",
-            "filesize": 75497472,
-            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=4926adbe-0cd6-4851-b70f-e9d60b3b3f06"
-        },
-        {
-            "filename": "WeOS-zero-5.27.0.disk",
-            "version": "5.27.0",
-            "md5sum": "8bd4944b60eaeca391bb5d1dc0defb8b",
-            "filesize": 78643200,
-            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=1a7bf389-a4b1-4dae-b121-6fb3d6781542"
+            "filename": "WeOS-zero-5.31.0.disk",
+            "version": "5.31.0",
+            "filesize": 84934656,
+            "md5sum": "72284fabff5d56e39099e45ec4dd58c7",
+            "direct_download_url": "https://dropzone.westermo.com/file.aspx?id=90f7679d-8c2f-46a2-b00b-57fd0d6fb107"
         }
     ],
     "versions": [
         {
-            "name": "5.30.0",
+            "name": "5.31.0",
             "images": {
-                "hda_disk_image": "WeOS-zero-5.30.0.disk",
-                "hdb_disk_image": "Config-zero-1.0.0.disk"
-            }
-        },        {
-            "name": "5.29.0",
-            "images": {
-                "hda_disk_image": "WeOS-zero-5.29.0.disk",
-                "hdb_disk_image": "Config-zero-1.0.0.disk"
-            }
-        },
-        {
-            "name": "5.28.0",
-            "images": {
-                "hda_disk_image": "WeOS-zero-5.28.0.disk",
-                "hdb_disk_image": "Config-zero-1.0.0.disk"
-            }
-        },
-        {
-            "name": "5.27.0",
-            "images": {
-                "hda_disk_image": "WeOS-zero-5.27.0.disk",
+                "hda_disk_image": "WeOS-zero-5.31.0.disk",
                 "hdb_disk_image": "Config-zero-1.0.0.disk"
             }
         }
