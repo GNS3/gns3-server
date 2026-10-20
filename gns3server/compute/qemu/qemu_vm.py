@@ -2316,16 +2316,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
                 ]
             )
-            if self._qemu_version and parse_version(self._qemu_version) >= parse_version("4.2.0"):
-                # The ‘ide-drive’ device is deprecated since version 4.2.0
-                # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
-                options.extend(
-                    ["-device", f"ide-hd,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}"]
-                )
-            else:
-                options.extend(
-                    ["-device", f"ide-drive,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}"]
-                )
+            options.extend(["-device", f"ide-hd,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}"])
         elif interface == "nvme":
             options.extend(
                 [
@@ -2721,15 +2712,12 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
     async def _disable_graphics(self):
         """
-        Disable graphics depending of the QEMU version
+        Disable graphics for Qemu if no graphics options are specified.
         """
 
         if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl-spice", "-vnc"]):
             return []
-        if self._qemu_version and parse_version(self._qemu_version) >= parse_version("3.0"):
-            return ["-display", "none"]
-        else:
-            return ["-nographic"]
+        return ["-display", "none"]
 
     async def _run_with_hardware_acceleration(self, qemu_path, options):
         """
@@ -2854,8 +2842,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         """
 
         self._qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-        if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
-            raise QemuError("Qemu version 2.4 or later is required to run Qemu VMs")
+        if self._qemu_version and parse_version(self._qemu_version) < parse_version("6.2.0"):
+            raise QemuError("Qemu version 6.2 or later is required to run Qemu VMs")
         vm_name = self._name.replace(",", ",,")
         project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
@@ -2877,14 +2865,6 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
-                # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
-                # https://github.com/GNS3/gns3-server/issues/685
-                if (
-                    self._qemu_version
-                    and parse_version(self._qemu_version) >= parse_version("2.4.0")
-                    and self.platform == "x86_64"
-                ):
-                    command.extend(["-machine", "smm=off"])
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
         command.extend(["-boot", f"order={self._boot_priority}"])
