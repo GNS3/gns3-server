@@ -2064,7 +2064,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         console_host = "::"
                 except OSError as e:
                     raise QemuError(f"Could not check if IPv6 is enabled: {e}")
-            return ["-spice", f"addr={console_host},port={port},disable-ticketing", "-vga", "qxl"]
+            return ["-spice", f"addr={console_host},port={port},disable-ticketing=on", "-vga", "qxl"]
         else:
             return []
 
