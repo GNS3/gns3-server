@@ -26,7 +26,6 @@ import re
 import shutil
 import socket
 import subprocess
-import sys
 import tempfile
 import time
 
@@ -253,11 +252,6 @@ class Dynamips(BaseManager):
         # look for Dynamips
         dynamips_path = self.config.settings.Dynamips.dynamips_path
         if not os.path.isabs(dynamips_path):
-            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                dynamips_dir = os.path.normpath(
-                    os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "dynamips")
-                )
-                os.environ["PATH"] = os.pathsep.join(dynamips_dir) + os.pathsep + os.environ.get("PATH", "")
             dynamips_path = shutil.which(dynamips_path)
 
         if not dynamips_path:
@@ -311,13 +305,12 @@ class Dynamips(BaseManager):
         if parse_version(dynamips_version) < parse_version("0.2.11"):
             raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {dynamips_version}")
 
-        if not sys.platform.startswith("win"):
-            # Hypervisor should always listen to 127.0.0.1
-            # See https://github.com/GNS3/dynamips/issues/62
-            # This was fixed in Dynamips v0.2.23 which hasn't been built for Windows
-            if parse_version(dynamips_version) >= parse_version("0.2.23"):
-                server_host = "127.0.0.1"
-                bind_console_host = True
+        # Hypervisor should always listen to 127.0.0.1
+        # See https://github.com/GNS3/dynamips/issues/62
+        # This was fixed in Dynamips v0.2.23
+        if parse_version(dynamips_version) >= parse_version("0.2.23"):
+            server_host = "127.0.0.1"
+            bind_console_host = True
 
         try:
             info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)

@@ -511,21 +511,15 @@ class Controller:
             dst_md5 = await wait_run_in_executor(md5sum, dst)
             return src_md5 != dst_md5
 
-        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-            resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
-            for filename in os.listdir(resource_path):
-                if not os.path.exists(os.path.join(dst_path, filename)):
-                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-        else:
-            for entry in importlib_resources.files("gns3server").joinpath(resource_name).iterdir():
-                full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
-                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
-                    shutil.copy(str(entry), os.path.join(full_path))
-                    installed_resources.append(full_path)
-                elif entry.is_dir():
-                    os.makedirs(full_path, exist_ok=True)
-                    await Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
+        for entry in importlib_resources.files("gns3server").joinpath(resource_name).iterdir():
+            full_path = os.path.join(dst_path, entry.name)
+            if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
+                log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                shutil.copy(str(entry), os.path.join(full_path))
+                installed_resources.append(full_path)
+            elif entry.is_dir():
+                os.makedirs(full_path, exist_ok=True)
+                await Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
         return installed_resources
 
     async def _install_base_configs(self):

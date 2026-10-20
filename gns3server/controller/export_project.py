@@ -18,7 +18,6 @@
 import json
 import logging
 import os
-import sys
 import tempfile
 import zipfile
 from datetime import datetime
@@ -154,9 +153,6 @@ def _patch_mtime(path):
     :param path: file path
     """
 
-    if sys.platform.startswith("win"):
-        # only UNIX type platforms
-        return
     st = os.stat(path, follow_symlinks=False)
     file_date = datetime.fromtimestamp(st.st_mtime)
     if file_date.year < 1980:
