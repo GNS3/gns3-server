@@ -1128,15 +1128,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             return
 
         try:
-            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                cpulimit_exec = os.path.join(
-                    os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe"
-                )
-            else:
-                cpulimit_exec = "cpulimit"
-
             command = [
-                cpulimit_exec,
+                "cpulimit",
                 "--lazy",
                 f"--pid={self._process.pid}",
                 f"--limit={self._cpu_throttling}",
@@ -2599,8 +2592,6 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         Start swtpm (TPM emulator)
         """
 
-        if sys.platform.startswith("win"):
-            raise QemuError("swtpm (TPM emulator) is not supported on Windows")
         tpm_dir = os.path.join(self.working_dir, "tpm")
         os.makedirs(tpm_dir, exist_ok=True)
         tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
