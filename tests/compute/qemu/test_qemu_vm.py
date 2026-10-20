@@ -645,7 +645,7 @@ async def test_build_command_console_none(vm):
 @pytest.mark.asyncio
 async def test_build_command_manual_uuid(vm):
     """
-    If user has set a uuid we keep it
+    If user has set a UUID we keep it
     """
 
     vm.options = "-uuid e1c307a4-896f-11e6-81a5-3c07547807cc"
@@ -657,12 +657,12 @@ async def test_build_command_manual_uuid(vm):
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm_below_2_4(linux_platform, vm, fake_qemu_binary):
+async def test_build_command_kvm_below_6_2(linux_platform, vm, fake_qemu_binary):
     """
     Qemu 2.4 introduce an issue with KVM
     """
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.3.2")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.1.0")
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             with pytest.raises(QemuError):
@@ -670,62 +670,21 @@ async def test_build_command_kvm_below_2_4(linux_platform, vm, fake_qemu_binary)
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
-    """
-    Qemu 2.4 introduce an issue with KVM
-    """
-
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.2")
-    os.environ["DISPLAY"] = "0:0"
-    with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-            cmd = await vm._build_command()
-            nio = vm._local_udp_tunnels[0][0]
-            assert cmd == [
-                fake_qemu_binary,
-                "-name",
-                "test",
-                "-m",
-                "256M",
-                "-smp",
-                "cpus=1,maxcpus=1,sockets=1",
-                "-enable-kvm",
-                "-machine",
-                "smm=off",
-                "-boot",
-                "order=c",
-                "-uuid",
-                vm.id,
-                "-serial",
-                f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
-                "-net",
-                "none",
-                "-device",
-                "i82801b11-bridge,id=dmi_pci_bridge1",
-                "-device",
-                "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
-                "-device",
-                f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
-                "-netdev",
-                f"socket,id=gns3-0,udp=127.0.0.1:{nio.rport},localaddr=127.0.0.1:{nio.lport}",
-                "-nographic",
-            ]
-
-
-@pytest.mark.asyncio
 async def test_build_command_without_display(vm):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.2.0")
     os.environ["DISPLAY"] = ""
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "-nographic" in cmd
+        print(cmd)
+        assert "-display" in cmd
+        assert "none" in cmd
 
 
 @pytest.mark.asyncio
 async def test_build_command_two_adapters(vm, fake_qemu_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.2.0")
     os.environ["DISPLAY"] = "0:0"
     vm.adapters = 2
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
@@ -760,7 +719,8 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             f"e1000,mac={int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)},bus=pci-bridge1,addr=0x01,netdev=gns3-1",
             "-netdev",
             f"socket,id=gns3-1,udp=127.0.0.1:{nio2.rport},localaddr=127.0.0.1:{nio2.lport}",
-            "-nographic",
+            "-display",
+            "none",
         ]
 
 
