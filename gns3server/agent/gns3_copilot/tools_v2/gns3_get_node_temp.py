@@ -168,7 +168,7 @@ class GNS3TemplateTool(BaseTool):
 
         except Exception as e:
             logger.error("Failed to connect to GNS3 server or retrieve templates: %s", e)
-            return {"error": f"Failed to retrieve templates: {str(e)}"}
+            return {"error": f"Failed to retrieve templates: {e!s}"}
 
 
 if __name__ == "__main__":

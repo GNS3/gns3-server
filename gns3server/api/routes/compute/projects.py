@@ -18,33 +18,32 @@
 API routes for projects.
 """
 
+import asyncio
+import inspect
+import logging
 import os
 import shutil
 import urllib.parse
-import inspect
-import asyncio
-
-import logging
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import FileResponse
 from typing import List
 from uuid import UUID
 
-from gns3server.compute.project_manager import ProjectManager
-from gns3server.compute.project import Project
-from gns3server.compute.base_manager import BaseManager
-from gns3server.utils.path import is_safe_path
-from gns3server import schemas
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse
 
+from gns3server import schemas
+from gns3server.compute.error import NodeError
+from gns3server.compute.project import Project
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.utils.path import is_safe_path
 
 router = APIRouter()
 
 # How many clients have subscribed to notifications
-_notifications_listening = {}
+_notifications_listening: dict[str, int] = {}
 
 
 def dep_project(project_id: UUID) -> Project:
@@ -74,12 +73,12 @@ def create_compute_project(project_data: schemas.ProjectCreate) -> schemas.Proje
     """
 
     pm = ProjectManager.instance()
-    project_data = jsonable_encoder(project_data, exclude_unset=True)
+    data = jsonable_encoder(project_data, exclude_unset=True)
     project = pm.create_project(
-        name=project_data.get("name"),
-        path=project_data.get("path"),
-        project_id=project_data.get("project_id"),
-        variables=project_data.get("variables", None),
+        name=data.get("name"),
+        path=data.get("path"),
+        project_id=data.get("project_id"),
+        variables=data.get("variables", None),
     )
     return project.asdict()
 
@@ -261,7 +260,7 @@ async def create_batch_nios(
     # This is what makes builtin L2 nodes (ethernet_switch/hub/cloud/nat)
     # start their uBridge concurrently during project open instead of one
     # at a time (~0.5s each for fork + socket connect).
-    per_node = {}
+    per_node: dict[str, list[schemas.BatchNIOEntry]] = {}
     for entry in batch.nios:
         per_node.setdefault(entry.node_id, []).append(entry)
 
@@ -273,16 +272,35 @@ async def create_batch_nios(
         # count (standard == 1, Dynamips == 2) and await the async variant.
         sig = inspect.signature(node.manager.create_nio)
         dynamips_style = len(sig.parameters) >= 2
+        failed = []
         for entry in entries:
             nio_settings = jsonable_encoder(entry.nio, exclude_unset=True)
-            if dynamips_style:
-                nio = await node.manager.create_nio(node, nio_settings)
-            else:
-                nio = node.manager.create_nio(nio_settings)
-            await _add_nio_binding(node, entry.adapter_number, entry.port_number, nio)
+            try:
+                if dynamips_style:
+                    nio = await node.manager.create_nio(node, nio_settings)
+                else:
+                    nio = node.manager.create_nio(nio_settings)
+                await _add_nio_binding(node, entry.adapter_number, entry.port_number, nio)
+            except NodeError:
+                # A VXLAN entry that cannot be wired (its VNI already
+                # registered on the host's shared socket, no route to the
+                # peer) must not fail the whole project open: report it so
+                # the controller can degrade that link to the uBridge relay.
+                # Every other NIO type keeps the fail-the-batch semantics.
+                if not nio_settings.get("vxlan"):
+                    raise
+                failed.append(
+                    {
+                        "node_id": entry.node_id,
+                        "adapter_number": entry.adapter_number,
+                        "port_number": entry.port_number,
+                    }
+                )
+        return failed
 
-    await asyncio.gather(*[_create_one_node(nid, ents) for nid, ents in per_node.items()])
-    return {"added": len(batch.nios)}
+    results = await asyncio.gather(*[_create_one_node(nid, ents) for nid, ents in per_node.items()])
+    failed = [item for node_failed in results for item in node_failed]
+    return {"added": len(batch.nios) - len(failed), "failed": failed}
 
 
 @router.put(
@@ -308,7 +326,7 @@ async def update_batch_nios(
     # Group entries by node so that different nodes' uBridge processes are
     # updated in parallel (each node has its own AF_UNIX socket). Within a
     # node entries are serial to respect the per-node uBridge command lock.
-    per_node = {}
+    per_node: dict[str, list[schemas.BatchNIOEntry]] = {}
     for entry in batch.nios:
         per_node.setdefault(entry.node_id, []).append(entry)
 

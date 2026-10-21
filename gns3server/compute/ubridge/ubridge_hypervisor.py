@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import logging
 import re
 import time
-import logging
-import asyncio
 
 from gns3server.utils.asyncio import locking
+
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ class UBridgeHypervisor:
         self._reader = None
         self._writer = None
 
-    async def connect(self, timeout=10):
+    async def connect(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Connects to the hypervisor.
         """
@@ -187,9 +188,7 @@ class UBridgeHypervisor:
             await self._writer.drain()
         except OSError as e:
             raise UbridgeError(
-                "Lost communication with {endpoint} when sending command '{command}': {error}, uBridge process running: {run}".format(
-                    endpoint=self.endpoint, command=command, error=e, run=self.is_running()
-                )
+                f"Lost communication with {self.endpoint} when sending command '{command}': {e}, uBridge process running: {self.is_running()}"
             )
 
         # Now retrieve the result
@@ -214,9 +213,7 @@ class UBridgeHypervisor:
                 if not chunk:
                     if retries > max_retries:
                         raise UbridgeError(
-                            "No data returned from {endpoint} after sending command '{command}', uBridge process running: {run}".format(
-                                endpoint=self.endpoint, command=command, run=self.is_running()
-                            )
+                            f"No data returned from {self.endpoint} after sending command '{command}', uBridge process running: {self.is_running()}"
                         )
                     else:
                         retries += 1
@@ -226,9 +223,7 @@ class UBridgeHypervisor:
                 buf += chunk.decode("utf-8")
             except OSError as e:
                 raise UbridgeError(
-                    "Lost communication with {endpoint} after sending command '{command}': {error}, uBridge process running: {run}".format(
-                        endpoint=self.endpoint, command=command, error=e, run=self.is_running()
-                    )
+                    f"Lost communication with {self.endpoint} after sending command '{command}': {e}, uBridge process running: {self.is_running()}"
                 )
 
             # If the buffer doesn't end in '\n' then we can't be done
@@ -237,9 +232,7 @@ class UBridgeHypervisor:
                     continue
             except IndexError:
                 raise UbridgeError(
-                    "Could not communicate with {endpoint} after sending command '{command}', uBridge process running: {run}".format(
-                        endpoint=self.endpoint, command=command, run=self.is_running()
-                    )
+                    f"Could not communicate with {self.endpoint} after sending command '{command}', uBridge process running: {self.is_running()}"
                 )
 
             data += buf.split("\r\n")

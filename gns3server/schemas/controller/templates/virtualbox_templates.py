@@ -14,23 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.virtualbox_nodes import (
-    VirtualBoxConsoleType,
-    VirtualBoxAdapterType,
-    VirtualBoxOnCloseAction,
-    CustomAdapter,
-)
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from gns3server.schemas.compute.virtualbox_nodes import (
+    CustomAdapter,
+    VirtualBoxAdapterType,
+    VirtualBoxConsoleType,
+    VirtualBoxOnCloseAction,
+)
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
 
 
-class VirtualBoxTemplate(TemplateBase):
+class VirtualBoxTemplateBase(TemplateBase):
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vbox_guest"
-    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+    vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")
     adapters: Optional[int] = Field(
@@ -59,5 +62,9 @@ class VirtualBoxTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VirtualBoxTemplateUpdate(VirtualBoxTemplate):
-    vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")
+class VirtualBoxTemplate(VirtualBoxTemplateBase):
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+
+
+class VirtualBoxTemplateUpdate(PartialUpdateModel, VirtualBoxTemplateBase):
+    update_excluded_fields = ("template_id",)

@@ -15,27 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
-import shutil
+import os
+import unittest.mock
+import uuid
+from pathlib import Path
+from typing import Optional
 
 import pytest
-import uuid
-import unittest.mock
-
-from pathlib import Path
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.utils import asyncio_patch
+from gns3server import schemas
+from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
+from gns3server.controller import Config, Controller
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.controller import Controller
-from gns3server.controller import Config
 from gns3server.services.templates import BUILTIN_TEMPLATES
-from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
-from gns3server import schemas
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -91,6 +89,27 @@ class TestTemplateRoutes:
                 assert len(response.json()) == 1
         else:
             assert len(response.json()) == 0
+
+    @pytest.mark.parametrize(
+        "name, tags, expected_names",
+        (
+            ("VPCS_TEST", None, ["VPCS_TEST"]),
+            ("vpcs_test", None, []),
+            ("missing", None, []),
+            ("VPCS_TEST", ["tag1"], ["VPCS_TEST"]),
+            ("VPCS_TEST", ["tag42"], []),
+        ),
+    )
+    async def test_template_list_filter_by_name(
+        self, app: FastAPI, client: AsyncClient, name: str, tags: Optional[list], expected_names: list
+    ) -> None:
+
+        params = {"name": name}
+        if tags is not None:
+            params["tags"] = tags
+        response = await client.get(app.url_path_for("get_templates"), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        assert [t["name"] for t in response.json()] == expected_names
 
     async def test_template_get(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -1046,7 +1065,7 @@ class TestIOUTemplate:
                 "startup_config": "iou_l3_base_startup-config.txt",
                 "symbol": unittest.mock.ANY,
                 "use_default_iou_values": False,
-                "l1_keepalives": False,
+                "l1_keepalives": True,
             }
 
             for item, value in expected_response.items():
@@ -1093,6 +1112,28 @@ class TestDockerTemplate:
 
 
 class TestQemuTemplate:
+    async def test_cdrom_interfaces_persist_on_template_update(self, app, client):
+        params = {
+            "name": "SATA installer",
+            "compute_id": "local",
+            "template_type": "qemu",
+            "cdrom_interface": "sata",
+            "cdrom2_interface": "sata",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        template_id = response.json()["template_id"]
+        url = app.url_path_for("get_template", template_id=template_id)
+        saved = (await client.get(url)).json()
+        assert saved["cdrom_interface"] == saved["cdrom2_interface"] == "sata"
+        response = await client.put(
+            app.url_path_for("update_template", template_id=template_id), json={"cdrom_interface": "ide"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        saved = (await client.get(url)).json()
+        assert saved["cdrom_interface"] == "ide"
+        assert saved["cdrom2_interface"] == "sata"
+
     async def test_qemu_template_create(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {
@@ -1585,3 +1626,67 @@ class TestImageAssociationWithTemplate:
 
         response = await client.post(app.url_path_for("create_template"), json=params)
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize("reference", ["Vendor/router.bin", "router.bin"])
+    async def test_nested_template_resolves_image_in_correct_type_root(self, client, images_dir, db_session, reference):
+        repository = ImagesRepository(db_session)
+        # Insert the wrong type first, then a suffix collision below QEMU itself.
+        for index, relative in enumerate([f"IOU/{reference}", f"QEMU/Other/{reference}", f"QEMU/{reference}"]):
+            path = Path(images_dir) / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"image bytes")
+            await repository.add_image(
+                path.name, "iou" if index == 0 else "qemu", 11, str(path), str(index) * 32, "md5"
+            )
+        expected_path = str(Path(images_dir) / "QEMU" / reference)
+        response = await client.post(
+            "/v3/templates",
+            json={
+                "name": f"Nested QEMU {reference}",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "hda_disk_image": reference,
+                "ram": 512,
+            },
+        )
+        assert response.status_code == 201, response.text
+        templates = TemplatesRepository(db_session)
+        template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
+        assert [image.path for image in template.images] == [expected_path]
+        # Updating removes the association for the same correctly resolved path.
+        response = await client.put(f"/v3/templates/{template.template_id}", json={"hda_disk_image": ""})
+        assert response.status_code == 200, response.text
+        await db_session.refresh(template, ["images"])
+        assert template.images == []
+
+    async def test_update_removes_legacy_association_when_new_exact_path_exists(self, client, images_dir, db_session):
+        repository = ImagesRepository(db_session)
+        legacy_path = Path(images_dir) / "QEMU/Other/Vendor/router.qcow2"
+        canonical_path = Path(images_dir) / "QEMU/Vendor/router.qcow2"
+        for index, path in enumerate([legacy_path, canonical_path]):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"image bytes")
+            await repository.add_image(path.name, "qemu", 11, str(path), str(index) * 32, "md5")
+        response = await client.post(
+            "/v3/templates",
+            json={
+                "name": "Legacy nested association",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "hda_disk_image": str(legacy_path),
+                "ram": 512,
+            },
+        )
+        assert response.status_code == 201, response.text
+        templates = TemplatesRepository(db_session)
+        template = await templates.get_template(uuid.UUID(response.json()["template_id"]))
+        # Simulate an existing template that used the legacy suffix lookup.
+        await templates.update_template(template, {"hda_disk_image": "Vendor/router.qcow2"})
+        legacy_image = template.images[0]
+        legacy_image.availability = "missing"
+        await db_session.commit()
+        legacy_path.unlink()
+        response = await client.put(f"/v3/templates/{template.template_id}", json={"hda_disk_image": ""})
+        assert response.status_code == 200, response.text
+        await db_session.refresh(template, ["images"])
+        assert template.images == []

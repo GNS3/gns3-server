@@ -21,8 +21,9 @@ Web Wireshark - Docker HTTP API client
 This module handles Docker API operations via aiohttp Unix socket.
 """
 
-import asyncio
 import logging
+from asyncio import timeout as async_timeout
+from typing import Any
 
 import aiohttp
 
@@ -132,7 +133,7 @@ class DockerHTTPClient:
         url = f"http://docker/v{self._api_version}/{endpoint}"
 
         try:
-            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+            async with async_timeout(self.REQUEST_TIMEOUT):
                 async with session.request(method, url, **kwargs) as response:
                     if response.status >= 300:
                         error_text = await response.text()
@@ -140,7 +141,7 @@ class DockerHTTPClient:
                     if response.status == 204:  # No Content
                         return None
                     return await response.json()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for {endpoint}")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e
@@ -157,9 +158,9 @@ class DockerHTTPClient:
                 return await self._request(method, endpoint, check_connection=False, **kwargs)
             raise
 
-    async def create_network(self, name: str, driver: str = "bridge", subnet: str = None):
+    async def create_network(self, name: str, driver: str = "bridge", subnet: str | None = None):
         """Create Docker network."""
-        data = {"Name": name, "Driver": driver}
+        data: dict[str, Any] = {"Name": name, "Driver": driver}
         if subnet:
             data["IPAM"] = {"Config": [{"Subnet": subnet}]}
         await self._request("POST", "networks/create", json=data)
@@ -175,7 +176,7 @@ class DockerHTTPClient:
 
     async def create_container(self, name: str, image: str, **kwargs):
         """Create container."""
-        data = {"Image": image, "name": name, "HostConfig": {}, "NetworkingConfig": {}}
+        data: dict[str, Any] = {"Image": image, "name": name, "HostConfig": {}, "NetworkingConfig": {}}
 
         # Handle network config
         if "network" in kwargs:
@@ -223,7 +224,7 @@ class DockerHTTPClient:
                 return None
             raise
 
-    async def stop_container(self, container_id: str, timeout: int = 0):
+    async def stop_container(self, container_id: str, timeout: int = 0):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """Stop container immediately (force kill, no graceful shutdown)."""
         await self._request("POST", f"containers/{container_id}/stop", params={"t": timeout})
 
@@ -248,13 +249,13 @@ class DockerHTTPClient:
         url = f"http://docker/v{self._api_version}/containers/{container_name}/top?ps_args=aux"
 
         try:
-            async with asyncio.timeout(self.REQUEST_TIMEOUT):
+            async with async_timeout(self.REQUEST_TIMEOUT):
                 async with session.get(url) as response:
                     if response.status >= 300:
                         error_text = await response.text()
                         raise RuntimeError(f"Docker API error {response.status}: {error_text}")
                     result = await response.json()
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise RuntimeError(f"Docker API timeout after {self.REQUEST_TIMEOUT}s for containers/{container_name}/top")
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Docker connection error: {e}") from e

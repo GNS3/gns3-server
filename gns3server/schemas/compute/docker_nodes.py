@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter, ConsoleType, AuxType, ExtraConfig
+from pydantic import BaseModel, Field, field_validator
+
+from ..common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class DockerBase(BaseModel):
@@ -41,8 +43,8 @@ class DockerBase(BaseModel):
         # the canonical "no path" value is "/" (the creation default)
         return value or "/"
 
-    name: str
-    image: str = Field(..., description="Docker image name")
+    name: Optional[str] = None
+    image: Optional[str] = Field(None, description="Docker image name")
     node_id: Optional[UUID] = None
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[ConsoleType] = Field(None, description="Console type")
@@ -76,6 +78,8 @@ class DockerCreate(DockerBase):
     Properties to create a Docker node.
     """
 
+    name: str
+    image: str = Field(..., description="Docker image name")
     application_id: Optional[int] = Field(
         None, ge=1, le=1022, description="IOL application ID for iol-runner images (allocated by the controller)"
     )
@@ -88,16 +92,20 @@ class DockerCreate(DockerBase):
     )
 
 
-class DockerUpdate(DockerBase):
+class DockerUpdate(PartialUpdateModel, DockerBase):
     """
     Properties to update a Docker node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     image: Optional[str] = Field(None, description="Docker image name")
 
 
 class Docker(DockerBase):
+    name: str
+    image: str = Field(..., description="Docker image name")
     container_id: str = Field(
         ..., min_length=12, max_length=64, pattern="^[a-f0-9]+$", description="Docker container ID (read only)"
     )

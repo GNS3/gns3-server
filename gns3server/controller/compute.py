@@ -15,37 +15,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import ipaddress
-import aiohttp
 import asyncio
-import socket
-import json
-import sys
 import io
+import ipaddress
+import json
+import logging
+import socket
+import sys
+from asyncio import timeout as asynctimeout
 
+import aiohttp
 from fastapi import HTTPException
 
-if sys.version_info >= (3, 11):
-    from asyncio import timeout as asynctimeout
-else:
-    from async_timeout import timeout as asynctimeout
-
-from ..utils import parse_version
-from ..utils.asyncio import locking, async_iterable_to_stream
 from ..controller.controller_error import (
-    ControllerError,
+    ComputeConflictError,
+    ComputeError,
     ControllerBadRequestError,
-    ControllerNotFoundError,
+    ControllerError,
     ControllerForbiddenError,
+    ControllerNotFoundError,
     ControllerTimeoutError,
     ControllerUnauthorizedError,
-    ComputeError,
-    ComputeConflictError,
 )
+from ..utils import parse_version
+from ..utils.asyncio import async_iterable_to_stream, locking
 from ..version import __version__, __version_info__
-
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +61,7 @@ class Compute:
         name=None,
         console_host=None,
         ssl_context=None,
+        auto_connect=False,
     ):
         self._http_session = None
         assert controller is not None
@@ -86,6 +81,11 @@ class Compute:
         self._connected = False
         self._notifications = None
         self._closed = False  # Close mean we are destroying the compute node
+        # True when the user asked to disconnect: blocks every reconnection
+        # path (retry backoff, notification stream reconnect, lazy connect)
+        # until connect() is called again
+        self._manual_disconnect = False
+        self._auto_connect = auto_connect
         self._controller = controller
         self._set_auth(user, password)
         self._cpu_usage_percent = 0
@@ -93,7 +93,18 @@ class Compute:
         self._disk_usage_percent = 0
         self._last_error = None
         self._ssl_context = ssl_context
-        self._capabilities = {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": []}
+        self._capabilities = {
+            "version": "",
+            "platform": "",
+            "cpus": 0,
+            "memory": 0,
+            "disk_size": 0,
+            "node_types": [],
+            "ubridge_tc": None,
+            "ubridge_tap": None,
+            "ubridge_iol_tap": None,
+            "ubridge_bridge_tap": None,
+        }
         self.name = name
         # Cache of interfaces on remote host
         self._interfaces_cache = None
@@ -149,6 +160,11 @@ class Compute:
 
     async def update(self, **kwargs):
 
+        if "auto_connect" in kwargs:
+            # stored separately from the generic attributes below so that
+            # asdict() reports it (it is persisted in the database, the
+            # controller-side copy is only a mirror for notifications)
+            self._auto_connect = kwargs.pop("auto_connect")
         for kw in kwargs:
             if kw not in ("user", "password"):
                 setattr(self, kw, kwargs[kw])
@@ -216,6 +232,13 @@ class Compute:
         """
         return self._host
 
+    @host.setter
+    def host(self, host):
+        self._host = host
+        self._host_ip_cache = None  # invalidate; re-resolve on next access
+        if self._console_host is None:
+            self._console_host = host
+
     @property
     def host_ip(self):
         """
@@ -227,13 +250,6 @@ class Compute:
             except socket.gaierror:
                 self._host_ip_cache = "0.0.0.0"
         return self._host_ip_cache
-
-    @host.setter
-    def host(self, host):
-        self._host = host
-        self._host_ip_cache = None  # invalidate; re-resolve on next access
-        if self._console_host is None:
-            self._console_host = host
 
     @property
     def console_host(self):
@@ -289,6 +305,15 @@ class Compute:
     def disk_usage_percent(self):
         return self._disk_usage_percent
 
+    @property
+    def capabilities(self) -> dict:
+        """
+        Capabilities reported by this compute (fetched from GET /capabilities
+        at connect time).
+        """
+
+        return self._capabilities
+
     def asdict(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
@@ -309,6 +334,7 @@ class Compute:
             "host": self._host,
             "port": self._port,
             "user": self._user,
+            "auto_connect": self._auto_connect,
             "connected": self._connected,
             "cpu_usage_percent": self._cpu_usage_percent,
             "memory_usage_percent": self._memory_usage_percent,
@@ -354,7 +380,9 @@ class Compute:
         :param params: Optional dict of query parameters to append to the URL
         """
 
-        if not self._connected and not dont_connect:
+        # a manually disconnected compute is not lazily reconnected either: the
+        # request fails like for any unreachable compute
+        if not self._connected and not self._manual_disconnect and not dont_connect:
             if self._id == "vm" and not self._controller.gns3vm.running:
                 await self._controller.gns3vm.start()
             await self.connect()
@@ -367,6 +395,9 @@ class Compute:
         """
         We catch error during reconnect
         """
+
+        if self._manual_disconnect:
+            return  # stop reconnecting, the compute was manually disconnected
         try:
             await self.connect()
         except ControllerError:
@@ -399,6 +430,8 @@ class Compute:
         Check if remote server is accessible
         """
 
+        # an explicit connection request cancels a manual disconnect
+        self._manual_disconnect = False
         if not self._connected and not self._closed and self.host:
             try:
                 log.info(f"Connecting to compute '{self._id}'")
@@ -460,6 +493,31 @@ class Compute:
             self._last_error = None
             self._controller.notification.controller_emit("compute.updated", self.asdict())
 
+    async def disconnect(self):
+        """
+        Manually disconnect from the compute. The controller stops reconnecting
+        (retry backoff, notification stream reconnect and lazy connection are
+        all blocked) until connect() is called again, or the controller
+        restarts with auto_connect enabled for this compute.
+        """
+
+        self._manual_disconnect = True
+        if self._notifications:
+            # Cancelling the notification task runs its finally block: the
+            # compute is marked disconnected and clients are notified. The
+            # flag set above keeps it from scheduling a reconnection.
+            self._notifications.cancel()
+            try:
+                await self._notifications
+            except asyncio.CancelledError:
+                pass
+            self._notifications = None
+        if self._http_session and not self._http_session.closed:
+            await self._http_session.close()
+        if self._connected:
+            self._connected = False
+            self._controller.notification.controller_emit("compute.updated", self.asdict())
+
     async def _connect_notification(self):
         """
         Connect to the notification stream
@@ -512,9 +570,12 @@ class Compute:
             # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a resources usage bomb)
             from gns3server.api.server import app
 
-            if not app.state.exiting and not hasattr(sys, "_called_from_test"):
+            # The reconnection goes through _try_reconnect (not connect
+            # directly) so that a manual disconnect landing within the 1
+            # second window is still honoured by the time the timer fires
+            if not self._manual_disconnect and not app.state.exiting and not hasattr(sys, "_called_from_test"):
                 log.info(f"Reconnecting to compute '{self._id}' WebSocket '{ws_url}'")
-                asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
+                asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self._try_reconnect()))
 
     def _getUrl(self, path):
         host = self._host
@@ -535,7 +596,7 @@ class Compute:
         """Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
-    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):
+    async def _run_http_query(self, method, path, data=None, timeout=120, raw=False, stream=False, params=None):  # noqa: ASYNC109 - operation-specific timeout is intentional
         async with asynctimeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}
@@ -574,7 +635,7 @@ class Compute:
                 chunked=chunked,
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ComputeError(f"Timeout error for {method} call to {url} after {timeout}s")
         except (
             aiohttp.ClientError,

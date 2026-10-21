@@ -27,7 +27,6 @@ Tests for the shared GNS3 REST client layer (gns3_copilot.gns3_client):
 
 import pytest
 
-
 # ── project_inventory ────────────────────────────────────────────────────
 
 
@@ -63,6 +62,35 @@ def test_nodes_inventory_emits_default_credentials():
     assert inventory["R1"]["type"] == "dynamips"
     assert inventory["R1"]["server"] == "127.0.0.1"
     assert inventory["R1"]["tags"] == []
+
+
+def test_nodes_inventory_carries_console_host():
+    """
+    The inventory must keep the per-node console_host: remote computes bind
+    console ports on their own host, and the Nornir inventory needs it to
+    dial devices outside the controller machine.
+    """
+    pytest.importorskip("jwt", reason="ai-features extras not installed")
+    from gns3server.agent.gns3_copilot.gns3_client.project_inventory import (
+        build_nodes_inventory,
+    )
+
+    nodes = [
+        {
+            "name": "R1",
+            "node_id": "0d15c2e6-8f83-4b79-8875-9dbc3e5f2f1e",
+            "node_type": "dynamips",
+            "console": 5000,
+            "console_host": "192.168.122.10",
+            "console_type": "telnet",
+            "status": "started",
+        },
+    ]
+
+    inventory = build_nodes_inventory(nodes, "127.0.0.1")
+    assert inventory["R1"]["console_host"] == "192.168.122.10"
+    # the controller-wide "server" stays for backward compatibility
+    assert inventory["R1"]["server"] == "127.0.0.1"
 
 
 def test_links_summary_resolves_names_and_ports():
@@ -131,8 +159,8 @@ def test_device_ports_prefer_netmiko_field_over_tag(monkeypatch):
     the tag stays as fallback when the field is missing.
     """
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):
@@ -164,8 +192,8 @@ def test_device_ports_prefer_netmiko_field_over_tag(monkeypatch):
 
 def test_device_ports_error_without_any_device_type(monkeypatch):
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):
@@ -193,8 +221,8 @@ def test_device_ports_inject_default_credentials(monkeypatch):
     keep inheriting from the group.
     """
     pytest.importorskip("jwt", reason="ai-features extras not installed")
-    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
     from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
 
     class _FakeTopology:
         def _run(self, project_id=None, jwt_token=None, url=None):
@@ -235,3 +263,60 @@ def test_device_ports_inject_default_credentials(monkeypatch):
     assert "password" not in hosts["R2"]
     assert "username" not in hosts["R3"]
     assert "password" not in hosts["R3"]
+
+
+def test_device_ports_carry_per_node_console_host(monkeypatch):
+    """
+    Remote computes bind console ports on their own host: console_host from
+    the topology becomes a host-level nornir hostname (overriding the
+    group's controller-wide default). Missing or wildcard values keep the
+    group inheritance.
+    """
+    pytest.importorskip("jwt", reason="ai-features extras not installed")
+    from gns3server.agent.gns3_copilot import gns3_client
+    from gns3server.agent.gns3_copilot.utils import get_gns3_device_port
+
+    class _FakeTopology:
+        def _run(self, project_id=None, jwt_token=None, url=None):
+            return {
+                "nodes": {
+                    # node on a remote compute (another GNS3 VM)
+                    "R1": {
+                        "console_port": 5000,
+                        "console_host": "192.168.122.10",
+                        "tags": [],
+                        "netmiko_device_type": "cisco_ios_telnet",
+                    },
+                    # node on the local compute
+                    "R2": {
+                        "console_port": 5001,
+                        "console_host": "127.0.0.1",
+                        "tags": [],
+                        "netmiko_device_type": "cisco_ios_telnet",
+                    },
+                    # legacy topology payload without console_host
+                    "R3": {
+                        "console_port": 5002,
+                        "tags": [],
+                        "netmiko_device_type": "cisco_ios_telnet",
+                    },
+                    # wildcard host cannot be dialed; keep group inheritance
+                    "R4": {
+                        "console_port": 5003,
+                        "console_host": "0.0.0.0",
+                        "tags": [],
+                        "netmiko_device_type": "cisco_ios_telnet",
+                    },
+                }
+            }
+
+    # the function does a lazy from-import inside the body
+    monkeypatch.setattr(gns3_client, "GNS3TopologyTool", _FakeTopology)
+    hosts = get_gns3_device_port.get_device_ports_from_topology(["R1", "R2", "R3", "R4"])
+
+    # remote and local consoles dial their own host
+    assert hosts["R1"]["hostname"] == "192.168.122.10"
+    assert hosts["R2"]["hostname"] == "127.0.0.1"
+    # missing or wildcard console_host keeps inheriting the group hostname
+    assert "hostname" not in hosts["R3"]
+    assert "hostname" not in hosts["R4"]

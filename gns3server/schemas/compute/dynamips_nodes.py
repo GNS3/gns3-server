@@ -15,15 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
+from enum import StrEnum
+from typing import List, Optional
 from uuid import UUID
 
+from pydantic import BaseModel, Field
+
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
-class DynamipsPlatform(str, Enum):
+class DynamipsPlatform(StrEnum):
     """
     Supported Dynamips Platforms.
     """
@@ -37,7 +39,7 @@ class DynamipsPlatform(str, Enum):
     c1700 = "c1700"
 
 
-class DynamipsAdapters(str, Enum):
+class DynamipsAdapters(StrEnum):
     """
     Supported Dynamips Network Modules.
     """
@@ -70,7 +72,7 @@ class DynamipsAdapters(str, Enum):
     _ = ""
 
 
-class DynamipsWics(str, Enum):
+class DynamipsWics(StrEnum):
     """
     Supported Dynamips WICs.
     """
@@ -81,7 +83,7 @@ class DynamipsWics(str, Enum):
     _ = ""
 
 
-class DynamipsConsoleType(str, Enum):
+class DynamipsConsoleType(StrEnum):
     """
     Supported Dynamips console types.
     """
@@ -91,7 +93,7 @@ class DynamipsConsoleType(str, Enum):
     none = "none"
 
 
-class DynamipsNPE(str, Enum):
+class DynamipsNPE(StrEnum):
     """
     Supported Dynamips NPE models.
     """
@@ -106,7 +108,7 @@ class DynamipsNPE(str, Enum):
     npe_g2 = "npe-g2"
 
 
-class DynamipsMidplane(str, Enum):
+class DynamipsMidplane(StrEnum):
     """
     Supported Dynamips Midplane models.
     """
@@ -124,7 +126,6 @@ class DynamipsBase(BaseModel):
     node_id: Optional[UUID] = None
     name: Optional[str] = None
     dynamips_id: Optional[int] = Field(None, description="Dynamips internal ID")
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     ram: Optional[int] = Field(None, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, gt=0, description="Amount of NVRAM in KB")
     image: Optional[str] = Field(None, description="Path to the IOS image")
@@ -180,16 +181,19 @@ class DynamipsCreate(DynamipsBase):
     ram: int = Field(..., gt=0, description="Amount of RAM in MB")
 
 
-class DynamipsUpdate(DynamipsBase):
+class DynamipsUpdate(PartialUpdateModel, DynamipsBase):
     """
     Properties to update a Dynamips node.
     """
 
-    pass
+    update_excluded_fields = ("node_id", "dynamips_id")
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
 
 
 class Dynamips(DynamipsBase):
     name: str
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     node_id: UUID
     project_id: UUID
     dynamips_id: int

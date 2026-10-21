@@ -23,19 +23,22 @@ import logging
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, status
-from typing import List
+from typing import Any, List
 from uuid import UUID
 
-from gns3server.controller.project import Project
-from gns3server.db.repositories.rbac import RbacRepository
+from fastapi import APIRouter, Depends, status
+
 from gns3server import schemas
 from gns3server.controller import Controller
+from gns3server.controller.project import Project
+from gns3server.db.repositories.rbac import RbacRepository
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -103,7 +106,7 @@ async def delete_snapshot(
 
 @router.post(
     "/{snapshot_id}/restore",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.Project,
     dependencies=[Depends(has_privilege("Snapshot.Restore"))],
 )

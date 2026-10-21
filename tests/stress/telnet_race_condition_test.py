@@ -10,12 +10,12 @@ Usage:
     python telnet_race_condition_test.py --host 127.0.0.1 --port 2000 --connections 10
 """
 
-import asyncio
 import argparse
+import asyncio
 import logging
+import sys
 import time
 from typing import List, Optional
-import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -61,7 +61,7 @@ class TelnetClient:
             log.warning(f"Client {self.client_id}: Send failed: {e}")
             return False
 
-    async def receive_response(self, timeout: float = 1.0) -> Optional[str]:
+    async def receive_response(self, timeout: float = 1.0) -> Optional[str]:  # noqa: ASYNC109 - mock signature must match patched API
         """Receive response from server (optional)."""
         if not self.reader or not self.connected:
             return None
@@ -72,7 +72,7 @@ class TelnetClient:
                 response = data.decode("utf-8", errors="ignore")
                 log.debug(f"Client {self.client_id}: Received: {response[:50]}...")
                 return response
-        except asyncio.TimeoutError:
+        except TimeoutError:
             log.debug(f"Client {self.client_id}: No response (timeout)")
         except Exception as e:
             log.debug(f"Client {self.client_id}: Receive error: {e}")
@@ -288,7 +288,7 @@ async def run_stress_test(
     log.info(f"Device Type: {device_type}")
     log.info(f"Rapid clients: {rapid_clients} (each {iterations_per_client} iterations)")
     log.info(f"Long-lived clients: {long_lived_clients} (duration: {test_duration}s)")
-    log.info(f"Expected behavior: Rapid clients disconnect, long-lived clients unaffected")
+    log.info("Expected behavior: Rapid clients disconnect, long-lived clients unaffected")
     log.info("=" * 70)
 
     tasks: List[asyncio.Task] = []

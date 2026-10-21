@@ -43,18 +43,18 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
 from nornir.core import Nornir
-from nornir.core.task import AggregatedResult
-from nornir.core.task import Result
-from nornir.core.task import Task
+from nornir.core.task import AggregatedResult, Result, Task
 from nornir_netmiko.tasks import netmiko_multiline
 
 from gns3server.agent.gns3_copilot.gns3_client import get_gns3_server_host
-from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
 
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_vpcs_telnet and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
+from gns3server.agent.gns3_copilot.utils.device_configs import (
+    merge_duplicate_device_configs,
+)
 
 # Explicitly register VPCS device type to ensure it is available
 try:
@@ -68,7 +68,7 @@ try:
     # CRITICAL: Update netmiko.ssh_dispatcher platforms lists
     import importlib
 
-    sd = importlib.import_module("netmiko.ssh_dispatcher")
+    sd: Any = importlib.import_module("netmiko.ssh_dispatcher")
 
     # Recalculate platforms lists to include custom device types
     sd.platforms = list(sd.CLASS_MAPPER.keys())
@@ -179,8 +179,15 @@ class VPCSCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
+        if len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
+
+        # Merge same-device entries before anything keys by device_name
+        try:
+            device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="commands")
+        except ValueError as e:
+            logger.error("Invalid device_configs input: %s", e)
+            return [{"status": "failed", "error": str(e)}]
 
         # Create a mapping of device names to their commands
         device_configs_map = self._configs_map(device_configs_list)
@@ -227,7 +234,7 @@ class VPCSCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing commands on all VPCS devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.debug(
             "VPCS command execution completed. Results: %s",
@@ -262,7 +269,7 @@ class VPCSCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Command failed (ReadTimeout): {str(e)}",
+                result=f"Command failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -289,7 +296,7 @@ class VPCSCommands(BaseTool):
                 )
                 return Result(
                     host=task.host,
-                    result=f"Command failed: {str(retry_e)}",
+                    result=f"Command failed: {retry_e!s}",
                     failed=True,
                 )
 
@@ -386,7 +393,7 @@ class VPCSCommands(BaseTool):
     def _prepare_device_hosts_data(
         self,
         device_configs_list: list[dict[str, Any]],
-        project_id: str,
+        project_id: str | None,
         jwt_token: str | None = None,
         url: str | None = None,
     ) -> dict[str, dict[str, Any]]:
@@ -415,7 +422,7 @@ class VPCSCommands(BaseTool):
         device_ports = get_device_ports_from_topology(device_names, project_id=project_id, jwt_token=jwt_token, url=url)
 
         # Build Nornir inventory hosts data
-        hosts_data = {}
+        hosts_data: dict[str, Any] = {}
         for device_name in device_names:
             if device_name not in device_ports:
                 logger.error("Device '%s' not found in topology", device_name)
@@ -444,7 +451,7 @@ class VPCSCommands(BaseTool):
                 continue
 
             # VPCS devices use gns3_vpcs_telnet device type
-            hosts_data[device_name] = {
+            host_entry = {
                 "port": port,
                 "platform": "vpcs",
                 "groups": ["vpcs_devices"],  # All VPCS devices share one group
@@ -458,6 +465,12 @@ class VPCSCommands(BaseTool):
                     }
                 },
             }
+            # Remote computes bind console ports on their own host; carry the
+            # per-node hostname from the topology so it overrides the group's
+            # controller-wide default.
+            if "hostname" in device_ports[device_name]:
+                host_entry["hostname"] = device_ports[device_name]["hostname"]
+            hosts_data[device_name] = host_entry
 
         return hosts_data
 
@@ -588,7 +601,6 @@ class VPCSCommands(BaseTool):
 
 if __name__ == "__main__":
     # Example usage
-    import sys
 
     command_groups = json.dumps(
         {

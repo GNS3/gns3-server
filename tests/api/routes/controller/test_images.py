@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import json
-import uuid
-import pytest
 import hashlib
+import json
+import os
+import uuid
 
-from tests.utils import asyncio_patch
-from sqlalchemy.ext.asyncio import AsyncSession
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import AsyncioMagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from gns3server.compute.qemu import Qemu
 from gns3server.controller import Controller
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.compute.qemu import Qemu
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -110,15 +109,18 @@ def empty_image(tmpdir) -> str:
 class TestImageRoutes:
     async def test_create_image(self, app: FastAPI, client: AsyncClient, images_dir) -> None:
 
-        Qemu.instance().create_disk_image = AsyncioMagicMock()
+        async def create_disk(path, options):
+            with open(path, "wb") as f:
+                f.write(b"QFI\xfb\x00\x00\x00")
+
+        Qemu.instance().create_disk_image = AsyncioMagicMock(side_effect=create_disk)
         path = os.path.join(os.path.join(images_dir, "QEMU", "new_image.qcow2"))
-        with open(path, "wb+") as f:
-            f.write(b"QFI\xfb\x00\x00\x00")
         image_name = os.path.basename(path)
         response = await client.post(
             app.url_path_for("create_qemu_image", image_path=image_name), json={"format": "qcow2", "size": 30}
         )
         assert response.status_code == status.HTTP_201_CREATED
+        assert os.path.isfile(path)
 
     @pytest.mark.parametrize(
         "image_type, fixture_name, valid_request",
@@ -165,6 +167,21 @@ class TestImageRoutes:
         response = await client.get(app.url_path_for("get_images"))
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 5  # 4 valid images uploaded before + 1 created
+
+    async def test_image_list_filter_by_name(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
+
+        image_name = os.path.basename(qcow2_image)
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name})
+        assert response.status_code == status.HTTP_200_OK
+        assert [i["filename"] for i in response.json()] == [image_name]
+
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name.upper()})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+        response = await client.get(app.url_path_for("get_images"), params={"name": image_name, "image_type": "iou"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
 
     async def test_image_get(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
@@ -459,3 +476,40 @@ class TestImageRoutes:
         assert len(templates) == 1
         assert templates[0].name == "Empty VM"
         await templates_repo.delete_template(templates[0].template_id)
+
+
+class TestIsoImages:
+    async def test_iso_uploads_can_be_used_together_in_a_template(self, app, client, config, images_dir):
+        config.settings.Server.allow_raw_images = False
+        references = []
+        for index, name in enumerate(("installer.ISO", "drivers.iso")):
+            content = bytes(16 * 2048) + b"\x01CD001\x01" + bytes([index]) * 2041
+            response = await client.post(
+                app.url_path_for("upload_image", image_path=name),
+                params={"subdirectory": "installers"} if index == 0 else {},
+                content=content,
+            )
+            assert response.status_code == status.HTTP_201_CREATED, response.text
+            assert response.json()["image_type"] == "qemu"
+            relative = "installers/" + name if index == 0 else name
+            assert response.json()["path"] == os.path.join(images_dir, "QEMU", relative)
+            assert response.json()["reference"] == relative
+            assert Qemu.instance().get_abs_image_path(relative) == response.json()["path"]
+            references.append(relative)
+
+        response = await client.post(
+            app.url_path_for("create_template"),
+            json={
+                "name": "Windows installer with drivers",
+                "template_type": "qemu",
+                "compute_id": "local",
+                "cdrom_image": references[0],
+                "cdrom2_image": references[1],
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        template_id = response.json()["template_id"]
+        response = await client.get(app.url_path_for("get_template", template_id=template_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["cdrom_image"] == references[0]
+        assert response.json()["cdrom2_image"] == references[1]

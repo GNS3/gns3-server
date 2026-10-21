@@ -15,29 +15,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import signal
+import logging
 import os
+import signal
 import time
-import psutil
+from typing import Dict
 
-from fastapi import APIRouter, Request, Depends, WebSocket, WebSocketDisconnect, status
-from fastapi.responses import StreamingResponse
+import psutil
+from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from fastapi.routing import Mount
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
-from typing import List, Dict
-
+from gns3server import schemas
+from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
+from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.agent.web_wireshark.stats import collect_webwireshark_stats
-from gns3server.version import __version__
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
-from gns3server import schemas
+from gns3server.version import __version__
 
 from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ def get_version(request: Request) -> dict:
     # compute subapp
     controller_host = None
     for route in request.app.routes:
-        if isinstance(route, Mount) and route.name == "compute":
+        if isinstance(route, Mount) and route.name == "compute" and isinstance(route.app, FastAPI):
             controller_host = route.app.state.controller_host
 
     local_server = Config.instance().settings.Server.local
@@ -129,7 +128,7 @@ async def shutdown() -> None:
             try:
                 future.result()
             except Exception as e:
-                log.error(f"Could not close project: {e}", exc_info=1)
+                log.error(f"Could not close project: {e}", exc_info=True)
                 continue
 
     # then shutdown the server itself
@@ -148,7 +147,7 @@ def get_iou_license() -> schemas.IOULicense:
 @router.put(
     "/iou_license",
     dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.IOULicense,
 )
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
@@ -163,7 +162,12 @@ async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULice
     return current_iou_license
 
 
-@router.get("/statistics", dependencies=[Depends(get_current_active_user)])
+@router.get(
+    "/statistics",
+    response_model=schemas.ServerStatistics,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(get_current_active_user)],
+)
 async def statistics() -> dict:
     """
     Return server statistics including compute resources, projects, and nodes.
@@ -191,8 +195,8 @@ async def statistics() -> dict:
     # Node statistics - distinguish open vs closed project nodes
     open_project_nodes = []
     closed_project_nodes = []
-    node_by_type = {}
-    node_by_status = {}
+    node_by_type: Dict[str, int] = {}
+    node_by_status: Dict[str, int] = {}
 
     for project in projects:
         nodes = project.nodes.values()
@@ -256,31 +260,36 @@ async def statistics() -> dict:
     }
 
 
-@router.get("/notifications", dependencies=[Depends(get_current_active_user)])
+@router.get(
+    "/notifications",
+    dependencies=[Depends(get_current_active_user)],
+    response_class=NDJSONResponse,
+    responses=NOTIFICATION_STREAM_RESPONSES,
+)
 async def controller_http_notifications(request: Request) -> StreamingResponse:
     """
-    Receive controller notifications about the controller from HTTP stream.
+    Receive controller notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
+
+    The same messages are available as WebSocket text frames on `/v3/notifications/ws`.
+    Controller actions: `compute.*`, `template.*`, `project.created`, `project.updated`, `project.opened`,
+    `project.closed`, `project.deleted`, `settings.updated`, `log.*` and `ping`.
     """
 
     from gns3server.api.server import app
 
-    log.info(
-        f"New client {request.client.host}:{request.client.port} has connected to controller HTTP notification stream"
-    )
+    client = f"{request.client.host}:{request.client.port}" if request.client else "unknown"
+    log.info(f"New client {client} has connected to controller HTTP notification stream")
 
     async def event_stream():
         try:
             with Controller.instance().notification.controller_queue() as queue:
                 while not app.state.exiting:
                     msg = await queue.get_json(5)
-                    yield f"{msg}\n".encode("utf-8")
+                    yield f"{msg}\n".encode()
         finally:
-            log.info(
-                f"Client {request.client.host}:{request.client.port} has disconnected from controller HTTP "
-                f"notification stream"
-            )
+            log.info(f"Client {client} has disconnected from controller HTTP notification stream")
 
-    return StreamingResponse(event_stream(), media_type="application/json")
+    return StreamingResponse(event_stream(), media_type=NDJSON_MEDIA_TYPE)
 
 
 @router.websocket("/notifications/ws")
@@ -288,20 +297,22 @@ async def controller_ws_notifications(
     websocket: WebSocket, current_user: schemas.User = Depends(get_current_active_user_from_websocket)
 ) -> None:
     """
-    Receive project notifications about the controller from WebSocket.
+    Receive controller notifications from a WebSocket, one Notification JSON object per text frame.
+    Same messages as the HTTP stream `/v3/notifications`.
     """
 
     if current_user is None:
         return
 
-    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller WebSocket")
     try:
         with Controller.instance().notification.controller_queue() as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):
-        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket")
+        log.info(f"Client {client} has disconnected from controller WebSocket")
     except WebSocketException as e:
         log.warning(f"Error while sending to controller event to WebSocket client: {e}")
 

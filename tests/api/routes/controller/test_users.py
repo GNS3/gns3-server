@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-
 from typing import Optional
+
+import pytest
 from fastapi import FastAPI, HTTPException, status
-from sqlalchemy import update
 from httpx import AsyncClient
 from joserfc import jwt
 from joserfc.jwk import OctKey
-
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.db.repositories.users import UsersRepository
-from gns3server.services import auth_service
-from gns3server.config import Config
-from gns3server.schemas.controller.users import User
+
 import gns3server.db.models as models
+from gns3server.config import Config
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.schemas.controller.users import User
+from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio
 
@@ -444,6 +444,74 @@ class TestLogout:
 
         response = await unauthorized_client.post(app.url_path_for("logout"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestTokenLifetime:
+    async def _issue(self, app, client, user, endpoint):
+        credentials = {"username": user.username, "password": "user1_password"}
+        if endpoint == "login":
+            return await client.post(
+                app.url_path_for("login"),
+                data=credentials,
+                headers={"content-type": "application/x-www-form-urlencoded"},
+            )
+        auth = await client.post(app.url_path_for("authenticate"), json=credentials)
+        if endpoint == "authenticate":
+            return auth
+        return await client.post(
+            app.url_path_for("refresh_access_token"), json={"refresh_token": auth.json()["refresh_token"]}
+        )
+
+    @pytest.mark.parametrize("endpoint", ("login", "authenticate", "refresh_access_token"))
+    async def test_token_response_includes_lifetimes(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
+        config: Config,
+        endpoint: str,
+    ) -> None:
+
+        response = await self._issue(app, unauthorized_client, test_user, endpoint)
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        controller = config.settings.Controller
+        assert body["expires_in"] == controller.jwt_access_token_expire_minutes * 60
+        assert body["refresh_expires_in"] == controller.jwt_refresh_token_expire_minutes * 60
+        assert body["access_token"]
+        assert body["token_type"] == "bearer"
+        assert body["refresh_token"]
+
+    @pytest.mark.parametrize("endpoint", ("login", "authenticate", "refresh_access_token"))
+    async def test_expires_in_matches_jwt_claims(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        test_user: User,
+        config: Config,
+        endpoint: str,
+    ) -> None:
+
+        response = await self._issue(app, unauthorized_client, test_user, endpoint)
+        body = response.json()
+        key = OctKey.import_key(config.settings.Controller.jwt_secret_key)
+        access = jwt.decode(body["access_token"], key, algorithms=["HS256"]).claims
+        refresh = jwt.decode(body["refresh_token"], key, algorithms=["HS256"]).claims
+        assert access["exp"] - access["iat"] == body["expires_in"]
+        assert refresh["exp"] - refresh["iat"] == body["refresh_expires_in"]
+
+    async def test_openapi_declares_token_lifetimes_as_integers(self, app: FastAPI) -> None:
+
+        schema = app.openapi()["components"]["schemas"]["Token"]
+        assert schema["properties"]["expires_in"]["type"] == "integer"
+        refresh_expires_in = schema["properties"]["refresh_expires_in"]
+        assert "integer" in str(refresh_expires_in)
+        assert "expires_in" in schema["required"]
+
+    async def test_openapi_security_scheme_mentions_api_keys(self, app: FastAPI) -> None:
+
+        schemes = app.openapi()["components"]["securitySchemes"]
+        assert any("API key" in scheme.get("description", "") for scheme in schemes.values())
 
 
 class TestRefreshToken:

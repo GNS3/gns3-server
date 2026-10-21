@@ -23,24 +23,24 @@ Nested under projects: /v3/projects/{project_id}/chat/...
 import json
 import logging
 import uuid
-from typing import List, Optional
+from typing import Any, List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
-from uuid import UUID
 
 from gns3server import schemas
-from gns3server.controller import Controller
-from gns3server.controller.project import Project
-from gns3server.controller.controller_error import ControllerNotFoundError
 from gns3server.agent.gns3_copilot.project_agent_manager import get_project_agent_manager
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerNotFoundError
+from gns3server.controller.project import Project
 from gns3server.db.tasks import get_user_llm_config_full
 
 from .dependencies.authentication import get_current_active_user
 
 log = logging.getLogger(__name__)
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Resource not found"}}
+responses: dict[int | str, dict[str, Any]] = {404: {"model": schemas.ErrorMessage, "description": "Resource not found"}}
 
 router = APIRouter(responses=responses)
 

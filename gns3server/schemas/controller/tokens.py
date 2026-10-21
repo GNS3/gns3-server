@@ -15,17 +15,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Optional
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_in: int
     refresh_token: Optional[str] = None
+    refresh_expires_in: Optional[int] = None
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str
     token_version: int = 0
     token_use: str = "access"
 
@@ -40,3 +44,30 @@ class ApiKeyCreate(BaseModel):
     """Schema for creating a new API key."""
 
     name: str
+
+
+class ApiKey(BaseModel):
+    """API key metadata. The secret is never returned after creation."""
+
+    api_key_id: UUID
+    name: str
+    key_prefix: str
+    created_at: Optional[str] = None
+    last_used_at: Optional[str] = None
+    revoked: bool
+
+
+class ApiKeyCreated(BaseModel):
+    """A newly created API key. The full key is returned only once."""
+
+    api_key_id: UUID
+    api_key: str
+    name: str
+    key_prefix: str
+    created_at: Optional[str] = None
+
+
+class ApiKeyMessage(BaseModel):
+    """Confirmation message returned when an API key is revoked or restored."""
+
+    message: str

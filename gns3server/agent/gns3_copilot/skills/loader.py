@@ -31,7 +31,6 @@ Supports loading injection skills and device/feature skills.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -248,7 +247,7 @@ class SkillsLoader:
                     continue
                 # Use device_type from YAML content as the key
                 # Fallback to filename stem if device_type not present
-                skill_key = skill_data.get("device_type") if isinstance(skill_data, dict) else None
+                skill_key = skill_data.get("device_type")
                 if not skill_key:
                     skill_key = yaml_file.stem
                     logger.warning(f"No device_type in {yaml_file}, using filename '{skill_key}' as key")
@@ -278,7 +277,7 @@ class SkillsLoader:
             return ""
 
         try:
-            with open(prompt_file, "r", encoding="utf-8") as f:
+            with open(prompt_file, encoding="utf-8") as f:
                 content = f.read()
             logger.debug(f"Loaded prompt: {prompt_name} from {prompt_file}")
             return content
@@ -302,7 +301,7 @@ class SkillsLoader:
 
         try:
             commands = []
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -364,7 +363,7 @@ class SkillsLoader:
         Returns:
             Parsed YAML content as dictionary, or empty dict if file is empty
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
             logger.warning(f"YAML file {file_path} is empty or has invalid format")

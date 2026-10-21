@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,23 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import asyncio
+import json
 import os
 import stat
 import sys
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
-
+from pathlib import Path
 from unittest import mock
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from gns3server.compute.qemu.qemu_vm import QemuVM
-from gns3server.compute.qemu.qemu_error import QemuError
-from gns3server.compute.qemu import Qemu
-from gns3server.utils import force_unix_path, macaddress_to_int, int_to_macaddress
+import pytest
+import pytest_asyncio
+
 from gns3server.compute.notification_manager import NotificationManager
+from gns3server.compute.qemu import Qemu
+from gns3server.compute.qemu.qemu_error import QemuError
+from gns3server.compute.qemu.qemu_vm import QemuVM
+from gns3server.utils import force_unix_path, int_to_macaddress, macaddress_to_int
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -386,7 +386,7 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
                 fake_qemu_img_binary,
                 "create",
                 "-o",
-                "backing_file={}".format(vm._hda_disk_image),
+                f"backing_file={vm._hda_disk_image}",
                 "-F",
                 "qcow2",
                 "-f",
@@ -396,7 +396,7 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
                 fake_qemu_img_binary,
                 "create",
                 "-o",
-                "backing_file={}".format(vm._hdb_disk_image),
+                f"backing_file={vm._hdb_disk_image}",
                 "-F",
                 "qcow2",
                 "-f",
@@ -451,7 +451,7 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write("1")
 
     options = await vm._build_command()
-    assert " ".join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in " ".join(options)
+    assert " ".join(["-drive", f"if=pflash,format=raw,readonly,file={ovmf_code_path}"]) in " ".join(options)
     assert " ".join(
         ["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]
     ) in " ".join(options)
@@ -481,7 +481,7 @@ async def test_spice_option(vm, fake_qemu_img_binary):
     vm._console_type = "spice"
     vm._console = 5905
     options = await vm._build_command()
-    assert "-spice addr=127.0.0.1,port=5905,disable-ticketing" in " ".join(options)
+    assert "-spice addr=127.0.0.1,port=5905,disable-ticketing=on" in " ".join(options)
     assert "-vga qxl" in " ".join(options)
 
 
@@ -492,7 +492,7 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
     tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
     with patch("os.path.exists", return_value=True) as os_path:
         options = await vm._build_command()
-    assert "-chardev socket,id=chrtpm,path={}".format(tpm_sock) in " ".join(options)
+    assert f"-chardev socket,id=chrtpm,path={tpm_sock}" in " ".join(options)
     assert "-tpmdev emulator,id=tpm0,chardev=chrtpm" in " ".join(options)
     assert "-device tpm-tis,tpmdev=tpm0" in " ".join(options)
 
@@ -610,7 +610,7 @@ async def test_build_command(vm, fake_qemu_binary):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -618,18 +618,34 @@ async def test_build_command(vm, fake_qemu_binary):
             "-device",
             "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
+            f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            f"socket,id=gns3-0,udp=127.0.0.1:{nio.rport},localaddr=127.0.0.1:{nio.lport}",
             "-display",
             "none",
         ]
 
 
 @pytest.mark.asyncio
+async def test_build_command_console_none(vm):
+    """
+    A headless QEMU node (console_type none) builds a command line without a
+    serial device: the console options for "none" used to fall through and
+    return None, which made node start fail with a TypeError.
+    """
+
+    vm.console_type = "none"
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        cmd = await vm._build_command()
+    assert "-serial" not in cmd
+    assert "-netdev" in cmd
+
+
+@pytest.mark.asyncio
 async def test_build_command_manual_uuid(vm):
     """
-    If user has set a uuid we keep it
+    If user has set a UUID we keep it
     """
 
     vm.options = "-uuid e1c307a4-896f-11e6-81a5-3c07547807cc"
@@ -641,12 +657,12 @@ async def test_build_command_manual_uuid(vm):
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm_below_2_4(linux_platform, vm, fake_qemu_binary):
+async def test_build_command_kvm_below_6_2(linux_platform, vm, fake_qemu_binary):
     """
     Qemu 2.4 introduce an issue with KVM
     """
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.3.2")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.1.0")
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             with pytest.raises(QemuError):
@@ -654,62 +670,21 @@ async def test_build_command_kvm_below_2_4(linux_platform, vm, fake_qemu_binary)
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
-    """
-    Qemu 2.4 introduce an issue with KVM
-    """
-
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.2")
-    os.environ["DISPLAY"] = "0:0"
-    with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-            cmd = await vm._build_command()
-            nio = vm._local_udp_tunnels[0][0]
-            assert cmd == [
-                fake_qemu_binary,
-                "-name",
-                "test",
-                "-m",
-                "256M",
-                "-smp",
-                "cpus=1,maxcpus=1,sockets=1",
-                "-enable-kvm",
-                "-machine",
-                "smm=off",
-                "-boot",
-                "order=c",
-                "-uuid",
-                vm.id,
-                "-serial",
-                "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
-                "-net",
-                "none",
-                "-device",
-                "i82801b11-bridge,id=dmi_pci_bridge1",
-                "-device",
-                "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
-                "-device",
-                "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
-                "-netdev",
-                "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
-                "-nographic",
-            ]
-
-
-@pytest.mark.asyncio
 async def test_build_command_without_display(vm):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.2.0")
     os.environ["DISPLAY"] = ""
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "-nographic" in cmd
+        print(cmd)
+        assert "-display" in cmd
+        assert "none" in cmd
 
 
 @pytest.mark.asyncio
 async def test_build_command_two_adapters(vm, fake_qemu_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.2.0")
     os.environ["DISPLAY"] = "0:0"
     vm.adapters = 2
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
@@ -729,7 +704,7 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-uuid",
             vm.id,
             "-serial",
-            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -737,16 +712,15 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "-device",
             "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(vm._mac_address),
+            f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio1.rport, nio1.lport),
+            f"socket,id=gns3-0,udp=127.0.0.1:{nio1.rport},localaddr=127.0.0.1:{nio1.lport}",
             "-device",
-            "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(
-                int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
-            ),
+            f"e1000,mac={int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)},bus=pci-bridge1,addr=0x01,netdev=gns3-1",
             "-netdev",
-            "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport),
-            "-nographic",
+            f"socket,id=gns3-1,udp=127.0.0.1:{nio2.rport},localaddr=127.0.0.1:{nio2.lport}",
+            "-display",
+            "none",
         ]
 
 
@@ -763,8 +737,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+        assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+        assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
 
     vm.mac_address = "00:42:ab:0e:0f:0a"
     mac_0 = vm._mac_address
@@ -772,8 +746,8 @@ async def test_build_command_two_adapters_mac_address(vm):
     assert mac_0[:8] == "00:42:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-        assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+        assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+        assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
 
 
 @pytest.mark.asyncio
@@ -795,19 +769,19 @@ async def test_build_command_large_number_of_adapters(vm):
     assert len([l for l in cmd if "e1000" in l]) == 100
     assert len(vm._ethernet_adapters) == 100
 
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x00,netdev=gns3-0".format(mac_0) in cmd
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x01,netdev=gns3-1".format(mac_1) in cmd
+    assert f"e1000,mac={mac_0},bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+    assert f"e1000,mac={mac_1},bus=pci-bridge1,addr=0x01,netdev=gns3-1" in cmd
     assert "pci-bridge,id=pci-bridge0,bus=dmi_pci_bridge0,chassis_nr=0x1,addr=0x0,shpc=off" not in cmd
     assert "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off" in cmd
     assert "pci-bridge,id=pci-bridge2,bus=dmi_pci_bridge2,chassis_nr=0x1,addr=0x2,shpc=off" in cmd
     assert "i82801b11-bridge,id=dmi_pci_bridge1" in cmd
 
     mac_29 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 29)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x1d,netdev=gns3-29".format(mac_29) in cmd
+    assert f"e1000,mac={mac_29},bus=pci-bridge1,addr=0x1d,netdev=gns3-29" in cmd
     mac_30 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 30)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x1e,netdev=gns3-30".format(mac_30) in cmd
+    assert f"e1000,mac={mac_30},bus=pci-bridge1,addr=0x1e,netdev=gns3-30" in cmd
     mac_74 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 74)
-    assert "e1000,mac={},bus=pci-bridge3,addr=0x0a,netdev=gns3-74".format(mac_74) in cmd
+    assert f"e1000,mac={mac_74},bus=pci-bridge3,addr=0x0a,netdev=gns3-74" in cmd
 
 
 @pytest.mark.asyncio
@@ -1027,3 +1001,225 @@ async def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
         vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):
             await vm._run_with_hardware_acceleration("qemu-system-x86_64", "")
+
+
+@pytest.mark.asyncio
+async def test_two_cdrom_images(vm, images_dir):
+    installer = Path(images_dir) / "installer.iso"
+    drivers = Path(images_dir) / "virtio,drivers.iso"
+    installer.touch()
+    drivers.touch()
+    vm.cdrom_image = str(installer)
+    vm.cdrom2_image = str(drivers)
+    assert vm._cdrom_option() == [
+        "-cdrom",
+        str(installer),
+        "-drive",
+        f"file={str(drivers).replace(',', ',,')},if=ide,index=3,media=cdrom,readonly=on",
+    ]
+    assert vm.asdict()["cdrom2_image"].endswith("virtio,drivers.iso")
+    vm.cdrom2_image = ""
+    assert vm._cdrom_option() == ["-cdrom", str(installer)]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("config_disk", [False, True])
+async def test_second_cdrom_ide_conflict(vm, images_dir, config_disk):
+    iso = Path(images_dir) / "drivers.iso"
+    iso.touch()
+    vm.cdrom2_image = str(iso)
+    vm._hdd_disk_interface = "ide"
+    vm._create_config_disk = config_disk
+    if not config_disk:
+        vm._hdd_disk_image = str(iso)
+    with pytest.raises(QemuError, match="second CDROM"):
+        vm._cdrom_option()
+
+
+@pytest.mark.asyncio
+async def test_first_cdrom_ide_conflict(vm, images_dir):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm.cdrom_image = str(iso)
+    vm._hdc_disk_image = str(iso)
+    vm._hdc_disk_interface = "ide"
+    with pytest.raises(QemuError, match="IDE hdc disk"):
+        vm._cdrom_option()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interface", ["virtio", "scsi", "sata", "nvme"])
+@pytest.mark.parametrize("cdrom_count", [1, 2])
+async def test_four_non_ide_disks_with_cdroms(vm, images_dir, interface, cdrom_count):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm.cdrom_image = str(iso)
+    for drive in "abcd":
+        disk = Path(images_dir) / f"hd{drive}.qcow2"
+        disk.touch()
+        setattr(vm, f"_hd{drive}_disk_image", str(disk))
+        setattr(vm, f"_hd{drive}_disk_interface", interface)
+    expected = ["-cdrom", str(iso)]
+    if cdrom_count == 2:
+        vm.cdrom2_image = str(iso)
+        expected.extend(["-drive", f"file={iso},if=ide,index=3,media=cdrom,readonly=on"])
+    assert vm._cdrom_option() == expected
+    vm.linked_clone = False
+    with patch.object(vm, "_qemu_img_exec", new_callable=AsyncioMagicMock, return_value=0):
+        disk_options = await vm._disk_options()
+    assert sum(option.startswith("file=") for option in disk_options) == 4
+
+
+@pytest.fixture
+def cdrom_monitor(vm):
+    reader = asyncio.StreamReader()
+    reader.feed_data(b"QEMU monitor\r\n(qemu) ")
+    writer = MagicMock()
+    writer.drain = AsyncioMagicMock()
+    state = {"blocks": "ide1-cd0: installer.iso\r\nide1-cd1: drivers.iso\r\n", "error": ""}
+
+    def respond(data):
+        command = data.decode("utf-8").strip()
+        output = state["blocks"] if command == "info block" else state["error"]
+        reader.feed_data(data.rstrip(b"\n") + b"\r\n" + output.encode("utf-8") + b"(qemu) ")
+
+    writer.write.side_effect = respond
+    with (
+        patch.object(vm, "is_running", return_value=True),
+        patch.object(
+            vm, "_open_qemu_monitor_connection_vm", new_callable=AsyncioMagicMock, return_value=(reader, writer)
+        ),
+    ):
+        yield state, writer
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("filename", ["drivers with spaces.iso", "drivers-雪.iso", "drivers (qemu) .iso"])
+async def test_second_cdrom_update(vm, images_dir, cdrom_monitor, filename):
+    iso = Path(images_dir) / filename
+    iso.touch()
+    state, writer = cdrom_monitor
+    await vm.update_property("cdrom2_image", str(iso))
+    assert writer.write.call_args_list[0] == mock.call(b"info block\n")
+    command = writer.write.call_args_list[1].args[0].decode("ascii")
+    encoded_filename = json.loads(command.removeprefix("change ide1-cd1 -f ").strip())
+    if encoded_filename.startswith("json:"):
+        assert json.loads(encoded_filename[5:])["file"]["filename"] == str(iso)
+    else:
+        assert encoded_filename == str(iso)
+    assert vm.cdrom2_image == str(iso)
+    writer.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_second_cdrom_eject(vm, cdrom_monitor):
+    state, writer = cdrom_monitor
+    await vm.update_property("cdrom2_image", "")
+    writer.write.assert_called_with(b"eject -f ide1-cd1\n")
+
+
+@pytest.mark.asyncio
+async def test_second_cdrom_hot_add_requires_restart(vm, images_dir, cdrom_monitor):
+    iso = Path(images_dir) / "drivers.iso"
+    iso.touch()
+    state, writer = cdrom_monitor
+    state["blocks"] = "ide1-cd0: installer.iso\r\n"
+    vm._command_line_changed = False
+    with pytest.raises(QemuError, match="Stop the VM"):
+        await vm.update_property("cdrom2_image", str(iso))
+    assert vm.cdrom2_image == ""
+    assert not vm._command_line_changed
+    assert writer.write.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_other_iso_does_not_block_media_swap(vm, images_dir, cdrom_monitor):
+    iso = Path(images_dir) / "installer.iso"
+    iso.touch()
+    vm._cdrom2_image = str(Path(images_dir) / "deleted.iso")
+    await vm.update_property("cdrom_image", str(iso))
+    assert vm.cdrom_image == str(iso)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error", ["Error: media change failed", "change: filename expected"])
+@pytest.mark.parametrize("original_deleted", [False, True])
+async def test_cdrom_monitor_error_preserves_previous_image(vm, images_dir, cdrom_monitor, error, original_deleted):
+    original = Path(images_dir) / "original.iso"
+    original.touch()
+    replacement = Path(images_dir) / "replacement.iso"
+    replacement.touch()
+    vm.cdrom2_image = str(original)
+    if original_deleted:
+        original.unlink()
+    state, writer = cdrom_monitor
+    state["error"] = error + "\r\n"
+    with pytest.raises(QemuError, match=error):
+        await vm.update_property("cdrom2_image", str(replacement))
+    assert vm.cdrom2_image == str(original)
+    writer.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_with_ide_disks(vm, images_dir, slot):
+    iso = Path(images_dir) / "installer,drivers.iso"
+    iso.touch()
+    image_name = "cdrom_image" if slot == 0 else "cdrom2_image"
+    interface_name = "cdrom_interface" if slot == 0 else "cdrom2_interface"
+    setattr(vm, image_name, str(iso))
+    setattr(vm, interface_name, "sata")
+    vm._hdc_disk_image = vm._hdd_disk_image = str(iso)
+    vm._hdc_disk_interface = vm._hdd_disk_interface = "ide"
+    assert vm._cdrom_option() == [
+        "-device",
+        f"ich9-ahci,id=cdrom-ahci{slot}",
+        "-drive",
+        f"file={str(iso).replace(',', ',,')},if=none,id=sata-cdrom{slot},media=cdrom,readonly=on",
+        "-device",
+        f"ide-cd,drive=sata-cdrom{slot},bus=cdrom-ahci{slot}.0",
+    ]
+    assert vm.asdict()[interface_name] == "sata"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["cdrom_interface", "cdrom2_interface"])
+async def test_cdrom_interface_change_requires_stopped_vm(vm, name):
+    with patch.object(vm, "is_running", return_value=True):
+        with pytest.raises(QemuError, match="Stop the VM"):
+            await vm.update_property(name, "sata")
+    assert getattr(vm, name) == "ide"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_media_update(vm, images_dir, cdrom_monitor, slot):
+    state, writer = cdrom_monitor
+    setattr(vm, "_cdrom_interface" if slot == 0 else "_cdrom2_interface", "sata")
+    state["blocks"] = f"sata-cdrom{slot} (#block123): old.iso\r\n"
+    iso = Path(images_dir) / "new.iso"
+    iso.touch()
+    await vm.update_property("cdrom_image" if slot == 0 else "cdrom2_image", str(iso))
+    writer.write.assert_called_with(f'change sata-cdrom{slot} -f "{iso}"\n'.encode())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["cdrom_image", "cdrom2_image"])
+async def test_cdrom_broken_symlink_error_includes_target(vm, images_dir, name):
+    target = Path(images_dir) / "missing.iso"
+    link = Path(images_dir) / "linked.iso"
+    link.symlink_to(target)
+    setattr(vm, f"_{name}", str(link))
+    with pytest.raises(QemuError, match="linked to") as error:
+        vm._cdrom_option()
+    assert str(target) in str(error.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slot", [0, 1])
+async def test_sata_cdrom_eject(vm, cdrom_monitor, slot):
+    state, writer = cdrom_monitor
+    setattr(vm, "_cdrom_interface" if slot == 0 else "_cdrom2_interface", "sata")
+    state["blocks"] = f"sata-cdrom{slot}: empty\r\n"
+    await vm.update_property("cdrom_image" if slot == 0 else "cdrom2_image", "")
+    writer.write.assert_called_with(f"eject -f sata-cdrom{slot}\n".encode())

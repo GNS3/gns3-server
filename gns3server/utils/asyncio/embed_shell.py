@@ -16,24 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
 import asyncio
 import inspect
 import io
+import sys
 
 from prompt_toolkit import prompt
-from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit.enums import DEFAULT_BUFFER
 from prompt_toolkit.eventloop.base import EventLoop
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.input import StdinInput
 from prompt_toolkit.interface import CommandLineInterface
 from prompt_toolkit.layout.screen import Size
-from prompt_toolkit.shortcuts import create_prompt_application, create_asyncio_eventloop
+from prompt_toolkit.shortcuts import create_asyncio_eventloop, create_prompt_application
 from prompt_toolkit.terminal.vt100_output import Vt100_Output
-from prompt_toolkit.input import StdinInput
 
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
 from gns3server.utils.asyncio.input_stream import InputStream
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
 
 
 class EmbedShell:
@@ -236,12 +236,11 @@ class ShellConnection(TelnetConnection):
     async def disconnected(self):
         pass
 
-    @asyncio.coroutine
-    def window_size_changed(self, columns, rows):
+    async def window_size_changed(self, columns, rows):
         self._size = Size(rows=rows, columns=columns)
         self._cb.terminal_size_changed()
         if self._window_size_changed_callback:
-            yield from self._window_size_changed_callback(columns, rows)
+            await self._window_size_changed_callback(columns, rows)
 
     async def feed(self, data):
         data = data.decode()

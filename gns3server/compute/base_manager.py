@@ -14,37 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-import struct
-import stat
 import asyncio
-import aiofiles
-import socket
-import shutil
-import re
-import logging
 import inspect
+import logging
+import os
+import re
+import shutil
+import socket
+import stat
+import struct
+import sys
+
+import aiofiles
 
 log = logging.getLogger(__name__)
 
-from gns3server.utils.asyncio import cancellable_wait_run_in_executor
+from typing import Type
+from uuid import UUID, uuid4
+
 from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
+from gns3server.utils.asyncio import cancellable_wait_run_in_executor
 from gns3server.utils.interfaces import is_interface_up
 
-from uuid import UUID, uuid4
-from typing import Type
 from ..config import Config
 from ..utils import force_unix_path
-from .project_manager import ProjectManager
-from .port_manager import PortManager
+from ..utils.images import default_images_directory, images_directories, list_images, md5sum, remove_checksum
 from .base_node import BaseNode
-
-from .nios.nio_udp import NIOUDP
-from .nios.nio_tap import NIOTAP
+from .error import ImageMissingError, NodeError
+from .nios.nio_anchor import NIOAnchor
+from .nios.nio_bridge import NIOBridge
 from .nios.nio_ethernet import NIOEthernet
-from ..utils.images import md5sum, remove_checksum, images_directories, default_images_directory, list_images
-from .error import NodeError, ImageMissingError
+from .nios.nio_tap import NIOTAP
+from .nios.nio_udp import NIOUDP
+from .port_manager import PortManager
+from .project_manager import ProjectManager
 
 CHUNK_SIZE = 1024 * 8  # 8KB
 
@@ -294,11 +297,12 @@ class BaseManager:
         return node
 
     @staticmethod
-    def has_privileged_access(executable):
+    def has_privileged_access(executable, *, require_net_admin=False):
         """
         Check if an executable have the right to attach to Ethernet and TAP adapters.
 
         :param executable: executable path
+        :param require_net_admin: also require CAP_NET_ADMIN for network configuration
 
         :returns: True or False
         """
@@ -321,8 +325,8 @@ class BaseManager:
         try:
             if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
-                # test the 2nd byte and check if the 13th bit (CAP_NET_RAW) is set
-                if struct.unpack("<IIIII", caps)[1] & 1 << 13:
+                required = (1 << 13) | ((1 << 12) if require_net_admin else 0)
+                if struct.unpack("<IIIII", caps)[1] & required == required:
                     return True
         except (AttributeError, OSError) as e:
             log.error(f"Could not determine if CAP_NET_RAW capability is set for {executable}: {e}")
@@ -354,6 +358,39 @@ class BaseManager:
             except OSError as e:
                 raise ComputeError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(lport, rhost, rport)
+            # The netem-extension filters (rate, reorder, gemodel…) have no
+            # uBridge relay equivalent — reject them here (the controller
+            # already keeps them off relay links; this is the second guard
+            # for direct compute API use, mirroring the kernel-NIO guard).
+            from gns3server.utils.packet_filter_validation import kernel_only_features
+
+            kernel_only = kernel_only_features(nio_settings.get("filters") or {})
+            if kernel_only:
+                raise ComputeError(
+                    "Packet filter(s) {} only run on a kernel-datapath link "
+                    "(tc netem on the veth host end); the uBridge relay has no equivalent".format(
+                        ", ".join(sorted(kernel_only))
+                    )
+                )
+            nio.filters = nio_settings.get("filters", {})
+            nio.markers = nio_settings.get("markers", {})
+            nio.suspend = nio_settings.get("suspend", False)
+        elif nio_settings["type"] == "nio_bridge":
+            # A vxlan sub-spec marks a cross-compute link: the node creates
+            # the VXLAN device and enslaves it into the same per-link bridge
+            # next to its anchor (see KernelDatapathMixin._kernel_attach).
+            nio = NIOBridge(nio_settings["bridge"], nio_settings.get("vxlan"))
+            nio.filters = nio_settings.get("filters", {})
+            # Markers ride the NIO and attach to the veth host interface via
+            # uBridge's AF_PACKET marker module (marker add_kernel).
+            nio.markers = nio_settings.get("markers", {})
+            nio.suspend = nio_settings.get("suspend", False)
+        elif nio_settings["type"] == "nio_anchor":
+            # The node-owned-bridge mirror of nio_bridge: the Ethernet
+            # switch joins the named foreign anchor to its own kernel
+            # bridge (AnchorNIO/NIOAnchor). A cascade link carries the
+            # other veth end's name in "peer" on the owning side.
+            nio = NIOAnchor(nio_settings["anchor"], nio_settings.get("peer"))
             nio.filters = nio_settings.get("filters", {})
             nio.markers = nio_settings.get("markers", {})
             nio.suspend = nio_settings.get("suspend", False)

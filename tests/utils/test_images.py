@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -18,12 +17,11 @@
 import os
 import sys
 import threading
-import pytest
-from unittest.mock import patch
 
+import pytest
 
 from gns3server.utils import force_unix_path
-from gns3server.utils.images import md5sum, remove_checksum, images_directories, list_images
+from gns3server.utils.images import images_directories, list_images, md5sum, remove_checksum
 
 
 def test_images_directories(tmpdir, config):
@@ -189,3 +187,53 @@ async def test_list_images(tmpdir, config):
             "path": "qemu_image.qcow2",
         }
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("subdirectory", [None, "installers/linux"])
+async def test_iso_upload_and_discovery(tmp_path, config, subdirectory):
+    from unittest.mock import AsyncMock
+
+    from gns3server.utils.images import discover_images, inspect_image_file, write_image
+
+    config.settings.Server.images_path = str(tmp_path)
+    config.settings.Server.additional_images_paths = []
+    # ISO 9660 primary volume descriptor; no raw-image fallback is needed.
+    content = b"\0" * (16 * 2048) + b"\x01CD001\x01" + b"\0" * 2041
+
+    async def stream():
+        # Exercise a descriptor split across upload chunks.
+        for offset in range(0, len(content), 13):
+            yield content[offset : offset + 13]
+
+    repo = AsyncMock()
+    repo.get_image_by_checksum.return_value = None
+    repo.save_verified_image.side_effect = lambda image: image
+    result = await write_image(
+        "installer.ISO", str(tmp_path / "installer.ISO"), stream(), repo, subdirectory=subdirectory
+    )
+    expected = tmp_path / "QEMU" / (subdirectory or "") / "installer.ISO"
+    assert result["path"] == str(expected)
+    assert result["image_type"] == "qemu"
+    assert expected.read_bytes() == content
+    assert inspect_image_file(expected)["checksum"] == result["checksum"]
+    assert [image["path"] for image in await discover_images("qemu")] == [str(expected)]
+
+
+def test_iso_extension_alone_is_not_a_valid_image():
+    from gns3server.utils.images import InvalidImageError, check_valid_image_header
+
+    with pytest.raises(InvalidImageError):
+        check_valid_image_header("fake.iso", b"not an ISO image")
+
+
+@pytest.mark.parametrize("images_root", ["images", "QEMU/images"])
+def test_image_reference_uses_configured_root(tmp_path, config, images_root):
+    from gns3server.db.models.images import Image
+
+    root = tmp_path / images_root
+    config.settings.Server.images_path = str(root)
+    image = Image(image_type="qemu", path=str(root / "QEMU/installers/linux.iso"))
+    assert image.reference == "installers/linux.iso"
+    image.path = str(tmp_path / "extra/QEMU/linux.iso")
+    assert image.reference == image.path

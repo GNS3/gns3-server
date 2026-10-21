@@ -18,8 +18,9 @@
 Chat API schemas for GNS3 Copilot integration.
 """
 
+from typing import Any, Dict, List, Literal, Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any, Literal
 
 
 class OpenAIToolCall(BaseModel):

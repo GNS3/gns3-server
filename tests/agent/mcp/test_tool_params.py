@@ -10,8 +10,6 @@ This catches issues like:
 """
 
 import ast
-import os
-import sys
 from pathlib import Path
 
 import pytest
@@ -69,6 +67,9 @@ HANDLER_FILES = {
     "download_capture_file_handler": API_HANDLERS_FILE,
     "link_marker_handler": API_HANDLERS_FILE,
     "marker_definition_handler": API_HANDLERS_FILE,
+    "create_text_drawing_handler": API_HANDLERS_FILE,
+    "create_rectangle_drawing_handler": API_HANDLERS_FILE,
+    "create_ellipse_drawing_handler": API_HANDLERS_FILE,
     "list_templates_handler": "templates.py",
     "get_template_handler": "templates.py",
     "create_template_handler": "templates.py",
@@ -82,7 +83,6 @@ HANDLER_FILES = {
     "delete_snapshot_handler": "snapshots.py",
     "restore_snapshot_handler": "snapshots.py",
     "get_drawings_handler": "drawings.py",
-    "create_drawing_handler": "drawings.py",
     "get_drawing_handler": "drawings.py",
     "update_drawing_handler": "drawings.py",
     "delete_drawing_handler": "drawings.py",
@@ -192,6 +192,9 @@ def _initial_params_keys(fn_node):
                 and stmt.targets[0].id == "params"
                 and isinstance(stmt.value, ast.Dict)
             ):
+                return _dict_literal_keys(stmt.value)
+        if isinstance(stmt, ast.AnnAssign):
+            if isinstance(stmt.target, ast.Name) and stmt.target.id == "params" and isinstance(stmt.value, ast.Dict):
                 return _dict_literal_keys(stmt.value)
     return None
 

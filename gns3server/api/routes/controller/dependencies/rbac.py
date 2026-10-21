@@ -14,15 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import re
 
-from fastapi import Request, WebSocket, Depends, HTTPException
+from fastapi import Depends, HTTPException, Request, WebSocket
+
 from gns3server import schemas
 from gns3server.db.repositories.rbac import RbacRepository
+
 from .authentication import get_current_active_user, get_current_active_user_from_websocket
 from .database import get_repository
-
-import logging
 
 log = logging.getLogger()
 

@@ -14,24 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import datetime
+import hashlib
+import logging
 import os
 import shutil
-import magic
-import asyncio
-import hashlib
-import datetime
-
 from uuid import UUID, uuid4
+
+import magic
 from fastapi import HTTPException, status
 
-from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
-from .port_manager import PortManager
-from .notification_manager import NotificationManager
-from ..config import Config
+from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
+
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
-
-import logging
+from .notification_manager import NotificationManager
+from .port_manager import PortManager
 
 log = logging.getLogger(__name__)
 
@@ -466,7 +465,7 @@ class Project:
             )
 
         # Non-recursive: list only the current directory level
-        files = []
+        files: list[dict] = []
         try:
             scandir_iter = os.scandir(target_path)
         except PermissionError:
@@ -481,11 +480,13 @@ class Project:
                 stat_info = await wait_run_in_executor(lambda e=entry: e.stat())
                 is_dir = await wait_run_in_executor(lambda e=entry: e.is_dir())
                 if is_dir:
+                    created_at: str | None = None
+                    modified_at: str | None = None
                     try:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,
@@ -507,7 +508,7 @@ class Project:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,
@@ -538,7 +539,7 @@ class Project:
                         created_at = datetime.datetime.fromtimestamp(stat_info.st_ctime).isoformat()
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError):
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": os.path.relpath(dir_full_path, base_path),
@@ -568,7 +569,7 @@ class Project:
                         modified_at = datetime.datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                     except (OSError, OverflowError, ValueError) as e:
                         log.warning(f"Invalid timestamp for '{rel_path}': {e}")
-                        created_at = modified_at = ""
+                        created_at = modified_at = None
                     files.append(
                         {
                             "path": rel_path,

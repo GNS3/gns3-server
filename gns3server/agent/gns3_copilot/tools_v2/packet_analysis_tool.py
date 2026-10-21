@@ -143,7 +143,8 @@ class PacketAnalysisTool(BaseTool):
                 stderr=subprocess.DEVNULL,
                 text=True,
             )
-            tshark.stdout.close()
+            if tshark.stdout is not None:
+                tshark.stdout.close()
             stdout, _ = grep.communicate(timeout=30)
             tshark.wait(timeout=5)
         except Exception as e:
@@ -324,7 +325,7 @@ class PacketAnalysisTool(BaseTool):
 
         except Exception as e:
             logger.error(f"PacketAnalysisTool error: {e}", exc_info=True)
-            return f'{{"error": "Analysis failed: {str(e)}"}}'
+            return f'{{"error": "Analysis failed: {e!s}"}}'
 
         finally:
             # Clean up temp file
@@ -443,7 +444,7 @@ class PacketAnalysisTool(BaseTool):
         # Build command: tshark -r <file> <user_args>
         import shlex
 
-        cmd = ["tshark", "-r", pcap_file] + shlex.split(tshark_args)
+        cmd = ["tshark", "-r", pcap_file, *shlex.split(tshark_args)]
 
         logger.info(f"Running tshark: {' '.join(cmd)}")
 
@@ -496,7 +497,7 @@ class PacketAnalysisTool(BaseTool):
             return '{"error": "tshark not installed. Please install tshark: apt install tshark"}'
         except Exception as e:
             logger.error(f"tshark execution error: {e}", exc_info=True)
-            return f'{{"error": "tshark failed: {str(e)}"}}'
+            return f'{{"error": "tshark failed: {e!s}"}}'
 
 
 if __name__ == "__main__":

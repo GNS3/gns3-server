@@ -17,25 +17,31 @@
 import asyncio
 import hashlib
 import logging
-import bcrypt
-
-from fastapi import Request, Query, Depends, HTTPException, WebSocket, status
-from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 from uuid import UUID
 
-from gns3server import schemas
+import bcrypt
+from fastapi import Depends, HTTPException, Query, Request, WebSocket, status
+from fastapi.security import OAuth2PasswordBearer
+
 import gns3server.db.models as models
+from gns3server import schemas
 from gns3server.db.repositories.api_keys import ApiKeysRepository
-from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.tokens import TokenData
-from gns3server.services import auth_service, access_ticket_service
+from gns3server.services import access_ticket_service, auth_service
 from gns3server.services.access_tickets import TICKET_PREFIX
+
 from .database import get_repository
 
 log = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/access/users/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/v3/access/users/login",
+    auto_error=False,
+    description="Send the access token as a bearer token. "
+    "An API key (gns3_<api_key_id>_<secret>) is also accepted as the bearer token.",
+)
 
 
 def _reject_refresh_token(token_data) -> None:
@@ -55,7 +61,7 @@ async def get_user_from_token(
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     api_keys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
     token: Optional[str] = Query(None, include_in_schema=False),
-) -> schemas.User:
+) -> models.User:
 
     if bearer_token:
         # bearer token is used first, then any token passed as a URL parameter
@@ -169,7 +175,7 @@ async def get_current_active_user_from_websocket(
     websocket: WebSocket,
     token: str = Query(...),
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> Optional[schemas.User]:
+) -> Optional[models.User]:
 
     # Extract requested subprotocols from headers for proper WebSocket negotiation
     # This is critical for protocols like xpra that require specific subprotocols
@@ -238,4 +244,5 @@ async def get_current_active_user_from_websocket(
         websocket_error = {"action": "log.error", "event": {"message": err_msg}}
         await websocket.send_json(websocket_error)
         log.error(err_msg)
-        return await websocket.close(code=1008)
+        await websocket.close(code=1008)
+        return None

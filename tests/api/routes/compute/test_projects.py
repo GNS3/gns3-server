@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,17 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import uuid
 import os
+import uuid
 
-from unittest.mock import patch
-from tests.utils import asyncio_patch
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.project import Project
+from gns3server.compute.project_manager import ProjectManager
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -209,6 +207,7 @@ class TestBatchNIOEdgeCases:
     async def test_dynamips_router_dispatch_to_slot_add_nio_binding(self):
         """_add_nio_binding dispatches Dynamips router to slot_add_nio_binding."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()
@@ -223,6 +222,7 @@ class TestBatchNIOEdgeCases:
     async def test_dynamips_switch_dispatch_to_add_nio(self):
         """_add_nio_binding dispatches Dynamips switch to add_nio."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()
@@ -241,7 +241,6 @@ class TestBatchNIOEdgeCases:
         base version.  The batch handler must await it.
         """
         import inspect
-        import asyncio as _asyncio
 
         class _FakeDynamips:
             async def create_nio(self, node, nio_settings):
@@ -268,6 +267,7 @@ class TestBatchNIOEdgeCases:
     async def test_qemu_dispatch_to_adapter_add_nio_binding(self):
         """_add_nio_binding dispatches Qemu to adapter_add_nio_binding."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()
@@ -282,6 +282,7 @@ class TestBatchNIOEdgeCases:
     async def test_iou_dispatch_to_adapter_add_nio_binding(self):
         """_add_nio_binding dispatches IOU to adapter_add_nio_binding(adapter, port, nio)."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()
@@ -301,6 +302,7 @@ class TestBatchNIOEdgeCases:
         cross-wired links (the last entry per node wins).
         """
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import (
             _add_nio_binding,
             _get_existing_nio,
@@ -327,6 +329,7 @@ class TestBatchNIOEdgeCases:
     async def test_vpcs_dispatch_to_port_add_nio_binding(self):
         """_add_nio_binding dispatches VPCS to port_add_nio_binding."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()
@@ -341,6 +344,7 @@ class TestBatchNIOEdgeCases:
     async def test_builtin_dispatch_to_add_nio(self):
         """_add_nio_binding dispatches Builtin nodes to add_nio(nio, port)."""
         from unittest.mock import AsyncMock, MagicMock
+
         from gns3server.api.routes.compute.projects import _add_nio_binding
 
         node = MagicMock()

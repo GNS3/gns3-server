@@ -15,13 +15,16 @@
 API route for privileges
 """
 
-from typing import List
-from gns3server.db.repositories.rbac import RbacRepository
-from .dependencies.database import get_repository
-from fastapi import APIRouter, Depends
 import logging
+from typing import List
 
+from fastapi import APIRouter, Depends
+
+import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.db.repositories.rbac import RbacRepository
+
+from .dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,7 +36,7 @@ router = APIRouter()
 )
 async def get_privileges(
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> List[schemas.Privilege]:
+) -> List[models.Privilege]:
     """
     Get all privileges.
 

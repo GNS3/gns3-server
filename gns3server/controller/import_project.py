@@ -15,23 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
-import json
-import uuid
-import shutil
-import aiofiles
 import itertools
-import tempfile
+import json
+import logging
+import os
+import shutil
 import stat
+import sys
+import tempfile
+import uuid
+
+import aiofiles
+
 import gns3server.utils.zipfile_zstd as zipfile_zstd
 
+from ..utils.asyncio import aiozipstream, wait_run_in_executor
 from .controller_error import ControllerError
 from .topology import load_topology
-from ..utils.asyncio import wait_run_in_executor
-from ..utils.asyncio import aiozipstream
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ async def import_project(
     auto_start=False,
     auto_open=False,
     auto_close=True,
+    user=None,
 ):
     """
     Import a project contain in a zip file
@@ -65,6 +66,7 @@ async def import_project(
     :param reset_mac_addresses: Reset MAC addresses for each node
     :param keep_compute_ids: keep compute IDs unchanged
     :param project_name: Original project name when restoring a snapshot
+    :param user: User importing the project
 
     :returns: Project
     """
@@ -119,6 +121,9 @@ async def import_project(
     topology["auto_start"] = auto_start
     topology["auto_open"] = auto_open
     topology["auto_close"] = auto_close
+
+    if user:
+        topology["created_by"] = user
 
     if not restoring_snapshot:
         # Do not re-generate IDs if we are restoring a snapshot because they should be the same in a project
@@ -388,7 +393,7 @@ async def update_snapshots(snapshots_dir, project_path, project_name, project_id
                     async with aiofiles.open(snapshot_path, "wb+") as f:
                         async for chunk in zstream:
                             await f.write(chunk)
-                log.info("Project '{}': updated and repacked snapshot file '{}'".format(project_name, snapshot))
+                log.info(f"Project '{project_name}': updated and repacked snapshot file '{snapshot}'")
             except OSError as e:
                 raise ControllerError(
                     f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}"

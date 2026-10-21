@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import sys
-
-from .cloud import Cloud
-from ...error import NodeError
 
 import gns3server.utils.interfaces
 from gns3server.config import Config
 
-import logging
+from ...error import NodeError
+from .cloud import Cloud
 
 log = logging.getLogger(__name__)
 
@@ -45,8 +44,8 @@ class Nat(Cloud):
                 nat_interface = "virbr0"
             if allowed_interfaces and nat_interface not in allowed_interfaces:
                 raise NodeError(
-                    "NAT interface {} is not allowed be used on this server. "
-                    "Please check the server configuration file.".format(nat_interface)
+                    f"NAT interface {nat_interface} is not allowed be used on this server. "
+                    "Please check the server configuration file."
                 )
             if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
                 raise NodeError(f"NAT interface {nat_interface} is missing, please install libvirt")
@@ -57,8 +56,8 @@ class Nat(Cloud):
                 nat_interface = "vmnet8"
             if allowed_interfaces and nat_interface not in allowed_interfaces:
                 raise NodeError(
-                    "NAT interface {} is not allowed be used on this server. "
-                    "Please check the server configuration file.".format(nat_interface)
+                    f"NAT interface {nat_interface} is not allowed be used on this server. "
+                    "Please check the server configuration file."
                 )
             interfaces = list(
                 filter(

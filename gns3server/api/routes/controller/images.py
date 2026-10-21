@@ -18,35 +18,54 @@
 API routes for images.
 """
 
-import os
 import logging
+import os
+import tempfile
 import urllib.parse
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Request, Depends, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.encoders import jsonable_encoder
-from starlette.requests import ClientDisconnect
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import MultipleResultsFound
-from typing import List, Optional
+from starlette.requests import ClientDisconnect
 
+import gns3server.db.models as models
 from gns3server import schemas
-from gns3server.config import Config
+from gns3server.api.openapi import binary_request_body
 from gns3server.compute.qemu import Qemu
-from gns3server.utils.images import (
-    InvalidImageError,
-    write_image,
-    read_image_info,
-    default_images_directory,
-    get_builtin_disks,
-)
-from gns3server.db.repositories.images import ImagesRepository
-from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerForbiddenError,
     ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+)
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.schemas.controller.images import (
+    ImageCompatibility,
+    ImageCompatibilityCatalog,
+    ImageCompatibilityRequest,
+)
+from gns3server.services.image_reconciliation import get_image_reconciliation_service
+from gns3server.utils.image_inventory import (
+    ImageLockBusy,
+    contained_path,
+    fingerprint,
+    image_lock,
+    publish_image,
+    validate_image_subdirectory,
+    validate_image_upload_name,
+)
+from gns3server.utils.images import (
+    InvalidImageError,
+    default_images_directory,
+    get_builtin_disks,
+    read_image_info,
+    write_image,
 )
 
 from .dependencies.authentication import get_current_active_user
@@ -56,6 +75,66 @@ from .dependencies.rbac import has_privilege
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def image_destination(image_path):
+    root = os.path.realpath(os.path.expanduser(Config.instance().settings.Server.images_path))
+    full_path = os.path.abspath(os.path.join(root, image_path))
+    if not contained_path(os.path.realpath(full_path), root):
+        raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
+    return full_path
+
+
+@router.get(
+    "/compatibility/catalog",
+    response_model=ImageCompatibilityCatalog,
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
+async def image_compatibility_catalog() -> dict:
+    """List known catalog image sizes so clients can avoid hashing obvious nonmatches."""
+    return Controller.instance().appliance_manager.image_compatibility_catalog()
+
+
+@router.post(
+    "/compatibility",
+    response_model=list[ImageCompatibility],
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
+async def check_image_compatibility(
+    request: ImageCompatibilityRequest,
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+) -> list[dict]:
+    """Check catalog matches for locally computed MD5 checksums without uploading files."""
+    return await Controller.instance().appliance_manager.check_image_compatibility(request.checksums, images_repo)
+
+
+@router.post(
+    "/sync",
+    response_model=schemas.ImageSyncJob,
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
+async def sync_images(options: schemas.ImageSyncRequest, request: Request, response: Response):
+    """Reconcile configured image directories without deleting files or references."""
+    try:
+        job = await get_image_reconciliation_service(request.app).start(**options.model_dump())
+    except ImageLockBusy:
+        raise ControllerError("Image synchronization is already running or shutting down")
+    response.headers["Location"] = str(request.url_for("get_image_sync_job", job_id=job["job_id"]))
+    return job
+
+
+@router.get(
+    "/sync/jobs/{job_id}", response_model=schemas.ImageSyncJob, dependencies=[Depends(has_privilege("Image.Audit"))]
+)
+async def get_image_sync_job(
+    job_id: str, request: Request, offset: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000)
+):
+    """Get progress and a page of errors (first 1,000 errors retained per job)."""
+    job = await get_image_reconciliation_service(request.app).get_job(job_id, offset, limit)
+    if job is None:
+        raise ControllerNotFoundError(f"Image synchronization job '{job_id}' not found")
+    return job
 
 
 @router.post(
@@ -68,7 +147,7 @@ async def create_qemu_image(
     image_path: str,
     image_data: schemas.QemuDiskImageCreate,
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> schemas.Image:
+) -> Optional[models.Image]:
     """
     Create a new blank Qemu image.
 
@@ -82,53 +161,61 @@ async def create_qemu_image(
     disk_image_path = urllib.parse.unquote(image_path)
     image_dir, image_name = os.path.split(disk_image_path)
     # check if the path is within the default images directory
-    base_images_directory = os.path.expanduser(Config.instance().settings.Server.images_path)
-    full_path = os.path.abspath(os.path.join(base_images_directory, image_dir, image_name))
-    if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
-        raise ControllerForbiddenError(f"Cannot write disk image, '{disk_image_path}' is forbidden")
+    disk_image_path = image_destination(disk_image_path)
 
     if not image_dir:
         # put the image in the default images directory for Qemu
         directory = default_images_directory(image_type="qemu")
         os.makedirs(directory, exist_ok=True)
-        disk_image_path = os.path.abspath(os.path.join(directory, disk_image_path))
+        disk_image_path = image_destination(os.path.join(directory, image_name))
 
-    if await images_repo.get_image(disk_image_path):
-        raise ControllerBadRequestError(f"Disk image '{disk_image_path}' already exists")
-
-    options = jsonable_encoder(image_data, exclude_unset=True)
-    # FIXME: should we have the create_disk_image in the compute code since
-    # this code is used to create images on the controller?
-    await Qemu.instance().create_disk_image(disk_image_path, options)
-
-    image_info = await read_image_info(disk_image_path, "qemu")
-
-    image = await images_repo.get_image(disk_image_path)
-    if image:
-        # the image has already been added to the database
-        return image
-    else:
-        return await images_repo.add_image(**image_info)
+    async with image_lock(disk_image_path):
+        if os.path.lexists(disk_image_path):
+            raise ControllerBadRequestError(f"Disk image '{disk_image_path}' already exists")
+        os.makedirs(os.path.dirname(disk_image_path), exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=".gns3-create-", suffix=".tmp", dir=os.path.dirname(disk_image_path))
+        os.close(fd)
+        try:
+            options = jsonable_encoder(image_data, exclude_unset=True)
+            await Qemu.instance().create_disk_image(temporary, options)
+            image_info = await read_image_info(temporary, "qemu", allow_raw_image=allow_raw_image)
+            publish_image(temporary, disk_image_path)
+            image_info.update(
+                path=disk_image_path, image_name=image_name, file_fingerprint=fingerprint(disk_image_path)
+            )
+            return await images_repo.save_verified_image(image_info)
+        except (OSError, InvalidImageError, SQLAlchemyError) as e:
+            raise ControllerError(f"Could not create disk image '{disk_image_path}': {e}") from e
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
 
 
 @router.get("", response_model=List[schemas.Image], dependencies=[Depends(has_privilege("Image.Audit"))])
 async def get_images(
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     image_type: Optional[schemas.ImageType] = None,
-) -> List[schemas.Image]:
+    availability: Optional[Literal["unknown", "available", "missing", "unavailable", "invalid"]] = None,
+    name: Optional[str] = Query(None, description="Return only images whose filename exactly matches (case-sensitive)"),
+) -> List[models.Image]:
     """
     Return all images.
 
     Required privilege: Image.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the image filename.
     """
 
-    return await images_repo.get_images(image_type)
+    return await images_repo.get_images(image_type, availability, name)
 
 
 @router.post(
     "/upload/{image_path:path}",
-    response_model=schemas.Image,
+    response_model=schemas.ImageUpload,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Image.Allocate"))],
 )
 async def upload_image(
@@ -139,7 +226,12 @@ async def upload_image(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     install_appliances: Optional[bool] = False,
-) -> schemas.Image:
+    subdirectory: Optional[str] = Query(
+        None,
+        max_length=512,
+        description="Relative subfolder below the detected image type directory; use a plain filename",
+    ),
+) -> models.Image | schemas.ImageUpload:
     """
     Upload an image.
 
@@ -150,16 +242,19 @@ async def upload_image(
     """
 
     image_path = urllib.parse.unquote(image_path)
-    image_dir, image_name = os.path.split(image_path)
+    if subdirectory is not None:
+        try:
+            validate_image_subdirectory(subdirectory)
+            validate_image_upload_name(image_path)
+        except ValueError as e:
+            raise ControllerBadRequestError(str(e)) from e
+    image_dir = os.path.dirname(image_path)
     # check if the path is within the default images directory
-    base_images_directory = os.path.expanduser(Config.instance().settings.Server.images_path)
-    full_path = os.path.abspath(os.path.join(base_images_directory, image_dir, image_name))
-    if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
-        raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
+    full_path = image_destination(image_path)
 
     # If the client sends X-MD5-Checksum, check for a duplicate before consuming the upload stream
     checksum_header = request.headers.get("X-MD5-Checksum")
-    if checksum_header:
+    if checksum_header and subdirectory is None:
         check_dir = os.path.dirname(full_path) if image_dir else None
         duplicate = await images_repo.get_image_by_checksum(checksum_header, check_dir)
         if duplicate:
@@ -168,21 +263,45 @@ async def upload_image(
 
     try:
         allow_raw_image = Config.instance().settings.Server.allow_raw_images
-        image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)
-    except (OSError, InvalidImageError, ClientDisconnect) as e:
+        image = await write_image(
+            image_path,
+            full_path,
+            request.stream(),
+            images_repo,
+            allow_raw_image=allow_raw_image,
+            subdirectory=subdirectory,
+        )
+    except (OSError, InvalidImageError, ClientDisconnect, SQLAlchemyError) as e:
+        service = getattr(request.app.state, "image_reconciliation", None)
+        if service:
+            service.dirty.set()
         raise ControllerError(f"Could not save image '{image_path}': {e}")
 
     if install_appliances:
-        # attempt to automatically create templates based on image checksum
-        await Controller.instance().appliance_manager.install_appliances_from_image(
-            image_path,
-            image.checksum,
-            images_repo,
-            templates_repo,
-            rbac_repo,
-            current_user,
-            os.path.dirname(image.path),
-        )
+        # Snapshot before template operations can roll back and expire ORM attributes.
+        uploaded_image = schemas.Image.model_validate(image).model_dump()
+        # Matching requires the checksum computed from the uploaded contents.
+        try:
+            results = await Controller.instance().appliance_manager.install_appliances_from_image(
+                image_path,
+                image.checksum,
+                images_repo,
+                templates_repo,
+                rbac_repo,
+                current_user,
+                os.path.dirname(image.path),
+            )
+        except (ControllerError, InvalidImageError, OSError, SQLAlchemyError) as e:
+            results = [{"status": "skipped", "reason": f"Template creation failed: {e}"}]
+        if not results:
+            results = [
+                {
+                    "status": "skipped",
+                    "reason": "No compatible appliance definition found in the server's catalog for this image. "
+                    "Manually create a template to use this image.",
+                }
+            ]
+        return schemas.ImageUpload.model_validate({**uploaded_image, "template_results": results})
 
     return image
 
@@ -205,10 +324,17 @@ async def prune_images(
     # a single pass over all projects' node properties protects every
     # referenced file name at once
     referenced_filenames = Controller.instance().collect_referenced_image_filenames()
-    await images_repo.prune_images(list(skip_images) + list(referenced_filenames))
+    await images_repo.prune_images(
+        list(skip_images) + list(referenced_filenames), is_in_use=Controller.instance().find_projects_using_image
+    )
 
 
-@router.post("/install", status_code=status.HTTP_200_OK, dependencies=[Depends(has_privilege("Image.Allocate"))])
+@router.post(
+    "/install",
+    response_model=schemas.ImageInstallResult,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(has_privilege("Image.Allocate"))],
+)
 async def install_images(
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
@@ -227,6 +353,11 @@ async def install_images(
     skip_images = get_builtin_disks()
     images = await images_repo.get_images()
     for image in images:
+        if not await images_repo.is_usable(image):
+            skipped.append(
+                {"name": image.filename, "reason": "image is missing, changed or unreadable; synchronize images first"}
+            )
+            continue
         if skip_images and image.filename in skip_images:
             log.debug(f"Skipping image '{image.path}' for image installation")
             continue
@@ -256,7 +387,7 @@ async def install_images(
 async def get_image(
     image_path: str,
     images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> schemas.Image:
+) -> models.Image:
     """
     Return an image.
 
@@ -299,18 +430,29 @@ async def delete_image(
 
     templates = await images_repo.get_image_templates(image.image_id)
     if templates:
-        template_names = ", ".join([template.name for template in templates])
+        template_names = ", ".join([str(template.name) for template in templates])
         raise ControllerError(f"Image '{image_path}' is used by one or more templates: {template_names}")
 
     project_names = Controller.instance().find_projects_using_image(image.filename)
     if project_names:
         raise ControllerError(f"Image '{image_path}' is used by one or more projects: {', '.join(project_names)}")
 
-    try:
-        os.remove(image.path)
-    except OSError:
-        log.warning(f"Could not delete image file {image.path}")
-
-    success = await images_repo.delete_image(image_path)
-    if not success:
-        raise ControllerError(f"Image '{image_path}' could not be deleted")
+    path = image.path
+    revision = (image.image_id, image.checksum, image.file_fingerprint)
+    async with image_lock(path):
+        image = await images_repo.get_image(path, refresh=True)
+        if image is None or (image.image_id, image.checksum, image.file_fingerprint) != revision:
+            raise ControllerError(f"Image '{image_path}' changed while waiting for deletion; refresh and retry")
+        # Recheck usage after waiting for a concurrent writer/scanner.
+        if await images_repo.get_image_templates(image.image_id) or Controller.instance().find_projects_using_image(
+            image.filename
+        ):
+            raise ControllerError(f"Image '{image_path}' is in use")
+        try:
+            os.remove(image.path)
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            raise ControllerError(f"Could not delete image file '{image.path}': {e}") from e
+        if not await images_repo.delete_image_exact(image.image_id):
+            raise ControllerError(f"Image '{image_path}' could not be deleted")

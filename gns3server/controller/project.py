@@ -15,43 +15,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-import os
-import json
-import uuid
-import copy
-import shutil
-import time
 import asyncio
-import aiofiles
-import tempfile
-import zipfile
+import copy
+import json
+import logging
+import os
 import pathlib
-
+import re
+import shutil
+import tempfile
+import time
+import uuid
+import zipfile
 from uuid import UUID, uuid4
+
+import aiofiles
 from fastapi import HTTPException, status
 
-from .node import Node
-from .compute import ComputeError
-from .snapshot import Snapshot
-from .drawing import Drawing
-from .topology import project_to_topology, load_topology
-from .udp_link import UDPLink
-from .link import _UNSET
-from ..config import Config
-from ..utils.path import check_path_allowed, get_default_project_directory
-from ..utils.application_id import get_next_application_id, is_iol_runner_environment
-from ..utils.asyncio.pool import Pool
-from ..utils.packet_filter_validation import validate_bpf_syntax
-from ..utils.asyncio import locking
-from ..utils.asyncio import aiozipstream
-from ..utils.asyncio import wait_run_in_executor
-from .export_project import export_project
-from .import_project import import_project, update_snapshots, regenerate_topology_ids
-from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 from gns3server.agent.web_wireshark.manager import WebWiresharkManager
 
-import logging
+from ..config import Config
+from ..utils.application_id import get_next_application_id, is_iol_runner_environment
+from ..utils.asyncio import aiozipstream, locking, wait_run_in_executor
+from ..utils.asyncio.pool import Pool
+from ..utils.packet_filter_validation import validate_bpf_syntax
+from ..utils.path import check_path_allowed, get_default_project_directory
+from .compute import ComputeError
+from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
+from .drawing import Drawing
+from .export_project import export_project
+from .import_project import import_project, regenerate_topology_ids, update_snapshots
+from .link import _UNSET
+from .node import Node
+from .snapshot import Snapshot
+from .topology import load_topology, project_to_topology
+from .udp_link import _VXLAN_ATTEMPTS, UDPLink
 
 log = logging.getLogger(__name__)
 
@@ -479,10 +477,6 @@ class Project:
     def path(self):
         return self._path
 
-    @property
-    def status(self):
-        return self._status
-
     @path.setter
     def path(self, path):
         check_path_allowed(path)
@@ -509,6 +503,10 @@ class Project:
             )
 
         self._path = path
+
+    @property
+    def status(self):
+        return self._status
 
     @property
     def captures_directory(self):
@@ -559,17 +557,20 @@ class Project:
         if name in self._allocated_node_names:
             self._allocated_node_names.remove(name)
 
-    def update_allocated_node_name(self, base_name):
+    def update_allocated_node_name(self, base_name, strict=False):
         """
         Updates a node name or generate a new if no node
         name is available.
 
         :param base_name: new node base name
+        :param strict: raise an error instead of renaming when the name is already taken
         """
 
         if base_name is None:
             return None
         base_name = re.sub(r"[ ]", "", base_name)  # remove spaces in node name
+        if strict and base_name in self._allocated_node_names:
+            raise ControllerError(f"Node name {base_name} is already used")
         if base_name in self._allocated_node_names:
             base_name = re.sub(r"[0-9]+$", "{0}", base_name)
 
@@ -597,11 +598,11 @@ class Project:
                     return name
         raise ControllerError("A node name could not be allocated (node limit reached?)")
 
-    def update_node_name(self, node, new_name):
+    def update_node_name(self, node, new_name, strict=False):
 
         if new_name and node.name != new_name:
             self.remove_allocated_node_name(node.name)
-            return self.update_allocated_node_name(new_name)
+            return self.update_allocated_node_name(new_name, strict=strict)
         return new_name
 
     @open_required
@@ -632,26 +633,32 @@ class Project:
         node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
-    async def _create_node(self, compute, name, node_id, node_type=None, allow_missing_image=False, **kwargs):
+    async def _create_node(
+        self, compute, name, node_id, node_type=None, allow_missing_image=False, strict_names=False, **kwargs
+    ):
 
-        node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
-        # Hold the lock across the check + POST + register so that concurrent
-        # node creations on the same compute don't all race past the check and
-        # each POST /projects (the compute-side sync handler then instantiated
-        # the Project N times). Once one creation registers the compute, the
-        # rest see it in the set and return immediately.
-        async with self._create_node_lock:
-            if compute not in self._project_created_on_compute:
-                if compute.id == "local":
-                    data = {"name": self._name, "project_id": self._id, "path": self._path}
-                else:
-                    data = {"name": self._name, "project_id": self._id}
-                if self._variables:
-                    data["variables"] = self._variables
-                await compute.post("/projects", data=data)
-                self._project_created_on_compute.add(compute)
+        node = Node(self, compute, name, node_id=node_id, node_type=node_type, strict_names=strict_names, **kwargs)
+        try:
+            # Hold the lock across the check + POST + register so that concurrent
+            # node creations on the same compute don't all race past the check and
+            # each POST /projects (the compute-side sync handler then instantiated
+            # the Project N times). Once one creation registers the compute, the
+            # rest see it in the set and return immediately.
+            async with self._create_node_lock:
+                if compute not in self._project_created_on_compute:
+                    if compute.id == "local":
+                        data = {"name": self._name, "project_id": self._id, "path": self._path}
+                    else:
+                        data = {"name": self._name, "project_id": self._id}
+                    if self._variables:
+                        data["variables"] = self._variables
+                    await compute.post("/projects", data=data)
+                    self._project_created_on_compute.add(compute)
 
-        await node.create(allow_missing_image=allow_missing_image)
+            await node.create(allow_missing_image=allow_missing_image)
+        except BaseException:
+            self.remove_allocated_node_name(node.name)
+            raise
         self._nodes[node.id] = node
 
         return node
@@ -750,7 +757,9 @@ class Project:
         try:
             return self._nodes[node_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Node ID {node_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Node ID {node_id} doesn't exist", code="node_not_found", details={"node_id": node_id}
+            )
 
     def _get_closed_data(self, section, id_key):
         """
@@ -819,7 +828,9 @@ class Project:
         try:
             return self._drawings[drawing_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Drawing ID {drawing_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Drawing ID {drawing_id} doesn't exist", code="drawing_not_found", details={"drawing_id": drawing_id}
+            )
 
     @open_required
     async def delete_drawing(self, drawing_id):
@@ -989,9 +1000,7 @@ class Project:
             # an image is missing. Keep the link on the controller (so the
             # topology is preserved) but defer the NIO creation until the
             # missing image is resolved.
-            for n in link._nodes:
-                n["node"].add_link(link)
-                n["port"].link = link
+            link._bind_members()
             link._deferred = True
             log.info(
                 "Project '%s' [%s]: deferring link %s until missing image(s) are resolved",
@@ -1011,6 +1020,84 @@ class Project:
                 log.warning("Marker definition '%s' could not be applied to link %s: %s", def_name, link.id, e)
         entries = await link._prepare()
         return (link, entries)
+
+    async def _dispatch_nio_batch(self, compute, nio_entries):
+        """
+        POST one compute's NIO batch for this project, returning the entries
+        it refused (VXLAN entries a compute could not wire — see the batch
+        route; other NIO types fail the whole request).
+        """
+
+        response = await compute.post(
+            f"/projects/{self._id}/nios/batch",
+            data={"nios": nio_entries},
+            timeout=300,
+        )
+        return response.json.get("failed") or []
+
+    async def _redispatch_vxlan_links(self, links, downgrade):
+        """
+        Re-prepare *links* and dispatch their NIOs in a second per-compute
+        batch, returning the links the computes still refused.
+
+        With ``downgrade=False`` each link's VNI salt is bumped first — a
+        fresh VNI, since the refused one was already registered on the
+        host's shared dstport socket. With ``downgrade=True`` the links are
+        marked degraded to the uBridge relay (whose UDP NIOs cannot fail
+        this way) before re-preparing.
+        """
+
+        for link in links:
+            if downgrade:
+                log.warning(
+                    "Project '%s' [%s]: VXLAN wiring failed for link %s — falling back to the uBridge relay datapath",
+                    self._name,
+                    self._id,
+                    link.id,
+                )
+                link._vxlan_downgraded = True
+            else:
+                link._vxlan_salt += 1
+        per_compute = {}
+        by_key = {}
+        for link in links:
+            for node, adapter_number, port_number, nio_data in await link._prepare():
+                by_key[(str(node.id), adapter_number, port_number)] = link
+                per_compute.setdefault(node.compute, []).append(
+                    {
+                        "node_id": node.id,
+                        "adapter_number": adapter_number,
+                        "port_number": port_number,
+                        "nio": nio_data,
+                    }
+                )
+        if not per_compute:
+            return []
+        results = await asyncio.gather(
+            *[self._dispatch_nio_batch(compute, entries) for compute, entries in per_compute.items()]
+        )
+        failed = []
+        for item in (i for sub in results for i in sub):
+            link = by_key.get((str(item["node_id"]), item["adapter_number"], item["port_number"]))
+            if link is not None and link not in failed:
+                failed.append(link)
+        return failed
+
+    async def _heal_refused_vxlan_links(self, pending):
+        """
+        Drive the links a compute refused at open onto a working datapath:
+        fresh-VNI rounds first — the same candidate count an interactive
+        link creation tries — then, for whatever still fails, the
+        degradation to the uBridge relay (whose UDP NIOs cannot hit this
+        refusal).
+        """
+
+        for _ in range(_VXLAN_ATTEMPTS - 1):
+            if not pending:
+                return
+            pending = await self._redispatch_vxlan_links(pending, downgrade=False)
+        if pending:
+            await self._redispatch_vxlan_links(pending, downgrade=True)
 
     async def restore_deferred_links(self, node):
         """
@@ -1103,7 +1190,9 @@ class Project:
         try:
             return self._links[link_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Link ID {link_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Link ID {link_id} doesn't exist", code="link_not_found", details={"link_id": link_id}
+            )
 
     @property
     def links(self):
@@ -1464,7 +1553,11 @@ class Project:
         try:
             return self._snapshots[snapshot_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Snapshot ID {snapshot_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Snapshot ID {snapshot_id} doesn't exist",
+                code="snapshot_not_found",
+                details={"snapshot_id": snapshot_id},
+            )
 
     def _load_snapshot_config(self):
 
@@ -1485,7 +1578,7 @@ class Project:
                     try:
                         snapshot = Snapshot(self, filename=snap)
                     except ValueError:
-                        log.error("Invalid snapshot file: {}".format(snap))
+                        log.error(f"Invalid snapshot file: {snap}")
                         continue
                     self._snapshots[snapshot.id] = snapshot
         else:
@@ -1494,13 +1587,13 @@ class Project:
                 try:
                     path = os.path.join(snapshot_dir, snapshot_entry["filename"])
                     if not os.path.isfile(path):
-                        log.warning("Snapshot file '{}' does not exist".format(path))
+                        log.warning(f"Snapshot file '{path}' does not exist")
                         continue
                     snapshot_entry.pop("project_id")
                     snapshot = Snapshot(self, **snapshot_entry)
                     self._snapshots[snapshot.id] = snapshot
                 except KeyError:
-                    log.error("Invalid entry in snapshot config file: {}".format(snapshot_entry))
+                    log.error(f"Invalid entry in snapshot config file: {snapshot_entry}")
                     continue
 
         self._save_snapshot_config()
@@ -1517,7 +1610,7 @@ class Project:
             with open(self._snapshot_conf_path, "w+") as f:
                 json.dump(self._snapshot_conf, f, indent=4)
         except OSError as e:
-            log.error("Cannot write snapshot config '{}': {}".format(self._snapshot_conf_path, e))
+            log.error(f"Cannot write snapshot config '{self._snapshot_conf_path}': {e}")
 
     @open_required
     async def snapshot(self, name):
@@ -1731,7 +1824,7 @@ class Project:
                 )
             shutil.rmtree(self.path)
         except OSError as e:
-            raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
+            raise ControllerError(f"Cannot delete project directory {self.path}: {e!s}")
         self.emit_controller_notification("project.deleted", self.asdict())
 
     def _get_disconnected_computes(self):
@@ -1979,22 +2072,35 @@ class Project:
                         }
                     )
 
-            async def _dispatch_batch(compute, nio_entries):
-                await compute.post(
-                    f"/projects/{self._id}/nios/batch",
-                    data={"nios": nio_entries},
-                    timeout=300,
-                )
-
             if per_compute:
-                await asyncio.gather(*[_dispatch_batch(c, n) for c, n in per_compute.items()])
+                results = await asyncio.gather(
+                    *[self._dispatch_nio_batch(compute, entries) for compute, entries in per_compute.items()]
+                )
+                failed = [item for sub in results for item in sub]
+            else:
+                failed = []
+            # A VXLAN entry a compute refused (its VNI already registered on
+            # the host's shared socket, no route to the peer) must not fail
+            # the whole open: the refused links are healed onto a working
+            # datapath (fresh VNIs, then the relay) — see
+            # _heal_refused_vxlan_links.
+            if failed:
+                by_key = {}
+                for link, entries in valid:
+                    for node, adapter_number, port_number, nio_data in entries:
+                        if nio_data.get("vxlan"):
+                            by_key[(str(node.id), adapter_number, port_number)] = link
+                pending = []
+                for item in failed:
+                    link = by_key.get((str(item["node_id"]), item["adapter_number"], item["port_number"]))
+                    if link is not None and link not in pending:
+                        pending.append(link)
+                await self._heal_refused_vxlan_links(pending)
 
             # Finalise every link: wire node/port back-references, mark created,
             # notify clients, and apply project-level marker definitions.
             for link, _entries in valid:
-                for n in link._nodes:
-                    n["node"].add_link(link)
-                    n["port"].link = link
+                link._bind_members()
                 link._created = True
                 self.emit_notification("link.created", link.asdict())
             log.info("Project '%s' [%s]: created %d links", self._name, self._id, len(valid))
@@ -2081,7 +2187,7 @@ class Project:
             else:
                 log.info("Fast duplication failed, fallback to normal duplication")
         except Exception as e:
-            raise ControllerError(f"Cannot duplicate project: {str(e)}")
+            raise ControllerError(f"Cannot duplicate project: {e!s}")
 
         try:
             begin = time.time()
@@ -2119,7 +2225,7 @@ class Project:
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, UnicodeEncodeError) as e:
-            raise ControllerError(f"Cannot duplicate project: {str(e)}")
+            raise ControllerError(f"Cannot duplicate project: {e!s}")
 
         if previous_status == "closed":
             await self.close()
@@ -2144,7 +2250,7 @@ class Project:
         # remote replication is not supported with remote computes
         for compute in self.computes:
             if compute.id != "local":
-                log.warning("Fast duplication is not supported with remote compute: '{}'".format(compute.id))
+                log.warning(f"Fast duplication is not supported with remote compute: '{compute.id}'")
                 return None
         # work dir
         p_work = pathlib.Path(location or self.path).parent.absolute()
@@ -2158,9 +2264,7 @@ class Project:
         await wait_run_in_executor(
             shutil.copytree, self.path, new_project_path.as_posix(), symlinks=True, ignore_dangling_symlinks=True
         )
-        log.info(
-            "Project content copied from '{}' to '{}' in {}s".format(self.path, new_project_path, time.time() - t0)
-        )
+        log.info(f"Project content copied from '{self.path}' to '{new_project_path}' in {time.time() - t0}s")
 
         # Read the topology file using the actual filename (self._filename), not self.name
         # This handles the case where a project has been renamed but we need to read the actual file
@@ -2179,7 +2283,7 @@ class Project:
         regenerate_topology_ids(topology, new_project_path, reset_mac_addresses)
 
         # dump the updated .gns3 project file
-        dot_gns3_path = new_project_path.joinpath("{}.gns3".format(project_name))
+        dot_gns3_path = new_project_path.joinpath(f"{project_name}.gns3")
         topology["project_id"] = new_project_id
         with open(dot_gns3_path, "w+") as f:
             json.dump(topology, f, indent=4, sort_keys=True)
@@ -2192,7 +2296,7 @@ class Project:
         # Remove the old .gns3 file (which has the original project name)
         os.remove(old_gns3_file)
         project = await self.controller.load_project(dot_gns3_path, load=False)
-        log.info("Project '{}': fast duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
+        log.info(f"Project '{project.name}': fast duplicated in {time.time() - t0:.4f} seconds")
         return project
 
     def is_running(self):

@@ -19,12 +19,12 @@ API routes for IOU nodes.
 """
 
 import os
+from typing import Any, Union
+from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.compute.iou import IOU
@@ -32,7 +32,9 @@ from gns3server.compute.iou.iou_vm import IOUVM
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -60,18 +62,18 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate) -> sch
     """
 
     iou = IOU.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await iou.create_node(
-        node_data.pop("name"),
+        data.pop("name"),
         str(project_id),
-        node_data.get("node_id"),
-        application_id=node_data.get("application_id"),
-        path=node_data.get("path"),
-        console=node_data.get("console"),
-        console_type=node_data.get("console_type", "telnet"),
+        data.get("node_id"),
+        application_id=data.get("application_id"),
+        path=data.get("path"),
+        console=data.get("console"),
+        console_type=data.get("console_type", "telnet"),
     )
 
-    for name, value in node_data.items():
+    for name, value in data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
             if name == "application_id":
                 continue  # we must ignore this to avoid overwriting the application_id allocated by the controller
@@ -79,7 +81,7 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate) -> sch
                 continue
             if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
                 continue
-            if node_data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
+            if data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                 continue
             setattr(vm, name, value)
     return vm.asdict()
@@ -100,11 +102,9 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
     Update an IOU node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    for name, value in node_data.items():
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    for name, value in data.items():
         if hasattr(node, name) and getattr(node, name) != value:
-            if name == "application_id":
-                continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
             setattr(node, name, value)
 
     if node.use_default_iou_values:
@@ -147,8 +147,8 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
     Start an IOU node.
     """
 
-    start_data = jsonable_encoder(start_data, exclude_unset=True)
-    for name, value in start_data.items():
+    start_values = jsonable_encoder(start_data, exclude_unset=True)
+    for name, value in start_values.items():
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
 
@@ -187,15 +187,15 @@ async def reload_iou_node(node: IOUVM = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_iou_node_nio(
     adapter_number: int,
     port_number: int,
-    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     node: IOUVM = Depends(dep_node),
-) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
+) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     """
@@ -208,25 +208,31 @@ async def create_iou_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_iou_node_nio(
     adapter_number: int,
     port_number: int,
-    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO],
     node: IOUVM = Depends(dep_node),
-) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]:
+) -> Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     """
 
     nio = node.get_nio(adapter_number, port_number)
     nio.filters.clear()
-    if nio_data.filters:
+    # EthernetNIO/TAPNIO carry no filters field; UDPNIO (relay) and
+    # BridgeNIO (kernel datapath) both do.
+    if isinstance(nio_data, (schemas.UDPNIO, schemas.BridgeNIO)) and nio_data.filters:
         nio.filters = nio_data.filters
-    # NIO type is a Union (Ethernet/TAP/UDP); only UDPNIO carries markers.
+    # NIO type is a Union (Ethernet/TAP/UDP/bridge); only UDPNIO and
+    # BridgeNIO carry markers and suspend. Suspend is what the compute turns
+    # into an admin-down anchor on a kernel link (native carrier), so it must
+    # reach the NIO like it does on the Docker/QEMU routes.
     nio.markers = getattr(nio_data, "markers", None) or {}
+    nio.suspend = getattr(nio_data, "suspend", None) or False
     await node.adapter_update_nio_binding(adapter_number, port_number, nio)
     return nio.asdict()
 

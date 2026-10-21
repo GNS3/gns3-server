@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import logging
 import asyncio
+import logging
+import os
+
 import psutil
 
 from gns3server.compute.vmware import VMware, VMwareError
@@ -40,7 +41,7 @@ class VMwareGNS3VM(BaseGNS3VM):
     def vmx_path(self):
         return self._vmx_path
 
-    async def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
         try:
             result = await self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
@@ -116,7 +117,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             return await self._vmware_manager.list_vms()
         except VMwareError as e:
-            raise GNS3VMError(f"Could not list VMware VMs: {str(e)}")
+            raise GNS3VMError(f"Could not list VMware VMs: {e!s}")
 
     async def start(self):
         """
@@ -143,7 +144,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             running = await self._is_running()
         except VMwareError as e:
-            raise GNS3VMError(f"Could not list VMware VMs: {str(e)}")
+            raise GNS3VMError(f"Could not list VMware VMs: {e!s}")
         if not running:
             # set the number of vCPUs and amount of RAM
             if self.allocate_vcpus_ram:
@@ -197,7 +198,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             await self._execute("suspend", [self._vmx_path])
         except GNS3VMError as e:
-            log.warning(f"Error when suspending the VM: {str(e)}")
+            log.warning(f"Error when suspending the VM: {e!s}")
         log.info("GNS3 VM has been suspended")
         self.running = False
 
@@ -211,6 +212,6 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             await self._execute("stop", [self._vmx_path, "soft"])
         except GNS3VMError as e:
-            log.warning(f"Error when stopping the VM: {str(e)}")
+            log.warning(f"Error when stopping the VM: {e!s}")
         log.info("GNS3 VM has been stopped")
         self.running = False

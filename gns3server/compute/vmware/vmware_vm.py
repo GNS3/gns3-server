@@ -18,25 +18,24 @@
 VMware VM instance.
 """
 
-import sys
-import os
 import asyncio
-import tempfile
+import logging
+import os
 import platform
+import sys
+import tempfile
+from collections import OrderedDict
 
-from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
-from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.utils.asyncio.serial import asyncio_open_serial
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
-from collections import OrderedDict
-from .vmware_error import VMwareError
-from ..nios.nio_udp import NIOUDP
+from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils.asyncio.ssh_server import AsyncioSSHServer
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..base_node import BaseNode
-
-
-import logging
+from ..nios.nio_udp import NIOUDP
+from .vmware_error import VMwareError
 
 log = logging.getLogger(__name__)
 
@@ -362,18 +361,12 @@ class VMwareVM(BaseNode):
                 await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
             else:
                 # special case on macOS, we cannot bind VMnet interfaces using the libpcap
-                await self._ubridge_send(
-                    'bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface)
-                )
+                await self._ubridge_send(f'bridge add_nio_fusion_vmnet {vnet} "{vmnet_interface}"')
         else:
             await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):
-            await self._ubridge_send(
-                "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
-                    name=vnet, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
-                )
-            )
+            await self._ubridge_send(f"bridge add_nio_udp {vnet} {nio.lport} {nio.rhost} {nio.rport}")
 
         if nio.capturing:
             await self._ubridge_send(f'bridge start_capture {vnet} "{nio.pcap_output_file}"')
@@ -419,9 +412,7 @@ class VMwareVM(BaseNode):
             raise VMwareError(f"vnet {vnet} not in VMX file")
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot start the packet capture: uBridge is not running")
-        await self._ubridge_send(
-            'bridge start_capture {name} "{output_file}"'.format(name=vnet, output_file=output_file)
-        )
+        await self._ubridge_send(f'bridge start_capture {vnet} "{output_file}"')
 
     async def _stop_ubridge_capture(self, adapter_number):
         """
@@ -695,11 +686,7 @@ class VMwareVM(BaseNode):
             self._ethernet_adapters[adapter_number] = EthernetAdapter()
 
         self._adapters = len(self._ethernet_adapters)
-        log.info(
-            "VMware VM '{name}' [{id}] has changed the number of Ethernet adapters to {adapters}".format(
-                name=self.name, id=self.id, adapters=adapters
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}] has changed the number of Ethernet adapters to {adapters}")
 
     @property
     def adapter_type(self):
@@ -720,11 +707,7 @@ class VMwareVM(BaseNode):
         """
 
         self._adapter_type = adapter_type
-        log.info(
-            "VMware VM '{name}' [{id}]: adapter type changed to {adapter_type}".format(
-                name=self.name, id=self.id, adapter_type=adapter_type
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}]: adapter type changed to {adapter_type}")
 
     @property
     def use_any_adapter(self):
@@ -761,11 +744,7 @@ class VMwareVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VMwareError(
-                "Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VMwareError(f"Adapter {adapter_number} doesn't exist on VMware VM '{self.name}'")
 
         self._read_vmx_file()
         # check if trying to connect to a nat, bridged or host-only adapter
@@ -779,28 +758,20 @@ class VMwareVM(BaseNode):
             ):
                 if await self.is_running():
                     raise VMwareError(
-                        "Attachment '{attachment}' is configured on network adapter {adapter_number}. "
-                        "Please stop VMware VM '{name}' to link to this adapter and allow GNS3 to change the attachment type.".format(
-                            attachment=self._vmx_pairs[connection_type], adapter_number=adapter_number, name=self.name
-                        )
+                        f"Attachment '{self._vmx_pairs[connection_type]}' is configured on network adapter {adapter_number}. "
+                        f"Please stop VMware VM '{self.name}' to link to this adapter and allow GNS3 to change the attachment type."
                     )
                 else:
                     raise VMwareError(
-                        "Attachment '{attachment}' is already configured on network adapter {adapter_number}. "
-                        "Please remove it or allow VMware VM '{name}' to use any adapter.".format(
-                            attachment=self._vmx_pairs[connection_type], adapter_number=adapter_number, name=self.name
-                        )
+                        f"Attachment '{self._vmx_pairs[connection_type]}' is already configured on network adapter {adapter_number}. "
+                        f"Please remove it or allow VMware VM '{self.name}' to use any adapter."
                     )
 
         adapter.add_nio(0, nio)
         if self._started and self._ubridge_hypervisor:
             await self._add_ubridge_connection(nio, adapter_number)
 
-        log.info(
-            "VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
-                name=self.name, id=self.id, nio=nio, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}]: {nio} added to adapter {adapter_number}")
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
@@ -814,11 +785,7 @@ class VMwareVM(BaseNode):
             try:
                 await self._update_ubridge_connection(adapter_number, nio)
             except IndexError:
-                raise VMwareError(
-                    'Adapter {adapter_number} does not exist on VMware VM "{name}"'.format(
-                        name=self._name, adapter_number=adapter_number
-                    )
-                )
+                raise VMwareError(f'Adapter {adapter_number} does not exist on VMware VM "{self._name}"')
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -832,11 +799,7 @@ class VMwareVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise VMwareError(
-                "Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VMwareError(f"Adapter {adapter_number} doesn't exist on VMware VM '{self.name}'")
 
         await self.stop_capture(adapter_number)
         nio = adapter.get_nio(0)
@@ -846,11 +809,7 @@ class VMwareVM(BaseNode):
         if self._started and self._ubridge_hypervisor:
             await self._delete_ubridge_connection(adapter_number)
 
-        log.info(
-            "VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
-                name=self.name, id=self.id, nio=nio, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}]: {nio} removed from adapter {adapter_number}")
 
         return nio
 
@@ -866,11 +825,7 @@ class VMwareVM(BaseNode):
         try:
             adapter = self.ethernet_adapters[adapter_number]
         except KeyError:
-            raise VMwareError(
-                "Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise VMwareError(f"Adapter {adapter_number} doesn't exist on VMware VM '{self.name}'")
 
         nio = adapter.get_nio(0)
         if not nio:
@@ -952,7 +907,11 @@ class VMwareVM(BaseNode):
         await self._stop_remote_console()
         await self._start_console()
 
-    @BaseNode.console_type.setter
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
     def console_type(self, new_console_type):
         """
         Sets the console type for this VMware VM.
@@ -981,11 +940,7 @@ class VMwareVM(BaseNode):
         if self._started:
             await self._start_ubridge_capture(adapter_number, output_file)
 
-        log.info(
-            "VMware VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(
-                name=self.name, id=self.id, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}]: starting packet capture on adapter {adapter_number}")
 
     async def stop_capture(self, adapter_number):
         """
@@ -1002,8 +957,4 @@ class VMwareVM(BaseNode):
         if self._started:
             await self._stop_ubridge_capture(adapter_number)
 
-        log.info(
-            "VMware VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(
-                name=self.name, id=self.id, adapter_number=adapter_number
-            )
-        )
+        log.info(f"VMware VM '{self.name}' [{self.id}]: stopping packet capture on adapter {adapter_number}")

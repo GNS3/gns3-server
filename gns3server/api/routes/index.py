@@ -16,12 +16,12 @@
 
 import os
 
-from fastapi import APIRouter, Request, HTTPException, status
-from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from gns3server.version import __version__
 from gns3server.utils.get_resource import get_resource
+from gns3server.version import __version__
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join("gns3server", "templates"))
@@ -36,7 +36,7 @@ async def root():
 @router.get("/debug", response_class=HTMLResponse, deprecated=True, include_in_schema=False)
 def debug(request: Request):
 
-    kwargs = {"gns3_version": __version__, "gns3_host": request.client.host}
+    kwargs = {"gns3_version": __version__, "gns3_host": request.client.host if request.client else None}
     return templates.TemplateResponse(request=request, name="index.html", context=kwargs)
 
 
@@ -62,7 +62,7 @@ async def web_ui(file_path: str):
     # which results with warnings in Firefox 66 on Windows
     # Ref. gns3-server#1559
     _, ext = os.path.splitext(static)
-    mimetype = ext == ".js" and "application/javascript" or None
+    mimetype = (ext == ".js" and "application/javascript") or None
     return FileResponse(static, media_type=mimetype)
 
 

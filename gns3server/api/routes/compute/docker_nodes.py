@@ -19,19 +19,23 @@ API routes for Docker nodes.
 """
 
 import os
+from typing import Any, Union
+from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from uuid import UUID
-from typing import Union
 
 from gns3server import schemas
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.docker.docker_vm import DockerVM
+
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -53,13 +57,13 @@ def dep_node(project_id: UUID, node_id: UUID) -> DockerVM:
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Docker node"}},
     dependencies=[Depends(compute_authentication)],
 )
-async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) -> schemas.Docker:
+async def create_docker_node(project_id: UUID, node_create: schemas.DockerCreate) -> schemas.Docker:
     """
     Create a new Docker node.
     """
 
     docker_manager = Docker.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    node_data = jsonable_encoder(node_create, exclude_unset=True)
     container = await docker_manager.create_node(
         node_data.pop("name"),
         str(project_id),
@@ -124,7 +128,7 @@ def get_docker_node(node: DockerVM = Depends(dep_node)) -> schemas.Docker:
 
 
 @router.put("/{node_id}", response_model=schemas.Docker, dependencies=[Depends(compute_authentication)])
-async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)) -> schemas.Docker:
+async def update_docker_node(node_update: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)) -> schemas.Docker:
     """
     Update a Docker node.
     """
@@ -151,15 +155,28 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
         "cpus",
     ]
 
-    changed = False
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    for prop in props:
-        # hasattr: startup_config_content only exists on IOLDockerVM
-        if prop in node_data and hasattr(node, prop) and node_data[prop] != getattr(node, prop):
-            setattr(node, prop, node_data[prop])
-            changed = True
+    node_data = jsonable_encoder(node_update, exclude_unset=True)
+    # hasattr: startup_config_content only exists on IOLDockerVM
+    changed_props = [
+        prop for prop in props if prop in node_data and hasattr(node, prop) and node_data[prop] != getattr(node, prop)
+    ]
+
+    # A property change is applied by destroying and recreating the container,
+    # so it discards whatever was written inside it. Refuse that while the
+    # container is up (like QEMU, IOU, Dynamips, VPCS, VirtualBox and VMware do
+    # for their own restart-requiring settings) instead of resetting a running
+    # node behind the user's back. Nothing is applied before this check: a
+    # refused update must leave the node exactly as it was.
+    if changed_props and await node.is_up():
+        raise DockerError(
+            f'"{node.name}" must be stopped to change {", ".join(sorted(changed_props))}: '
+            "the container is recreated and changes made inside it are lost"
+        )
+
+    for prop in changed_props:
+        setattr(node, prop, node_data[prop])
     # We don't call container.update for nothing because it will restart the container
-    if changed:
+    if changed_props:
         await node.update()
     node.updated()
     return node.asdict()
@@ -257,12 +274,15 @@ async def duplicate_docker_node(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
-) -> schemas.UDPNIO:
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Docker node is always 0.
@@ -276,12 +296,15 @@ async def create_docker_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_docker_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
-) -> schemas.UDPNIO:
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
+    node: DockerVM = Depends(dep_node),
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Docker node is always 0.

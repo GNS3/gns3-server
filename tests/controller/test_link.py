@@ -15,15 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
+import asyncio
 from unittest.mock import MagicMock
 
+import pytest
+import pytest_asyncio
+
+from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.link import Link
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.ports.serial_port import SerialPort
-from gns3server.controller.controller_error import ControllerError
 from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
@@ -109,6 +111,66 @@ async def test_add_node_already_connected(project, compute):
     link2.create = AsyncioMagicMock()
     with pytest.raises(ControllerError):
         await link2.add_node(node1, 0, 4)
+
+
+@pytest.mark.asyncio
+async def test_add_node_already_connected_after_node_update(project, compute):
+    """
+    A node update (any compute node.updated notification) rebuilds its port
+    objects; the port must still count as used afterwards, or the duplicate
+    link reaches the compute and fails on the already-bound NIO instead of
+    being refused here.
+    """
+
+    project.dump = AsyncioMagicMock()
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link.node_updated = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    await link.add_node(node1, 0, 0)
+    await link.add_node(node2, 0, 0)
+
+    await node1.parse_node_response({"status": "started"})
+
+    link2 = Link(project)
+    link2.create = AsyncioMagicMock()
+    with pytest.raises(ControllerError, match="already used"):
+        await link2.add_node(node1, 0, 0)
+
+
+@pytest.mark.asyncio
+async def test_link_delete_after_node_update_releases_port(project, compute):
+    """
+    Link.delete drops the port's link reference through the port object it
+    stored at add_node time; a node update since then rebuilt the port list,
+    so that stored object is stale. The delete must release the *live* port,
+    or the next link on it is refused with "Port is already used".
+    """
+
+    project.dump = AsyncioMagicMock()
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node2 = Node(project, compute, "node2", node_type="qemu")
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link.node_updated = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    await link.add_node(node1, 0, 0)
+    await link.add_node(node2, 0, 0)
+
+    # a node update (e.g. the status change of a start) rebuilds the ports
+    await node1.parse_node_response({"status": "started"})
+
+    await link.delete()
+
+    link2 = Link(project)
+    link2.create = AsyncioMagicMock()
+    await link2.add_node(node1, 0, 0)  # must not raise "Port is already used"
 
 
 @pytest.mark.asyncio
@@ -227,6 +289,7 @@ async def test_json(project, compute):
         "suspend": False,
         "wireshark": False,
         "link_type": "ethernet",
+        "kernel_datapath": False,
         "capturing": False,
         "capture_file_name": None,
         "capture_file_path": None,
@@ -360,6 +423,58 @@ async def test_update_filters(project, compute):
 
 
 @pytest.mark.asyncio
+async def test_update_filters_unchanged_is_noop(project, compute):
+    """Re-sending an identical filters dict skips the datapath reconcile."""
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    project.dump = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 0, 4)
+
+    link.update = AsyncioMagicMock()
+    await link.update_filters({"packet_loss": [10]})
+    assert link.update.call_count == 1
+    await link.update_filters({"packet_loss": [10]})
+    assert link.update.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_filters_unchanged_window_drop_still_reconciles(project, compute):
+    """
+    window_drop's outage schedule is measured from the apply, so an
+    unchanged re-send must re-arm it instead of being skipped as a no-op.
+    """
+
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock()
+    link._project.emit_notification = MagicMock()
+    project.dump = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 0, 4)
+    # window_drop is kernel-only: this synthetic link has no real wiring,
+    # so declare the kernel datapath the way _link_data does at runtime
+    link._link_data = [{"type": "nio_bridge"}]
+
+    link.update = AsyncioMagicMock()
+    await link.update_filters({"window_drop": [3000, 5000, 100]})
+    assert link.update.call_count == 1
+    await link.update_filters({"window_drop": [3000, 5000, 100]})
+    assert link.update.call_count == 2
+
+
+@pytest.mark.asyncio
 async def test_available_filters(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="ethernet_switch")
@@ -416,3 +531,67 @@ async def test_update_link_style(project, compute):
     }
     link._project.emit_notification.assert_called_with("link.updated", link.asdict())
     assert project.dump.called
+
+
+@pytest.mark.asyncio
+async def test_add_node_concurrent_same_port(project, compute):
+    project.dump = MagicMock()
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4), EthernetPort("E1", 0, 0, 5)]
+    node3 = Node(project, compute, "node3", node_type="qemu")
+    node3._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    async def slow_create():
+        await asyncio.sleep(0)
+
+    async def connect(other, other_port):
+        link = Link(project)
+        link.create = slow_create
+        try:
+            await link.add_node(other, 0, other_port)
+            await link.add_node(node1, 0, 4)
+        except ControllerError as e:
+            return e
+        return link
+
+    results = await asyncio.gather(connect(node2, 4), connect(node3, 4))
+    errors = [r for r in results if isinstance(r, ControllerError)]
+    assert len(errors) == 1
+    assert errors[0].code == "port_in_use"
+    assert node1._ports[0].link in results
+
+
+@pytest.mark.asyncio
+async def test_add_node_create_failure_releases_ports(project, compute):
+    project.dump = MagicMock()
+    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute, "node2", node_type="qemu")
+    node2._ports = [EthernetPort("E0", 0, 0, 4)]
+
+    link = Link(project)
+    link.create = AsyncioMagicMock(side_effect=ControllerError("boom"))
+    await link.add_node(node1, 0, 4)
+    with pytest.raises(ControllerError):
+        await link.add_node(node2, 0, 4)
+
+    assert node1._ports[0].link is None
+    assert node2._ports[0].link is None
+    assert not node1.links
+    assert not node2.links
+
+
+def test_node_get_port_by_name_and_free_port(project, compute):
+    node = Node(project, compute, "node1", node_type="qemu")
+    node._ports = [EthernetPort("E1", 0, 0, 1), EthernetPort("E0", 0, 0, 0), SerialPort("S0", 0, 1, 0)]
+
+    assert node.get_port_by_name("E0") is node._ports[1]
+    assert node.get_port_by_name("nope") is None
+    assert node.get_free_port() is node._ports[1]
+    assert node.get_free_port("serial") is node._ports[2]
+    node._ports[1].link = object()
+    assert node.get_free_port("ethernet") is node._ports[0]
+    node._ports[0].link = object()
+    assert node.get_free_port("ethernet") is None

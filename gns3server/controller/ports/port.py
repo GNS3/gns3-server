@@ -42,6 +42,10 @@ class Port:
         self._link = val
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def adapter_number(self):
         return self._adapter_number
 

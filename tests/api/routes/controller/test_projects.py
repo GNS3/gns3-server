@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,21 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import uuid
-import os
 import json
+import os
+import uuid
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from unittest.mock import patch, MagicMock
-from tests.utils import asyncio_patch, AsyncioMagicMock
 
 import gns3server.utils.zipfile_zstd as zipfile_zstd
 from gns3server.controller import Controller
-from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
+from gns3server.controller.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -118,6 +117,55 @@ class TestControllerProjectRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "test2"
 
+    async def test_update_project_ignores_path_and_project_id(
+        self, app: FastAPI, client: AsyncClient, controller: Controller
+    ) -> None:
+
+        params = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
+        response = await client.post(app.url_path_for("create_project"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        path = response.json()["path"]
+
+        params = {
+            "name": "test2",
+            "path": os.path.join(os.path.dirname(path), "other"),
+            "project_id": "20010203-0405-0607-0809-0a0b0c0d0e0f",
+        }
+        response = await client.put(
+            app.url_path_for("update_project", project_id="10010203-0405-0607-0809-0a0b0c0d0e0f"), json=params
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["name"] == "test2"
+        assert response.json()["path"] == path
+        assert response.json()["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
+
+    async def test_project_etag_and_if_match(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
+
+        params = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
+        assert (await client.post(app.url_path_for("create_project"), json=params)).status_code == 201
+        get_url = app.url_path_for("get_project", project_id="10010203-0405-0607-0809-0a0b0c0d0e0f")
+        put_url = app.url_path_for("update_project", project_id="10010203-0405-0607-0809-0a0b0c0d0e0f")
+
+        response = await client.get(get_url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert (await client.get(get_url)).headers["ETag"] == etag
+
+        response = await client.put(put_url, json={"name": "test2"}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        new_etag = response.headers["ETag"]
+        assert new_etag != etag
+        assert (await client.get(get_url)).headers["ETag"] == new_etag
+
+        response = await client.put(put_url, json={"name": "test3"}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert (await client.get(get_url)).json()["name"] == "test2"
+
+        response = await client.put(put_url, json={"name": "test4"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["name"] == "test4"
+
     async def test_update_project_with_variables(
         self, app: FastAPI, client: AsyncClient, controller: Controller
     ) -> None:
@@ -142,6 +190,26 @@ class TestControllerProjectRoutes:
         assert response.status_code == status.HTTP_200_OK
         projects = response.json()
         assert projects[0]["name"] == "test"
+
+    async def test_list_projects_filter_by_name(
+        self, app: FastAPI, client: AsyncClient, controller: Controller
+    ) -> None:
+
+        for name in ("test", "other"):
+            params = {"name": name, "project_id": str(uuid.uuid4())}
+            response = await client.post(app.url_path_for("create_project"), json=params)
+            assert response.status_code == status.HTTP_201_CREATED
+
+        response = await client.get(app.url_path_for("get_projects"), params={"name": "test"})
+        assert response.status_code == status.HTTP_200_OK
+        assert [p["name"] for p in response.json()] == ["test"]
+
+        response = await client.get(app.url_path_for("get_projects"), params={"name": "TEST"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+        response = await client.get(app.url_path_for("get_projects"))
+        assert len(response.json()) == 2
 
     async def test_get_project(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
@@ -175,7 +243,7 @@ class TestControllerProjectRoutes:
 
         with asyncio_patch("gns3server.controller.project.Project.open", return_value=True) as mock:
             response = await client.post(app.url_path_for("open_project", project_id=project.id))
-            assert response.status_code == status.HTTP_201_CREATED
+            assert response.status_code == status.HTTP_200_OK
             assert mock.called
 
     async def test_load_project(self, app: FastAPI, client: AsyncClient, project: Project, config) -> None:
@@ -245,10 +313,9 @@ class TestControllerProjectRoutes:
             )
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-        assert response.headers[
-            "CONTENT-DISPOSITION"
-        ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-            name=project.name
+        assert (
+            response.headers["CONTENT-DISPOSITION"]
+            == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
         )
 
         with open(str(tmpdir / "project.zip"), "wb+") as f:
@@ -284,10 +351,9 @@ class TestControllerProjectRoutes:
             )
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-        assert response.headers[
-            "CONTENT-DISPOSITION"
-        ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-            name=project.name
+        assert (
+            response.headers["CONTENT-DISPOSITION"]
+            == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
         )
         with open(str(tmpdir / "project.zip"), "wb+") as f:
             f.write(response.content)
@@ -344,10 +410,9 @@ class TestControllerProjectRoutes:
 
         if response.status_code == status.HTTP_200_OK:
             assert response.headers["CONTENT-TYPE"] == "application/gns3project"
-            assert response.headers[
-                "CONTENT-DISPOSITION"
-            ] == "attachment; filename=\"{name}.gns3project\"; filename*=UTF-8''{name}.gns3project".format(
-                name=project.name
+            assert (
+                response.headers["CONTENT-DISPOSITION"]
+                == f"attachment; filename=\"{project.name}.gns3project\"; filename*=UTF-8''{project.name}.gns3project"
             )
             with open(str(tmpdir / "project.zip"), "wb+") as f:
                 f.write(response.content)

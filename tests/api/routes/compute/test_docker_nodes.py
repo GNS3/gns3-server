@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,17 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from unittest.mock import patch, MagicMock
 
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -227,6 +226,31 @@ class TestDockerNodesRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
 
+    async def test_docker_nio_create_bridge_requires_the_field_but_takes_null(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        BridgeNIO.bridge is required-but-nullable: an omitted key is a 422
+        (the NIO factories read it, and the routes drop unset fields — an
+        omitted key used to pass validation and die as a KeyError during
+        binding), while an explicit null is the absorbed-link shape.
+        """
+
+        url = app.url_path_for(
+            "compute:create_docker_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="0",
+            port_number="0",
+        )
+
+        response = await compute_client.post(url, json={"type": "nio_bridge"})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        response = await compute_client.post(url, json={"type": "nio_bridge", "bridge": None})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["bridge"] is None
+
     async def test_docker_nio_batch_create(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
         """
         Exercise the project-wide batch NIO endpoint: bind two NIOs on the same
@@ -367,6 +391,71 @@ class TestDockerNodesRoutes:
         assert not mock.called  # no real change: the container must not be recreated
         assert response.json()["start_command"] is None
         assert response.json()["console_http_path"] == "/"
+
+    async def test_docker_update_refused_while_container_is_up(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        A property change is applied by recreating the container, which throws
+        away what was written inside it. While the container is up (running or
+        paused) the update is refused instead of resetting the node behind the
+        user's back, and the error says what stopping it would cost.
+        """
+
+        for state in ("running", "paused"):
+            with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
+                with asyncio_patch(
+                    "gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value=state
+                ):
+                    response = await compute_client.put(
+                        app.url_path_for(
+                            "compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]
+                        ),
+                        json={"console_type": "vnc"},
+                    )
+
+            assert response.status_code == 409
+            assert "must be stopped" in response.json()["message"]
+            assert "console_type" in response.json()["message"]
+            assert not mock.called
+
+        # the refused update left the node exactly as it was
+        response = await compute_client.get(
+            app.url_path_for("compute:get_docker_node", project_id=vm["project_id"], node_id=vm["node_id"])
+        )
+        assert response.json()["console_type"] == "telnet"
+
+    async def test_docker_update_without_change_is_allowed_while_container_is_up(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        Clients send the whole node back on every edit: a PUT that changes
+        nothing must not be refused just because the container is running.
+        """
+
+        with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value="running"):
+            response = await compute_client.put(
+                app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+                json={"name": "DOCKER-TEST-1", "console_type": "telnet"},
+            )
+        assert response.status_code == 200
+
+    async def test_docker_update_stopped_container_is_recreated(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """A stopped container has no live state to lose: the change applies."""
+
+        with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
+            with asyncio_patch(
+                "gns3server.compute.docker.docker_vm.DockerVM._get_container_state", return_value="exited"
+            ):
+                response = await compute_client.put(
+                    app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+                    json={"console_type": "vnc"},
+                )
+        assert response.status_code == 200
+        assert mock.called
+        assert response.json()["console_type"] == "vnc"
 
     async def test_docker_start_capture(self, app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
 

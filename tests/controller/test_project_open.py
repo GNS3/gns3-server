@@ -15,13 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
+import os
+
 import pytest
 
-from tests.utils import asyncio_patch
-
-from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
 
 

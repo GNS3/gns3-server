@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import time
 import shutil
+import time
 import zipfile
 
 
@@ -40,7 +40,7 @@ def unpack_zip(filename, extract_dir=None):
         with zipfile.ZipFile(filename, "r") as zfile:
             for zinfo in zfile.infolist():
                 fname = os.path.join(extract_dir, zinfo.filename)
-                date_time = time.mktime(zinfo.date_time + (0, 0, -1))
+                date_time = time.mktime((*zinfo.date_time, 0, 0, -1))
                 zfile.extract(zinfo, extract_dir)
 
                 # update timestamp
@@ -52,4 +52,4 @@ def unpack_zip(filename, extract_dir=None):
         for fname, date_time in reversed(dirs):
             os.utime(fname, (date_time, date_time))
     except zipfile.BadZipFile:
-        raise shutil.ReadError("%s is not a zip file" % filename)
+        raise shutil.ReadError(f"{filename} is not a zip file")

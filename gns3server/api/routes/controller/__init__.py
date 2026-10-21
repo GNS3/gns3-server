@@ -18,12 +18,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 # Check AI Copilot availability
 from gns3server.agent import AI_COPILOT_AVAILABLE
+from gns3server.api.operation_ids import add_stub_routes
+from gns3server.config import Config
 
 # Conditionally import AI-dependent routes
 if AI_COPILOT_AVAILABLE:
-    from . import chat
-    from . import copilot
-    from . import llm_model_configs
+    from . import chat, copilot, llm_model_configs
 
     _chat_router = chat.router
     _copilot_router = copilot.router
@@ -34,39 +34,48 @@ else:
     _copilot_router = APIRouter()
     _llm_router = APIRouter()
 
-    @_chat_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
-    @_copilot_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
-    @_llm_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
+    @_chat_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
+    @_copilot_router.api_route(
+        "/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False
+    )
+    @_llm_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
     async def ai_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
 
+    add_stub_routes(_chat_router, ai_not_available, "chat_not_available")
+    add_stub_routes(_copilot_router, ai_not_available, "copilot_not_available")
+    add_stub_routes(_llm_router, ai_not_available, "llm_not_available")
 
-from . import controller
-from . import appliances
-from . import computes
-from . import drawings
-from . import gns3vm
-from . import links
-from . import nodes
-from . import projects
-from . import snapshots
-from . import symbols
-from . import templates
-from . import images
-from . import users
-from . import groups
-from . import roles
-from . import acl
-from . import pools
-from . import privileges
-from . import api_keys
-from . import netmiko
-from . import settings
 
+from . import (
+    acl,
+    api_keys,
+    appliances,
+    computes,
+    controller,
+    drawings,
+    gns3vm,
+    groups,
+    images,
+    links,
+    netmiko,
+    nodes,
+    pools,
+    privileges,
+    projects,
+    roles,
+    settings,
+    snapshots,
+    symbols,
+    templates,
+    users,
+)
 from .dependencies.authentication import get_current_active_user
+
+_include_ai_in_schema = Config.instance().settings.Server.openapi_include_ai
 
 router = APIRouter()
 
@@ -117,11 +126,19 @@ router.include_router(
 )
 
 router.include_router(
-    _llm_router, prefix="/access", dependencies=[Depends(get_current_active_user)], tags=["LLM Model Configurations"]
+    _llm_router,
+    prefix="/access",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["LLM Model Configurations"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(
-    _copilot_router, prefix="/copilot", dependencies=[Depends(get_current_active_user)], tags=["GNS3 Copilot"]
+    _copilot_router,
+    prefix="/copilot",
+    dependencies=[Depends(get_current_active_user)],
+    tags=["GNS3 Copilot"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(
@@ -129,6 +146,7 @@ router.include_router(
     prefix="/copilot/projects/{project_id}/chat",
     dependencies=[Depends(get_current_active_user)],
     tags=["GNS3 Copilot"],
+    include_in_schema=_include_ai_in_schema,
 )
 
 router.include_router(api_keys.router, dependencies=[Depends(get_current_active_user)], tags=["API Keys"])

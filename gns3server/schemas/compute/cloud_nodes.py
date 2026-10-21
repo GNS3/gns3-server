@@ -14,25 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, Union, List
-from enum import Enum
+import re
+from enum import StrEnum
+from typing import List, Optional, Union
 from uuid import UUID
 
+from pydantic import BaseModel, Field, model_validator
+
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
+
+LINUX_TAP_NAME_PATTERN = r"^[a-zA-Z0-9_.:-]{1,15}$"
 
 
-class HostInterfaceType(str, Enum):
+class HostInterfaceType(StrEnum):
     ethernet = "ethernet"
     tap = "tap"
 
 
-class IPAddressFamily(str, Enum):
+class IPAddressFamily(StrEnum):
     ipv4 = "ipv4"
     ipv6 = "ipv6"
 
 
-class InterfaceStatus(str, Enum):
+class InterfaceStatus(StrEnum):
     up = "up"
     down = "down"
 
@@ -55,6 +60,7 @@ class HostInterface(BaseModel):
     name: str = Field(..., description="Interface name")
     type: HostInterfaceType = Field(..., description="Interface type")
     special: bool = Field(..., description="Whether the interface is non standard")
+    is_bridge: bool = Field(False, description="Whether this is a Linux bridge")
     ip_addresses: List[HostInterfaceIPAddress] = Field(
         default_factory=list, description="All IPv4 and IPv6 addresses on this interface"
     )
@@ -64,7 +70,7 @@ class HostInterface(BaseModel):
     flags: List[str] = Field(default_factory=list, description="Interface flags")
 
 
-class EthernetType(str, Enum):
+class EthernetType(StrEnum):
     ethernet = "ethernet"
 
 
@@ -79,7 +85,7 @@ class EthernetPort(BaseModel):
     interface: str
 
 
-class TAPType(str, Enum):
+class TAPType(StrEnum):
     tap = "tap"
 
 
@@ -92,9 +98,22 @@ class TAPPort(BaseModel):
     port_number: int
     type: TAPType
     interface: str
+    bridge: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=15,
+        pattern=LINUX_TAP_NAME_PATTERN,
+        description="Existing Linux bridge to attach the TAP to",
+    )
+
+    @model_validator(mode="after")
+    def validate_bridged_interface(self):
+        if self.bridge and not re.fullmatch(LINUX_TAP_NAME_PATTERN, self.interface):
+            raise ValueError("A bridged TAP name must be 1-15 letters, digits, underscores, dots, colons or hyphens")
+        return self
 
 
-class UDPType(str, Enum):
+class UDPType(StrEnum):
     udp = "udp"
 
 
@@ -111,7 +130,7 @@ class UDPPort(BaseModel):
     rport: int = Field(..., gt=0, le=65535, description="Remote port")
 
 
-class CloudConsoleType(str, Enum):
+class CloudConsoleType(StrEnum):
     telnet = "telnet"
     ssh = "ssh"
     vnc = "vnc"
@@ -126,7 +145,7 @@ class CloudBase(BaseModel):
     Common cloud node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = None
     remote_console_host: Optional[str] = Field(None, description="Remote console host or IP")
@@ -144,18 +163,21 @@ class CloudCreate(CloudBase):
     Properties to create a cloud node.
     """
 
-    pass
+    name: str
 
 
-class CloudUpdate(CloudBase):
+class CloudUpdate(PartialUpdateModel, CloudBase):
     """
     Properties to update a cloud node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 
 
 class Cloud(CloudBase):
+    name: str
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

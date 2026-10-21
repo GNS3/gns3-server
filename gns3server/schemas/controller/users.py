@@ -16,9 +16,11 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import ConfigDict, EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+
+from ..update import PartialUpdateModel
 from .base import DateTimeModelMixin
 
 
@@ -42,7 +44,7 @@ class UserCreate(UserBase):
     password: SecretStr = Field(..., min_length=8, max_length=100)
 
 
-class UserUpdate(UserBase):
+class UserUpdate(PartialUpdateModel, UserBase):
     """
     Properties to update a user.
     """
@@ -80,7 +82,7 @@ class UserGroupCreate(UserGroupBase):
     Properties to create a user group.
     """
 
-    name: Optional[str] = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
+    name: str = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
 
 
 class UserGroupUpdate(UserGroupBase):

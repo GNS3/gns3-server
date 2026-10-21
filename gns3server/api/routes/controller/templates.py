@@ -18,32 +18,34 @@
 API routes for templates.
 """
 
-import os
 import hashlib
 import json
-
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, HTTPException, Depends, Response, status, Query
-from typing import List, Optional
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, Query, Request, Response, status
+
 from gns3server import schemas
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.db.repositories.images import ImagesRepository
-from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.utils.images import get_builtin_disks
 
 from .dependencies.authentication import get_current_active_user
-from .dependencies.rbac import has_privilege
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find template"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find template"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -57,7 +59,7 @@ router = APIRouter(responses=responses)
 async def create_template(
     template_create: schemas.TemplateCreate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> dict:
     """
     Create a new template.
 
@@ -80,7 +82,7 @@ async def get_template(
     request: Request,
     response: Response,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> Union[dict, Response]:
     """
     Return a template.
 
@@ -108,7 +110,7 @@ async def update_template(
     template_id: UUID,
     template_update: schemas.TemplateUpdate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Template:
+) -> dict:
     """
     Update a template.
 
@@ -125,7 +127,7 @@ async def delete_template(
     template_id: UUID,
     prune_images: Optional[bool] = False,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-    images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
+    images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
@@ -155,7 +157,7 @@ async def delete_template(
                 if str(template.template_id) != str(template_id)
             ]
             if other_templates:
-                template_names = ", ".join([template.name for template in other_templates])
+                template_names = ", ".join([str(template.name) for template in other_templates])
                 raise ControllerError(f"Image '{image.path}' is used by one or more templates: {template_names}")
 
             if referenced_filenames is None:
@@ -193,7 +195,8 @@ async def get_templates(
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
     current_user: schemas.User = Depends(get_current_active_user),
     tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
-) -> List[schemas.Template]:
+    name: Optional[str] = Query(None, description="Return only templates whose name exactly matches (case-sensitive)"),
+) -> List[dict]:
     """
     Return all templates.
 
@@ -202,9 +205,13 @@ async def get_templates(
     Query Parameters:
     - tags: Filter by tags. Multiple tags are ANDed together.
             Example: ?tags=vendor:cisco&tags=model:7200
+    - name: Exact, case-sensitive match on the template name. Combined with other filters using AND.
     """
 
     templates = await TemplatesService(templates_repo).get_templates()
+
+    if name is not None:
+        templates = [template for template in templates if template.get("name") == name]
 
     # Filter by tags if provided (all filter tags have to match the node tags)
     if tags:
@@ -244,7 +251,7 @@ async def get_templates(
 )
 async def duplicate_template(
     template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
-) -> schemas.Template:
+) -> dict:
     """
     Duplicate a template.
 

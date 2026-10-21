@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class FrameRelaySwitchBase(BaseModel):
@@ -26,8 +28,8 @@ class FrameRelaySwitchBase(BaseModel):
     Common Frame Relay switch properties.
     """
 
-    name: str = None
-    node_id: UUID = None
+    name: Optional[str] = None
+    node_id: Optional[UUID] = None
     usage: Optional[str] = None
     mappings: Optional[dict] = None
 
@@ -40,10 +42,12 @@ class FrameRelaySwitchCreate(FrameRelaySwitchBase):
     node_id: Optional[UUID] = None
 
 
-class FrameRelaySwitchUpdate(FrameRelaySwitchBase):
+class FrameRelaySwitchUpdate(PartialUpdateModel, FrameRelaySwitchBase):
     """
     Properties to update an Frame Relay node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     node_id: Optional[UUID] = None

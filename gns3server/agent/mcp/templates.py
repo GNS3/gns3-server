@@ -22,9 +22,8 @@ Handlers receive (params, gns3_ctx) and call GNS3's REST API
 via Gns3Connector (from gns3_copilot.gns3_client.connector).
 """
 
-from typing import Any
-
 import logging
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -173,7 +172,7 @@ def delete_template_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
         template_id = matches[0]["template_id"]
 
     conn.http_call("delete", f"{conn.base_url}/templates/{template_id}")
-    return {"message": f"Template deleted"}
+    return {"message": "Template deleted"}
 
 
 # ── Tool definitions ───────────────────────────────────────────────────────

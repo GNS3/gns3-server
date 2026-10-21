@@ -19,27 +19,32 @@
 # This file contains the validation for checking a .gns3 file
 #
 
+from enum import StrEnum
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 from .computes import Compute
 from .drawings import Drawing
 from .links import Link
 from .nodes import Node
-
 from .projects import Supplier, Variable
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
-from uuid import UUID
+
+class TopologyLink(Link):
+    # Legacy topology files store filters as untyped dicts
+    filters: Optional[dict] = None
 
 
-class TopologyType(str, Enum):
+class TopologyType(StrEnum):
     topology = "topology"
 
 
 class TopologyContent(BaseModel):
     computes: List[Compute] = Field(..., description="List of computes")
     drawings: List[Drawing] = Field(..., description="List of drawings")
-    links: List[Link] = Field(..., description="List of links")
+    links: List[TopologyLink] = Field(..., description="List of links")
     nodes: List[Node] = Field(..., description="List of nodes")
 
 

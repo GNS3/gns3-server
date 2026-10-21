@@ -16,14 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
-import re
-import shlex
-import textwrap
-import posixpath
-import socket
 import errno
 import hashlib
+import posixpath
+import re
+import socket
+import textwrap
 
 
 def force_unix_path(path):
@@ -50,7 +48,7 @@ def int_to_macaddress(integer):
     """
     Convert an integer to a mac address
     """
-    return ":".join(textwrap.wrap("%012x" % (integer), width=2))
+    return ":".join(textwrap.wrap(f"{integer:012x}", width=2))
 
 
 def parse_version(version):
@@ -72,7 +70,7 @@ def parse_version(version):
             info = int(info)
             # We pad with zero to compare only on string
             # This avoid issue when comparing version with different length
-            version.append("%06d" % (info,))
+            version.append(f"{info:06d}")
         except ValueError:
             # Force to a version with three number
             if len(version) == 1:
@@ -101,15 +99,26 @@ def is_ipv6_enabled() -> bool:
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.bind(("::1", 0))
-        return True
     except OSError as e:
         if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT):
             # EADDRNOTAVAIL is the errno if IPv6 modules/drivers are loaded but disabled.
             # EAFNOSUPPORT is the errno if IPv6 modules/drivers are not loaded at all.
             return False
         if e.errno == errno.EADDRINUSE:
-            return True
-        raise
+            pass
+        else:
+            raise
+
+    # Applications like SPICE resolve the listen address with AI_ADDRCONFIG,
+    # which fails (EAI_ADDRFAMILY) for "::" when the IPv6 stack is loaded but no
+    # non-loopback IPv6 address is configured on the host.
+    try:
+        socket.getaddrinfo(
+            "::", None, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE | socket.AI_ADDRCONFIG
+        )
+    except (socket.gaierror, UnicodeError):
+        return False
+    return True
 
 
 def md5sum(filename):

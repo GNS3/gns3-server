@@ -16,23 +16,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import html
 import copy
-import uuid
-import os
-
-from .controller_error import ControllerError, ControllerTimeoutError, ComputeError, ComputeConflictError
-from .node_types import BUILTIN_NODE_TYPES
-from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
-from ..utils.images import images_directories
-from ..utils.application_id import is_iol_runner_environment
-from ..utils import macaddress_to_int, int_to_macaddress
-from ..config import Config
-
-
+import html
 import logging
+import os
+import re
+import uuid
+
+from ..config import Config
+from ..utils import int_to_macaddress, macaddress_to_int
+from ..utils.application_id import is_iol_runner_environment
+from ..utils.images import images_directories
+from ..utils.vxlan import vxlan_device_name
+from .controller_error import ComputeConflictError, ComputeError, ControllerError, ControllerTimeoutError
+from .node_types import BUILTIN_NODE_TYPES
+from .ports.port_factory import DynamipsPortFactory, PortFactory, StandardPortFactory
 
 log = logging.getLogger(__name__)
+
+# The compute's error when it could not create a VXLAN tunnel device — the
+# wording is a same-repo contract with KernelDatapathMixin._kernel_error
+# (only computes running this codebase carry VXLAN links: the capability
+# gate keeps everything else on the relay), and the captured device name
+# identifies the link (a pure function of link id + node id).
+_VXLAN_CONFLICT_RE = re.compile(r"Could not create VXLAN device (?P<device>\S+)")
+
+# Node-start self-heal rounds over a refused VXLAN VNI: the first re-wires
+# the link on a fresh VNI, the second degrades it to the relay (whose NIOs
+# cannot hit the conflict) — a start must not fail permanently because
+# another link already registered the VNI on the shared dstport socket.
+_VXLAN_START_HEALS = 2
 
 
 # Image properties of a node, mapped by node type. The value is the image
@@ -45,6 +58,7 @@ IMAGE_PROPERTIES_BY_NODE_TYPE = {
         "hdc_disk_image": "qemu",
         "hdd_disk_image": "qemu",
         "cdrom_image": "qemu",
+        "cdrom2_image": "qemu",
         "initrd": "qemu",
         "kernel_image": "qemu",
         "bios_image": "qemu",
@@ -102,7 +116,9 @@ class Node:
         "default_password",
     ]
 
-    def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
+    def __init__(
+        self, project, compute, name, node_id=None, node_type=None, template_id=None, strict_names=False, **kwargs
+    ):
         """
         :param project: Project of the node
         :param compute: Compute where the server will run
@@ -110,6 +126,7 @@ class Node:
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
         :param template_id: Template ID used to create this node
+        :param strict_names: Fail instead of renaming the node when the name is already used
         :param kwargs: Node properties
         """
 
@@ -127,7 +144,7 @@ class Node:
         self._label = None
         self._links = set()
         self._name = None
-        self.name = name
+        self._name = project.update_node_name(self, name, strict=strict_names)
         self._console = None
         self._console_type = None
         self._aux = None
@@ -136,6 +153,7 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
+        self._status_changed = asyncio.Event()
         self._template_id = template_id
         self._x = 0
         self._y = 0
@@ -525,7 +543,9 @@ class Node:
                     res = False
                     if last_missing_image:
                         try:
-                            res = await self._upload_missing_image(self._node_type, last_missing_image)
+                            res = await self._upload_missing_image(
+                                self._node_type, last_missing_image, data.get("image_digest")
+                            )
                         except ControllerError as upload_error:
                             # For Docker the image is pulled from a registry: a
                             # failed pull (unknown tag, no network, private image)
@@ -707,6 +727,9 @@ class Node:
         old_properties = copy.deepcopy(self._properties)
         old_custom_adapters = copy.deepcopy(self._custom_adapters)
         old_missing_images = copy.deepcopy(self._missing_images)
+        # Values applied locally below, kept to roll the node back if the
+        # compute refuses the update (see the ComputeConflictError handler).
+        old_prop_values = {prop: getattr(self, prop) for prop in kwargs if prop != "properties"}
 
         compute_properties = None
         # Update node properties with additional elements
@@ -762,9 +785,20 @@ class Node:
             try:
                 response = await self.put(None, data=data)
             except ComputeConflictError:
+                # The compute refused the update: roll back everything applied
+                # locally. Keeping the requested values would leave the
+                # controller describing a node the compute never accepted, and
+                # the next project dump persists them — a refused change would
+                # then silently land the next time the node is created.
+                for prop, old_value in old_prop_values.items():
+                    setattr(self, prop, old_value)
                 if old_name != self.name:
                     # special case when the new name is already updated on controller but refused by the compute
                     self.name = old_name
+                self._properties = old_properties
+                self._custom_adapters = old_custom_adapters
+                self._missing_images = old_missing_images
+                self._list_ports()
                 raise
             await self.parse_node_response(response.json)
         elif old_json != self.asdict():
@@ -787,7 +821,7 @@ class Node:
             elif key == "command_line":
                 self._command_line = value
             elif key == "status":
-                self._status = value
+                self._set_status(value)
             elif key == "console_type":
                 self._console_type = value
             elif key == "aux_type":
@@ -867,6 +901,7 @@ class Node:
                 "hdc_disk_image",
                 "hdd_disk_image",
                 "cdrom_image",
+                "cdrom2_image",
                 "bios_image",
                 "initrd",
                 "kernel_image",
@@ -903,6 +938,17 @@ class Node:
     async def destroy(self):
         await self.delete()
 
+    async def wait_for_status(self, status):
+        """
+        Wait until the controller side status of the node matches
+
+        :param status: expected status
+        """
+
+        while self._status != status:
+            self._status_changed.clear()
+            await self._status_changed.wait()
+
     async def start(self, data=None):
         """
         Start a node
@@ -926,32 +972,109 @@ class Node:
                     f"Cannot start node '{self._name}': {len(failed_links)} deferred link(s) "
                     "could not be restored. Please try again."
                 )
-        try:
-            # For IOU: we need to send the licence everytime we start a node
-            if self.node_type == "iou":
-                license_check = self._project.controller.iou_license.get("license_check", True)
-                iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                await self.post(
-                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+        for heal in range(_VXLAN_START_HEALS + 1):
+            try:
+                await self._start_on_compute(data)
+                break
+            except TimeoutError:
+                raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+            except ComputeError as e:
+                conflicted = self._vxlan_conflicted_link(e)
+                if conflicted is None or heal == _VXLAN_START_HEALS:
+                    raise
+                degrade = heal > 0  # a second conflict takes the relay
+                log.warning(
+                    "Node '%s': start refused over a VXLAN VNI conflict on link %s — %s and retrying",
+                    self._name,
+                    conflicted.id,
+                    "degrading the link to the uBridge relay" if degrade else "re-wiring the link on a fresh VNI",
                 )
-            else:
-                await self.post("/start", data=data, timeout=240)
-        except asyncio.TimeoutError:
-            raise ControllerTimeoutError(f"Timeout when starting {self._name}")
+                # The refused start leaves the node half-started (the
+                # emulator process runs, the wiring partial) — stop it
+                # first: a start on a running container early-returns
+                # without wiring anything.
+                await self.stop()
+                if await self._project._redispatch_vxlan_links([conflicted], downgrade=degrade) and not degrade:
+                    # The fresh VNI was already refused before the start
+                    # could even retry — degrade the pair to the relay now.
+                    await self._project._redispatch_vxlan_links([conflicted], downgrade=True)
+        self._confirm_status("started")
+        # A started node may have brought kernel anchors into existence that
+        # a link needs to finish wiring (the Ethernet-switch fast path joins
+        # the peer's anchor on the switch side — see UDPLink.node_started).
+        for link in self._links:
+            await link.node_started(self)
 
-    async def stop(self):
+    async def _start_on_compute(self, data=None):
+        """
+        The compute-side start request (IOU carries its licence along).
+        """
+
+        # For IOU: we need to send the licence everytime we start a node
+        if self.node_type == "iou":
+            license_check = self._project.controller.iou_license.get("license_check", True)
+            iourc_content = self._project.controller.iou_license.get("iourc_content", None)
+            await self.post(
+                "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+            )
+        else:
+            await self.post("/start", data=data, timeout=240)
+
+    def _vxlan_conflicted_link(self, error):
+        """
+        The link whose VXLAN device a failed node start could not create,
+        or None for every other failure.
+
+        The compute's error names the device it could not create and the
+        name is a pure function of (link id, node id), so it identifies the
+        link with no extra API surface. An unmatched message — another
+        failure, a future wording change — simply leaves the error to
+        surface unchanged, which is exactly the behaviour without the heal.
+        """
+
+        match = _VXLAN_CONFLICT_RE.search(str(error))
+        if match is None:
+            return None
+        device = match.group("device")
+        for link in self._links:
+            if vxlan_device_name(link.id, self.id) == device and any(nio.get("vxlan") for nio in link._link_data):
+                return link
+        return None
+
+    async def stop(self, strict=False):
         """
         Stop a node
+
+        :param strict: Raise the errors reported by the compute instead of ignoring them
         """
         if self.missing_image:
             return
+        stopped = False
         try:
             await self.post("/stop", timeout=240, dont_connect=True)
-        # We don't care if a node is down at this step
+            stopped = True
         except (ComputeError, ControllerError):
-            pass
-        except asyncio.TimeoutError:
+            # We don't care if a node is down at this step
+            if strict:
+                raise
+        except TimeoutError:
             raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
+        if stopped:
+            self._confirm_status("stopped")
+
+    def _set_status(self, status):
+        self._status = status
+        self._status_changed.set()
+
+    def _confirm_status(self, status):
+        """
+        Record the state reached once the compute accepted a lifecycle call,
+        without waiting for the asynchronous compute notification
+        """
+
+        if not self.is_always_running():
+            self._set_status(status)
+        self.project.emit_notification("node.updated", self.asdict())
 
     async def suspend(self):
         """
@@ -959,8 +1082,9 @@ class Node:
         """
         try:
             await self.post("/suspend", timeout=240)
-        except asyncio.TimeoutError:
-            raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
+        except TimeoutError:
+            raise ControllerTimeoutError(f"Timeout when suspending {self._name}")
+        self._confirm_status("suspended")
 
     async def reload(self):
         """
@@ -968,8 +1092,9 @@ class Node:
         """
         try:
             await self.post("/reload", timeout=240)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
+        self._confirm_status("started")
 
     async def reset_console(self):
         """
@@ -979,7 +1104,7 @@ class Node:
         if self._console and self._console_type in ("telnet", "ssh"):
             try:
                 await self.post("/console/reset", timeout=240)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ControllerTimeoutError(f"Timeout when reset console {self._name}")
 
     async def get(self, path="", **kwargs):
@@ -1033,14 +1158,18 @@ class Node:
                 f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
             )
 
-    async def _upload_missing_image(self, type, img):
+    async def _upload_missing_image(self, type, img, image_digest=None):
         """
         Search an image on local computer and upload it to remote compute
         if the image exists
+
+        :param image_digest: digest pinned for this image in the create payload,
+            forwarded so the compute can translate it (see
+            _sync_missing_docker_image)
         """
 
         if self._node_type == "docker":
-            return await self._sync_missing_docker_image(img)
+            return await self._sync_missing_docker_image(img, image_digest)
 
         image = self._find_local_image(type, img)
         if image is None:
@@ -1050,7 +1179,7 @@ class Node:
             with open(image, "rb") as f:
                 await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
         except OSError as e:
-            raise ControllerError(f"Can't upload {image}: {str(e)}")
+            raise ControllerError(f"Can't upload {image}: {e!s}")
         self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
         return True
 
@@ -1077,11 +1206,17 @@ class Node:
         if image_id:
             data["image_digest"] = image_id
 
-    async def _sync_missing_docker_image(self, image):
+    async def _sync_missing_docker_image(self, image, image_digest=None):
         """
         Export a Docker image from the Docker daemon on the controller host and
         stream it to the remote compute, or ask the compute to pull it when the
         image is not available locally
+
+        :param image_digest: digest pinned for this image in the create payload.
+            It is sent along with the archive so the compute can remember how its
+            own daemon identifies the image it received: image ids are not
+            comparable across image stores, so the pin alone would keep being
+            reported as a mismatch after every sync.
         """
 
         from gns3server.compute.docker import Docker
@@ -1105,8 +1240,11 @@ class Node:
         self.project.emit_notification(
             "log.info", {"message": f"Syncing Docker image '{image}' to compute '{self._compute.name}'"}
         )
+        params = {"image": image}
+        if image_digest:
+            params["digest"] = image_digest
         try:
-            await self._compute.post("/docker/images/load", data=response.content, timeout=None)
+            await self._compute.post("/docker/images/load", data=response.content, timeout=None, params=params)
         finally:
             response.close()
         self.project.emit_notification(
@@ -1144,7 +1282,54 @@ class Node:
                 return port
         return None
 
+    def get_port_by_name(self, name):
+        """
+        Return the port with this name or None if the port is not found
+        """
+        for port in self.ports:
+            if port.name == name:
+                return port
+        return None
+
+    def get_free_port(self, link_type=None):
+        """
+        Return the lowest free port, optionally restricted to a link type,
+        or None if there is no such port
+        """
+        free_ports = [
+            port for port in self.ports if port.link is None and (link_type is None or port.link_type == link_type)
+        ]
+        if not free_ports:
+            return None
+        return min(free_ports, key=lambda port: (port.adapter_number, port.port_number))
+
     def _list_ports(self):
+        """
+        Rebuild the port list, preserving the link back-references.
+
+        The list is rebuilt on every node update (a property change or a
+        compute ``node.updated`` notification), which creates fresh Port
+        objects — but the links themselves are unaffected by that rebuild,
+        so a port that still exists must keep pointing at its link. Without
+        this the "Port is already used" guard in ``Link.add_node`` silently
+        stops matching after any node update and a second link gets created
+        on an occupied port (the compute then fails on the already-bound
+        NIO). Links are carried over by (adapter, port), first match wins,
+        mirroring ``get_port``.
+        """
+        preserved = {}
+        for port in self._ports or []:
+            if port.link is not None:
+                preserved.setdefault((port.adapter_number, port.port_number), port.link)
+
+        self._rebuild_ports()
+
+        for port in self._ports:
+            link = preserved.pop((port.adapter_number, port.port_number), None)
+            if link is not None and port.link is None:
+                port.link = link
+
+    def _rebuild_ports(self):
         """
         Generate the list of port display in the client
         if the compute has sent a list we return it (use by

@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import UUID
 
-from ..common import NodeStatus, ConsoleType
+from pydantic import BaseModel, Field
+
+from ..common import ConsoleType, NodeStatus
+from ..update import PartialUpdateModel
 
 
 class IOUBase(BaseModel):
@@ -26,9 +28,9 @@ class IOUBase(BaseModel):
     Common IOU node properties.
     """
 
-    name: str
-    path: str = Field(..., description="IOU executable path")
-    application_id: int = Field(..., description="Application ID for running IOU executable")
+    name: Optional[str] = None
+    path: Optional[str] = Field(None, description="IOU executable path")
+    application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
@@ -52,13 +54,17 @@ class IOUCreate(IOUBase):
     Properties to create an IOU node.
     """
 
-    pass
+    name: str
+    path: str = Field(..., description="IOU executable path")
+    application_id: int = Field(..., description="Application ID for running IOU executable")
 
 
-class IOUUpdate(IOUBase):
+class IOUUpdate(PartialUpdateModel, IOUBase):
     """
     Properties to update an IOU node.
     """
+
+    update_excluded_fields = ("node_id", "application_id")
 
     name: Optional[str] = None
     path: Optional[str] = Field(None, description="IOU executable path")
@@ -66,6 +72,9 @@ class IOUUpdate(IOUBase):
 
 
 class IOU(IOUBase):
+    name: str
+    path: str = Field(..., description="IOU executable path")
+    application_id: int = Field(..., description="Application ID for running IOU executable")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")

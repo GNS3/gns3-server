@@ -19,36 +19,39 @@
 FastAPI app
 """
 
-from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.exc import SQLAlchemyError
-from uvicorn.main import Server as UvicornServer
+from typing import Any, cast
 
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import (
     get_redoc_html,
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerBadRequestError,
-    ControllerTimeoutError,
-    ControllerForbiddenError,
-    ControllerUnauthorizedError,
-    ComputeConflictError,
-)
-
-from gns3server.api.routes import controller, index
-from gns3server.api.routes.compute import compute_api
-from gns3server.core import tasks
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from uvicorn.main import Server as UvicornServer
 
 # MCP is an optional feature — import only if dependencies are installed
 from gns3server.agent import MCP_AVAILABLE
+from gns3server.api.errors import customize_openapi_errors, error_response
+from gns3server.api.operation_ids import add_stub_routes, generate_operation_id
+from gns3server.api.routes import controller, index
+from gns3server.api.routes.compute import compute_api
+from gns3server.config import Config
+from gns3server.controller.controller_error import (
+    ComputeConflictError,
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+    ControllerTimeoutError,
+    ControllerUnauthorizedError,
+)
+from gns3server.core import tasks
+from gns3server.version import __api_version__
 
 if MCP_AVAILABLE:
     from gns3server.agent import mcp
@@ -59,12 +62,14 @@ else:
 
     _mcp_router = APIRouter(prefix="/mcp", tags=["MCP"])
 
-    @_mcp_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"])
+    @_mcp_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
     async def mcp_not_available(path: str = ""):
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="MCP is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
         )
+
+    add_stub_routes(_mcp_router, mcp_not_available, "not_available")
 
 
 import logging
@@ -72,15 +77,24 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class ControllerAPI(FastAPI):
+    def openapi(self) -> dict[str, Any]:
+        if self.openapi_schema is None:
+            customize_openapi_errors(super().openapi())
+        return cast(dict[str, Any], self.openapi_schema)
+
+
 def get_application() -> FastAPI:
 
-    application = FastAPI(
+    application = ControllerAPI(
         lifespan=tasks.lifespan,
         title="GNS3 controller API",
         description="This page describes the public controller API for GNS3",
-        version="3.0.0",
+        version=__api_version__,
+        servers=[{"url": "/"}],
         docs_url=None,
         redoc_url=None,
+        generate_unique_id_function=generate_operation_id,
     )
 
     application.add_middleware(
@@ -97,7 +111,12 @@ def get_application() -> FastAPI:
     application.mount("/v3/compute", compute_api, name="compute")
 
     # Register MCP routes (stub returns 501 if MCP dependencies are not installed)
-    application.include_router(_mcp_router, prefix="/v3", tags=["MCP"])
+    application.include_router(
+        _mcp_router,
+        prefix="/v3",
+        tags=["MCP"],
+        include_in_schema=Config.instance().settings.Server.openapi_include_ai,
+    )
 
     return application
 
@@ -118,7 +137,7 @@ def handle_exit(*args, **kwargs):
     unicorn_exit_handler(*args, **kwargs)
 
 
-UvicornServer.handle_exit = handle_exit
+UvicornServer.handle_exit = handle_exit  # type: ignore[method-assign]
 
 
 # Configure self-hosting JavaScript and CSS for docs
@@ -134,7 +153,7 @@ async def custom_swagger_ui_html():
     )
 
 
-@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+@app.get(cast(str, app.swagger_ui_oauth2_redirect_url), include_in_schema=False)
 async def swagger_ui_redirect():
     return get_swagger_ui_oauth2_redirect_html()
 
@@ -151,83 +170,75 @@ async def redoc_html():
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
-    log.error(f"Controller error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ControllerTimeoutError):
-    log.error(f"Controller timeout error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_408_REQUEST_TIMEOUT,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller timeout error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_408_REQUEST_TIMEOUT, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ControllerUnauthorizedError):
-    log.error(f"Controller unauthorized error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller unauthorized error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_401_UNAUTHORIZED, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ControllerForbiddenError):
-    log.error(f"Controller forbidden error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller forbidden error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_403_FORBIDDEN, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
-    log.error(f"Controller not found error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller not found error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_404_NOT_FOUND, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ControllerBadRequestError)
 async def controller_bad_request_error_handler(request: Request, exc: ControllerBadRequestError):
-    log.error(f"Controller bad request error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller bad request error in {request.url.path} ({method}): {exc}")
+    return error_response(status.HTTP_400_BAD_REQUEST, str(exc), exc.code, exc.details)
 
 
 @app.exception_handler(ComputeConflictError)
 async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
-    log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"message": str(exc)},
-    )
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller received error from compute for request '{exc.url()}' ({method}): {exc}")
+    return error_response(status.HTTP_409_CONFLICT, str(exc), exc.code, exc.details)
 
 
-# make sure the content key is "message", not "detail" per default
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail}, headers=exc.headers)
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return error_response(exc.status_code, exc.detail, headers=exc.headers)
 
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
-    log.error(f"Controller database error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"message": "Database error detected, please check logs to find details"},
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Controller database error in {request.url.path} ({method}): {exc}")
+    return error_response(
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "Database error detected, please check logs to find details",
+        "database_error",
     )
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
-    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"message": str(exc)})
+    method = getattr(request, "method", "WebSocket")
+    log.error(f"Request validation error in {request.url.path} ({method}): {exc}")
+    errors = [
+        {"loc": list(error.get("loc", ())), "msg": error.get("msg"), "type": error.get("type")}
+        for error in exc.errors()
+    ]
+    return error_response(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc), "validation_error", {"errors": errors})

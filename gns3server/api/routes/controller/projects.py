@@ -18,46 +18,70 @@
 API routes for projects.
 """
 
-import os
 import asyncio
+import logging
+import os
 import tempfile
-import aiofiles
 import time
 import urllib.parse
-import gns3server.utils.zipfile_zstd as zipfile
 
-import logging
+import aiofiles
+
+import gns3server.utils.zipfile_zstd as zipfile
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse, FileResponse
-from websockets.exceptions import ConnectionClosed, WebSocketException
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, StreamingResponse
+from websockets.exceptions import ConnectionClosed, WebSocketException
+
 from gns3server import schemas
-from gns3server.controller import Controller
-from gns3server.controller.project import Project
-from gns3server.controller.link import _UNSET
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
-from gns3server.controller.import_project import import_project as import_controller_project
+from gns3server.api.openapi import ZIP_MEDIA_TYPE, binary_request_body, binary_response
+from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
+from gns3server.controller import Controller, marker_replay
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.controller.export_project import export_project as export_controller_project
-from gns3server.controller import marker_replay
+from gns3server.controller.import_project import import_project as import_controller_project
+from gns3server.controller.link import _UNSET
 from gns3server.controller.marker_replay import SharkdError, SharkdMissingError
+from gns3server.controller.project import Project
+from gns3server.db.repositories.pools import ResourcePoolsRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.services.templates import TemplatesService
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
-from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.db.repositories.pools import ResourcePoolsRepository
-from gns3server.services.templates import TemplatesService
 
-from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 from .dependencies.authentication import get_current_active_user
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -75,11 +99,15 @@ def dep_project(project_id: UUID) -> Project:
 async def get_projects(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    name: Optional[str] = Query(None, description="Return only projects whose name exactly matches (case-sensitive)"),
 ) -> List[schemas.Project]:
     """
     Return all projects.
 
     Required privilege: Project.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the project name.
     """
 
     controller = Controller.instance()
@@ -88,7 +116,7 @@ async def get_projects(
 
     if current_user.is_superadmin:
         # super admin sees all projects
-        return [p.asdict() for p in controller.projects.values()]
+        return [p.asdict() for p in controller.projects.values() if name is None or p.name == name]
 
     # Batch ACE + resource pool check (3 DB queries regardless of project count)
     all_project_ids = list(controller.projects.keys())
@@ -99,6 +127,8 @@ async def get_projects(
     # Step 2: Filter direct ACE projects by created_by
     # Direct project sharing is only available through resource pools
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in direct_ace_ids and p.created_by == current_user.username:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
@@ -106,6 +136,8 @@ async def get_projects(
 
     # Step 3: Resource pool projects (no created_by filter)
     for p in controller.projects.values():
+        if name is not None and p.name != name:
+            continue
         if p.id in pool_accessible_ids:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
@@ -139,34 +171,51 @@ async def create_project(
     return project.asdict()
 
 
-@router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(has_privilege("Project.Audit"))])
-def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
+@router.get(
+    "/{project_id}",
+    response_model=schemas.Project,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+def get_project(response: Response, project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
 
     Required privilege: Project.Audit
     """
 
-    return project.asdict()
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.put(
     "/{project_id}",
     response_model=schemas.Project,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def update_project(
-    project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)
+    project_data: schemas.ProjectUpdate,
+    response: Response,
+    project: Project = Depends(dep_project),
+    if_match: Optional[str] = Depends(if_match_header),
 ) -> schemas.Project:
     """
     Update a project.
 
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
+
     Required privilege: Project.Modify
     """
 
-    await project.update(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.asdict()
+    async with serialize_updates(f"project:{project.id}"):
+        check_if_match(if_match, project.asdict())
+        await project.update(**jsonable_encoder(project_data, exclude_unset=True))
+    project_dict = project.asdict()
+    set_etag(response, project_dict)
+    return project_dict
 
 
 @router.delete(
@@ -188,7 +237,9 @@ async def delete_project(
     await rbac_repo.delete_all_ace_starting_with_path(f"/projects/{project.id}")
 
 
-@router.get("/{project_id}/stats", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/stats", response_model=schemas.ProjectStats, dependencies=[Depends(has_privilege("Project.Audit"))]
+)
 def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
     Return a project statistics.
@@ -199,7 +250,12 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     return project.stats()
 
 
-@router.get("/{project_id}/markers", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/markers",
+    response_model=Dict[str, schemas.ProjectMarker],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 def get_project_markers(project: Project = Depends(dep_project)) -> dict:
     """
     Return all traffic-insight markers across every link in the project.
@@ -230,6 +286,7 @@ async def _replay_response(awaitable):
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/range",
+    response_model=schemas.ReplayTimeline,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_range(
@@ -270,6 +327,7 @@ async def replay_tag_range(
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/frames",
+    response_model=schemas.ReplayFrames,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_frames(
@@ -310,6 +368,8 @@ async def replay_tag_frames(
 
 @router.get(
     "/{project_id}/markers/tags/{tag}/replay/frame/detail",
+    response_model=schemas.ReplayFrameDetail,
+    response_model_exclude_unset=True,
     dependencies=[Depends(has_privilege("Project.Audit"))],
 )
 async def replay_tag_frame_detail(
@@ -348,7 +408,12 @@ async def replay_tag_frame_detail(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/{project_id}/marker-definitions", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/marker-definitions",
+    response_model=Dict[str, schemas.MarkerDefinitionWithLinks],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
     """
     Return all project-level marker definitions with their bound link IDs.
@@ -370,6 +435,8 @@ def get_marker_definitions(project: Project = Depends(dep_project)) -> dict:
 
 @router.post(
     "/{project_id}/marker-definitions",
+    response_model=schemas.MarkerDefinition,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
@@ -397,7 +464,12 @@ async def create_marker_definition(
     return project.marker_definitions.get(name, {})
 
 
-@router.put("/{project_id}/marker-definitions/{def_name}", dependencies=[Depends(has_privilege("Project.Modify"))])
+@router.put(
+    "/{project_id}/marker-definitions/{def_name}",
+    response_model=schemas.MarkerDefinition,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Modify"))],
+)
 async def update_marker_definition(
     def_name: str, def_data: schemas.MarkerDefinitionCreate, project: Project = Depends(dep_project)
 ) -> dict:
@@ -484,7 +556,7 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
 
 @router.post(
     "/{project_id}/open",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
     dependencies=[Depends(has_privilege("Project.Allocate"))],
@@ -520,10 +592,20 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     return project.asdict()
 
 
-@router.get("/{project_id}/notifications", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/notifications",
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+    response_class=NDJSONResponse,
+    responses=NOTIFICATION_STREAM_RESPONSES,
+)
 async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
-    Receive project notifications about the controller from HTTP stream.
+    Receive project notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
+
+    The same messages are available as WebSocket text frames on `/v3/projects/{project_id}/notifications/ws`.
+    Marker events (`marker.match`) are not sent here, they are only available on
+    `/v3/projects/{project_id}/notifications/markers/ws`.
+    Project actions: `node.*`, `link.*`, `drawing.*`, `project.updated`, `snapshot.restored`, `log.*` and `ping`.
 
     Required privilege: Project.Audit
     """
@@ -541,7 +623,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
             with controller.notification.project_queue(project.id) as queue:
                 while not app.state.exiting:
                     msg = await queue.get_json(5)
-                    yield f"{msg}\n".encode("utf-8")
+                    yield f"{msg}\n".encode()
         finally:
             log.info(f"Client has disconnected from notification for project ID '{project.id}' (HTTP stream method)")
             if project.auto_close:
@@ -552,7 +634,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
                     log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                     await project.close()
 
-    return StreamingResponse(event_stream(), media_type="application/json")
+    return StreamingResponse(event_stream(), media_type=NDJSON_MEDIA_TYPE)
 
 
 @router.websocket("/{project_id}/notifications/ws")
@@ -562,7 +644,8 @@ async def project_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive project notifications about the controller from WebSocket.
+    Receive project notifications from a WebSocket, one Notification JSON object per text frame.
+    Same messages as the HTTP stream `/v3/projects/{project_id}/notifications`.
 
     Required privilege: Project.Audit
     """
@@ -600,8 +683,8 @@ async def project_marker_ws_notifications(
     current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit")),
 ) -> None:
     """
-    Receive marker notifications (e.g. marker.match) for a project on a
-    dedicated WebSocket, separate from the main project stream so high-frequency
+    Receive marker notifications (`marker.match`, see the Notification schema) for a project on a
+    dedicated WebSocket, one JSON object per text frame, separate from the main project stream so high-frequency
     marker.matches do not block topology events (node.*/link.*).
 
     Required privilege: Project.Audit
@@ -629,15 +712,20 @@ async def project_marker_ws_notifications(
         log.warning(f"Error while sending marker event to WebSocket client: {e}")
 
 
-@router.get("/{project_id}/export", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/export",
+    response_class=StreamingResponse,
+    responses={200: binary_response(ZIP_MEDIA_TYPE, "Portable project archive")},
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def export_project(
     project: Project = Depends(dep_project),
     include_snapshots: bool = False,
     include_images: bool = False,
     reset_mac_addresses: bool = False,
     keep_compute_ids: bool = False,
-    compression: schemas.ProjectCompression = "zstd",
-    compression_level: int = None,
+    compression: schemas.ProjectCompression = schemas.ProjectCompression.zstd,
+    compression_level: Optional[int] = None,
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
@@ -650,19 +738,19 @@ async def export_project(
 
     compression_query = compression.lower()
     if compression_query == "zip":
-        compression = zipfile.ZIP_DEFLATED
+        zip_compression = zipfile.ZIP_DEFLATED
         if compression_level is not None and (compression_level < 0 or compression_level > 9):
             raise ControllerBadRequestError("Compression level must be between 0 and 9 for ZIP compression")
     elif compression_query == "none":
-        compression = zipfile.ZIP_STORED
+        zip_compression = zipfile.ZIP_STORED
     elif compression_query == "bzip2":
-        compression = zipfile.ZIP_BZIP2
+        zip_compression = zipfile.ZIP_BZIP2
         if compression_level is not None and (compression_level < 1 or compression_level > 9):
             raise ControllerBadRequestError("Compression level must be between 1 and 9 for BZIP2 compression")
     elif compression_query == "lzma":
-        compression = zipfile.ZIP_LZMA
+        zip_compression = zipfile.ZIP_LZMA
     elif compression_query == "zstd":
-        compression = zipfile.ZIP_ZSTANDARD
+        zip_compression = zipfile.ZIP_ZSTANDARD
         if compression_level is not None and (compression_level < 1 or compression_level > 22):
             raise ControllerBadRequestError("Compression level must be between 1 and 22 for Zstandard compression")
 
@@ -681,7 +769,7 @@ async def export_project(
                 f"Exporting project '{project.name}' with '{compression_query}' compression (level {compression_level})"
             )
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
-                with aiozipstream.ZipFile(compression=compression, compresslevel=compression_level) as zstream:
+                with aiozipstream.ZipFile(compression=zip_compression, compresslevel=compression_level) as zstream:
                     await export_controller_project(
                         zstream,
                         project,
@@ -715,9 +803,15 @@ async def export_project(
     "/{project_id}/import",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
+    openapi_extra=binary_request_body(ZIP_MEDIA_TYPE),
     dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
-async def import_project(project_id: UUID, request: Request, name: Optional[str] = None) -> schemas.Project:
+async def import_project(
+    project_id: UUID,
+    request: Request,
+    name: Optional[str] = None,
+    current_user: schemas.User = Depends(get_current_active_user),
+) -> schemas.Project:
     """
     Import a project from a portable archive.
 
@@ -736,7 +830,13 @@ async def import_project(project_id: UUID, request: Request, name: Optional[str]
                 async for chunk in request.stream():
                     await f.write(chunk)
             with open(temp_project_path, "rb") as f:
-                project = await import_controller_project(controller, str(project_id), f, name=name)
+                project = await import_controller_project(
+                    controller,
+                    str(project_id),
+                    f,
+                    name=name,
+                    user=current_user.username,
+                )
 
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
@@ -839,7 +939,12 @@ async def unlock_project(project: Project = Depends(dep_project)) -> None:
     project.unlock()
 
 
-@router.get("/{project_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/files/{file_path:path}",
+    response_class=FileResponse,
+    responses={200: binary_response(description="File content")},
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def get_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return a file from a project.
@@ -861,7 +966,17 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
     return FileResponse(path, media_type="application/octet-stream")
 
 
-@router.get("/{project_id}/gns3file", dependencies=[Depends(has_privilege("Project.Audit"))])
+@router.get(
+    "/{project_id}/gns3file",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "description": "Project topology file",
+            "content": {"application/json": {"schema": {"type": "object"}}},
+        }
+    },
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
 async def get_project_gns3_file(project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return the .gns3 topology file of a project.
@@ -879,6 +994,7 @@ async def get_project_gns3_file(project: Project = Depends(dep_project)) -> File
 @router.post(
     "/{project_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Project.Modify"))],
 )
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:

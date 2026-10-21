@@ -15,18 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .base import Base
 from .acl import ACE
-from .users import User, UserGroup
-from .roles import Role
-from .privileges import Privilege
-from .computes import Compute
-from .images import Image
-from .pools import Resource, ResourcePool
-from .llm_model_configs import LLMModelConfig
 from .api_keys import ApiKey
+from .base import Base
+from .computes import Compute
+from .images import Image, ImageSyncJob
+from .llm_model_configs import LLMModelConfig
+from .pools import Resource, ResourcePool
+from .privileges import Privilege
+from .roles import Role
 from .templates import (
-    Template,
     CloudTemplate,
     DockerTemplate,
     DynamipsTemplate,
@@ -34,7 +32,36 @@ from .templates import (
     EthernetSwitchTemplate,
     IOUTemplate,
     QemuTemplate,
+    Template,
     VirtualBoxTemplate,
     VMwareTemplate,
     VPCSTemplate,
 )
+from .users import User, UserGroup
+
+__all__ = [
+    "ACE",
+    "ApiKey",
+    "Base",
+    "CloudTemplate",
+    "Compute",
+    "DockerTemplate",
+    "DynamipsTemplate",
+    "EthernetHubTemplate",
+    "EthernetSwitchTemplate",
+    "IOUTemplate",
+    "Image",
+    "ImageSyncJob",
+    "LLMModelConfig",
+    "Privilege",
+    "QemuTemplate",
+    "Resource",
+    "ResourcePool",
+    "Role",
+    "Template",
+    "User",
+    "UserGroup",
+    "VMwareTemplate",
+    "VPCSTemplate",
+    "VirtualBoxTemplate",
+]

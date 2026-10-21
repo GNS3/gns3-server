@@ -18,20 +18,23 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, Body, Depends, status
-from typing import Any, List, Union, Optional
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, Query, status
+
+import gns3server.db.models as models
+from gns3server import schemas
 from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services.computes import ComputesService
-from gns3server import schemas
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Compute not found"}}
+responses: dict[int | str, dict[str, Any]] = {404: {"model": schemas.ErrorMessage, "description": "Compute not found"}}
 
 router = APIRouter(responses=responses)
 
@@ -51,14 +54,14 @@ async def create_compute(
     compute_create: schemas.ComputeCreate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
     connect: Optional[bool] = False,
-) -> schemas.Compute:
+) -> models.Compute:
     """
     Create a new compute on the controller.
 
     Required privilege: Compute.Allocate
     """
 
-    return await ComputesService(computes_repo).create_compute(compute_create, connect)
+    return await ComputesService(computes_repo).create_compute(compute_create, bool(connect))
 
 
 @router.post(
@@ -78,6 +81,42 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
         await compute.connect(report_failed_connection=True)
 
 
+@router.post(
+    "/{compute_id}/disconnect",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Compute is used by opened projects"}},
+    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+)
+async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool] = False) -> None:
+    """
+    Disconnect from a compute on the controller.
+
+    The compute is not reconnected until an explicit connection is requested,
+    or the controller restarts with auto_connect enabled for this compute.
+
+    Rejected with 409 when an opened project still uses the compute, unless
+    force is true. Forcing does not stop anything on the compute: only the
+    controller-side control channel (notification stream and HTTP session) is
+    torn down, nodes keep running unmanaged.
+
+    Required privilege: Compute.Audit
+    """
+
+    if str(compute_id) == "local":
+        raise ControllerBadRequestError("Cannot disconnect the local compute")
+    controller = Controller.instance()
+    compute = controller.get_compute(str(compute_id))
+    if not force:
+        open_projects = controller.get_compute_open_projects(compute)
+        if open_projects:
+            project_names = ", ".join(f"'{project.name}'" for project in open_projects)
+            raise ControllerError(
+                f"Compute '{compute_id}' is used by opened projects ({project_names}), "
+                "disconnect anyway with force=true"
+            )
+    await compute.disconnect()
+
+
 @router.get(
     "/{compute_id}",
     response_model=schemas.Compute,
@@ -86,7 +125,7 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
 )
 async def get_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
-) -> schemas.Compute:
+) -> Union[models.Compute, dict]:
     """
     Return a compute from the controller.
 
@@ -104,14 +143,21 @@ async def get_compute(
 )
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-) -> List[schemas.Compute]:
+    name: Optional[str] = Query(None, description="Return only computes whose name exactly matches (case-sensitive)"),
+) -> List[models.Compute]:
     """
     Return all computes known by the controller.
 
     Required privilege: Compute.Audit
+
+    Query Parameters:
+    - name: Exact, case-sensitive match on the compute name.
     """
 
-    return await ComputesService(computes_repo).get_computes()
+    computes = await ComputesService(computes_repo).get_computes()
+    if name is not None:
+        computes = [compute for compute in computes if compute.name == name]
+    return computes
 
 
 @router.put(
@@ -124,7 +170,7 @@ async def update_compute(
     compute_id: Union[str, UUID],
     compute_update: schemas.ComputeUpdate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
-) -> schemas.Compute:
+) -> models.Compute:
     """
     Update a compute on the controller.
 
@@ -203,7 +249,7 @@ async def vmware_vms(compute_id: Union[str, UUID]) -> List[schemas.ComputeVMware
     return result
 
 
-@router.post("/{compute_id}/dynamips/auto_idlepc")
+@router.post("/{compute_id}/dynamips/auto_idlepc", response_model=schemas.IdlePC)
 async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC):
     """
     Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.

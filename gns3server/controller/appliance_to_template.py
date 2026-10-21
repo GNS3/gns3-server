@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2021 GNS3 Technologies Inc.
 #
@@ -18,6 +17,7 @@
 
 
 import logging
+
 from .controller_error import ControllerError
 
 log = logging.getLogger(__name__)

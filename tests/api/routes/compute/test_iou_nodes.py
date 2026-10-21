@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,18 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import os
 import stat
 import uuid
-
-from fastapi import FastAPI, status
-from httpx import AsyncClient
-from tests.utils import asyncio_patch
 from unittest.mock import patch
 
+import pytest
+import pytest_asyncio
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.compute.project import Project
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -297,6 +296,40 @@ class TestIOUNodesRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["type"] == "nio_udp"
         assert response.json()["filters"] == {}
+
+    async def test_iou_nio_update_carries_suspend_and_bridge(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        """
+        A kernel-datapath NIO (nio_bridge) is accepted on the IOU routes, and
+        the update body's suspend flag reaches the NIO — the compute turns it
+        into an admin-down anchor, so a dropped suspend would leave a
+        "suspended" link forwarding traffic.
+        """
+
+        url = app.url_path_for(
+            "compute:create_iou_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="1",
+            port_number="0",
+        )
+        params = {"type": "nio_bridge", "bridge": "gns3a1b2c3d4e5f"}
+        response = await compute_client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["type"] == "nio_bridge"
+
+        url = app.url_path_for(
+            "compute:update_iou_node_nio",
+            project_id=vm["project_id"],
+            node_id=vm["node_id"],
+            adapter_number="1",
+            port_number="0",
+        )
+        params["suspend"] = True
+        response = await compute_client.put(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["suspend"] is True
 
     async def test_iou_nio_create_ethernet(
         self, app: FastAPI, compute_client: AsyncClient, vm: dict, ethernet_device: str

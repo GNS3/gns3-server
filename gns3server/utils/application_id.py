@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from gns3server.controller.controller_error import ControllerError
-
 import logging
+
+from gns3server.controller.controller_error import ControllerError
 
 log = logging.getLogger(__name__)
 

@@ -33,9 +33,9 @@ from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.services import access_ticket_service
 from gns3server.services.access_tickets import (
-    AccessTicketService,
     DEFAULT_TICKET_TTL,
     TICKET_PREFIX,
+    AccessTicketService,
 )
 from gns3server.utils.http_client import HTTPClient
 from tests.api.routes.controller.test_nodes import FakeComputeConsoleWebSocket

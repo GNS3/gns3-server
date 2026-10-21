@@ -18,27 +18,27 @@
 VMware player/workstation server module.
 """
 
-import os
-import sys
-import re
-import shutil
 import asyncio
-import subprocess
-import logging
 import codecs
 import ipaddress
+import logging
+import os
+import re
 import shlex
-
+import shutil
+import subprocess
+import sys
 from collections import OrderedDict
-from gns3server.utils.interfaces import interfaces
-from gns3server.utils.asyncio import subprocess_check_output
+
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import subprocess_check_output
+from gns3server.utils.interfaces import interfaces
 
 log = logging.getLogger(__name__)
 
 from gns3server.compute.base_manager import BaseManager
-from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware.vmware_error import VMwareError
+from gns3server.compute.vmware.vmware_vm import VMwareVM
 
 
 class VMware(BaseManager):
@@ -237,16 +237,16 @@ class VMware(BaseManager):
                         vmnet = f"vmnet{match.group(1)}"
                         if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
                             vmnet_interfaces[vmnet] = {}
-            with open(vmware_networking_file, "r", encoding="utf-8") as f:
+            with open(vmware_networking_file, encoding="utf-8") as f:
                 for line in f.read().splitlines():
                     match = re.search(r"VNET_([0-9]+)_HOSTONLY_SUBNET\s+(.*)", line)
                     if match:
-                        vmnet = "vmnet{}".format(match.group(1))
+                        vmnet = f"vmnet{match.group(1)}"
                         if vmnet in vmnet_interfaces.keys():
                             vmnet_interfaces[vmnet]["subnet"] = match.group(2)
                     match = re.search(r"VNET_([0-9]+)_HOSTONLY_NETMASK\s+(.*)", line)
                     if match:
-                        vmnet = "vmnet{}".format(match.group(1))
+                        vmnet = f"vmnet{match.group(1)}"
                         if vmnet in vmnet_interfaces.keys():
                             vmnet_interfaces[vmnet]["netmask"] = match.group(2)
 
@@ -305,7 +305,7 @@ class VMware(BaseManager):
 
     def refresh_vmnet_list(self, ubridge=True):
 
-        log.debug("Refreshing VMnet list with uBridge={}".format(ubridge))
+        log.debug(f"Refreshing VMnet list with uBridge={ubridge}")
 
         if ubridge:
             # VMnet host adapters must be present when uBridge is used
@@ -315,7 +315,7 @@ class VMware(BaseManager):
             self._vmnets_info = vmnet_interfaces.copy()
             vmnet_interfaces = list(vmnet_interfaces.keys())
 
-        log.debug("Found {} VMnet interfaces".format(len(vmnet_interfaces)))
+        log.debug(f"Found {len(vmnet_interfaces)} VMnet interfaces")
         # remove vmnets already in use
         for vmware_vm in self._nodes.values():
             for used_vmnet in vmware_vm.vmnets:
@@ -326,7 +326,7 @@ class VMware(BaseManager):
         # remove vmnets that are not managed
         for vmnet in vmnet_interfaces.copy():
             if vmnet in vmnet_interfaces and self.is_managed_vmnet(vmnet) is False:
-                log.debug("{} is not managed by GNS3".format(vmnet))
+                log.debug(f"{vmnet} is not managed by GNS3")
                 vmnet_interfaces.remove(vmnet)
 
         self._vmnets = vmnet_interfaces
@@ -344,7 +344,7 @@ class VMware(BaseManager):
 
         return self._host_type
 
-    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         trial = 2
 
         while True:
@@ -361,7 +361,7 @@ class VMware(BaseManager):
                     trial -= 1
                     await asyncio.sleep(0.5)
 
-    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):  # noqa: ASYNC109 - operation-specific timeout is intentional
         if self.host_type is None:
             await self.check_vmware_version()
 
@@ -382,7 +382,7 @@ class VMware(BaseManager):
 
         try:
             stdout_data, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise VMwareError(
                 f"vmrun has timed out after {timeout} seconds!\nTry to run {command_string} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus."
             )
@@ -677,9 +677,7 @@ class VMware(BaseManager):
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
                     if not os.path.isdir(default_vm_path):
                         raise VMwareError(
-                            'Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'.format(
-                                default_vm_path=default_vm_path, vmware_preferences_path=vmware_preferences_path
-                            )
+                            f'Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'
                         )
                     vmware_vms = self._get_vms_from_directory(default_vm_path)
 

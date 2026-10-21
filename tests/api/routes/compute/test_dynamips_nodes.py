@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,12 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import sys
 import os
 import stat
-
 from unittest.mock import patch
+
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 

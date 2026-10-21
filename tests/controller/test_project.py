@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,26 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
+import os
 import uuid
-import pytest
-import pytest_asyncio
-from unittest.mock import MagicMock
-from tests.utils import AsyncioMagicMock, asyncio_patch
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from gns3server.controller.project import Project
+import pytest
+import pytest_asyncio
+
+from gns3server.controller.controller_error import (
+    ComputeConflictError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerNotFoundError,
+)
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
-from gns3server.controller.controller_error import (
-    ControllerError,
-    ControllerNotFoundError,
-    ControllerForbiddenError,
-    ComputeConflictError,
-)
-from gns3server.config import Config
+from gns3server.controller.project import Project
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -124,7 +122,7 @@ async def test_update_on_compute(controller):
     project._project_created_on_compute = [compute]
     project.emit_notification = MagicMock()
     await project.update(variables=variables)
-    compute.put.assert_any_call("/projects/{}".format(project.id), {"variables": variables})
+    compute.put.assert_any_call(f"/projects/{project.id}", {"variables": variables})
 
 
 @pytest.mark.asyncio
@@ -205,7 +203,7 @@ async def test_add_node_local(controller):
         },
     )
     compute.post.assert_any_call(
-        "/projects/{}/vpcs/nodes".format(project.id),
+        f"/projects/{project.id}/vpcs/nodes",
         data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
         timeout=1200,
     )
@@ -274,7 +272,7 @@ async def test_add_node_non_local(controller):
 
     compute.post.assert_any_call("/projects", data={"name": project._name, "project_id": project._id})
     compute.post.assert_any_call(
-        "/projects/{}/vpcs/nodes".format(project.id),
+        f"/projects/{project.id}/vpcs/nodes",
         data={"node_id": node.id, "startup_script": "test.cfg", "name": "test"},
         timeout=1200,
     )
@@ -450,7 +448,7 @@ async def test_add_node_iou_no_id_available(controller):
     with pytest.raises(ControllerError):
         for i in range(1, 513):
             prop = {"properties": {"application_id": i}}
-            project._nodes[i] = Node(project, compute, "Node{}".format(i), node_id=i, node_type="iou", **prop)
+            project._nodes[i] = Node(project, compute, f"Node{i}", node_id=i, node_type="iou", **prop)
         await project.add_node(compute, "test1", None, node_type="iou")
 
 
@@ -540,7 +538,7 @@ async def test_delete_node(controller):
     await project.delete_node(node.id)
     assert node.id not in project._nodes
 
-    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
+    compute.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node.id}")
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
 
 
@@ -587,7 +585,7 @@ async def test_delete_node_delete_link(controller):
     assert node.id not in project._nodes
     assert link.id not in project._links
 
-    compute.delete.assert_any_call("/projects/{}/vpcs/nodes/{}".format(project.id, node.id))
+    compute.delete.assert_any_call(f"/projects/{project.id}/vpcs/nodes/{node.id}")
     project.emit_notification.assert_any_call("node.deleted", node.asdict())
     project.emit_notification.assert_any_call("link.deleted", link.asdict())
 
@@ -1118,6 +1116,46 @@ async def test_node_name(project):
 
     node = await project.add_node(compute, "R3", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     assert node.name == "R3"
+
+
+@pytest.mark.asyncio
+async def test_node_name_strict(project):
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert node.name == "R1"
+    with pytest.raises(ControllerError):
+        await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert len(project.nodes) == 1
+
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=False)
+    assert node.name == "R2"
+    node = await project.add_node(compute, "T{0}", None, node_type="vpcs", strict_names=True)
+    assert node.name == "T1"
+    node = await project.add_node(compute, "T{0}", None, node_type="vpcs", strict_names=True)
+    assert node.name == "T2"
+
+
+@pytest.mark.asyncio
+async def test_node_name_released_when_creation_fails(project):
+
+    compute = MagicMock()
+    compute.id = "local"
+    compute.post = AsyncioMagicMock(side_effect=ControllerError("failure"))
+
+    with pytest.raises(ControllerError):
+        await project.add_node(compute, "R1", None, node_type="vpcs")
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+    node = await project.add_node(compute, "R1", None, node_type="vpcs", strict_names=True)
+    assert node.name == "R1"
 
 
 @pytest.mark.asyncio

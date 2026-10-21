@@ -14,15 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
+from enum import StrEnum
+from typing import List, Literal, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter
+from pydantic import BaseModel, Field
+
+from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
-class QemuPlatform(str, Enum):
+class QemuPlatform(StrEnum):
     aarch64 = "aarch64"
     alpha = "alpha"
     arm = "arm"
@@ -53,7 +55,7 @@ class QemuPlatform(str, Enum):
     xtensaeb = "xtensaeb"
 
 
-class QemuConsoleType(str, Enum):
+class QemuConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -66,7 +68,7 @@ class QemuConsoleType(str, Enum):
     none = "none"
 
 
-class QemuBootPriority(str, Enum):
+class QemuBootPriority(StrEnum):
     """
     Supported boot priority types.
     """
@@ -82,7 +84,7 @@ class QemuBootPriority(str, Enum):
     nd = "nd"
 
 
-class QemuOnCloseAction(str, Enum):
+class QemuOnCloseAction(StrEnum):
     """
     Supported actions when closing Qemu VM.
     """
@@ -92,7 +94,7 @@ class QemuOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class QemuProcessPriority(str, Enum):
+class QemuProcessPriority(StrEnum):
     realtime = "realtime"
     very_high = "very high"
     high = "high"
@@ -101,7 +103,7 @@ class QemuProcessPriority(str, Enum):
     very_low = "very low"
 
 
-class QemuAdapterType(str, Enum):
+class QemuAdapterType(StrEnum):
     """
     Supported Qemu VM adapter types.
     """
@@ -133,7 +135,7 @@ class QemuAdapterType(str, Enum):
     vmxnet3 = "vmxnet3"
 
 
-class QemuDiskInterfaceType(str, Enum):
+class QemuDiskInterfaceType(StrEnum):
     """
     Supported Qemu VM disk interface types.
     """
@@ -150,12 +152,15 @@ class QemuDiskInterfaceType(str, Enum):
     none = "none"
 
 
+QemuCdromInterface = Literal["ide", "sata"]
+
+
 class QemuBase(BaseModel):
     """
     Common Qemu node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
@@ -181,8 +186,12 @@ class QemuBase(BaseModel):
     hdd_disk_image_backing_file: Optional[str] = Field(None, description="QEMU hdd backing file disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
-    cdrom_image: Optional[str] = Field(None, description="QEMU cdrom image path")
-    cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU cdrom image checksum")
+    cdrom_image: Optional[str] = Field(None, description="QEMU first cdrom image path")
+    cdrom_interface: QemuCdromInterface = Field("ide", description="First CD/DVD interface")
+    cdrom2_interface: QemuCdromInterface = Field("ide", description="Second CD/DVD interface")
+    cdrom2_image: Optional[str] = Field(None, description="QEMU second cdrom image path")
+    cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU first cdrom image checksum")
+    cdrom2_image_md5sum: Optional[str] = Field(None, description="QEMU second cdrom image checksum")
     bios_image: Optional[str] = Field(None, description="QEMU bios image path")
     bios_image_md5sum: Optional[str] = Field(None, description="QEMU bios image checksum")
     initrd: Optional[str] = Field(None, description="QEMU initrd path")
@@ -219,21 +228,25 @@ class QemuCreate(QemuBase):
     Properties to create a Qemu node.
     """
 
+    name: str
     disk_images_to_reset: Optional[List[str]] = Field(
         None,
         description="Disk image properties whose stale linked-clone overlays must be recreated",
     )
 
 
-class QemuUpdate(QemuBase):
+class QemuUpdate(PartialUpdateModel, QemuBase):
     """
     Properties to update a Qemu node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 
 
 class Qemu(QemuBase):
+    name: str
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     command_line: str = Field(..., description="Last command line used to start IOU (read only)")

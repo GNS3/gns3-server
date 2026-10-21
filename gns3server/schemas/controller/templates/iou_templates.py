@@ -15,18 +15,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.iou_nodes import ConsoleType
-
-from pydantic import Field
 from typing import Optional
 
+from pydantic import Field
 
-class IOUTemplate(TemplateBase):
+from gns3server.schemas.compute.iou_nodes import ConsoleType
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
+
+
+class IOUTemplateBase(TemplateBase):
     category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = "multilayer_switch"
-    path: str = Field(..., description="Path of IOU executable")
+    path: Optional[str] = Field(None, description="Path of IOU executable")
     ethernet_adapters: Optional[int] = Field(2, ge=0, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, ge=0, description="Number of serial adapters")
     ram: Optional[int] = Field(1024, gt=0, description="Amount of RAM in MB")
@@ -35,7 +38,7 @@ class IOUTemplate(TemplateBase):
     startup_config: Optional[str] = Field("iou_l3_base_startup-config.txt", description="Startup-config of IOU")
     private_config: Optional[str] = Field("", description="Private-config of IOU")
     l1_keepalives: Optional[bool] = Field(
-        False,
+        True,
         description="Enable Layer 1 keepalives so IOU interfaces report accurate link state",
     )
     console_type: Optional[ConsoleType] = Field(ConsoleType.telnet, description="Console type")
@@ -44,5 +47,9 @@ class IOUTemplate(TemplateBase):
     )
 
 
-class IOUTemplateUpdate(IOUTemplate):
-    path: Optional[str] = Field(None, description="Path of IOU executable")
+class IOUTemplate(IOUTemplateBase):
+    path: str = Field(..., description="Path of IOU executable")
+
+
+class IOUTemplateUpdate(PartialUpdateModel, IOUTemplateBase):
+    update_excluded_fields = ("template_id",)

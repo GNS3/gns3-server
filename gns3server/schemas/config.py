@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-
-from enum import Enum
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, FilePath, DirectoryPath, field_validator, model_validator
+from enum import StrEnum
 from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, DirectoryPath, Field, FilePath, SecretStr, field_validator, model_validator
 
 
 class ControllerSettings(BaseModel):
@@ -126,12 +126,12 @@ class WebWiresharkSettings(BaseModel):
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
-class ServerProtocol(str, Enum):
+class ServerProtocol(StrEnum):
     http = "http"
     https = "https"
 
 
-class UbridgeControlTransport(str, Enum):
+class UbridgeControlTransport(StrEnum):
     # TCP control channel: -H host:port. ubridge now binds loopback by default,
     # so this is reachable only locally. Retained for backward compatibility.
     tcp = "tcp"
@@ -140,7 +140,7 @@ class UbridgeControlTransport(str, Enum):
     unix = "unix"
 
 
-class BuiltinSymbolTheme(str, Enum):
+class BuiltinSymbolTheme(StrEnum):
     classic = "Classic"
     affinity_square_blue = "Affinity-square-blue"
     affinity_square_red = "Affinity-square-red"
@@ -155,6 +155,9 @@ class ServerSettings(BaseModel):
         False, description="Local server mode, set by the --local command line argument (not meant to be set by hand)"
     )
     enable_http_auth: bool = Field(True, description="Enable compute HTTP authentication")
+    openapi_include_ai: bool = Field(
+        True, description="Include the AI Copilot, LLM and MCP routes in the generated OpenAPI specification"
+    )
     name: str = Field(
         f"{socket.gethostname()} (controller)",
         description="Server name, default is what is returned by socket.gethostname()",
@@ -183,7 +186,31 @@ class ServerSettings(BaseModel):
         description='Default symbol theme, e.g. "Classic" or "Affinity-square-blue"',
     )
     allow_raw_images: bool = Field(True, description="Allow raw images to be uploaded to the server")
+    enable_kernel_datapath: bool = Field(
+        True,
+        description="Wire eligible links (both endpoints on one compute, both able to anchor: Docker veth, "
+        "or QEMU when the compute's uBridge supports persistent TAPs) through kernel interfaces instead "
+        "of the uBridge UDP relay",
+    )
+    enable_vxlan_cross_compute: bool = Field(
+        False,
+        description="Wire eligible cross-compute links through kernel VXLAN tunnels (one device per endpoint, "
+        "uBridge's vxlan module) instead of the uBridge UDP relay. The kernel encapsulates/decapsulates, so "
+        "no user-space forwarding is involved; the price is MTU: a tunnel can only carry the underlay MTU "
+        "minus 50 bytes of outer headers, so enable this where the fabric between computes carries jumbo "
+        "frames. The relay stays the default and the fallback when a tunnel cannot be wired",
+    )
+    vxlan_dstport: int = Field(
+        4789,
+        ge=1,
+        le=65535,
+        description="UDP destination port every cross-compute VXLAN tunnel listens on. The kernel shares one "
+        "socket per port across all VXLAN devices, so all links of a deployment ride this one port — the "
+        "IANA-assigned VXLAN port by default. Change it when other VXLAN software on the computes already "
+        "listens on it: a shared socket merges their demux table with ours",
+    )
     auto_discover_images: bool = Field(True, description="Automatically discover images in the images directory")
+    image_sync_interval: int = Field(900, ge=10, description="Seconds between automatic image inventory scans")
     report_errors: bool = Field(True, description="Automatically send crash reports to the GNS3 team")
     additional_images_paths: List[str] = Field(
         default_factory=list,

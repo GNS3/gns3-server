@@ -19,7 +19,6 @@ Interface for Dynamips NIO bridge module ("nio_bridge").
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L538
 """
 
-import asyncio
 from .device import Device
 
 
@@ -55,9 +54,7 @@ class Bridge(Device):
         :param new_name: New name for this bridge
         """
 
-        await self._hypervisor.send(
-            'nio_bridge rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name)
-        )
+        await self._hypervisor.send(f'nio_bridge rename "{self._name}" "{new_name}"')
 
         self._name = new_name
 

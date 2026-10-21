@@ -19,24 +19,23 @@ Qemu server module.
 """
 
 import asyncio
+import logging
 import os
 import platform
-import shutil
-import shlex
-import sys
 import re
+import shlex
+import shutil
 import subprocess
+import sys
 
 from ...utils.asyncio import subprocess_check_output
 from ...utils.get_resource import get_resource
 from ..base_manager import BaseManager
-from ..error import NodeError, ImageMissingError
+from ..error import ImageMissingError, NodeError
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
 from .utils.guest_cid import get_next_guest_cid
 from .utils.ziputils import unpack_zip
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -178,7 +177,7 @@ class Qemu(BaseManager):
 
         qemu_img_path = shutil.which("qemu-img")
         if not qemu_img_path:
-            raise QemuError(f"Could not find qemu-img binary")
+            raise QemuError("Could not find qemu-img binary")
 
         try:
             if os.path.exists(disk_image_path):
@@ -239,41 +238,9 @@ class Qemu(BaseManager):
                 version = match.group(1)
                 return version
             else:
-                raise QemuError("Could not determine the swtpm version for '{}'".format(swtpm_path))
+                raise QemuError(f"Could not determine the swtpm version for '{swtpm_path}'")
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Error while looking for the swtpm version: {}".format(e))
-
-    @staticmethod
-    def get_haxm_windows_version():
-        """
-        Gets the HAXM version number (Windows).
-
-        :returns: HAXM version number. Returns None if HAXM is not installed.
-        """
-
-        assert sys.platform.startswith("win")
-        import winreg
-
-        hkey = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
-        )
-        version = None
-        for index in range(winreg.QueryInfoKey(hkey)[0]):
-            product_id = winreg.EnumKey(hkey, index)
-            try:
-                product_key = winreg.OpenKey(hkey, r"{}\InstallProperties".format(product_id))
-                try:
-                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith(
-                        "Hardware Accelerated Execution Manager"
-                    ):
-                        version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
-                        break
-                finally:
-                    winreg.CloseKey(product_key)
-            except OSError:
-                continue
-        winreg.CloseKey(hkey)
-        return version
+            raise QemuError(f"Error while looking for the swtpm version: {e}")
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):

@@ -175,7 +175,7 @@ class Gns3Connector:
             else:
                 raise HTTPError(f"v3 API authentication failed: {response.status_code} - {response.text}")
         except Exception as e:
-            raise HTTPError(f"v3 API authentication error: {str(e)}") from e
+            raise HTTPError(f"v3 API authentication error: {e!s}") from e
 
     def _is_token_expired(self) -> bool:
         """
@@ -273,7 +273,7 @@ class Gns3Connector:
         except Exception:
             # If JSON parsing fails, return error with original text
             return HTTPError(
-                f"Original Error: {str(e)}. GNS3 response text: {response.text}",
+                f"Original Error: {e!s}. GNS3 response text: {response.text}",
                 response=response,
             )
         return e

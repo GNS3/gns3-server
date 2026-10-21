@@ -14,11 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional, Tuple
-from enum import Enum
+from enum import StrEnum
+from typing import Annotated, List, Literal, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, ConfigDict, Discriminator, Field, field_validator, model_validator
+
+from ..common import ErrorMessage
+from ..update import PartialUpdateModel
 from .labels import Label
 
 
@@ -33,7 +36,33 @@ class LinkNode(BaseModel):
     label: Optional[Label] = None
 
 
-class LinkType(str, Enum):
+class LinkNodeCreate(BaseModel):
+    """
+    Link node data for link creation.
+
+    The port is given either by adapter_number and port_number, by port_name
+    or by port set to "auto" (first free compatible port).
+    """
+
+    node_id: UUID
+    adapter_number: Optional[int] = None
+    port_number: Optional[int] = None
+    port_name: Optional[str] = Field(None, description="Name of the port on the node")
+    port: Optional[Literal["auto"]] = Field(None, description='Use "auto" to select the first free compatible port')
+    label: Optional[Label] = None
+
+    @model_validator(mode="after")
+    def check_port_selector(self):
+        numbered = self.adapter_number is not None or self.port_number is not None
+        if numbered and (self.adapter_number is None or self.port_number is None):
+            raise ValueError("adapter_number and port_number must be given together")
+        forms = sum([numbered, self.port_name is not None, self.port is not None])
+        if forms != 1:
+            raise ValueError("exactly one of adapter_number and port_number, port_name or port must be given")
+        return self
+
+
+class LinkType(StrEnum):
     """
     Link type.
     """
@@ -52,6 +81,64 @@ class LinkStyle(BaseModel):
     control_offset: Optional[Tuple[float, float]] = None
 
 
+class LinkFilterType(StrEnum):
+    """
+    Packet filter type. The first five run on relay and kernel-datapath links
+    alike; the rest are kernel-datapath only (tc netem / cls_bpf / the eBPF
+    classifier on the host anchor).
+    """
+
+    frequency_drop = "frequency_drop"
+    packet_loss = "packet_loss"
+    delay = "delay"
+    corrupt = "corrupt"
+    bpf = "bpf"
+    rate = "rate"
+    reorder = "reorder"
+    gemodel = "gemodel"
+    duplicate = "duplicate"
+    seed = "seed"
+    limit = "limit"
+    quota = "quota"
+    window_drop = "window_drop"
+
+
+class LinkFilters(BaseModel):
+    """
+    Packet filters applied on a link. Each filter is an array of positional values.
+    A filter set to an empty array or to its disabled value (0, 0 for delay, empty text for bpf) is not applied.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    frequency_drop: Optional[List[Annotated[int, Field(ge=-1, le=32767)]]] = Field(
+        None,
+        max_length=1,
+        description="[frequency]: -1 drops every packet, N > 0 drops every Nth packet, 0 disables the filter",
+    )
+    packet_loss: Optional[List[Annotated[int, Field(ge=0, le=100)]]] = Field(
+        None,
+        max_length=1,
+        description="[chance]: percentage chance for a packet to be lost, 0 disables the filter",
+    )
+    delay: Optional[List[Annotated[int, Field(ge=0, le=32767)]]] = Field(
+        None,
+        max_length=2,
+        description="[latency, jitter] in milliseconds: latency must be 1 to 32767 unless both values are 0, "
+        "which disables the filter; jitter is 0 to 32767",
+    )
+    corrupt: Optional[List[Annotated[int, Field(ge=0, le=100)]]] = Field(
+        None,
+        max_length=1,
+        description="[chance]: percentage chance for a packet to be corrupted, 0 disables the filter",
+    )
+    bpf: Optional[List[str]] = Field(
+        None,
+        max_length=1,
+        description="[expressions]: BPF expressions, one per line, matching packets are dropped",
+    )
+
+
 class LinkBase(BaseModel):
     """
     Link data.
@@ -60,7 +147,12 @@ class LinkBase(BaseModel):
     nodes: Optional[List[LinkNode]] = Field(None, min_length=0, max_length=2)
     suspend: Optional[bool] = None
     link_style: Optional[LinkStyle] = None
-    filters: Optional[dict] = None
+    filters: Optional[dict] = Field(
+        None,
+        description="Packet filters applied on a link: filter type → array of positional values. "
+        "The vocabulary is capability-gated per link (see /available_filters) and validated by the "
+        "controller, so it is not enumerated here",
+    )
     markers: Optional[dict] = Field(
         None, description="Traffic-insight markers on this link: name → {bpf, tag, enabled}"
     )
@@ -69,10 +161,11 @@ class LinkBase(BaseModel):
 
 class LinkCreate(LinkBase):
     link_id: UUID = Field(default_factory=uuid4)
-    nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
+    # LinkNodeCreate narrows the port selector, so it cannot be a LinkNode subclass
+    nodes: List[LinkNodeCreate] = Field(..., min_length=2, max_length=2)  # type: ignore[assignment]
 
 
-class LinkUpdate(LinkBase):
+class LinkUpdate(PartialUpdateModel, LinkBase):
     pass
 
 
@@ -80,6 +173,12 @@ class Link(LinkBase):
     link_id: UUID
     project_id: Optional[UUID] = None
     link_type: Optional[LinkType] = None
+    kernel_datapath: Optional[bool] = Field(
+        None,
+        description="Read only property. True when this link is wired through kernel interfaces "
+        "(veth or TAP anchors enslaved to a per-link Linux bridge, both endpoints on one compute) "
+        "instead of the uBridge UDP relay",
+    )
     capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
     capture_file_name: Optional[str] = Field(
         None, description="Read only property. The name of the capture file if a capture is running"
@@ -95,6 +194,16 @@ class Link(LinkBase):
     )
 
 
+class LinkBatchResult(BaseModel):
+    """
+    Outcome of one link of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    link: Optional[Link] = Field(None, description="The created link, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the link could not be created")
+
+
 class UDPPortInfo(BaseModel):
     """
     UDP port information.
@@ -105,6 +214,7 @@ class UDPPortInfo(BaseModel):
     rhost: str
     rport: int
     type: str
+    kind: Literal["udp"]
 
 
 class EthernetPortInfo(BaseModel):
@@ -115,6 +225,10 @@ class EthernetPortInfo(BaseModel):
     node_id: UUID
     interface: str
     type: str
+    kind: Literal["ethernet"]
+
+
+LinkIfaceInfo = Annotated[Union[UDPPortInfo, EthernetPortInfo], Discriminator("kind")]
 
 
 class LinkCapture(BaseModel):
@@ -272,3 +386,81 @@ class MarkerDefinitionCreate(BaseModel):
     @classmethod
     def _both_to_none(cls, v):
         return None if v == "both" else v
+
+
+class Marker(BaseModel):
+    """
+    A traffic-insight marker attached to a link.
+    """
+
+    bpf: str = Field(..., description="libpcap BPF expression")
+    tag: Optional[int] = Field(None, description="Correlation id shared by markers replayed together")
+    enabled: bool = Field(True, description="Whether the marker is capturing")
+    color: Optional[str] = Field(None, description="Hex color used by the Web UI")
+    highlight_duration: Optional[int] = Field(None, description="Web UI highlight duration in milliseconds")
+    capture_node_id: Optional[str] = Field(None, description="Node whose uBridge hosts the marker")
+    direction: Optional[str] = Field(None, description="'tx' or 'rx', null for both directions")
+    data_link_type: Optional[str] = Field(None, description="pcap link-layer type of the capture file")
+    inherited_from: Optional[str] = Field(None, description="Project marker definition this marker was copied from")
+
+
+class ProjectMarker(Marker):
+    """
+    A marker in the project-wide aggregation, with the link and node it belongs to.
+    """
+
+    link_id: str
+    node_id: Optional[str] = None
+
+
+class MarkerDefinition(BaseModel):
+    """
+    A project-level marker definition inherited by every link.
+    """
+
+    bpf: str = Field(..., description="libpcap BPF expression")
+    tag: Optional[int] = Field(None, description="Correlation id shared by markers replayed together")
+    direction: Optional[str] = Field(None, description="'tx' or 'rx', null for both directions")
+    color: Optional[str] = Field(None, description="Hex color used by the Web UI")
+    highlight_duration: Optional[int] = Field(None, description="Web UI highlight duration in milliseconds")
+    data_link_type: Optional[str] = Field(None, description="pcap link-layer type of inherited markers")
+    paused: bool = Field(False, description="Whether the inherited markers are paused")
+
+
+class MarkerDefinitionWithLinks(MarkerDefinition):
+    """
+    A project-level marker definition with the links currently carrying a copy of it.
+    """
+
+    link_ids: List[str] = Field(..., description="Links carrying an inherited copy of the definition")
+
+
+class LinkWiresharkRestart(BaseModel):
+    """
+    Result of restarting the Wireshark window of a link capture.
+    """
+
+    status: str
+
+
+class LinkFilterParameter(BaseModel):
+    """
+    A parameter of a packet filter.
+    """
+
+    name: str
+    type: str
+    minimum: Optional[int] = None
+    maximum: Optional[int] = None
+    unit: Optional[str] = None
+
+
+class LinkFilterInfo(BaseModel):
+    """
+    A packet filter that can be applied to a link.
+    """
+
+    type: str = Field(..., description="Filter identifier used as key in the link 'filters' property")
+    name: str
+    description: str
+    parameters: List[LinkFilterParameter]

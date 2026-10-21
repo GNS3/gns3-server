@@ -16,16 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
+from datetime import datetime
+from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
-from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import as_declarative
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import CHAR, VARCHAR, TypeDecorator
 
 
-@as_declarative()
-class Base:
+class Base(DeclarativeBase):
     def asdict(self):
 
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
@@ -58,10 +59,10 @@ class GUID(TypeDecorator):
             return str(value)
         else:
             if not isinstance(value, uuid.UUID):
-                return "%.32x" % uuid.UUID(value).int
+                return f"{uuid.UUID(value).int:032x}"
             else:
                 # hexstring
-                return "%.32x" % value.int
+                return f"{value.int:032x}"
 
     def process_result_value(self, value, dialect):
         if value is None:
@@ -106,7 +107,9 @@ class BaseTable(Base):
     __abstract__ = True
 
     created_at = Column(DateTime, server_default=func.current_timestamp())
-    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
 
     __mapper_args__ = {"eager_defaults": True}
 

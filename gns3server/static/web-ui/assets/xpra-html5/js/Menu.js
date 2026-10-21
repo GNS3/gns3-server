@@ -42,6 +42,27 @@ SOFTWARE.
   const MENU_CLASS_NAME = "Menu";
   const VISIBLE_CLASS_NAME = "-visible";
 
+  function positionToolbarMenu(ul) {
+    if (!ul.closest("#menu_list")) return;
+
+    // Measure without the opening animation or a previous edge correction.
+    ul.style.left = "";
+    ul.style.right = "";
+    const viewportWidth = document.documentElement.clientWidth;
+    let bounds = ul.getBoundingClientRect();
+    if (bounds.right > viewportWidth && ul.id !== "menu_list") {
+      ul.style.left = "auto";
+      ul.style.right = "100%";
+      bounds = ul.getBoundingClientRect();
+    }
+
+    const shift = Math.max(0, -bounds.left) + Math.min(0, viewportWidth - bounds.right);
+    if (shift) {
+      ul.style.left = `${ul.offsetLeft + shift}px`;
+      ul.style.right = "auto";
+    }
+  }
+
   function showMenu() {
     const menu = this;
     const ul = $("ul", menu)[0];
@@ -61,8 +82,10 @@ SOFTWARE.
     }
 
     menu.classList.add(ACTIVE_CLASS_NAME);
-    ul.classList.add(ANIMATING_CLASS_NAME);
+    ul.classList.remove(ANIMATING_CLASS_NAME);
     ul.classList.add(VISIBLE_CLASS_NAME);
+    positionToolbarMenu(ul);
+    ul.classList.add(ANIMATING_CLASS_NAME);
     setTimeout(function() {
       ul.classList.remove(ANIMATING_CLASS_NAME);
     }, 25);

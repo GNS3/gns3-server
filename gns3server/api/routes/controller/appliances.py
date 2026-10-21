@@ -19,23 +19,21 @@ API routes for appliances.
 """
 
 import logging
+from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from typing import Optional, List, Union
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError, ControllerNotFoundError
-
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError, ControllerNotFoundError
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
-
 
 log = logging.getLogger(__name__)
 
@@ -84,12 +82,12 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
 
 @router.post(
     "/{appliance_id}/version",
+    response_model=schemas.Appliance,
+    response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Appliance.Allocate"))],
 )
-def add_appliance_version(
-    appliance_id: UUID, appliance_version: Union[schemas.ApplianceVersion, schemas.ApplianceVersionV8]
-) -> dict:
+def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersionCreate) -> dict:
     """
     Add a version to an appliance.
 
@@ -111,7 +109,7 @@ def add_appliance_version(
         if version.get("name") == appliance_version.name:
             raise ControllerError(message=f"Appliance '{appliance_id}' already has version '{appliance_version.name}'")
 
-    appliance.versions.append(appliance_version.model_dump(exclude_unset=True))
+    appliance.versions.append(appliance_version.model_dump(exclude_unset=True, exclude={"registry_version"}))
     return appliance.asdict()
 
 

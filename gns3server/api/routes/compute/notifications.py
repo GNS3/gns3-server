@@ -18,14 +18,15 @@
 API routes for compute notifications.
 """
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+import logging
 from typing import Union
+
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server.compute.notification_manager import NotificationManager
-from .dependencies.authentication import ws_compute_authentication
 
-import logging
+from .dependencies.authentication import ws_compute_authentication
 
 log = logging.getLogger(__name__)
 
@@ -39,14 +40,15 @@ async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(w
     """
 
     if websocket:
-        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
+        client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+        log.info(f"New client {client} has connected to compute WebSocket")
         try:
             with NotificationManager.instance().queue() as queue:
                 while True:
                     notification = await queue.get_json(5)
                     await websocket.send_text(notification)
         except (ConnectionClosed, WebSocketDisconnect):
-            log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
+            log.info(f"Client {client} has disconnected from compute WebSocket")
         except WebSocketException as e:
             log.warning(f"Error while sending to controller event to WebSocket client: {e}")
 
@@ -66,7 +68,7 @@ if __name__ == "__main__":
             <ul id='messages'>
             </ul>
             <script>
-                var ws = new WebSocket("ws://localhost:8000/notifications/ws");        
+                var ws = new WebSocket("ws://localhost:8000/notifications/ws");
                 ws.onmessage = function(event) {
                     var messages = document.getElementById('messages')
                     var message = document.createElement('li')

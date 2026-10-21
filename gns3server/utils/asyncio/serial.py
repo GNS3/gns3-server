@@ -17,8 +17,8 @@
 
 import asyncio
 
-from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.compute.error import NodeError
+from gns3server.utils.asyncio import wait_for_file_creation
 
 """
 This module handle connection to unix socket
@@ -66,7 +66,7 @@ async def _asyncio_open_serial_unix(path):
     try:
         # wait for VM to create the pipe file.
         await wait_for_file_creation(path)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         raise NodeError(f'Pipe file "{path}" is missing')
 
     output = SerialReaderWriterProtocol()

@@ -17,16 +17,14 @@
 
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.db.repositories.users import UsersRepository
+
 from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.schemas.controller.users import User
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.rbac import ACECreate
-from gns3server.controller import Controller
+from gns3server.schemas.controller.users import User
 
 pytestmark = pytest.mark.asyncio
 
@@ -59,7 +57,7 @@ class TestACLRoutes:
         await rbac_repo.create_ace(ace)
 
         # add an ACE on /projects to allow user to create a project
-        path = f"/projects"
+        path = "/projects"
         new_ace = {"path": path, "ace_type": "user", "user_id": str(test_user.user_id), "role_id": role_id}
 
         response = await authorized_client.post(app.url_path_for("create_ace"), json=new_ace)
@@ -99,7 +97,7 @@ class TestACLRoutes:
     async def test_get_ace(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
-        ace_in_db = await rbac_repo.get_ace_by_path(f"/projects")
+        ace_in_db = await rbac_repo.get_ace_by_path("/projects")
         response = await client.get(app.url_path_for("get_ace", ace_id=ace_in_db.ace_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["ace_id"] == str(ace_in_db.ace_id)
@@ -115,13 +113,13 @@ class TestACLRoutes:
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
-        ace_in_db = await rbac_repo.get_ace_by_path(f"/projects")
+        ace_in_db = await rbac_repo.get_ace_by_path("/projects")
 
-        update_ace = {"path": f"/appliances", "ace_type": "user", "user_id": str(test_user.user_id), "role_id": role_id}
+        update_ace = {"path": "/appliances", "ace_type": "user", "user_id": str(test_user.user_id), "role_id": role_id}
         response = await client.put(app.url_path_for("update_ace", ace_id=ace_in_db.ace_id), json=update_ace)
         assert response.status_code == status.HTTP_200_OK
         updated_ace_in_db = await rbac_repo.get_ace(ace_in_db.ace_id)
-        assert updated_ace_in_db.path == f"/appliances"
+        assert updated_ace_in_db.path == "/appliances"
 
     async def test_delete_ace(
         self,
@@ -131,7 +129,7 @@ class TestACLRoutes:
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
-        ace_in_db = await rbac_repo.get_ace_by_path(f"/appliances")
+        ace_in_db = await rbac_repo.get_ace_by_path("/appliances")
         response = await client.delete(app.url_path_for("delete_ace", ace_id=ace_in_db.ace_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -163,3 +161,8 @@ class TestACLRoutes:
 
         # the ACE should have been deleted after deleting the project
         assert not await rbac_repo.get_ace_by_path(path)
+
+    async def test_get_endpoints(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("endpoints"))
+        assert response.status_code == status.HTTP_200_OK

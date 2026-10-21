@@ -23,17 +23,17 @@ except ImportError:
     # Sentry SDK is not installed with deb package in order to simplify packaging
     SENTRY_SDK_AVAILABLE = False
 
-import os
-import sys
-import struct
-import platform
 import locale
+import logging
+import os
+import platform
+import struct
+import sys
+
 import distro
 
-from .version import __version__, __version_info__
 from .config import Config
-
-import logging
+from .version import __version__, __version_info__
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "https://26a1435b1f29ae4d00d775ea930b4e13@o19455.ingest.us.sentry.io/38482"
+    DSN = "https://620bb8bfb2526f9854faa175c56ea40e@o19455.ingest.us.sentry.io/38482"
     _instance = None
 
     def __init__(self):
@@ -77,14 +77,14 @@ class CrashReport:
                     dsn=CrashReport.DSN, release=__version__, default_integrations=False, integrations=[sentry_logging]
                 )
             except Exception as e:
-                log.error("Crash report could not be sent: {}".format(e))
+                log.error(f"Crash report could not be sent: {e}")
                 return
 
             tags = {
                 "os:name": platform.system(),
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
-                "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
+                "os:mac": f"{platform.mac_ver()[0]} {platform.mac_ver()[2]}",
                 "os:linux": distro.name(pretty=True),
             }
 
@@ -93,7 +93,7 @@ class CrashReport:
                     scope.set_tag(key, value)
 
             extra_context = {
-                "python:version": "{}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]),
+                "python:version": f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}",
                 "python:bit": struct.calcsize("P") * 8,
                 "python:encoding": sys.getdefaultencoding(),
                 "python:frozen": "{}".format(hasattr(sys, "frozen")),

@@ -20,10 +20,10 @@ This script tests:
 Run with: python test_vpcs_telnet.py
 """
 
+import os
 import sys
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-import os
+from unittest.mock import MagicMock, Mock, patch
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -116,7 +116,7 @@ class TestVPCSTelnetInit(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -165,7 +165,7 @@ class TestVPCSTelnetMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -208,7 +208,7 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -273,7 +273,7 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -353,7 +353,7 @@ class TestVPCSTelnetAnsiStripping(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import (
             VPCSTelnet,
         )
 
@@ -426,7 +426,6 @@ IP/MASK     : 192.168.1.20/24"""
 
     def test_send_command_calls_strip_ansi(self):
         """Test that send_command calls _strip_ansi_codes."""
-        from unittest.mock import patch
 
         instance = self.VPCSTelnet.__new__(self.VPCSTelnet)
 

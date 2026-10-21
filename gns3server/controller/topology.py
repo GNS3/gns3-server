@@ -15,36 +15,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import glob
 import html
 import json
-import uuid
-import glob
+import logging
+import os
 import shutil
+import uuid
 import zipfile
-import pydantic
-
 from typing import Optional
 
-from ..version import __version__
-from ..utils.qt import qt_font_to_style
-from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
-from .controller_error import ControllerError
-from .compute import Compute
-from .drawing import Drawing
-from .node import Node
-from .link import Link
+import pydantic
 
+from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
+from gns3server.schemas.controller.topology import Topology
 from gns3server.utils.hostname import (
     is_ios_hostname_valid,
     is_rfc1123_hostname_valid,
-    to_rfc1123_hostname,
     to_ios_hostname,
+    to_rfc1123_hostname,
 )
-from gns3server.schemas.controller.topology import Topology
-from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
 
-import logging
+from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
+from ..utils.qt import qt_font_to_style
+from ..version import __version__
+from .compute import Compute
+from .controller_error import ControllerError
+from .drawing import Drawing
+from .link import Link
+from .node import Node
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +52,7 @@ GNS3_FILE_FORMAT_REVISION = 10
 
 
 class DynamipsNodeValidation(DynamipsCreate):
-    name: Optional[str] = None
+    name: Optional[str] = None  # type: ignore[assignment]
 
 
 def _check_topology_schema(topo, path):
@@ -139,7 +138,7 @@ def load_topology(path):
         with open(path, encoding="utf-8") as f:
             topo = json.load(f)
     except (OSError, UnicodeDecodeError, ValueError) as e:
-        raise ControllerError(f"Could not load topology {path}: {str(e)}")
+        raise ControllerError(f"Could not load topology {path}: {e!s}")
 
     if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
         raise ControllerError(
@@ -154,7 +153,7 @@ def load_topology(path):
         try:
             shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         except OSError as e:
-            raise ControllerError(f"Can't write backup of the topology {path}: {str(e)}")
+            raise ControllerError(f"Can't write backup of the topology {path}: {e!s}")
         changed = True
         # update the version because we converted the topology
         topo["version"] = __version__
@@ -210,7 +209,7 @@ def load_topology(path):
             with open(path, "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
         except OSError as e:
-            raise ControllerError(f"Can't write the topology {path}: {str(e)}")
+            raise ControllerError(f"Can't write the topology {path}: {e!s}")
     return topo
 
 
@@ -326,7 +325,7 @@ def _convert_2_0_0_beta_2(topo, topo_path):
                 for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", f"i{dynamips_id}_*")):
                     shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
             except OSError as e:
-                raise ControllerError(f"Can't convert project {topo_path}: {str(e)}")
+                raise ControllerError(f"Can't convert project {topo_path}: {e!s}")
     return topo
 
 

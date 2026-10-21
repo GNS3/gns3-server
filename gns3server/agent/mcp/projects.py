@@ -22,9 +22,8 @@ Tool handlers receive (params, gns3_ctx) and call GNS3's REST API
 via Gns3Connector (from gns3_copilot.gns3_client.connector).
 """
 
-from typing import Any
-
 import logging
+from typing import Any
 
 log = logging.getLogger(__name__)
 

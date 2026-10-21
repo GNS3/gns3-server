@@ -143,7 +143,7 @@ class GNS3ProjectInfoTool(BaseTool):
 
         except Exception as e:
             logger.error("Error retrieving GNS3 project info: %s", str(e))
-            return {"error": f"Failed to retrieve project info: {str(e)}"}
+            return {"error": f"Failed to retrieve project info: {e!s}"}
 
 
 if __name__ == "__main__":

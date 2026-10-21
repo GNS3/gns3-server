@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil
-import pytest
-import uuid
 import os
+import shutil
+import uuid
+from unittest.mock import ANY, MagicMock
 
-from unittest.mock import MagicMock, ANY
-from tests.utils import AsyncioMagicMock, asyncio_patch
+import pytest
+
 from gns3server.compute.docker.docker_error import DockerError
-
+from gns3server.controller.controller_error import ComputeConflictError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
-from gns3server.controller.controller_error import ComputeConflictError, ControllerError
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest.fixture
@@ -312,7 +312,7 @@ async def test_create(node, compute):
 
     assert await node.create() is True
     data = {"console": 2048, "console_type": "vnc", "node_id": node.id, "startup_script": "echo test", "name": "demo"}
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
     assert node._console == 2048
     assert node._properties == {"startup_script": "echo test"}
 
@@ -359,7 +359,7 @@ async def test_create_image_missing_kept_in_degraded_state(project, compute, tmp
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/qemu/nodes".format(project.id),
+            f"/projects/{project.id}/qemu/nodes",
             {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"},
         )
 
@@ -390,7 +390,7 @@ async def test_create_image_missing_raises_by_default(project, compute, tmpdir, 
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/qemu/nodes".format(project.id),
+            f"/projects/{project.id}/qemu/nodes",
             {"message": "The image is missing", "image": "missing.qcow2", "exception": "ImageMissingError"},
         )
 
@@ -513,7 +513,7 @@ async def test_create_docker_image_missing_after_failed_pull(project, compute):
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/docker/nodes".format(project.id),
+            f"/projects/{project.id}/docker/nodes",
             {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"},
         )
 
@@ -544,7 +544,7 @@ async def test_create_docker_image_missing_pull_error_raises_by_default(project,
 
     async def resp(*args, **kwargs):
         raise ComputeConflictError(
-            "/projects/{}/docker/nodes".format(project.id),
+            f"/projects/{project.id}/docker/nodes",
             {"message": "The image is missing", "image": "ghost:latest", "exception": "ImageMissingError"},
         )
 
@@ -714,7 +714,7 @@ async def test_create_base_script(node, config, compute, tmpdir):
         "name": "demo",
     }
 
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
 
 
 def test_symbol(node, symbols_dir):
@@ -779,7 +779,7 @@ async def test_update(node, compute, project, controller):
 
     await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo")
     data = {"console": 2048, "console_type": "vnc", "startup_script": "echo test", "name": "demo"}
-    compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
+    compute.put.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}", data=data)
     assert node._console == 2048
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
@@ -799,7 +799,7 @@ async def test_update_properties(node, compute, controller):
 
     await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "hello world"}, name="demo")
     data = {"console": 2048, "console_type": "vnc", "startup_script": "hello world", "name": "demo"}
-    compute.put.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id), data=data)
+    compute.put.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}", data=data)
     assert node._console == 2048
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
@@ -809,6 +809,36 @@ async def test_update_properties(node, compute, controller):
     # node_notif = copy.deepcopy(node.asdict())
     # node_notif["properties"]["startup_script"] = "echo test"
     # controller._notification.emit.assert_called_with("node.updated", node_notif)
+
+
+@pytest.mark.asyncio
+async def test_update_rolls_back_when_compute_refuses(node, compute, project, controller):
+    """
+    Values applied locally before the PUT must be rolled back when the compute
+    refuses the update: kept in memory they describe a node the compute never
+    accepted, and the next project dump persists them — the refused change
+    would then silently land the next time the node is created.
+    """
+
+    async def resp(*args, **kwargs):
+        raise ComputeConflictError(
+            f"/projects/{project.id}/vpcs/nodes/{node.id}",
+            {"message": '"demo" must be stopped to change the console type to telnet'},
+        )
+
+    compute.put = AsyncioMagicMock(side_effect=resp)
+    controller._notification = AsyncioMagicMock()
+    project.dump = MagicMock()
+    old_json = node.asdict()
+
+    with pytest.raises(ComputeConflictError):
+        await node.update(x=42, console_type="telnet", name="renamed", properties={"startup_script": "changed"})
+
+    assert node.name == "demo"
+    assert node.console_type == "vnc"
+    assert node.properties == {"startup_script": "echo test"}
+    assert node.asdict() == old_json
+    assert not project.dump.called
 
 
 @pytest.mark.asyncio
@@ -933,7 +963,23 @@ async def test_start(node, compute):
     compute.post = AsyncioMagicMock()
 
     await node.start()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/start", timeout=240)
+
+
+@pytest.mark.asyncio
+async def test_start_notifies_links(node, compute):
+    """
+    A successful start tells the node's links: the Ethernet-switch fast
+    path completes a deferred anchor join only then (UDPLink.node_started).
+    """
+
+    compute.post = AsyncioMagicMock()
+    link = AsyncioMagicMock()
+    link.deferred = False
+    node.add_link(link)
+
+    await node.start()
+    assert link.node_started.called
 
 
 @pytest.mark.asyncio
@@ -949,7 +995,7 @@ async def test_start_iou(compute, project, controller):
     controller._iou_license_settings = {"license_check": True, "iourc_content": "aa"}
     await node.start()
     compute.post.assert_called_with(
-        "/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id),
+        f"/projects/{node.project.id}/iou/nodes/{node.id}/start",
         timeout=240,
         data={"license_check": True, "iourc_content": "aa"},
     )
@@ -962,7 +1008,7 @@ async def test_stop(node, compute):
 
     await node.stop()
     compute.post.assert_called_with(
-        "/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240, dont_connect=True
+        f"/projects/{node.project.id}/vpcs/nodes/{node.id}/stop", timeout=240, dont_connect=True
     )
 
 
@@ -971,7 +1017,7 @@ async def test_suspend(node, compute):
 
     compute.post = AsyncioMagicMock()
     await node.suspend()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/suspend", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -979,7 +1025,7 @@ async def test_reload(node, compute):
 
     compute.post = AsyncioMagicMock()
     await node.reload()
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id), timeout=240)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/reload", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -994,7 +1040,7 @@ async def test_create_without_console(node, compute):
 
     await node.create()
     data = {"console_type": "vnc", "node_id": node.id, "startup_script": "echo test", "name": "demo"}
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes", data=data, timeout=1200)
     assert node._console == 2048
     assert node._properties == {"test_value": "success", "startup_script": "echo test"}
 
@@ -1003,21 +1049,21 @@ async def test_create_without_console(node, compute):
 async def test_delete(node, compute):
 
     await node.destroy()
-    compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id))
+    compute.delete.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}")
 
 
 @pytest.mark.asyncio
 async def test_post(node, compute):
 
     await node.post("/test", {"a": "b"})
-    compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id), data={"a": "b"})
+    compute.post.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/test", data={"a": "b"})
 
 
 @pytest.mark.asyncio
 async def test_delete(node, compute):
 
     await node.delete("/test")
-    compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id))
+    compute.delete.assert_called_with(f"/projects/{node.project.id}/vpcs/nodes/{node.id}/test")
 
 
 @pytest.mark.asyncio
@@ -1028,9 +1074,7 @@ async def test_dynamips_idle_pc(node, compute):
     response.json = {"idlepc": "0x60606f54"}
     compute.get = AsyncioMagicMock(return_value=response)
     await node.dynamips_auto_idlepc()
-    compute.get.assert_called_with(
-        "/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id), timeout=240
-    )
+    compute.get.assert_called_with(f"/projects/{node.project.id}/dynamips/nodes/{node.id}/auto_idlepc", timeout=240)
 
 
 @pytest.mark.asyncio
@@ -1042,7 +1086,7 @@ async def test_dynamips_idlepc_proposals(node, compute):
     compute.get = AsyncioMagicMock(return_value=response)
     await node.dynamips_idlepc_proposals()
     compute.get.assert_called_with(
-        "/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240
+        f"/projects/{node.project.id}/dynamips/nodes/{node.id}/idlepc_proposals", timeout=240
     )
 
 
@@ -1096,8 +1140,87 @@ async def test_sync_missing_docker_image_from_controller_daemon(compute, control
     with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as save_mock:
         assert await node._upload_missing_image("docker", "gns3/frr:latest") is True
         save_mock.assert_called_with("GET", "images/gns3/frr:latest/get", timeout=None)
-    compute.post.assert_called_with("/docker/images/load", data=response.content, timeout=None)
+    compute.post.assert_called_with(
+        "/docker/images/load", data=response.content, timeout=None, params={"image": "gns3/frr:latest"}
+    )
     response.close.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_sync_missing_docker_image_forwards_pinned_digest(compute, controller):
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(
+        project, compute, "demo", node_id=str(uuid.uuid4()), node_type="docker", properties={"image": "gns3/frr:latest"}
+    )
+
+    digest = "sha256:" + "a" * 64
+    response = MagicMock()
+    response.content = MagicMock()
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+        assert await node._upload_missing_image("docker", "gns3/frr:latest", digest) is True
+    compute.post.assert_called_with(
+        "/docker/images/load",
+        data=response.content,
+        timeout=None,
+        params={"image": "gns3/frr:latest", "digest": digest},
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_docker_node_syncs_missing_image_with_the_pinned_digest(compute, controller):
+    """
+    When the compute reports a Docker image as missing, the create retries after
+    the sync and the load call carries the pinned digest, so the compute can
+    translate it into the id of its own daemon (image ids are not comparable
+    across image stores).
+    """
+
+    project = Project(str(uuid.uuid4()), controller=controller)
+    node = Node(
+        project,
+        compute,
+        "demo",
+        node_id=str(uuid.uuid4()),
+        node_type="docker",
+        properties={"image": "gns3/frr:latest", "adapters": 1},
+    )
+
+    controller_image_id = "sha256:" + "a" * 64
+    conflict = ComputeConflictError(
+        f"/projects/{project.id}/docker/nodes",
+        {
+            "message": "The image 'gns3/frr:latest' is missing",
+            "image": "gns3/frr:latest",
+            "exception": "ImageMissingError",
+        },
+    )
+    created = MagicMock()
+    created.status = 200
+    created.json = {}
+
+    # the create call, the image sync, then the create retry
+    responses = [conflict, MagicMock(), created]
+
+    async def resp(*args, **kwargs):
+        result = responses.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    compute.post = AsyncioMagicMock(side_effect=resp)
+
+    load_response = MagicMock()
+    load_response.content = MagicMock()
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": controller_image_id}):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=load_response):
+            assert await node.create() is True
+
+    # first call is the node creation, then the image sync, then the retry
+    sync_call = compute.post.call_args_list[1]
+    assert sync_call[0][0] == "/docker/images/load"
+    assert sync_call[1]["params"] == {"image": "gns3/frr:latest", "digest": controller_image_id}
+    assert compute.post.call_args_list[2][1]["data"]["image_digest"] == controller_image_id
 
 
 @pytest.mark.asyncio
@@ -1177,3 +1300,20 @@ async def test_parse_node_response(node):
     node.add_link(link)
     await node.parse_node_response({"status": "started"})
     assert link.node_updated.called
+
+
+@pytest.mark.asyncio
+async def test_port_link_survives_port_rebuild(node):
+    """
+    A node update rebuilds the port objects (every compute node.updated
+    notification does); the link back-references must survive the rebuild,
+    or the "Port is already used" guard silently stops matching.
+    """
+
+    port = node.get_port(0, 0)
+    link = MagicMock()
+    port.link = link
+    await node.parse_node_response({"status": "started"})
+    rebuilt = node.get_port(0, 0)
+    assert rebuilt is not port  # the rebuild really does replace the objects
+    assert rebuilt.link is link

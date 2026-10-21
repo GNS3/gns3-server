@@ -14,16 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import secrets
 import base64
 import binascii
 import logging
+import secrets
+from typing import Optional, Union
 
 from fastapi import Depends, HTTPException, WebSocket, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.security.utils import get_authorization_scheme_param
+
 from gns3server.config import Config
-from typing import Optional, Union
 
 log = logging.getLogger(__name__)
 security = HTTPBasic(auto_error=False)
@@ -91,9 +92,9 @@ async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSock
         if not separator:
             raise invalid_user_credentials_exc
 
-        username = secrets.compare_digest(username, server_settings.compute_username)
-        password = secrets.compare_digest(password, server_settings.compute_password.get_secret_value())
-        if not (username and password):
+        username_valid = secrets.compare_digest(username, server_settings.compute_username)
+        password_valid = secrets.compare_digest(password, server_settings.compute_password.get_secret_value())
+        if not (username_valid and password_valid):
             raise invalid_user_credentials_exc
 
     except HTTPException as e:
@@ -101,5 +102,6 @@ async def ws_compute_authentication(websocket: WebSocket) -> Union[None, WebSock
         websocket_error = {"action": "log.error", "event": {"message": err_msg}}
         await websocket.send_json(websocket_error)
         log.error(err_msg)
-        return await websocket.close(code=1008)
+        await websocket.close(code=1008)
+        return None
     return websocket

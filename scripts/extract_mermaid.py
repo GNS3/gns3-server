@@ -27,11 +27,11 @@ Usage:
     python3 scripts/extract_mermaid.py docs/implemented/ my_svgs/
 """
 
-import re
-import os
-import sys
-import subprocess
 import argparse
+import os
+import re
+import subprocess
+import sys
 
 # Chrome binary path discovery
 PUPPETEER_CACHE = os.environ.get(
@@ -337,7 +337,7 @@ def main():
                     versions = os.listdir(item_path)
                     print(f"    {item}: {', '.join(versions)}")
         else:
-            print(f"  Puppeteer cache: NOT FOUND")
+            print("  Puppeteer cache: NOT FOUND")
 
         print(f"\n  Result: {'✓ ALL CHECKS PASSED' if ok else '✗ SOME CHECKS FAILED'}")
         sys.exit(0 if ok else 1)

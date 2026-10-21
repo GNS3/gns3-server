@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,16 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
-import pytest_asyncio
+import os
 import tempfile
 import uuid
-import os
+
+import pytest
+import pytest_asyncio
 
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
-from unittest.mock import patch
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture

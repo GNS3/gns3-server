@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+
 import pytest
 
-from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.compute.marker.marker_listener import MarkerListener
-
+from gns3server.compute.marker.marker_manager import MarkerManager
 
 # ---------------------------------------------------------------------------
 # Registry

@@ -5,9 +5,9 @@ Tests that handlers correctly transform tool parameters into HTTP calls.
 """
 
 import json
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 def _mock_conn(json_result=None):
@@ -222,6 +222,7 @@ class TestNode:
 
     def test_create_batch_preserves_submission_order(self, ctx):
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_node_handler
 
         with patch(f"{AH}._get_connector") as m:
@@ -249,6 +250,7 @@ class TestNode:
     def test_create_batch_default_names_created_sequentially(self, ctx):
         import threading
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_node_handler
 
         def _run(nodes_param):
@@ -423,6 +425,21 @@ class TestLink:
             result = get_links_handler({"project_id": "p1", "fields": ["link_id"]}, ctx)
             assert result["links"] == [{"link_id": "l1"}]
 
+    def test_list_can_ask_for_kernel_datapath(self, ctx):
+        """
+        The datapath is a field the tool descriptions always advertised, so
+        it has to be requestable: a whitelist missing it rejected
+        fields=["kernel_datapath"] and made link_list unable to report which
+        links run on kernel interfaces.
+        """
+
+        from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_links_handler
+
+        with patch(f"{AH}._get_connector") as m:
+            m.return_value = _mock_conn([{"link_id": "l1", "link_type": "ethernet", "kernel_datapath": True}])
+            result = get_links_handler({"project_id": "p1", "fields": ["link_id", "kernel_datapath"]}, ctx)
+            assert result["links"] == [{"link_id": "l1", "kernel_datapath": True}]
+
     def test_get(self, ctx):
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_link_handler
 
@@ -502,6 +519,7 @@ class TestLink:
 
     def test_create_batch_preserves_submission_order(self, ctx):
         import time
+
         from gns3server.agent.gns3_copilot.gns3_client.api_handlers import create_link_handler
 
         with patch(f"{AH}._get_connector") as m:
@@ -553,7 +571,7 @@ class TestLink:
         # a short path-bound ticket replaces the long Bearer JWT in the URL
         assert "?token=gns3t_" in result["download_url"]
         assert "Bearer" not in result["curl_command"]
-        path = f"/v3/projects/p1/links/l1/capture/file"
+        path = "/v3/projects/p1/links/l1/capture/file"
         ticket = result["download_url"].split("token=")[1]
         assert result["curl_command"] == f"curl -L -o capture.pcap '{result['download_url']}'"
         redeemed = access_ticket_service.redeem_for_path(ticket, path)

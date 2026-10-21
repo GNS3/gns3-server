@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from enum import StrEnum
 from typing import Optional
-from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
-class QemuDiskImageFormat(str, Enum):
+class QemuDiskImageFormat(StrEnum):
     """
     Supported Qemu disk image formats.
     """
@@ -32,7 +33,7 @@ class QemuDiskImageFormat(str, Enum):
     raw = "raw"
 
 
-class QemuDiskImagePreallocation(str, Enum):
+class QemuDiskImagePreallocation(StrEnum):
     """
     Supported Qemu disk image pre-allocation options.
     """
@@ -43,7 +44,7 @@ class QemuDiskImagePreallocation(str, Enum):
     full = "full"
 
 
-class QemuDiskImageOnOff(str, Enum):
+class QemuDiskImageOnOff(StrEnum):
     """
     Supported Qemu image on/off options.
     """
@@ -52,7 +53,7 @@ class QemuDiskImageOnOff(str, Enum):
     off = "off"
 
 
-class QemuDiskImageSubformat(str, Enum):
+class QemuDiskImageSubformat(StrEnum):
     """
     Supported Qemu disk image sub-format options.
     """
@@ -66,7 +67,7 @@ class QemuDiskImageSubformat(str, Enum):
     monolithic_flat = "monolithicFlat"
 
 
-class QemuDiskImageAdapterType(str, Enum):
+class QemuDiskImageAdapterType(StrEnum):
     """
     Supported Qemu disk image on/off options.
     """
@@ -78,8 +79,8 @@ class QemuDiskImageAdapterType(str, Enum):
 
 
 class QemuDiskImageBase(BaseModel):
-    format: QemuDiskImageFormat = Field(..., description="Image format type")
-    size: int = Field(..., description="Image size in Megabytes")
+    format: Optional[QemuDiskImageFormat] = Field(None, description="Image format type")
+    size: Optional[int] = Field(None, description="Image size in Megabytes")
     preallocation: Optional[QemuDiskImagePreallocation] = None
     cluster_size: Optional[int] = None
     refcount_bits: Optional[int] = None
@@ -91,10 +92,9 @@ class QemuDiskImageBase(BaseModel):
 
 
 class QemuDiskImageCreate(QemuDiskImageBase):
-    pass
+    format: QemuDiskImageFormat = Field(..., description="Image format type")
+    size: int = Field(..., description="Image size in Megabytes")
 
 
 class QemuDiskImageUpdate(QemuDiskImageBase):
-    format: Optional[QemuDiskImageFormat] = Field(None, description="Image format type")
-    size: Optional[int] = Field(None, description="Image size in Megabytes")
     extend: Optional[int] = Field(None, description="Number of Megabytes to extend the image")

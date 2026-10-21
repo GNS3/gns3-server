@@ -19,27 +19,23 @@
 API routes for compute.
 """
 
-import os
-import psutil
-import cpuinfo
-
 from functools import lru_cache
-from gns3server.config import Config
-from gns3server.utils.cpu_percent import CpuPercent
-from gns3server.version import __version__
-from gns3server.utils.path import get_default_project_directory, is_safe_path
+from typing import List
+from uuid import UUID
+
+import cpuinfo
+import psutil
+from fastapi import APIRouter, HTTPException, status
+
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.utils.interfaces import interfaces
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.vmware import VMware
-from gns3server import schemas
-
-from fastapi import APIRouter, HTTPException, Body, Response, status
-from fastapi.encoders import jsonable_encoder
-from uuid import UUID
-from typing import Optional, List
+from gns3server.utils.cpu_percent import CpuPercent
+from gns3server.utils.interfaces import interfaces
+from gns3server.utils.path import get_default_project_directory
+from gns3server.version import __version__
 
 router = APIRouter()
 
@@ -163,7 +159,7 @@ def compute_statistics() -> dict:
 
 @router.get("/qemu/capabilities")
 async def get_qemu_capabilities() -> dict:
-    capabilities = {"kvm": []}
+    capabilities: dict[str, list] = {"kvm": []}
     kvms = await Qemu.get_kvm_archs()
     if kvms:
         capabilities["kvm"] = kvms

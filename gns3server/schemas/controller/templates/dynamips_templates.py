@@ -14,28 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import Category, TemplateBase
-
-from gns3server.schemas.compute.dynamips_nodes import (
-    DynamipsConsoleType,
-    DynamipsPlatform,
-    DynamipsAdapters,
-    DynamipsWics,
-    DynamipsNPE,
-    DynamipsMidplane,
-)
+from enum import StrEnum
+from typing import Optional
 
 from pydantic import Field
-from typing import Optional
-from enum import Enum
+
+from gns3server.schemas.compute.dynamips_nodes import (
+    DynamipsAdapters,
+    DynamipsConsoleType,
+    DynamipsMidplane,
+    DynamipsNPE,
+    DynamipsPlatform,
+    DynamipsWics,
+)
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
 
 
-class DynamipsTemplate(TemplateBase):
+class DynamipsTemplateBase(TemplateBase):
     category: Optional[Category] = Category.router
     default_name_format: Optional[str] = "R{0}"
     symbol: Optional[str] = "router"
-    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
-    image: str = Field(..., description="Path to the IOS image")
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
     exec_area: Optional[int] = Field(64, ge=0, description="Exec area value")
     mmap: Optional[bool] = Field(True, description="MMAP feature")
     mac_addr: Optional[str] = Field(
@@ -67,7 +69,12 @@ class DynamipsTemplate(TemplateBase):
     wic2: Optional[DynamipsWics] = Field(None, description="Network module WIC slot 2")
 
 
-class C7200DynamipsTemplate(DynamipsTemplate):
+class DynamipsTemplate(DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C7200DynamipsTemplateBase(DynamipsTemplateBase):
     ram: Optional[int] = Field(512, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(512, gt=0, description="Amount of NVRAM in KB")
     npe: Optional[DynamipsNPE] = Field(DynamipsNPE.npe_400, description="NPE model")
@@ -75,67 +82,87 @@ class C7200DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C7200DynamipsTemplateUpdate(C7200DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C7200DynamipsTemplateUpdate(PartialUpdateModel, C7200DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C3725DynamipsTemplate(DynamipsTemplate):
+class C7200DynamipsTemplate(C7200DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C3725DynamipsTemplateBase(DynamipsTemplateBase):
     ram: Optional[int] = Field(128, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3725DynamipsTemplateUpdate(C3725DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C3725DynamipsTemplateUpdate(PartialUpdateModel, C3725DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C3745DynamipsTemplate(DynamipsTemplate):
+class C3725DynamipsTemplate(C3725DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C3745DynamipsTemplateBase(DynamipsTemplateBase):
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3745DynamipsTemplateUpdate(C3745DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C3745DynamipsTemplateUpdate(PartialUpdateModel, C3745DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C3600ChassisType(str, Enum):
+class C3745DynamipsTemplate(C3745DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C3600ChassisType(StrEnum):
     chassis_3620 = "3620"
     chassis_3640 = "3640"
     chassis_3660 = "3660"
 
 
-class C3600DynamipsTemplate(DynamipsTemplate):
-    chassis: Optional[C3600ChassisType] = Field("c3660", description="Chassis type")
+class C3600DynamipsTemplateBase(DynamipsTemplateBase):
+    chassis: Optional[C3600ChassisType] = Field(C3600ChassisType.chassis_3660, description="Chassis type")
     ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C3600DynamipsTemplateUpdate(C3600DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C3600DynamipsTemplateUpdate(PartialUpdateModel, C3600DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C2691DynamipsTemplate(DynamipsTemplate):
+class C3600DynamipsTemplate(C3600DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C2691DynamipsTemplateBase(DynamipsTemplateBase):
     ram: Optional[int] = Field(192, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C2691DynamipsTemplateUpdate(C2691DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C2691DynamipsTemplateUpdate(PartialUpdateModel, C2691DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C2600ChassisType(str, Enum):
+class C2691DynamipsTemplate(C2691DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C2600ChassisType(StrEnum):
     chassis_2610 = "2610"
     chassis_2620 = "2620"
     chassis_2610xm = "2610XM"
@@ -147,20 +174,24 @@ class C2600ChassisType(str, Enum):
     chassis_2651xm = "2651XM"
 
 
-class C2600DynamipsTemplate(DynamipsTemplate):
-    chassis: Optional[C2600ChassisType] = Field("2651XM", description="Chassis type")
+class C2600DynamipsTemplateBase(DynamipsTemplateBase):
+    chassis: Optional[C2600ChassisType] = Field(C2600ChassisType.chassis_2651xm, description="Chassis type")
     ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(15, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
-class C2600DynamipsTemplateUpdate(C2600DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C2600DynamipsTemplateUpdate(PartialUpdateModel, C2600DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
 
 
-class C1700ChassisType(str, Enum):
+class C2600DynamipsTemplate(C2600DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")
+
+
+class C1700ChassisType(StrEnum):
     chassis_1720 = "1720"
     chassis_1721 = "1721"
     chassis_1750 = "1750"
@@ -168,14 +199,18 @@ class C1700ChassisType(str, Enum):
     chassis_1760 = "1760"
 
 
-class C1700DynamipsTemplate(DynamipsTemplate):
-    chassis: Optional[C1700ChassisType] = Field("1760", description="Chassis type")
+class C1700DynamipsTemplateBase(DynamipsTemplateBase):
+    chassis: Optional[C1700ChassisType] = Field(C1700ChassisType.chassis_1760, description="Chassis type")
     ram: Optional[int] = Field(160, gt=0, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(128, gt=0, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(15, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(False, description="Sparse memory feature")
 
 
-class C1700DynamipsTemplateUpdate(C1700DynamipsTemplate):
-    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
-    image: Optional[str] = Field(None, description="Path to the IOS image")
+class C1700DynamipsTemplateUpdate(PartialUpdateModel, C1700DynamipsTemplateBase):
+    update_excluded_fields = ("template_id",)
+
+
+class C1700DynamipsTemplate(C1700DynamipsTemplateBase):
+    platform: DynamipsPlatform = Field(..., description="Cisco router platform")
+    image: str = Field(..., description="Path to the IOS image")

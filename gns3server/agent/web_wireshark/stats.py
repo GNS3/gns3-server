@@ -7,7 +7,7 @@ about Web Wireshark containers and sessions.
 
 import logging
 import subprocess
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def collect_webwireshark_stats(projects: List) -> Dict:
     """
     from .manager import WebWiresharkManager
 
-    stats = {"total_containers": 0, "running_containers": 0, "active_sessions": 0, "containers": []}
+    stats: Dict[str, Any] = {"total_containers": 0, "running_containers": 0, "active_sessions": 0, "containers": []}
 
     # Create a single manager instance and reuse it
     manager = WebWiresharkManager()

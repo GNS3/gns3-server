@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,27 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import asyncio
-import pytest
-import pytest_asyncio
-import uuid
 import os
 import shutil
-
+import uuid
 from types import SimpleNamespace
-from unittest.mock import patch
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from unittest.mock import AsyncMock, MagicMock, call, mock_open, patch
 
-from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+import aiohttp
+import pytest
+import pytest_asyncio
+
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
-from gns3server.compute.error import ImageMissingError
 from gns3server.compute.docker import Docker
-
-
-from unittest.mock import AsyncMock, patch, MagicMock, call
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.error import ImageMissingError
+from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -107,7 +103,7 @@ async def test_create(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -149,7 +145,7 @@ async def test_create_with_tag(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -196,7 +192,7 @@ async def test_create_vnc(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -427,7 +423,7 @@ async def test_create_start_cmd(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -524,7 +520,7 @@ async def test_create_image_digest_match(compute_project, manager):
         )
         await vm.create()
         # the last query is the container creation: the digest check let it through
-        assert mock.call_args[0] == ("POST", "containers/create?name={}".format(vm.docker_name))
+        assert mock.call_args[0] == ("POST", f"containers/create?name={vm.docker_name}")
         assert vm._cid == "sha256:" + "a" * 64
 
 
@@ -535,6 +531,49 @@ async def test_create_image_digest_mismatch(compute_project, manager):
     vm = DockerVM(
         "test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", image_digest="sha256:" + "a" * 64
     )
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as query_mock:
+        with pytest.raises(ImageMissingError, match="ubuntu:latest"):
+            await vm.create()
+        # only the image inspect happened: no container was created from the stale image
+        query_mock.assert_called_once_with("GET", "images/ubuntu:latest/json")
+
+
+@pytest.mark.asyncio
+async def test_create_image_digest_translated_for_this_daemon(compute_project, manager):
+    """
+    Image ids are not comparable across image stores: the daemon on the
+    controller host may pin the config digest while this daemon reports the
+    manifest digest for the same content. An image this compute received from
+    the controller is accepted through the translation recorded at load time.
+    """
+
+    controller_digest = "sha256:" + "a" * 64
+    local_id = "sha256:" + "b" * 64
+    manager._image_id_translations["ubuntu:latest"] = (controller_digest, local_id)
+
+    response = {"Id": local_id, "Warnings": []}
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+        vm = DockerVM(
+            "test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", image_digest=controller_digest
+        )
+        await vm.create()
+        # the last query is the container creation: the translated pin let it through
+        assert mock.call_args[0] == ("POST", f"containers/create?name={vm.docker_name}")
+        assert vm._cid == local_id
+
+
+@pytest.mark.asyncio
+async def test_create_image_digest_translated_only_for_the_synced_content(compute_project, manager):
+    """
+    A tag that now points to some other image on this daemon stays missing, even
+    when this image name was synced from the controller before.
+    """
+
+    controller_digest = "sha256:" + "a" * 64
+    manager._image_id_translations["ubuntu:latest"] = (controller_digest, "sha256:" + "c" * 64)
+
+    response = {"Id": "sha256:" + "b" * 64, "Warnings": []}
+    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", image_digest=controller_digest)
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as query_mock:
         with pytest.raises(ImageMissingError, match="ubuntu:latest"):
             await vm.create()
@@ -558,7 +597,7 @@ async def test_create_with_user(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -651,7 +690,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -703,7 +742,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -755,7 +794,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -807,7 +846,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -857,7 +896,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -909,7 +948,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -960,7 +999,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -1380,7 +1419,7 @@ async def test_update(vm):
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call(
         "POST",
-        "containers/create?name={}".format(vm.docker_name),
+        f"containers/create?name={vm.docker_name}",
         data={
             "Tty": True,
             "OpenStdin": True,
@@ -1452,7 +1491,7 @@ async def test_update_running(vm):
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call(
         "POST",
-        "containers/create?name={}".format(vm.docker_name),
+        f"containers/create?name={vm.docker_name}",
         data={
             "Tty": True,
             "OpenStdin": True,
@@ -1545,14 +1584,17 @@ async def test_add_ubridge_connection(vm):
     vm._namespace = 42
     await vm._add_ubridge_connection(nio, 0)
 
+    host_ifc, guest_ifc = vm._veth_names(0, 0)
     calls = [
+        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+        call.send(f'link set "{host_ifc}" down'),
+        call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
         call.send("bridge create bridge0"),
-        call.send("bridge add_nio_tap bridge0 tap-gns3-e0 off"),
-        call.send("docker move_to_ns tap-gns3-e0 42 eth0"),
+        call.send(f'bridge add_nio_ethernet bridge0 "{host_ifc}"'),
         call.send("bridge add_nio_udp bridge0 4242 127.0.0.1 4343"),
         call.send('bridge start_capture bridge0 "/tmp/capture.pcap"'),
         call.send("bridge start bridge0"),
-        call.send("bridge set_nio_tap_carrier bridge0 on"),
+        call.send(f'link set "{host_ifc}" up'),
     ]
     assert "bridge0" in vm._bridges
     # We need to check any_order otherwise mock is confused by asyncio
@@ -1575,11 +1617,13 @@ async def test_add_ubridge_connections_with_base_mac_address(vm):
     nio = vm.manager.create_nio(nio_params)
     await vm._add_ubridge_connection(nio, 1)
 
+    _, guest0 = vm._veth_names(0, 0)
+    _, guest1 = vm._veth_names(1, 0)
     calls = [
         call.send("bridge create bridge0"),
         call.send("bridge create bridge1"),
-        call.send("docker set_mac_addr tap-gns3-e0 02:42:42:42:42:00"),
-        call.send("docker set_mac_addr tap-gns3-e0 02:42:42:42:42:01"),
+        call.send(f"docker set_mac_addr {guest0} 02:42:42:42:42:00"),
+        call.send(f"docker set_mac_addr {guest1} 02:42:42:42:42:01"),
     ]
 
     # We need to check any_order otherwise mock is confused by asyncio
@@ -1595,12 +1639,14 @@ async def test_add_ubridge_connection_none_nio(vm):
 
     await vm._add_ubridge_connection(nio, 0)
 
+    host_ifc, guest_ifc = vm._veth_names(0, 0)
     calls = [
-        call.send("bridge create bridge0"),
-        call.send("bridge add_nio_tap bridge0 tap-gns3-e0 off"),
-        call.send("docker move_to_ns tap-gns3-e0 42 eth0"),
+        call.send(f'docker create_veth "{host_ifc}" "{guest_ifc}"'),
+        call.send(f'link set "{host_ifc}" down'),
+        call.send(f"docker move_to_ns {guest_ifc} 42 eth0"),
     ]
-    assert "bridge0" in vm._bridges
+    # unconnected adapter: interface exists (carrier off), no relay bridge
+    assert "bridge0" not in vm._bridges
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
@@ -1631,25 +1677,30 @@ async def test_add_ubridge_connection_invalid_adapter_number(vm):
 
 
 @pytest.mark.asyncio
-async def test_add_ubridge_connection_no_free_interface(vm):
-
-    nio = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
-    nio = vm.manager.create_nio(nio)
-    with pytest.raises(DockerError):
-        # We create fake ethernet interfaces for docker
-        interfaces = ["tap-gns3-e{}".format(index) for index in range(4096)]
-
-        with patch("psutil.net_if_addrs", return_value=interfaces):
-            await vm._add_ubridge_connection(nio, 0)
-
-
-@pytest.mark.asyncio
 async def test_adapter_add_nio_binding_1(vm):
 
     nio = {"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     await vm.adapter_add_nio_binding(0, nio)
     assert vm._ethernet_adapters[0].get_nio(0) == nio
+
+
+@pytest.mark.asyncio
+async def test_adapter_add_nio_binding_refuses_an_occupied_port(vm):
+    """
+    The compute-side backstop of the controller's duplicate-port guard: a
+    second NIO for a port that already carries one is refused instead of
+    silently overwriting the binding the first link's teardown still needs.
+    """
+
+    first = vm.manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4343, "rhost": "127.0.0.1"})
+    await vm.adapter_add_nio_binding(0, first)
+
+    second = vm.manager.create_nio({"type": "nio_udp", "lport": 4244, "rport": 4345, "rhost": "127.0.0.1"})
+    with pytest.raises(DockerError, match="already has a link"):
+        await vm.adapter_add_nio_binding(0, second)
+
+    assert vm._ethernet_adapters[0].get_nio(0) is first
 
 
 @pytest.mark.asyncio
@@ -1825,9 +1876,9 @@ async def test_start_vnc(vm):
         "None",
         "-desktop",
         "test",
-        ":{}".format(vm._display),
+        f":{vm._display}",
     )
-    mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
+    mock_wait.assert_called_with(f"/tmp/.X11-unix/X{vm._display}")
 
 
 @pytest.mark.asyncio
@@ -1836,6 +1887,103 @@ async def test_start_vnc_missing(vm):
     with patch("shutil.which", return_value=None):
         with pytest.raises(DockerError):
             await vm._start_vnc()
+
+
+@pytest.mark.asyncio
+async def test_start_vnc_concurrent_nodes_get_distinct_displays(compute_project, manager, monkeypatch):
+    """
+    Nodes are created in parallel when a project is opened: the X socket of the
+    first node does not exist yet when the second node picks its display.
+    """
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+    vms = [DockerVM(f"PC{i}", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest") for i in range(3)]
+
+    async def wait_for_socket(path):
+        await asyncio.sleep(0)  # let the other nodes run, like Xvnc starting
+
+    with patch("shutil.which", return_value="/bin/Xtigervnc"), patch("os.path.exists", return_value=False):
+        with (
+            asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation", side_effect=wait_for_socket),
+            patch("psutil.pid_exists", return_value=False),
+        ):
+            with asyncio_patch("asyncio.create_subprocess_exec"):
+                with patch("gns3server.compute.docker.docker_vm.monitor_process"):
+                    await asyncio.gather(*(vm._start_vnc() for vm in vms))
+
+    assert sorted(vm._display for vm in vms) == [100, 101, 102]
+
+
+def test_get_free_display_port_skips_live_lock(vm, monkeypatch):
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+
+    def fake_open(path, *args, **kwargs):
+        if path == "/tmp/.X100-lock":
+            return mock_open(read_data=f"{os.getpid():>10}\n")()
+        raise FileNotFoundError(path)
+
+    with patch("os.path.exists", return_value=False), patch("builtins.open", side_effect=fake_open):
+        assert vm._get_free_display_port() == 101
+
+
+def test_get_free_display_port_ignores_stale_lock(vm, monkeypatch):
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", set())
+    with patch("os.path.exists", return_value=False):
+        with patch("builtins.open", mock_open(read_data="     99999\n")):
+            with patch("psutil.pid_exists", return_value=False):
+                assert vm._get_free_display_port() == 100
+
+
+@pytest.mark.asyncio
+async def test_close_vnc_crashed_keeps_other_node_socket(vm, monkeypatch):
+    """
+    When Xvnc failed, the display may belong to another node: its socket must stay.
+    """
+
+    monkeypatch.setattr(DockerVM, "_reserved_displays", {100})
+    vm._console_type = "vnc"
+    vm._display = 100
+    vm._vnc_process = None
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+            with patch("os.remove") as mock_remove:
+                await vm.close()
+
+    assert not mock_remove.called
+    assert vm._display is None
+    assert DockerVM._reserved_displays == set()
+
+
+@pytest.mark.asyncio
+async def test_start_restarts_crashed_vnc_on_same_display(vm):
+    """
+    The container is bound to the X socket of the display it was created with.
+    """
+
+    vm._console_type = "vnc"
+    vm._display = 105
+    vm._vnc_process = None
+    vm._get_container_state = AsyncioMagicMock(return_value="stopped")
+    vm._start_ubridge = AsyncioMagicMock()
+    vm._get_namespace = AsyncioMagicMock(return_value=42)
+    vm._start_console = AsyncioMagicMock()
+    vm._add_ubridge_connection = AsyncioMagicMock()
+
+    with patch("shutil.which", return_value="/bin/Xtigervnc"), patch("os.remove") as mock_remove:
+        with asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation") as mock_wait:
+            with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
+                with patch("gns3server.compute.docker.docker_vm.monitor_process"):
+                    with patch("gns3server.compute.docker.Docker.install_busybox"):
+                        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+                            await vm.start()
+
+    assert vm._display == 105
+    assert mock_exec.call_args[0][-1] == ":105"
+    mock_remove.assert_any_call("/tmp/.X11-unix/X105")
+    mock_wait.assert_called_with("/tmp/.X11-unix/X105")
 
 
 @pytest.mark.asyncio
@@ -1886,9 +2034,7 @@ async def test_fix_permission(vm):
         "/gns3/bin/busybox",
         "sh",
         "-c",
-        '(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {}:{} -R "/etc"'.format(
-            os.getuid(), os.getgid()
-        ),
+        f'(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {os.getuid()}:{os.getgid()} -R "/etc"',
         stderr=asyncio.subprocess.PIPE,
     )
     assert process.wait.called
@@ -1911,9 +2057,7 @@ async def test_fix_permission_not_running(vm):
         "/gns3/bin/busybox",
         "sh",
         "-c",
-        '(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {}:{} -R "/etc"'.format(
-            os.getuid(), os.getgid()
-        ),
+        f'(/gns3/bin/busybox find "/etc" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c \'%a:%u:%g:%n\' > "/etc/.gns3_perms") && /gns3/bin/busybox chmod -R u+rX "/etc" && /gns3/bin/busybox chown {os.getuid()}:{os.getgid()} -R "/etc"',
         stderr=asyncio.subprocess.PIPE,
     )
     assert mock_start.called
@@ -2052,7 +2196,7 @@ async def test_delete_reports_root_files_when_reclaim_fails(vm):
 @pytest.mark.asyncio
 async def test_read_console_output_with_binary_mode(vm):
 
-    class InputStreamMock(object):
+    class InputStreamMock:
         def __init__(self):
             self.sent = False
 
@@ -2084,7 +2228,7 @@ async def test_cpus(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -2126,7 +2270,7 @@ async def test_memory(compute_project, manager):
             await vm.create()
             mock.assert_called_with(
                 "POST",
-                "containers/create?name={}".format(vm.docker_name),
+                f"containers/create?name={vm.docker_name}",
                 data={
                     "Tty": True,
                     "OpenStdin": True,
@@ -2247,6 +2391,7 @@ def test_extra_config_schema_rejects_bad_targets():
     """
 
     from pydantic import ValidationError
+
     from gns3server.schemas.common import ExtraConfig
 
     for bad in ("relative/path", "/has/../dots", "/", "/etc/", "no-leading-slash"):

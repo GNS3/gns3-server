@@ -15,20 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import logging
-
+import os
+import uuid
+from typing import List, Optional, Union, cast
 from uuid import UUID
-from typing import List, Union, Optional
-from sqlalchemy import select, delete
+
+from sqlalchemy import delete, select
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.session import make_transient
 
-from .base import BaseRepository
-
 import gns3server.db.models as models
-from gns3server import schemas
+from gns3server.controller.controller_error import ControllerNotFoundError
+from gns3server.utils.image_inventory import image_lock, normalized_path
+from gns3server.utils.images import default_images_directory
+
+from .base import BaseRepository
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +68,7 @@ class TemplatesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def get_template_by_name_and_version(self, name: str, version: str) -> Union[None, models.Template]:
+    async def get_template_by_name_and_version(self, name: str, version: Optional[str]) -> Union[None, models.Template]:
 
         query = (
             select(models.Template)
@@ -89,7 +93,7 @@ class TemplatesRepository(BaseRepository):
 
         query = select(models.Template).options(selectinload(models.Template.images))
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_template(self, template_type: str, template_settings: dict) -> models.Template:
 
@@ -100,7 +104,7 @@ class TemplatesRepository(BaseRepository):
         await self._db_session.refresh(db_template)
         return db_template
 
-    async def update_template(self, db_template: models.Template, template_settings: dict) -> schemas.Template:
+    async def update_template(self, db_template: models.Template, template_settings: dict) -> models.Template:
 
         # update the fields directly because update() query couldn't work
         for key, value in template_settings.items():
@@ -114,9 +118,9 @@ class TemplatesRepository(BaseRepository):
         query = delete(models.Template).where(models.Template.template_id == template_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
-        return result.rowcount > 0
+        return cast(CursorResult, result).rowcount > 0
 
-    async def duplicate_template(self, template_id: UUID) -> Optional[schemas.Template]:
+    async def duplicate_template(self, template_id: UUID) -> Optional[models.Template]:
 
         query = (
             select(models.Template)
@@ -128,32 +132,62 @@ class TemplatesRepository(BaseRepository):
             # duplicate db object with new primary key (template_id)
             self._db_session.expunge(db_template)
             make_transient(db_template)
-            db_template.template_id = None
+            db_template.template_id = uuid.uuid4()
             self._db_session.add(db_template)
             await self._db_session.commit()
             await self._db_session.refresh(db_template)
         return db_template
 
-    async def get_image(self, image_path: str) -> Optional[models.Image]:
+    async def get_image(
+        self,
+        image_path: str,
+        *,
+        include_unavailable: bool = False,
+        image_type: Optional[str] = None,
+        template_id: Optional[UUID] = None,
+    ) -> Optional[models.Image]:
         """
-        Get an image by its path.
+        Get an image by its path, preferring its type root for relative references.
+
+        Without image_type, retain legacy filename/suffix matching. Absolute
+        references always match the supplied path regardless of image_type.
+        template_id limits lookup to existing associations when removing an image.
         """
 
-        image_dir, image_name = os.path.split(image_path)
-        if image_dir:
+        lookup_path = os.path.normpath(image_path) if image_type and not os.path.isabs(image_path) else image_path
+        image_dir, image_name = os.path.split(lookup_path)
+        if os.path.isabs(image_path):
+            query = select(models.Image).where(models.Image.path == image_path)
+        elif image_dir:
             query = select(models.Image).where(
-                models.Image.filename == image_name, models.Image.path.endswith(image_path)
+                models.Image.filename == image_name, models.Image.path.endswith(os.sep + lookup_path, autoescape=True)
             )
         else:
             query = select(models.Image).where(models.Image.filename == image_name)
+        if template_id is not None:
+            query = query.where(models.Image.templates.any(models.Template.template_id == template_id))
+        if not include_unavailable:
+            query = query.where(models.Image.availability.in_(["unknown", "available"]))
         query = query.order_by(models.Image.image_id)
         result = await self._db_session.execute(query)
-        images = result.scalars().all()
+        images = list(result.scalars().all())
+        if image_type and not os.path.isabs(image_path):
+            # Type-relative paths must resolve below that type's root first.
+            # Preserve legacy suffix/basename lookup for additional image roots.
+            typed_images = [image for image in images if image.image_type == image_type]
+            if typed_images:
+                expected = normalized_path(os.path.join(default_images_directory(image_type), image_path))
+                for image in typed_images:
+                    if normalized_path(image.path) == expected:
+                        return image
+                images = typed_images
         if len(images) > 1:
             log.warning(
-                f"Multiple DB entries found for image '{image_path}' "
-                f"({len(images)} rows). This indicates a data integrity issue. "
-                f"Using the entry with the lowest image_id ({images[0].image_id})."
+                "Multiple images match reference '%s' (%s rows); using '%s' with the lowest image_id (%s)",
+                image_path,
+                len(images),
+                images[0].path,
+                images[0].image_id,
             )
         return images[0] if images else None
 
@@ -162,20 +196,28 @@ class TemplatesRepository(BaseRepository):
         Add an image to template.
         """
 
-        query = (
-            select(models.Template)
-            .options(selectinload(models.Template.images))
-            .where(models.Template.template_id == template_id)
-        )
-        result = await self._db_session.execute(query)
-        template_in_db = result.scalars().first()
-        if not template_in_db:
-            return None
+        async with image_lock(image.path):
+            exists = (
+                await self._db_session.execute(
+                    select(models.Image.image_id).where(models.Image.image_id == image.image_id)
+                )
+            ).scalar_one_or_none()
+            if exists is None:
+                raise ControllerNotFoundError(f"Image '{image.path}' was removed while creating the template")
+            query = (
+                select(models.Template)
+                .options(selectinload(models.Template.images))
+                .where(models.Template.template_id == template_id)
+            )
+            result = await self._db_session.execute(query)
+            template_in_db = result.scalars().first()
+            if not template_in_db:
+                return None
 
-        template_in_db.images.append(image)
-        await self._db_session.commit()
-        await self._db_session.refresh(template_in_db)
-        return template_in_db
+            template_in_db.images.append(image)
+            await self._db_session.commit()
+            await self._db_session.refresh(template_in_db)
+            return template_in_db
 
     async def remove_image_from_template(self, template_id: UUID, image: models.Image) -> Union[None, models.Template]:
         """
@@ -205,4 +247,4 @@ class TemplatesRepository(BaseRepository):
 
         query = select(models.Image).join(models.Image.templates).filter(models.Template.template_id == template_id)
         result = await self._db_session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())

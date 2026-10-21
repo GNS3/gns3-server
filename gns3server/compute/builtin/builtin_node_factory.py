@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
+
 from ..error import NodeError
 from .nodes.cloud import Cloud
-from .nodes.nat import Nat
 from .nodes.ethernet_hub import EthernetHub
 from .nodes.ethernet_switch import EthernetSwitch
-
-import logging
+from .nodes.nat import Nat
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ BUILTIN_NODES = {"cloud": Cloud, "nat": Nat, "ethernet_hub": EthernetHub, "ether
 
 class BuiltinNodeFactory:
     """
-    Factory to create an builtin object based on the node type.
+    Factory to create a builtin object based on the node type.
     """
 
     def __new__(cls, name, node_id, project, manager, node_type, **kwargs):

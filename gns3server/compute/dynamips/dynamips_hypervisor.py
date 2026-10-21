@@ -19,10 +19,10 @@ Interface for Dynamips hypervisor management module ("hypervisor")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L46
 """
 
+import asyncio
+import logging
 import re
 import time
-import logging
-import asyncio
 
 from .dynamips_error import DynamipsError
 
@@ -57,7 +57,7 @@ class DynamipsHypervisor:
         self._writer = None
         self._io_lock = asyncio.Lock()
 
-    async def connect(self, timeout=10):
+    async def connect(self, timeout=10):  # noqa: ASYNC109 - operation-specific timeout is intentional
         """
         Connects to the hypervisor.
         """
@@ -80,7 +80,7 @@ class DynamipsHypervisor:
                 self._reader, self._writer = await asyncio.wait_for(
                     asyncio.open_connection(host, self._port), timeout=1
                 )
-            except (asyncio.TimeoutError, OSError) as e:
+            except (TimeoutError, OSError) as e:
                 last_exception = e
                 continue
             connection_success = True
@@ -96,7 +96,7 @@ class DynamipsHypervisor:
         try:
             version = await self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
-            log.debug("Dynamips version {} detected".format(self._version))
+            log.debug(f"Dynamips version {self._version} detected")
         except IndexError:
             log.warning("Dynamips version could not be detected")
             self._version = "Unknown"
@@ -253,9 +253,7 @@ class DynamipsHypervisor:
                 await self._writer.drain()
             except OSError as e:
                 raise DynamipsError(
-                    "Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}".format(
-                        command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
-                    )
+                    f"Could not send Dynamips command '{command.strip()}' to {self._host}:{self._port}: {e}, process running: {self.is_running()}"
                 )
 
             # Now retrieve the result
@@ -281,9 +279,7 @@ class DynamipsHypervisor:
                     if not chunk:
                         if retries > max_retries:
                             raise DynamipsError(
-                                "No data returned from {host}:{port}, Dynamips process running: {run}".format(
-                                    host=self._host, port=self._port, run=self.is_running()
-                                )
+                                f"No data returned from {self._host}:{self._port}, Dynamips process running: {self.is_running()}"
                             )
                         else:
                             retries += 1
@@ -293,9 +289,7 @@ class DynamipsHypervisor:
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
                     raise DynamipsError(
-                        "Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}".format(
-                            command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
-                        )
+                        f"Could not read response for '{command.strip()}' from {self._host}:{self._port}: {e}, process running: {self.is_running()}"
                     )
 
                 # If the buffer doesn't end in '\n' then we can't be done
@@ -304,9 +298,7 @@ class DynamipsHypervisor:
                         continue
                 except IndexError:
                     raise DynamipsError(
-                        "Could not communicate with {host}:{port}, Dynamips process running: {run}".format(
-                            host=self._host, port=self._port, run=self.is_running()
-                        )
+                        f"Could not communicate with {self._host}:{self._port}, Dynamips process running: {self.is_running()}"
                     )
 
                 data += buf.split("\r\n")

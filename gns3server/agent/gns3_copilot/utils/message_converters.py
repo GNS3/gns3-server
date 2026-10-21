@@ -31,13 +31,9 @@ Converts between LangChain messages and OpenAI-compatible format.
 
 import json
 import uuid
-from typing import Any
-from typing import Dict
+from typing import Any, Dict
 
-from langchain_core.messages import AIMessage
-from langchain_core.messages import HumanMessage
-from langchain_core.messages import SystemMessage
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolCall, ToolMessage
 
 
 def _ensure_string(content: Any) -> str:
@@ -86,7 +82,7 @@ def convert_langchain_to_openai(lc_message) -> Dict[str, Any]:
             tool_calls = []
             for tc in lc_message.tool_calls:
                 # Convert to dict if it's an object
-                tc_dict = tc if isinstance(tc, dict) else tc.model_dump()
+                tc_dict = tc
                 tool_calls.append(
                     {
                         "id": tc_dict.get("id", str(uuid.uuid4())),
@@ -139,7 +135,7 @@ def convert_openai_to_langchain(msg: Dict[str, Any]):
 
         # Restore tool calls if present
         if "tool_calls" in msg and msg["tool_calls"]:
-            tool_calls = []
+            tool_calls: list[ToolCall] = []
             for tc in msg["tool_calls"]:
                 tool_calls.append(
                     {

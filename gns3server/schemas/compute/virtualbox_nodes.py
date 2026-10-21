@@ -14,15 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
+from enum import StrEnum
+from typing import List, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter
+from pydantic import BaseModel, Field
+
+from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
-class VirtualBoxConsoleType(str, Enum):
+class VirtualBoxConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -32,7 +34,7 @@ class VirtualBoxConsoleType(str, Enum):
     none = "none"
 
 
-class VirtualBoxOnCloseAction(str, Enum):
+class VirtualBoxOnCloseAction(StrEnum):
     """
     Supported actions when closing VirtualBox VM.
     """
@@ -42,7 +44,7 @@ class VirtualBoxOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class VirtualBoxAdapterType(str, Enum):
+class VirtualBoxAdapterType(StrEnum):
     pcnet_pci_ii = ("PCnet-PCI II (Am79C970A)",)
     pcnet_fast_iii = ("PCNet-FAST III (Am79C973)",)
     intel_pro_1000_mt_desktop = ("Intel PRO/1000 MT Desktop (82540EM)",)
@@ -56,8 +58,8 @@ class VirtualBoxBase(BaseModel):
     Common VirtualBox node properties.
     """
 
-    name: str
-    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
+    name: Optional[str] = None
+    vmname: Optional[str] = None
     node_id: Optional[UUID] = None
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
     usage: Optional[str] = Field(None, description="How to use the node")
@@ -78,19 +80,24 @@ class VirtualBoxCreate(VirtualBoxBase):
     Properties to create a VirtualBox node.
     """
 
-    pass
+    name: str
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
 
 
-class VirtualBoxUpdate(VirtualBoxBase):
+class VirtualBoxUpdate(PartialUpdateModel, VirtualBoxBase):
     """
     Properties to update a VirtualBox node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     vmname: Optional[str] = None
 
 
 class VirtualBox(VirtualBoxBase):
+    name: str
+    vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

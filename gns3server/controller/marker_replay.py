@@ -51,9 +51,17 @@ merge sorts by ``(ts, source file, frame number)`` and index structures must
 never use ts alone as a dict key, or same-microsecond frames silently
 overwrite each other. The canonical ts strings travel to clients verbatim
 and must be round-tripped verbatim.
+
+Capture files live on the compute hosting the capture node — only a local
+marker's pcap sits in the controller's project directory. A remote marker's
+pcap is fetched from its compute over HTTP on every acquire into a bounded
+cache (paused marker pcaps hold matched packets only, so they stay small);
+the previous copy is kept when the bytes are identical so resident sharkd
+sessions (validated by ``(mtime, size)``) survive unchanged refetches.
 """
 
 import asyncio
+import filecmp
 import json
 import logging
 import os
@@ -63,7 +71,9 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 
-from .controller_error import ControllerError, ControllerNotFoundError, ControllerBadRequestError
+import aiofiles
+
+from .controller_error import ComputeError, ControllerBadRequestError, ControllerError, ControllerNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -200,6 +210,173 @@ def read_frame_bytes(path, frame_number):
     with open(path, "rb") as f:
         f.seek(offset)
         return f.read(incl_len).hex()
+
+
+# ---------------------------------------------------------------------------
+# Remote capture sources (fetched from their compute over HTTP)
+# ---------------------------------------------------------------------------
+
+# Bounded number of remote marker pcaps kept on the controller. Only idle
+# entries are ever evicted (see _remote_pcap), so a request's own sources
+# cannot be pulled out from under it.
+_REMOTE_CACHE_MAX = 32
+
+# (project_id, compute_id, rel_path) -> {"path": str, "last_used": float, "_uses": int}
+_remote_cache: dict[tuple[str, str, str], dict] = {}
+_remote_locks: dict[tuple[str, str, str], asyncio.Lock] = {}
+_remote_cache_dir: str | None = None
+
+
+def _cache_path(project, compute, rel_path):
+    """Flat, collision-free cache path: project/compute ids are uuids and
+    basename() strips any path component out of the file name."""
+
+    global _remote_cache_dir
+    if _remote_cache_dir is None:
+        _remote_cache_dir = tempfile.mkdtemp(prefix="gns3-marker-replay-")
+    os.makedirs(_remote_cache_dir, exist_ok=True)
+    return os.path.join(_remote_cache_dir, f"{project.id}_{compute.id}_{os.path.basename(rel_path)}")
+
+
+def _drop_cached_file(key):
+    """Forget a cache entry and delete its file (marker removed on the compute)."""
+
+    entry = _remote_cache.pop(key, None)
+    if entry and entry["path"]:
+        try:
+            os.remove(entry["path"])
+        except OSError:
+            pass
+
+
+def _evict_idle_remote_cache():
+    """Trim the cache down to the cap, least-recently-used first. Only idle
+    entries are evictable; dict access is synchronous, so this cannot
+    interleave with a concurrent acquire's refcount bump."""
+
+    while len(_remote_cache) > _REMOTE_CACHE_MAX:
+        idle = [key for key, entry in _remote_cache.items() if entry["_uses"] == 0]
+        if not idle:
+            break
+        victim = min(idle, key=lambda key: _remote_cache[key]["last_used"])
+        entry = _remote_cache.pop(victim)
+        if entry["path"]:
+            try:
+                os.remove(entry["path"])
+            except OSError:
+                pass
+
+
+async def _fetch_to_cache(project, compute, rel_path, path):
+    """
+    Fetch the pcap from its compute, replacing the cached copy only when the
+    bytes changed — an unchanged copy keeps its mtime, so the resident sharkd
+    session keyed by that path stays valid. The file is refetched on every
+    acquire: the gate already pins replay to paused markers, and a marker
+    resumed and re-paused between two requests rebuilds its pcap.
+
+    :returns: the cache path, or None when the compute has no such file (the
+        marker never matched anything — not an error).
+    :raises ComputeError: the compute could not be reached or refused the file.
+    """
+
+    try:
+        response = await compute.http_query("GET", f"/projects/{project.id}/files/{rel_path}", stream=True)
+    except ControllerNotFoundError:
+        return None
+    except ControllerError as e:
+        raise ComputeError(f"Could not fetch capture file from compute '{compute.id}': {e}") from e
+
+    tmp = f"{path}.tmp"
+    try:
+        async with aiofiles.open(tmp, "wb") as f:
+            async for chunk in response.content.iter_any():
+                if chunk:
+                    await f.write(chunk)
+        await response.release()
+        if os.path.exists(path) and filecmp.cmp(path, tmp, shallow=False):
+            os.remove(tmp)  # unchanged: keep the old copy, mtime intact
+        else:
+            os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+    return path
+
+
+@asynccontextmanager
+async def _remote_pcap(project, compute, rel_path):
+    """
+    A controller-local copy of a capture file living on a remote compute.
+    Acquires of the same file are serialized per key; the entry is
+    refcounted while yielded so eviction only ever removes idle files.
+
+    Yields the local path, or None when the compute has no such file.
+    """
+
+    key = (project.id, compute.id, rel_path)
+    lock = _remote_locks.setdefault(key, asyncio.Lock())
+    async with lock:
+        entry = _remote_cache.get(key)
+        if entry is None:
+            entry = {"path": _cache_path(project, compute, rel_path), "last_used": 0.0, "_uses": 0}
+            _remote_cache[key] = entry
+        entry["_uses"] += 1
+        try:
+            path = await _fetch_to_cache(project, compute, rel_path, entry["path"])
+            entry["last_used"] = time.monotonic()
+            if path is None:
+                _drop_cached_file(key)
+            yield path
+        finally:
+            entry["_uses"] -= 1
+    _evict_idle_remote_cache()
+
+
+def _capture_node_compute(project, node_id):
+    """
+    The compute hosting a marker's capture node, or None when the capture is
+    local — or the node is gone, in which case only the controller's own
+    markers directory can hold a copy and the caller has already checked it.
+    """
+
+    get_node = getattr(project, "get_node", None)
+    if get_node is None:
+        return None
+    try:
+        compute = get_node(node_id).compute
+    except ControllerError:
+        return None
+    if compute is None or compute.id == "local":
+        return None
+    return compute
+
+
+@asynccontextmanager
+async def _source_pcap(project, node_id, link_id, marker):
+    """
+    Resolve a marker's capture file to a controller-local path.
+
+    Yields None when no capture exists (no packet ever matched on that
+    marker). Local markers resolve straight to the project's markers
+    directory; a marker whose capture node runs on another compute is
+    fetched from that compute (see _remote_pcap).
+    """
+
+    filename = f"{node_id}_{link_id}_{marker}.pcap"
+    path = os.path.join(project.markers_directory, filename)
+    if os.path.exists(path):
+        yield path
+        return
+    compute = _capture_node_compute(project, node_id)
+    if compute is None:
+        yield None
+        return
+    async with _remote_pcap(project, compute, f"project-files/markers/{filename}") as fetched:
+        yield fetched
 
 
 # ---------------------------------------------------------------------------
@@ -349,7 +526,7 @@ class _SharkdSession:
                 self.proc.stdin.write((json.dumps(request) + "\n").encode())
                 await self.proc.stdin.drain()
                 raw = await asyncio.wait_for(self.proc.stdout.readline(), RPC_TIMEOUT_SECONDS)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 await self._abort(f"sharkd timed out after {RPC_TIMEOUT_SECONDS:.0f}s on {method!r}")
             except (OSError, ValueError) as e:
                 # ValueError: a reply line over the StreamReader limit — the
@@ -387,7 +564,7 @@ class _SharkdSession:
                 # the caller — leak the process with a log instead.
                 try:
                     await asyncio.wait_for(self.proc.wait(), timeout=2.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     log.warning("sharkd session for %s did not exit after kill", self.pcap)
         except ProcessLookupError:
             pass
@@ -526,13 +703,19 @@ def _get_manager():
 
 async def close_sessions():
     """Server shutdown hook: kill every resident session and drop its scratch
-    copy, so nothing leaks into /tmp across restarts."""
+    copy, and remove the remote-capture cache, so nothing leaks into /tmp
+    across restarts."""
 
     global _manager
+    global _remote_cache_dir
     manager = _manager
     if manager is not None:
         await manager.close_all()
     _manager = None
+    if _remote_cache_dir is not None:
+        shutil.rmtree(_remote_cache_dir, ignore_errors=True)
+        _remote_cache_dir = None
+    _remote_cache.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -655,45 +838,68 @@ async def _merged_frames(project, entries, filter_expr=None, link_id=None):
     ``sources`` is the stable inventory of the tag: EVERY capture source is
     listed with engine-free total counts, unaffected by ``link_id`` /
     ``filter_expr`` — the inventory must not shrink when the view narrows.
+    A capture file that cannot be fetched from its compute keeps its source
+    entry, with ``count: 0`` and an ``error`` message, instead of silently
+    vanishing from the timeline.
     """
 
-    markers_dir = project.markers_directory
     merged = []
     sources = []
     for entry in entries:
-        pcap = os.path.join(markers_dir, f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}.pcap")
-        frames = scan_pcap_frames(pcap) if os.path.exists(pcap) else []
-        # Inventory first: every source, engine-free totals.
-        sources.append(
-            {**{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")}, "count": len(frames)}
-        )
-        if link_id and entry["link_id"] != link_id:
-            continue  # link narrows the stream before any engine work
-        if frames:
-            columns = await _columns_for(pcap, filter_expr)
-        else:
-            columns = {}
-        source_key = f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}"
-        for frame_number, (sec, usec, incl_len) in enumerate(frames, start=1):
-            if filter_expr is not None and frame_number not in columns:
-                continue
-            cols = columns.get(frame_number, {})
-            merged.append(
+        try:
+            async with _source_pcap(project, entry["node_id"], entry["link_id"], entry["marker"]) as pcap:
+                frames = scan_pcap_frames(pcap) if pcap else []
+                # Inventory first: every source, engine-free totals.
+                sources.append(
+                    {
+                        **{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
+                        "count": len(frames),
+                    }
+                )
+                if link_id and entry["link_id"] != link_id:
+                    continue  # link narrows the stream before any engine work
+                if frames:
+                    columns = await _columns_for(pcap, filter_expr)
+                else:
+                    columns = {}
+                source_key = f"{entry['node_id']}_{entry['link_id']}_{entry['marker']}"
+                for frame_number, (sec, usec, incl_len) in enumerate(frames, start=1):
+                    if filter_expr is not None and frame_number not in columns:
+                        continue
+                    cols = columns.get(frame_number, {})
+                    merged.append(
+                        {
+                            "ts": _format_ts(sec, usec),
+                            "ts_us": sec * 1_000_000 + usec,
+                            "_source": source_key,
+                            "len": incl_len,
+                            "node_id": entry["node_id"],
+                            "link_id": entry["link_id"],
+                            "marker": entry["marker"],
+                            "frame_number": frame_number,
+                            "src": cols.get("src"),
+                            "dst": cols.get("dst"),
+                            "proto": cols.get("proto"),
+                            "info": cols.get("info"),
+                            "bg": cols.get("bg"),
+                            "fg": cols.get("fg"),
+                        }
+                    )
+        except ComputeError as e:
+            # The capture file lives on a compute that could not be reached:
+            # keep the source in the inventory, flagged, so a partial timeline
+            # is never mistaken for the whole capture.
+            log.warning(
+                "Capture file of marker '%s' on link %s could not be fetched: %s",
+                entry["marker"],
+                entry["link_id"],
+                e,
+            )
+            sources.append(
                 {
-                    "ts": _format_ts(sec, usec),
-                    "ts_us": sec * 1_000_000 + usec,
-                    "_source": source_key,
-                    "len": incl_len,
-                    "node_id": entry["node_id"],
-                    "link_id": entry["link_id"],
-                    "marker": entry["marker"],
-                    "frame_number": frame_number,
-                    "src": cols.get("src"),
-                    "dst": cols.get("dst"),
-                    "proto": cols.get("proto"),
-                    "info": cols.get("info"),
-                    "bg": cols.get("bg"),
-                    "fg": cols.get("fg"),
+                    **{k: entry[k] for k in ("node_id", "link_id", "marker", "data_link_type")},
+                    "count": 0,
+                    "error": str(e),
                 }
             )
     merged.sort(key=lambda f: (f["ts_us"], f["_source"], f["frame_number"]))
@@ -761,7 +967,10 @@ async def decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=
     round-tripped ts still matches the file (guards a rebuild between the
     timeline view and this click), read the raw bytes for the hex view
     straight from the pcap, and rename the sharkd protocol tree into the
-    REST contract (closed key set, values untouched).
+    REST contract (closed key set, values untouched). A marker captured on
+    another compute decodes from its fetched cache copy; a compute that
+    cannot be reached raises ComputeError — distinct from the 404s below,
+    which mean the marker never matched anything or the capture was rebuilt.
 
     ``ts`` is not unique within one pcap (same-microsecond frames are kept
     deliberately); an explicit ``frame_number`` from the frame list entry
@@ -778,40 +987,40 @@ async def decode_frame(project, tag, ts, node_id, link_id, marker, frame_number=
     if entry is None:
         raise ControllerNotFoundError(f"No marker '{marker}' with tag {tag} on link {link_id} captured by {node_id}")
 
-    pcap = os.path.join(project.markers_directory, f"{node_id}_{link_id}_{marker}.pcap")
-    if not os.path.exists(pcap):
-        raise ControllerNotFoundError(f"No capture file for marker '{marker}' (nothing ever matched)")
+    async with _source_pcap(project, node_id, link_id, marker) as pcap:
+        if pcap is None:
+            raise ControllerNotFoundError(f"No capture file for marker '{marker}' (nothing ever matched)")
 
-    frames = scan_pcap_frames(pcap)
-    rebuilt_message = f"No frame at ts {ts} in marker '{marker}' (the capture may have been rebuilt)"
-    if frame_number is None:
-        # The ts must be the exact string the timeline returned; find the frame
-        # it identifies rather than trusting any position hint from the client.
-        frame_number = next(
-            (i for i, (sec, usec, _len) in enumerate(frames, start=1) if _format_ts(sec, usec) == ts),
-            None,
-        )
+        frames = scan_pcap_frames(pcap)
+        rebuilt_message = f"No frame at ts {ts} in marker '{marker}' (the capture may have been rebuilt)"
         if frame_number is None:
-            raise ControllerNotFoundError(rebuilt_message)
-    else:
-        if not 1 <= frame_number <= len(frames):
-            raise ControllerNotFoundError(rebuilt_message)
-        sec, usec, _len = frames[frame_number - 1]
-        if _format_ts(sec, usec) != ts:
+            # The ts must be the exact string the timeline returned; find the frame
+            # it identifies rather than trusting any position hint from the client.
+            frame_number = next(
+                (i for i, (sec, usec, _len) in enumerate(frames, start=1) if _format_ts(sec, usec) == ts),
+                None,
+            )
+            if frame_number is None:
+                raise ControllerNotFoundError(rebuilt_message)
+        else:
+            if not 1 <= frame_number <= len(frames):
+                raise ControllerNotFoundError(rebuilt_message)
+            sec, usec, _len = frames[frame_number - 1]
+            if _format_ts(sec, usec) != ts:
+                raise ControllerNotFoundError(rebuilt_message)
+
+        raw_hex = read_frame_bytes(pcap, frame_number)
+        if raw_hex is None:
+            # The header scan listed it but the bytes are gone — mid-write tail.
             raise ControllerNotFoundError(rebuilt_message)
 
-    raw_hex = read_frame_bytes(pcap, frame_number)
-    if raw_hex is None:
-        # The header scan listed it but the bytes are gone — mid-write tail.
-        raise ControllerNotFoundError(rebuilt_message)
-
-    async with _get_manager().session(pcap) as session:
-        try:
-            result = await session.rpc("frame", {"frame": frame_number, "proto": True})
-        except _SharkdRpcError as e:
-            # The frame range was validated against the file above, so an
-            # engine error here is a real fault (502), not a client 404.
-            raise SharkdError(f"sharkd frame failed: {e.message}")
+        async with _get_manager().session(pcap) as session:
+            try:
+                result = await session.rpc("frame", {"frame": frame_number, "proto": True})
+            except _SharkdRpcError as e:
+                # The frame range was validated against the file above, so an
+                # engine error here is a real fault (502), not a client 404.
+                raise SharkdError(f"sharkd frame failed: {e.message}")
 
     tree = _rename_value(result.get("tree", []))
     return {

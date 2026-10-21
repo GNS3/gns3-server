@@ -20,10 +20,10 @@ API routes for images.
 
 import os
 import urllib.parse
+from typing import List, Optional
 
-from fastapi import APIRouter, Body, Request, status, Response, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
-from typing import List
 
 from gns3server.compute.docker import Docker
 from gns3server.compute.dynamips import Dynamips
@@ -54,13 +54,23 @@ async def pull_docker_image(image: str = Body(..., embed=True, min_length=1, pat
 
 
 @router.post("/docker/images/load", status_code=status.HTTP_204_NO_CONTENT)
-async def load_docker_image(request: Request) -> None:
+async def load_docker_image(
+    request: Request,
+    image: Optional[str] = Query(None, pattern=r"^\S+$", description="Tag of the image in the archive"),
+    digest: Optional[str] = Query(
+        None, pattern=r"^\S+$", description="Image id reported by the controller host daemon"
+    ),
+) -> None:
     """
     Load a Docker image into the Docker daemon from a docker save tar stream.
+
+    The optional image tag and digest let the compute remember which image the
+    controller pushed and how the local daemon identifies it (see
+    Docker.load_image).
     """
 
     docker_manager = Docker.instance()
-    await docker_manager.load_image(request.stream())
+    await docker_manager.load_image(request.stream(), image=image, digest=digest)
 
 
 @router.get("/dynamips/images")

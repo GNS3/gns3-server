@@ -19,6 +19,7 @@ import asyncio
 from contextlib import contextmanager
 
 from gns3server.utils.notification_queue import NotificationQueue
+
 from .controller_error import ControllerError
 
 

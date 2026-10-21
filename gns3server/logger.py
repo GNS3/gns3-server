@@ -17,12 +17,11 @@
 
 """Provide a pretty logging on console"""
 
+import gzip
 import logging
-import sys
 import os
 import shutil
-import gzip
-
+import sys
 from logging.handlers import RotatingFileHandler
 
 
@@ -125,8 +124,8 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
             self.stream.close()
         if self.backupCount > 0:
             for i in range(self.backupCount - 1, 0, -1):
-                sfn = "%s.%d.gz" % (self.baseFilename, i)
-                dfn = "%s.%d.gz" % (self.baseFilename, i + 1)
+                sfn = f"{self.baseFilename}.{i}.gz"
+                dfn = f"{self.baseFilename}.{i + 1}.gz"
                 if os.path.exists(sfn):
                     if os.path.exists(dfn):
                         os.remove(dfn)

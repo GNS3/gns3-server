@@ -197,22 +197,17 @@ if __name__ == "__main__":
     parser.add_argument("private", metavar="private-config", nargs="?", help="private configuration")
     args = parser.parse_args()
 
+    nvram: bytes | None = None
+    private: bytes | None = None
     try:
         if args.create is None:
-            fd = open(args.nvram, "rb")
-            nvram = fd.read()
-            fd.close()
-        else:
-            nvram = None
-        fd = open(args.startup, "rb")
-        startup = fd.read()
-        fd.close()
-        if args.private is None:
-            private = None
-        else:
-            fd = open(args.private, "rb")
-            private = fd.read()
-            fd.close()
+            with open(args.nvram, "rb") as fd:
+                nvram = fd.read()
+        with open(args.startup, "rb") as fd:
+            startup = fd.read()
+        if args.private is not None:
+            with open(args.private, "rb") as fd:
+                private = fd.read()
     except OSError as err:
         sys.stderr.write(f"Error reading file: {err}\n")
         sys.exit(1)
@@ -224,9 +219,8 @@ if __name__ == "__main__":
         sys.exit(3)
 
     try:
-        fd = open(args.nvram, "wb")
-        fd.write(nvram)
-        fd.close()
+        with open(args.nvram, "wb") as out:
+            out.write(nvram)
     except OSError as err:
         sys.stderr.write(f"Error writing file: {err}\n")
         sys.exit(1)

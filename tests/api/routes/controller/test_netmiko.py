@@ -16,7 +16,6 @@
 
 
 import pytest
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 

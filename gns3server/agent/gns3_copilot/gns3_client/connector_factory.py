@@ -49,13 +49,12 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
-    get_current_jwt_token,
-)
-
 # Local imports
 from gns3server.agent.gns3_copilot.gns3_client.connector import (
     Gns3Connector,
+)
+from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
+    get_current_jwt_token,
 )
 
 logger = logging.getLogger(__name__)
@@ -347,7 +346,7 @@ def get_gns3_server_host() -> str:
         host = get_gns3_server_host()
         print(f"GNS3 server host: {host}")
     """
-    url = _detect_url_for_api()
+    url = _detect_url_for_api() or DEFAULT_GNS3_URL
 
     # Extract host from URL
     # URL format: protocol://host:port

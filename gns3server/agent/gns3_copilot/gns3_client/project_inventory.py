@@ -43,17 +43,20 @@ def build_nodes_inventory(nodes: list[dict[str, Any]], server_host: str | None) 
     Build an inventory-style dict keyed by node name.
 
     Shape (per node name):
-        {server, name, node_id, console_port, console_type, type, ports,
-         status, x, y, tags, netmiko_device_type, default_username,
-         default_password}
+        {server, name, node_id, console_port, console_host, console_type,
+         type, ports, status, x, y, tags, netmiko_device_type,
+         default_username, default_password}
     """
     inventory: dict[str, Any] = {}
     for n in nodes:
-        inventory[n.get("name")] = {
+        inventory[n.get("name") or ""] = {
             "server": server_host,
             "name": n.get("name"),
             "node_id": n.get("node_id"),
             "console_port": n.get("console"),
+            # Where the console port is bound: the compute's own host for
+            # remote computes, not the controller running this code.
+            "console_host": n.get("console_host"),
             "console_type": n.get("console_type"),
             "type": n.get("node_type"),
             "ports": n.get("ports"),
@@ -68,7 +71,7 @@ def build_nodes_inventory(nodes: list[dict[str, Any]], server_host: str | None) 
     return inventory
 
 
-def build_links_summary(nodes: list[dict[str, Any]], links: list[dict[str, Any]]) -> list[dict[str, str]]:
+def build_links_summary(nodes: list[dict[str, Any]], links: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Build a human/LLM-friendly link list resolving node and port names.
 
@@ -76,7 +79,7 @@ def build_links_summary(nodes: list[dict[str, Any]], links: list[dict[str, Any]]
     Links whose endpoints cannot be resolved are skipped, mirroring the
     original Project.links_summary behavior.
     """
-    summary: list[dict[str, str]] = []
+    summary: list[dict[str, Any]] = []
     for link in links:
         if not link.get("nodes"):
             continue

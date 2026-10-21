@@ -15,20 +15,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.qemu_nodes import (
-    QemuConsoleType,
-    QemuPlatform,
-    QemuAdapterType,
-    QemuOnCloseAction,
-    QemuBootPriority,
-    QemuDiskInterfaceType,
-    QemuProcessPriority,
-    CustomAdapter,
-)
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from gns3server.schemas.compute.qemu_nodes import (
+    CustomAdapter,
+    QemuAdapterType,
+    QemuBootPriority,
+    QemuCdromInterface,
+    QemuConsoleType,
+    QemuDiskInterfaceType,
+    QemuOnCloseAction,
+    QemuPlatform,
+    QemuProcessPriority,
+)
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
 
 
 class QemuTemplate(TemplateBase):
@@ -76,7 +80,10 @@ class QemuTemplate(TemplateBase):
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(
         QemuDiskInterfaceType.none, description="QEMU hdd interface"
     )
-    cdrom_image: Optional[str] = Field("", description="QEMU cdrom image path")
+    cdrom_image: Optional[str] = Field("", description="QEMU first cdrom image path")
+    cdrom_interface: QemuCdromInterface = Field("ide", description="First CD/DVD interface")
+    cdrom2_interface: QemuCdromInterface = Field("ide", description="Second CD/DVD interface")
+    cdrom2_image: Optional[str] = Field("", description="QEMU second cdrom image path")
     initrd: Optional[str] = Field("", description="QEMU initrd path")
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
     bios_image: Optional[str] = Field("", description="QEMU bios image path")
@@ -100,5 +107,5 @@ class QemuTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class QemuTemplateUpdate(QemuTemplate):
-    pass
+class QemuTemplateUpdate(PartialUpdateModel, QemuTemplate):
+    update_excluded_fields = ("template_id",)

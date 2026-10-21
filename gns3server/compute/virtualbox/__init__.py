@@ -18,19 +18,19 @@
 VirtualBox server module.
 """
 
+import asyncio
+import logging
 import os
 import re
-import sys
 import shutil
-import asyncio
 import subprocess
-import logging
+import sys
 
 log = logging.getLogger(__name__)
 
 from ..base_manager import BaseManager
-from .virtualbox_vm import VirtualBoxVM
 from .virtualbox_error import VirtualBoxError
+from .virtualbox_vm import VirtualBoxVM
 
 
 class VirtualBox(BaseManager):
@@ -85,7 +85,7 @@ class VirtualBox(BaseManager):
         self._vboxmanage_path = vboxmanage_path
         return vboxmanage_path
 
-    async def execute(self, subcommand, args, timeout=60):
+    async def execute(self, subcommand, args, timeout=60):  # noqa: ASYNC109 - operation-specific timeout is intentional
 
         # We use a lock prevent parallel execution due to strange errors
         # reported by a user and reproduced by us.
@@ -112,7 +112,7 @@ class VirtualBox(BaseManager):
 
             try:
                 stdout_data, stderr_data = await asyncio.wait_for(process.communicate(), timeout=timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise VirtualBoxError(f"VBoxManage has timed out after {timeout} seconds!")
 
             if process.returncode:

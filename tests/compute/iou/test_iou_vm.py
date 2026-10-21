@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,22 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import pytest_asyncio
 import asyncio
 import os
-import stat
+import shutil
 import socket
+import stat
 import struct
 import uuid
-import shutil
-
-from tests.utils import asyncio_patch, AsyncioMagicMock
-
 from unittest.mock import MagicMock, call
-from gns3server.compute.iou.iou_vm import IOUL1KeepaliveProtocol, IOUVM
-from gns3server.compute.iou.iou_error import IOUError
+
+import pytest
+import pytest_asyncio
+
+from gns3server.compute.error import NodeError
 from gns3server.compute.iou import IOU
+from gns3server.compute.iou.iou_error import IOUError
+from gns3server.compute.iou.iou_vm import IOUVM, IOUL1KeepaliveProtocol
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -57,7 +58,7 @@ def iourc_file(tmpdir):
     path = str(tmpdir / "iourc")
     with open(path, "w+") as f:
         hostname = socket.gethostname()
-        f.write("[license]\n{} = aaaaaaaaaaaaaaaa;".format(hostname))
+        f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaaaa;")
     return path
 
 
@@ -153,6 +154,26 @@ async def test_start_failure_stops_l1_responder(vm):
 
 
 @pytest.mark.asyncio
+async def test_start_failure_in_the_tap_setup_stops_ubridge(vm):
+    """
+    A raise before the IOU launch (the tap datapath setup here) must take
+    the uBridge datapath down again: a node reporting a failed start must
+    not keep a uBridge process and its anchor TAPs alive.
+    """
+
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock()
+    vm._prepare_tap_datapath = AsyncioMagicMock(side_effect=IOUError("tap create refused"))
+    vm._stop_ubridge = AsyncioMagicMock()
+
+    with pytest.raises(IOUError, match="tap create refused"):
+        await vm.start()
+
+    assert vm._stop_ubridge.call_count == 1
+
+
+@pytest.mark.asyncio
 async def test_start_with_iourc(vm, tmpdir, config):
 
     fake_file = str(tmpdir / "iourc")
@@ -183,15 +204,15 @@ async def test_rename_nvram_file(vm):
     It should rename the nvram file to the correct name before launching the VM
     """
 
-    with open(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id + 1)), "w+") as f:
+    with open(os.path.join(vm.working_dir, f"nvram_0000{vm.application_id + 1}"), "w+") as f:
         f.write("1")
 
-    with open(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id + 1)), "w+") as f:
+    with open(os.path.join(vm.working_dir, f"vlan.dat-0000{vm.application_id + 1}"), "w+") as f:
         f.write("1")
 
     vm._rename_nvram_file()
-    assert os.path.exists(os.path.join(vm.working_dir, "nvram_0000{}".format(vm.application_id)))
-    assert os.path.exists(os.path.join(vm.working_dir, "vlan.dat-0000{}".format(vm.application_id)))
+    assert os.path.exists(os.path.join(vm.working_dir, f"nvram_0000{vm.application_id}"))
+    assert os.path.exists(os.path.join(vm.working_dir, f"vlan.dat-0000{vm.application_id}"))
 
 
 @pytest.mark.asyncio
@@ -582,6 +603,36 @@ def test_get_legacy_vm_workdir():
 
 
 @pytest.mark.asyncio
+async def test_ubridge_apply_filters_rejects_kernel_only(vm):
+    """
+    The IOL relay path carries the base guard: a kernel-only filter reaching
+    a relay port is a clear NodeError, not a late uBridge failure.
+    """
+
+    vm._ubridge_send = AsyncioMagicMock()
+    with pytest.raises(NodeError, match="kernel-datapath"):
+        await vm._ubridge_apply_filters("bridge0 0 0", {"rate": ["512kbit"]})
+    vm._ubridge_send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_ubridge_apply_filters_degrades_a_bad_bpf_line(vm):
+    """
+    A BPF line that no longer compiles on this uBridge's libpcap is a
+    warning, not a hard failure — the same degradation as the base relay
+    path (the controller validated the syntax with tcpdump at update time).
+    """
+
+    async def refuse(command):
+        if "add_packet_filter" in command:
+            raise UbridgeError("Cannot compile filter 'icmp': syntax error")
+        return ["OK"]
+
+    vm._ubridge_send = refuse
+    await vm._ubridge_apply_filters("bridge0 0 0", {"bpf": ["icmp"]})
+
+
+@pytest.mark.asyncio
 async def test_invalid_iou_file(vm, iourc_file):
 
     hostname = socket.gethostname()
@@ -590,13 +641,13 @@ async def test_invalid_iou_file(vm, iourc_file):
     # Missing ;
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
-            f.write("[license]\n{} = aaaaaaaaaaaaaaaa".format(hostname))
+            f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaaaa")
         await vm._check_iou_license()
 
     # Key too short
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
-            f.write("[license]\n{} = aaaaaaaaaaaaaa;".format(hostname))
+            f.write(f"[license]\n{hostname} = aaaaaaaaaaaaaa;")
         await vm._check_iou_license()
 
     # Invalid hostname

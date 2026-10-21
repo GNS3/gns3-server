@@ -15,43 +15,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
-import uuid
-import shutil
 import asyncio
-import random
 import json
+import os
+import random
+import shutil
+import sys
 import threading
+import uuid
 
 try:
     import importlib_resources
 except ImportError:
     from importlib import resources as importlib_resources
 
-from watchdog.events import FileSystemEventHandler, DirDeletedEvent, FileDeletedEvent
+import logging
+
+from watchdog.events import DirDeletedEvent, FileDeletedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from ..config import Config
-from ..utils import parse_version, md5sum
-from ..utils.images import default_images_directory
+from ..db.tasks import update_disk_checksums
+from ..utils import md5sum, parse_version
 from ..utils.asyncio import wait_run_in_executor
-
-from .project import Project
-from .node import Node
-from .appliance import Appliance
+from ..utils.images import default_images_directory
+from ..version import __version__
+from .appliance import Appliance as Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
-from .notification import Notification
-from .symbols import Symbols
-from .topology import load_topology
+from .controller_error import ControllerError, ControllerNotFoundError
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
-from .controller_error import ControllerError, ControllerNotFoundError
-from ..db.tasks import update_disk_checksums
-from ..version import __version__
-
-import logging
+from .node import Node
+from .notification import Notification
+from .project import Project
+from .symbols import Symbols
+from .topology import load_topology
 
 log = logging.getLogger(__name__)
 
@@ -176,7 +175,7 @@ class Controller:
 
         protocol = server_config.protocol.value
         if self._ssl_context and protocol != "https":
-            log.warning(f"Protocol changed to 'https' for local compute because SSL is enabled")
+            log.warning("Protocol changed to 'https' for local compute because SSL is enabled")
             protocol = "https"
         try:
             self._local_server = await self.add_compute(
@@ -202,10 +201,12 @@ class Controller:
         if computes:
             for c in computes:
                 try:
-                    # FIXME: Task exception was never retrieved
                     await self.add_compute(
                         compute_id=str(c.compute_id),
-                        connect=False,
+                        # computes flagged auto_connect connect in the
+                        # background, one second after the controller started
+                        connect=c.auto_connect,
+                        wait_connection=False,
                         **c.dict(exclude_unset=True, exclude={"compute_id", "created_at", "updated_at"}),
                         ssl_context=self._ssl_context,
                     )
@@ -363,7 +364,7 @@ class Controller:
         # install the built-in appliances if needed
         if Config.instance().settings.Server.install_builtin_appliances:
             previous_version = controller_vars.get("version")
-            log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+            log.info(f"Comparing controller version {__version__} with config version {previous_version}")
             builtin_appliances_path = self._appliance_manager.builtin_appliances_path()
             if not previous_version or parse_version(__version__.split("+")[0]) > parse_version(
                 previous_version.split("+")[0]
@@ -510,21 +511,15 @@ class Controller:
             dst_md5 = await wait_run_in_executor(md5sum, dst)
             return src_md5 != dst_md5
 
-        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-            resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
-            for filename in os.listdir(resource_path):
-                if not os.path.exists(os.path.join(dst_path, filename)):
-                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-        else:
-            for entry in importlib_resources.files("gns3server").joinpath(resource_name).iterdir():
-                full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
-                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
-                    shutil.copy(str(entry), os.path.join(full_path))
-                    installed_resources.append(full_path)
-                elif entry.is_dir():
-                    os.makedirs(full_path, exist_ok=True)
-                    await Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
+        for entry in importlib_resources.files("gns3server").joinpath(resource_name).iterdir():
+            full_path = os.path.join(dst_path, entry.name)
+            if entry.is_file() and await should_copy(str(entry), full_path, upgrade_resources):
+                log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                shutil.copy(str(entry), os.path.join(full_path))
+                installed_resources.append(full_path)
+            elif entry.is_dir():
+                os.makedirs(full_path, exist_ok=True)
+                await Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
         return installed_resources
 
     async def _install_base_configs(self):
@@ -626,9 +621,12 @@ class Controller:
             if connect:
                 if wait_connection:
                     await compute.connect()
-                else:
-                    # call compute.connect() later to give time to the controller to be fully started
-                    asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
+                elif not hasattr(sys, "_called_from_test"):
+                    # connect in the background to give time to the controller to be fully
+                    # started; goes through _try_reconnect so connection errors don't die
+                    # as unretrieved task exceptions. Skipped during tests: the timer would
+                    # leak the connection attempt into another test's event loop.
+                    asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute._try_reconnect()))
             self.notification.controller_emit("compute.created", compute.asdict())
             return compute
         else:
@@ -646,6 +644,17 @@ class Controller:
             if compute in project.computes:
                 await project.close()
 
+    def get_compute_open_projects(self, compute):
+        """
+        Return the opened projects using a compute.
+
+        :returns: List of opened projects
+        """
+
+        return [
+            project for project in self._projects.values() if compute in project.computes and project.status == "opened"
+        ]
+
     def compute_has_open_project(self, compute):
         """
         Check is compute has a project opened.
@@ -653,10 +662,7 @@ class Controller:
         :returns: True if a project is open
         """
 
-        for project in self._projects.values():
-            if compute in project.computes and project.status == "opened":
-                return True
-        return False
+        return bool(self.get_compute_open_projects(compute))
 
     async def delete_compute(self, compute_id):
         """
@@ -711,7 +717,9 @@ class Controller:
         except KeyError:
             if compute_id == "vm":
                 raise ControllerNotFoundError("Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
-            raise ControllerNotFoundError(f"Compute ID {compute_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Compute ID {compute_id} doesn't exist", code="compute_not_found", details={"compute_id": compute_id}
+            )
 
     def has_compute(self, compute_id):
         """
@@ -749,7 +757,9 @@ class Controller:
         try:
             return self._projects[project_id]
         except KeyError:
-            raise ControllerNotFoundError(f"Project ID {project_id} doesn't exist")
+            raise ControllerNotFoundError(
+                f"Project ID {project_id} doesn't exist", code="project_not_found", details={"project_id": project_id}
+            )
 
     async def get_loaded_project(self, project_id):
         """

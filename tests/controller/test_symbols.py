@@ -17,8 +17,8 @@
 
 import os
 
-from gns3server.controller.symbols import Symbols
 from gns3server.controller.symbol_themes import BUILTIN_SYMBOL_THEMES
+from gns3server.controller.symbols import Symbols
 from gns3server.utils.get_resource import get_resource
 
 

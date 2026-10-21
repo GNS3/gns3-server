@@ -16,22 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import os
-import uuid
 import shutil
 import tempfile
-import aiofiles
-import zipfile
 import time
-from datetime import datetime, timezone
+import uuid
+import zipfile
+from datetime import UTC, datetime
 
+import aiofiles
+
+from ..utils.asyncio import aiozipstream, wait_run_in_executor
 from .controller_error import ControllerError
-from ..utils.asyncio import wait_run_in_executor
-from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -64,23 +63,23 @@ class Snapshot:
             if created_at:
                 self._created_at = created_at
             else:
-                self._created_at = int(datetime.now(timezone.utc).timestamp())
+                self._created_at = int(datetime.now(UTC).timestamp())
             if not filename:
                 filename = self._name + ".gns3snapshot"
         else:
             self._name = filename.rsplit("_", 2)[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
             self._created_at = int(
-                datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=timezone.utc).timestamp()
+                datetime.strptime(datestring, FILENAME_DATETIME_FORMAT).replace(tzinfo=UTC).timestamp()
             )
 
         if not description:
             date = (
-                datetime.fromtimestamp(self._created_at, tz=timezone.utc)
+                datetime.fromtimestamp(self._created_at, tz=UTC)
                 .replace(tzinfo=None)
                 .strftime(DESCRIPTION_DATETIME_FORMAT)
             )
-            description = "Snapshot '{}' taken on {}".format(self._name, date)
+            description = f"Snapshot '{self._name}' taken on {date}"
 
         self._description = description
         self._filename = filename
@@ -158,7 +157,7 @@ class Snapshot:
                     auto_open=self._project.auto_open,
                     auto_close=self._project.auto_close,
                 )
-            log.info("Snapshot '{}' restored in {:.4f} seconds".format(self.name, time.time() - begin))
+            log.info(f"Snapshot '{self.name}' restored in {time.time() - begin:.4f} seconds")
         except (OSError, PermissionError) as e:
             raise ControllerError(str(e))
         await project.open()

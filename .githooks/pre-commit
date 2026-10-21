@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Pre-commit checks mirroring the CI checks that are fast enough to run on
+# every commit (justfile "lint" + "type-check"; pytest and pip check are not
+# run here). Only staged Python files are checked.
+#
+# Install with: just install-hooks
+
+set -euo pipefail
+
+# Prefer the repo virtualenv, fall back to whatever python is on PATH
+PYTHON="venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    PYTHON="python"
+fi
+if ! command -v "$PYTHON" >/dev/null 2>&1; then
+    echo "pre-commit: no python interpreter found, skipping checks" >&2
+    exit 0
+fi
+
+# Staged .py files (deletions excluded)
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=d -- '*.py')
+if [ ${#staged[@]} -eq 0 ]; then
+    exit 0
+fi
+
+status=0
+
+echo "pre-commit: ruff check"
+"$PYTHON" -m ruff check --exit-non-zero-on-fix "${staged[@]}" || status=1
+
+echo "pre-commit: ruff format --check"
+"$PYTHON" -m ruff format --check --diff "${staged[@]}" || status=1
+
+# mypy is configured with files = ["gns3server"] in pyproject.toml, i.e. CI
+# never type-checks tests: only pass staged files from that package.
+mypy_targets=()
+for f in "${staged[@]}"; do
+    case "$f" in
+        gns3server/*) mypy_targets+=("$f") ;;
+    esac
+done
+
+if [ ${#mypy_targets[@]} -gt 0 ]; then
+    echo "pre-commit: mypy"
+    "$PYTHON" -m mypy "${mypy_targets[@]}" || status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "pre-commit: checks failed. Fix the issues above (try 'just format')," >&2
+    echo "or bypass with: git commit --no-verify" >&2
+fi
+
+exit "$status"

@@ -22,26 +22,25 @@ Derived directly from zipfile.py and the zipstream project
 https://github.com/allanlei/python-zipstream
 """
 
+import asyncio
 import os
-import sys
 import stat
 import struct
+import sys
 import time
 import zipfile
-import asyncio
-import aiofiles
 from concurrent import futures
 
-from zipfile import (
-    structCentralDir,
-    structEndArchive64,
-    structEndArchive,
-    structEndArchive64Locator,
-    stringCentralDir,
-    stringEndArchive64,
-    stringEndArchive,
-    stringEndArchive64Locator,
-)
+import aiofiles
+
+structCentralDir = "<4s4B4HL2L5H2L"
+structEndArchive64 = "<4sQ2H2L4Q"
+structEndArchive = b"<4s4H2LH"
+structEndArchive64Locator = "<4sLQL"
+stringCentralDir = b"PK\x01\x02"
+stringEndArchive64 = b"PK\x06\x06"
+stringEndArchive = b"PK\x05\x06"
+stringEndArchive64Locator = b"PK\x06\x07"
 
 
 ZIP_ZSTANDARD = 93  # zstandard is supported by WinZIP v24 and later, PowerArchiver 2021 and 7-Zip-zstd
@@ -185,11 +184,11 @@ class ZipFile(zipfile.ZipFile):
         """
 
         if not isinstance(comment, bytes):
-            raise TypeError("comment: expected bytes, got %s" % type(comment))
+            raise TypeError(f"comment: expected bytes, got {type(comment)}")
         # check for valid comment length
         if len(comment) >= zipfile.ZIP_MAX_COMMENT:
             if self.debug:
-                print("Archive comment is too long; truncating to %d bytes" % zipfile.ZIP_MAX_COMMENT)
+                print(f"Archive comment is too long; truncating to {zipfile.ZIP_MAX_COMMENT} bytes")
             comment = comment[: zipfile.ZIP_MAX_COMMENT]
         self._comment = comment
         self._didModify = True

@@ -19,19 +19,22 @@ API routes for VPCS nodes.
 """
 
 import os
+from typing import Any, Union
+from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, Depends, Body, Path, status, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, WebSocket, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import Union
-from uuid import UUID
 
 from gns3server import schemas
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
+
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}
+}
 
 router = APIRouter(responses=responses)
 
@@ -59,14 +62,14 @@ async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate) -> s
     """
 
     vpcs = VPCS.instance()
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await vpcs.create_node(
-        node_data["name"],
+        data["name"],
         str(project_id),
-        node_data.get("node_id"),
-        console=node_data.get("console"),
-        console_type=node_data.get("console_type", "telnet"),
-        startup_script=node_data.get("startup_script"),
+        data.get("node_id"),
+        console=data.get("console"),
+        console_type=data.get("console_type", "telnet"),
+        startup_script=data.get("startup_script"),
     )
 
     return vm.asdict()
@@ -87,14 +90,14 @@ async def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends
     Update a VPCS node.
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
-    name = node_data.get("name", node.name)
+    data = jsonable_encoder(node_data, exclude_unset=True)
+    name = data.get("name", node.name)
     if node.name != name:
         node.name = name
-    console = node_data.get("console", node.console)
+    console = data.get("console", node.console)
     if node.console != console:
         node.console = console
-    console_type = node_data.get("console_type", node.console_type)
+    console_type = data.get("console_type", node.console_type)
     if node.console_type != console_type:
         node.console_type = console_type
     node.updated()
@@ -172,16 +175,16 @@ async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def create_vpcs_node_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
     node: VPCSVM = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the VPCS node is always 0.
@@ -195,16 +198,16 @@ async def create_vpcs_node_nio(
 @router.put(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UDPNIO,
+    response_model=Union[schemas.UDPNIO, schemas.BridgeNIO],
     dependencies=[Depends(compute_authentication)],
 )
 async def update_vpcs_node_nio(
     *,
     adapter_number: int = Path(..., ge=0, le=0),
     port_number: int,
-    nio_data: schemas.UDPNIO,
+    nio_data: Union[schemas.UDPNIO, schemas.BridgeNIO],
     node: VPCSVM = Depends(dep_node),
-) -> schemas.UDPNIO:
+) -> Union[schemas.UDPNIO, schemas.BridgeNIO]:
     """
     Update a NIO (Network Input/Output) on the node.
     The adapter number on the VPCS node is always 0.
@@ -214,6 +217,7 @@ async def update_vpcs_node_nio(
     nio.filters.clear()
     if nio_data.filters:
         nio.filters = nio_data.filters
+    nio.suspend = nio_data.suspend
     nio.markers = nio_data.markers or {}
     await node.port_update_nio_binding(port_number, nio)
     return nio.asdict()

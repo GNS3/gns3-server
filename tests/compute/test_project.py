@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -18,16 +17,17 @@
 
 import os
 import uuid
+from unittest.mock import patch
+from uuid import uuid4
+
 import pytest
 import pytest_asyncio
-from uuid import uuid4
-from unittest.mock import patch
 
-from tests.utils import asyncio_patch
-from gns3server.compute.project import Project
-from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError
+from gns3server.compute.notification_manager import NotificationManager
+from gns3server.compute.project import Project
 from gns3server.compute.vpcs import VPCS, VPCSVM
+from tests.utils import asyncio_patch
 
 
 @pytest_asyncio.fixture(scope="function")

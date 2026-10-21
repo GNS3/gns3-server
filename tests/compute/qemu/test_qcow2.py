@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytest
 import shutil
+
+import pytest
 
 from gns3server.compute.qemu.utils.qcow2 import Qcow2, Qcow2Error
 

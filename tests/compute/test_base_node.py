@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -18,19 +17,18 @@
 import os
 import shutil
 from collections import OrderedDict
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from unittest.mock import patch, MagicMock
-
 from gns3server.compute.compute_error import ComputeError
-from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.error import NodeError
-from gns3server.compute.vpcs import VPCS
 from gns3server.compute.nios.nio_udp import NIOUDP
+from gns3server.compute.vpcs import VPCS
+from gns3server.compute.vpcs.vpcs_vm import VPCSVM
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -169,6 +167,20 @@ async def test_ubridge_apply_filters(node):
     await node._ubridge_apply_filters("VPCS-10", filters)
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
     node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 latency 10")
+
+
+@pytest.mark.asyncio
+async def test_ubridge_apply_filters_rejects_kernel_only(node):
+    """
+    Netem-extension filters have no relay equivalent: applying them on a
+    relay bridge must fail loudly instead of pushing an unknown filter type
+    to uBridge.
+    """
+
+    node._ubridge_send = AsyncioMagicMock()
+    with pytest.raises(NodeError, match="kernel-datapath"):
+        await node._ubridge_apply_filters("VPCS-10", {"delay": [100, 10], "rate": ["512kbit"]})
+    node._ubridge_send.assert_not_called()
 
 
 @pytest.mark.asyncio

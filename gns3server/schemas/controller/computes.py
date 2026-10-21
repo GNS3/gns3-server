@@ -15,16 +15,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
+from enum import StrEnum
+from typing import Any, Optional, Union
 
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, field_validator, model_validator
-from typing import List, Optional, Union, Any
-from enum import Enum
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
-from .nodes import NodeType
 from .base import DateTimeModelMixin
 
+# The capabilities payload has one definition (controller.capabilities): a
+# second, private copy here silently stripped every field it did not know
+# about from GET /computes/{id} — which is how ubridge_tap and
+# ubridge_iol_tap went missing while the compute returned them.
+from .capabilities import Capabilities
 
-class Protocol(str, Enum):
+
+class Protocol(StrEnum):
     """
     Protocol supported to communicate with a compute.
     """
@@ -38,12 +43,15 @@ class ComputeBase(BaseModel):
     Data to create a compute.
     """
 
-    protocol: Protocol
-    host: str
-    port: int = Field(..., gt=0, le=65535)
-    user: str = None
+    protocol: Optional[Protocol] = None
+    host: Optional[str] = None
+    port: Optional[int] = Field(None, gt=0, le=65535)
+    user: Optional[str] = None
     password: Optional[SecretStr] = None
     name: Optional[str] = None
+    auto_connect: Optional[bool] = Field(
+        False, description="Whether to automatically connect to the compute when the controller starts"
+    )
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -52,7 +60,10 @@ class ComputeCreate(ComputeBase):
     Data to create a compute.
     """
 
-    compute_id: Union[str, uuid.UUID] = None
+    protocol: Protocol
+    host: str
+    port: int = Field(..., gt=0, le=65535)
+    compute_id: Optional[Union[str, uuid.UUID]] = None
     model_config = ConfigDict(
         json_schema_extra={
             "example": {"name": "My compute", "host": "127.0.0.1", "port": 3080, "user": "user", "password": "password"}
@@ -77,11 +88,9 @@ class ComputeUpdate(ComputeBase):
     Data to update a compute.
     """
 
-    protocol: Optional[Protocol] = None
-    host: Optional[str] = None
-    port: Optional[int] = Field(None, gt=0, le=65535)
     user: Optional[str] = None
     password: Optional[SecretStr] = None
+    auto_connect: Optional[bool] = None  # no default: update schemas must not publish defaults
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -92,26 +101,18 @@ class ComputeUpdate(ComputeBase):
     )
 
 
-class Capabilities(BaseModel):
-    """
-    Capabilities supported by a compute.
-    """
-
-    version: str = Field(..., description="Compute version number")
-    node_types: List[NodeType] = Field(..., description="Node types supported by the compute")
-    platform: str = Field(..., description="Platform where the compute is running (Linux, Windows or macOS)")
-    cpus: int = Field(..., description="Number of CPUs on this compute")
-    memory: int = Field(..., description="Amount of memory on this compute")
-    disk_size: int = Field(..., description="Disk size on this compute")
-
-
 class Compute(DateTimeModelMixin, ComputeBase):
     """
     Data returned for a compute.
     """
 
+    protocol: Protocol
+    host: str
+    port: int = Field(..., gt=0, le=65535)
     compute_id: Union[str, uuid.UUID]
     name: str
+    # defaulted: topology files and the local compute dict may not carry it
+    auto_connect: bool = False
     connected: Optional[bool] = Field(None, description="Whether the controller is connected to the compute or not")
     cpu_usage_percent: Optional[float] = Field(None, description="CPU usage of the compute", ge=0, le=100)
     memory_usage_percent: Optional[float] = Field(None, description="Memory usage of the compute", ge=0, le=100)
@@ -158,3 +159,11 @@ class AutoIdlePC(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={"example": {"platform": "c7200", "image": "/path/to/c7200_image.bin", "ram": 256}}
     )
+
+
+class IdlePC(BaseModel):
+    """
+    Result of an Idle-PC computation.
+    """
+
+    idlepc: Optional[str] = Field(None, description="Idle-PC value, null when none was found")

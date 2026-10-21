@@ -22,7 +22,7 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "3.1.0a6"
+__version__ = "3.1.0a7"
 __version_info__ = (3, 1, 0, -99)
 
 if "dev" in __version__:
@@ -35,3 +35,5 @@ if "dev" in __version__:
             __version__ += "+" + r
     except Exception as e:
         print(e)
+
+__api_version__ = __version__.split("+", 1)[0]

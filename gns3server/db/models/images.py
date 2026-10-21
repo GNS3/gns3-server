@@ -15,11 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Column, String, ForeignKey, BigInteger, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, BaseTable, GUID
-
+from .base import GUID, Base, BaseTable
 
 image_template_map = Table(
     "image_template_map",
@@ -32,11 +31,45 @@ image_template_map = Table(
 class Image(BaseTable):
     __tablename__ = "images"
 
-    image_id = Column(Integer, primary_key=True, autoincrement=True)
+    image_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String, index=True)
-    path = Column(String, unique=True)
+    path: Mapped[str] = mapped_column(String, unique=True, nullable=True)
     image_type = Column(String)
     image_size = Column(BigInteger)
     checksum = Column(String, index=True)
     checksum_algorithm = Column(String)
+    availability = Column(String, nullable=False, default="unknown", server_default="unknown")
+    file_fingerprint = Column(String)
+    last_seen_at = Column(DateTime)
+    last_verified_at = Column(DateTime)
+    last_error = Column(String)
     templates = relationship("Template", secondary=image_template_map, back_populates="images")
+
+    @property
+    def reference(self):
+        """An emulator-relative reference, or an absolute additional-root path."""
+        import os
+
+        from gns3server.utils import force_unix_path
+        from gns3server.utils.images import default_images_directory
+
+        root = os.path.abspath(default_images_directory(self.image_type))
+        path = os.path.abspath(self.path)
+        try:
+            if os.path.commonpath([root, path]) == root:
+                return force_unix_path(os.path.relpath(path, root))
+        except ValueError:  # Different drives on Windows.
+            pass
+        return force_unix_path(path)
+
+
+class ImageSyncJob(BaseTable):
+    __tablename__ = "image_sync_jobs"
+
+    job_id = Column(String, primary_key=True)
+    status = Column(String, nullable=False)
+    dry_run = Column(Boolean, nullable=False)
+    force_checksum = Column(Boolean, nullable=False)
+    finished_at = Column(DateTime)
+    counts = Column(JSON, nullable=False)
+    errors = Column(JSON, nullable=False)

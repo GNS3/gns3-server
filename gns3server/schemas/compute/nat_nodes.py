@@ -14,15 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, Union, List
-from enum import Enum
+from enum import StrEnum
+from typing import List, Optional, Union
 from uuid import UUID
 
+from pydantic import BaseModel, Field
+
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
-class HostInterfaceType(str, Enum):
+class HostInterfaceType(StrEnum):
     ethernet = "ethernet"
     tap = "tap"
 
@@ -37,7 +39,7 @@ class HostInterface(BaseModel):
     special: bool = Field(..., description="Whether the interface is non standard")
 
 
-class EthernetType(str, Enum):
+class EthernetType(StrEnum):
     ethernet = "ethernet"
 
 
@@ -52,7 +54,7 @@ class EthernetPort(BaseModel):
     interface: str
 
 
-class TAPType(str, Enum):
+class TAPType(StrEnum):
     tap = "tap"
 
 
@@ -67,7 +69,7 @@ class TAPPort(BaseModel):
     interface: str
 
 
-class UDPType(str, Enum):
+class UDPType(StrEnum):
     udp = "udp"
 
 
@@ -89,7 +91,7 @@ class NATBase(BaseModel):
     Common NAT node properties.
     """
 
-    name: str
+    name: Optional[str] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = None
     ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(
@@ -102,18 +104,21 @@ class NATCreate(NATBase):
     Properties to create a NAT node.
     """
 
-    pass
+    name: str
 
 
-class NATUpdate(NATBase):
+class NATUpdate(PartialUpdateModel, NATBase):
     """
     Properties to update a NAT node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
 
 
 class NAT(NATBase):
+    name: str
     project_id: UUID
     node_id: UUID
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]]

@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from enum import StrEnum
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
-from enum import Enum
 
 
 class ErrorMessage(BaseModel):
@@ -25,9 +26,14 @@ class ErrorMessage(BaseModel):
     """
 
     message: str
+    code: Optional[str] = Field(
+        None,
+        description="Stable machine-readable error code, for example port_in_use or node_not_found",
+    )
+    details: Optional[dict[str, Any]] = Field(None, description="Optional structured data about the error")
 
 
-class NodeStatus(str, Enum):
+class NodeStatus(StrEnum):
     """
     Supported node statuses.
     """
@@ -35,6 +41,8 @@ class NodeStatus(str, Enum):
     stopped = "stopped"
     started = "started"
     suspended = "suspended"
+    starting = "starting"
+    stopping = "stopping"
 
 
 class CustomAdapter(BaseModel):
@@ -77,7 +85,7 @@ class ExtraConfig(BaseModel):
         return v
 
 
-class ConsoleType(str, Enum):
+class ConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -93,7 +101,7 @@ class ConsoleType(str, Enum):
     docker_exec = "docker_exec"
 
 
-class AuxType(str, Enum):
+class AuxType(StrEnum):
     """
     Supported auxiliary console types.
     """

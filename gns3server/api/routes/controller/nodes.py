@@ -18,36 +18,50 @@
 API routes for nodes.
 """
 
-import aiohttp
 import asyncio
 import contextlib
 import ipaddress
+import logging
+from typing import Any, Callable, List, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status, Query, HTTPException
+import aiohttp
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
-from typing import List, Callable, Optional
-from uuid import UUID
 
-from gns3server.controller import Controller
+from gns3server import schemas
+from gns3server.api.openapi import binary_request_body, binary_response
 from gns3server.config import Config
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+    ControllerTimeoutError,
+    controller_error_status_code,
+)
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
-from gns3server.controller.controller_error import ControllerForbiddenError, ControllerBadRequestError
-from gns3server.db.repositories.rbac import RbacRepository
-from gns3server import schemas
 
+from .dependencies.concurrency import (
+    GET_RESPONSES,
+    PUT_RESPONSES,
+    check_if_match,
+    if_match_header,
+    serialize_updates,
+    set_etag,
+)
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
-import logging
-
 log = logging.getLogger(__name__)
 
-node_locks = {}
+node_locks: dict[str, dict[str, Any]] = {}
 
 
 class NodeConcurrency(APIRoute):
@@ -84,7 +98,9 @@ class NodeConcurrency(APIRoute):
         return custom_route_handler
 
 
-responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}}
+responses: dict[int | str, dict[str, Any]] = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}
+}
 
 router = APIRouter(route_class=NodeConcurrency, responses=responses)
 
@@ -127,18 +143,60 @@ def _check_node_type(node: Node, *required_types: str) -> None:
     },
     dependencies=[Depends(has_privilege("Node.Allocate"))],
 )
-async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
+async def create_node(node_create: schemas.NodeCreate, project: Project = Depends(dep_project)) -> dict:
     """
     Create a new node.
+
+    Set strict_names to get a 409 error instead of an automatic rename when the node name is already used.
 
     Required privilege: Node.Allocate
     """
 
+    return await _create_node(project, node_create)
+
+
+async def _create_node(project: Project, node_create: schemas.NodeCreate) -> dict:
+
     controller = Controller.instance()
-    compute = controller.get_compute(str(node_data.compute_id))
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    compute = controller.get_compute(str(node_create.compute_id))
+    node_data = jsonable_encoder(node_create, exclude_unset=True)
     node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
     return node.asdict()
+
+
+@router.post(
+    "/batch",
+    response_model=List[schemas.NodeBatchResult],
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+    },
+    dependencies=[Depends(has_privilege("Node.Allocate"))],
+)
+async def create_nodes(
+    nodes_create: List[schemas.NodeCreate], project: Project = Depends(dep_project)
+) -> List[schemas.NodeBatchResult]:
+    """
+    Create several nodes in the order they are listed.
+
+    The response lists one result per node in the same order. A node that fails to be created
+    does not stop the following ones.
+
+    Required privilege: Node.Allocate
+    """
+
+    results = []
+    for node_create in nodes_create:
+        try:
+            node = await _create_node(project, node_create)
+            results.append(schemas.NodeBatchResult(status_code=status.HTTP_201_CREATED, node=node))
+        except ControllerError as e:
+            log.error(f"Could not create node {node_create.name} in batch: {e}")
+            results.append(
+                schemas.NodeBatchResult(
+                    status_code=controller_error_status_code(e), error=schemas.ErrorMessage(message=str(e))
+                )
+            )
+    return results
 
 
 @router.get(
@@ -150,6 +208,7 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
 def get_nodes(
     project: Project = Depends(dep_project),
     tags: Optional[List[str]] = Query(None, description="Filter by tags (e.g. tags=vendor:cisco&tags=model:7200)"),
+    name: Optional[str] = Query(None, description="Return only nodes whose name exactly matches (case-sensitive)"),
 ) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
@@ -159,6 +218,7 @@ def get_nodes(
     Query Parameters:
     - tags: Filter by tags. Multiple tags are ANDed together.
             Example: ?tags=vendor:cisco&tags=model:7200
+    - name: Exact, case-sensitive match on the node name. Combined with other filters using AND.
     """
 
     if project.status == "closed":
@@ -166,6 +226,9 @@ def get_nodes(
         nodes = list(project.nodes.values())
     else:
         nodes = [v.asdict() for v in project.nodes.values()]
+
+    if name is not None:
+        nodes = [node for node in nodes if node.get("name") == name]
 
     # Filter by tags if provided (all filter tags have to match the node tags)
     if tags:
@@ -250,8 +313,13 @@ async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
 _HOST_INTERFACE_NODE_TYPES = {"cloud", "nat"}
 
 
-@router.get("/{node_id}", response_model=schemas.Node, dependencies=[Depends(has_privilege("Node.Audit"))])
-async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
+@router.get(
+    "/{node_id}",
+    response_model=schemas.Node,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.Audit"))],
+)
+async def get_node(response: Response, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Return a node from a given project.
 
@@ -260,36 +328,50 @@ async def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
 
     if node.node_type in _HOST_INTERFACE_NODE_TYPES:
         try:
-            response = await node.get()
-            await node.parse_node_response(response.json)
+            node_response = await node.get()
+            await node.parse_node_response(node_response.json)
         except Exception:
             # If compute is unreachable, still return cached data
             log.warning(f"Could not refresh node {node.id} from compute, returning cached data")
-    return node.asdict()
+    node_dict = node.asdict()
+    set_etag(response, node_dict)
+    return node_dict
 
 
 @router.put(
     "/{node_id}",
     response_model=schemas.Node,
     response_model_exclude_unset=True,
+    responses=PUT_RESPONSES,
     dependencies=[Depends(has_privilege("Node.Modify"))],
 )
-async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
+async def update_node(
+    node_update: schemas.NodeUpdate,
+    response: Response,
+    node: Node = Depends(dep_node),
+    if_match: Optional[str] = Depends(if_match_header),
+) -> schemas.Node:
     """
     Update a node.
+
+    If the If-Match header is present, the update is only applied when it matches the current ETag.
 
     Required privilege: Node.Modify
     """
 
-    node_data = jsonable_encoder(node_data, exclude_unset=True)
+    node_data = jsonable_encoder(node_update, exclude_unset=True)
 
     # Ignore these because we only use them when creating a node
     node_data.pop("node_id", None)
     node_data.pop("node_type", None)
     node_data.pop("compute_id", None)
 
-    await node.update(**node_data)
-    return node.asdict()
+    async with serialize_updates(f"node:{node.id}"):
+        check_if_match(if_match, node.asdict())
+        await node.update(**node_data)
+    node_dict = node.asdict()
+    set_etag(response, node_dict)
+    return node_dict
 
 
 @router.delete(
@@ -330,46 +412,93 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
     return new_node.asdict()
 
 
+LIFECYCLE_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_408_REQUEST_TIMEOUT: {"model": schemas.ErrorMessage, "description": "Timeout waiting for the node"},
+}
+
+
+async def _run_lifecycle(
+    node: Node,
+    action: Callable,
+    target: str,
+    wait: bool,
+    timeout: int,  # noqa: ASYNC109 - operation-specific timeout is intentional
+    tolerate_unsupported: bool = True,
+) -> dict:
+    async def _run():
+        try:
+            await action()
+        except HTTPException as e:
+            if not tolerate_unsupported or not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+                raise
+            return
+        if wait and not node.is_always_running():
+            await node.wait_for_status(target)
+
+    if not wait:
+        await _run()
+        return node.asdict()
+    try:
+        await asyncio.wait_for(_run(), timeout)
+    except TimeoutError:
+        raise ControllerTimeoutError(f"Timeout when waiting for {node.name} to be {target}")
+    return node.asdict()
+
+
 @router.post(
-    "/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/start",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def start_node(start_data: Optional[dict] = None, node: Node = Depends(dep_node)) -> None:
+async def start_node(
+    start_data: Optional[dict] = None,
+    wait: bool = Query(False, description="Return only when the node status is 'started'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Start a node.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.start(data=start_data)
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, lambda: node.start(data=start_data), "started", wait, timeout)
 
 
 @router.post(
-    "/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/stop",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def stop_node(node: Node = Depends(dep_node)) -> None:
+async def stop_node(
+    wait: bool = Query(False, description="Return only when the node status is 'stopped'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Stop a node.
+
+    Errors reported while stopping are returned to the caller.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.stop()
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, lambda: node.stop(strict=True), "stopped", wait, timeout)
 
 
 @router.post(
     "/{node_id}/suspend",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
     dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def suspend_node(node: Node = Depends(dep_node)) -> None:
+async def suspend_node(
+    wait: bool = Query(False, description="Return only when the node status is 'suspended'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Suspend a node.
 
@@ -379,24 +508,27 @@ async def suspend_node(node: Node = Depends(dep_node)) -> None:
     Required privilege: Node.PowerMgmt
     """
 
-    await node.suspend()
+    return await _run_lifecycle(node, node.suspend, "suspended", wait, timeout, tolerate_unsupported=False)
 
 
 @router.post(
-    "/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+    "/{node_id}/reload",
+    response_model=schemas.Node,
+    responses=LIFECYCLE_RESPONSES,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))],
 )
-async def reload_node(node: Node = Depends(dep_node)) -> None:
+async def reload_node(
+    wait: bool = Query(False, description="Return only when the node status is 'started'"),
+    timeout: int = Query(240, ge=1, le=3600, description="Seconds to wait when 'wait' is true"),  # noqa: ASYNC109 - operation-specific timeout is intentional
+    node: Node = Depends(dep_node),
+) -> dict:
     """
     Reload a node.
 
     Required privilege: Node.PowerMgmt
     """
 
-    try:
-        await node.reload()
-    except HTTPException as e:
-        if not e.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
-            raise
+    return await _run_lifecycle(node, node.reload, "started", wait, timeout)
 
 
 @router.post(
@@ -446,7 +578,11 @@ async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     return links
 
 
-@router.get("/{node_id}/dynamips/auto_idlepc", dependencies=[Depends(has_privilege("Node.Audit"))])
+@router.get(
+    "/{node_id}/dynamips/auto_idlepc",
+    response_model=schemas.IdlePC,
+    dependencies=[Depends(has_privilege("Node.Audit"))],
+)
 async def auto_idlepc(node: Node = Depends(dep_node)) -> dict:
     """
     Compute an Idle-PC value for a Dynamips node
@@ -550,7 +686,12 @@ async def list_node_files(
     return res.json
 
 
-@router.get("/{node_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Node.Audit"))])
+@router.get(
+    "/{node_id}/files/{file_path:path}",
+    response_class=StreamingResponse,
+    responses={200: binary_response(description="File content")},
+    dependencies=[Depends(has_privilege("Node.Audit"))],
+)
 async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     """
     Return a file from the node directory.
@@ -575,7 +716,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
         try:
             async for chunk in compute_resp.content.iter_chunked(65536):
                 yield chunk
-        except (IOError, OSError, asyncio.TimeoutError) as e:
+        except (TimeoutError, OSError) as e:
             log.error(f"Error streaming file '{path}' from compute: {e}")
             raise
         finally:
@@ -591,6 +732,13 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
 @router.post(
     "/{node_id}/files/{file_path:path}",
     status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {
+            "description": "File written",
+            "content": {"application/json": {"schema": {"type": "null"}}},
+        }
+    },
+    openapi_extra=binary_request_body(),
     dependencies=[Depends(has_privilege("Node.Modify"))],
 )
 async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
@@ -654,9 +802,8 @@ async def ws_console(
         return
 
     compute = node.compute
-    log.info(
-        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket"
-    )
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller console WebSocket")
 
     compute_host = compute.host
     try:
@@ -690,9 +837,7 @@ async def ws_console(
                     await ws_console_compute.send_bytes(msg["bytes"])
         except WebSocketDisconnect:
             pass
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller console WebSocket"
-        )
+        log.info(f"Client {client} has disconnected from controller console WebSocket")
 
     async def ws_send(ws_console_compute):
         """
@@ -709,10 +854,7 @@ async def ws_console(
                     break
         except WebSocketDisconnect:
             # the client disconnected while the compute was still streaming console output
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" console WebSocket"
-            )
+            log.info(f"Client {client} has disconnected from controller console WebSocket")
 
     try:
         # forward WebSocket data in both directions between the client and the compute console WebSocket
@@ -763,9 +905,8 @@ async def vnc_console(
         return
 
     compute = node.compute
-    log.info(
-        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller VNC console WebSocket"
-    )
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
+    log.info(f"New client {client} has connected to controller VNC console WebSocket")
 
     compute_host = compute.host
     try:
@@ -796,10 +937,7 @@ async def vnc_console(
                     await vnc_console_compute.send_bytes(data)
         except WebSocketDisconnect:
             pass
-        log.info(
-            f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-            f" VNC console WebSocket"
-        )
+        log.info(f"Client {client} has disconnected from controller VNC console WebSocket")
 
     async def vnc_send(vnc_console_compute):
         """
@@ -814,10 +952,7 @@ async def vnc_console(
                     break
         except WebSocketDisconnect:
             # the client disconnected while the compute was still streaming VNC console output
-            log.info(
-                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                f" VNC console WebSocket"
-            )
+            log.info(f"Client {client} has disconnected from controller VNC console WebSocket")
 
     try:
         # forward WebSocket data in both directions between the client and the compute VNC console WebSocket

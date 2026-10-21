@@ -18,16 +18,15 @@
 Represents a Dynamips hypervisor and starts/stops the associated Dynamips process.
 """
 
-import sys
+import asyncio
+import logging
 import os
 import subprocess
-import asyncio
 
 from gns3server.utils.asyncio import wait_for_process_termination
-from .dynamips_hypervisor import DynamipsHypervisor
-from .dynamips_error import DynamipsError
 
-import logging
+from .dynamips_error import DynamipsError
+from .dynamips_hypervisor import DynamipsHypervisor
 
 log = logging.getLogger(__name__)
 
@@ -145,7 +144,7 @@ class Hypervisor(DynamipsHypervisor):
             await asyncio.sleep(0.01)
             try:
                 await wait_for_process_termination(self._process, timeout=3)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if self._process.returncode is None:
                     log.warning(f"Dynamips process {self._process.pid} is still running... killing it")
                     try:
@@ -196,13 +195,13 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
+        command.extend(["-l", f"dynamips_i{self._id}_log.txt"])  # log file
 
         if self._bind_console_host:
             # support was added in Dynamips version 0.2.23
-            command.extend(["-H", "{}:{}".format(self._host, self._port), "--console-binding-addr", self._console_host])
+            command.extend(["-H", f"{self._host}:{self._port}", "--console-binding-addr", self._console_host])
         elif self._console_host != "0.0.0.0" and self._console_host != "::":
-            command.extend(["-H", "{}:{}".format(self._host, self._port)])
+            command.extend(["-H", f"{self._host}:{self._port}"])
         else:
             command.extend(["-H", str(self._port)])
 

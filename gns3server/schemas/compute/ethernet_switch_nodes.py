@@ -14,21 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List
+from enum import StrEnum
+from typing import List, Optional
 from uuid import UUID
-from enum import Enum
+
+from pydantic import BaseModel, Field, model_validator
 
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
-class EthernetSwitchPortType(str, Enum):
+class EthernetSwitchPortType(StrEnum):
     access = "access"
     dot1q = "dot1q"
     qinq = "qinq"
 
 
-class EthernetSwitchEtherType(str, Enum):
+class EthernetSwitchEtherType(StrEnum):
     ethertype_8021q = "0x8100"
     ethertype_qinq = "0x88A8"
     ethertype_8021q9100 = "0x9100"
@@ -52,7 +54,7 @@ class EthernetSwitchPort(BaseModel):
         return self
 
 
-class TelnetConsoleType(str, Enum):
+class TelnetConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -82,12 +84,12 @@ class EthernetSwitchCreate(EthernetSwitchBase):
     name: str
 
 
-class EthernetSwitchUpdate(EthernetSwitchBase):
+class EthernetSwitchUpdate(PartialUpdateModel, EthernetSwitchBase):
     """
     Properties to update an Ethernet hub node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
 
 
 class EthernetSwitch(EthernetSwitchBase):

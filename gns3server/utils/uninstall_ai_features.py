@@ -7,10 +7,10 @@ Usage:
     gns3server-uninstall-ai-features -y
 """
 
-import os
-import sys
-import subprocess
 import argparse
+import os
+import subprocess
+import sys
 
 
 def _find_base_dir():
@@ -25,7 +25,7 @@ def _read_requirements(filename):
     base_dir = _find_base_dir()
     filepath = os.path.join(base_dir, filename)
     packages = []
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):

@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+
 from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
@@ -54,3 +54,16 @@ class TestImagesRoutes:
             stream = mock.call_args[0][0]
             assert hasattr(stream, "__aiter__")
             assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_load_docker_image_with_image_and_digest(self, app: FastAPI, compute_client: AsyncClient) -> None:
+
+        digest = "sha256:" + "a" * 64
+        with asyncio_patch("gns3server.compute.docker.Docker.load_image") as mock:
+            response = await compute_client.post(
+                app.url_path_for("compute:load_docker_image"),
+                params={"image": "gns3/frr:latest", "digest": digest},
+                content=b"docker-save-tar-bytes",
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            # the tag and the digest pinned by the controller reach the manager
+            assert mock.call_args[1] == {"image": "gns3/frr:latest", "digest": digest}

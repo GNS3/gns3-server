@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytest
 
+import pytest
 from fastapi import HTTPException
 
 from gns3server.utils.path import check_path_allowed, get_default_project_directory

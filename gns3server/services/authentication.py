@@ -14,22 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from joserfc import jwt
-from joserfc.jwk import OctKey
-from joserfc.errors import JoseError, BadSignatureError
 import base64
 import json
+import logging
 import time
-from datetime import datetime, timedelta, timezone
-import bcrypt
-
+from datetime import UTC, datetime, timedelta
 from typing import Optional
+
+import bcrypt
 from fastapi import HTTPException, status
-from gns3server.schemas.controller.tokens import TokenData
-from gns3server.config import Config
+from joserfc import jwt
+from joserfc.errors import BadSignatureError, JoseError
+from joserfc.jwk import OctKey
 from pydantic import ValidationError
 
-import logging
+from gns3server.config import Config
+from gns3server.schemas.controller.tokens import Token, TokenData
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,9 @@ def _extract_alg(token: str) -> str:
         return "<undecodable>"
 
 
+BEARER_TOKEN_TYPE = "bearer"
+
+
 class AuthService:
     def hash_password(self, password: str) -> str:
 
@@ -61,8 +64,9 @@ class AuthService:
     def _create_token(self, username, token_version, token_type, expires_in, secret_key=None) -> str:
         """Shared helper to create any kind of signed JWT token."""
 
-        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_in)
-        to_encode = {"sub": username, "exp": expire, "ver": token_version, "type": token_type}
+        issued_at = datetime.now(UTC)
+        expire = issued_at + timedelta(minutes=expires_in)
+        to_encode = {"sub": username, "iat": issued_at, "exp": expire, "ver": token_version, "type": token_type}
         if secret_key is None:
             secret_key = Config.instance().settings.Controller.jwt_secret_key
         if secret_key is None:
@@ -73,21 +77,34 @@ class AuthService:
         encoded_jwt = jwt.encode({"alg": algorithm}, to_encode, key)
         return encoded_jwt
 
-    def create_access_token(self, username, token_version: int = 0, secret_key: str = None, expires_in: int = 0) -> str:
+    def create_access_token(
+        self, username, token_version: int = 0, secret_key: Optional[str] = None, expires_in: int = 0
+    ) -> str:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_access_token_expire_minutes
         return self._create_token(username, token_version, "access", expires_in, secret_key)
 
     def create_refresh_token(
-        self, username, token_version: int = 0, secret_key: str = None, expires_in: int = 0
+        self, username, token_version: int = 0, secret_key: Optional[str] = None, expires_in: int = 0
     ) -> str:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_refresh_token_expire_minutes
         return self._create_token(username, token_version, "refresh", expires_in, secret_key)
 
-    def get_token_data(self, token: str, secret_key: str = None) -> TokenData:
+    def create_token_response(self, user) -> Token:
+
+        settings = Config.instance().settings.Controller
+        return Token(
+            access_token=self.create_access_token(user.username, token_version=user.token_version),
+            token_type=BEARER_TOKEN_TYPE,
+            expires_in=settings.jwt_access_token_expire_minutes * 60,
+            refresh_token=self.create_refresh_token(user.username, token_version=user.token_version),
+            refresh_expires_in=settings.jwt_refresh_token_expire_minutes * 60,
+        )
+
+    def get_token_data(self, token: str, secret_key: Optional[str] = None) -> TokenData:
 
         def auth_error(detail: str) -> HTTPException:
             return HTTPException(
@@ -105,7 +122,7 @@ class AuthService:
         key = OctKey.import_key(secret_key)
         try:
             payload = jwt.decode(token, key, algorithms=[algorithm])
-            username: str = payload.claims.get("sub")
+            username: Optional[str] = payload.claims.get("sub")
             if username is None:
                 raise auth_error("Invalid token: missing subject claim")
             # Validate the exp claim — joserfc does not validate time-based claims by default
@@ -123,5 +140,5 @@ class AuthService:
             raise auth_error(f"Invalid token ({type(e).__name__})")
         return token_data
 
-    def get_username_from_token(self, token: str, secret_key: str = None) -> Optional[str]:
+    def get_username_from_token(self, token: str, secret_key: Optional[str] = None) -> Optional[str]:
         return self.get_token_data(token, secret_key).username

@@ -183,8 +183,8 @@ def reload_skills_repository() -> dict[str, Any]:
     protocols_ok = manager.reload_packet_analysis_protocols()
 
     # Reload forbidden commands (local import to avoid circular dependency)
-    from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload_fc
     from gns3server.agent.gns3_copilot.utils.command_filter import get_forbidden_commands
+    from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload_fc
 
     _reload_fc()
     forbidden_commands = get_forbidden_commands()
@@ -239,7 +239,7 @@ def reload_injection_skills() -> dict[str, Any]:
         logger.error(f"Error during skills reload: {e}")
         return {
             "success": False,
-            "message": f"Error: {str(e)}",
+            "message": f"Error: {e!s}",
             "skill_count": len(INJECTION_SKILLS_REGISTRY),
             "version": "",
         }
@@ -278,7 +278,7 @@ def reload_prompts() -> dict[str, Any]:
         manager = get_skills_manager()
         return {
             "success": False,
-            "message": f"Error: {str(e)}",
+            "message": f"Error: {e!s}",
             "prompt_count": manager.get_prompt_count() if manager else 0,
             "version": "",
         }
@@ -300,8 +300,8 @@ def reload_forbidden_commands() -> dict[str, Any]:
         }
     """
     try:
-        from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload
         from gns3server.agent.gns3_copilot.utils.command_filter import get_forbidden_commands
+        from gns3server.agent.gns3_copilot.utils.command_filter import reload_forbidden_commands as _reload
 
         _reload()
         commands = get_forbidden_commands()
@@ -314,7 +314,7 @@ def reload_forbidden_commands() -> dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error during forbidden commands reload: {e}")
-        return {"success": False, "message": f"Error: {str(e)}", "command_count": 0, "version": ""}
+        return {"success": False, "message": f"Error: {e!s}", "command_count": 0, "version": ""}
 
 
 def get_prompt(prompt_name: str) -> str:

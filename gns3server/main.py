@@ -25,14 +25,12 @@ Entry point of the server. It's support daemonize the process
 # if is not writetable the application crash. It's the user fault
 # because one day the user as used sudo to run an egg and break his
 # filesystem permissions, but it's a common mistake.
-import gns3server.utils.get_resource
-
-import os
-import sys
-import asyncio
 import argparse
+import asyncio
 import logging
+import os
 import resource
+import sys
 
 
 def daemonize():
@@ -45,7 +43,7 @@ def daemonize():
             # Exit first parent
             sys.exit(0)
     except OSError as e:
-        print("First fork failed: %d (%s)\n" % (e.errno, e.strerror), file=sys.stderr)
+        print(f"First fork failed: {e.errno} ({e.strerror})\n", file=sys.stderr)
         sys.exit(1)
 
     # Decouple from parent environment
@@ -59,7 +57,7 @@ def daemonize():
             # Exit from second parent
             sys.exit(0)
     except OSError as e:
-        print("Second fork failed: %d (%s)\n" % (e.errno, e.strerror), file=sys.stderr)
+        print(f"Second fork failed: {e.errno} ({e.strerror})\n", file=sys.stderr)
         sys.exit(1)
 
 

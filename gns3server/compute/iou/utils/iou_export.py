@@ -204,9 +204,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        fd = open(args.nvram, "rb")
-        nvram = fd.read()
-        fd.close()
+        with open(args.nvram, "rb") as fd:
+            nvram = fd.read()
     except OSError as err:
         sys.stderr.write(f"Error reading file: {err}\n")
         sys.exit(1)
@@ -218,16 +217,14 @@ if __name__ == "__main__":
         sys.exit(3)
 
     try:
-        fd = open(args.startup, "wb")
-        fd.write(startup)
-        fd.close()
+        with open(args.startup, "wb") as out:
+            out.write(startup)
         if args.private is not None:
             if private is None:
                 sys.stderr.write("Warning: No private config\n")
             else:
-                fd = open(args.private, "wb")
-                fd.write(private)
-                fd.close()
+                with open(args.private, "wb") as out:
+                    out.write(private)
     except OSError as err:
         sys.stderr.write(f"Error writing file: {err}\n")
         sys.exit(1)

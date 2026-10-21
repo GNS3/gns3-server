@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from ..common import NodeStatus
+from ..update import PartialUpdateModel
 
 
 class EthernetHubPort(BaseModel):
@@ -45,12 +47,12 @@ class EthernetHubCreate(EthernetHubBase):
     name: str
 
 
-class EthernetHubUpdate(EthernetHubBase):
+class EthernetHubUpdate(PartialUpdateModel, EthernetHubBase):
     """
     Properties to update an Ethernet hub node.
     """
 
-    pass
+    update_excluded_fields = ("node_id",)
 
 
 class EthernetHub(EthernetHubBase):

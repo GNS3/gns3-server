@@ -31,8 +31,8 @@ Features:
 
 import os
 import sys
-from typing import Dict, List, Tuple
 from datetime import datetime
+from typing import Dict, List, Tuple
 
 
 def get_netmiko_version() -> str:
@@ -169,7 +169,7 @@ def group_devices_by_brand(device_types: List[str]) -> Dict[str, List[str]]:
     Returns:
         Dictionary mapping brand names to device type lists
     """
-    brands = {}
+    brands: dict[str, list[str]] = {}
 
     for device_type in device_types:
         brand = extract_brand_name(device_type)
@@ -338,7 +338,7 @@ def save_markdown(content: str, filename: str = "netmiko_devices.md") -> None:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"Markdown document saved to: {output_path}")
-    except IOError as e:
+    except OSError as e:
         print(f"Error: Failed to save Markdown file: {e}", file=sys.stderr)
         sys.exit(1)
 

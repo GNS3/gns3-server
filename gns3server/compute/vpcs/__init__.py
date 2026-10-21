@@ -19,7 +19,6 @@ VPCS server module.
 """
 
 import os
-import asyncio
 
 from ..base_manager import BaseManager
 from .vpcs_error import VPCSError

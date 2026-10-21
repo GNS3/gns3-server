@@ -18,19 +18,19 @@
 Reads the configuration file and store the settings for the server.
 """
 
-import sys
-import os
-import shutil
-import secrets
 import configparser
-
-from enum import Enum
-from pydantic import ValidationError
-from .schemas import ServerConfig
-from .version import __version_info__
-from .utils.file_watcher import FileWatcher
-
 import logging
+import os
+import secrets
+import shutil
+import sys
+from enum import Enum
+
+from pydantic import ValidationError
+
+from .schemas import ServerConfig
+from .utils.file_watcher import FileWatcher
+from .version import __version_info__
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +46,10 @@ class ConfigConflictError(Exception):
 # values; every other list option is comma-separated (must match the field
 # validators splitting them in gns3server.schemas.config).
 LIST_OPTION_SEPARATORS = {"additional_images_paths": ";"}
+
+
+def parser_sections(parser: configparser.ConfigParser) -> dict[str, dict[str, str]]:
+    return {section: dict(parser[section]) for section in parser.sections()}
 
 
 class Config:
@@ -328,7 +332,7 @@ class Config:
                 changed.append(f"{section}.{option}")
 
         # validate the merged settings before touching the file on disk
-        ServerConfig(**merged_parser._sections)
+        ServerConfig(**parser_sections(merged_parser))
 
         directory_name = os.path.dirname(main_config_file)
         if directory_name:
@@ -414,7 +418,7 @@ class Config:
             self._watched_files[file] = os.stat(file).st_mtime
 
         try:
-            self._settings = ServerConfig(**config._sections)
+            self._settings = ServerConfig(**parser_sections(config))
         except ValidationError as e:
             log.critical(f"Could not validate configuration file settings: {e}")
             raise

@@ -18,10 +18,10 @@ This script tests:
 Run with: python test_huawei_ce.py
 """
 
+import os
 import sys
 import unittest
 from unittest.mock import Mock, patch
-import os
 
 # Add project root to path using relative path
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -157,7 +157,7 @@ class TestHuaweiTelnetCEIntegration(unittest.TestCase):
 
     def test_mock_telnet_connection(self):
         """Test telnet_login logic with mocked connection."""
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko.huawei_ce import (  # noqa: E501
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.huawei_ce import (
             GNS3HuaweiTelnetCE,
         )
 

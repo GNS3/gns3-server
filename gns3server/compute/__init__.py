@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
+import sys
 
 from .builtin import Builtin
-from .vpcs import VPCS
-from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .qemu import Qemu
+from .virtualbox import VirtualBox
 from .vmware import VMware
+from .vpcs import VPCS
 
 MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
 

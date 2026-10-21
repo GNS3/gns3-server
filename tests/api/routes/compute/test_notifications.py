@@ -15,11 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import json
-
-from gns3server.compute.notification_manager import NotificationManager
-
 
 # @pytest.mark.asyncio
 # async def test_notification_ws(compute_api):

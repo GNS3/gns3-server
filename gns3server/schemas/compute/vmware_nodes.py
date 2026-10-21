@@ -14,15 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
+from enum import StrEnum
+from typing import List, Optional
 from uuid import UUID
 
-from ..common import NodeStatus, CustomAdapter
+from pydantic import BaseModel, Field
+
+from ..common import CustomAdapter, NodeStatus
+from ..update import PartialUpdateModel
 
 
-class VMwareConsoleType(str, Enum):
+class VMwareConsoleType(StrEnum):
     """
     Supported console types.
     """
@@ -32,7 +34,7 @@ class VMwareConsoleType(str, Enum):
     none = "none"
 
 
-class VMwareOnCloseAction(str, Enum):
+class VMwareOnCloseAction(StrEnum):
     """
     Supported actions when closing VMware VM.
     """
@@ -42,7 +44,7 @@ class VMwareOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
-class VMwareAdapterType(str, Enum):
+class VMwareAdapterType(StrEnum):
     """
     Supported VMware VM adapter types.
     """
@@ -62,9 +64,9 @@ class VMwareBase(BaseModel):
     Common VMware node properties.
     """
 
-    name: str
-    vmx_path: str = Field(..., description="Path to the vmx file")
-    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
+    name: Optional[str] = None
+    vmx_path: Optional[str] = None
+    linked_clone: Optional[bool] = None
     node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
@@ -83,13 +85,17 @@ class VMwareCreate(VMwareBase):
     Properties to create a VMware node.
     """
 
-    pass
+    name: str
+    vmx_path: str = Field(..., description="Path to the vmx file")
+    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
 
 
-class VMwareUpdate(VMwareBase):
+class VMwareUpdate(PartialUpdateModel, VMwareBase):
     """
     Properties to update a VMware node.
     """
+
+    update_excluded_fields = ("node_id",)
 
     name: Optional[str] = None
     vmx_path: Optional[str] = None
@@ -97,6 +103,9 @@ class VMwareUpdate(VMwareBase):
 
 
 class VMware(VMwareBase):
+    name: str
+    vmx_path: str = Field(..., description="Path to the vmx file")
+    linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
     project_id: UUID = Field(..., description="Project ID")
     node_directory: Optional[str] = Field(None, description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

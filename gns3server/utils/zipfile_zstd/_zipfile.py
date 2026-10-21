@@ -1,13 +1,19 @@
-import zipfile
-import zstandard as zstd
 import inspect
+import zipfile as _zipfile_module
+from typing import Any
+
+import zstandard as zstd
 
 from ._patcher import patch
 
+zipfile: Any = _zipfile_module
 
-zipfile.ZIP_ZSTANDARD = 93
+ZIP_ZSTANDARD = 93
+ZSTANDARD_VERSION = 20
+
+zipfile.ZIP_ZSTANDARD = ZIP_ZSTANDARD
 zipfile.compressor_names[zipfile.ZIP_ZSTANDARD] = "zstandard"
-zipfile.ZSTANDARD_VERSION = 20
+zipfile.ZSTANDARD_VERSION = ZSTANDARD_VERSION
 
 
 @patch(zipfile, "_check_compression")

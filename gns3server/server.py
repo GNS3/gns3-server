@@ -20,25 +20,25 @@
 Start the program. Use main.py to load it.
 """
 
-import os
-import datetime
-import locale
-import psutil
-import sys
 import asyncio
-import signal
+import datetime
 import functools
-import uvicorn
+import locale
+import logging
+import os
 import secrets
+import signal
 import string
+import sys
 
-from gns3server.logger import init_logger
-from gns3server.version import __version__
+import psutil
+import uvicorn
+from pydantic import SecretStr, ValidationError
+
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
-from pydantic import ValidationError, SecretStr
-
-import logging
+from gns3server.logger import init_logger
+from gns3server.version import __version__
 
 log = logging.getLogger(__name__)
 
@@ -255,14 +255,12 @@ class Server:
         else:
             log.info(f"Compute authentication is enabled with username '{config.Server.compute_username}'")
 
-        # we only support Python 3 version >= 3.9
-        if sys.version_info < (3, 9, 0):
-            raise SystemExit("Python 3.9 or higher is required")
+        # we only support Python 3 version >= 3.11
+        if sys.version_info < (3, 11, 0):
+            raise SystemExit("Python 3.11 or higher is required")
 
         log.info(
-            "Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
-                major=sys.version_info[0], minor=sys.version_info[1], micro=sys.version_info[2], pid=os.getpid()
-            )
+            f"Running with Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} and has PID {os.getpid()}"
         )
 
         # check for the correct locale (UNIX/Linux only)

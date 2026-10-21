@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-
-from gns3server.controller.gns3vm.remote_gns3_vm import RemoteGNS3VM
-from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 from pydantic import SecretStr
+
+from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
+from gns3server.controller.gns3vm.remote_gns3_vm import RemoteGNS3VM
 
 
 @pytest.fixture

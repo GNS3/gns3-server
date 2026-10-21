@@ -43,21 +43,21 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
 from nornir.core import Nornir
-from nornir.core.task import AggregatedResult
-from nornir.core.task import Result
-from nornir.core.task import Task
+from nornir.core.task import AggregatedResult, Result, Task
 from nornir_netmiko.tasks import netmiko_send_config
 
 from gns3server.agent.gns3_copilot.gns3_client import get_gns3_server_host
-from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
-from gns3server.agent.gns3_copilot.utils.command_filter import (
-    filter_forbidden_commands,
-)
 
 # Import custom Netmiko device types for GNS3 emulation
 # This registers gns3_huawei_telnet_ce and other custom device types
 # NOTE: Must be imported BEFORE any Nornir operations to ensure device types are registered
-from gns3server.agent.gns3_copilot.utils import custom_netmiko  # noqa: F401
+from gns3server.agent.gns3_copilot.utils import get_device_ports_from_topology
+from gns3server.agent.gns3_copilot.utils.command_filter import (
+    filter_forbidden_commands,
+)
+from gns3server.agent.gns3_copilot.utils.device_configs import (
+    merge_duplicate_device_configs,
+)
 
 # Explicitly register custom device types to ensure they are available
 # This is a safety measure in case the auto-registration on import doesn't work
@@ -78,7 +78,7 @@ try:
     # so we use importlib to get the actual module
     import importlib
 
-    sd = importlib.import_module("netmiko.ssh_dispatcher")
+    sd: Any = importlib.import_module("netmiko.ssh_dispatcher")
 
     # Recalculate platforms lists to include custom device types
     sd.platforms = list(sd.CLASS_MAPPER.keys())
@@ -196,8 +196,15 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
 
         # Validate input
         device_configs_list, project_id = self._validate_tool_input(tool_input)
-        if isinstance(device_configs_list, list) and len(device_configs_list) > 0 and "error" in device_configs_list[0]:
+        if len(device_configs_list) > 0 and "error" in device_configs_list[0]:
             return device_configs_list
+
+        # Merge same-device entries before anything keys by device_name
+        try:
+            device_configs_list = merge_duplicate_device_configs(device_configs_list, commands_field="config_commands")
+        except ValueError as e:
+            logger.error("Invalid device_configs input: %s", e)
+            return [{"status": "failed", "error": str(e)}]
 
         # Filter forbidden commands and store blocked commands info
         device_configs_list, blocked_commands_map = self._filter_forbidden_commands_from_device_configs(
@@ -255,7 +262,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
         except Exception as e:
             # Overall execution failed
             logger.error("Error executing configurations on all devices: %s", e)
-            return [{"status": "failed", "error": f"Execution error: {str(e)}"}]
+            return [{"status": "failed", "error": f"Execution error: {e!s}"}]
 
         logger.info(
             "Multiple device configuration execution completed. Results: %s",
@@ -285,7 +292,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (ReadTimeout): {str(e)}",
+                result=f"Configuration failed (ReadTimeout): {e!s}",
                 failed=True,
             )
 
@@ -305,7 +312,7 @@ class ExecuteMultipleDeviceConfigCommands(BaseTool):
             )
             return Result(
                 host=task.host,
-                result=f"Configuration failed (Unhandled Exception): {str(e)}",
+                result=f"Configuration failed (Unhandled Exception): {e!s}",
                 failed=True,
             )
 

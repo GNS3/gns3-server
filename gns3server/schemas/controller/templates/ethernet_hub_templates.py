@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.ethernet_hub_nodes import EthernetHubPort
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
 
+from gns3server.schemas.compute.ethernet_hub_nodes import EthernetHubPort
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
 
 DEFAULT_PORTS = [
     EthernetHubPort(port_number=0, name="Ethernet0"),
@@ -40,5 +42,5 @@ class EthernetHubTemplate(TemplateBase):
     ports_mapping: Optional[List[EthernetHubPort]] = Field(DEFAULT_PORTS, description="Ports")
 
 
-class EthernetHubTemplateUpdate(EthernetHubTemplate):
-    pass
+class EthernetHubTemplateUpdate(PartialUpdateModel, EthernetHubTemplate):
+    update_excluded_fields = ("template_id",)

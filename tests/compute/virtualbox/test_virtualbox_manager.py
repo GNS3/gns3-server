@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,13 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
-import pytest_asyncio
-import tempfile
 import os
 import stat
+import tempfile
 
-from unittest.mock import patch
+import pytest
+import pytest_asyncio
 
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
@@ -93,7 +91,7 @@ async def test_list_vms(manager):
                 return ["memory=512"]
             elif args[0] == "ccd8c50b-c172-457d-99fa-dd69371ede0e":
                 return ["memory=256"]
-        assert False, "Unknow {} {}".format(cmd, args)
+        assert False, f"Unknow {cmd} {args}"
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock

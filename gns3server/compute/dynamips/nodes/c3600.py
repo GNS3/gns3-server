@@ -19,11 +19,10 @@ Interface for Dynamips virtual Cisco 3600 instances module ("c3600")
 http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L366
 """
 
-import asyncio
-from .router import Router
-from ..adapters.leopard_2fe import Leopard_2FE
-
 import logging
+
+from ..adapters.leopard_2fe import Leopard_2FE
+from .router import Router
 
 log = logging.getLogger(__name__)
 
@@ -120,9 +119,7 @@ class C3600(Router):
 
         await self._hypervisor.send(f'c3600 set_chassis "{self._name}" {chassis}')
 
-        log.info(
-            'Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name, id=self._id, chassis=chassis)
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: chassis set to {chassis}')
 
         self._chassis = chassis
         self._setup_chassis()
@@ -146,9 +143,5 @@ class C3600(Router):
 
         await self._hypervisor.send(f'c3600 set_iomem "{self._name}" {iomem}')
 
-        log.info(
-            'Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(
-                name=self._name, id=self._id, old_iomem=self._iomem, new_iomem=iomem
-            )
-        )
+        log.info(f'Router "{self._name}" [{self._id}]: I/O memory updated from {self._iomem}% to {iomem}%')
         self._iomem = iomem

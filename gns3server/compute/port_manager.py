@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import socket
 import ipaddress
-import threading
-from fastapi import HTTPException, status
-from gns3server.config import Config
-
 import logging
+import socket
+import threading
+
+from fastapi import HTTPException, status
+
+from gns3server.config import Config
 
 log = logging.getLogger(__name__)
 

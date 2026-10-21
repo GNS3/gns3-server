@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -17,9 +16,10 @@
 
 
 import asyncio
+
 import pytest
 
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, locking
+from gns3server.utils.asyncio import locking, subprocess_check_output, wait_run_in_executor
 
 
 @pytest.mark.asyncio

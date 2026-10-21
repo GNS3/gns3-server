@@ -14,16 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from enum import StrEnum
 from typing import List, Optional, Union
-from enum import Enum
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field
+
+from ..common import ConsoleType, CustomAdapter, ErrorMessage, NodeStatus
+from ..update import PartialUpdateModel
 from .labels import Label
-from ..common import ConsoleType, NodeStatus, CustomAdapter
 
 
-class NodeType(str, Enum):
+class NodeType(StrEnum):
     """
     Supported node types.
     """
@@ -54,7 +56,7 @@ class Image(BaseModel):
     filesize: Optional[int] = None
 
 
-class LinkType(str, Enum):
+class LinkType(StrEnum):
     """
     Supported link types.
     """
@@ -63,7 +65,7 @@ class LinkType(str, Enum):
     serial = "serial"
 
 
-class DataLinkType(str, Enum):
+class DataLinkType(StrEnum):
     """
     Supported data link types.
     """
@@ -114,9 +116,9 @@ class NodeBase(BaseModel):
     Node data.
     """
 
-    compute_id: Union[UUID, str]
-    name: str
-    node_type: NodeType
+    compute_id: Optional[Union[UUID, str]] = None
+    name: Optional[str] = None
+    node_type: Optional[NodeType] = None
 
     node_id: Optional[UUID] = None
 
@@ -162,20 +164,28 @@ class NodeBase(BaseModel):
 
 
 class NodeCreate(NodeBase):
+    compute_id: Union[UUID, str]
+    name: str
+    node_type: NodeType
     node_id: UUID = Field(default_factory=uuid4)
+    strict_names: bool = Field(
+        False,
+        description="Return a 409 error instead of renaming the node when the requested name is already used",
+    )
 
 
-class NodeUpdate(NodeBase):
+class NodeUpdate(PartialUpdateModel, NodeBase):
     """
     Data to update a node.
     """
 
-    compute_id: Optional[Union[UUID, str]] = None
-    name: Optional[str] = None
-    node_type: Optional[NodeType] = None
+    update_excluded_fields = ("node_id", "compute_id", "node_type")
 
 
 class Node(NodeBase):
+    compute_id: Union[UUID, str]
+    name: str
+    node_type: NodeType
     template_id: Optional[UUID] = Field(
         None, description="Template UUID from which the node has been created. Read only"
     )
@@ -197,6 +207,16 @@ class Node(NodeBase):
     missing_images: List[MissingImage] = Field(
         default_factory=list, description="List of missing images referenced by the node. Read only"
     )
+
+
+class NodeBatchResult(BaseModel):
+    """
+    Outcome of one node of a batch creation request.
+    """
+
+    status_code: int = Field(..., description="HTTP status code the same request would have returned on its own")
+    node: Optional[Node] = Field(None, description="The created node, set when status_code is 201")
+    error: Optional[ErrorMessage] = Field(None, description="The error, set when the node could not be created")
 
 
 class NodeDuplicate(BaseModel):

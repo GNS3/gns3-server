@@ -16,9 +16,10 @@
 
 
 import os
-import sys
 import socket
 import struct
+import sys
+
 import psutil
 
 from gns3server.compute.compute_error import ComputeError
@@ -32,106 +33,6 @@ if psutil.version_info < (3, 0, 0):
 import logging
 
 log = logging.getLogger(__name__)
-
-
-def _get_windows_interfaces_from_registry():
-
-    import winreg
-
-    # HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
-    interfaces = []
-    try:
-        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards")
-        for index in range(winreg.QueryInfoKey(hkey)[0]):
-            network_card_id = winreg.EnumKey(hkey, index)
-            hkeycard = winreg.OpenKey(hkey, network_card_id)
-            guid, _ = winreg.QueryValueEx(hkeycard, "ServiceName")
-            netcard, _ = winreg.QueryValueEx(hkeycard, "Description")
-            connection = (
-                r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}"
-                + rf"\{guid}\Connection"
-            )
-            hkeycon = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, connection)
-            name, _ = winreg.QueryValueEx(hkeycon, "Name")
-            interface = rf"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{guid}"
-            hkeyinterface = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, interface)
-            is_dhcp_enabled, _ = winreg.QueryValueEx(hkeyinterface, "EnableDHCP")
-            if is_dhcp_enabled:
-                ip_address, _ = winreg.QueryValueEx(hkeyinterface, "DhcpIPAddress")
-                netmask, _ = winreg.QueryValueEx(hkeyinterface, "DhcpSubnetMask")
-            else:
-                ip_address, _ = winreg.QueryValueEx(hkeyinterface, "IPAddress")
-                netmask, _ = winreg.QueryValueEx(hkeyinterface, "SubnetMask")
-                if ip_address:
-                    # get the first IPv4 address only
-                    ip_address = ip_address[0]
-            npf_interface = "\\Device\\NPF_{guid}".format(guid=guid)
-            interfaces.append(
-                {
-                    "id": npf_interface,
-                    "name": name,
-                    "ip_address": ip_address,
-                    "mac_address": "",  # TODO: find MAC address in registry
-                    "netcard": netcard,
-                    "netmask": netmask,
-                    "type": "ethernet",
-                }
-            )
-            winreg.CloseKey(hkeyinterface)
-            winreg.CloseKey(hkeycon)
-            winreg.CloseKey(hkeycard)
-        winreg.CloseKey(hkey)
-    except OSError as e:
-        log.error(f"could not read registry information: {e}")
-
-    return interfaces
-
-
-def get_windows_interfaces():
-    """
-    Get Windows interfaces.
-
-    :returns: list of windows interfaces
-    """
-
-    import win32com.client
-    import pywintypes
-
-    interfaces = []
-    try:
-        locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-        service = locator.ConnectServer(".", r"root\cimv2")
-        network_configs = service.InstancesOf("Win32_NetworkAdapterConfiguration")
-        # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
-        for adapter in service.InstancesOf("Win32_NetworkAdapter"):
-            if adapter.NetConnectionStatus == 2 or adapter.NetConnectionStatus == 7:
-                # adapter is connected or media disconnected
-                ip_address = ""
-                netmask = ""
-                for network_config in network_configs:
-                    if network_config.InterfaceIndex == adapter.InterfaceIndex:
-                        if network_config.IPAddress:
-                            # get the first IPv4 address only
-                            ip_address = network_config.IPAddress[0]
-                            netmask = network_config.IPSubnet[0]
-                        break
-                npf_interface = "\\Device\\NPF_{guid}".format(guid=adapter.GUID)
-                interfaces.append(
-                    {
-                        "id": npf_interface,
-                        "name": adapter.NetConnectionID,
-                        "ip_address": ip_address,
-                        "mac_address": adapter.MACAddress,
-                        "netcard": adapter.name,
-                        "netmask": netmask,
-                        "type": "ethernet",
-                    }
-                )
-    except (AttributeError, pywintypes.com_error):
-        log.warning("Could not use the COM service to retrieve interface info, trying using the registry...")
-        return _get_windows_interfaces_from_registry()
-
-    return interfaces
 
 
 def has_netmask(interface_name):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -19,31 +18,29 @@
 import asyncio
 import contextlib
 import logging
+from types import SimpleNamespace
+from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
 import aiohttp
 import pytest
-
-from types import SimpleNamespace
-from typing import List, Optional
-
 from fastapi import FastAPI, HTTPException, WebSocketDisconnect, status
 from httpx import AsyncClient
-from pydantic import SecretStr
-from httpx_ws import aconnect_ws
 from httpx_ws import WebSocketDisconnect as HttpxWebSocketDisconnect
-from httpx_ws.transport import ASGIWebSocketTransport, ASGIWebSocketAsyncNetworkStream
+from httpx_ws import aconnect_ws
+from httpx_ws.transport import ASGIWebSocketAsyncNetworkStream, ASGIWebSocketTransport
+from pydantic import SecretStr
 
-from unittest.mock import MagicMock, patch
-from tests.utils import AsyncioMagicMock
-
+from gns3server.api.routes.controller.nodes import vnc_console, ws_console
 from gns3server.config import Config
+from gns3server.controller.compute import Compute
+from gns3server.controller.controller_error import ComputeError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute
-from gns3server.utils.http_client import HTTPClient
-from gns3server.api.routes.controller.nodes import ws_console, vnc_console
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
+from gns3server.utils.http_client import HTTPClient
+from tests.utils import AsyncioMagicMock
 
 pytestmark = pytest.mark.asyncio
 
@@ -75,6 +72,103 @@ class TestNodeRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "test"
         assert "name" not in response.json()["properties"]
+
+    async def test_create_node_taken_name_is_renamed(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        payload = {"name": "R1", "node_type": "vpcs", "compute_id": "example.com"}
+
+        first = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+        second = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+
+        assert first.json()["name"] == "R1"
+        assert second.status_code == status.HTTP_201_CREATED
+        assert second.json()["name"] == "R2"
+
+    async def test_create_node_strict_names(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        payload = {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True}
+
+        first = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+        second = await client.post(app.url_path_for("create_node", project_id=project.id), json=payload)
+
+        assert first.status_code == status.HTTP_201_CREATED
+        assert second.status_code == status.HTTP_409_CONFLICT
+        assert "R1" in second.json()["message"]
+        assert len(project.nodes) == 1
+
+    async def test_create_nodes_batch(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        nodes = [{"name": "R{0}", "node_type": "vpcs", "compute_id": "example.com"} for _ in range(3)]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.json()
+        assert [r["status_code"] for r in results] == [201, 201, 201]
+        assert [r["node"]["name"] for r in results] == ["R1", "R2", "R3"]
+        assert all(r["error"] is None for r in results)
+        assert len(project.nodes) == 3
+
+    async def test_create_nodes_batch_item_failures_keep_order(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+        nodes = [
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "unknown"},
+            {"name": "R1", "node_type": "vpcs", "compute_id": "example.com"},
+        ]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.json()
+        assert [r["status_code"] for r in results] == [201, 409, 404, 201]
+        assert results[0]["node"]["name"] == "R1"
+        assert results[1]["node"] is None
+        assert "R1" in results[1]["error"]["message"]
+        assert results[2]["error"]["message"]
+        assert results[3]["node"]["name"] == "R2"
+        assert len(project.nodes) == 2
+
+    async def test_create_nodes_batch_failed_node_releases_name(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ControllerError("compute failure"))
+        nodes = [{"name": "R1", "node_type": "vpcs", "compute_id": "example.com", "strict_names": True}]
+
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.json()[0]["status_code"] == status.HTTP_409_CONFLICT
+        assert len(project.nodes) == 0
+
+        response_ok = MagicMock()
+        response_ok.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response_ok)
+        response = await client.post(app.url_path_for("create_nodes", project_id=project.id), json=nodes)
+
+        assert response.json()[0]["status_code"] == status.HTTP_201_CREATED
+        assert response.json()[0]["node"]["name"] == "R1"
 
     async def test_list_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
@@ -160,6 +254,54 @@ class TestNodeRoutes:
         else:
             assert len(response.json()) == 0
 
+    @pytest.mark.parametrize(
+        "name, tags, expected_names",
+        (
+            (None, None, ["test", "test2"]),
+            ("test", None, ["test"]),
+            ("test2", None, ["test2"]),
+            ("TEST", None, []),
+            ("missing", None, []),
+            ("test", ["tag1"], ["test"]),
+            ("test", ["tag3"], []),
+            ("test2", ["tag3", "tag4"], ["test2"]),
+        ),
+    )
+    async def test_list_nodes_filter_by_name(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        name: Optional[str],
+        tags: Optional[list],
+        expected_names: list,
+    ) -> None:
+        response = MagicMock()
+        response.json = {"console": 2048}
+        compute.post = AsyncioMagicMock(return_value=response)
+
+        for node_name, node_tags in (("test", ["tag1", "tag2"]), ("test2", ["tag3", "tag4"])):
+            await client.post(
+                app.url_path_for("create_node", project_id=project.id),
+                json={
+                    "name": node_name,
+                    "node_type": "vpcs",
+                    "compute_id": "example.com",
+                    "tags": node_tags,
+                    "properties": {"startup_script": "echo test"},
+                },
+            )
+
+        params = {}
+        if name is not None:
+            params["name"] = name
+        if tags is not None:
+            params["tags"] = tags
+        response = await client.get(app.url_path_for("get_nodes", project_id=project.id), params=params)
+        assert response.status_code == status.HTTP_200_OK
+        assert sorted(n["name"] for n in response.json()) == expected_names
+
     async def test_get_node(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
         response = MagicMock()
@@ -206,6 +348,77 @@ class TestNodeRoutes:
         assert "name" not in response.json()["properties"]
         assert response.json()["tags"] == ["tag1", "tag2"]
 
+    async def test_node_etag_on_get_and_put(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        etag = response.headers["ETag"]
+        assert etag.startswith('"') and etag.endswith('"')
+        assert (await client.get(url)).headers["ETag"] == etag
+
+        response = await client.put(url, json={"name": "renamed"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["ETag"] != etag
+        assert (await client.get(url)).headers["ETag"] == response.headers["ETag"]
+
+    async def test_update_node_with_matching_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "renamed"}, headers={"If-Match": etag})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["name"] == "renamed"
+        assert response.headers["ETag"] != etag
+
+    async def test_update_node_with_stale_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        stale_etag = (await client.get(url)).headers["ETag"]
+        assert (await client.put(url, json={"name": "first"})).status_code == status.HTTP_200_OK
+
+        response = await client.put(url, json={"name": "second"}, headers={"If-Match": stale_etag})
+        assert response.status_code == status.HTTP_412_PRECONDITION_FAILED
+        assert "message" in response.json()
+        assert node.name == "first"
+
+    async def test_update_node_without_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        assert (await client.put(url, json={"name": "first"})).status_code == status.HTTP_200_OK
+        assert (await client.put(url, json={"name": "second"})).status_code == status.HTTP_200_OK
+        assert node.name == "second"
+
+    async def test_update_node_with_wildcard_and_list_if_match(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.put = AsyncioMagicMock(return_value=MagicMock(json={"console": 2048}))
+        url = app.url_path_for("update_node", project_id=project.id, node_id=node.id)
+
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "a"}, headers={"If-Match": "*"})
+        assert response.status_code == status.HTTP_200_OK
+        etag = (await client.get(url)).headers["ETag"]
+        response = await client.put(url, json={"name": "b"}, headers={"If-Match": f'"other", {etag}'})
+        assert response.status_code == status.HTTP_200_OK
+
     async def test_start_all_nodes(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
         compute.post = AsyncioMagicMock()
@@ -248,7 +461,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
 
     async def test_stop_node(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
@@ -256,6 +470,86 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "stopped"
+
+    async def test_start_node_wait(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock()
+        response = await client.post(
+            app.url_path_for("start_node", project_id=project.id, node_id=node.id) + "?wait=true&timeout=5", json={}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
+        response = await client.get(app.url_path_for("get_node", project_id=project.id, node_id=node.id))
+        assert response.json()["status"] == "started"
+
+    async def test_start_node_keeps_real_status_while_in_flight(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        seen = []
+
+        async def post(*args, **kwargs):
+            seen.append(node.asdict()["status"])
+
+        compute.post = post
+        response = await client.post(app.url_path_for("start_node", project_id=project.id, node_id=node.id), json={})
+        assert response.status_code == status.HTTP_200_OK
+        # no transitional status is reported while the call is in flight
+        assert seen == ["stopped"]
+        assert response.json()["status"] == "started"
+
+    async def test_stop_node_keeps_real_status_while_in_flight(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        seen = []
+
+        async def post(*args, **kwargs):
+            seen.append(node.asdict()["status"])
+
+        compute.post = post
+        node._status = "started"
+        response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_200_OK
+        # no transitional status is reported while the call is in flight
+        assert seen == ["started"]
+        assert response.json()["status"] == "stopped"
+
+    async def test_start_node_wait_timeout(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        async def post(*args, **kwargs):
+            await asyncio.sleep(10)
+
+        compute.post = post
+        response = await client.post(
+            app.url_path_for("start_node", project_id=project.id, node_id=node.id) + "?wait=true&timeout=1", json={}
+        )
+        assert response.status_code == status.HTTP_408_REQUEST_TIMEOUT
+        assert "message" in response.json()
+        assert node.asdict()["status"] == "stopped"
+
+    async def test_stop_node_reports_compute_error(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ComputeError("compute unreachable"))
+        node._status = "started"
+        response = await client.post(app.url_path_for("stop_node", project_id=project.id, node_id=node.id))
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert node.asdict()["status"] == "started"
+
+    async def test_stop_all_nodes_tolerates_compute_error(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.post = AsyncioMagicMock(side_effect=ComputeError("compute unreachable"))
+        response = await client.post(app.url_path_for("stop_all_nodes", project_id=project.id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_suspend_node(
@@ -264,7 +558,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("suspend_node", project_id=project.id, node_id=node.id))
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "suspended"
 
     async def test_suspend_node_unsupported(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
@@ -294,7 +589,8 @@ class TestNodeRoutes:
 
         compute.post = AsyncioMagicMock()
         response = await client.post(app.url_path_for("reload_node", project_id=project.id, node_id=node.id))
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "started"
 
     async def test_isolate_node(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
@@ -469,9 +765,7 @@ class TestNodeRoutes:
 
         compute.http_query.assert_called_with(
             "GET",
-            "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
-                project_id=project.id, node_id=node.id
-            ),
+            f"/projects/{project.id}/files/project-files/vpcs/{node.id}/hello",
             timeout=None,
             stream=True,
         )
@@ -495,16 +789,12 @@ class TestNodeRoutes:
         compute.http_query.assert_called_once()
         call_args = compute.http_query.call_args
         assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(
-            project_id=project.id, node_id=node.id
-        )
+        assert call_args[0][1] == f"/projects/{project.id}/files/project-files/vpcs/{node.id}/hello"
         assert call_args[1]["timeout"] is None
         # data should be an async generator from request.stream()
         assert hasattr(call_args[1]["data"], "__aiter__")
 
-        response = await client.get(
-            "/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id)
-        )
+        response = await client.get(f"/projects/{project.id}/nodes/{node.id}/files/../hello")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     # @pytest.mark.asyncio

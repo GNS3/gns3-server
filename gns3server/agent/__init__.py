@@ -34,8 +34,7 @@ AI_COPILOT_AVAILABLE = False
 
 # Try to import AI Copilot components
 try:
-    from .gns3_copilot.project_agent_manager import get_project_agent_manager
-    from .gns3_copilot.project_agent_manager import ProjectAgentManager
+    from .gns3_copilot.project_agent_manager import ProjectAgentManager, get_project_agent_manager
 
     AI_COPILOT_AVAILABLE = True
 
@@ -57,7 +56,7 @@ except ImportError as e:
     AI_COPILOT_AVAILABLE = False
 
     # Provide stub functions that raise helpful errors
-    async def get_project_agent_manager():
+    async def get_project_agent_manager() -> "ProjectAgentManager":
         """
         Get the global ProjectAgentManager singleton instance.
 
@@ -68,7 +67,7 @@ except ImportError as e:
             "AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]"
         )
 
-    class ProjectAgentManager:
+    class ProjectAgentManager:  # type: ignore[no-redef]
         """
         Stub class for ProjectAgentManager when AI dependencies are not installed.
         """
@@ -103,6 +102,6 @@ except ImportError:
 __all__ = [
     "AI_COPILOT_AVAILABLE",
     "MCP_AVAILABLE",
-    "get_project_agent_manager",
     "ProjectAgentManager",
+    "get_project_agent_manager",
 ]

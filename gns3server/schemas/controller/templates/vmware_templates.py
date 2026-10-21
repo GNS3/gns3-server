@@ -15,23 +15,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import Category, TemplateBase
-from gns3server.schemas.compute.vmware_nodes import (
-    VMwareConsoleType,
-    VMwareAdapterType,
-    VMwareOnCloseAction,
-    CustomAdapter,
-)
+from typing import List, Optional
 
 from pydantic import Field
-from typing import Optional, List
+
+from gns3server.schemas.compute.vmware_nodes import (
+    CustomAdapter,
+    VMwareAdapterType,
+    VMwareConsoleType,
+    VMwareOnCloseAction,
+)
+
+from ...update import PartialUpdateModel
+from . import Category, TemplateBase
 
 
-class VMwareTemplate(TemplateBase):
+class VMwareTemplateBase(TemplateBase):
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "vmware_guest"
-    vmx_path: str = Field(..., description="Path to the vmx file")
+    vmx_path: Optional[str] = Field(None, description="Path to the vmx file")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field(
@@ -57,5 +60,9 @@ class VMwareTemplate(TemplateBase):
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
 
 
-class VMwareTemplateUpdate(VMwareTemplate):
-    vmx_path: Optional[str] = Field(None, description="Path to the vmx file")
+class VMwareTemplate(VMwareTemplateBase):
+    vmx_path: str = Field(..., description="Path to the vmx file")
+
+
+class VMwareTemplateUpdate(PartialUpdateModel, VMwareTemplateBase):
+    update_excluded_fields = ("template_id",)

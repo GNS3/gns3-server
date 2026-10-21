@@ -16,25 +16,24 @@
 
 import os
 import uuid
-import pydantic
-
+from typing import List, Optional
 from uuid import UUID
-from fastapi.encoders import jsonable_encoder
-from typing import List
 
+import pydantic
+from fastapi.encoders import jsonable_encoder
+
+import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.config import Config
-import gns3server.db.models as models
-from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller.controller_error import (
-    ControllerError,
     ControllerBadRequestError,
-    ControllerNotFoundError,
+    ControllerError,
     ControllerForbiddenError,
+    ControllerNotFoundError,
 )
+from gns3server.db.repositories.templates import TemplatesRepository
 
-
-TEMPLATE_TYPE_TO_SCHEMA = {
+TEMPLATE_TYPE_TO_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "cloud": schemas.CloudTemplate,
     "ethernet_hub": schemas.EthernetHubTemplate,
     "ethernet_switch": schemas.EthernetSwitchTemplate,
@@ -47,7 +46,7 @@ TEMPLATE_TYPE_TO_SCHEMA = {
     "qemu": schemas.QemuTemplate,
 }
 
-TEMPLATE_TYPE_TO_UPDATE_SCHEMA = {
+TEMPLATE_TYPE_TO_UPDATE_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "cloud": schemas.CloudTemplateUpdate,
     "ethernet_hub": schemas.EthernetHubTemplateUpdate,
     "ethernet_switch": schemas.EthernetSwitchTemplateUpdate,
@@ -59,7 +58,7 @@ TEMPLATE_TYPE_TO_UPDATE_SCHEMA = {
     "qemu": schemas.QemuTemplateUpdate,
 }
 
-DYNAMIPS_PLATFORM_TO_SCHEMA = {
+DYNAMIPS_PLATFORM_TO_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "c7200": schemas.C7200DynamipsTemplate,
     "c3745": schemas.C3745DynamipsTemplate,
     "c3725": schemas.C3725DynamipsTemplate,
@@ -69,7 +68,7 @@ DYNAMIPS_PLATFORM_TO_SCHEMA = {
     "c1700": schemas.C1700DynamipsTemplate,
 }
 
-DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA = {
+DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA: dict[str, type[pydantic.BaseModel]] = {
     "c7200": schemas.C7200DynamipsTemplateUpdate,
     "c3745": schemas.C3745DynamipsTemplateUpdate,
     "c3725": schemas.C3725DynamipsTemplateUpdate,
@@ -169,11 +168,12 @@ class TemplatesService:
         for builtin_template in BUILTIN_TEMPLATES:
             builtin_template["symbol"] = self._controller.symbols.resolve_symbol(builtin_template["symbol"])
 
-    def get_builtin_template(self, template_id: UUID) -> dict:
+    def get_builtin_template(self, template_id: UUID) -> Optional[dict]:
 
         for builtin_template in BUILTIN_TEMPLATES:
             if builtin_template["template_id"] == template_id:
                 return jsonable_encoder(builtin_template)
+        return None
 
     def _base_path(self):
         return self._templates_repo.configs_path()
@@ -189,9 +189,9 @@ class TemplatesService:
                 templates.append(jsonable_encoder(builtin_template))
         return templates
 
-    async def _find_image(self, image_path: str):
+    async def _find_image(self, image_path: str, image_type: str):
 
-        image = await self._templates_repo.get_image(image_path)
+        image = await self._templates_repo.get_image(image_path, image_type=image_type)
         if not image:
             raise ControllerNotFoundError(f"Image '{image_path}' could not be found in the controller database")
         if not os.path.exists(image.path):
@@ -203,7 +203,7 @@ class TemplatesService:
         images_to_add_to_template = []
         if template_type == "dynamips":
             if settings.get("image"):
-                image = await self._find_image(settings["image"])
+                image = await self._find_image(settings["image"], "ios")
                 if image.image_type != "ios":
                     raise ControllerBadRequestError(
                         f"Image '{image.filename}' type is not 'ios' but '{image.image_type}'"
@@ -211,7 +211,7 @@ class TemplatesService:
                 images_to_add_to_template.append(image)
         elif template_type == "iou":
             if settings.get("path"):
-                image = await self._find_image(settings["path"])
+                image = await self._find_image(settings["path"], "iou")
                 if image.image_type != "iou":
                     raise ControllerBadRequestError(
                         f"Image '{image.filename}' type is not 'iou' but '{image.image_type}'"
@@ -220,7 +220,7 @@ class TemplatesService:
         elif template_type == "qemu":
             for key, value in settings.items():
                 if key.endswith("_image") and value:
-                    image = await self._find_image(value)
+                    image = await self._find_image(value, "qemu")
                     if image.image_type != "qemu":
                         raise ControllerBadRequestError(
                             f"Image '{image.filename}' type is not 'qemu' but '{image.image_type}'"
@@ -274,11 +274,14 @@ class TemplatesService:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
         return template
 
-    async def _remove_image(self, template_id: UUID, image_path: str) -> None:
+    async def _remove_image(self, template_id: UUID, image_path: str, image_type: str) -> None:
 
         if not image_path:
             return
-        image = await self._templates_repo.get_image(image_path)
+        # Removing an association must also find missing/invalid image rows.
+        image = await self._templates_repo.get_image(
+            image_path, include_unavailable=True, image_type=image_type, template_id=template_id
+        )
         if image is None:
             return
         await self._templates_repo.remove_image_from_template(template_id, image)
@@ -303,7 +306,7 @@ class TemplatesService:
         try:
             # validate the update settings
             update_settings = jsonable_encoder(template_update, exclude_unset=True)
-            if db_template.template_type == "dynamips":
+            if isinstance(db_template, models.DynamipsTemplate):
                 template_schema = DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA[db_template.platform]
             else:
                 template_schema = TEMPLATE_TYPE_TO_UPDATE_SCHEMA[db_template.template_type]
@@ -312,14 +315,14 @@ class TemplatesService:
             raise ControllerBadRequestError(f"JSON schema error received while updating template: {e}")
 
         images_to_add_to_template = await self._find_images(db_template.template_type, template_settings)
-        if db_template.template_type == "dynamips" and "image" in template_settings:
-            await self._remove_image(db_template.template_id, db_template.image)
-        elif db_template.template_type == "iou" and "path" in template_settings:
-            await self._remove_image(db_template.template_id, db_template.path)
+        if isinstance(db_template, models.DynamipsTemplate) and "image" in template_settings:
+            await self._remove_image(db_template.template_id, db_template.image, "ios")
+        elif isinstance(db_template, models.IOUTemplate) and "path" in template_settings:
+            await self._remove_image(db_template.template_id, db_template.path, "iou")
         elif db_template.template_type == "qemu":
             for key in template_update.model_dump().keys():
                 if key.endswith("_image") and key in template_settings:
-                    await self._remove_image(db_template.template_id, db_template.__dict__[key])
+                    await self._remove_image(db_template.template_id, db_template.__dict__[key], "qemu")
 
         db_template = await self._templates_repo.update_template(db_template, template_settings)
         for image in images_to_add_to_template:

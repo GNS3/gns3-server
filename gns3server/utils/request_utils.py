@@ -6,8 +6,8 @@ from ASGI scope dictionaries for logging and debugging purposes.
 """
 
 import logging
+from typing import Any, Dict, Optional
 from urllib.parse import parse_qs
-from typing import Dict, Any, Optional
 
 log = logging.getLogger(__name__)
 

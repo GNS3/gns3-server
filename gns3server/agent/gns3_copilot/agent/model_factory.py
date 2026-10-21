@@ -32,8 +32,7 @@ Configuration is passed directly from the database.
 """
 
 import logging
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.chat_models import init_chat_model
 
@@ -110,7 +109,7 @@ def create_base_model(
 
     try:
         # Prepare parameters for init_chat_model
-        init_params = {
+        init_params: dict[str, Any] = {
             "model": config_vars["model_name"],
             "model_provider": config_vars["model_provider"],
             "api_key": config_vars["api_key"],
@@ -177,7 +176,7 @@ def create_title_model(
 
     try:
         # Prepare parameters for init_chat_model
-        init_params = {
+        init_params: dict[str, Any] = {
             "model": config_vars["model_name"],
             "model_provider": config_vars["model_provider"],
             "api_key": config_vars["api_key"],

@@ -15,18 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import hashlib
 import base64
-import uuid
-import re
+import hashlib
+import logging
 import os
+import re
+import uuid
 import xml.etree.ElementTree as ET
 
-
 from gns3server.utils.picture import get_size
-
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -75,9 +72,7 @@ class Drawing:
                         return data.decode()
                     except UnicodeError:
                         width, height, filetype = get_size(data)
-                        return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{height}" width="{width}">\n<image height="{height}" width="{width}" xlink:href="data:image/{filetype};base64,{b64}" />\n</svg>'.format(
-                            b64=base64.b64encode(data).decode(), filetype=filetype, width=width, height=height
-                        )
+                        return f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{height}" width="{width}">\n<image height="{height}" width="{width}" xlink:href="data:image/{filetype};base64,{base64.b64encode(data).decode()}" />\n</svg>'
             except OSError:
                 log.warning("Image file %s missing", filename)
                 return "<svg></svg>"

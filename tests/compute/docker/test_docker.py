@@ -16,13 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock, patch
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
-from gns3server.compute.docker import Docker, DOCKER_PREFERRED_API_VERSION, DOCKER_MINIMUM_API_VERSION
+import pytest
+import pytest_asyncio
+
+from gns3server.compute.docker import DOCKER_MINIMUM_API_VERSION, DOCKER_PREFERRED_API_VERSION, Docker
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 @pytest_asyncio.fixture
@@ -50,7 +51,7 @@ async def test_query_success(vm):
     data = await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},
@@ -75,7 +76,7 @@ async def test_query_error(vm):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},
@@ -98,7 +99,7 @@ async def test_query_error_json(vm):
         await vm.query("POST", "test", data={"a": True}, params={"b": 1})
     vm._session.request.assert_called_with(
         "POST",
-        "http://docker/v{}/test".format(DOCKER_MINIMUM_API_VERSION),
+        f"http://docker/v{DOCKER_MINIMUM_API_VERSION}/test",
         data='{"a": true}',
         headers={"content-type": "application/json"},
         params={"b": 1},
@@ -238,7 +239,7 @@ async def test_pull_image_propagates_timeout():
 
     class Content:
         async def read(self, size):
-            raise asyncio.TimeoutError
+            raise TimeoutError
 
     response = MagicMock()
     response.content = Content()
@@ -273,6 +274,38 @@ async def test_load_image():
         mock.assert_called_with("POST", "images/load", data=stream, timeout=None)
     response.close.assert_called_once()
     assert any("Loaded image" in message for message in messages)
+
+
+@pytest.mark.asyncio
+async def test_load_image_records_image_id_translation():
+    """
+    The digest pinned by the controller is the id of its own daemon and is not
+    comparable with the id this daemon reports for the same content, so the pair
+    is remembered to accept the pin during node creation.
+    """
+
+    class Content:
+        def __init__(self):
+            self._chunks = [b'{"stream": "Loaded image: ubuntu:latest"}', b""]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    async def tar_stream():
+        yield b"tar-bytes"
+
+    controller_digest = "sha256:" + "a" * 64
+    local_id = "sha256:" + "b" * 64
+    with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": local_id}) as query_mock:
+            await Docker.instance().load_image(tar_stream(), image="ubuntu:latest", digest=controller_digest)
+
+    query_mock.assert_called_once_with("GET", "images/ubuntu:latest/json")
+    assert Docker.instance().image_id_translation("ubuntu:latest") == (controller_digest, local_id)
+    assert Docker.instance().image_id_translation("nginx:latest") is None
 
 
 @pytest.mark.asyncio

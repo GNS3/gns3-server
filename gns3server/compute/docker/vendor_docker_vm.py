@@ -34,10 +34,11 @@ import os
 import shutil
 import tempfile
 
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
+from gns3server.compute.docker.docker_vm import DockerVM
+from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
-from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 
 log = logging.getLogger(__name__)
 
@@ -394,7 +395,28 @@ class VendorDockerVM(DockerVM):
         Override: with GNS3_UNIX_SOCKET_NIO, bridge the adapter port through
         the image's AF_UNIX datagram socket pair (raw Ethernet frames)
         instead of a TAP interface moved into the container's network
-        namespace.
+        namespace — see ``_ensure_unix_port_bridge`` for the wiring.
+        """
+
+        if not self._unix_socket_nio:
+            return await super()._add_ubridge_connection(nio, adapter_number, port_number)
+
+        if isinstance(nio, NIOBridge):
+            raise DockerError(
+                f"Container '{self._name}' bridges its adapters through AF_UNIX sockets; "
+                "kernel-datapath links are not supported for this container"
+            )
+
+        await self._ensure_unix_port_bridge(adapter_number, port_number)
+
+        if nio:
+            await self._connect_nio(adapter_number, nio, port_number)
+
+    async def _ensure_unix_port_bridge(self, adapter_number, port_number):
+        """
+        The adapter port's uBridge bridge with its unix-socket NIO — the
+        guest leg every link topology rides on. Idempotent: an already
+        created bridge (this start wired it) is left alone.
 
         Ports are addressed flat across adapters: interface index = adapter
         number × ports-per-adapter + port number (single-port adapters
@@ -412,20 +434,15 @@ class VendorDockerVM(DockerVM):
         uses.
         """
 
-        if not self._unix_socket_nio:
-            return await super()._add_ubridge_connection(nio, adapter_number, port_number)
-
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError(
-                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
-                    name=self.name, adapter_number=adapter_number
-                )
-            )
+            raise DockerError(f"Adapter {adapter_number} doesn't exist on Docker container '{self.name}'")
 
         interface_number = adapter_number * adapter.interfaces + port_number
         bridge_name = self._bridge_name(adapter_number, port_number)
+        if bridge_name in self._bridges:
+            return
         try:
             await self._ubridge_send(f"bridge create {bridge_name}")
             self._bridges.add(bridge_name)
@@ -442,7 +459,7 @@ class VendorDockerVM(DockerVM):
             # setup; wait instead of silently blackholing the adapter.
             try:
                 await wait_for_file_creation(remote_sock, timeout=30)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise DockerError(
                     f"Socket '{remote_sock}' for adapter {adapter_number} of container "
                     f"'{self._name}' did not appear within 30 seconds. Check that the "
@@ -466,9 +483,6 @@ class VendorDockerVM(DockerVM):
             local_sock,
             remote_sock,
         )
-
-        if nio:
-            await self._connect_nio(adapter_number, nio, port_number)
 
     async def _set_adapter_carrier(self, adapter_number, connected, port_number=0):
         """
@@ -792,7 +806,7 @@ class _LazyExecTelnetServer(AsyncioTelnetServer):
         await writer.drain()
         try:
             headers = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=5)
-        except (asyncio.IncompleteReadError, asyncio.TimeoutError) as e:
+        except (TimeoutError, asyncio.IncompleteReadError) as e:
             writer.close()
             raise DockerError(f"Docker exec start failed: {e}")
         status_line = headers.split(b"\r\n", 1)[0]

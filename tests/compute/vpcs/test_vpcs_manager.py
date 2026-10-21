@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import uuid
 
+import pytest
 
+from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.vpcs.vpcs_error import VPCSError
-from gns3server.compute.project_manager import ProjectManager
 
 
 @pytest.mark.asyncio
@@ -75,5 +74,5 @@ async def test_get_mac_id_no_id_available(compute_project, port_manager):
     with pytest.raises(VPCSError):
         for i in range(0, 256):
             node_id = str(uuid.uuid4())
-            await vpcs.create_node("PC {}".format(i), compute_project.id, node_id)
+            await vpcs.create_node(f"PC {i}", compute_project.id, node_id)
             assert vpcs.get_mac_id(node_id) == i

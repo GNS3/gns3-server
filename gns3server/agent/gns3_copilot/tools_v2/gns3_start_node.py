@@ -136,7 +136,11 @@ class GNS3StartNodeTool(BaseTool):
             results = []
             known_ids = [nid for nid in node_ids if nid in nodes_by_id]
             start_results = start_node_handler({"project_id": project_id, "node_ids": known_ids}, gns3_ctx)
-            start_errors = {r["node_id"]: r.get("error") for r in start_results if r.get("status") == "error"}
+            start_errors = (
+                {r["node_id"]: r.get("error") for r in start_results if r.get("status") == "error"}
+                if isinstance(start_results, list)
+                else {}
+            )
 
             # Get immediate status (likely 'starting' or 'stopped') — one call
             listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
@@ -216,7 +220,7 @@ class GNS3StartNodeTool(BaseTool):
             return {"error": f"Invalid JSON input: {e}"}
         except Exception as e:
             logger.error("Failed to start nodes: %s", e)
-            return {"error": f"Failed to start nodes: {str(e)}"}
+            return {"error": f"Failed to start nodes: {e!s}"}
 
 
 # Backward-compat alias: the waiting variant was removed; both names now

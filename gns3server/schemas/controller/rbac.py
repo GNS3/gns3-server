@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, List
-from pydantic import ConfigDict, BaseModel, Field
+from enum import StrEnum
+from typing import List, Optional
 from uuid import UUID
-from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DateTimeModelMixin
 
@@ -36,7 +37,7 @@ class Privilege(DateTimeModelMixin, PrivilegeBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ACEType(str, Enum):
+class ACEType(StrEnum):
     user = "user"
     group = "group"
 
@@ -69,7 +70,8 @@ class ACEUpdate(ACEBase):
     Properties to update an ACE.
     """
 
-    pass
+    propagate: Optional[bool] = None
+    allowed: Optional[bool] = None
 
 
 class ACE(DateTimeModelMixin, ACEBase):
@@ -107,3 +109,13 @@ class Role(DateTimeModelMixin, RoleBase):
     is_builtin: bool
     privileges: List[Privilege]
     model_config = ConfigDict(from_attributes=True)
+
+
+class ACEEndpoint(BaseModel):
+    """
+    An endpoint that can be used in an ACL entry.
+    """
+
+    endpoint: str = Field(..., description="Endpoint path to use as the ACE path")
+    name: str = Field(..., description="Human readable name of the endpoint")
+    endpoint_type: str = Field(..., description="Kind of resource the endpoint refers to")

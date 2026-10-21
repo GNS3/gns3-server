@@ -47,16 +47,15 @@ Copilot-side callers build the context with :func:`build_gns3_ctx`, which
 pulls the request-scoped user JWT from the context variables.
 """
 
-from typing import Any
-from concurrent.futures import ThreadPoolExecutor
-
 import hashlib
 import logging
-
-from gns3server.services import access_ticket_service
-from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
+from gns3server.services import access_ticket_service
+from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
+from gns3server.utils.drawings import build_ellipse_svg, build_rectangle_svg, build_text_svg
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +106,10 @@ VALID_LINK_FIELDS = {
     "link_id",
     "project_id",
     "link_type",
+    # Runtime datapath fact (kernel bridge vs uBridge relay): the MCP tool
+    # descriptions have always advertised it, but it was missing here, so
+    # link_list could not return it at all.
+    "kernel_datapath",
     "nodes",
     "suspend",
     "link_style",
@@ -162,14 +165,14 @@ def build_gns3_ctx(jwt_token: str | None = None, url: str | None = None) -> dict
     }
 
 
-def _filter_node_response(node: dict, fields: list[str] = None) -> dict:
+def _filter_node_response(node: dict, fields: list[str] | None = None) -> dict:
     """Filter node response to only include requested fields."""
     if not fields:
         fields = ["node_id", "name", "node_type", "status", "console"]
     return {k: node[k] for k in fields if k in node}
 
 
-def _filter_link_response(link: dict, fields: list[str] = None) -> dict:
+def _filter_link_response(link: dict, fields: list[str] | None = None) -> dict:
     """Filter link response to only include requested fields."""
     if not fields:
         fields = LINK_DEFAULT_FIELDS
@@ -278,7 +281,7 @@ def _batch_lifecycle(project_id, node_ids, action, conn, action_label):
         return list(pool.map(_act, node_ids))
 
 
-def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -296,7 +299,7 @@ def start_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict
     return {"message": f"Node {node_id} started", "node_id": node_id}
 
 
-def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -314,7 +317,7 @@ def stop_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[
     return {"message": f"Node {node_id} stopped", "node_id": node_id}
 
 
-def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -332,7 +335,7 @@ def suspend_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
     return {"message": f"Node {node_id} suspended", "node_id": node_id}
 
 
-def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
 
     project_id = params.get("project_id")
     if not project_id:
@@ -401,7 +404,7 @@ def create_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
     return _filter_node_response(resp, fields)
 
 
-def delete_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def delete_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -694,8 +697,8 @@ def available_filters_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     """
     List the packet filter types available for a link (GNS3 API v3 only).
 
-    Returns a list of filter descriptors (frequency_drop, packet_loss,
-    delay, corrupt, bpf) with their parameters.
+    Returns a list of filter descriptors with their parameters — the
+    authoritative, per-link answer (topology and compute-capability gated).
     """
     project_id = params.get("project_id")
     link_id = params.get("link_id")
@@ -706,7 +709,7 @@ def available_filters_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     return conn.http_call("get", url).json()
 
 
-def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -762,7 +765,7 @@ def create_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
     return _filter_link_response(resp, fields)
 
 
-def delete_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def delete_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -809,7 +812,7 @@ def update_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
 # ── Link capture / reset handlers ──────────────────────────────────────
 
 
-def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+def reset_link_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
     project_id = params.get("project_id")
     if not project_id:
         return {"error": "project_id is required"}
@@ -1074,3 +1077,95 @@ def marker_definition_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) 
     # action == "delete"
     conn.http_call("delete", url)
     return {"message": f"Marker definition '{def_name}' deleted", "project_id": project_id, "def_name": def_name}
+
+
+# ── Drawing handlers ──────────────────────────────────────────────────────
+# SVG assembly and validation live in gns3server.utils.drawings (Web UI
+# compatible format); these handlers only carry params and do the REST call.
+
+
+def create_text_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas text label; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    try:
+        svg, width, height, line_height = build_text_svg(
+            params.get("text"),
+            font_size=params.get("font_size", 13),
+            color=params.get("color", "#000000"),
+            bold=params.get("bold", False),
+            font_family=params.get("font_family", "monospace"),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 1)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {
+        "message": "Text drawing created",
+        "drawing": result,
+        "width": width,
+        "height": height,
+        "line_height": line_height,
+    }
+
+
+def create_rectangle_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas rectangle; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    width = params.get("width")
+    height = params.get("height")
+    if width is None or height is None:
+        return {"error": "width and height are required"}
+    try:
+        svg, width, height = build_rectangle_svg(
+            width,
+            height,
+            fill=params.get("fill", "#FFFFFF"),
+            fill_opacity=params.get("fill_opacity", 1.0),
+            stroke=params.get("stroke"),
+            stroke_width=params.get("stroke_width", 1),
+            dashed=params.get("dashed", False),
+            dasharray=params.get("dasharray"),
+            rx=params.get("rx", 0),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 0)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {"message": "Rectangle drawing created", "drawing": result, "width": width, "height": height}
+
+
+def create_ellipse_drawing_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Create a canvas ellipse from a bounding box; the SVG is assembled from validated params."""
+
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    width = params.get("width")
+    height = params.get("height")
+    if width is None or height is None:
+        return {"error": "width and height are required"}
+    try:
+        svg, width, height = build_ellipse_svg(
+            width,
+            height,
+            fill=params.get("fill", "#FFFFFF"),
+            fill_opacity=params.get("fill_opacity", 1.0),
+            stroke=params.get("stroke"),
+            stroke_width=params.get("stroke_width", 1),
+            dashed=params.get("dashed", False),
+            dasharray=params.get("dasharray"),
+        )
+    except ValueError as e:
+        return {"error": str(e)}
+    conn = _get_connector(gns3_ctx)
+    data = {"svg": svg, "x": params.get("x", 0), "y": params.get("y", 0), "z": params.get("z", 0)}
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/drawings", json_data=data).json()
+    return {"message": "Ellipse drawing created", "drawing": result, "width": width, "height": height}

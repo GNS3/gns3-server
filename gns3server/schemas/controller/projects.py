@@ -15,13 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pydantic import BaseModel, Field, HttpUrl
+from datetime import datetime
+from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID
-from enum import Enum
+
+from pydantic import BaseModel, Field, HttpUrl
+
+from ..update import PartialUpdateModel
 
 
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     """
     Supported project statuses.
     """
@@ -45,7 +49,7 @@ class ProjectBase(BaseModel):
     Common properties for projects.
     """
 
-    name: str
+    name: Optional[str] = None
     project_id: Optional[UUID] = None
     path: Optional[str] = Field(None, description="Project directory")
     auto_close: Optional[bool] = Field(None, description="Close project when last client leaves")
@@ -69,7 +73,7 @@ class ProjectCreate(ProjectBase):
     Properties for project creation.
     """
 
-    pass
+    name: str
 
 
 class ProjectDuplicate(ProjectBase):
@@ -77,20 +81,20 @@ class ProjectDuplicate(ProjectBase):
     Properties for project duplication.
     """
 
+    name: str
     reset_mac_addresses: Optional[bool] = Field(False, description="Reset MAC addresses for this project")
 
 
-class ProjectUpdate(ProjectBase):
+class ProjectUpdate(PartialUpdateModel, ProjectBase):
     """
     Properties for project update.
     """
 
-    name: Optional[str] = None
+    update_excluded_fields = ("project_id", "path")
 
 
 class Project(ProjectBase):
     project_id: UUID
-    name: Optional[str] = None
     status: Optional[ProjectStatus] = None
     filename: Optional[str] = None
     created_by: Optional[str] = Field(None, description="Username of the user who created the project")
@@ -108,12 +112,12 @@ class NodeFile(BaseModel):
 
     path: str = Field(..., description="File name")
     size: int = Field(..., description="File size in bytes")
-    created_at: str = Field(..., description="File creation time (ISO 8601)")
-    modified_at: str = Field(..., description="File modification time (ISO 8601)")
+    created_at: Optional[datetime] = Field(None, description="File creation time (ISO 8601)")
+    modified_at: Optional[datetime] = Field(None, description="File modification time (ISO 8601)")
     file_type: str = Field(..., description="File type determined by the file command")
 
 
-class ProjectCompression(str, Enum):
+class ProjectCompression(StrEnum):
     """
     Supported project compression.
     """
@@ -123,3 +127,15 @@ class ProjectCompression(str, Enum):
     bzip2 = "bzip2"
     lzma = "lzma"
     zstd = "zstd"
+
+
+class ProjectStats(BaseModel):
+    """
+    Project object counts.
+    """
+
+    nodes: int
+    links: int
+    drawings: int
+    snapshots: int
+    markers: int

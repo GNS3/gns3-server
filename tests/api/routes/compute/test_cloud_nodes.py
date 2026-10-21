@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -17,13 +16,12 @@
 
 import pytest
 import pytest_asyncio
-
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from tests.utils import asyncio_patch
-
+from gns3server.compute.builtin import Builtin
 from gns3server.compute.project import Project
+from tests.utils import asyncio_patch
 
 pytestmark = pytest.mark.asyncio
 
@@ -215,3 +213,36 @@ class TestCloudNodesRoutes:
     #             response = await compute_api.get("/projects/{project_id}/cloud/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]))
     #             assert response.status_code == 200
     #
+
+    async def test_unbridged_connected_tap_update(self, app, compute_client, compute_project):
+        ports = [{"interface": "tap0", "name": "tap0", "port_number": 0, "type": "tap"}]
+        with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
+            response = await compute_client.post(
+                app.url_path_for("compute:create_cloud", project_id=compute_project.id),
+                json={"name": "Cloud TAP", "ports_mapping": ports},
+            )
+        assert response.status_code == 201
+        data = response.json()
+        node = Builtin.instance().get_node(data["node_id"], project_id=compute_project.id)
+        node.nios[0] = object()
+        response = await compute_client.put(
+            app.url_path_for("compute:update_cloud", project_id=compute_project.id, node_id=node.id),
+            json={"usage": "Updated usage", "ports_mapping": data["ports_mapping"]},
+        )
+        assert response.status_code == 200
+        assert response.json()["usage"] == "Updated usage"
+
+    @pytest.mark.parametrize("name", ["tap-interface-too-long", "tap bad", "/dev/tap0"])
+    async def test_invalid_bridged_tap_rejected_before_save(self, app, compute_client, compute_project, name):
+        with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge") as start:
+            response = await compute_client.post(
+                app.url_path_for("compute:create_cloud", project_id=compute_project.id),
+                json={
+                    "name": "Invalid TAP",
+                    "ports_mapping": [
+                        {"interface": name, "name": name, "port_number": 0, "type": "tap", "bridge": "virbr0"}
+                    ],
+                },
+            )
+        assert response.status_code == 422
+        start.assert_not_called()
