@@ -806,7 +806,12 @@ async def export_project(
     openapi_extra=binary_request_body(ZIP_MEDIA_TYPE),
     dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
-async def import_project(project_id: UUID, request: Request, name: Optional[str] = None) -> schemas.Project:
+async def import_project(
+    project_id: UUID,
+    request: Request,
+    name: Optional[str] = None,
+    current_user: schemas.User = Depends(get_current_active_user),
+) -> schemas.Project:
     """
     Import a project from a portable archive.
 
@@ -825,7 +830,13 @@ async def import_project(project_id: UUID, request: Request, name: Optional[str]
                 async for chunk in request.stream():
                     await f.write(chunk)
             with open(temp_project_path, "rb") as f:
-                project = await import_controller_project(controller, str(project_id), f, name=name)
+                project = await import_controller_project(
+                    controller,
+                    str(project_id),
+                    f,
+                    name=name,
+                    user=current_user.username,
+                )
 
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
