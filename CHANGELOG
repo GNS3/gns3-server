@@ -1,5 +1,112 @@
 # Change Log
 
+## 3.1.0a7 21/10/2026
+
+* Bundle web-ui v3.1.0a7
+* Change project creator on import
+* feat: add QEMU support documentation and enforce minimum version requirement
+* fix: SPICE socket binding failure
+* fix(cloud): keep ports_mapping getter and setter adjacent
+* feat(cloud): attach TAP interfaces to existing Linux bridges
+* feat(qemu): support SATA CD-ROM interfaces
+* fix: fetch remote-compute marker pcaps in tag replay
+* feat(qemu): support two CD/DVD images and consistent ISO handling
+* feat: default vxlan_dstport to the IANA VXLAN port 4789
+* feat: cross-compute VXLAN kernel datapath
+* fix: type User.username as str via Mapped-style column
+* fix: refuse Docker node updates that recreate a running container
+* fix: roll back a node update the compute refused
+* fix(docker): give each VNC node its own X display
+* fix: dial per-node console hosts in MCP device config tools
+* feat: add auto_connect flag and disconnect endpoint for computes
+* feat: concurrent kernel captures, one per interface
+* fix: hide kernel-datapath interfaces from the cloud node
+* fix(docker): accept the pinned image id when the stores report different ids
+* feat: VPCS kernel datapath
+* feat: add support for Python 3.15
+* fix: enable Layer 1 keepalives by default. Ref #2975
+* fix: update error logging to handle exceptions in WebSockets
+* fix(deps): update paramiko and netmiko versions to address security vulnerability
+* refactor: remove unused link filter schemas and fix test_add_v8_version_appliance
+* fix(controller): stop flooding clients with transitional node statuses
+* fix: remove incorrectly merged code
+* refactor(mcp): drop the raw drawing_create tool
+* feat(agent): share Web UI compatible drawing builders between MCP and copilot
+* feat(mcp): add drawing_create_text tool with Web UI compatible SVG assembly
+* fix(deps): install the SQLAlchemy asyncio module so the 'greenlet' library is installed
+* fix(rbac): annotate query variables with Select type for better type checking
+* fix: drop Python 3.10 and add Python 3.15 support
+* feat: add optional ETag/If-Match concurrency for projects, nodes and links
+* feat: add response models for endpoints returning untyped objects
+* feat(api): generate unique readable OpenAPI operationIds
+* feat(api): type link filters and available_filters response
+* fix(links): reserve ports on add, accept port name and auto, add port_in_use code
+* feat(api): add strict_names and batch node and link creation
+* feat(api): return node and add wait option on node lifecycle calls
+* feat(api): add Snapshot.created and type NodeFile timestamps as date-time
+* fix(api): derive OpenAPI version from package, add servers, hide AI stub routes
+* feat(api): add Notification schema and document notification streams
+* feat(api): add discriminators to link iface, appliance version and template settings schemas
+* feat(api): return token lifetimes and document API keys as bearer tokens
+* feat(api): add machine-readable error codes and align OpenAPI error schemas
+* fix(api): declare binary and streaming bodies in OpenAPI
+* fix(api): return 200 instead of 201 for ACL endpoints, IOU license update
+* feat(api): add exact-match name filter to list endpoints
+* fix(console): keep SSH web console open after terminal resize
+* fix: resolve the code-review findings on the kernel datapath
+* fix(image-manager): Fix type-check errors in image uploads and appliance installation
+* fix(templates): Fixed template test formatting to pass CI
+* fix(iou): keep BridgeNIO filters across the NIO update route
+* fix: repair imports lost in the 3.1 rebase and meet the new lint baseline
+* fix(tools): merge same-device entries before device command execution
+* fix(compute): a passive absorbed anchor no longer resets the switch's tc state
+* fix(esw): harden the cascade end the create race leaves unhardened
+* fix(compute): refuse a duplicate port NIO and wire before bookkeeping
+* fix(controller): bind and release link members on their live ports
+* fix(controller): keep port links across a port-list rebuild
+* feat(controller): let IOL runner containers take the kernel datapath
+* feat(iol): anchor IOL runner containers on persistent TAPs
+* feat(compute): probe uBridge's swappable bridge TAP leg
+* fix(controller): keep IOL runner containers off the kernel datapath
+* fix(qemu): release the datapath under the execution lock
+* fix(qemu): release the datapath after the process is gone
+* feat(esw): wire peer anchors straight into the switch bridge
+* feat(controller): offer Dynamips the kernel datapath
+* feat(dynamips): anchor every Ethernet port on a persistent TAP
+* fix(mcp): let link_list return kernel_datapath
+* fix(schemas): one definition of the capabilities payload
+* fix(iou): carry suspend from the NIO update body
+* feat(controller): offer IOU the kernel datapath
+* feat(ubridge): probe iol_bridge's TAP-port support
+* feat(iou): anchor every Ethernet bay/unit on a persistent TAP
+* fix(qemu): build a command line for a headless node
+* feat(controller): offer QEMU the kernel datapath, gated per compute
+* feat(qemu): anchor QEMU adapters on a persistent TAP
+* refactor(compute): share the kernel-datapath machinery across node types
+* fix(controller): re-arm window_drop and expose kernel_datapath
+* feat(mcp): accept project/node names as tool locators
+* feat(controller): expose kernel_datapath on the link payload
+* feat(compute): report uBridge tc capabilities and gate filters on them
+* fix(docker): delete the per-link kernel bridge when a node stops
+* feat(docker): expose the eBPF time-window filter on kernel links
+* feat(docker): eBPF stateful packet filters on kernel links
+* feat(docker): expose netem-extension packet filters on kernel links
+* fix(docker): bring the veth host end up before a relay attach
+* feat(docker): bpf packet filter on kernel links via cls_bpf match-drop
+* feat(docker): packet filters on kernel-datapath links via tc netem
+* feat(docker): unify adapter interfaces on veth, allow kernel links at runtime
+* feat(docker): traffic-insight markers on kernel-datapath links via AF_PACKET
+* feat(docker): packet capture on kernel-datapath links via AF_PACKET
+* fix(controller): don't push the synthetic suspend filter to kernel links
+* feat(docker): wire Docker-to-Docker links through a kernel bridge
+* feat(image-manager): Add support for nested image folders and appliance compatibility checks
+* refactor: discriminate appliance settings by template_type
+* fix: bump asyncssh - at least 2.24.1 for CVE-2026-62949 fixes
+* fix: require Python >= 3.10 in remote-install.sh when installing v3
+* fix(images): Fix symlinked image imports and add regression tests
+* fix(images): Fix symlink support in image inventory
+
+
 ## 3.1.0a6 27/09/2026
 
 * Bundle web-ui v3.1.0a6
