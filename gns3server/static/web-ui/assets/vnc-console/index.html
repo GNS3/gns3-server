@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="x-ua-compatible" content="IE=edge" />
     <title>VNC Console</title>
+    <link rel="stylesheet" href="../console-ui.css" />
     <style>
       * {
         margin: 0;
@@ -15,7 +16,7 @@
       body {
         overflow: hidden;
         background: #000;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: 'Roboto', sans-serif;
       }
 
       #vnc-container {
@@ -456,7 +457,7 @@
         color: #fff;
         font-size: 32px;
         font-weight: bold;
-        font-family: monospace;
+        font-family: var(--gns3-font-code);
         display: none;
         align-items: center;
         gap: 8px;
@@ -550,7 +551,9 @@
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        min-width: 400px;
+        width: min(400px, calc(100vw - 32px));
+        max-height: calc(100dvh - 32px);
+        overflow: auto;
         z-index: 1002;
         display: none;
       }
@@ -569,7 +572,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         padding: 12px;
-        font-family: monospace;
+        font-family: var(--gns3-font-code);
         font-size: 13px;
         resize: vertical;
         margin-bottom: 16px;
@@ -615,6 +618,34 @@
         background: rgba(0, 0, 0, 0.7);
         z-index: 1001;
         display: none;
+      }
+      button,
+      input,
+      select {
+        font-family: inherit;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid #90caf9;
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #vnc-container,
+        #status-bar,
+        #vnc-toolbar,
+        button,
+        .dropdown-menu {
+          transition: none;
+        }
+        .dropdown-menu.show,
+        #vnc-toolbar button.recording,
+        #recording-indicator .recording-dot {
+          animation: none;
+        }
       }
     </style>
   </head>
