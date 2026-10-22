@@ -19,7 +19,7 @@ langchain-openai>=1.1.10
 langchain-anthropic>=1.3.4
 langchain-google-genai>=4.2.1
 langchain-aws>=1.8.1
-langchain-ollama>=1.0.1
+langchain-ollama>=1.1.0
 langchain-deepseek>=1.0.1
 langchain-xai>=1.2.2
 
