@@ -32,7 +32,7 @@ langsmith>=0.14.7
 # Network Automation
 paramiko>=5.0.0  # install version >= 5.0.0 to address CVE-2026-44405
 netmiko>=4.8.0
-nornir>=3.5.0
+nornir>=3.6.0
 nornir-netmiko>=1.0.1
 nornir-utils>=0.3.0
 nornir-salt>=0.23.4
