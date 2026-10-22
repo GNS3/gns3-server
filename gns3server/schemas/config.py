@@ -79,12 +79,25 @@ class IOUSettings(BaseModel):
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
+class QemuKvmclock(StrEnum):
+    # turned off only when the host runs on Hyper-V without a usable TSC
+    auto = "auto"
+    enabled = "enabled"
+    disabled = "disabled"
+
+
 class QemuSettings(BaseModel):
     enable_monitor: bool = Field(True, description="Use the Qemu monitor feature to communicate with Qemu VMs")
     monitor_host: str = Field("127.0.0.1", description="IP used to listen for the monitor")
     enable_hardware_acceleration: bool = Field(True, description="Enable hardware acceleration (KVM)")
     require_hardware_acceleration: bool = Field(
         False, description="Require hardware acceleration in order to start VMs"
+    )
+    kvmclock: QemuKvmclock = Field(
+        QemuKvmclock.auto,
+        description="kvmclock and TSC deadline timer of KVM guests: 'auto' turns them off when this server runs on "
+        "Hyper-V without a usable TSC (guest clocks run away there, Linux guests panic with soft lockups or hang), "
+        "'enabled' or 'disabled' forces them",
     )
     allow_unsafe_options: bool = Field(False, description="Allow unsafe additional command line options")
     ovmf_firmware_dir: str = Field("/usr/share/OVMF", description="Path to the OVMF firmware directory")

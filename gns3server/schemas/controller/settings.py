@@ -35,6 +35,7 @@ from ..config import (
     ControllerSettings,
     DynamipsSettings,
     IOUSettings,
+    QemuKvmclock,
     QemuSettings,
     ServerProtocol,
     ServerSettings,
@@ -194,6 +195,7 @@ class QemuSettingsUpdate(BaseModel):
     monitor_host: Optional[str] = None
     enable_hardware_acceleration: Optional[bool] = None
     require_hardware_acceleration: Optional[bool] = None
+    kvmclock: Optional[QemuKvmclock] = None
     allow_unsafe_options: Optional[bool] = None
     ovmf_firmware_dir: Optional[str] = None
 

@@ -63,6 +63,31 @@ log = logging.getLogger(__name__)
 FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd", "-fsdev", "-virtfs", "-nic", "-netdev"}
 FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS if opt.startswith("-") and not opt.startswith("--")}
 
+CLOCKSOURCE_PATH = "/sys/devices/system/clocksource/clocksource0/current_clocksource"
+
+# Clocksources of a Linux host running on Hyper-V without a usable TSC. The guest
+# timekeeping KVM derives from the TSC there is broken with recent kernels: kvmclock
+# runs thousands of times too fast (Linux guests panic with soft lockups and reboot
+# in a loop) and TSC deadline timers fire far too late (guests hang while booting).
+HYPERV_CLOCKSOURCES = ("hyperv_clocksource_tsc_page", "hyperv_clocksource_msr")
+
+# guest CPU features turned off on such hosts
+KVMCLOCK_OFF_FEATURES = ("kvmclock", "tsc-deadline")
+
+
+def host_clocksource():
+    """
+    Returns the clocksource used by the host kernel (Linux only).
+
+    :returns: clocksource name or None
+    """
+
+    try:
+        with open(CLOCKSOURCE_PATH, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return None
+
 
 class QemuVM(KernelDatapathMixin, BaseNode):
     module_name = "qemu"
@@ -2763,6 +2788,44 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             return True
         return False
 
+    def _kvmclock_off_reason(self):
+        """
+        Returns why kvmclock and the TSC deadline timer must be turned off for this KVM guest.
+
+        :returns: reason (string) or None to keep them
+        """
+
+        kvmclock = self.manager.config.settings.Qemu.kvmclock
+        if kvmclock == "disabled":
+            return "kvmclock = disabled in the [Qemu] server settings"
+        if kvmclock == "auto":
+            clocksource = host_clocksource()
+            if clocksource in HYPERV_CLOCKSOURCES:
+                return (
+                    f"the host runs on Hyper-V without a usable TSC (clocksource {clocksource}), "
+                    "set kvmclock = enabled in the [Qemu] server settings to keep them"
+                )
+        return None
+
+    def _kvmclock_off_options(self, additional_options):
+        """
+        Turns kvmclock and the TSC deadline timer off on the -cpu of the additional
+        options (except the features it sets itself) or, without one, on QEMU's
+        default CPU model.
+
+        :param additional_options: additional options (list), updated in place
+        :returns: options to add to the command line
+        """
+
+        for index in range(len(additional_options) - 2, -1, -1):
+            if additional_options[index] in ("-cpu", "--cpu"):
+                for feature in KVMCLOCK_OFF_FEATURES:
+                    if feature not in additional_options[index + 1]:
+                        additional_options[index + 1] += f",{feature}=off"
+                return []
+        cpu_model = "qemu32" if self._platform == "i386" else "qemu64"
+        return ["-cpu", ",".join([cpu_model] + [f"{feature}=off" for feature in KVMCLOCK_OFF_FEATURES])]
+
     async def _clear_save_vm_stated(self, snapshot_name="GNS3_SAVED_STATE"):
 
         drives = ["a", "b", "c", "d"]
@@ -2862,9 +2925,11 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if self._cpus > maxcpus:
             maxcpus = self._cpus
         command.extend(["-smp", f"cpus={self._cpus},maxcpus={maxcpus},sockets=1"])
+        kvm = False
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
+                kvm = True
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
         command.extend(["-boot", f"order={self._boot_priority}"])
@@ -2887,6 +2952,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             command.extend(await self._disable_graphics())
         if self._tpm:
             command.extend(self._tpm_options())
+        additional_opt_list = []
         if additional_options:
             try:
                 additional_opt_list = shlex.split(additional_options)
@@ -2897,7 +2963,15 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 for opt in additional_opt_list:
                     if opt in FORBIDDEN_OPTIONS:
                         raise QemuError(f"Forbidden additional option: {opt}")
-            command.extend(additional_opt_list)
+        if kvm:
+            kvmclock_off_reason = self._kvmclock_off_reason()
+            if kvmclock_off_reason:
+                log.info(
+                    f'QEMU VM "{self._name}" [{self._id}]: kvmclock and TSC deadline timer turned off, '
+                    f"{kvmclock_off_reason}"
+                )
+                command.extend(self._kvmclock_off_options(additional_opt_list))
+        command.extend(additional_opt_list)
 
         # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
         if self._console_type == "vnc":

@@ -204,6 +204,20 @@ class TestSettingsRoutes:
         response = await client.put(app.url_path_for("update_server_settings"), json={"Server": {"prot": "http"}})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
+    async def test_put_settings_qemu_kvmclock(
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
+
+        response = await client.put(app.url_path_for("update_server_settings"), json={"Qemu": {"kvmclock": "disabled"}})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["Qemu"]["kvmclock"] == "disabled"
+        parsed = configparser.ConfigParser()
+        parsed.read(config._main_config_file)
+        assert parsed["Qemu"]["kvmclock"] == "disabled"
+
+        response = await client.put(app.url_path_for("update_server_settings"), json={"Qemu": {"kvmclock": "off"}})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
     async def test_put_settings_deprecated_sections_rejected(
         self, app: FastAPI, client: AsyncClient, stable_jwt_secret: str
     ) -> None:
