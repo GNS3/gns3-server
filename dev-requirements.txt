@@ -7,4 +7,4 @@ pytest-random-order==1.2.0  # opt-in: --random-order --random-order-bucket=globa
 pytest-cov==7.1.0
 ruff==0.16.9
 mypy==2.4.0
-rust-just==1.58.0  # provides the `just` command runner, see justfile
+rust-just==1.59.0  # provides the `just` command runner, see justfile
