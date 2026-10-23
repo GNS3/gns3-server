@@ -38,6 +38,7 @@ from ..config import Config
 from ..utils.application_id import get_next_application_id, is_iol_runner_environment
 from ..utils.asyncio import aiozipstream, locking, wait_run_in_executor
 from ..utils.asyncio.pool import Pool
+from ..utils.hostname import template_name_to_node_name
 from ..utils.packet_filter_validation import validate_bpf_syntax
 from ..utils.path import check_path_allowed, get_default_project_directory
 from .compute import ComputeError
@@ -622,7 +623,7 @@ class Project:
         log.info(f'Creating node from template "{template_name}" on compute "{compute.name}" [{compute.id}]')
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         if name is None:
-            name = default_name_format.replace("{name}", template_name)
+            name = default_name_format.replace("{name}", template_name_to_node_name(template_name, node_type))
         # the appliance metadata stays template level: only the default
         # credentials are seeded on the node (where they can be overridden)
         appliance_metadata = template.pop("appliance_metadata", None) or {}

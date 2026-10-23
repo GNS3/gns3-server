@@ -254,6 +254,35 @@ async def test_add_node_from_template_seeds_default_credentials(controller):
 
 
 @pytest.mark.asyncio
+async def test_add_node_from_template_name_invalid_in_hostname(controller):
+    """
+    A template name with characters invalid in a hostname (e.g. "+" in a model name)
+    gives node names the compute accepts.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    controller._computes["local"] = compute
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    template = {
+        "name": "MikroTik CCR1072-1G-8S+",
+        "template_type": "qemu",
+        "compute_id": "local",
+        "default_name_format": "{name}-{0}",
+        "properties": {},
+    }
+
+    node = await project.add_node_from_template(template)
+    assert node.name == "MikroTikCCR1072-1G-8S-1"
+
+
+@pytest.mark.asyncio
 async def test_add_node_non_local(controller):
     """
     For a non local server we do not send the project path

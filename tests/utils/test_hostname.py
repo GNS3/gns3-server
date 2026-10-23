@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+
 from gns3server.utils import hostname
 
 
@@ -118,3 +120,20 @@ def test_rfc1123_conversion_hostname_with_all_numeric_tld_replaced():
 
 def rfc1123_hostname_with_multiple_consecutive_invalid_characters():
     assert hostname.to_rfc1123_hostname("hostname!!!.example..com") == "hostname---.example.com"
+
+
+@pytest.mark.parametrize(
+    "name,node_type,expected",
+    [
+        ("MikroTik CCR1072-1G-8S+", "qemu", "MikroTikCCR1072-1G-8S"),
+        ("MikroTik RB450G", "qemu", "MikroTikRB450G"),
+        ("Cisco IOSv 15.9", "qemu", "CiscoIOSv15.9"),
+        ("ubuntu:22.04", "docker", "ubuntu-22.04"),
+        ("IOU L2 15.2", "iou", "IOUL215-2"),
+        ("c7200+", "dynamips", "c7200"),
+        ("PC 1+", "vpcs", "PC1+"),
+        ("+++", "qemu", "qemu"),
+    ],
+)
+def test_template_name_to_node_name(name, node_type, expected):
+    assert hostname.template_name_to_node_name(name, node_type) == expected
