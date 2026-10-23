@@ -29,7 +29,7 @@ import pytest_asyncio
 from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
-from gns3server.compute.qemu.qemu_vm import QemuVM
+from gns3server.compute.qemu.qemu_vm import QemuVM, host_clocksource
 from gns3server.utils import force_unix_path, int_to_macaddress, macaddress_to_int
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
@@ -813,6 +813,110 @@ async def test_build_command_with_forbidden_options(vm):
     vm.options = "-blockdev"
     with pytest.raises(QemuError):
         await vm._build_command()
+
+
+async def _build_command_with_kvm(vm, clocksource):
+    """
+    Builds the command line as on a KVM host whose kernel uses the given clocksource.
+    """
+
+    with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._run_with_hardware_acceleration", return_value=True):
+        with patch("gns3server.compute.qemu.qemu_vm.host_clocksource", return_value=clocksource):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+                return await vm._build_command()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("clocksource", ["hyperv_clocksource_tsc_page", "hyperv_clocksource_msr"])
+async def test_build_command_kvmclock_off_on_hyperv_host(linux_platform, vm, clocksource):
+    """
+    A host running on Hyper-V without a usable TSC falls back to a Hyper-V clocksource:
+    kvmclock runs away in KVM guests there (Linux guests panic with soft lockups) and
+    TSC deadline timers fire far too late (guests hang), so both are turned off on
+    QEMU's default CPU model.
+    """
+
+    cmd = await _build_command_with_kvm(vm, clocksource)
+    assert "-enable-kvm" in cmd
+    assert cmd[cmd.index("-cpu") + 1] == "qemu64,kvmclock=off,tsc-deadline=off"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("clocksource", ["tsc", None])
+async def test_build_command_kvmclock_kept_on_other_hosts(linux_platform, vm, clocksource):
+
+    cmd = await _build_command_with_kvm(vm, clocksource)
+    assert "-enable-kvm" in cmd
+    assert "-cpu" not in cmd
+
+
+@pytest.mark.asyncio
+async def test_build_command_kvmclock_kept_without_kvm(vm):
+
+    with patch("gns3server.compute.qemu.qemu_vm.host_clocksource", return_value="hyperv_clocksource_tsc_page"):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+            cmd = await vm._build_command()
+    assert "-cpu" not in cmd
+
+
+@pytest.mark.asyncio
+async def test_build_command_kvmclock_off_on_user_cpu(linux_platform, vm):
+    """
+    A -cpu given in the additional options keeps its model and gets the features turned off.
+    """
+
+    vm.options = "-nographic -cpu host"
+    cmd = await _build_command_with_kvm(vm, "hyperv_clocksource_tsc_page")
+    assert cmd.count("-cpu") == 1
+    assert cmd[cmd.index("-cpu") + 1] == "host,kvmclock=off,tsc-deadline=off"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cpu,expected",
+    [
+        ("host,kvmclock=on", "host,kvmclock=on,tsc-deadline=off"),
+        ("max,-kvmclock,+tsc-deadline", "max,-kvmclock,+tsc-deadline"),
+    ],
+)
+async def test_build_command_kvmclock_user_choice_kept(linux_platform, vm, cpu, expected):
+
+    vm.options = f"-cpu {cpu}"
+    cmd = await _build_command_with_kvm(vm, "hyperv_clocksource_tsc_page")
+    assert cmd.count("-cpu") == 1
+    assert cmd[cmd.index("-cpu") + 1] == expected
+
+
+@pytest.mark.asyncio
+async def test_build_command_kvmclock_off_i386(linux_platform, vm):
+
+    vm._platform = "i386"
+    cmd = await _build_command_with_kvm(vm, "hyperv_clocksource_tsc_page")
+    assert cmd[cmd.index("-cpu") + 1] == "qemu32,kvmclock=off,tsc-deadline=off"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "setting,clocksource,kvmclock_off",
+    [
+        ("disabled", "tsc", True),
+        ("enabled", "hyperv_clocksource_tsc_page", False),
+    ],
+)
+async def test_build_command_kvmclock_setting(linux_platform, vm, setting, clocksource, kvmclock_off):
+
+    vm.manager.config.settings.Qemu.kvmclock = setting
+    cmd = await _build_command_with_kvm(vm, clocksource)
+    assert ("qemu64,kvmclock=off,tsc-deadline=off" in cmd) is kvmclock_off
+
+
+def test_host_clocksource(monkeypatch, tmpdir):
+
+    path = tmpdir / "current_clocksource"
+    monkeypatch.setattr("gns3server.compute.qemu.qemu_vm.CLOCKSOURCE_PATH", str(path))
+    assert host_clocksource() is None
+    path.write_text("hyperv_clocksource_tsc_page\n", encoding="utf-8")
+    assert host_clocksource() == "hyperv_clocksource_tsc_page"
 
 
 def test_hda_disk_image(vm, images_dir):
