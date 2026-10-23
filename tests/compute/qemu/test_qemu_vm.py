@@ -799,6 +799,21 @@ async def test_build_command_with_virtio_net_pci_adapter(vm):
 
 
 @pytest.mark.asyncio
+async def test_build_command_custom_adapter_without_type(vm):
+    """
+    A custom adapter that only renames a port is saved with "adapter_type": null:
+    the node's adapter type applies instead of "-device None", which QEMU rejects.
+    """
+
+    vm.adapters = 1
+    vm.mac_address = "00:00:ab:0e:0f:09"
+    vm.custom_adapters = [{"adapter_number": 0, "port_name": "sfp1", "adapter_type": None, "mac_address": None}]
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        cmd = await vm._build_command()
+    assert "e1000,mac=00:00:ab:0e:0f:09,bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+
+
+@pytest.mark.asyncio
 async def test_build_command_with_invalid_options(vm):
 
     vm.options = "'test"

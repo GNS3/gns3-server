@@ -110,3 +110,22 @@ def to_rfc1123_hostname(name: str) -> str:
     name = name[:253]
 
     return name
+
+
+def template_name_to_node_name(name: str, node_type: str) -> str:
+    """
+    Convert a template name to the base of the names of the nodes created from it.
+
+    Spaces are removed. For the node types whose names the compute validates as
+    hostnames, the other invalid characters (e.g. "+" in a model name) are replaced
+    by hyphens: RFC 1123 for Qemu and Docker, IOS for Dynamips and IOU.
+    """
+
+    name = name.replace(" ", "")
+    if node_type in ("qemu", "docker"):
+        name = re.sub(r"[^a-zA-Z0-9.-]", "-", name)
+    elif node_type in ("dynamips", "iou"):
+        name = re.sub(r"[^a-zA-Z0-9-]", "-", name)
+    else:
+        return name
+    return name.strip("-.") or node_type
