@@ -1561,5 +1561,7 @@ class BaseNode:
         if self.custom_adapters:
             for custom_adapter in self.custom_adapters:
                 if custom_adapter["adapter_number"] == adapter_number:
-                    return custom_adapter
+                    # settings left unset are null (e.g. "adapter_type" when only the
+                    # port is renamed): drop them so callers fall back to the node's own
+                    return {key: value for key, value in custom_adapter.items() if value is not None}
         return {}
