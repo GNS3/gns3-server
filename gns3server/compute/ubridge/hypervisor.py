@@ -34,6 +34,13 @@ from .ubridge_hypervisor import UBridgeHypervisor
 
 log = logging.getLogger(__name__)
 
+# The kernel dataplane the persistent-TAP anchors feed (kernel links, kernel
+# markers and captures) needs uBridge >= 1.3.1: 1.3.0 introduced it, 1.3.1
+# made kernel captures per interface (`capture stop_kernel <ifc>`, which the
+# server always sends). The tap module itself is older (1.2.3), so a
+# successful `tap create` alone does not mean the dataplane is there.
+KERNEL_DATAPATH_MINIMUM_VERSION = "1.3.1"
+
 
 class Hypervisor(UBridgeHypervisor):
     """
@@ -148,6 +155,20 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         return self._version
+
+    @property
+    def supports_kernel_datapath(self):
+        """
+        Whether this uBridge is recent enough for the kernel dataplane
+        (persistent-TAP anchors, kernel links). False until the version is
+        known, i.e. before start().
+
+        :returns: boolean
+        """
+
+        if not self._version:
+            return False
+        return parse_version(self._version) >= parse_version(KERNEL_DATAPATH_MINIMUM_VERSION)
 
     async def _check_ubridge_version(self, env=None):
         """
