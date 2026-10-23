@@ -92,6 +92,69 @@ class TestEthernetSwitchNodesRoutes:
             ]
         )
 
+    async def test_ethernet_switch_create_releases_a_leftover_bridge(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project
+    ) -> None:
+        """
+        A server killed before close() leaves the switch's kernel bridge
+        behind, with a peer's persistent anchor TAP still enslaved (the
+        anchor outlives uBridge). uBridge refuses to delete a bridge that
+        still has ports (EBUSY), so the crash recovery must release the
+        leftover members first: otherwise ``brctl create`` hits EEXIST and
+        the switch -- and the project holding it -- can no longer be opened.
+        """
+
+        node_id = "ada84b51-ab2c-4d3e-8f40-0123456789ab"
+        br = "gns3ada84b"  # "gns3" + the first 6 hex chars of the node id
+        brif = f"/sys/class/net/{br}/brif"
+        leftover = "gq00010203e0p0"
+        members = {leftover}
+        bridge = {"exists": True}
+
+        async def ubridge(command):
+            # uBridge's brctl: delete refuses a bridge that still has ports,
+            # create refuses an existing one.
+            if command == f'brctl delif "{br}" "{leftover}"':
+                members.discard(leftover)
+            elif command == f'brctl delete "{br}"':
+                if members:
+                    raise UbridgeError(f"Could not delete bridge {br}: Device or resource busy")
+                bridge["exists"] = False
+            elif command == f'brctl create "{br}"':
+                if bridge["exists"]:
+                    raise UbridgeError(f"Could not create bridge {br}: File exists")
+                bridge["exists"] = True
+
+        real_listdir = os.listdir
+
+        def listdir(path):
+            if str(path) == brif:
+                if not bridge["exists"]:
+                    raise FileNotFoundError(path)
+                return sorted(members)
+            return real_listdir(path)
+
+        with (
+            asyncio_patch(f"{_NODE}._ubridge_send", side_effect=ubridge) as send,
+            patch("os.listdir", new=listdir),
+        ):
+            response = await compute_client.post(
+                app.url_path_for("compute:create_ethernet_switch", project_id=compute_project.id),
+                json={"name": "Ethernet Switch 1", "node_id": node_id},
+            )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert compute_project.get_node(node_id)._bridge_name == br
+        send.assert_has_calls(
+            [
+                call(f'brctl delif "{br}" "{leftover}"'),
+                call(f'brctl delete "{br}"'),
+                call(f'brctl create "{br}"'),
+                call(f'link set "{br}" up'),
+                call(f'brctl vlanfiltering "{br}" on'),
+            ]
+        )
+        assert not members
+
     async def test_ethernet_switch_get(
         self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, ethernet_switch: dict
     ) -> None:
