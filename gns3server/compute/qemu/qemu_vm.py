@@ -2715,8 +2715,14 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 tap = self._kernel_host_ifc(adapter_number) or self._tap_name(adapter_number)
             network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
             if self._tap_datapath or isinstance(nio, NIOTAP):
+                # vnet_hdr=off: with QEMU's default virtio-net header the
+                # guest NIC offloads TCP/UDP checksums and TSO to the TAP.
+                # A kernel bridge finishes such frames, but the uBridge relay
+                # (cloud, NAT, ...) copies them off the TAP as they are, so
+                # receivers drop them. Without the header QEMU and the guest
+                # send finished frames, as with the 2.x socket netdev.
                 network_options.extend(
-                    ["-netdev", f"tap,id=gns3-{adapter_number},ifname={tap},script=no,downscript=no"]
+                    ["-netdev", f"tap,id=gns3-{adapter_number},ifname={tap},script=no,downscript=no,vnet_hdr=off"]
                 )
             else:
                 # Legacy datapath (uBridge without the tap module): QEMU talks
