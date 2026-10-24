@@ -50,6 +50,9 @@ class FakeHypervisor:
     # doesn't exist), None = answer 100 (an impossible reply on the probe's
     # uuid name — the probe must treat it as unknown)
     bridge_tap_error = "214-bridge 'nosuch' doesn't exist"
+    # False = a build older than the kernel dataplane (uBridge < 1.3.1)
+    supports_kernel_datapath = True
+    version = "1.3.1"
     spawned = 0
 
     def __init__(self, project, path, working_dir, transport, host, node_id):
@@ -90,6 +93,8 @@ def probe_env(monkeypatch, tmp_path):
     FakeHypervisor.error = None
     FakeHypervisor.error_prefix = None
     FakeHypervisor.bridge_tap_error = "214-bridge 'nosuch' doesn't exist"
+    FakeHypervisor.supports_kernel_datapath = True
+    FakeHypervisor.version = "1.3.1"
     FakeHypervisor.reply = ["netem=delay,rate;ebpf=1;cbpf=1;ebpf_modes=nth,quota,window,flow"]
     tc_probe._cache.clear()
     tc_probe._tap_cache.clear()
@@ -283,6 +288,25 @@ async def test_probe_bridge_tap_support_missing_binary(monkeypatch):
     monkeypatch.setattr(tc_probe.shutil, "which", lambda name: None)
     assert await probe_bridge_tap_support() is None
     assert FakeHypervisor.spawned == 0
+
+
+@pytest.mark.parametrize(
+    "probe", [probe_tap_support, probe_iol_tap_support, probe_bridge_tap_support, probe_vxlan_support]
+)
+async def test_anchor_probes_unknown_below_the_kernel_dataplane_version(probe):
+    """
+    uBridge 1.2.3 already has the tap module, so its `tap create` succeeds —
+    but the kernel links built on that answer need commands that only 1.3.x
+    has (per-interface `capture stop_kernel`, kernel markers, ...). A build
+    below the kernel-dataplane version is unknown without being asked
+    anything, so every node stays on the relay datapath.
+    """
+
+    FakeHypervisor.supports_kernel_datapath = False
+    FakeHypervisor.version = "1.2.3"
+    assert await probe() is None
+    assert FakeHypervisor.spawned == 1
+    assert FakeHypervisor.last.commands == []
 
 
 class _FixedUuid:

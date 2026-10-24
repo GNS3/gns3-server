@@ -194,6 +194,24 @@ async def test_accepts_ubridge_1_2_3(tmp_path, monkeypatch):
     assert hyp.version == "1.2.3"
 
 
+@pytest.mark.parametrize(
+    "version, supported",
+    [
+        ("", False),  # not started yet: version unknown
+        ("1.2.3", False),  # has the tap module, but no kernel dataplane
+        ("1.3.0", False),  # no per-interface capture stop_kernel
+        ("1.3.1", True),
+        ("1.3.2", True),
+        ("1.4.0", True),
+    ],
+)
+def test_supports_kernel_datapath(tmp_path, monkeypatch, version, supported):
+
+    hyp = _make("unix", tmp_path, monkeypatch)
+    hyp._version = version
+    assert hyp.supports_kernel_datapath is supported
+
+
 # ---------------------------------------------------------------------------
 # start: fail-fast on an immediately-exiting uBridge
 # ---------------------------------------------------------------------------

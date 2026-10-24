@@ -124,6 +124,29 @@ async def test_prepare_tap_datapath_falls_back_without_the_tap_module(vm):
 
 
 @pytest.mark.asyncio
+async def test_prepare_tap_datapath_falls_back_below_the_kernel_dataplane_version(vm):
+    """
+    uBridge 1.2.3 has the tap module, so a `tap create` probe alone passes
+    — and the node then runs on TAP anchors whose kernel links the build
+    cannot drive. Below the kernel-dataplane version the node keeps the
+    legacy socket-netdev datapath without creating any TAP, and the warning
+    names the installed version.
+    """
+
+    vm._ubridge_hypervisor.supports_kernel_datapath = False
+    vm._ubridge_hypervisor.version = "1.2.3"
+    with patch.object(vm.project, "emit") as emit:
+        await vm._prepare_tap_datapath()
+
+    assert vm._tap_datapath is False
+    assert vm._kernel_taps == {}
+    assert not any(c.args[0].startswith("tap ") for c in vm._ubridge_send.call_args_list)
+    message = emit.call_args.args[1]["message"]
+    assert "1.2.3" in message
+    assert "1.3.1" in message
+
+
+@pytest.mark.asyncio
 async def test_tap_name_fits_ifnamsiz(vm):
     """
     The anchor name has to fit IFNAMSIZ (15) even for a late adapter.
