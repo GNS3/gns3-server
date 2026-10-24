@@ -230,13 +230,27 @@ class EthernetSwitch(KernelDatapathMixin, BaseNode):
         this switch's UUID (kernel interface names are ≤ 15 chars).  A stale
         bridge from a previous crash is deleted first so ``brctl create`` never
         hits EEXIST.
+
+        A server killed before ``close()`` leaves that bridge with its ports
+        still enslaved: a peer's persistent anchor TAP or a cascade veth end
+        outlives uBridge, and uBridge's ``brctl delete`` refuses a bridge that
+        still has ports (EBUSY). Every leftover member is released first
+        (same-host sysfs listing); no port of this switch is wired yet, and
+        the re-wiring re-enslaves the ones that are still linked.
         """
 
         if self._bridge_created:
             return
         # deterministic short name — 10 chars, always fits the 15-char kernel cap
         self._bridge_name = "gns3" + self._id.replace("-", "")[:6]
-        # crash recovery: best-effort delete any leftover bridge
+        # crash recovery: release any leftover bridge's ports, then delete it
+        try:
+            leftover_members = os.listdir(f"/sys/class/net/{self._bridge_name}/brif")
+        except OSError:
+            leftover_members = []  # no leftover bridge
+        for member in leftover_members:
+            with contextlib.suppress(UbridgeError):
+                await self._ubridge_send(f'brctl delif "{self._bridge_name}" "{member}"')
         try:
             await self._ubridge_send(f'brctl delete "{self._bridge_name}"')
         except UbridgeError:
