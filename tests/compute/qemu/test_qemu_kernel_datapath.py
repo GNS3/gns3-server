@@ -29,6 +29,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import pytest_asyncio
 
+from gns3server.compute.nios.nio_tap import NIOTAP
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
 from gns3server.compute.qemu.qemu_vm import QemuVM
@@ -143,9 +144,33 @@ async def test_network_options_use_the_tap_anchor(vm):
 
     options = await vm._network_options()
 
-    assert f"tap,id=gns3-0,ifname={TAP0},script=no,downscript=no" in options
+    assert f"tap,id=gns3-0,ifname={TAP0},script=no,downscript=no,vnet_hdr=off" in options
     assert not any(option.startswith("socket,") for option in options)
     assert not vm._local_udp_tunnels
+
+
+@pytest.mark.asyncio
+async def test_network_options_turn_off_the_tap_vnet_header(vm):
+    """
+    Every TAP netdev turns the virtio-net header off, the legacy NIOTAP one
+    included. With QEMU's default header the guest NIC hands its TCP/UDP
+    checksums (and TSO) to the TAP, and the uBridge relay copies those
+    frames off the TAP unfinished: receivers behind a cloud drop them.
+    """
+
+    vm._tap_datapath = True
+    vm.adapters = 2
+    vm.adapter_type = "virtio-net-pci"
+    vm._kernel_taps[(0, 0)] = TAP0
+    vm._ethernet_adapters[1].add_nio(0, NIOTAP("tap-legacy"))
+
+    options = await vm._network_options()
+
+    netdevs = [options[i + 1] for i, option in enumerate(options) if option == "-netdev"]
+    assert netdevs == [
+        f"tap,id=gns3-0,ifname={TAP0},script=no,downscript=no,vnet_hdr=off",
+        "tap,id=gns3-1,ifname=tap-legacy,script=no,downscript=no,vnet_hdr=off",
+    ]
 
 
 @pytest.mark.asyncio

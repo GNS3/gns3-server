@@ -11,7 +11,7 @@ binary, the real IOS CLI behind the server's telnet console), driven through
 the controller REST API. QEMU is the node type whose guest leg *is* the
 anchor: uBridge creates one persistent TAP per adapter before launch and
 hands it to this user, and QEMU opens it by ifname as its netdev
-(``-netdev tap,ifname=...,script=no,downscript=no``) — no userspace hop, no
+(``-netdev tap,ifname=...,script=no,downscript=no,vnet_hdr=off``) — no userspace hop, no
 port bridge, the anchor is the NIC's host side.
 
 * two QEMU nodes on one compute report ``kernel_datapath`` when the
