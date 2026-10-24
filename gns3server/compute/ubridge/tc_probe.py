@@ -45,7 +45,7 @@ from gns3server.config import Config
 from gns3server.utils.tc_capabilities import parse_tc_capabilities
 from gns3server.utils.vxlan import VXLAN_VNI_MAX, VXLAN_VNI_MIN
 
-from .hypervisor import KERNEL_DATAPATH_MINIMUM_VERSION, Hypervisor
+from .hypervisor import Hypervisor
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
@@ -63,22 +63,6 @@ _bridge_tap_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 # binary identity -> whether the vxlan module can create a device (None = unknown)
 _vxlan_cache: dict[tuple[str, int, int, int], Optional[bool]] = {}
 _lock = asyncio.Lock()
-
-
-def _require_kernel_datapath(hypervisor):
-    """
-    Refuse a uBridge older than the kernel dataplane before any anchoring
-    probe asks it anything. Its own commands can still succeed — 1.2.3 has
-    the tap module, so `tap create` answers OK — while the kernel links
-    built on that answer need 1.3.x commands it lacks. Raised as a
-    UbridgeError so the caller's usual failure path reports unknown.
-    """
-
-    if not hypervisor.supports_kernel_datapath:
-        raise UbridgeError(
-            f"uBridge {hypervisor.version} is too old for the kernel datapath "
-            f"(>= {KERNEL_DATAPATH_MINIMUM_VERSION} required)"
-        )
 
 
 async def probe_tc_capabilities(timeout: float = 15.0):  # noqa: ASYNC109 - operation-specific timeout is intentional
@@ -192,7 +176,6 @@ async def _probe_tap(path, config, timeout):  # noqa: ASYNC109 - operation-speci
 
         async def ask():
             await hypervisor.start()
-            _require_kernel_datapath(hypervisor)
             await hypervisor.connect()
             await hypervisor.send(f"tap create {name}")
             try:
@@ -272,7 +255,6 @@ async def _probe_iol_tap(path, config, timeout):  # noqa: ASYNC109 - operation-s
 
         async def ask():
             await hypervisor.start()
-            _require_kernel_datapath(hypervisor)
             await hypervisor.connect()
             await hypervisor.send(f"iol_bridge create {bridge} {_IOL_PROBE_BRIDGE_ID}")
             try:
@@ -354,7 +336,6 @@ async def _probe_bridge_tap(path, config, timeout):  # noqa: ASYNC109 - operatio
 
         async def ask():
             await hypervisor.start()
-            _require_kernel_datapath(hypervisor)
             await hypervisor.connect()
             try:
                 await hypervisor.send(f"bridge delete_nio_tap gns3brtapprobe{uuid.uuid4().hex[:4]} any")
@@ -451,7 +432,6 @@ async def _probe_vxlan(path, config, timeout):  # noqa: ASYNC109 - operation-spe
 
         async def ask():
             await hypervisor.start()
-            _require_kernel_datapath(hypervisor)
             await hypervisor.connect()
             await hypervisor.send(f"vxlan create {name} {vni} remote=127.0.0.1 dstport={dstport}")
             try:

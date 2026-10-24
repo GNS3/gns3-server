@@ -34,13 +34,6 @@ from .ubridge_hypervisor import UBridgeHypervisor
 
 log = logging.getLogger(__name__)
 
-# The kernel dataplane the persistent-TAP anchors feed (kernel links, kernel
-# markers and captures) needs uBridge >= 1.3.1: 1.3.0 introduced it, 1.3.1
-# made kernel captures per interface (`capture stop_kernel <ifc>`, which the
-# server always sends). The tap module itself is older (1.2.3), so a
-# successful `tap create` alone does not mean the dataplane is there.
-KERNEL_DATAPATH_MINIMUM_VERSION = "1.3.1"
-
 
 class Hypervisor(UBridgeHypervisor):
     """
@@ -156,20 +149,6 @@ class Hypervisor(UBridgeHypervisor):
 
         return self._version
 
-    @property
-    def supports_kernel_datapath(self):
-        """
-        Whether this uBridge is recent enough for the kernel dataplane
-        (persistent-TAP anchors, kernel links). False until the version is
-        known, i.e. before start().
-
-        :returns: boolean
-        """
-
-        if not self._version:
-            return False
-        return parse_version(self._version) >= parse_version(KERNEL_DATAPATH_MINIMUM_VERSION)
-
     async def _check_ubridge_version(self, env=None):
         """
         Checks if the ubridge executable version meets the minimum required.
@@ -179,10 +158,10 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                # uBridge >= 1.2.3 is required for the AF_UNIX control
-                # channel, marker filters, builtin Ethernet Switch support,
-                # and Docker TAP carrier control.
-                minimum_required_version = "1.2.3"
+                # uBridge >= 1.3.1 is required for the kernel datapath:
+                # persistent TAP anchors, kernel links, kernel markers and
+                # per-interface kernel captures.
+                minimum_required_version = "1.3.1"
                 if parse_version(self._version) < parse_version(minimum_required_version):
                     raise UbridgeError(f"uBridge executable version must be >= {minimum_required_version}")
             else:

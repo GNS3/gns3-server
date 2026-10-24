@@ -53,7 +53,6 @@ import socket
 import psutil
 
 from gns3server.compute.error import NodeError
-from gns3server.compute.ubridge.hypervisor import KERNEL_DATAPATH_MINIMUM_VERSION
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.tc_capabilities import FILTER_EBPF_MODES, parse_tc_capabilities, usable_ebpf_modes
 
@@ -159,18 +158,8 @@ class KernelDatapathMixin:
         "Unknown command"/"Unknown module", a build without CAP_NET_ADMIN
         fails outright. The caller composes its own warning and fallback:
         the legacy relay datapath keeps working either way.
-
-        A build older than the kernel dataplane is refused without asking:
-        1.2.3 already has the tap module, so its `tap create` succeeds,
-        but the anchors it creates would then carry kernel links that need
-        1.3.x commands (per-interface kernel captures, kernel markers).
         """
 
-        if not self.ubridge.supports_kernel_datapath:
-            return UbridgeError(
-                f"uBridge {self.ubridge.version} is too old for the kernel datapath "
-                f"(>= {KERNEL_DATAPATH_MINIMUM_VERSION} required)"
-            )
         try:
             await self._ubridge_send(f'tap create "{probe_name}"')
         except UbridgeError as e:
