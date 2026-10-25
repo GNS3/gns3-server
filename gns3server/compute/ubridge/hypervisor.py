@@ -158,10 +158,10 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                # uBridge >= 1.2.3 is required for the AF_UNIX control
-                # channel, marker filters, builtin Ethernet Switch support,
-                # and Docker TAP carrier control.
-                minimum_required_version = "1.2.3"
+                # uBridge >= 1.3.1 is required for the kernel datapath:
+                # persistent TAP anchors, kernel links, kernel markers and
+                # per-interface kernel captures.
+                minimum_required_version = "1.3.1"
                 if parse_version(self._version) < parse_version(minimum_required_version):
                     raise UbridgeError(f"uBridge executable version must be >= {minimum_required_version}")
             else:

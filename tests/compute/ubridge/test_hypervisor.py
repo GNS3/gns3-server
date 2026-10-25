@@ -168,30 +168,37 @@ async def test_stop_tcp_has_no_socket_to_unlink(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_requires_ubridge_1_2_3(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "version",
+    [
+        "1.2.3",  # has the tap module, but no kernel dataplane
+        "1.3.0",  # no per-interface capture stop_kernel
+    ],
+)
+async def test_requires_ubridge_1_3_1(tmp_path, monkeypatch, version):
 
     hyp = _make("unix", tmp_path, monkeypatch)
     with patch(
         "gns3server.compute.ubridge.hypervisor.subprocess_check_output",
         new_callable=AsyncMock,
-        return_value="ubridge version 1.2.2",
+        return_value=f"ubridge version {version}",
     ):
-        with pytest.raises(UbridgeError, match=r">= 1\.2\.3"):
+        with pytest.raises(UbridgeError, match=r">= 1\.3\.1"):
             await hyp._check_ubridge_version()
 
 
 @pytest.mark.asyncio
-async def test_accepts_ubridge_1_2_3(tmp_path, monkeypatch):
+async def test_accepts_ubridge_1_3_1(tmp_path, monkeypatch):
 
     hyp = _make("unix", tmp_path, monkeypatch)
     with patch(
         "gns3server.compute.ubridge.hypervisor.subprocess_check_output",
         new_callable=AsyncMock,
-        return_value="ubridge version 1.2.3",
+        return_value="ubridge version 1.3.1",
     ):
         await hyp._check_ubridge_version()
 
-    assert hyp.version == "1.2.3"
+    assert hyp.version == "1.3.1"
 
 
 # ---------------------------------------------------------------------------
