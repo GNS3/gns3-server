@@ -20,7 +20,7 @@ Readable and unique OpenAPI operationIds.
 """
 
 import re
-from typing import Callable
+from typing import Callable, Sequence
 
 from fastapi import APIRouter
 from fastapi.routing import APIRoute
@@ -46,10 +46,13 @@ def generate_operation_id(route: APIRoute) -> str:
     return name
 
 
-def add_stub_routes(router: APIRouter, endpoint: Callable, name: str) -> None:
+def add_stub_routes(router: APIRouter, endpoint: Callable, name: str, paths: Sequence[str] = ("/{path:path}",)) -> None:
     """
-    Registers a catch-all route per HTTP method so that every method gets its own operationId.
+    Registers a stub route per path and HTTP method so that every method gets its own operationId.
+    The default path is a catch-all for everything under the router prefix.
     """
 
-    for method in STUB_METHODS:
-        router.add_api_route("/{path:path}", endpoint, methods=[method], name=f"{name}_{method.lower()}")
+    for index, path in enumerate(paths):
+        suffix = f"_{index}" if len(paths) > 1 else ""
+        for method in STUB_METHODS:
+            router.add_api_route(path, endpoint, methods=[method], name=f"{name}{suffix}_{method.lower()}")
