@@ -829,7 +829,8 @@ async def link_update(
         steady-state mean loss = p/(p+r)*(1-h) per direction; mutually
         exclusive with packet_loss
       * duplicate (K): [pct, correl?] - Duplication percentage
-      * seed (K): [u32] - Makes netem random draws reproducible
+      * seed (K): [u32] - Makes netem random draws reproducible (needs
+        kernel >= 6.6; older kernels silently ignore the seed)
       * limit (K): [pkts] - Impairment queue depth (default 1000; raise for
         low rate + long delay)
       * quota (K): [bytes, pct] - After the byte quota is consumed, each
