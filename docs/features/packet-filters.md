@@ -76,7 +76,7 @@ On the kernel datapath the 13 types ride three kernel objects on the anchor. The
 | `rate ["512kbit"]` | netem `rate B` | tc-style integer+unit (bit/kbit/mbit/gbit/bps/kbps/mbps, ≤100gbit); kernel-only type |
 | `reorder [%, correl, gap]` | netem `reorder P [correl C] [gap G]` | requires `delay`; kernel-only type |
 | `gemodel [p, r, 1-h]` | netem `loss gemodel P R H` | Gilbert-Elliot bursty loss: p = good→bad transition, r = bad→good transition, 1-h = loss chance in the bad state (good loses nothing) — mean one-way loss p/(p+r)×(1-h); mutually exclusive with `packet_loss`; kernel-only type |
-| `seed [u32]` | netem `seed N` | reproducible random draws; kernel-only type |
+| `seed [u32]` | netem `seed N` | reproducible random draws; kernel-only type — seeded draws need Linux ≥ 6.2, older kernels silently ignore the seed (every other knob applies) |
 | `limit [pkts]` | netem `limit N` | queue depth above the 1000 default (rate+delay BDP); kernel-only type |
 | `bpf` (one line per expression, OR) | `tc bpf_drop add <if> <prio> "<expr>"` — cls_bpf on clsact egress + gact drop | needs uBridge `cbpf=1` (`tc capabilities`, probed once per uBridge process); a line that fails to compile on the compute is skipped with a warning, mirroring the relay |
 | `frequency_drop [N]` | `tc nth_drop <if> N` — the eBPF stateful classifier's exact every-Nth mode (clsact egress prio 1) | needs uBridge `ebpf=1`; -1 = drop everything → every 1st; per-direction counters (see below) |
@@ -96,7 +96,7 @@ The API surface of the 13 types — parameters, ranges and cross-filter rules, v
 | `rate` **K** | Bandwidth limit | Rate — tc-style string, e.g. `"512kbit"` (≤ 100gbit) | integer + unit; bps-family units count bytes/s |
 | `reorder` **K** | Reorder | Reorder (0…100 %) · Correlation (0…100 %) · Gap (1…1000 packets) | requires `delay` |
 | `gemodel` **K** | Gilbert-Elliot loss | p (good-to-bad) · r (bad-to-good) · 1-h (bad-state loss) (each 0…100 %) | mutually exclusive with `packet_loss` |
-| `seed` **K** | Random seed | Seed (0…4294967295) | pins the netem draws only |
+| `seed` **K** | Random seed | Seed (0…4294967295) | pins the netem draws only; reproducibility needs Linux ≥ 6.2 |
 | `limit` **K** | Queue limit | Limit (1…1000000 packets) | queue depth above the 1000 default |
 | `bpf` | Berkeley Packet Filter (BPF) | Filters — text, one expression per line | any match drops |
 | `frequency_drop` | Frequency drop | Frequency (−1…32767) | −1 drops everything; 0 disables |
@@ -229,7 +229,7 @@ Choosing parameters: pick the target mean M and average burst length L (packets)
 |---|---|
 | Seed (0…4294967295) | the netem PRNG seed |
 
-**Note**: pins the netem draws only — the eBPF percentage draws (quota, window) ride a PRNG seeded at program load, outside `seed`'s reach; any filter-set change resets schedules and counters. Two more boundaries: reproduction also requires the same traffic pattern (draws are consumed per arriving packet — classifier-stage drops upstream change the sequence), and a fixed seed pins one realization, not the distribution — for statistical conclusions (average throughput under loss) run several seeds.
+**Note**: pins the netem draws only — the eBPF percentage draws (quota, window) ride a PRNG seeded at program load, outside `seed`'s reach; any filter-set change resets schedules and counters. Two more boundaries: reproduction also requires the same traffic pattern (draws are consumed per arriving packet — classifier-stage drops upstream change the sequence), and a fixed seed pins one realization, not the distribution — for statistical conclusions (average throughput under loss) run several seeds. One more: the seeded PRNG itself is a Linux 6.2 addition — on older kernels the seed attribute is silently ignored (no error), the draws stay random while every other netem knob applies.
 
 **Example**: `{"packet_loss": [10], "seed": [42]}`.
 

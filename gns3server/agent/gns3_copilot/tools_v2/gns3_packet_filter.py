@@ -133,7 +133,8 @@ class GNS3PacketFilterTool(BaseTool):
     - "gemodel": Gilbert-Elliot bursty loss (parameters: p good-to-bad transition, r bad-to-good
       transition, 1-h loss in the bad state; mean loss = p/(p+r)*(1-h); kernel links only)
     - "duplicate": Packet duplication percentage (kernel links only)
-    - "seed": Reproducible netem random draws (kernel links only)
+    - "seed": Reproducible netem random draws (kernel links only; needs kernel >= 6.2 -
+      older kernels silently ignore the seed)
     - "limit": Impairment queue depth in packets (kernel links only)
     - "quota": Byte cap — after the quota, drop with a chance (parameters: bytes, chance;
       kernel links only)
