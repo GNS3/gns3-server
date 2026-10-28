@@ -21,6 +21,37 @@ from gns3server.agent import AI_COPILOT_AVAILABLE
 from gns3server.api.operation_ids import add_stub_routes
 from gns3server.config import Config
 
+# The LLM model configuration routes share the /access prefix with users, groups and API keys,
+# so their stub must cover only their own paths: a catch-all under /access would answer 501 for
+# every /access route included after it (e.g. creating an API key).
+LLM_STUB_PATHS = (
+    "/users/{user_id}/llm-model-configs{rest:path}",
+    "/groups/{group_id}/llm-model-configs{rest:path}",
+)
+
+
+async def ai_not_available():
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
+    )
+
+
+def build_ai_stub_routers() -> tuple[APIRouter, APIRouter, APIRouter]:
+    """
+    Stub routers (chat, copilot, LLM model configurations) that answer 501
+    when the AI dependencies are not installed.
+    """
+
+    chat_router = APIRouter()
+    copilot_router = APIRouter()
+    llm_router = APIRouter()
+    add_stub_routes(chat_router, ai_not_available, "chat_not_available")
+    add_stub_routes(copilot_router, ai_not_available, "copilot_not_available")
+    add_stub_routes(llm_router, ai_not_available, "llm_not_available", paths=LLM_STUB_PATHS)
+    return chat_router, copilot_router, llm_router
+
+
 # Conditionally import AI-dependent routes
 if AI_COPILOT_AVAILABLE:
     from . import chat, copilot, llm_model_configs
@@ -29,25 +60,7 @@ if AI_COPILOT_AVAILABLE:
     _copilot_router = copilot.router
     _llm_router = llm_model_configs.router
 else:
-    # Create stub routers that return 501 for all AI endpoints
-    _chat_router = APIRouter()
-    _copilot_router = APIRouter()
-    _llm_router = APIRouter()
-
-    @_chat_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
-    @_copilot_router.api_route(
-        "/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False
-    )
-    @_llm_router.api_route("/{path:path}", methods=["GET", "POST", "DELETE", "PATCH", "PUT"], include_in_schema=False)
-    async def ai_not_available(path: str = ""):
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="AI Copilot is not available. Install AI dependencies with: pip install gns3-server[ai-features]",
-        )
-
-    add_stub_routes(_chat_router, ai_not_available, "chat_not_available")
-    add_stub_routes(_copilot_router, ai_not_available, "copilot_not_available")
-    add_stub_routes(_llm_router, ai_not_available, "llm_not_available")
+    _chat_router, _copilot_router, _llm_router = build_ai_stub_routers()
 
 
 from . import (
