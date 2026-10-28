@@ -5,4 +5,6 @@
 # Or directly: pip install -r mcp-requirements.txt
 # ==============================================================================
 
-fastmcp>=3.4.0,<4
+# The official MCP SDK only — the server code imports mcp.server.mcpserver
+# directly (no fastmcp wrapper). mcp 2.x: FastMCP was renamed to MCPServer.
+mcp>=2.3.0,<3

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
@@ -36,11 +37,21 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    await startup(app)
-    try:
-        yield
-    finally:
-        await shutdown(app)
+    # The MCP Streamable HTTP session manager runs for the app's whole
+    # lifetime (mounted sub-app lifespans are not executed by Starlette).
+    # Entered before startup so it is running before the MCP ready gate opens.
+    from gns3server.agent import MCP_AVAILABLE
+
+    async with contextlib.AsyncExitStack() as stack:
+        if MCP_AVAILABLE:
+            from gns3server.agent.mcp import mcp_session_manager_lifespan
+
+            await stack.enter_async_context(mcp_session_manager_lifespan())
+        await startup(app)
+        try:
+            yield
+        finally:
+            await shutdown(app)
 
 
 async def startup(app: FastAPI) -> None:

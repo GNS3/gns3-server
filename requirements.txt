@@ -19,7 +19,7 @@ joserfc==1.7.5
 email-validator==2.3.0
 watchdog==6.0.0
 zstandard==0.25.0
-platformdirs>=2.4.0  # fastmcp-slim >=3.4 requires >=4.0.0; upper bound removed for compatibility
+platformdirs>=2.4.0
 truststore>=0.10.4
 
 # Shared dependencies (also used by AI Copilot)
