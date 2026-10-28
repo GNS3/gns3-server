@@ -87,7 +87,7 @@ try:
     # namespace — it would shadow the gns3server.agent.mcp subpackage.
     import importlib
 
-    importlib.import_module("mcp.server.fastmcp")
+    importlib.import_module("mcp.server.mcpserver")
     MCP_AVAILABLE = True
 except ImportError:
     # MCP dependencies not installed, disable MCP feature

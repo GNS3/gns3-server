@@ -2,7 +2,7 @@
 
 ## Overview
 
-GNS3 Server provides a standard [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) interface, allowing AI assistants like Claude to interact with GNS3 network simulations through SSE (Server-Sent Events) transport.
+GNS3 Server provides a standard [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) interface, allowing AI assistants like Claude to interact with GNS3 network simulations through the Streamable HTTP transport (the SSE transport was deprecated in the MCP specification on 2025-06-18).
 
 The MCP service exposes GNS3 project management operations as MCP tools that can be discovered and called by MCP clients.
 
@@ -11,21 +11,24 @@ The MCP service exposes GNS3 project management operations as MCP tools that can
 | Path | Method | Description |
 |------|--------|-------------|
 | `/v3/mcp/` | GET | MCP service metadata |
-| `/v3/mcp/transport/sse` | GET | SSE stream (MCP connection) |
-| `/v3/mcp/transport/messages/` | POST | JSON-RPC messages |
+| `/v3/mcp/transport` | POST | JSON-RPC requests (initialize, tools/list, tools/call, notifications) |
+| `/v3/mcp/transport` | GET | Optional server-to-client event stream (opened after initialize) |
+| `/v3/mcp/transport` | DELETE | Session termination |
+
+The server assigns a session on `initialize` and returns it in the `Mcp-Session-Id` response header; subsequent requests carry it back as a request header.
 
 ## Authentication
 
-The SSE endpoint supports two types of credentials, passed the same way.
+Every request to `/v3/mcp/transport` is authenticated. Two types of credentials are supported, passed either way.
 
 1. **Authorization header** (recommended):
    ```
    Authorization: Bearer <jwt_or_api_key>
    ```
 
-2. **Query parameter** (for clients that don't support custom headers):
+2. **Query parameter** (for clients that can't set headers, e.g. browser EventSource):
    ```
-   GET /v3/mcp/transport/sse?token=<jwt_or_api_key>
+   GET /v3/mcp/transport?token=<jwt_or_api_key>
    ```
 
 ### Option 1: JWT Token (24h expiry)
@@ -74,13 +77,15 @@ Both JWT tokens and API keys work for MCP and REST API endpoints interchangeably
 When connecting with an API key:
 
 ```
-SSE connect → Authorization: Bearer gns3_<uuid>_<secret>
+POST initialize → Authorization: Bearer gns3_<uuid>_<secret>
   ↓
 MCP auth wrapper extracts UUID → single DB query → 1 bcrypt (thread pool)
   ↓
-Generates a fresh short-lived JWT → stored in ContextVar for the session
+Generates a fresh 24h JWT → stored in ContextVar for the session
   ↓
-All subsequent tool handler REST API calls use this JWT → zero extra bcrypt
+Tool handlers run in the session task created by that request → they use this JWT
+  ↓
+Later requests re-validate the credential (result cached ~5 min → no repeated bcrypt)
 ```
 
 ### Concurrency
@@ -94,7 +99,7 @@ All subsequent tool handler REST API calls use this JWT → zero extra bcrypt
 
 ## Available Tools
 
-**76 tools** across 11 categories:
+**78 tools** across 11 categories:
 
 ### Project (14)
 
@@ -341,8 +346,8 @@ sequenceDiagram
 
 ```bash
 # Option A: Using API key (recommended — never expires)
-claude mcp add --transport sse My_GNS3_Server \
-  http://localhost:3080/v3/mcp/transport/sse \
+claude mcp add --transport http My_GNS3_Server \
+  http://localhost:3080/v3/mcp/transport \
   -H "Authorization: Bearer gns3_a1b2c3d4..."
 
 # Option B: Using JWT token (expires after 24h)
@@ -351,14 +356,14 @@ TOKEN=$(curl -s -X POST http://localhost:3080/v3/access/users/authenticate \
   -d '{"username": "admin", "password": "admin"}' | python3 -c \
   "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-claude mcp add --transport sse My_GNS3_Server \
-  http://localhost:3080/v3/mcp/transport/sse \
+claude mcp add --transport http My_GNS3_Server \
+  http://localhost:3080/v3/mcp/transport \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Transport Security
 
-MCP server uses FastMCP's DNS rebinding protection to prevent attackers from
+MCP server uses the MCP SDK's DNS rebinding protection to prevent attackers from
 exploiting DNS resolution to access the MCP endpoint through unauthorized domains.
 
 ### Default Behaviour
@@ -389,7 +394,7 @@ mcp_allowed_origins = http://127.0.0.1:*,http://localhost:*,http://192.168.1.3:*
 ### Protection Mechanism
 
 When protection is enabled, the MCP server validates the `Host` header of
-incoming SSE connection requests:
+incoming MCP requests:
 
 ```python
 # Verify the request's Host header matches allowed patterns
@@ -421,8 +426,8 @@ sequenceDiagram
     participant Auth as Auth
     participant GNS3 as GNS3 REST API
 
-    Note over Client: 1. Connect with API Key or JWT
-    Client->>MCP: GET /sse (Authorization: Bearer <key>)
+    Note over Client: 1. Initialize with API Key or JWT
+    Client->>MCP: POST /transport initialize (Authorization: Bearer <key>)
     
     alt API Key (gns3_&lt;uuid&gt;_&lt;secret&gt;)
         MCP->>Auth: Extract UUID → DB lookup → 1 bcrypt (thread pool)
@@ -432,22 +437,23 @@ sequenceDiagram
         Auth-->>MCP: Token valid
     end
     
-    MCP-->>Client: event: endpoint /messages/?session_id=xxx
+    MCP-->>Client: initialize result + Mcp-Session-Id header
 
-    Note over Client: 2. Initialize & Call Tools
-    Client->>MCP: POST /messages/ (tools/call ...)
-    MCP->>GNS3: HTTP request (with JWT from step 1)
+    Note over Client: 2. Call Tools (each request re-authenticated)
+    Client->>MCP: POST /transport tools/call (Mcp-Session-Id + Bearer)
+    MCP->>GNS3: HTTP request (with JWT pinned at session creation)
     GNS3-->>MCP: Response
-    MCP-->>Client: event: message (tool result)
+    MCP-->>Client: tool result (SSE or JSON response body)
 ```
 
 ## Internal Implementation
 
-- **FastMCP** (Anthropic MCP SDK) is used for tool registration and SSE transport
-- The SSE app is mounted as a Starlette sub-application under `/v3/mcp/transport`
-- **Auth:** JWT validation via `auth_service`. API key (`gns3_<uuid>_<secret>`) extracts UUID for O(1) DB lookup, runs bcrypt in thread pool, returns a fresh JWT — subsequent calls use the JWT with zero extra bcrypt.
+- **MCPServer** (official MCP SDK, `mcp.server.mcpserver` — `FastMCP` was renamed in SDK 2.x) is used for tool registration and the Streamable HTTP transport
+- The Streamable HTTP app is mounted as a Starlette sub-application at `/v3/mcp` (endpoint `/v3/mcp/transport`)
+- The session manager (`mcp.session_manager.run()`) is entered in the FastAPI lifespan (`gns3server.core.tasks.lifespan`) — Starlette does not run lifespans of mounted sub-apps
+- **Auth:** JWT validation via `auth_service` on every request. API key (`gns3_<uuid>_<secret>`) extracts UUID for O(1) DB lookup, runs bcrypt in thread pool, returns a fresh JWT — resolutions are cached ~5 minutes so repeated requests cost no extra bcrypt.
 - Tool handlers use `Gns3Connector` (from `gns3_copilot.gns3_client.connector`) via the shared handler layer (`gns3_copilot.gns3_client.api_handlers`), keeping the MCP layer decoupled
-- The JWT token is stored in a `contextvars.ContextVar` so it is available within tool handler threads (Python ≥ 3.9 propagates contextvars through `asyncio.to_thread`)
+- The JWT token is stored in a `contextvars.ContextVar` so it is available within tool handler threads (Python ≥ 3.9 propagates contextvars through `asyncio.to_thread`). In stateful Streamable HTTP the session task inherits the context of the opening request, so handlers see the token presented at `initialize`
 
 ### Console WebSocket
 
@@ -477,7 +483,7 @@ websocat ws://192.168.1.3:3080/v3/projects/{project_id}/nodes/{node_id}/console/
 
 | File | Purpose |
 |------|---------|
-| `gns3server/agent/mcp/__init__.py` | FastMCP server, tool decorators, SSE transport, JWT auth wrapper |
+| `gns3server/agent/mcp/__init__.py` | MCPServer, tool decorators, Streamable HTTP transport, JWT auth wrapper |
 | `gns3server/agent/mcp/projects.py` | Project tool handlers |
 | `gns3server/agent/mcp/nodes.py` | Node tool handlers |
 | `gns3server/agent/mcp/links.py` | Link tool handlers |
