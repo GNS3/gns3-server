@@ -11,7 +11,7 @@ langchain>=1.2.10
 langchain-core>=1.2.16
 langgraph>=1.0.9
 langgraph-checkpoint>=4.0.0
-langgraph-checkpoint-sqlite>=3.0.3
+langgraph-checkpoint-sqlite>=3.1.2
 langgraph-checkpoint-postgres>=3.0.4
 
 # Model Providers
