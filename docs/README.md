@@ -139,6 +139,7 @@ Proposed `image_type` discriminator on Docker templates plus a compute-side prof
 
 - [Telnet Server Connection Race Condition](bugs/telnet-server-connection-race-condition.md) — `getpeername()` error when client disconnects during connection setup (High severity, Open)
 - [Docker Link UDP Self-Loop](bugs/link-udp-self-loop.md) — intermittent one-way link (both ends handed the same UDP port by an allocation race); **fixed** (Medium severity)
+- [SIGHUP on SSH Session Disconnect Kills All Nodes](bugs/sighup-session-disconnect-kills-nodes.md) — server survives (SIGHUP=reload) while every emulator child default-terminates without cleanup; sticky TAPs then 409 the first start; **root-caused, deployment guidance** (Medium severity)
 
 ---
 
