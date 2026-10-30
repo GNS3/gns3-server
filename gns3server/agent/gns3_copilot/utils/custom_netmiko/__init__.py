@@ -34,6 +34,8 @@ Supported Drivers:
 - huawei_ce: GNS3HuaweiTelnetCE for CloudEngine devices (no authentication)
 - ruijie_telnet: RuijieTelnetEnhanced for Ruijie devices (interactive prompt handling)
 - vpcs_telnet: VPCSTelnet for VPCS virtual PC simulator devices (no authentication)
+- linux_telnet: LinuxTelnetShell for Linux shell consoles (docker exec / qemu
+  Linux images; expect login + exit-code marker completion)
 
 All drivers use 'gns3_' prefix to clearly distinguish them from Netmiko's
 built-in drivers.
@@ -75,4 +77,9 @@ try:
 except Exception as e:
     logger.warning(f"Failed to import VPCS driver: {e}", exc_info=True)
 
-__all__ = ["huawei_ce", "ruijie_telnet", "vpcs_telnet"]
+try:
+    from . import linux_telnet
+except Exception as e:
+    logger.warning(f"Failed to import Linux shell driver: {e}", exc_info=True)
+
+__all__ = ["huawei_ce", "linux_telnet", "ruijie_telnet", "vpcs_telnet"]

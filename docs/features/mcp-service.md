@@ -99,7 +99,7 @@ Later requests re-validate the credential (result cached ~5 min → no repeated 
 
 ## Available Tools
 
-**78 tools** across 11 categories:
+**82 tools** across 12 categories:
 
 ### Project (14)
 
@@ -237,7 +237,30 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | `device_show_run` | Run read-only show commands on devices. Supports Jinja2 `template` + `vars` |
 | `vpcs_config_set` | Configure VPCS devices (IP, gateway, etc.) |
 
-The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is auto-detected from the node's `device_type:<type>` tag in GNS3.
+### Interactive Console (4)
+
+| Tool | Description |
+|------|-------------|
+| `console_exec` | Run ONE command on a node console; returns the output when the command completes |
+| `console_send` | Write raw text/keystrokes without waiting (control keys such as `\x03` = Ctrl-C) |
+| `console_read` | Read console output that arrived since the previous read (poll long commands) |
+| `console_close` | Close the session explicitly (frees the device's VTY line) |
+
+Unlike the batch device-config tools, these keep a **persistent console session** per (user, node) for a configurable idle TTL (default 60s) — consecutive calls reuse the same console, so enable/config-mode context (network OS) or the shell working directory (Linux) survive across tool calls. Sessions self-close when idle and are LRU-capped (64 total).
+
+**Family dispatch** uses the same `netmiko_device_type` resolution as the batch tools:
+
+| netmiko_device_type | Family | Completion detection |
+|---|---|---|
+| `gns3_linux_telnet` | Linux shell (docker exec consoles, QEMU Linux images) | `cmd; echo __MCP_DONE_$?__` marker — the result carries the exact **exit code** |
+| any other driver (`cisco_ios_telnet`, `gns3_vpcs_telnet`, `gns3_huawei_telnet_ce`, ...) | Network OS | Driver prompt pattern |
+| none, and node_type is not `vpcs` | — | Error (no guessing; docker cannot default — xrd/IOL containers are network OS) |
+
+**Long-running commands** — start with `console_send`, poll with `console_read(wait=5)`, interrupt with `console_send(text="\x03")`. Bounded forms (`ping -c N`, `ping repeat N`, `traceroute` with a hop limit) are preferred: a command that terminates by itself needs no interrupt.
+
+**TUI guard** — screen-interactive commands (`top`, `less`, `tail -f`, `man`, `vi`, REPLs, ...) are rejected before touching the console, with the non-interactive alternative in `suggestion` (e.g. `top -b -n 1`, `cat <file>`, `tail -n 50`). Control-key writes bypass the guard. On the shell family the session also sets `TERM=dumb`/`PAGER=cat` so pagers degrade to linear output.
+
+The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is resolved from the node/template `netmiko_device_type` field, falling back to a `device_type:<type>` tag.
 
 #### Jinja2 Template Mode
 
@@ -504,4 +527,7 @@ websocat ws://192.168.1.3:3080/v3/projects/{project_id}/nodes/{node_id}/console/
 | `gns3server/agent/mcp/links.py` | Link tool handlers |
 | `gns3server/agent/mcp/templates.py` | Template tool handlers |
 | `gns3server/agent/mcp/computes.py` | Compute tool handlers |
+| `gns3server/agent/mcp/console.py` | Interactive console tool handlers, TUI guard, family dispatch |
+| `gns3server/agent/mcp/console_session.py` | Persistent console session manager (TTL, locks, LRU cap) |
+| `gns3server/agent/gns3_copilot/utils/custom_netmiko/linux_telnet.py` | `gns3_linux_telnet` custom driver (login dance, exit-code marker) |
 | `gns3server/api/server.py` | Mounts MCP routes via `register_starlette_routes()` |

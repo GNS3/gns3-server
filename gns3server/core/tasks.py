@@ -106,6 +106,18 @@ async def shutdown(app: FastAPI) -> None:
     Tasks to be performed when the server is exiting.
     """
 
+    # Close MCP interactive console sessions (netmiko connections) before
+    # the rest of the shutdown tears down the event loop machinery.
+    from gns3server.agent import MCP_AVAILABLE
+
+    if MCP_AVAILABLE:
+        try:
+            from gns3server.agent.mcp.console_session import get_console_session_manager
+
+            await get_console_session_manager().close_all()
+        except Exception as e:
+            log.warning(f"Error closing console sessions: {e}")
+
     service = getattr(app.state, "image_reconciliation", None)
     if service is not None:
         await service.close()

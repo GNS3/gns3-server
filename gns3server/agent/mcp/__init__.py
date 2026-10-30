@@ -109,6 +109,12 @@ from .computes import (
     get_compute_images_handler,
     list_computes_handler,
 )
+from .console import (
+    console_close_handler,
+    console_exec_handler,
+    console_read_handler,
+    console_send_handler,
+)
 from .device_config import (
     device_config_send_handler,
     device_show_run_handler,
@@ -370,14 +376,19 @@ mcp = _create_mcp_server()
 # ── Tool handlers ─────────────────────────────────────────────────────
 
 
-def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
-    """Run a synchronous Gns3Connector handler in a thread."""
-    ctx = {
+def _gns3_ctx() -> dict[str, Any]:
+    """Build the Gns3Connector context from the request's contextvars."""
+    return {
         "server_url": _server_url(),
         "jwt_token": _jwt_token_var.get(),
         "jwt_username": _jwt_username_var.get(),
         "jwt_token_version": _jwt_token_version_var.get(),
     }
+
+
+def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
+    """Run a synchronous Gns3Connector handler in a thread."""
+    ctx = _gns3_ctx()
 
     def run(h, p):
         return h(p, ctx)
@@ -2053,7 +2064,8 @@ async def device_config_send(
          Example: device_configs=[{\"device_name\": \"R1\", \"vars\": {\"n\": 0, \"ip\": \"1.1.1.1\"}}]
 
     Devices must be started first (use node_start or node_start_all).
-    Device type is auto-detected from the 'device_type:<type>' tag on each node.
+    Device type is resolved from the node/template 'netmiko_device_type' field,
+    falling back to a 'device_type:<type>' tag on each node.
     Common device types: cisco_ios_telnet, cisco_xr_telnet, huawei_telnet, gns3_huawei_telnet_ce
 
     Error contract: every failure is reported in-band as an entry with
@@ -2093,9 +2105,10 @@ async def device_show_run(
 
     Prerequisites:
     - Devices must be started first (use node_start or node_start_all).
-    - Each node must have a device_type:<type> tag set in GNS3
-      (e.g. device_type:cisco_ios_telnet, device_type:gns3_huawei_telnet_ce).
-      Nodes without this tag will fail with "device_type tag not found".
+    - Each node must resolve to a device type: the node/template
+      'netmiko_device_type' field wins, with a 'device_type:<type>' tag
+      as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce).
+      Nodes with neither will fail with "no device type found".
       Docker/Linux nodes are not supported (use node_console instead).
 
     Error contract: every failure is reported in-band as an entry with
@@ -2138,6 +2151,114 @@ async def vpcs_config_set(
             "device_configs": device_configs,
         },
     )
+
+
+# ── Interactive console tools ─────────────────────────────────────────
+# Persistent console sessions on top of the netmiko drivers. Two families,
+# dispatched by the same netmiko_device_type the batch config tools use:
+#   - gns3_linux_telnet → Linux shell driver (exit-code marker completion)
+#   - any other driver  → network OS (prompt-pattern completion)
+
+
+def _console_result(result: dict[str, Any]) -> list[dict[str, Any]]:
+    return [{"type": "text", "text": json.dumps(result, ensure_ascii=False, default=str)}]
+
+
+@mcp.tool()
+async def console_exec(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    node_id: Annotated[str, Field(description="Node name or UUID")],
+    command: Annotated[str, Field(description="Single command line to execute")],
+    timeout: Annotated[float, Field(description="Seconds to wait for command completion (default 30)")] = 30.0,  # noqa: ASYNC109
+    ttl: Annotated[
+        float,
+        Field(
+            description="Session idle TTL in seconds. Within the TTL, consecutive calls reuse the same console "
+            "session (enable/config or shell context survives). Default 60."
+        ),
+    ] = 60.0,
+    max_chars: Annotated[int, Field(description="Max output characters before truncation (default 20000)")] = 20000,
+) -> list[dict[str, Any]]:
+    """Execute ONE command on a node console; returns the output when the command completes.
+
+    Completion detection depends on the node's netmiko_device_type:
+      - Linux shells (gns3_linux_telnet): the command is marker-wrapped, so
+        the result also carries its exact exit_code.
+      - Network OS (cisco_ios_telnet, gns3_huawei_telnet_ce, ...): the driver
+        reads until the device prompt; exit_code is null.
+
+    Use non-interactive forms — screen commands are rejected with a suggestion:
+      top -b -n 1 (not top), cat (not less), tail -n 50 (not tail -f), -c '<code>' (not python)
+    Use bounded commands (ping -c N / repeat N) so they terminate by themselves.
+
+    For long-running commands (traceroute with many hops, continuous ping):
+    start them with console_send, poll output with console_read(wait=N),
+    then interrupt with console_send(text="\\x03").
+
+    The console session stays open between calls for ttl seconds; other tools'
+    console calls on the same node share it. Call console_close when done to
+    free the device's VTY line.
+    """
+    return _console_result(
+        await console_exec_handler(
+            {"project_id": project_id, "node_id": node_id, "command": command, "timeout": timeout, "ttl": ttl, "max_chars": max_chars},
+            _gns3_ctx(),
+        )
+    )
+
+
+@mcp.tool()
+async def console_send(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    node_id: Annotated[str, Field(description="Node name or UUID")],
+    text: Annotated[
+        str,
+        Field(description="Raw text/keystrokes to write, e.g. a command, 'q', or a control key like '\\x03' (Ctrl-C)"),
+    ],
+) -> list[dict[str, Any]]:
+    """Write raw text to a node console WITHOUT waiting for output.
+
+    Use for: starting long-running commands (then poll with console_read),
+    sending single keys (q to quit a pager) and control keys
+    ("\\x03" Ctrl-C, "\\x1a" Ctrl-Z). Plain screen-interactive commands
+    (top, less, ...) are still rejected with a suggestion; control keys pass.
+    """
+    return _console_result(
+        await console_send_handler({"project_id": project_id, "node_id": node_id, "text": text}, _gns3_ctx())
+    )
+
+
+@mcp.tool()
+async def console_read(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    node_id: Annotated[str, Field(description="Node name or UUID")],
+    wait: Annotated[float, Field(description="Max seconds to wait for new output (default 5)")] = 5.0,
+    max_chars: Annotated[int, Field(description="Max output characters before truncation (default 20000)")] = 20000,
+) -> list[dict[str, Any]]:
+    """Read console output that arrived since the previous read (poll for long commands).
+
+    Pairs with console_send: start a long command, then call this repeatedly
+    (wait=5) to watch progress, then interrupt with console_send(text="\\x03").
+    Returns whatever is buffered; empty output means nothing new arrived.
+    """
+    return _console_result(
+        await console_read_handler(
+            {"project_id": project_id, "node_id": node_id, "wait": wait, "max_chars": max_chars}, _gns3_ctx()
+        )
+    )
+
+
+@mcp.tool()
+async def console_close(
+    project_id: Annotated[str, Field(description="Project name or UUID")],
+    node_id: Annotated[str, Field(description="Node name or UUID")],
+) -> list[dict[str, Any]]:
+    """Close the console session for a node (frees the device's VTY line).
+
+    Sessions also close themselves after the idle TTL; close explicitly when
+    finished to release the line sooner.
+    """
+    return _console_result(await console_close_handler({"project_id": project_id, "node_id": node_id}, _gns3_ctx()))
 
 
 # ── Auth‑wrapped Streamable HTTP app ──────────────────────────────────

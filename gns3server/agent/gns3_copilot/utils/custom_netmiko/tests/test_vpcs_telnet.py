@@ -237,12 +237,14 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
         instance.remote_conn.write.assert_called_once_with(expected_bytes)
 
     def test_send_command_default_expect_string(self):
-        """Test that send_command uses VPCS prompt as default expect_string."""
+        """send_command falls back to the shared prompt pattern."""
         import inspect
 
-        # Check that expect_string defaults to r"PC\d+>"
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import DEFAULT_PROMPT_PATTERN
+
         source = inspect.getsource(self.VPCSTelnet.send_command)
-        self.assertIn('expect_string = r"PC\\d+>"', source)
+        self.assertIn("expect_string = self._prompt_pattern", source)
+        self.assertRegex("PC1>", DEFAULT_PROMPT_PATTERN)
 
     def test_send_command_timing_calls_send_command(self):
         """Test that send_command_timing delegates to send_command."""
@@ -280,12 +282,24 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
         cls.VPCSTelnet = VPCSTelnet
 
     def test_telnet_login_default_prompt_pattern(self):
-        """Test that telnet_login has correct default prompt pattern."""
-        import inspect
+        """The default pattern covers the template (PC<n>) and bare (VPCS>) prompt forms."""
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import DEFAULT_PROMPT_PATTERN
 
-        # Check default prompt terminator
-        source = inspect.getsource(self.VPCSTelnet.telnet_login)
-        self.assertIn('pri_prompt_terminator: str = r"PC\\d+>"', source)
+        for prompt in ("VPCS>", "PC1>", "PC42>"):
+            self.assertRegex(prompt, DEFAULT_PROMPT_PATTERN)
+
+    def test_pcname_builds_name_prompt_pattern(self):
+        """Passing the node name makes the pattern match that node's prompt."""
+        instance = self.VPCSTelnet.__new__(self.VPCSTelnet)
+        # __init__ cannot run without a connection; replicate its pattern logic
+        import re as _re
+
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.vpcs_telnet import DEFAULT_PROMPT_PATTERN
+
+        pcname = "R-edge.1"  # regex metacharacters in a node name must be escaped
+        pattern = rf"(?:{_re.escape(pcname)}>|{DEFAULT_PROMPT_PATTERN})"
+        for prompt in ("R-edge.1>", "VPCS>"):
+            self.assertRegex(prompt, pattern)
 
     def test_telnet_login_sends_newlines(self):
         """Test that telnet_login sends 4 newlines."""

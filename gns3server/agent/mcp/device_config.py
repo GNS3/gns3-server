@@ -20,12 +20,16 @@ MCP tool handlers for device configuration via Nornir + Netmiko.
 
 These tools connect to network device consoles via telnet/SSH and execute
 configuration or diagnostic commands. Device connection info is automatically
-discovered from the project topology using the device's tags for device_type.
+discovered from the project topology.
+
+Device type resolution (the netmiko driver to use):
+  1. The node/template 'netmiko_device_type' field (seeded from the appliance
+     definition when installed; the node value overrides the template value)
+  2. A 'device_type:<type>' tag on the node, as a fallback
 
 Prerequisites:
   - Device must be started (use node_start / node_start_all)
-  - Device must have a 'device_type:<type>' tag set in GNS3
-    (right-click → Configure → Tags → add 'device_type:cisco_ios_telnet')
+  - Device must resolve to a device type via field or tag (see above)
   - Device must have a console port assigned
 """
 
