@@ -361,6 +361,21 @@ claude mcp add --transport http My_GNS3_Server \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+Verify and manage the registration:
+
+```bash
+claude mcp list                  # health check — should show ✓ Connected
+claude mcp remove My_GNS3_Server
+```
+
+By default the server is registered for the current directory only. Use `--scope user` to make it available in all projects:
+
+```bash
+claude mcp add --scope user --transport http My_GNS3_Server \
+  http://localhost:3080/v3/mcp/transport \
+  -H "Authorization: Bearer gns3_a1b2c3d4..."
+```
+
 ## Transport Security
 
 MCP server uses the MCP SDK's DNS rebinding protection to prevent attackers from
