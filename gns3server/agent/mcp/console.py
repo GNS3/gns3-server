@@ -163,13 +163,10 @@ def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
 
     resolved, resolution_error = resolve_locators(params, run)
     if resolved is None:
-        return resolution_error
+        return resolution_error or {"status": "failed", "error": "Could not resolve the target node"}
     node = get_node_handler(resolved, gns3_ctx)
-    if not isinstance(node, dict) or "node_id" not in node:
-        return {
-            "status": "failed",
-            "error": f"Node not found: {node!r}" if not isinstance(node, dict) else "Node not found",
-        }
+    if "node_id" not in node:
+        return {"status": "failed", "error": f"Node not found: {node!r}"}
 
     # console_type selects the console transport (telnet/docker_exec/unset →
     # telnet, ssh → SSH). Types without a byte console (vnc, spice, http,
@@ -312,7 +309,9 @@ async def _find_session(params: dict[str, Any], gns3_ctx: dict[str, Any]):
     """
     manager = get_console_session_manager()
     user = gns3_ctx.get("jwt_username") or "unknown"
-    session = await manager.get(user, params.get("project_id"), params.get("node_id"))
+    # Empty strings never match a real key, so a missing id just falls
+    # through to the name-resolution path below.
+    session = await manager.get(user, str(params.get("project_id") or ""), str(params.get("node_id") or ""))
     if session is not None:
         return session, None
     node = await _resolve_target(params, gns3_ctx)
@@ -351,7 +350,7 @@ async def console_close_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]
     """Close the console session for a node (releases the device's VTY line)."""
     manager = get_console_session_manager()
     user = gns3_ctx.get("jwt_username") or "unknown"
-    closed = await manager.close(user, params.get("project_id"), params.get("node_id"))
+    closed = await manager.close(user, str(params.get("project_id") or ""), str(params.get("node_id") or ""))
     if not closed:
         node = await _resolve_target(params, gns3_ctx)
         if "node_id" in node:
