@@ -10,7 +10,7 @@ See LICENSE file for licensing information.
 
 **Netmiko Version:** 4.6.0
 **Generated:** 2026-03-14 13:10:00
-**Last Updated:** 2026-03-14 (Added VPCS support)
+**Last Updated:** 2026-10-30 (Added gns3_linux_telnet driver for Linux shell consoles)
 
 ---
 
@@ -30,6 +30,7 @@ GNS3-Copilot includes custom Netmiko drivers optimized for GNS3 emulation:
 | Huawei CE | `gns3_huawei_telnet_ce` | Huawei CloudEngine driver with no authentication |
 | Ruijie | `gns3_ruijie_telnet` | Ruijie OS enhanced driver with interactive command handling |
 | VPCS | `gns3_vpcs_telnet` | VPCS simulator driver with ANSI code stripping |
+| Linux shell | `gns3_linux_telnet` | Linux shell consoles (docker exec, QEMU Linux images): optional expect login, exit-code marker completion |
 
 ## SSH Supported Devices
 
@@ -243,6 +244,7 @@ GNS3-Copilot includes custom Netmiko drivers optimized for GNS3 emulation:
 | Ruijie (锐捷) | `ruijie_os_telnet` | Netmiko |
 | Ruijie (锐捷) | `gns3_ruijie_telnet` | Custom ✨ (GNS3 Enhanced) |
 | Supermicro | `supermicro_smis_telnet` | Netmiko |
+| Linux shell | `gns3_linux_telnet` | Custom ✨ (GNS3 Linux shell consoles) |
 | VPCS | `gns3_vpcs_telnet` | Custom ✨ (GNS3 VPCS Simulator) |
 | Telcosystems | `telcosystems_binos_telnet` | Netmiko |
 | Teldat | `teldat_cit_telnet` | Netmiko |
