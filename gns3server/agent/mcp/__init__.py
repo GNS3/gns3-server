@@ -2056,7 +2056,12 @@ async def device_config_send(
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
-    """Send configuration commands to network devices via console (telnet/SSH).
+    """Send configuration commands to network devices via console (telnet/SSH) — BATCH mode.
+
+    Best for: pushing the same-shaped config to MANY devices in one call
+    (parallel per device, config-mode handled by the driver, Jinja2 template
+    support). For a single device you want to interact with step by step,
+    or for Docker/Linux nodes, use console_exec instead.
 
     Two modes:
       1. Direct commands: each device has config_commands=[...]
@@ -2065,8 +2070,12 @@ async def device_config_send(
 
     Devices must be started first (use node_start or node_start_all).
     Device type is resolved from the node/template 'netmiko_device_type' field,
-    falling back to a 'device_type:<type>' tag on each node.
-    Common device types: cisco_ios_telnet, cisco_xr_telnet, huawei_telnet, gns3_huawei_telnet_ce
+    falling back to a 'device_type:<type>' tag on each node — one of the two is
+    required (no default is guessed).
+    Common device types: cisco_ios_telnet, cisco_xr_telnet, huawei_telnet,
+    gns3_huawei_telnet_ce, gns3_ruijie_telnet, gns3_vpcs_telnet (VPCS nodes:
+    set the field once on the template; the interactive console tools default
+    VPCS automatically, this batch tool does not).
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2094,22 +2103,26 @@ async def device_show_run(
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
-    """Run read-only diagnostic (show) commands on network devices via console.
+    """Run read-only diagnostic (show) commands on network devices via console — BATCH mode.
+
+    Read-only by design: only show/display/ping/traceroute-style commands are
+    accepted, making it the safe choice for AI-driven inspection across many
+    devices in parallel. For interactive diagnosis (watch a command's output
+    progressively, interrupt it, follow up based on what you see) or for
+    Docker/Linux nodes, use console_exec instead.
 
     Two modes:
       1. Direct commands: each device has commands=[...] (read-only show/display/ping/traceroute only)
       2. Jinja2 template: provide template + vars per device
 
-    Use this to inspect device status, view configurations, or verify changes.
-    For configuration changes use device_config_send instead.
-
     Prerequisites:
     - Devices must be started first (use node_start or node_start_all).
     - Each node must resolve to a device type: the node/template
       'netmiko_device_type' field wins, with a 'device_type:<type>' tag
-      as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce).
-      Nodes with neither will fail with "no device type found".
-      Docker/Linux nodes are not supported (use node_console instead).
+      as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce,
+      gns3_vpcs_telnet). Nodes with neither will fail with
+      "no device type found" (the interactive console tools default VPCS
+      automatically, this batch tool does not).
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2131,7 +2144,14 @@ async def vpcs_config_set(
         ),
     ],
 ) -> list[dict[str, Any]]:
-    """Configure VPCS devices (set IP addresses, gateway, etc.).
+    """Configure VPCS devices (set IP addresses, gateway, etc.). DEPRECATED.
+
+    Prefer the alternatives:
+      - console_exec — works on VPCS out of the box (no device_type setup
+        needed) and also covers interactive work (ping, trace, verify);
+      - device_config_send / device_show_run — for batch operations across
+        many devices, with 'netmiko_device_type: gns3_vpcs_telnet' set once
+        on the VPCS template.
 
     Only VPCS nodes are accepted: any other node type in device_configs fails
     with a per-device error instead of typing VPCS syntax into its CLI.
@@ -2198,6 +2218,10 @@ async def console_exec(
     The console session stays open between calls for ttl seconds; other tools'
     console calls on the same node share it. Call console_close when done to
     free the device's VTY line.
+
+    For pushing the same config to MANY devices in one call, prefer
+    device_config_send (batch, parallel, config-mode handled by the driver);
+    this tool is for single-node interactive work.
     """
     return _console_result(
         await console_exec_handler(
