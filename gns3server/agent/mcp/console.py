@@ -45,6 +45,7 @@ import logging
 import re
 from typing import Any
 
+from gns3server.agent.mcp.console_guard import guard_command
 from gns3server.agent.mcp.console_session import ConsoleSessionError, get_console_session_manager
 from gns3server.agent.mcp.locators import resolve_locators
 
@@ -58,82 +59,6 @@ SHELL_DEVICE_TYPE = "gns3_linux_telnet"
 
 DEFAULT_READ_TIMEOUT = 30.0
 MAX_OUTPUT_CHARS = 20000
-
-# ── TUI guard ─────────────────────────────────────────────────────────────
-# Family-scoped tables: head word -> rejection template. "{cmd}" expands to
-# the word after the command (for man). Keep this table SMALL and
-# high-confidence: a false reject blocks a legitimate command.
-_GUARD_TABLES: dict[str, dict[str, str]] = {
-    "shell": {
-        "top": "top -b -n 1",
-        "htop": "htop has no batch mode — use 'ps aux'",
-        "vim": "edit files with node_file_write instead",
-        "vi": "edit files with node_file_write instead",
-        "nano": "edit files with node_file_write instead",
-        "emacs": "edit files with node_file_write instead",
-        "less": "cat <file>",
-        "more": "cat <file>",
-        "man": "{cmd} --help",
-        "watch": "run the command directly once",
-        "python": "python -c '<code>'",
-        "python3": "python3 -c '<code>'",
-        "node": "node -e '<code>'",
-        "mysql": "mysql -e '<sql>'",
-        "psql": "psql -c '<sql>'",
-        "sqlite3": "sqlite3 <db> '<sql>'",
-        "passwd": "not supported over the MCP console",
-        "su": "not supported over the MCP console",
-        "ssh": "not supported over the MCP console",
-        "telnet": "not supported over the MCP console",
-    },
-    "netos": {
-        "setup": "configure with config commands instead",
-    },
-}
-
-
-def _has_control_keys(command: str) -> bool:
-    """Keystroke-style input (Ctrl-C etc.) — guard does not apply."""
-    return any(ord(c) < 32 and c not in "\n\r\t" for c in command)
-
-
-# Commands whose suggested form is the SAME command with a flag: once the
-# flag is present, the command is the non-interactive form and must pass.
-_BATCH_FLAG_OK = {
-    "top": "-b",  # top -b -n 1 is exactly what the guard suggests
-}
-
-
-def guard_command(command: str, family: str) -> dict[str, Any] | None:
-    """Screen one command against the family's interactive-TUI table.
-
-    Returns a rejection dict (with a suggestion) or None to allow.
-    Never rewrites silently — the caller must see what was blocked and why.
-    """
-    if _has_control_keys(command):
-        return None
-    tokens = command.strip().split()
-    if not tokens:
-        return None
-    head = tokens[0].rsplit("/", 1)[-1]  # /usr/bin/top -> top
-    # Already in its batch form (top -b ...) — rejecting it would block the
-    # very suggestion this guard returns.
-    batch_flag = _BATCH_FLAG_OK.get(head)
-    if batch_flag is not None and any(t.startswith(batch_flag) for t in tokens[1:]):
-        return None
-    table = _GUARD_TABLES.get(family, {})
-    suggestion = table.get(head)
-    if suggestion and head == "man" and len(tokens) > 1:
-        suggestion = suggestion.replace("{cmd}", tokens[1])
-    if suggestion is None and head == "tail" and "-f" in tokens:
-        head, suggestion = "tail -f", "tail -n 50 <file>"
-    if suggestion is None:
-        return None
-    return {
-        "status": "rejected",
-        "error": f"'{head}' is screen-interactive and would hang this console; the non-interactive form is required",
-        "suggestion": suggestion,
-    }
 
 
 # ── Node / family resolution ──────────────────────────────────────────────

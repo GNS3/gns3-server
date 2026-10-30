@@ -271,7 +271,7 @@ Unlike the batch device-config tools, these keep a **persistent console session*
 
 **Long-running commands** — start with `console_send`, poll with `console_read(wait=5)`, interrupt with `console_send(text="\x03")`. Bounded forms (`ping -c N`, `ping repeat N`, `traceroute` with a hop limit) are preferred: a command that terminates by itself needs no interrupt.
 
-**TUI guard** — screen-interactive commands (`top`, `less`, `tail -f`, `man`, `vi`, REPLs, ...) are rejected before touching the console, with the non-interactive alternative in `suggestion` (e.g. `top -b -n 1`, `cat <file>`, `tail -n 50`). Control-key writes bypass the guard. On the shell family the session also sets `TERM=dumb`/`PAGER=cat` so pagers degrade to linear output.
+**TUI guard** — screen-interactive commands (`top`, `less`, `tail -f`, `man`, `vi`, REPLs, ...) are rejected before touching the console, with the non-interactive alternative in `suggestion` (e.g. `top -b -n 1`, `cat <file>`, `tail -n 50`). Control-key writes bypass the guard. On the shell family the session also sets `TERM=dumb`/`PAGER=cat` so pagers degrade to linear output. The builtin rule tables live in `gns3server/agent/mcp/console_guard.py` and can be overridden per site through the GNS3-Skills repository file `config/console_guard.txt` (`family: head -> suggestion` per line, `!family: head` removes a builtin rule; the file merges over the builtin tables).
 
 The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is resolved from the node/template `netmiko_device_type` field, falling back to a `device_type:<type>` tag.
 

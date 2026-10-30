@@ -23,7 +23,12 @@ Unit tests for the console TUI guard (pure functions, no I/O).
 from gns3server.agent.mcp.console import (
     ANSI_ESCAPE_PATTERN,
     _device_type_from_node,
+)
+from gns3server.agent.mcp.console_guard import (
+    DEFAULT_GUARD_TABLES,
     guard_command,
+    parse_guard_file,
+    reload_console_guard,
 )
 
 
@@ -107,3 +112,69 @@ class TestDeviceTypeResolution:
     def test_vpcs_node_type_defaults_to_its_only_driver(self):
         # VPCS has exactly one possible driver — not a guess (unlike docker)
         assert _device_type_from_node({"node_type": "vpcs"}) == "gns3_vpcs_telnet"
+
+
+class TestGuardFileParsing:
+    """console_guard.txt format (the skills-repo override file)."""
+
+    def test_parse_rule_with_suggestion(self):
+        overrides, removals = parse_guard_file("shell: htop -> ps aux")
+        assert overrides == {"shell": {"htop": "ps aux"}}
+        assert removals == []
+
+    def test_parse_rule_without_suggestion(self):
+        overrides, _ = parse_guard_file("netos: reload")
+        assert overrides == {"netos": {"reload": ""}}
+
+    def test_parse_removal(self):
+        _, removals = parse_guard_file("!shell: vim")
+        assert removals == [("shell", "vim")]
+
+    def test_comments_and_blanks_ignored(self):
+        overrides, removals = parse_guard_file("# comment\n\n  \nshell: top -> top -b -n 1")
+        assert overrides == {"shell": {"top": "top -b -n 1"}}
+        assert removals == []
+
+    def test_malformed_lines_skipped(self):
+        overrides, removals = parse_guard_file("no colon here\nfossil: top -> x\nshell: two words -> x")
+        assert overrides == {}
+        assert removals == []
+
+    def test_case_folding(self):
+        overrides, _ = parse_guard_file("SHELL: TOP -> Top -b -n 1")
+        assert overrides == {"shell": {"top": "Top -b -n 1"}}
+
+
+class TestTableMerge:
+    """Builtin tables + skills-repo overrides."""
+
+    def test_no_skills_repo_falls_back_to_builtin(self, monkeypatch):
+        import gns3server.agent.mcp.console_guard as cg
+
+        monkeypatch.setattr(cg, "_read_skills_guard_file", lambda: None)
+        reload_console_guard()
+        assert cg.get_guard_tables() == DEFAULT_GUARD_TABLES
+        reload_console_guard()
+
+    def test_override_and_removal_merge(self, monkeypatch):
+        import gns3server.agent.mcp.console_guard as cg
+
+        file_text = "shell: htop -> use 'ps aux'\n!shell: vim\nnetos: reload -> do not"
+        monkeypatch.setattr(cg, "_read_skills_guard_file", lambda: file_text)
+        reload_console_guard()
+        tables = cg.get_guard_tables()
+        assert tables["shell"]["htop"] == "use 'ps aux'"  # overridden
+        assert "vim" not in tables["shell"]  # removed
+        assert tables["netos"]["reload"] == "do not"  # added
+        assert tables["shell"]["top"] == DEFAULT_GUARD_TABLES["shell"]["top"]  # untouched
+        reload_console_guard()
+
+    def test_merged_table_drives_guard_command(self, monkeypatch):
+        import gns3server.agent.mcp.console_guard as cg
+
+        monkeypatch.setattr(cg, "_read_skills_guard_file", lambda: "!shell: top")
+        reload_console_guard()
+        try:
+            assert guard_command("top", "shell") is None  # builtin rule removed by the file
+        finally:
+            reload_console_guard()
