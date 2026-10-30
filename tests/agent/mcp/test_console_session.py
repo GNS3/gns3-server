@@ -29,7 +29,45 @@ from gns3server.agent.mcp.console_session import (
     ConsoleSession,
     ConsoleSessionError,
     ConsoleSessionManager,
+    build_connect_kwargs,
 )
+
+
+class TestBuildConnectKwargs:
+    """Netmiko kwargs derived from the node's session info."""
+
+    def test_telnet_with_credentials(self):
+        info = {**NODE_INFO, "default_username": "root", "default_password": "pw"}
+        device = build_connect_kwargs(info)
+        assert device["device_type"] == "gns3_linux_telnet"
+        assert device["username"] == "root"
+        assert device["password"] == "pw"
+
+    def test_telnet_without_credentials_omits_them(self):
+        device = build_connect_kwargs(dict(NODE_INFO))
+        assert "username" not in device and "password" not in device
+
+    def test_ssh_defaults_to_proxy_username(self):
+        """The GNS3 SSH console proxy accepts any username with no password.
+
+        The password must be present (empty): paramiko skips "none" auth and
+        fails with 'No authentication methods available' when nothing is set.
+        """
+        info = {**NODE_INFO, "device_type": "gns3_linux_ssh"}
+        device = build_connect_kwargs(info)
+        assert device["username"] == "gns3"
+        assert device["password"] == ""
+
+    def test_ssh_getty_credentials_win(self):
+        info = {
+            **NODE_INFO,
+            "device_type": "gns3_linux_ssh",
+            "default_username": "admin",
+            "default_password": "secret",
+        }
+        device = build_connect_kwargs(info)
+        assert device["username"] == "admin"
+        assert device["password"] == "secret"
 
 
 class FakeConnection:

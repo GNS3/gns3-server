@@ -21,21 +21,26 @@ MCP tool handlers for interactive console access — Linux shell consoles only.
 
 Four tools on top of ConsoleSession (console_session.py):
 
-  console_exec   — guarded command, run through the gns3_linux_telnet driver
+  console_exec   — guarded command, run through the Linux shell driver
                    (exit-code marker completion), output + exact exit code
   console_send   — raw write (control keys such as \\x03 pass through)
   console_read   — drain console output collected since the last read
   console_close  — close the session explicitly
+
+Transport follows the node's console_type, like the web console does: telnet,
+docker_exec and unset use the gns3_linux_telnet driver; ssh uses
+gns3_linux_ssh (the GNS3 SSH console proxy, no authentication layer). The
+netmiko_device_type field only identifies the Linux family — a template that
+says gns3_linux_telnet keeps working when its console_type is switched to ssh.
 
 These tools deliberately do NOT serve network OS consoles: interactive config
 mode (conf t → (config)# → (config-if)#) is a prompt state machine that the
 batch tools already own (netmiko send_config_set enters/exits config mode
 itself), and prompt-based completion misfires on mode-changing commands.
 Network OS config and diagnostics go to device_config_send / device_show_run;
-VPCS goes to vpcs_config_set. Any node whose netmiko_device_type is not
-gns3_linux_telnet is rejected with a pointer to the right tool. No value at
-all is equally an error (no guessing — a wrong driver fails in confusing
-ways).
+VPCS goes to vpcs_config_set. Any other device type is rejected with a
+pointer to the right tool. No value at all is equally an error (no guessing —
+a wrong driver fails in confusing ways).
 
 Commands are screened against a small high-confidence table of
 screen-interactive commands (top, less, tail -f, ...). Rejections carry the
@@ -57,13 +62,24 @@ log = logging.getLogger(__name__)
 # Shared ANSI escape stripper (same pattern as the custom netmiko drivers).
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
-# The driver's sentinel PS1 (mirrors linux_telnet.PS1_SENTINEL; kept as a
+# The driver's sentinel PS1 (mirrors linux_shell.PS1_SENTINEL; kept as a
 # literal so this module stays importable without netmiko). It must never
 # leak into console_read output — it is our own plumbing, not device data.
 PS1_SENTINEL = "__MCP_PROMPT__"
 
-# The Linux shell driver — the only device type these tools serve.
-SHELL_DEVICE_TYPE = "gns3_linux_telnet"
+# Netmiko device types these tools serve (both are the same Linux shell
+# driver over different transports). The node field may name either one;
+# console_type below picks the transport actually used.
+LINUX_TELNET_DEVICE_TYPE = "gns3_linux_telnet"
+LINUX_SSH_DEVICE_TYPE = "gns3_linux_ssh"
+SHELL_DEVICE_TYPES = frozenset({LINUX_TELNET_DEVICE_TYPE, LINUX_SSH_DEVICE_TYPE})
+
+# console_type → transport. telnet/docker_exec/unset are telnet-speaking
+# (docker's docker_exec console is an AsyncioTelnetServer); ssh is the
+# GNS3 AsyncioSSHServer proxy. The rest (vnc/spice/http/https) are not byte
+# consoles at all and belong to node_console.
+TELNET_CONSOLE_TYPES = (None, "telnet", "docker_exec")
+SSH_CONSOLE_TYPES = ("ssh",)
 
 DEFAULT_READ_TIMEOUT = 30.0
 MAX_OUTPUT_CHARS = 20000
@@ -91,15 +107,16 @@ def _device_type_from_node(node: dict[str, Any]) -> str | None:
 
 def _reject_non_linux(device_type: str | None, node_name: str | None) -> dict[str, Any] | None:
     """In-band rejection for consoles these tools do not serve, or None to
-    proceed. Anything that is not the Linux shell driver is pointed at the
+    proceed. Anything that is not a Linux shell driver is pointed at the
     batch tool that owns it — the rejection is the routing hint."""
-    if device_type == SHELL_DEVICE_TYPE:
+    if device_type in SHELL_DEVICE_TYPES:
         return None
     if device_type is None:
         return {
             "status": "failed",
             "error": "No device type found for this node. The console tools only serve Linux shells: set the "
-            f"template/node 'netmiko_device_type' field to '{SHELL_DEVICE_TYPE}' or add a 'device_type:{SHELL_DEVICE_TYPE}' tag. "
+            f"template/node 'netmiko_device_type' field to '{LINUX_TELNET_DEVICE_TYPE}' (telnet console) or "
+            f"'{LINUX_SSH_DEVICE_TYPE}' (ssh console), or add a 'device_type:<type>' tag. "
             "List available types via the netmiko device-types endpoint.",
             "node": node_name,
         }
@@ -112,11 +129,25 @@ def _reject_non_linux(device_type: str | None, node_name: str | None) -> dict[st
         }
     return {
         "status": "failed",
-        "error": f"The console tools only serve Linux shells (netmiko_device_type '{SHELL_DEVICE_TYPE}'); this node is "
-        f"'{device_type}' (a network OS). Use device_config_send to push configuration and device_show_run to inspect it — "
-        "the batch drivers manage config mode themselves.",
+        "error": f"The console tools only serve Linux shells (netmiko_device_type '{LINUX_TELNET_DEVICE_TYPE}' or "
+        f"'{LINUX_SSH_DEVICE_TYPE}'); this node is '{device_type}' (a network OS). Use device_config_send to push "
+        "configuration and device_show_run to inspect it — the batch drivers manage config mode themselves.",
         "node": node_name,
     }
+
+
+def _console_device_type(node: dict[str, Any]) -> str:
+    """Netmiko device type to connect with, chosen by the node's console_type.
+
+    console_type is authoritative for the transport (it is what GNS3 used to
+    build the console proxy); the netmiko_device_type field only identifies
+    the Linux family, so switching a template from a telnet to an ssh console
+    does not require editing the device type. Nodes with an unsupported
+    console type never reach this helper — _resolve_target_sync rejects them.
+    """
+    if node.get("console_type") in SSH_CONSOLE_TYPES:
+        return LINUX_SSH_DEVICE_TYPE
+    return LINUX_TELNET_DEVICE_TYPE
 
 
 def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
@@ -140,14 +171,15 @@ def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
             "error": f"Node not found: {node!r}" if not isinstance(node, dict) else "Node not found",
         }
 
-    # console_type None on docker nodes = the (telnet-style) exec console;
-    # an assigned port is the real signal. Only clearly non-telnet consoles
-    # (vnc/http) are rejected.
-    if node.get("console_type") not in (None, "telnet"):
+    # console_type selects the console transport (telnet/docker_exec/unset →
+    # telnet, ssh → SSH). Types without a byte console (vnc, spice, http,
+    # https) belong to node_console.
+    console_type = node.get("console_type")
+    if console_type not in TELNET_CONSOLE_TYPES and console_type not in SSH_CONSOLE_TYPES:
         return {
             "status": "failed",
-            "error": f"Console type '{node.get('console_type')}' is not supported by console tools (telnet only). "
-            f"For VNC consoles use the node_console tool instead.",
+            "error": f"Console type '{console_type}' has no byte console these tools can drive "
+            "(supported: telnet, ssh, docker_exec). For VNC/SPICE/HTTP consoles use the node_console tool instead.",
         }
     if node.get("status") != "started":
         return {
@@ -216,7 +248,7 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         gns3_ctx.get("jwt_username") or "unknown",
         node["project_id"],
         node["node_id"],
-        _node_session_info(node, SHELL_DEVICE_TYPE),
+        _node_session_info(node, _console_device_type(node)),
         ttl=ttl,
     )
     try:
@@ -263,7 +295,7 @@ async def console_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         gns3_ctx.get("jwt_username") or "unknown",
         node["project_id"],
         node["node_id"],
-        _node_session_info(node, SHELL_DEVICE_TYPE),
+        _node_session_info(node, _console_device_type(node)),
     )
     try:
         await session.send_raw(text)

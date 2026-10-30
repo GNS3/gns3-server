@@ -2172,10 +2172,10 @@ async def vpcs_config_set(
 
 
 # ── Interactive console tools ─────────────────────────────────────────
-# Persistent console sessions on top of the netmiko drivers. Two families,
-# dispatched by the same netmiko_device_type the batch config tools use:
-#   - gns3_linux_telnet → Linux shell driver (exit-code marker completion)
-#   - any other driver  → network OS (prompt-pattern completion)
+# Persistent console sessions on top of the Linux shell drivers. The node's
+# console_type picks the transport (telnet/docker_exec → gns3_linux_telnet,
+# ssh → gns3_linux_ssh); the netmiko_device_type field only marks the Linux
+# family. Any other device type is rejected and routed to the batch tools.
 
 
 def _console_result(result: dict[str, Any]) -> list[dict[str, Any]]:
@@ -2199,12 +2199,14 @@ async def console_exec(
 ) -> list[dict[str, Any]]:
     """Execute ONE command on a Linux shell console; returns output + exact exit_code.
 
-    Linux shells only (netmiko_device_type gns3_linux_telnet — docker exec
-    consoles, QEMU Linux images). The command is marker-wrapped, so completion
-    is detected by the exit-code marker and the result carries its exact
-    exit_code. Network OS consoles (IOS/Huawei/...) are rejected — configure
-    them with device_config_send and inspect with device_show_run; VPCS goes
-    to vpcs_config_set.
+    Linux shells only (netmiko_device_type gns3_linux_telnet or
+    gns3_linux_ssh — docker exec consoles, QEMU Linux images). Both telnet
+    and SSH consoles are supported: the node's console_type picks the
+    transport. The command is marker-wrapped, so completion is detected by
+    the exit-code marker and the result carries its exact exit_code. Network
+    OS consoles (IOS/Huawei/...) are rejected — configure them with
+    device_config_send and inspect with device_show_run; VPCS goes to
+    vpcs_config_set.
 
     Use non-interactive forms — screen commands are rejected with a suggestion:
       top -b -n 1 (not top), cat (not less), tail -n 50 (not tail -f), -c '<code>' (not python)

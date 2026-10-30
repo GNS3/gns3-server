@@ -3,20 +3,21 @@
 #
 # GNS3-Copilot - AI-powered Network Lab Assistant for GNS3
 #
-# Unit test script for custom Netmiko LinuxTelnetShell driver
+# Unit test script for the custom Netmiko Linux shell drivers
 #
 
 """
-Unit test script for LinuxTelnetShell custom device driver.
+Unit test script for the Linux shell drivers (LinuxTelnetShell / LinuxSSHShell).
 
 Covers:
-1. Device type registration (CLASS_MAPPER, telnet platform lists)
+1. Device type registration (CLASS_MAPPER, transport platform lists)
 2. Login expect dance: direct shell, username+password, rejected
-   credentials, missing credentials, max-loop exhaustion
+   credentials, missing credentials, max-loop exhaustion; the SSH variant
+   runs it in session_preparation
 3. send_command: marker wrapping, exit-code parsing, output stripping
 4. Config mode / paging no-ops
 
-Run with: python -m pytest gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_linux_telnet.py
+Run with: python -m pytest gns3server/agent/gns3_copilot/utils/custom_netmiko/tests/test_linux_shell.py
 """
 
 import os
@@ -32,11 +33,12 @@ sys.path.insert(0, project_root)
 from netmiko.exceptions import NetmikoAuthenticationException
 
 
-def _make_driver(username=None, password=None):
+def _make_driver(username=None, password=None, driver_class=None):
     """Build a driver instance without connecting (skip __init__)."""
-    from gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_telnet import LinuxTelnetShell
+    from gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_shell import LinuxTelnetShell
 
-    instance = LinuxTelnetShell.__new__(LinuxTelnetShell)
+    cls = driver_class or LinuxTelnetShell
+    instance = cls.__new__(cls)
     instance.username = username
     instance.password = password
     instance.RETURN = "\r\n"
@@ -52,16 +54,16 @@ class TestLinuxTelnetRegistration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from gns3server.agent.gns3_copilot.utils.custom_netmiko import linux_telnet
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko import linux_shell
 
-        cls.linux_telnet = linux_telnet
+        cls.linux_shell = linux_shell
 
     def test_device_type_registered(self):
         from netmiko.ssh_dispatcher import CLASS_MAPPER, CLASS_MAPPER_BASE
 
         self.assertIn("gns3_linux_telnet", CLASS_MAPPER)
         self.assertIn("gns3_linux_telnet", CLASS_MAPPER_BASE)
-        self.assertIs(CLASS_MAPPER["gns3_linux_telnet"], self.linux_telnet.LinuxTelnetShell)
+        self.assertIs(CLASS_MAPPER["gns3_linux_telnet"], self.linux_shell.LinuxTelnetShell)
 
     def test_telnet_transport_dispatch(self):
         """The _telnet name substring is what routes Netmiko to the telnet transport."""
@@ -72,10 +74,25 @@ class TestLinuxTelnetRegistration(unittest.TestCase):
     def test_extends_base_connection(self):
         from netmiko.base_connection import BaseConnection
 
-        self.assertTrue(issubclass(self.linux_telnet.LinuxTelnetShell, BaseConnection))
+        self.assertTrue(issubclass(self.linux_shell.LinuxTelnetShell, BaseConnection))
+        self.assertTrue(issubclass(self.linux_shell.LinuxSSHShell, BaseConnection))
+        self.assertTrue(issubclass(self.linux_shell.LinuxSSHShell, self.linux_shell.LinuxShellBase))
+
+    def test_ssh_device_type_registered(self):
+        from netmiko.ssh_dispatcher import CLASS_MAPPER, CLASS_MAPPER_BASE
+
+        self.assertIn("gns3_linux_ssh", CLASS_MAPPER)
+        self.assertIn("gns3_linux_ssh", CLASS_MAPPER_BASE)
+        self.assertIs(CLASS_MAPPER["gns3_linux_ssh"], self.linux_shell.LinuxSSHShell)
+
+    def test_ssh_transport_dispatch(self):
+        """No _telnet substring → Netmiko selects the SSH (paramiko) transport."""
+        from netmiko.ssh_dispatcher import telnet_platforms
+
+        self.assertNotIn("gns3_linux_ssh", telnet_platforms)
 
 
-@patch("gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_telnet.time.sleep")
+@patch("gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_shell.time.sleep")
 class TestLinuxTelnetLogin(unittest.TestCase):
     """The expect login dance."""
 
@@ -152,6 +169,34 @@ class TestLinuxTelnetLogin(unittest.TestCase):
         instance.read_until_pattern = MagicMock(side_effect=ReadTimeout())
         with self.assertRaises(NetmikoAuthenticationException):
             instance.telnet_login()
+
+
+@patch("gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_shell.time.sleep")
+class TestLinuxSSHSessionPreparation(unittest.TestCase):
+    """SSH transport: the login dance runs in session_preparation (Netmiko
+    calls it after the paramiko connect; telnet_login is never invoked)."""
+
+    def _ssh_driver(self, username=None, password=None):
+        from gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_shell import LinuxSSHShell
+
+        return _make_driver(username=username, password=password, driver_class=LinuxSSHShell)
+
+    def test_direct_shell_probe(self, _sleep):
+        instance = self._ssh_driver()
+        reads = iter(["", ""])
+        instance.read_channel = lambda: next(reads, "")
+        instance.read_until_pattern = MagicMock(return_value="__MCP_PROMPT__ ")
+        instance.session_preparation()
+        self.assertEqual(instance.writes, ["export TERM=dumb PAGER=cat PS1='__MCP_PROMPT__ '\r\n"])
+
+    def test_getty_login_behind_ssh(self, _sleep):
+        """A Linux VM's serial console behind the SSH proxy still logs in."""
+        instance = self._ssh_driver(username="admin", password="secret")  # noqa: S106
+        reads = iter(["server login: ", "Password: ", ""])
+        instance.read_channel = lambda: next(reads, "")
+        instance.read_until_pattern = MagicMock(return_value="__MCP_PROMPT__ ")
+        instance.session_preparation()
+        self.assertEqual(instance.writes[:2], ["admin\r\n", "secret\r\n"])
 
 
 class TestLinuxTelnetSendCommand(unittest.TestCase):

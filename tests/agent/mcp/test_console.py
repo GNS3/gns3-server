@@ -24,8 +24,10 @@ import pytest
 
 import gns3server.agent.mcp.console as console
 from gns3server.agent.mcp.console import (
+    _console_device_type,
     _find_session,
     _reject_non_linux,
+    _resolve_target_sync,
     console_exec_handler,
     console_read_handler,
 )
@@ -116,6 +118,49 @@ class TestRejectNonLinux:
         result = _reject_non_linux(None, "n1")
         assert result["status"] == "failed"
         assert "gns3_linux_telnet" in result["error"]
+
+    def test_linux_ssh_family_allowed(self):
+        assert _reject_non_linux("gns3_linux_ssh", "n1") is None
+
+
+class TestTransportSelection:
+    """console_type picks the transport; the node field only marks the family."""
+
+    def test_telnet_consoles(self):
+        for console_type in (None, "telnet", "docker_exec"):
+            node = {**NODE, "console_type": console_type}
+            assert _console_device_type(node) == "gns3_linux_telnet", console_type
+
+    def test_ssh_console(self):
+        assert _console_device_type({**NODE, "console_type": "ssh"}) == "gns3_linux_ssh"
+
+    def test_ssh_console_wins_over_telnet_family_field(self):
+        """A template may keep netmiko_device_type gns3_linux_telnet while its
+        console_type is switched to ssh — no template edit required."""
+        node = {**NODE, "console_type": "ssh", "netmiko_device_type": "gns3_linux_telnet"}
+        assert _console_device_type(node) == "gns3_linux_ssh"
+
+
+class TestResolveConsoleTypeGate:
+    """_resolve_target_sync accepts byte consoles only."""
+
+    def _resolve(self, monkeypatch, console_type):
+        import gns3server.agent.gns3_copilot.gns3_client.api_handlers as api_handlers
+
+        monkeypatch.setattr(console, "resolve_locators", lambda params, run: (dict(params), None))
+        monkeypatch.setattr(api_handlers, "get_node_handler", lambda p, c: {**NODE, "console_type": console_type})
+        return _resolve_target_sync({"project_id": "p-uuid", "node_id": "n-uuid"}, {})
+
+    def test_ssh_accepted(self, monkeypatch):
+        assert self._resolve(monkeypatch, "ssh")["node_id"] == "n-uuid"
+
+    def test_docker_exec_accepted(self, monkeypatch):
+        assert self._resolve(monkeypatch, "docker_exec")["node_id"] == "n-uuid"
+
+    def test_vnc_rejected_with_node_console_pointer(self, monkeypatch):
+        result = self._resolve(monkeypatch, "vnc")
+        assert result["status"] == "failed"
+        assert "node_console" in result["error"]
 
 
 class _FakeConn:

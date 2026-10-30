@@ -26,15 +26,25 @@
 # mypy: ignore-errors
 
 """
-Custom Netmiko device driver for Linux shell consoles in GNS3.
+Custom Netmiko device drivers for Linux shell consoles in GNS3.
 
 Covers nodes whose console is a Linux shell: docker containers exposing an
 exec console and QEMU VMs running a Linux image with a getty on the serial
 console (netshoot, alpine, generic Linux images...).
 
-The device_type name MUST contain "_telnet": Netmiko dispatches the telnet
-transport by that name substring, and GNS3 consoles are telnet TCP ports
-(there is no SSH daemon on these consoles).
+Two transports, one implementation. GNS3 exposes the console of a Linux node
+on the node's console port using the transport selected by the node's
+console_type:
+
+  - telnet / docker_exec / unset → Device Type gns3_linux_telnet
+  - ssh                          → Device Type gns3_linux_ssh
+
+The name is part of Netmiko's contract: it selects the telnet transport for
+a device_type containing "_telnet" and SSH (paramiko) otherwise. The SSH
+console port of a GNS3 node is the server-side AsyncioSSHServer proxy, which
+accepts any username without authentication (the node has real credentials
+in default_username/default_password only when the shell behind it presents
+a getty login).
 
 Completion detection does NOT guess shell prompts. Two sentinels are used
 instead, because unlike a network OS the shell is ours to configure:
@@ -47,7 +57,7 @@ instead, because unlike a network OS the shell is ours to configure:
              the exit code, giving process-exit-grade completion signalling
              (the same determinism Claude Code gets from waitpid()).
 
-Device Type: gns3_linux_telnet
+Device Types: gns3_linux_telnet (telnet transport), gns3_linux_ssh (SSH)
 """
 
 import logging
@@ -99,19 +109,25 @@ def _echo_strip_pattern(text: str) -> re.Pattern:
     return re.compile(r"(?:\r?\n)?".join(re.escape(ch) for ch in text))
 
 
-class LinuxTelnetShell(BaseConnection):
+class LinuxShellBase(BaseConnection):
     """
-    Custom Linux shell driver for GNS3 console ports (telnet transport).
+    Transport-agnostic Linux shell driver for GNS3 console ports.
 
     - Login is optional: the expect loop handles getty prompts when present
       (credentials come from the node's default_username/default_password),
       and detects an already-logged-in shell otherwise.
     - send_command wraps each command with an exit-code marker and reads
       until it appears; the parsed exit code is exposed as last_exit_code.
+
+    Subclasses only choose the transport (the device_type name is what
+    Netmiko dispatches on) and the hook Netmiko runs after connecting.
     """
 
+    #: Netmiko device type; set by each transport subclass.
+    DEVICE_TYPE = ""
+
     def __init__(self, *args, **kwargs) -> None:
-        kwargs.setdefault("device_type", "gns3_linux_telnet")
+        kwargs.setdefault("device_type", self.DEVICE_TYPE)
         kwargs.setdefault("global_delay_factor", 1.0)
         kwargs.setdefault("fast_cli", False)
         super().__init__(*args, **kwargs)
@@ -122,15 +138,7 @@ class LinuxTelnetShell(BaseConnection):
 
     # ── Login ─────────────────────────────────────────────────────────────
 
-    def telnet_login(
-        self,
-        pri_prompt_terminator: str = PS1_SENTINEL,
-        alt_prompt_terminator: str = "",
-        username_pattern: str = "",
-        pwd_pattern: str = "",
-        delay_factor: float = 1.0,
-        max_loops: int = 20,
-    ) -> str:
+    def _login_and_prepare(self, delay_factor: float = 1.0, max_loops: int = 20) -> str:
         """
         Expect-style login for Linux console ports.
 
@@ -216,7 +224,7 @@ class LinuxTelnetShell(BaseConnection):
             f"Could not reach a shell prompt on the Linux console within {max_loops} attempts"
         )
 
-    def session_preparation(self) -> None:
+    def _prepare_session(self) -> None:
         """Re-assert the sentinel prompt and environment after login."""
         self.write_channel(SESSION_INIT_COMMAND + self.RETURN)
         try:
@@ -329,29 +337,75 @@ class LinuxTelnetShell(BaseConnection):
         return ""
 
 
-# Register the custom device type with Netmiko
+class LinuxTelnetShell(LinuxShellBase):
+    """Linux shell over the telnet transport (console_type telnet/docker_exec)."""
+
+    DEVICE_TYPE = "gns3_linux_telnet"
+
+    def telnet_login(
+        self,
+        pri_prompt_terminator: str = PS1_SENTINEL,
+        alt_prompt_terminator: str = "",
+        username_pattern: str = "",
+        pwd_pattern: str = "",
+        delay_factor: float = 1.0,
+        max_loops: int = 20,
+    ) -> str:
+        """Netmiko's telnet connect hook: the shared expect login."""
+        return self._login_and_prepare(delay_factor=delay_factor, max_loops=max_loops)
+
+    def session_preparation(self) -> None:
+        """Re-assert the sentinel prompt after the telnet login dance."""
+        self._prepare_session()
+
+
+class LinuxSSHShell(LinuxShellBase):
+    """Linux shell over the SSH transport (console_type ssh).
+
+    The GNS3 node console port runs a server-side AsyncioSSHServer proxy that
+    accepts any username without authentication, so no login dance happens at
+    the SSH layer. The stream behind it may still be a getty (a Linux VM's
+    serial console), which the shared expect login handles in
+    session_preparation — the same place where a shell-only console is
+    detected by the sentinel probe.
+    """
+
+    DEVICE_TYPE = "gns3_linux_ssh"
+
+    def session_preparation(self) -> None:
+        self._login_and_prepare()
+
+
+# Register the custom device types with Netmiko
 _registered = False  # Flag to prevent duplicate registration
+
+_CUSTOM_DEVICE_TYPES = {
+    LinuxTelnetShell.DEVICE_TYPE: LinuxTelnetShell,
+    LinuxSSHShell.DEVICE_TYPE: LinuxSSHShell,
+}
 
 
 def register_custom_device_type() -> None:
     """
-    Register the custom Linux shell Telnet device type with Netmiko.
+    Register the custom Linux shell device types with Netmiko.
 
-    Adds 'gns3_linux_telnet' to Netmiko's CLASS_MAPPER and rebuilds the
-    static platform lists (they are computed at import time). Idempotent.
+    Adds 'gns3_linux_telnet' and 'gns3_linux_ssh' to Netmiko's CLASS_MAPPER
+    and rebuilds the static platform lists (they are computed at import
+    time). Idempotent.
     """
     global _registered
 
     if _registered:
-        logger.debug("Linux shell Telnet device type already registered, skipping")
+        logger.debug("Linux shell device types already registered, skipping")
         return
 
     import importlib
 
     sd = importlib.import_module("netmiko.ssh_dispatcher")
 
-    sd.CLASS_MAPPER_BASE["gns3_linux_telnet"] = LinuxTelnetShell
-    sd.CLASS_MAPPER["gns3_linux_telnet"] = LinuxTelnetShell
+    for device_type, driver in _CUSTOM_DEVICE_TYPES.items():
+        sd.CLASS_MAPPER_BASE[device_type] = driver
+        sd.CLASS_MAPPER[device_type] = driver
 
     # Rebuild the static lists (same procedure as vpcs_telnet.py)
     sd.platforms = sorted(sd.CLASS_MAPPER.keys())
@@ -361,11 +415,11 @@ def register_custom_device_type() -> None:
     sd.telnet_platforms_str = "\n" + "\n".join(sd.telnet_platforms)
 
     _registered = True
-    logger.info("Successfully registered Linux shell Telnet device type with Netmiko")
+    logger.info("Successfully registered Linux shell device types with Netmiko (telnet + ssh)")
 
 
 # Auto-register on import
 try:
     register_custom_device_type()
 except Exception as e:
-    logger.warning("Failed to register Linux shell device type: %s", e, exc_info=True)
+    logger.warning("Failed to register Linux shell device types: %s", e, exc_info=True)

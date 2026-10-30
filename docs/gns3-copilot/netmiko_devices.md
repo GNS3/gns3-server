@@ -10,7 +10,7 @@ See LICENSE file for licensing information.
 
 **Netmiko Version:** 4.6.0
 **Generated:** 2026-03-14 13:10:00
-**Last Updated:** 2026-10-30 (Added gns3_linux_telnet driver for Linux shell consoles)
+**Last Updated:** 2026-10-30 (Linux shell drivers: gns3_linux_telnet + gns3_linux_ssh)
 
 ---
 
@@ -31,6 +31,7 @@ GNS3-Copilot includes custom Netmiko drivers optimized for GNS3 emulation:
 | Ruijie | `gns3_ruijie_telnet` | Ruijie OS enhanced driver with interactive command handling |
 | VPCS | `gns3_vpcs_telnet` | VPCS simulator driver with ANSI code stripping |
 | Linux shell | `gns3_linux_telnet` | Linux shell consoles (docker exec, QEMU Linux images): optional expect login, exit-code marker completion |
+| Linux shell | `gns3_linux_ssh` | Same driver over SSH (console_type `ssh`; GNS3's no-auth SSH console proxy) |
 
 ## SSH Supported Devices
 
@@ -150,6 +151,7 @@ GNS3-Copilot includes custom Netmiko drivers optimized for GNS3 emulation:
 | Keymile | `keymile_ssh` | Netmiko |
 | Lancom | `lancom_lcossx4_ssh` | Netmiko |
 | Linux | `linux_ssh` | Netmiko |
+| Linux shell | `gns3_linux_ssh` | Custom ✨ (GNS3 Linux shell consoles over SSH) |
 | Maipu (迈普) | `maipu_ssh` | Netmiko |
 | Mellanox | `mellanox_mlnxos_ssh` | Netmiko |
 | Mellanox | `mellanox_ssh` | Netmiko |

@@ -24,8 +24,9 @@ keyed by (username, project_id, node_id). The API the tools expose is
 stateless; the connection underneath is not — consecutive calls reuse the
 same console so the shell session (working directory, environment, a
 started-but-unfinished command) survives across tool calls. The console
-tools serve Linux shells (gns3_linux_telnet); this layer stays
-driver-agnostic and would carry other drivers unchanged:
+tools serve Linux shells over telnet or SSH (gns3_linux_telnet /
+gns3_linux_ssh); this layer stays driver-agnostic and would carry other
+drivers unchanged:
 
   - exec()     — driver send_command, run in a thread under the session lock
   - send_raw() — write_channel (control keys like \x03 pass through)
@@ -45,6 +46,40 @@ log = logging.getLogger(__name__)
 
 DEFAULT_SESSION_TTL = 60.0  # seconds without send/read activity before reap
 MAX_SESSIONS = 64  # total across all users; LRU-evicted when exceeded
+
+# SSH console proxy: GNS3's AsyncioSSHServer accepts any username without
+# authentication, so a placeholder is enough when the node has no
+# default_username. When the stream behind it is a getty, the node's real
+# credentials are used instead.
+LINUX_SSH_DEVICE_TYPE = "gns3_linux_ssh"
+SSH_PROXY_USERNAME = "gns3"
+
+
+def build_connect_kwargs(node_info: dict[str, Any]) -> dict[str, Any]:
+    """Netmiko ConnectHandler kwargs for a node from its session info."""
+    device: dict[str, Any] = {
+        "device_type": node_info["device_type"],
+        "host": node_info["console_host"],
+        "port": node_info["console"],
+        "global_delay_factor": 1.0,
+    }
+    is_ssh = device["device_type"] == LINUX_SSH_DEVICE_TYPE
+    username = node_info.get("default_username") or (SSH_PROXY_USERNAME if is_ssh else None)
+    # Credentials for consoles whose stream shows a getty login (node/template
+    # fields, seeded from appliance metadata). Consoles without login ignore
+    # them.
+    password = node_info.get("default_password")
+    if is_ssh and not password:
+        # Paramiko never attempts "none" authentication: with no password and
+        # no keys it gives up with "No authentication methods available" before
+        # even asking the server. An empty password makes it attempt password
+        # auth, which the GNS3 no-auth SSH console proxy accepts.
+        password = ""
+    if username:
+        device["username"] = username
+    if password is not None:
+        device["password"] = password
+    return device
 
 
 class ConsoleSessionError(Exception):
@@ -131,18 +166,7 @@ class ConsoleSession:
                 "netmiko is not installed. Install AI dependencies with: pip install gns3-server[ai-features]"
             ) from e
 
-        device: dict[str, Any] = {
-            "device_type": self.node_info["device_type"],
-            "host": self.node_info["console_host"],
-            "port": self.node_info["console"],
-            "global_delay_factor": 1.0,
-        }
-        # Credentials for consoles with a login prompt (node/template fields,
-        # seeded from appliance metadata). Consoles without login ignore them.
-        if self.node_info.get("default_username"):
-            device["username"] = self.node_info["default_username"]
-        if self.node_info.get("default_password"):
-            device["password"] = self.node_info["default_password"]
+        device = build_connect_kwargs(self.node_info)
 
         log.info(
             "Opening console session %s (%s @ %s:%s)", self.key, device["device_type"], device["host"], device["port"]
