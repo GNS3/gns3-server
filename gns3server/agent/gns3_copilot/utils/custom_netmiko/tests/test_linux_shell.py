@@ -237,9 +237,7 @@ class TestLinuxTelnetSendCommand(unittest.TestCase):
         return instance
 
     def test_marker_wrapping_and_exit_code(self):
-        instance = self._make_connected(
-            ["", "ls /\r\nbin\r\nboot\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "]
-        )
+        instance = self._make_connected(["", "ls /\r\nbin\r\nboot\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "])
         output = instance.send_command("ls /")
         self.assertEqual(instance.last_exit_code, 0)
         self.assertFalse(instance.last_timed_out)
@@ -300,9 +298,7 @@ class TestLinuxTelnetSendCommand(unittest.TestCase):
         echoed marker wrapper must still be stripped from the output."""
         cmd = "ip -brief addr show dev eth0"
         wrapped_echo = f"{cmd}; echo __MCP_D" + "\r\n" + "ONE_$?__"
-        instance = self._make_connected(
-            ["", f"{wrapped_echo}\r\nlo UNKNOWN 127.0.0.1/8\r\n__MCP_DONE_0__\r\n"]
-        )
+        instance = self._make_connected(["", f"{wrapped_echo}\r\nlo UNKNOWN 127.0.0.1/8\r\n__MCP_DONE_0__\r\n"])
         output = instance.send_command(cmd)
         self.assertEqual(instance.last_exit_code, 0)
         self.assertNotIn("echo __MCP_D", output)

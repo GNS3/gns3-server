@@ -2230,7 +2230,14 @@ async def console_exec(
     """
     return _console_result(
         await console_exec_handler(
-            {"project_id": project_id, "node_id": node_id, "command": command, "timeout": timeout, "ttl": ttl, "max_chars": max_chars},
+            {
+                "project_id": project_id,
+                "node_id": node_id,
+                "command": command,
+                "timeout": timeout,
+                "ttl": ttl,
+                "max_chars": max_chars,
+            },
             _gns3_ctx(),
         )
     )

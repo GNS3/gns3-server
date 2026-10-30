@@ -62,6 +62,7 @@ def _console_identity(node_info: dict[str, Any]) -> tuple[Any, ...]:
     connection even though its node_id did not change."""
     return (node_info.get("device_type"), node_info.get("console_host"), node_info.get("console"))
 
+
 # SSH console proxy: GNS3's AsyncioSSHServer accepts any username without
 # authentication, so a placeholder is enough when the node has no
 # default_username. When the stream behind it is a getty, the node's real
