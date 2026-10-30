@@ -17,22 +17,25 @@
 #
 
 """
-MCP tool handlers for interactive console access.
+MCP tool handlers for interactive console access — Linux shell consoles only.
 
 Four tools on top of ConsoleSession (console_session.py):
 
-  console_exec   — guarded command, run through the node's netmiko driver
-                   (prompt-based for network OS, exit-code marker for
-                   gns3_linux_telnet), output returned when the command done
+  console_exec   — guarded command, run through the gns3_linux_telnet driver
+                   (exit-code marker completion), output + exact exit code
   console_send   — raw write (control keys such as \\x03 pass through)
   console_read   — drain console output collected since the last read
   console_close  — close the session explicitly
 
-Family dispatch is a single netmiko_device_type lookup — the same field the
-batch config tools resolve (node/template field first, device_type:<x> tag as
-fallback). gns3_linux_telnet means the Linux shell driver; any other driver
-value means a network OS; no value at all is an error (no guessing — a wrong
-driver fails in confusing ways).
+These tools deliberately do NOT serve network OS consoles: interactive config
+mode (conf t → (config)# → (config-if)#) is a prompt state machine that the
+batch tools already own (netmiko send_config_set enters/exits config mode
+itself), and prompt-based completion misfires on mode-changing commands.
+Network OS config and diagnostics go to device_config_send / device_show_run;
+VPCS goes to vpcs_config_set. Any node whose netmiko_device_type is not
+gns3_linux_telnet is rejected with a pointer to the right tool. No value at
+all is equally an error (no guessing — a wrong driver fails in confusing
+ways).
 
 Commands are screened against a small high-confidence table of
 screen-interactive commands (top, less, tail -f, ...). Rejections carry the
@@ -54,7 +57,7 @@ log = logging.getLogger(__name__)
 # Shared ANSI escape stripper (same pattern as the custom netmiko drivers).
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
-# The Linux shell driver — the only marker-based family.
+# The Linux shell driver — the only device type these tools serve.
 SHELL_DEVICE_TYPE = "gns3_linux_telnet"
 
 DEFAULT_READ_TIMEOUT = 30.0
@@ -79,6 +82,36 @@ def _device_type_from_node(node: dict[str, Any]) -> str | None:
     if node.get("node_type") == "vpcs":
         return "gns3_vpcs_telnet"
     return None
+
+
+def _reject_non_linux(device_type: str | None, node_name: str | None) -> dict[str, Any] | None:
+    """In-band rejection for consoles these tools do not serve, or None to
+    proceed. Anything that is not the Linux shell driver is pointed at the
+    batch tool that owns it — the rejection is the routing hint."""
+    if device_type == SHELL_DEVICE_TYPE:
+        return None
+    if device_type is None:
+        return {
+            "status": "failed",
+            "error": "No device type found for this node. The console tools only serve Linux shells: set the "
+            f"template/node 'netmiko_device_type' field to '{SHELL_DEVICE_TYPE}' or add a 'device_type:{SHELL_DEVICE_TYPE}' tag. "
+            "List available types via the netmiko device-types endpoint.",
+            "node": node_name,
+        }
+    if device_type == "gns3_vpcs_telnet":
+        return {
+            "status": "failed",
+            "error": "The console tools only serve Linux shells; this node is a VPCS PC (gns3_vpcs_telnet). "
+            "Use vpcs_config_set (batch, validated) for VPCS configuration.",
+            "node": node_name,
+        }
+    return {
+        "status": "failed",
+        "error": f"The console tools only serve Linux shells (netmiko_device_type '{SHELL_DEVICE_TYPE}'); this node is "
+        f"'{device_type}' (a network OS). Use device_config_send to push configuration and device_show_run to inspect it — "
+        "the batch drivers manage config mode themselves.",
+        "node": node_name,
+    }
 
 
 def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
@@ -120,14 +153,9 @@ def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
         return {"status": "failed", "error": f"Node '{node.get('name')}' has no console port assigned."}
 
     device_type = _device_type_from_node(node)
-    if not device_type:
-        return {
-            "status": "failed",
-            "error": "No device type found for this node. Set the template/node 'netmiko_device_type' field "
-            f"(e.g. '{SHELL_DEVICE_TYPE}' for Linux shells, 'cisco_ios_telnet' for IOS, 'gns3_vpcs_telnet' for VPCS), "
-            "or add a 'device_type:<type>' tag. List available types via the netmiko device-types endpoint.",
-            "node": node.get("name"),
-        }
+    rejection = _reject_non_linux(device_type, node.get("name"))
+    if rejection is not None:
+        return rejection
     return node
 
 
@@ -162,9 +190,7 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
     if "node_id" not in node:
         return node  # in-band error dict
 
-    device_type = _device_type_from_node(node)
-    family = "shell" if device_type == SHELL_DEVICE_TYPE else "netos"
-    rejection = guard_command(command, family)
+    rejection = guard_command(command, "shell")
     if rejection is not None:
         rejection["node"] = node.get("name")
         return rejection
@@ -174,7 +200,7 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         gns3_ctx.get("jwt_username") or "unknown",
         node["project_id"],
         node["node_id"],
-        _node_session_info(node, device_type),
+        _node_session_info(node, SHELL_DEVICE_TYPE),
         ttl=ttl,
     )
     try:
@@ -188,7 +214,6 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         "output": output,
         "exit_code": result.get("exit_code"),
         "truncated": truncated,
-        "family": family,
     }
 
 
@@ -199,10 +224,8 @@ async def console_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         return node
     text = params.get("text") or ""
 
-    device_type = _device_type_from_node(node)
-    family = "shell" if device_type == SHELL_DEVICE_TYPE else "netos"
     # Plain command-looking text is screened too (control keys pass by design).
-    rejection = guard_command(text, family)
+    rejection = guard_command(text, "shell")
     if rejection is not None:
         rejection["node"] = node.get("name")
         return rejection
@@ -212,7 +235,7 @@ async def console_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         gns3_ctx.get("jwt_username") or "unknown",
         node["project_id"],
         node["node_id"],
-        _node_session_info(node, device_type),
+        _node_session_info(node, SHELL_DEVICE_TYPE),
     )
     try:
         await session.send_raw(text)

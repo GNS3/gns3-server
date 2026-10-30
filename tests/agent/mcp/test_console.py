@@ -23,7 +23,7 @@ Unit tests for the MCP console tool handlers (no I/O, REST monkeypatched).
 import pytest
 
 import gns3server.agent.mcp.console as console
-from gns3server.agent.mcp.console import _find_session
+from gns3server.agent.mcp.console import _find_session, _reject_non_linux
 from gns3server.agent.mcp.console_session import ConsoleSession, ConsoleSessionManager
 
 NODE = {
@@ -89,3 +89,25 @@ async def test_find_session_node_error_passes_through(fresh_manager, monkeypatch
     found, error = await _find_session({"project_id": "x", "node_id": "y"}, {})
     assert found is None
     assert error == {"status": "failed", "error": "nope"}
+
+
+class TestRejectNonLinux:
+    """The console tools serve Linux shells only; everything else is routed."""
+
+    def test_linux_shell_allowed(self):
+        assert _reject_non_linux("gns3_linux_telnet", "n1") is None
+
+    def test_network_os_rejected_with_batch_pointer(self):
+        result = _reject_non_linux("cisco_ios_telnet", "R-1")
+        assert result["status"] == "failed"
+        assert "device_config_send" in result["error"] and "device_show_run" in result["error"]
+
+    def test_vpcs_rejected_with_vpcs_pointer(self):
+        result = _reject_non_linux("gns3_vpcs_telnet", "PC1")
+        assert result["status"] == "failed"
+        assert "vpcs_config_set" in result["error"]
+
+    def test_missing_device_type_explains_the_field(self):
+        result = _reject_non_linux(None, "n1")
+        assert result["status"] == "failed"
+        assert "gns3_linux_telnet" in result["error"]

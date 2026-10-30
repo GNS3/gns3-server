@@ -22,12 +22,10 @@ Interactive console sessions for the MCP console tools.
 A ConsoleSession is a persistent netmiko connection to one node's console,
 keyed by (username, project_id, node_id). The API the tools expose is
 stateless; the connection underneath is not — consecutive calls reuse the
-same console so enable/config-mode context (network OS) or the shell session
-(Linux) survive across tool calls.
-
-Family differences live entirely inside the netmiko drivers (prompt-based
-completion for network OS, exit-code marker for gns3_linux_telnet); this
-layer is family-agnostic:
+same console so the shell session (working directory, environment, a
+started-but-unfinished command) survives across tool calls. The console
+tools serve Linux shells (gns3_linux_telnet); this layer stays
+driver-agnostic and would carry other drivers unchanged:
 
   - exec()     — driver send_command, run in a thread under the session lock
   - send_raw() — write_channel (control keys like \x03 pass through)
@@ -140,15 +138,11 @@ class ConsoleSession:
             "global_delay_factor": 1.0,
         }
         # Credentials for consoles with a login prompt (node/template fields,
-        # seeded from appliance metadata). VPCS-style consoles ignore them.
+        # seeded from appliance metadata). Consoles without login ignore them.
         if self.node_info.get("default_username"):
             device["username"] = self.node_info["default_username"]
         if self.node_info.get("default_password"):
             device["password"] = self.node_info["default_password"]
-        # VPCS prompts as "<node name>>" (set by the node's startup script);
-        # the driver builds its prompt pattern from the name.
-        if device["device_type"] == "gns3_vpcs_telnet" and self.node_info.get("name"):
-            device["pcname"] = self.node_info["name"]
 
         log.info(
             "Opening console session %s (%s @ %s:%s)", self.key, device["device_type"], device["host"], device["port"]

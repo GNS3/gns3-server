@@ -2060,8 +2060,8 @@ async def device_config_send(
 
     Best for: pushing the same-shaped config to MANY devices in one call
     (parallel per device, config-mode handled by the driver, Jinja2 template
-    support). For a single device you want to interact with step by step,
-    or for Docker/Linux nodes, use console_exec instead.
+    support). This is the ONLY way to configure network OS consoles — the
+    interactive console tools serve Linux shells only.
 
     Two modes:
       1. Direct commands: each device has config_commands=[...]
@@ -2074,8 +2074,8 @@ async def device_config_send(
     required (no default is guessed).
     Common device types: cisco_ios_telnet, cisco_xr_telnet, huawei_telnet,
     gns3_huawei_telnet_ce, gns3_ruijie_telnet.
-    VPCS nodes: use vpcs_config_set (batch, validated) or console_exec
-    (interactive) — both drive VPCS with no device_type setup.
+    VPCS nodes: use vpcs_config_set (batch, validated) — it drives VPCS
+    with no device_type setup.
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2107,9 +2107,9 @@ async def device_show_run(
 
     Read-only by design: only show/display/ping/traceroute-style commands are
     accepted, making it the safe choice for AI-driven inspection across many
-    devices in parallel. For interactive diagnosis (watch a command's output
-    progressively, interrupt it, follow up based on what you see) or for
-    Docker/Linux nodes, use console_exec instead.
+    devices in parallel. (Interactive send/read/interrupt of long-running
+    commands is available for Linux shells via console_exec/console_send/
+    console_read; network OS consoles are batch-only.)
 
     Two modes:
       1. Direct commands: each device has commands=[...] (read-only show/display/ping/traceroute only)
@@ -2121,8 +2121,8 @@ async def device_show_run(
       'netmiko_device_type' field wins, with a 'device_type:<type>' tag
       as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce).
       Nodes with neither will fail with "no device type found".
-      VPCS nodes: use vpcs_config_set or console_exec instead — both
-      drive VPCS with no device_type setup.
+      VPCS nodes: use vpcs_config_set instead — it drives VPCS with
+      no device_type setup.
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2147,9 +2147,9 @@ async def vpcs_config_set(
     """Configure VPCS devices in batch (set IP addresses, gateway, etc.).
 
     The VPCS counterpart of device_config_send: Nornir + Netmiko, multiple
-    PCs in parallel, with VPCS command syntax validated per device.
-    For interactive work on a single VPCS node (ping, trace, verify), use
-    console_exec — it works on VPCS out of the box, no device_type setup.
+    PCs in parallel, with VPCS command syntax validated per device. Also the
+    way to drive VPCS interactively-adjacent work (ping/trace) — the
+    interactive console tools serve Linux shells only.
 
     Only VPCS nodes are accepted: any other node type in device_configs fails
     with a per-device error instead of typing VPCS syntax into its CLI.
@@ -2192,34 +2192,30 @@ async def console_exec(
         float,
         Field(
             description="Session idle TTL in seconds. Within the TTL, consecutive calls reuse the same console "
-            "session (enable/config or shell context survives). Default 60."
+            "session (shell context survives). Default 60."
         ),
     ] = 60.0,
     max_chars: Annotated[int, Field(description="Max output characters before truncation (default 20000)")] = 20000,
 ) -> list[dict[str, Any]]:
-    """Execute ONE command on a node console; returns the output when the command completes.
+    """Execute ONE command on a Linux shell console; returns output + exact exit_code.
 
-    Completion detection depends on the node's netmiko_device_type:
-      - Linux shells (gns3_linux_telnet): the command is marker-wrapped, so
-        the result also carries its exact exit_code.
-      - Network OS (cisco_ios_telnet, gns3_huawei_telnet_ce, ...): the driver
-        reads until the device prompt; exit_code is null.
+    Linux shells only (netmiko_device_type gns3_linux_telnet — docker exec
+    consoles, QEMU Linux images). The command is marker-wrapped, so completion
+    is detected by the exit-code marker and the result carries its exact
+    exit_code. Network OS consoles (IOS/Huawei/...) are rejected — configure
+    them with device_config_send and inspect with device_show_run; VPCS goes
+    to vpcs_config_set.
 
     Use non-interactive forms — screen commands are rejected with a suggestion:
       top -b -n 1 (not top), cat (not less), tail -n 50 (not tail -f), -c '<code>' (not python)
-    Use bounded commands (ping -c N / repeat N) so they terminate by themselves.
+    Use bounded commands (ping -c N) so they terminate by themselves.
 
     For long-running commands (traceroute with many hops, continuous ping):
     start them with console_send, poll output with console_read(wait=N),
     then interrupt with console_send(text="\\x03").
 
     The console session stays open between calls for ttl seconds; other tools'
-    console calls on the same node share it. Call console_close when done to
-    free the device's VTY line.
-
-    For pushing the same config to MANY devices in one call, prefer
-    device_config_send (batch, parallel, config-mode handled by the driver);
-    this tool is for single-node interactive work.
+    console calls on the same node share it. Call console_close when done.
     """
     return _console_result(
         await console_exec_handler(
@@ -2238,12 +2234,13 @@ async def console_send(
         Field(description="Raw text/keystrokes to write, e.g. a command, 'q', or a control key like '\\x03' (Ctrl-C)"),
     ],
 ) -> list[dict[str, Any]]:
-    """Write raw text to a node console WITHOUT waiting for output.
+    """Write raw text to a Linux shell console WITHOUT waiting for output.
 
-    Use for: starting long-running commands (then poll with console_read),
-    sending single keys (q to quit a pager) and control keys
-    ("\\x03" Ctrl-C, "\\x1a" Ctrl-Z). Plain screen-interactive commands
-    (top, less, ...) are still rejected with a suggestion; control keys pass.
+    Linux shells only (same family as console_exec). Use for: starting
+    long-running commands (then poll with console_read), sending single keys
+    (q to quit a pager) and control keys ("\\x03" Ctrl-C, "\\x1a" Ctrl-Z).
+    Plain screen-interactive commands (top, less, ...) are still rejected
+    with a suggestion; control keys pass.
     """
     return _console_result(
         await console_send_handler({"project_id": project_id, "node_id": node_id, "text": text}, _gns3_ctx())
@@ -2257,10 +2254,11 @@ async def console_read(
     wait: Annotated[float, Field(description="Max seconds to wait for new output (default 5)")] = 5.0,
     max_chars: Annotated[int, Field(description="Max output characters before truncation (default 20000)")] = 20000,
 ) -> list[dict[str, Any]]:
-    """Read console output that arrived since the previous read (poll for long commands).
+    """Read Linux shell console output that arrived since the previous read (poll for long commands).
 
-    Pairs with console_send: start a long command, then call this repeatedly
-    (wait=5) to watch progress, then interrupt with console_send(text="\\x03").
+    Pairs with console_send (Linux shells only, same family as console_exec):
+    start a long command, then call this repeatedly (wait=5) to watch
+    progress, then interrupt with console_send(text="\\x03").
     Returns whatever is buffered; empty output means nothing new arrived.
     """
     return _console_result(
@@ -2275,10 +2273,10 @@ async def console_close(
     project_id: Annotated[str, Field(description="Project name or UUID")],
     node_id: Annotated[str, Field(description="Node name or UUID")],
 ) -> list[dict[str, Any]]:
-    """Close the console session for a node (frees the device's VTY line).
+    """Close the console session for a Linux shell node.
 
     Sessions also close themselves after the idle TTL; close explicitly when
-    finished to release the line sooner.
+    finished to release the console sooner.
     """
     return _console_result(await console_close_handler({"project_id": project_id, "node_id": node_id}, _gns3_ctx()))
 
