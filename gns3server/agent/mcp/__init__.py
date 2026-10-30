@@ -543,7 +543,7 @@ async def node_list(
     fields: Annotated[
         list[str] | None,
         Field(
-            description='Optional: return only these fields per node. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type'
+            description='Optional: return only these fields per node. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type, netmiko_device_type'
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
@@ -558,7 +558,7 @@ async def node_get(
     fields: Annotated[
         list[str] | None,
         Field(
-            description='Optional: return only these fields. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type'
+            description='Optional: return only these fields. e.g. ["name","status"]. Available: name, status, node_type, console, console_type, console_host, node_id, project_id, compute_id, symbol, x, y, z, locked, ports, properties, command_line, node_directory, label, tags, template_id, width, height, aux, aux_type, netmiko_device_type'
         ),
     ] = None,
 ) -> list[dict[str, Any]]:

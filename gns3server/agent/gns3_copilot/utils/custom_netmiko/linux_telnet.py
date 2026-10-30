@@ -300,6 +300,14 @@ class LinuxTelnetShell(BaseConnection):
             output = _echo_strip_pattern(wrapped).sub("", output)
             output = _echo_strip_pattern(SESSION_INIT_COMMAND).sub("", output)
             output = output.replace(PS1_SENTINEL, "")
+            # Readline renders a long pasted line as a horizontal-scroll view
+            # ("<" + command tail ...; echo __MCP_DONE_$?__") instead of a
+            # wrapped echo, so the echoed wrapper can appear mangled beyond
+            # what the fuzzy strip can match. Any line still carrying marker
+            # text at this point is echo debris — real output never contains
+            # the marker unexpanded. Drop the whole line (it is echo, not
+            # device data).
+            output = "\n".join(line for line in output.splitlines() if "__MCP_DONE_" not in line)
         return output.strip("\n")
 
     def send_command_timing(self, command_string: str, **kwargs) -> str:

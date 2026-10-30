@@ -215,6 +215,20 @@ class TestLinuxTelnetSendCommand(unittest.TestCase):
         self.assertIsNone(instance.last_exit_code)
         self.assertIn("64 bytes", output)
 
+    def test_readline_scroll_view_echo_dropped(self):
+        """Captured from a live docker PTY: a command longer than the terminal
+        width is re-rendered by readline as "<" + command tail, so the echoed
+        wrapper is truncated and unmatched. That line is echo debris and must
+        be dropped; real output lines must survive."""
+        debris = "<pad%.0s' 1 2 3 4 5 6 7 8 9 10; echo __MCP_DONE_$?__"
+        instance = self._make_connected(["", f"\n{debris}\nline-one\nline-two\n__MCP_DONE_0__\n__MCP_PROMPT__ "])
+        output = instance.send_command("echo line-one && echo line-two")
+        self.assertEqual(instance.last_exit_code, 0)
+        self.assertNotIn("__MCP_DONE_", output)
+        self.assertNotIn("<pad", output)
+        self.assertIn("line-one", output)
+        self.assertIn("line-two", output)
+
     def test_wrapped_console_echo_stripped(self):
         """The PTY wraps long echoed lines with CRLF at any column — the
         echoed marker wrapper must still be stripped from the output."""
