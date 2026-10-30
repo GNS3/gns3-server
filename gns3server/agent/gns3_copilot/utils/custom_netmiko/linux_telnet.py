@@ -53,6 +53,7 @@ Device Type: gns3_linux_telnet
 import logging
 import re
 import time
+from functools import lru_cache
 
 from netmiko.base_connection import BaseConnection
 from netmiko.exceptions import ReadTimeout
@@ -87,6 +88,17 @@ MARKER_TEMPLATE = "echo __MCP_DONE_$?__"
 SESSION_INIT_COMMAND = f"export TERM=dumb PAGER=cat PS1='{PS1_SENTINEL} '"
 
 
+@lru_cache(maxsize=128)
+def _echo_strip_pattern(text: str) -> re.Pattern:
+    """Pattern matching `text` as the console echoes it back.
+
+    A PTY wraps long lines by inserting CRLF at any column (not only at
+    spaces), so an exact replace misses wrapped echoes and the marker text
+    leaks into the output. Allow an optional line break between any two
+    characters of the echoed text."""
+    return re.compile(r"(?:\r?\n)?".join(re.escape(ch) for ch in text))
+
+
 class LinuxTelnetShell(BaseConnection):
     """
     Custom Linux shell driver for GNS3 console ports (telnet transport).
@@ -103,8 +115,10 @@ class LinuxTelnetShell(BaseConnection):
         kwargs.setdefault("global_delay_factor", 1.0)
         kwargs.setdefault("fast_cli", False)
         super().__init__(*args, **kwargs)
-        # Exit code of the last send_command, parsed from the marker.
+        # Exit code of the last send_command, parsed from the marker; and
+        # whether that command was still running when the read timed out.
         self.last_exit_code: int | None = None
+        self.last_timed_out: bool = False
 
     # ── Login ─────────────────────────────────────────────────────────────
 
@@ -232,6 +246,13 @@ class LinuxTelnetShell(BaseConnection):
         by guessing a prompt pattern. The exit code is parsed into
         self.last_exit_code; the echoed wrapped command and the marker line
         are stripped from the returned output.
+
+        The read loop is owned here rather than delegated to netmiko's
+        read_until_pattern: on timeout that helper RAISES and discards the
+        output it has already read, while an interactive caller needs the
+        partial output plus a "still running" signal. On timeout the partial
+        output is returned, self.last_timed_out is set and last_exit_code
+        stays None — the command itself keeps running on the console.
         """
         if read_timeout is None:
             read_timeout = 30.0
@@ -239,6 +260,7 @@ class LinuxTelnetShell(BaseConnection):
             expect_string = MARKER_EXPECT
 
         self.last_exit_code = None
+        self.last_timed_out = False
         wrapped = f"{command_string}; {MARKER_TEMPLATE}"
         # Drain stale output from a previous command on this cached session
         # before writing, so it cannot bleed into this command's result.
@@ -248,7 +270,19 @@ class LinuxTelnetShell(BaseConnection):
             pass
         self.write_channel(wrapped + self.RETURN)
 
-        output = self.read_until_pattern(pattern=expect_string, read_timeout=read_timeout)
+        # read_timeout 0 means "no timeout" (netmiko convention).
+        deadline = time.monotonic() + read_timeout if read_timeout else None
+        output = ""
+        while True:
+            output += self.read_channel() or ""
+            if re.search(expect_string, output):
+                break
+            if deadline is not None and time.monotonic() >= deadline:
+                self.last_timed_out = True
+                logger.debug("Command %r not complete after %.1fs (still running)", command_string, read_timeout)
+                break
+            time.sleep(0.05)
+
         output = ANSI_ESCAPE_PATTERN.sub("", output)
 
         marker_match = MARKER_RE.search(output)
@@ -260,9 +294,11 @@ class LinuxTelnetShell(BaseConnection):
             # prompt fragments (the shell glues the prompt in front of the
             # echo, so line-based strip helpers cannot find it) and the
             # session-init echo that the first command's read may pick up.
+            # Echoed text is matched wrap-tolerantly: a PTY inserts CRLF at
+            # any column when a long line wraps.
             output = MARKER_RE.sub("", output)
-            output = output.replace(wrapped, "")
-            output = output.replace(SESSION_INIT_COMMAND, "")
+            output = _echo_strip_pattern(wrapped).sub("", output)
+            output = _echo_strip_pattern(SESSION_INIT_COMMAND).sub("", output)
             output = output.replace(PS1_SENTINEL, "")
         return output.strip("\n")
 

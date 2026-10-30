@@ -2210,6 +2210,13 @@ async def console_exec(
       top -b -n 1 (not top), cat (not less), tail -n 50 (not tail -f), -c '<code>' (not python)
     Use bounded commands (ping -c N) so they terminate by themselves.
 
+    Timeout semantics: `timeout` is how long to WAIT for completion, not how
+    long the command may run. If the marker does not appear in time, the
+    result has status "timeout" with the partial output — the command keeps
+    running and the session stays alive; poll with console_read (a
+    __MCP_DONE_<code>__ line marks completion, the code is the exit code) or
+    interrupt with console_send(text="\\x03").
+
     For long-running commands (traceroute with many hops, continuous ping):
     start them with console_send, poll output with console_read(wait=N),
     interrupt with console_send(text="\\x03"), then console_read once more
@@ -2261,8 +2268,9 @@ async def console_read(
     Pairs with console_send (Linux shells only, same family as console_exec):
     start a long command, then call this repeatedly (wait=5) to watch
     progress, then interrupt with console_send(text="\\x03") and read once
-    more to collect the final summary. Returns whatever is buffered; empty
-    output means nothing new arrived.
+    more to collect the final summary. A __MCP_DONE_<code>__ line in the
+    output means the command finished; the number is its exit code. Returns
+    whatever is buffered; empty output means nothing new arrived.
     """
     return _console_result(
         await console_read_handler(

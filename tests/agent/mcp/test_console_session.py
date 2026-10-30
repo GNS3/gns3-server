@@ -101,6 +101,27 @@ async def test_exec_without_exit_code_attribute():
 
 
 @pytest.mark.asyncio
+async def test_exec_timeout_reports_still_running():
+    """A driver-reported timeout is a result, not an error: partial output,
+    no exit code, timed_out True (the command keeps running)."""
+
+    class SlowConn(FakeConnection):
+        last_timed_out = True
+
+        def send_command(self, command, read_timeout=None, **kwargs):
+            self.writes.append(command)
+            return "64 bytes from 10.0.0.1"  # partial output before the deadline
+
+    conn = SlowConn()
+    session = ConsoleSession(("alice", "p1", "n1"), NODE_INFO, conn_factory=lambda: conn)
+    result = await session.exec("ping 10.0.0.1", read_timeout=5)
+    assert result["timed_out"] is True
+    assert result["exit_code"] is None
+    assert "64 bytes" in result["output"]
+    await session.close()
+
+
+@pytest.mark.asyncio
 async def test_exec_failure_wrapped():
     session, fake = await _make_session(fail_on_exec=True)
     with pytest.raises(ConsoleSessionError, match="Command execution failed"):

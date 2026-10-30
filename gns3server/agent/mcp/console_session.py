@@ -162,7 +162,11 @@ class ConsoleSession:
     # ── operations (all serialized by the session lock) ───────────────────
 
     async def exec(self, command: str, read_timeout: float = 30.0) -> dict[str, Any]:
-        """Run one command through the driver and return output + exit code."""
+        """Run one command through the driver and return output + exit code.
+
+        A command that does not finish within read_timeout is NOT an error:
+        the driver returns the partial output with exit_code None and
+        timed_out True (the command keeps running on the console)."""
         self.touch()
         async with self.lock:
             conn = await self._ensure_conn()
@@ -173,7 +177,8 @@ class ConsoleSession:
             self.touch()
             # Only the linux-shell driver parses an exit code from its marker.
             exit_code = getattr(conn, "last_exit_code", None)
-            return {"output": output or "", "exit_code": exit_code}
+            timed_out = bool(getattr(conn, "last_timed_out", False))
+            return {"output": output or "", "exit_code": exit_code, "timed_out": timed_out}
 
     async def send_raw(self, text: str) -> None:
         """Write raw text (including control keys such as \\x03) to the console."""

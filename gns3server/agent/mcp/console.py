@@ -57,6 +57,11 @@ log = logging.getLogger(__name__)
 # Shared ANSI escape stripper (same pattern as the custom netmiko drivers).
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
+# The driver's sentinel PS1 (mirrors linux_telnet.PS1_SENTINEL; kept as a
+# literal so this module stays importable without netmiko). It must never
+# leak into console_read output — it is our own plumbing, not device data.
+PS1_SENTINEL = "__MCP_PROMPT__"
+
 # The Linux shell driver — the only device type these tools serve.
 SHELL_DEVICE_TYPE = "gns3_linux_telnet"
 
@@ -159,6 +164,17 @@ def _resolve_target_sync(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> di
     return node
 
 
+async def _resolve_target(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Resolve in a worker thread; REST/transport failures become in-band
+    errors instead of escaping as bare tool crashes (the controller can
+    e.g. answer 403 "project is not opened")."""
+    try:
+        return await asyncio.to_thread(_resolve_target_sync, params, gns3_ctx)
+    except Exception as e:
+        log.debug("console target resolution failed", exc_info=True)
+        return {"status": "failed", "error": f"Node lookup failed: {e}"}
+
+
 def _node_session_info(node: dict[str, Any], device_type: str) -> dict[str, Any]:
     return {
         "device_type": device_type,
@@ -186,7 +202,7 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
     ttl = float(params.get("ttl") or 60.0)
     max_chars = int(params.get("max_chars") or MAX_OUTPUT_CHARS)
 
-    node = await asyncio.to_thread(_resolve_target_sync, params, gns3_ctx)
+    node = await _resolve_target(params, gns3_ctx)
     if "node_id" not in node:
         return node  # in-band error dict
 
@@ -208,6 +224,18 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
     except ConsoleSessionError as e:
         return {"status": "failed", "error": str(e), "node": node.get("name")}
     output, truncated = _truncate(result["output"], max_chars)
+    if result.get("timed_out"):
+        # The command is still running on the console — not a failure.
+        return {
+            "status": "timeout",
+            "node": node.get("name"),
+            "output": output,
+            "exit_code": None,
+            "truncated": truncated,
+            "hint": f"Command not complete within {read_timeout:.0f}s and still running. Poll with console_read "
+            "(a __MCP_DONE_<code>__ line marks completion, the code is the exit code) or interrupt with "
+            "console_send text '\\x03'.",
+        }
     return {
         "status": "ok",
         "node": node.get("name"),
@@ -219,7 +247,7 @@ async def console_exec_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
 
 async def console_send_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
     """Write raw text/keystrokes to a node console without waiting for output."""
-    node = await asyncio.to_thread(_resolve_target_sync, params, gns3_ctx)
+    node = await _resolve_target(params, gns3_ctx)
     if "node_id" not in node:
         return node
     text = params.get("text") or ""
@@ -255,7 +283,7 @@ async def _find_session(params: dict[str, Any], gns3_ctx: dict[str, Any]):
     session = await manager.get(user, params.get("project_id"), params.get("node_id"))
     if session is not None:
         return session, None
-    node = await asyncio.to_thread(_resolve_target_sync, params, gns3_ctx)
+    node = await _resolve_target(params, gns3_ctx)
     if "node_id" not in node:
         return None, node
     session = await manager.get(user, node["project_id"], node["node_id"])
@@ -279,7 +307,11 @@ async def console_read_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
         output = await session.read_raw(wait=wait, max_chars=max_chars)
     except ConsoleSessionError as e:
         return {"status": "failed", "error": str(e), "node": session.node_info.get("name")}
-    output, truncated = _truncate(ANSI_ESCAPE_PATTERN.sub("", output), max_chars)
+    # The sentinel PS1 is our own plumbing — never let it reach the caller.
+    # The __MCP_DONE_<code>__ marker is deliberately KEPT: it is the
+    # completion signal the caller polls for after an interrupt.
+    clean = ANSI_ESCAPE_PATTERN.sub("", output).replace(PS1_SENTINEL, "")
+    output, truncated = _truncate(clean, max_chars)
     return {"status": "ok", "node": session.node_info.get("name"), "output": output, "truncated": truncated}
 
 
@@ -289,7 +321,7 @@ async def console_close_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]
     user = gns3_ctx.get("jwt_username") or "unknown"
     closed = await manager.close(user, params.get("project_id"), params.get("node_id"))
     if not closed:
-        node = await asyncio.to_thread(_resolve_target_sync, params, gns3_ctx)
+        node = await _resolve_target(params, gns3_ctx)
         if "node_id" in node:
             closed = await manager.close(user, node["project_id"], node["node_id"])
     return {"status": "ok", "closed": closed}

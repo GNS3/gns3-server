@@ -23,7 +23,12 @@ Unit tests for the MCP console tool handlers (no I/O, REST monkeypatched).
 import pytest
 
 import gns3server.agent.mcp.console as console
-from gns3server.agent.mcp.console import _find_session, _reject_non_linux
+from gns3server.agent.mcp.console import (
+    _find_session,
+    _reject_non_linux,
+    console_exec_handler,
+    console_read_handler,
+)
 from gns3server.agent.mcp.console_session import ConsoleSession, ConsoleSessionManager
 
 NODE = {
@@ -111,3 +116,75 @@ class TestRejectNonLinux:
         result = _reject_non_linux(None, "n1")
         assert result["status"] == "failed"
         assert "gns3_linux_telnet" in result["error"]
+
+
+class _FakeConn:
+    """netmiko-shaped connection the session layer can drive."""
+
+    def __init__(self):
+        self.writes = []
+        self.last_exit_code = 0
+        self.last_timed_out = False
+        self.outputs = []
+
+    def send_command(self, command, read_timeout=None, **kwargs):
+        self.writes.append(command)
+        return self.outputs.pop(0) if self.outputs else ""
+
+    def write_channel(self, data):
+        self.writes.append(data)
+
+    def read_channel(self):
+        return self.outputs.pop(0) if self.outputs else ""
+
+    def disconnect(self):
+        pass
+
+
+@pytest.mark.asyncio
+async def test_exec_resolve_failure_is_in_band(fresh_manager, monkeypatch):
+    """A REST failure during resolution (e.g. 403 project not opened) must
+    not escape as a bare tool error."""
+    monkeypatch.setattr(
+        console, "_resolve_target_sync", lambda params, ctx: (_ for _ in ()).throw(RuntimeError("403 boom"))
+    )
+    result = await console_exec_handler({"project_id": "p", "node_id": "n", "command": "uptime"}, {})
+    assert result["status"] == "failed"
+    assert "403 boom" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_exec_timeout_status_with_partial_output(fresh_manager, monkeypatch):
+    conn = _FakeConn()
+    conn.send_command = lambda command, read_timeout=None, **kw: "partial output"
+    conn.last_timed_out = True  # what the real driver reports on a timeout
+    conn.last_exit_code = None
+    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), dict(NODE), conn_factory=lambda: conn)
+    fresh_manager._sessions[("alice", "p-uuid", "n-uuid")] = session
+    monkeypatch.setattr(console, "_resolve_target_sync", lambda params, ctx: dict(NODE))
+
+    result = await console_exec_handler(
+        {"project_id": "p", "node_id": "linux-1", "command": "sleep 30", "timeout": 5}, {"jwt_username": "alice"}
+    )
+    assert result["status"] == "timeout"
+    assert result["output"] == "partial output"
+    assert result["exit_code"] is None
+    assert "console_read" in result["hint"]
+    await fresh_manager.close_all()
+
+
+@pytest.mark.asyncio
+async def test_read_strips_sentinel_keeps_marker(fresh_manager, monkeypatch):
+    conn = _FakeConn()
+    conn.outputs = ["__MCP_PROMPT__ 64 bytes from 10.0.0.1\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "]
+    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), dict(NODE), conn_factory=lambda: conn)
+    fresh_manager._sessions[("alice", "p-uuid", "n-uuid")] = session
+    monkeypatch.setattr(console, "_resolve_target_sync", lambda params, ctx: dict(NODE))
+
+    result = await console_read_handler(
+        {"project_id": "p", "node_id": "linux-1", "wait": 0.3}, {"jwt_username": "alice"}
+    )
+    assert result["status"] == "ok"
+    assert "__MCP_PROMPT__" not in result["output"]
+    assert "__MCP_DONE_0__" in result["output"]  # the completion signal survives
+    await fresh_manager.close_all()

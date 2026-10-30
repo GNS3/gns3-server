@@ -41,6 +41,7 @@ def _make_driver(username=None, password=None):
     instance.password = password
     instance.RETURN = "\r\n"
     instance.last_exit_code = None
+    instance.last_timed_out = False
     instance.writes = []
     instance.write_channel = instance.writes.append
     return instance
@@ -154,44 +155,79 @@ class TestLinuxTelnetLogin(unittest.TestCase):
 
 
 class TestLinuxTelnetSendCommand(unittest.TestCase):
-    """Marker wrapping and exit-code parsing."""
+    """Marker wrapping, exit-code parsing, timeout and echo stripping."""
 
-    def _make_connected(self):
+    def _make_connected(self, chunks):
+        """Driver with a scripted read_channel: first call is the pre-write
+        drain, the rest are the loop's reads (then quiet forever)."""
         instance = _make_driver()
         instance.strip_command = lambda cmd, out: out
+        remaining = iter(chunks)
+
+        def read_channel():
+            return next(remaining, "")
+
+        instance.read_channel = read_channel
         return instance
 
     def test_marker_wrapping_and_exit_code(self):
-        instance = self._make_connected()
-        instance.read_until_pattern = MagicMock(
-            return_value="ls /\r\nbin\r\nboot\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "
+        instance = self._make_connected(
+            ["", "ls /\r\nbin\r\nboot\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "]
         )
         output = instance.send_command("ls /")
         self.assertEqual(instance.last_exit_code, 0)
+        self.assertFalse(instance.last_timed_out)
         self.assertNotIn("__MCP_DONE_", output)
         self.assertNotIn("__MCP_PROMPT__", output)
         self.assertIn("bin", output)
 
     def test_nonzero_exit_code(self):
-        instance = self._make_connected()
-        instance.read_until_pattern = MagicMock(return_value="cat nofile\r\ncat: nofile: No such file\r\n__MCP_DONE_1__")
+        instance = self._make_connected(["", "cat nofile\r\ncat: nofile: No such file\r\n__MCP_DONE_1__"])
         output = instance.send_command("cat nofile")
         self.assertEqual(instance.last_exit_code, 1)
         self.assertIn("No such file", output)
 
     def test_wrapped_command_written(self):
-        instance = self._make_connected()
-        instance.read_until_pattern = MagicMock(return_value="__MCP_DONE_0__")
+        instance = self._make_connected(["", "__MCP_DONE_0__"])
         instance.send_command("uptime", read_timeout=5)
-        self.assertIn(instance.writes[-1], ("uptime; echo __MCP_DONE_$?__\r\n",))
+        self.assertEqual(instance.writes[-1], "uptime; echo __MCP_DONE_$?__\r\n")
 
     def test_ansi_stripped(self):
-        instance = self._make_connected()
-        instance.read_until_pattern = MagicMock(return_value="\x1b[31mFAIL\x1b[0m\r\n__MCP_DONE_2__")
+        instance = self._make_connected(["", "\x1b[31mFAIL\x1b[0m\r\n__MCP_DONE_2__"])
         output = instance.send_command("false")
         self.assertNotIn("\x1b", output)
         self.assertIn("FAIL", output)
         self.assertEqual(instance.last_exit_code, 2)
+
+    def test_timeout_returns_partial_output_not_an_error(self):
+        """A command that outlives read_timeout keeps running: the driver
+        reports what arrived so far instead of raising (netmiko's
+        read_until_pattern would discard it)."""
+
+        def read_channel():
+            return "64 bytes from 10.0.0.1: seq=1\r\n"
+
+        instance = _make_driver()
+        instance.strip_command = lambda cmd, out: out
+        instance.read_channel = read_channel
+        output = instance.send_command("ping 10.0.0.1", read_timeout=0.2)
+        self.assertTrue(instance.last_timed_out)
+        self.assertIsNone(instance.last_exit_code)
+        self.assertIn("64 bytes", output)
+
+    def test_wrapped_console_echo_stripped(self):
+        """The PTY wraps long echoed lines with CRLF at any column — the
+        echoed marker wrapper must still be stripped from the output."""
+        cmd = "ip -brief addr show dev eth0"
+        wrapped_echo = f"{cmd}; echo __MCP_D" + "\r\n" + "ONE_$?__"
+        instance = self._make_connected(
+            ["", f"{wrapped_echo}\r\nlo UNKNOWN 127.0.0.1/8\r\n__MCP_DONE_0__\r\n"]
+        )
+        output = instance.send_command(cmd)
+        self.assertEqual(instance.last_exit_code, 0)
+        self.assertNotIn("echo __MCP_D", output)
+        self.assertNotIn("ONE_$?__", output)
+        self.assertIn("127.0.0.1/8", output)
 
 
 class TestLinuxTelnetNoOps(unittest.TestCase):
