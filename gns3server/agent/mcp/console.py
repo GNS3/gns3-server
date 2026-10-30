@@ -97,6 +97,13 @@ def _has_control_keys(command: str) -> bool:
     return any(ord(c) < 32 and c not in "\n\r\t" for c in command)
 
 
+# Commands whose suggested form is the SAME command with a flag: once the
+# flag is present, the command is the non-interactive form and must pass.
+_BATCH_FLAG_OK = {
+    "top": "-b",  # top -b -n 1 is exactly what the guard suggests
+}
+
+
 def guard_command(command: str, family: str) -> dict[str, Any] | None:
     """Screen one command against the family's interactive-TUI table.
 
@@ -109,6 +116,11 @@ def guard_command(command: str, family: str) -> dict[str, Any] | None:
     if not tokens:
         return None
     head = tokens[0].rsplit("/", 1)[-1]  # /usr/bin/top -> top
+    # Already in its batch form (top -b ...) — rejecting it would block the
+    # very suggestion this guard returns.
+    batch_flag = _BATCH_FLAG_OK.get(head)
+    if batch_flag is not None and any(t.startswith(batch_flag) for t in tokens[1:]):
+        return None
     table = _GUARD_TABLES.get(family, {})
     suggestion = table.get(head)
     if suggestion and head == "man" and len(tokens) > 1:

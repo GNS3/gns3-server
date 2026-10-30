@@ -45,6 +45,11 @@ class TestShellGuard:
     def test_tail_bounded_allowed(self):
         assert guard_command("tail -n 50 /var/log/syslog", "shell") is None
 
+    def test_top_batch_form_passes(self):
+        # top -b is exactly what the guard suggests — it must not be blocked
+        assert guard_command("top -b -n 1", "shell") is None
+        assert guard_command("top -b -n 1 | head -3", "shell") is None
+
     def test_man_suggestion_uses_subject(self):
         result = guard_command("man ls", "shell")
         assert result["suggestion"] == "ls --help"
