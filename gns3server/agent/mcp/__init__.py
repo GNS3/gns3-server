@@ -2212,7 +2212,9 @@ async def console_exec(
 
     For long-running commands (traceroute with many hops, continuous ping):
     start them with console_send, poll output with console_read(wait=N),
-    then interrupt with console_send(text="\\x03").
+    interrupt with console_send(text="\\x03"), then console_read once more
+    to collect the final summary (e.g. ping statistics) — a following
+    console_exec would discard unread output before running its command.
 
     The console session stays open between calls for ttl seconds; other tools'
     console calls on the same node share it. Call console_close when done.
@@ -2258,8 +2260,9 @@ async def console_read(
 
     Pairs with console_send (Linux shells only, same family as console_exec):
     start a long command, then call this repeatedly (wait=5) to watch
-    progress, then interrupt with console_send(text="\\x03").
-    Returns whatever is buffered; empty output means nothing new arrived.
+    progress, then interrupt with console_send(text="\\x03") and read once
+    more to collect the final summary. Returns whatever is buffered; empty
+    output means nothing new arrived.
     """
     return _console_result(
         await console_read_handler(
