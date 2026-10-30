@@ -170,7 +170,7 @@ async def test_operations_serialized_by_lock():
 
     slow.send_command = slow_exec
     session = ConsoleSession(("alice", "p1", "n1"), NODE_INFO, conn_factory=lambda: slow)
-    await asyncio.gather(*(session.exec("c%d" % i) for i in range(5)))
+    await asyncio.gather(*(session.exec(f"c{i}") for i in range(5)))
     assert slow.writes == ["c0", "c1", "c2", "c3", "c4"]
     await session.close()
 
