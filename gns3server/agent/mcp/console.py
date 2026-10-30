@@ -237,14 +237,11 @@ async def _find_session(params: dict[str, Any], gns3_ctx: dict[str, Any]):
         return None, node
     session = await manager.get(user, node["project_id"], node["node_id"])
     if session is None:
-        session, error = (
-            None,
-            {
-                "status": "failed",
-                "error": "No open console session for this node. Run console_exec or console_send first.",
-            },
-        )
-    return session, error
+        return None, {
+            "status": "failed",
+            "error": "No open console session for this node. Run console_exec or console_send first.",
+        }
+    return session, None
 
 
 async def console_read_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
