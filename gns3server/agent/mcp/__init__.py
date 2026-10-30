@@ -2073,9 +2073,9 @@ async def device_config_send(
     falling back to a 'device_type:<type>' tag on each node — one of the two is
     required (no default is guessed).
     Common device types: cisco_ios_telnet, cisco_xr_telnet, huawei_telnet,
-    gns3_huawei_telnet_ce, gns3_ruijie_telnet, gns3_vpcs_telnet (VPCS nodes:
-    set the field once on the template; the interactive console tools default
-    VPCS automatically, this batch tool does not).
+    gns3_huawei_telnet_ce, gns3_ruijie_telnet.
+    VPCS nodes: use vpcs_config_set (batch, validated) or console_exec
+    (interactive) — both drive VPCS with no device_type setup.
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2119,10 +2119,10 @@ async def device_show_run(
     - Devices must be started first (use node_start or node_start_all).
     - Each node must resolve to a device type: the node/template
       'netmiko_device_type' field wins, with a 'device_type:<type>' tag
-      as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce,
-      gns3_vpcs_telnet). Nodes with neither will fail with
-      "no device type found" (the interactive console tools default VPCS
-      automatically, this batch tool does not).
+      as fallback (e.g. cisco_ios_telnet, gns3_huawei_telnet_ce).
+      Nodes with neither will fail with "no device type found".
+      VPCS nodes: use vpcs_config_set or console_exec instead — both
+      drive VPCS with no device_type setup.
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
@@ -2144,14 +2144,12 @@ async def vpcs_config_set(
         ),
     ],
 ) -> list[dict[str, Any]]:
-    """Configure VPCS devices (set IP addresses, gateway, etc.). DEPRECATED.
+    """Configure VPCS devices in batch (set IP addresses, gateway, etc.).
 
-    Prefer the alternatives:
-      - console_exec — works on VPCS out of the box (no device_type setup
-        needed) and also covers interactive work (ping, trace, verify);
-      - device_config_send / device_show_run — for batch operations across
-        many devices, with 'netmiko_device_type: gns3_vpcs_telnet' set once
-        on the VPCS template.
+    The VPCS counterpart of device_config_send: Nornir + Netmiko, multiple
+    PCs in parallel, with VPCS command syntax validated per device.
+    For interactive work on a single VPCS node (ping, trace, verify), use
+    console_exec — it works on VPCS out of the box, no device_type setup.
 
     Only VPCS nodes are accepted: any other node type in device_configs fails
     with a per-device error instead of typing VPCS syntax into its CLI.

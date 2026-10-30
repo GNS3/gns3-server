@@ -235,18 +235,19 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 |------|-------------|
 | `device_config_send` | Push config commands to devices via console (Nornir + Netmiko), batch and parallel. Supports Jinja2 `template` + `vars` |
 | `device_show_run` | Run read-only show commands on devices (whitelist-enforced). Supports Jinja2 `template` + `vars` |
-| `vpcs_config_set` | Configure VPCS devices — **deprecated**: use `console_exec` (zero setup, interactive) or the batch tools with `netmiko_device_type: gns3_vpcs_telnet` on the template |
+| `vpcs_config_set` | Configure VPCS devices in batch (Nornir + Netmiko, parallel, VPCS command syntax validated) — the VPCS counterpart of `device_config_send` |
 
 **Which tool when** — the console-facing tools divide the work by shape:
 
 | Scenario | Use |
 |---|---|
-| Push the same-shaped config to many devices, one call | `device_config_send` (Jinja2 template + parallel fan-out) |
+| Push the same-shaped config to many network devices, one call | `device_config_send` (Jinja2 template + parallel fan-out) |
+| Configure many VPCS PCs in one call | `vpcs_config_set` (parallel, VPCS syntax validated) |
 | Inspect many devices read-only, one call | `device_show_run` (command whitelist — safe for AI) |
 | One node, step-by-step (each command depends on the last output) | `console_exec` (session context survives across calls) |
 | Long-running command: watch, then interrupt | `console_send` + `console_read` + `console_send("\x03")` |
 | Docker/Linux node (incl. exit codes) | `console_exec` with `netmiko_device_type: gns3_linux_telnet` |
-| VPCS | `console_exec` (defaults automatically; batch tools need the type set on the template) |
+| Single VPCS PC, interactive (ping/trace/verify) | `console_exec` (no device_type setup needed) |
 | VNC console | `node_console` (returns a websocat URL) |
 
 ### Interactive Console (4)
