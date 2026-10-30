@@ -26,6 +26,7 @@ import gns3server.agent.mcp.console as console
 from gns3server.agent.mcp.console import (
     _console_device_type,
     _find_session,
+    _node_session_info,
     _reject_non_linux,
     _resolve_target_sync,
     console_exec_handler,
@@ -204,7 +205,8 @@ async def test_exec_timeout_status_with_partial_output(fresh_manager, monkeypatc
     conn.send_command = lambda command, read_timeout=None, **kw: "partial output"
     conn.last_timed_out = True  # what the real driver reports on a timeout
     conn.last_exit_code = None
-    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), dict(NODE), conn_factory=lambda: conn)
+    session_info = _node_session_info(NODE, "gns3_linux_telnet")
+    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), session_info, conn_factory=lambda: conn)
     fresh_manager._sessions[("alice", "p-uuid", "n-uuid")] = session
     monkeypatch.setattr(console, "_resolve_target_sync", lambda params, ctx: dict(NODE))
 
@@ -222,7 +224,8 @@ async def test_exec_timeout_status_with_partial_output(fresh_manager, monkeypatc
 async def test_read_strips_sentinel_keeps_marker(fresh_manager, monkeypatch):
     conn = _FakeConn()
     conn.outputs = ["__MCP_PROMPT__ 64 bytes from 10.0.0.1\r\n__MCP_DONE_0__\r\n__MCP_PROMPT__ "]
-    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), dict(NODE), conn_factory=lambda: conn)
+    session_info = _node_session_info(NODE, "gns3_linux_telnet")
+    session = ConsoleSession(("alice", "p-uuid", "n-uuid"), session_info, conn_factory=lambda: conn)
     fresh_manager._sessions[("alice", "p-uuid", "n-uuid")] = session
     monkeypatch.setattr(console, "_resolve_target_sync", lambda params, ctx: dict(NODE))
 

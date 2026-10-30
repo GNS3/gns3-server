@@ -47,6 +47,21 @@ log = logging.getLogger(__name__)
 DEFAULT_SESSION_TTL = 60.0  # seconds without send/read activity before reap
 MAX_SESSIONS = 64  # total across all users; LRU-evicted when exceeded
 
+# QEMU serial bridges are single-client underneath (-serial telnet:...,
+# server,nowait). Right after a console_type switch or node restart the
+# previous client may not be released yet, so the first connect attempts are
+# refused and succeed a few seconds later — a bounded retry rides out that
+# transition instead of surfacing it as a failed tool call.
+MAX_CONNECT_ATTEMPTS = 3
+CONNECT_RETRY_DELAY = 2.0
+
+
+def _console_identity(node_info: dict[str, Any]) -> tuple[Any, ...]:
+    """The fields that identify WHERE and HOW a session connects. A node whose
+    console identity changed (console_type switch, node rebuild) needs a new
+    connection even though its node_id did not change."""
+    return (node_info.get("device_type"), node_info.get("console_host"), node_info.get("console"))
+
 # SSH console proxy: GNS3's AsyncioSSHServer accepts any username without
 # authentication, so a placeholder is enough when the node has no
 # default_username. When the stream behind it is a getty, the node's real
@@ -154,11 +169,11 @@ class ConsoleSession:
     async def _ensure_conn(self):
         if self._conn is not None:
             return self._conn
-        if self._conn_factory is not None:
-            self._conn = await asyncio.to_thread(self._conn_factory)
-            return self._conn
 
-        # Production path: netmiko over the node's telnet console port.
+        if self._conn_factory is not None:
+            return await self._connect_with_retry(self._conn_factory)
+
+        # Production path: netmiko over the node's console port.
         try:
             from netmiko import ConnectHandler  # lazy: AI-features extra
         except ImportError as e:
@@ -167,17 +182,33 @@ class ConsoleSession:
             ) from e
 
         device = build_connect_kwargs(self.node_info)
-
         log.info(
             "Opening console session %s (%s @ %s:%s)", self.key, device["device_type"], device["host"], device["port"]
         )
-        try:
-            self._conn = await asyncio.to_thread(ConnectHandler, **device)
-        except ConsoleSessionError:
-            raise
-        except Exception as e:
-            raise ConsoleSessionError(f"Could not open console connection: {e}") from e
-        return self._conn
+        return await self._connect_with_retry(lambda: ConnectHandler(**device))
+
+    async def _connect_with_retry(self, factory: Callable[[], Any]):
+        """Open the connection, retrying a bounded number of times (QEMU
+        serial bridges are single-client: right after a console switch the
+        first attempts are refused until the old client is released)."""
+        last_error: Exception | None = None
+        for attempt in range(1, MAX_CONNECT_ATTEMPTS + 1):
+            try:
+                self._conn = await asyncio.to_thread(factory)
+                return self._conn
+            except Exception as e:
+                last_error = e
+                if attempt < MAX_CONNECT_ATTEMPTS:
+                    log.debug(
+                        "Console connect attempt %d/%d for %s failed (%s); retrying in %.1fs",
+                        attempt,
+                        MAX_CONNECT_ATTEMPTS,
+                        self.key,
+                        e,
+                        CONNECT_RETRY_DELAY,
+                    )
+                    await asyncio.sleep(CONNECT_RETRY_DELAY)
+        raise ConsoleSessionError(f"Could not open console connection: {last_error}") from last_error
 
     @property
     def alive(self) -> bool:
@@ -260,8 +291,23 @@ class ConsoleSessionManager:
         async with self._lock:
             session = self._sessions.get(key)
             if session is not None and session.alive:
-                session.touch()
-                return session
+                # The node's console can be rebuilt underneath a live session
+                # (console_type switch, node restart): reuse only when the
+                # console identity still matches, otherwise the cached
+                # connection points at a dead proxy/port.
+                if _console_identity(session.node_info) != _console_identity(node_info):
+                    log.info(
+                        "Console identity changed for %s; replacing session (was %s @ %s:%s)",
+                        key,
+                        session.node_info.get("device_type"),
+                        session.node_info.get("console_host"),
+                        session.node_info.get("console"),
+                    )
+                    del self._sessions[key]
+                    await session.close("console changed")
+                else:
+                    session.touch()
+                    return session
             # Evict stale entries, then LRU-evict if still at capacity.
             for stale_key in [k for k, s in self._sessions.items() if not s.alive]:
                 del self._sessions[stale_key]

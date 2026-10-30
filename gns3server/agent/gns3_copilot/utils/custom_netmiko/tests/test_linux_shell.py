@@ -170,6 +170,27 @@ class TestLinuxTelnetLogin(unittest.TestCase):
         with self.assertRaises(NetmikoAuthenticationException):
             instance.telnet_login()
 
+    def test_motd_last_login_is_not_a_login_prompt(self, _sleep):
+        """Regression (live SSH console): the MOTD line 'Last login: <date>'
+        contains 'login:' mid-line; an already-logged-in console must not make
+        the driver type the username into the live shell as a command."""
+        instance = _make_driver(username="ubuntu", password="pw")  # noqa: S106
+        script = [
+            "Welcome to Ubuntu 24.04\r\nLast login: Fri Oct 31 09:00:00 on ttyS0\r\n$ ",  # initial drain
+            "",  # loop read
+        ]
+        output = self._run_login(instance, script, ["__MCP_PROMPT__ "])
+        self.assertIn("__MCP_PROMPT__", output)
+        # Only the sentinel probe was written — no username anywhere
+        self.assertEqual(instance.writes, ["export TERM=dumb PAGER=cat PS1='__MCP_PROMPT__ '\r\n"])
+
+    def test_motd_password_change_is_not_a_password_prompt(self, _sleep):
+        """'Last password change: ...' must not trigger a password send."""
+        instance = _make_driver(username="ubuntu", password="pw")  # noqa: S106
+        script = ["Last password change: Fri Oct 31\r\n$ ", ""]
+        self._run_login(instance, script, ["__MCP_PROMPT__ "])
+        self.assertNotIn("pw\r\n", instance.writes)
+
 
 @patch("gns3server.agent.gns3_copilot.utils.custom_netmiko.linux_shell.time.sleep")
 class TestLinuxSSHSessionPreparation(unittest.TestCase):

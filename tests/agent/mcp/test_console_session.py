@@ -25,6 +25,7 @@ import time
 
 import pytest
 
+import gns3server.agent.mcp.console_session as console_session
 from gns3server.agent.mcp.console_session import (
     ConsoleSession,
     ConsoleSessionError,
@@ -247,6 +248,61 @@ async def test_manager_reuses_session_per_key():
     assert other is not session
     await mgr.close_all()
     assert session.closed and other.closed
+
+
+@pytest.mark.asyncio
+async def test_manager_replaces_session_when_console_identity_changes():
+    """Live-tested: switching a node's console_type rebuilds its console path;
+    the old session's connection points at a dead proxy. The next call must
+    swap in a fresh session instead of reusing it (this used to require a
+    manual console_close + ~10s wait)."""
+    mgr = ConsoleSessionManager()
+    fake = FakeConnection()
+    session = ConsoleSession(("alice", "p1", "n1"), NODE_INFO, conn_factory=lambda: fake)
+    await session.exec("uptime")  # establish the connection
+    mgr._sessions[("alice", "p1", "n1")] = session
+
+    switched = {**NODE_INFO, "device_type": "gns3_linux_ssh", "console": 5002}
+    replacement = await mgr.get_or_open("alice", "p1", "n1", switched)
+    assert replacement is not session
+    assert session.closed and fake.disconnected
+    assert session.close_reason == "console changed"
+    await mgr.close_all()
+
+
+@pytest.mark.asyncio
+async def test_connect_retries_ride_out_serial_contention(monkeypatch):
+    """Live-tested on QEMU serial: single-client bridges refuse the first
+    connects right after a console switch. A factory failing twice then
+    succeeding must surface as a working connection, not an error."""
+    monkeypatch.setattr(console_session, "MAX_CONNECT_ATTEMPTS", 3)
+    monkeypatch.setattr(console_session, "CONNECT_RETRY_DELAY", 0.0)
+    attempts = []
+
+    def flaky_factory():
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise OSError("telnet connection closed")
+        return FakeConnection()
+
+    session = ConsoleSession(("alice", "p1", "n1"), NODE_INFO, conn_factory=flaky_factory)
+    conn = await session._ensure_conn()
+    assert len(attempts) == 3
+    assert conn is not None
+    await session.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_failure_after_retries_is_one_error(monkeypatch):
+    monkeypatch.setattr(console_session, "MAX_CONNECT_ATTEMPTS", 2)
+    monkeypatch.setattr(console_session, "CONNECT_RETRY_DELAY", 0.0)
+
+    def dead_factory():
+        raise OSError("broken pipe")
+
+    session = ConsoleSession(("alice", "p1", "n1"), NODE_INFO, conn_factory=dead_factory)
+    with pytest.raises(ConsoleSessionError, match=r"Could not open console connection.*broken pipe"):
+        await session._ensure_conn()
 
 
 @pytest.mark.asyncio

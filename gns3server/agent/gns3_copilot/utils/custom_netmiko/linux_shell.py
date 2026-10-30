@@ -77,8 +77,13 @@ ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 # Conventional Unix login prompts. The username prompt always ends in
 # "login:"/"Username:" and the password prompt in "Password:" — decades of
 # getty convention make these reliable. The password is never echoed.
-USERNAME_PROMPT_RE = re.compile(r"(?i)(?:login|user ?name|username)\s*:")
-PASSWORD_PROMPT_RE = re.compile(r"(?i)password\s*:")
+# The anchors are load-bearing: a getty prompt is the LAST thing on its
+# line, while MOTD text like "Last login: Fri Oct 31" or "Last password
+# change: ..." carries the same words mid-line — without the line-end
+# anchor an already-logged-in console matches the stale prompt and the
+# username gets typed into the live shell as a command.
+USERNAME_PROMPT_RE = re.compile(r"(?im)^(?:[\w.-]+\s+)?(?:login|user ?name|username)\s*:\s*$")
+PASSWORD_PROMPT_RE = re.compile(r"(?im)^password\s*:\s*$")
 
 # Sentinels. Chosen so they cannot collide with anything a shell would print
 # on its own; the marker embeds the command's exit code ($?).
