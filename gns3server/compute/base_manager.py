@@ -28,6 +28,7 @@ import aiofiles
 
 log = logging.getLogger(__name__)
 
+from os.path import commonpath
 from typing import Type
 from uuid import UUID, uuid4
 
@@ -480,7 +481,7 @@ class BaseManager:
         path = force_unix_path(path)
         for directory in valid_directory_prefices:
             log.debug(f"Searching for image '{orig_path}' in '{directory}'")
-            if os.path.commonprefix([directory, path]) == directory:
+            if commonpath([directory, path]) == directory:
                 if os.path.exists(path):
                     return path
                 raise ImageMissingError(orig_path)
@@ -525,7 +526,7 @@ class BaseManager:
             valid_directory_prefices.append(extra_dir)
 
         for directory in valid_directory_prefices:
-            if os.path.commonprefix([directory, path]) == directory:
+            if commonpath([directory, path]) == directory:
                 relpath = os.path.relpath(path, directory)
                 # We don't allow to recurse search from the top image directory just for image type directory (compatibility with old releases)
                 if os.sep not in relpath or directory == img_directory:
@@ -557,7 +558,7 @@ class BaseManager:
 
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
-        if os.path.commonprefix([directory, path]) != directory:
+        if commonpath([directory, path]) != directory:
             raise ComputeForbiddenError(f"Could not write image: {filename}, '{path}' is forbidden")
         log.info(f"Writing image file to '{path}'")
         try:
