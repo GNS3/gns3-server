@@ -340,12 +340,7 @@ class Cloud(BaseNode):
                         f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
                     )
 
-                if sys.platform.startswith("linux") or sys.platform.startswith("openbsd"):
-                    await self._add_linux_ethernet(port_info, bridge_name)
-                elif sys.platform.startswith("darwin"):
-                    await self._add_osx_ethernet(port_info, bridge_name)
-                else:
-                    await self._add_windows_ethernet(port_info, bridge_name)
+                await self._add_linux_ethernet(port_info, bridge_name)
 
             elif port_info["type"] == "tap":
                 await self._add_tap_interface(port_info, bridge_name)
@@ -409,28 +404,6 @@ class Cloud(BaseNode):
             await self._ubridge_send(f'brctl addif "{interface}" "{tap}"')
         else:
             await self._ubridge_send(f'bridge add_nio_linux_raw {bridge_name} "{interface}"')
-
-    async def _add_osx_ethernet(self, port_info, bridge_name):
-        """
-        Connects an Ethernet interface on OSX using libpcap.
-        """
-
-        # Wireless adapters are not well supported by the libpcap on OSX
-        if await self._is_wifi_adapter_osx(port_info["interface"]):
-            raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
-        if port_info["interface"].startswith("vmnet"):
-            # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
-            await self._ubridge_send(
-                'bridge add_nio_fusion_vmnet {name} "{interface}"'.format(
-                    name=bridge_name, interface=port_info["interface"]
-                )
-            )
-            return
-        if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError(f"Interface {port_info['interface']} has no netmask, interface down?")
-        await self._ubridge_send(
-            'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
-        )
 
     async def _add_windows_ethernet(self, port_info, bridge_name):
         """

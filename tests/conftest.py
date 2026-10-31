@@ -2,7 +2,6 @@ import asyncio
 import base64
 import configparser
 import os
-import platform
 import resource
 import shutil
 import stat
@@ -43,12 +42,11 @@ def pytest_configure(config):
     Increases the maximum number of open file descriptors before running tests (Unix only).
     """
 
-    if platform.system() != "Windows":
-        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-        # Set soft limit to hard limit, or a safe high number like 4096
-        new_soft = min(4096, hard)
-        if soft < new_soft:
-            resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    # Set soft limit to hard limit, or a safe high number like 4096
+    new_soft = min(4096, hard)
+    if soft < new_soft:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
@@ -320,43 +318,7 @@ def free_console_port(port_manager, compute_project):
 
 
 @pytest.fixture
-def darwin_platform():
-    """
-    Change sys.plaform to Darwin
-    """
-
-    old_platform = sys.platform
-    sys.platform = "darwin10.10"
-    yield
-    sys.plaform = old_platform
-
-
-@pytest.fixture
-def windows_platform():
-    """
-    Change sys.platform to Windows
-    """
-
-    old_platform = sys.platform
-    sys.platform = "win10"
-    yield
-    sys.plaform = old_platform
-
-
-@pytest.fixture
-def linux_platform():
-    """
-    Change sys.platform to Linux
-    """
-
-    old_platform = sys.platform
-    sys.platform = "linuxdebian"
-    yield
-    sys.plaform = old_platform
-
-
-@pytest.fixture
-def on_gns3vm(linux_platform):
+def on_gns3vm():
     """
     Mock the hostname to  emulate the GNS3 VM
     """

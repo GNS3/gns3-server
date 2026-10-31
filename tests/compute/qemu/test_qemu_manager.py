@@ -17,7 +17,6 @@
 import os
 import platform
 import stat
-import sys
 from unittest.mock import patch
 
 import pytest
@@ -29,10 +28,7 @@ from tests.utils import asyncio_patch
 @pytest.fixture
 def fake_qemu_img_binary(tmpdir):
 
-    if sys.platform.startswith("win"):
-        bin_path = str(tmpdir / "qemu-img.EXE")
-    else:
-        bin_path = str(tmpdir / "qemu-img")
+    bin_path = str(tmpdir / "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)

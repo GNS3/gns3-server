@@ -307,10 +307,6 @@ class BaseManager:
         :returns: True or False
         """
 
-        if sys.platform.startswith("darwin"):
-            if os.stat(executable).st_uid == 0:
-                return True
-
         if os.geteuid() == 0:
             # we are root, so we should have privileged access.
             return True

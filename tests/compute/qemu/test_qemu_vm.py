@@ -18,7 +18,6 @@ import asyncio
 import json
 import os
 import stat
-import sys
 from pathlib import Path
 from unittest import mock
 from unittest.mock import MagicMock, patch
@@ -46,10 +45,7 @@ async def manager(port_manager):
 def fake_qemu_img_binary(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
-    if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu-img.EXE")
-    else:
-        bin_path = os.path.join(os.environ["PATH"], "qemu-img")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -72,7 +68,7 @@ async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
 
     manager.port_manager.console_host = "127.0.0.1"
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
-    vm._process_priority = "normal"  # Avoid complexity for Windows tests
+    vm._process_priority = "normal"
     vm._replicate_network_connection_state = False  # to avoid delay when starting/stopping the VM
     vm._start_ubridge = AsyncioMagicMock()
     vm._ubridge_hypervisor = MagicMock()
@@ -432,7 +428,6 @@ async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
     assert " ".join(["-bios", str(tmpdir / "test.img")]) in " ".join(options)
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Test not working on Windows")
 @pytest.mark.asyncio
 async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binary):
 
@@ -657,7 +652,7 @@ async def test_build_command_manual_uuid(vm):
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvm_below_6_2(linux_platform, vm, fake_qemu_binary):
+async def test_build_command_kvm_below_6_2(vm, fake_qemu_binary):
     """
     Qemu 2.4 introduce an issue with KVM
     """
@@ -821,7 +816,6 @@ async def test_build_command_with_invalid_options(vm):
         await vm._build_command()
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_build_command_with_forbidden_options(vm):
 
@@ -843,7 +837,7 @@ async def _build_command_with_kvm(vm, clocksource):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clocksource", ["hyperv_clocksource_tsc_page", "hyperv_clocksource_msr"])
-async def test_build_command_kvmclock_off_on_hyperv_host(linux_platform, vm, clocksource):
+async def test_build_command_kvmclock_off_on_hyperv_host(vm, clocksource):
     """
     A host running on Hyper-V without a usable TSC falls back to a Hyper-V clocksource:
     kvmclock runs away in KVM guests there (Linux guests panic with soft lockups) and
@@ -852,16 +846,16 @@ async def test_build_command_kvmclock_off_on_hyperv_host(linux_platform, vm, clo
     """
 
     cmd = await _build_command_with_kvm(vm, clocksource)
-    assert "-enable-kvm" in cmd
+    assert "accel=kvm" in cmd
     assert cmd[cmd.index("-cpu") + 1] == "qemu64,kvmclock=off,tsc-deadline=off"
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clocksource", ["tsc", None])
-async def test_build_command_kvmclock_kept_on_other_hosts(linux_platform, vm, clocksource):
+async def test_build_command_kvmclock_kept_on_other_hosts(vm, clocksource):
 
     cmd = await _build_command_with_kvm(vm, clocksource)
-    assert "-enable-kvm" in cmd
+    assert "accel=kvm" in cmd
     assert "-cpu" not in cmd
 
 
@@ -875,7 +869,7 @@ async def test_build_command_kvmclock_kept_without_kvm(vm):
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvmclock_off_on_user_cpu(linux_platform, vm):
+async def test_build_command_kvmclock_off_on_user_cpu(vm):
     """
     A -cpu given in the additional options keeps its model and gets the features turned off.
     """
@@ -894,7 +888,7 @@ async def test_build_command_kvmclock_off_on_user_cpu(linux_platform, vm):
         ("max,-kvmclock,+tsc-deadline", "max,-kvmclock,+tsc-deadline"),
     ],
 )
-async def test_build_command_kvmclock_user_choice_kept(linux_platform, vm, cpu, expected):
+async def test_build_command_kvmclock_user_choice_kept(vm, cpu, expected):
 
     vm.options = f"-cpu {cpu}"
     cmd = await _build_command_with_kvm(vm, "hyperv_clocksource_tsc_page")
@@ -903,7 +897,7 @@ async def test_build_command_kvmclock_user_choice_kept(linux_platform, vm, cpu, 
 
 
 @pytest.mark.asyncio
-async def test_build_command_kvmclock_off_i386(linux_platform, vm):
+async def test_build_command_kvmclock_off_i386(vm):
 
     vm._platform = "i386"
     cmd = await _build_command_with_kvm(vm, "hyperv_clocksource_tsc_page")
@@ -918,7 +912,7 @@ async def test_build_command_kvmclock_off_i386(linux_platform, vm):
         ("enabled", "hyperv_clocksource_tsc_page", False),
     ],
 )
-async def test_build_command_kvmclock_setting(linux_platform, vm, setting, clocksource, kvmclock_off):
+async def test_build_command_kvmclock_setting(vm, setting, clocksource, kvmclock_off):
 
     vm.manager.config.settings.Qemu.kvmclock = setting
     cmd = await _build_command_with_kvm(vm, clocksource)
@@ -1031,7 +1025,7 @@ def test_initrd_asa(vm, images_dir):
         assert mock.called
 
 
-def test_options(linux_platform, vm):
+def test_options(vm):
     vm.kvm = False
     vm.options = "-usb"
     assert vm.options == "-usb"
@@ -1044,23 +1038,12 @@ def test_options(linux_platform, vm):
     assert vm.options == "-machine accel=kvm"
 
 
-def test_options_windows(windows_platform, vm):
-    vm.options = "-no-kvm"
-    assert vm.options == "-machine accel=tcg"
-
-    vm.options = "-enable-kvm"
-    assert vm.options == ""
-
-
 def test_get_qemu_img(vm, tmpdir):
 
     open(str(tmpdir / "qemu-system-x86_64"), "w+").close()
     open(str(tmpdir / "qemu-img"), "w+").close()
     vm._qemu_path = str(tmpdir / "qemu-system-x86_64")
-    if sys.platform.startswith("win"):
-        assert vm._get_qemu_img() == str(tmpdir / "qemu-img.EXE")
-    else:
-        assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
+    assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
 
 
 # def test_get_qemu_img_not_exist(vm, tmpdir):
@@ -1072,21 +1055,7 @@ def test_get_qemu_img(vm, tmpdir):
 
 
 @pytest.mark.asyncio
-async def test_run_with_hardware_acceleration_darwin(darwin_platform, vm):
-
-    vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
-    assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is False
-
-
-@pytest.mark.asyncio
-async def test_run_with_hardware_acceleration_windows(windows_platform, vm):
-
-    vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
-    assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is False
-
-
-@pytest.mark.asyncio
-async def test_run_with_kvm_linux(linux_platform, vm):
+async def test_run_with_kvm(vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
@@ -1095,7 +1064,7 @@ async def test_run_with_kvm_linux(linux_platform, vm):
 
 
 @pytest.mark.asyncio
-async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
+async def test_run_with_kvm_options_no_kvm(vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
@@ -1103,7 +1072,7 @@ async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
 
 
 @pytest.mark.asyncio
-async def test_run_with_kvm_not_x86(linux_platform, vm):
+async def test_run_with_kvm_not_x86(vm):
 
     with patch("os.path.exists", return_value=True):
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
@@ -1113,7 +1082,7 @@ async def test_run_with_kvm_not_x86(linux_platform, vm):
 
 
 @pytest.mark.asyncio
-async def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
+async def test_run_with_kvm_dev_kvm_missing(vm):
 
     with patch("os.path.exists", return_value=False):
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True

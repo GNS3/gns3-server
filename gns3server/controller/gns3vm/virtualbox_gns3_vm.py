@@ -275,23 +275,10 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 f'VM "{self.vmname}" must have a NAT interface or NAT Network configured in order to start'
             )
 
-        if sys.platform.startswith("darwin") and parse_version(self._system_properties["API version"]) >= parse_version(
-            "7_0"
-        ):
-            # VirtualBox 7.0+ on macOS requires a host-only network interface
-            backend_type = "hostonly-network"
-            backend_description = "host-only network"
-            vboxnet_type = "hostonlynets"
-            interface_number = await self._look_for_interface("hostonlynetwork")
-            if interface_number < 0:
-                raise GNS3VMError(
-                    f'VM "{self.vmname}" must have a network adapter attached to a host-only network in order to start'
-                )
-        else:
-            backend_type = "hostonlyadapter"
-            backend_description = "host-only adapter"
-            vboxnet_type = "hostonlyifs"
-            interface_number = await self._look_for_interface("hostonly")
+        backend_type = "hostonlyadapter"
+        backend_description = "host-only adapter"
+        vboxnet_type = "hostonlyifs"
+        interface_number = await self._look_for_interface("hostonly")
 
         if interface_number < 0:
             raise GNS3VMError(

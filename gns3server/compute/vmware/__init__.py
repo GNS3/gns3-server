@@ -92,10 +92,7 @@ class VMware(BaseManager):
         # look for vmrun
         vmrun_path = self.config.settings.VMware.vmrun_path
         if not vmrun_path:
-            if sys.platform.startswith("darwin"):
-                vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-            else:
-                vmrun_path = "vmrun"
+            vmrun_path = "vmrun"
 
         if vmrun_path and not os.path.isabs(vmrun_path):
             vmrun_path = shutil.which(vmrun_path)
@@ -186,14 +183,6 @@ class VMware(BaseManager):
         Check VMware version
         """
 
-        if sys.platform.startswith("darwin"):
-            if not os.path.isdir("/Applications/VMware Fusion.app"):
-                raise VMwareError(
-                    "VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app"
-                )
-            self._host_type = "fusion"
-            return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
-
         vmware_path = VMware._get_linux_vmware_binary()
         if vmware_path is None:
             raise VMwareError("VMware is not installed (vmware or vmplayer executable could not be found in $PATH)")
@@ -223,11 +212,7 @@ class VMware(BaseManager):
     @staticmethod
     def _get_vmnet_interfaces():
 
-        if sys.platform.startswith("darwin"):
-            vmware_networking_file = "/Library/Preferences/VMware Fusion/networking"
-        else:
-            # location on Linux
-            vmware_networking_file = "/etc/vmware/networking"
+        vmware_networking_file = "/etc/vmware/networking"
         vmnet_interfaces = {}
         try:
             with open(vmware_networking_file, encoding="utf-8") as f:
@@ -620,10 +605,7 @@ class VMware(BaseManager):
         :returns: path to the inventory file
         """
 
-        if sys.platform.startswith("darwin"):
-            return os.path.expanduser("~/Library/Application Support/VMware Fusion/vmInventory")
-        else:
-            return os.path.expanduser("~/.vmware/inventory.vmls")
+        return os.path.expanduser("~/.vmware/inventory.vmls")
 
     @staticmethod
     def get_vmware_preferences_path():
@@ -633,10 +615,7 @@ class VMware(BaseManager):
         :returns: path to the preferences file
         """
 
-        if sys.platform.startswith("darwin"):
-            return os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
-        else:
-            return os.path.expanduser("~/.vmware/preferences")
+        return os.path.expanduser("~/.vmware/preferences")
 
     @staticmethod
     def get_vmware_default_vm_paths():
@@ -646,10 +625,7 @@ class VMware(BaseManager):
         :returns: path to the default VM directory
         """
 
-        if sys.platform.startswith("darwin"):
-            return [os.path.expanduser("~/Documents/Virtual Machines.localized")]
-        else:
-            return [os.path.expanduser("~/vmware")]
+        return [os.path.expanduser("~/vmware")]
 
     async def list_vms(self):
         """

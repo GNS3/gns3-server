@@ -171,7 +171,7 @@ async def test_json_without_ports(on_gns3vm, compute_project, manager):
     }
 
 
-async def test_kernel_datapath_interfaces_are_hidden(linux_platform, compute_project, manager):
+async def test_kernel_datapath_interfaces_are_hidden(compute_project, manager):
     """
     Kernel-datapath interfaces (node anchors, cascade veths, VXLAN devices)
     are neither pre-filled as cloud ports nor listed as host interfaces,
@@ -221,7 +221,7 @@ async def test_update_port_mappings(on_gns3vm, compute_project):
     assert cloud.ports_mapping == ports1
 
 
-async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
+async def test_linux_ethernet_raw_add_nio(compute_project, nio):
     ports = [{"interface": "eth0", "name": "eth0", "port_number": 0, "type": "ethernet"}]
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, MagicMock(), ports=ports)
     cloud.status = "started"
@@ -243,7 +243,7 @@ async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
     )
 
 
-async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project, nio):
+async def test_linux_ethernet_raw_add_nio_bridge(compute_project, nio):
     """
     Bridge can't be connected directly to a cloud we use a tap in the middle
     """
@@ -275,7 +275,7 @@ async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project
 
 @pytest.mark.parametrize("bridge", [None, "virbr0"])
 @pytest.mark.parametrize("existing_master", [False, True])
-async def test_tap_bridge_recreated(linux_platform, compute_project, manager, nio, bridge, existing_master):
+async def test_tap_bridge_recreated(compute_project, manager, nio, bridge, existing_master):
     ports = [{"interface": "tap0", "name": "tap0", "port_number": 0, "type": "tap"}]
     if bridge:
         ports[0]["bridge"] = bridge
@@ -302,8 +302,8 @@ async def test_tap_bridge_recreated(linux_platform, compute_project, manager, ni
             assert attach_call not in send.call_args_list
 
 
-@pytest.mark.parametrize("failure", ["missing", "not_bridge", "other_master", "invalid_name", "non_linux"])
-async def test_tap_bridge_validation(linux_platform, compute_project, manager, nio, failure):
+@pytest.mark.parametrize("failure", ["missing", "not_bridge", "other_master", "invalid_name"])
+async def test_tap_bridge_validation(compute_project, manager, nio, failure):
     ports = [{"interface": "tap0", "name": "tap0", "port_number": 0, "type": "tap", "bridge": "virbr0"}]
     if failure == "invalid_name":
         ports[0]["interface"] = 'tap0"\nbridge delete all'
@@ -314,14 +314,13 @@ async def test_tap_bridge_validation(linux_platform, compute_project, manager, n
         patch("gns3server.utils.interfaces.is_interface_bridge", return_value=failure != "not_bridge"),
         patch("gns3server.compute.builtin.nodes.cloud.os.path.exists", return_value=failure == "other_master"),
         patch("gns3server.compute.builtin.nodes.cloud.os.path.realpath", return_value="/sys/class/net/another0"),
-        patch("gns3server.compute.builtin.nodes.cloud.sys.platform", "darwin" if failure == "non_linux" else "linux"),
     ):
         with pytest.raises(NodeError):
             await cloud._add_ubridge_connection(nio, 0)
         assert not any("add_nio_tap" in c.args[0] or "brctl addif" in c.args[0] for c in send.call_args_list)
 
 
-async def test_tap_bridge_attachment_failure(linux_platform, compute_project, manager, nio):
+async def test_tap_bridge_attachment_failure(compute_project, manager, nio):
     ports = [{"interface": "tap0", "name": "tap0", "port_number": 0, "type": "tap", "bridge": "virbr0"}]
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, manager, ports=ports)
     cloud.status = "started"
@@ -342,7 +341,7 @@ async def test_tap_bridge_attachment_failure(linux_platform, compute_project, ma
         assert cloud.status == "stopped"
 
 
-async def test_cloud_lists_linux_bridges(linux_platform, compute_project, manager):
+async def test_cloud_lists_linux_bridges(compute_project, manager):
     cloud = Cloud(
         "cloud1",
         str(uuid.uuid4()),
@@ -400,7 +399,7 @@ async def test_bridged_tap_name_validation_preserves_legacy_names(name):
         ((1 << 12) | (1 << 13), True, True),
     ],
 )
-async def test_bridged_tap_requires_net_admin(linux_platform, tmp_path, caps, legacy_allowed, bridge_allowed):
+async def test_bridged_tap_requires_net_admin(tmp_path, caps, legacy_allowed, bridge_allowed):
     executable = tmp_path / "ubridge"
     executable.write_text("")
     with (

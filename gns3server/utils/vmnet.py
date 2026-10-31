@@ -22,11 +22,7 @@ import shutil
 import sys
 from collections import OrderedDict
 
-if sys.platform.startswith("darwin"):
-    VMWARE_NETWORKING_FILE = "/Library/Preferences/VMware Fusion/networking"
-else:
-    # location on Linux
-    VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
+VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
 
 if sys.platform.startswith("win"):
     DEFAULT_RANGE = [1, 19]
@@ -74,15 +70,8 @@ def write_networking_file(version, pairs):
         raise SystemExit(f"Cannot open {VMWARE_NETWORKING_FILE}: {e}")
 
     # restart VMware networking service
-    if sys.platform.startswith("darwin"):
-        if not os.path.exists("/Applications/VMware Fusion.app/Contents/Library/vmnet-cli"):
-            raise SystemExit("VMware Fusion is not installed in Applications")
-        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --configure")
-        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --stop")
-        os.system(r"/Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --start")
-    else:
-        os.system("vmware-networks --stop")
-        os.system("vmware-networks --start")
+    os.system("vmware-networks --stop")
+    os.system("vmware-networks --start")
 
 
 def parse_vmnet_range(start, end):

@@ -68,10 +68,8 @@ class GNS3VM:
             "support_headless": True,
             "support_ram": True,
         }
-        if sys.platform.startswith("darwin"):
-            vmware_info["name"] = "VMware Fusion (recommended)"
-        else:
-            vmware_info["name"] = "VMware Workstation / Player (recommended)"
+
+        vmware_info["name"] = "VMware Workstation / Player (recommended)"
 
         download_url = (
             f"https://github.com/GNS3/gns3-gui/releases/download/v{__version__}/GNS3.VM.Hyper-V.{__version__}.zip"
