@@ -15,22 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import os
 import socket
 import struct
-import sys
 
 import psutil
 
 from gns3server.compute.compute_error import ComputeError
 from gns3server.config import Config
-
-if psutil.version_info < (3, 0, 0):
-    raise Exception(
-        "psutil version should >= 3.0.0. If you are under Ubuntu/Debian install gns3 via apt instead of pip"
-    )
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -60,25 +53,21 @@ def is_interface_up(interface):
     :returns: boolean
     """
 
-    if sys.platform.startswith("linux") or sys.platform.startswith("openbsd"):
-        if interface not in psutil.net_if_addrs():
-            return False
+    if interface not in psutil.net_if_addrs():
+        return False
 
-        import fcntl
+    import fcntl
 
-        SIOCGIFFLAGS = 0x8913
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                result = fcntl.ioctl(s.fileno(), SIOCGIFFLAGS, interface + "\0" * 256)
-                (flags,) = struct.unpack("H", result[16:18])
-                if flags & 1:  # check if the up bit is set
-                    return True
-            return False
-        except OSError as e:
-            raise ComputeError(f"Exception when checking if {interface} is up: {e}")
-    else:
-        # TODO: Windows & OSX support
-        return True
+    SIOCGIFFLAGS = 0x8913
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            result = fcntl.ioctl(s.fileno(), SIOCGIFFLAGS, interface + "\0" * 256)
+            (flags,) = struct.unpack("H", result[16:18])
+            if flags & 1:  # check if the up bit is set
+                return True
+        return False
+    except OSError as e:
+        raise ComputeError(f"Exception when checking if {interface} is up: {e}")
 
 
 def is_interface_bridge(interface):

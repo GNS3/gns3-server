@@ -24,7 +24,6 @@ import re
 import shutil
 import stat
 import struct
-import sys
 import tempfile
 
 import asyncssh
@@ -34,7 +33,6 @@ from fastapi import WebSocketDisconnect
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.ubridge.hypervisor import Hypervisor
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-from gns3server.utils.interfaces import interfaces
 
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import locking, wait_run_in_executor
@@ -1491,28 +1489,15 @@ class BaseNode:
             except UbridgeError as e:
                 log.warning(f"Could not resume markers on node {self._id}: {e}")
 
-    async def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=False):
+    async def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface):
         """
         Creates a connection with an Ethernet interface in uBridge.
 
         :param bridge_name: bridge name in uBridge
         :param ethernet_interface: Ethernet interface name
-        :param block_host_traffic: block network traffic originating from the host OS (Windows only)
         """
 
-        if sys.platform.startswith("linux") and block_host_traffic is False:
-            # on Linux we use RAW sockets by default excepting if host traffic must be blocked
-            await self._ubridge_send(f'bridge add_nio_linux_raw {bridge_name} "{ethernet_interface}"')
-        else:
-            # on other platforms we just rely on the pcap library
-            await self._ubridge_send(f'bridge add_nio_ethernet {bridge_name} "{ethernet_interface}"')
-            source_mac = None
-            for interface in interfaces():
-                if interface["name"] == ethernet_interface:
-                    source_mac = interface["mac_address"]
-            if source_mac:
-                await self._ubridge_send(f'bridge set_pcap_filter {bridge_name} "not ether src {source_mac}"')
-                log.info(f"PCAP filter applied on '{ethernet_interface}' for source MAC {source_mac}")
+        await self._ubridge_send(f'bridge add_nio_linux_raw {bridge_name} "{ethernet_interface}"')
 
     def _create_local_udp_tunnel(self):
         """

@@ -29,7 +29,6 @@ from .controller.computes import (
     IdlePC,
 )
 from .controller.drawings import Drawing
-from .controller.gns3vm import GNS3VM, GNS3VMEngineInfo, GNS3VMInfo
 from .controller.images import (
     Image,
     ImageInstallCreated,
@@ -201,7 +200,6 @@ from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageFormat, QemuDiskI
 
 __all__ = [
     "ACE",
-    "GNS3VM",
     "IOU",
     "NAT",
     "TAPNIO",
@@ -285,8 +283,6 @@ __all__ = [
     "FrameRelaySwitch",
     "FrameRelaySwitchCreate",
     "FrameRelaySwitchUpdate",
-    "GNS3VMEngineInfo",
-    "GNS3VMInfo",
     "IOUCreate",
     "IOULicense",
     "IOUStart",

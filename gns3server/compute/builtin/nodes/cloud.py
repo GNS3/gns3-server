@@ -18,7 +18,6 @@ import logging
 import os
 import re
 import subprocess
-import sys
 
 import gns3server.utils.asyncio
 import gns3server.utils.interfaces
@@ -104,7 +103,7 @@ class Cloud(BaseNode):
                 }
             )
 
-            if sys.platform.startswith("linux") and gns3server.utils.interfaces.is_interface_bridge(interface["name"]):
+            if gns3server.utils.interfaces.is_interface_bridge(interface["name"]):
                 host_interfaces[-1]["is_bridge"] = True
 
         return {
@@ -371,8 +370,6 @@ class Cloud(BaseNode):
 
     def _validate_tap_bridge(self, tap, target_bridge):
         """Validate host resources before creating or attaching a Cloud TAP."""
-        if not sys.platform.startswith("linux"):
-            raise NodeError("TAP bridge assignments are only supported on Linux")
         if not all(re.fullmatch(LINUX_TAP_NAME_PATTERN, name) for name in (target_bridge, tap)):
             raise NodeError("Invalid TAP or bridge interface name")
         if target_bridge not in {
@@ -404,17 +401,6 @@ class Cloud(BaseNode):
             await self._ubridge_send(f'brctl addif "{interface}" "{tap}"')
         else:
             await self._ubridge_send(f'bridge add_nio_linux_raw {bridge_name} "{interface}"')
-
-    async def _add_windows_ethernet(self, port_info, bridge_name):
-        """
-        Connects an Ethernet interface on Windows.
-        """
-
-        if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError(f"Interface {port_info['interface']} has no netmask, interface down?")
-        await self._ubridge_send(
-            'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
-        )
 
     async def add_nio(self, nio, port_number):
         """

@@ -18,16 +18,10 @@
 import argparse
 import ipaddress
 import os
-import shutil
-import sys
 from collections import OrderedDict
 
 VMWARE_NETWORKING_FILE = "/etc/vmware/networking"
-
-if sys.platform.startswith("win"):
-    DEFAULT_RANGE = [1, 19]
-else:
-    DEFAULT_RANGE = [10, 99]
+DEFAULT_RANGE = [10, 99]
 
 
 def parse_networking_file():
@@ -90,107 +84,18 @@ def parse_vmnet_range(start, end):
     return Range
 
 
-def find_vnetlib_registry(regkey):
-
-    import winreg
-
-    try:
-        # default path not used, let's look in the registry
-        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
-        install_path, _ = winreg.QueryValueEx(hkey, "InstallPath")
-        winreg.CloseKey(hkey)
-        vnetlib_path = os.path.join(install_path, "vnetlib64.exe")
-        if os.path.exists(vnetlib_path):
-            return vnetlib_path
-        vnetlib_path = os.path.join(install_path, "vnetlib.exe")
-        if os.path.exists(vnetlib_path):
-            return vnetlib_path
-    except OSError:
-        pass
-    return None
-
-
-def find_vnetlib_on_windows():
-
-    # look for vnetlib in PATH
-    vnetlib_path = shutil.which("vnetlib64")
-
-    if vnetlib_path is None:
-        vnetlib_path = shutil.which("vnetlib")
-
-    if vnetlib_path is None:
-        # look for vnetlib using the directory listed in the registry (for VMware Workstation)
-        vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
-
-    if vnetlib_path is None:
-        # look for vnetlib using the directory listed in the registry (for VMware Player)
-        vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
-
-    if vnetlib_path is None:
-        # look for vnetlib in default VMware Workstation directory
-        vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib64.exe")
-        if not os.path.exists(vnetlib_ws):
-            vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib.exe")
-        if os.path.exists(vnetlib_ws):
-            vnetlib_path = vnetlib_ws
-
-    if vnetlib_path is None:
-        # look for vnetlib in default VMware VIX directory
-        vnetlib_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vnetlib64.exe")
-        if not os.path.exists(vnetlib_vix):
-            vnetlib_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vnetlib.exe")
-        if os.path.exists(vnetlib_vix):
-            vnetlib_path = vnetlib_vix
-
-    return vnetlib_path
-
-
-def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
-
-    vnetlib_path = find_vnetlib_on_windows()
-    if not vnetlib_path:
-        raise SystemExit("VMware is not installed, could not find vnetlib.exe")
-    from win32com.shell import shell
-
-    if not shell.IsUserAnAdmin():
-        raise SystemExit("You must run this script as an administrator")
-
-    print("Using", vnetlib_path, "for controlling vmnet")
-
-    if args.list:
-        raise SystemExit("Not implemented")
-
-    if args.clean:
-        # clean all vmnets but vmnet1 and vmnet8
-        for vmnet_number in range(1, 20):
-            if vmnet_number in (1, 8):
-                continue
-            print(f"Removing vmnet{vmnet_number}...")
-            os.system(f'"{vnetlib_path}" -- remove adapter vmnet{vmnet_number}')
-    else:
-        for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
-            if vmnet_number in (1, 8):
-                continue
-            print(f"Adding vmnet{vmnet_number}...")
-            os.system(f'"{vnetlib_path}" -- add adapter vmnet{vmnet_number}')
-    os.system("net stop npf")
-    os.system("net start npf")
-    os.system("net stop npcap")
-    os.system("net start npcap")
-
-
-def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
+def vmnet(args, vmnet_range_start, vmnet_range_end):
     """
-    Implementation on Linux and Mac OS X.
+    Add or remove vmnet interfaces.
     """
 
     if not os.path.exists(VMWARE_NETWORKING_FILE):
-        raise SystemExit("VMware Player, Workstation or Fusion is not installed")
+        raise SystemExit("VMware Player or Workstation is not installed")
     if not os.access(VMWARE_NETWORKING_FILE, os.W_OK):
         raise SystemExit("You must run this script as root")
 
     version, pairs, allocated_subnets = parse_networking_file()
-    if args.list and not sys.platform.startswith("win"):
+    if args.list:
         for vmnet_number in range(1, 256):
             vmnet_name = f"VNET_{vmnet_number}_VIRTUAL_ADAPTER"
             if vmnet_name in pairs:
@@ -243,7 +148,7 @@ def main():
         help=f"vmnet range to add (default is {DEFAULT_RANGE[0]} {DEFAULT_RANGE[1]})",
     )
     parser.add_argument("-C", "--clean", action="store_true", help="remove all vmnets excepting vmnet1 and vmnet8")
-    parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets (UNIX only)")
+    parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets")
 
     try:
         args = parser.parse_args()
@@ -251,14 +156,7 @@ def main():
         raise SystemExit(e)
 
     vmnet_range = args.range if args.range is not None else DEFAULT_RANGE
-    if sys.platform.startswith("win"):
-        try:
-            vmnet_windows(args, vmnet_range[0], vmnet_range[1])
-        except SystemExit:
-            os.system("pause")
-            raise
-    else:
-        vmnet_unix(args, vmnet_range[0], vmnet_range[1])
+    vmnet(args, vmnet_range[0], vmnet_range[1])
 
 
 if __name__ == "__main__":

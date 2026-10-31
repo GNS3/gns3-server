@@ -343,8 +343,7 @@ class VMwareVM(BaseNode):
         vnet = self._get_vnet(adapter_number)
         await self._ubridge_send(f"bridge create {vnet}")
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
-        block_host_traffic = self.manager.config.settings.VMware.block_host_traffic
-        await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
+        await self._add_ubridge_ethernet_connection(vnet, vmnet_interface)
 
         if isinstance(nio, NIOUDP):
             await self._ubridge_send(f"bridge add_nio_udp {vnet} {nio.lport} {nio.rhost} {nio.rport}")

@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import sys
 
 import gns3server.utils.interfaces
 from gns3server.config import Config
@@ -38,39 +37,18 @@ class Nat(Cloud):
         allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
         if allowed_interfaces and isinstance(allowed_interfaces, str):
             allowed_interfaces = allowed_interfaces.split(",")
-        if sys.platform.startswith("linux"):
-            nat_interface = Config.instance().settings.Server.default_nat_interface
-            if not nat_interface:
-                nat_interface = "virbr0"
-            if allowed_interfaces and nat_interface not in allowed_interfaces:
-                raise NodeError(
-                    f"NAT interface {nat_interface} is not allowed be used on this server. "
-                    "Please check the server configuration file."
-                )
-            if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-                raise NodeError(f"NAT interface {nat_interface} is missing, please install libvirt")
-            interface = nat_interface
-        else:
-            nat_interface = Config.instance().settings.Server.default_nat_interface
-            if not nat_interface:
-                nat_interface = "vmnet8"
-            if allowed_interfaces and nat_interface not in allowed_interfaces:
-                raise NodeError(
-                    f"NAT interface {nat_interface} is not allowed be used on this server. "
-                    "Please check the server configuration file."
-                )
-            interfaces = list(
-                filter(
-                    lambda x: nat_interface in x.lower(),
-                    [interface["name"] for interface in gns3server.utils.interfaces.interfaces()],
-                )
+
+        nat_interface = Config.instance().settings.Server.default_nat_interface
+        if not nat_interface:
+            nat_interface = "virbr0"
+        if allowed_interfaces and nat_interface not in allowed_interfaces:
+            raise NodeError(
+                f"NAT interface {nat_interface} is not allowed be used on this server. "
+                "Please check the server configuration file."
             )
-            if not len(interfaces):
-                raise NodeError(
-                    f"NAT interface {nat_interface} is missing. "
-                    f"You need to install VMware or use the NAT node on GNS3 VM"
-                )
-            interface = interfaces[0]  # take the first available interface containing the vmnet8 name
+        if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+            raise NodeError(f"NAT interface {nat_interface} is missing, please install libvirt")
+        interface = nat_interface
 
         log.debug(f"NAT node '{name}' configured to use NAT interface '{interface}'")
         ports = [{"name": "nat0", "type": "ethernet", "interface": interface, "port_number": 0}]

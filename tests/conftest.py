@@ -320,7 +320,7 @@ def free_console_port(port_manager, compute_project):
 @pytest.fixture
 def on_gns3vm():
     """
-    Mock the hostname to  emulate the GNS3 VM
+    Mock the hostname to emulate the GNS3 VM
     """
 
     with patch(

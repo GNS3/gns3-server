@@ -27,7 +27,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
 from collections import OrderedDict
 
 from gns3server.utils import parse_version
@@ -525,11 +524,9 @@ class VMware(BaseManager):
             except LookupError:
                 log.warning(f"Invalid file encoding detected in '{path}': {file_encoding}")
         with open(path, "w", encoding=encoding, errors="ignore") as f:
-            if sys.platform.startswith("linux"):
-                # write the shebang on the first line on Linux
-                vmware_path = VMware._get_linux_vmware_binary()
-                if vmware_path:
-                    f.write(f"#!{vmware_path}\n")
+            vmware_path = VMware._get_linux_vmware_binary()
+            if vmware_path:
+                f.write(f"#!{vmware_path}\n")
             for key, value in pairs.items():
                 entry = f'{key} = "{value}"\n'
                 f.write(entry)

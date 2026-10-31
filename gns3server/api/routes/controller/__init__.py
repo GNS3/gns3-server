@@ -70,7 +70,6 @@ from . import (
     computes,
     controller,
     drawings,
-    gns3vm,
     groups,
     images,
     links,
@@ -133,10 +132,6 @@ router.include_router(appliances.router, prefix="/appliances", tags=["Appliances
 router.include_router(netmiko.router, prefix="/netmiko", tags=["Netmiko"])
 
 router.include_router(pools.router, prefix="/pools", tags=["Resource pools"])
-
-router.include_router(
-    gns3vm.router, dependencies=[Depends(get_current_active_user)], deprecated=True, prefix="/gns3vm", tags=["GNS3 VM"]
-)
 
 router.include_router(
     _llm_router,
