@@ -100,6 +100,10 @@ VALID_NODE_FIELDS = {
     "height",
     "ports",
     "console_host",
+    # AI-relevant node field: the netmiko driver the console/batch tools
+    # dispatch on (node → template → appliance). Present in full listings;
+    # must also be selectable via the fields filter.
+    "netmiko_device_type",
 }
 
 VALID_LINK_FIELDS = {

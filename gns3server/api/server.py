@@ -123,7 +123,7 @@ def get_application() -> FastAPI:
 
 app = get_application()
 
-# Register MCP SSE transport routes (Starlette-level, for raw ASGI access)
+# Register MCP Streamable HTTP transport route (Starlette-level, for raw ASGI access)
 if MCP_AVAILABLE:
     mcp.register_starlette_routes(app)
 

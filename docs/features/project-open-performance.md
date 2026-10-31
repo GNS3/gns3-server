@@ -122,7 +122,7 @@ if await asyncio.to_thread(bcrypt.checkpw, secret.encode(), db_key.key_hash.enco
 
 **File:** `gns3server/agent/mcp/__init__.py`
 
-When an MCP client connects with an API key, the `_resolve_token` function validates the key then returns a fresh short-lived JWT instead of the raw API key. The JWT is stored in a `ContextVar` and reused for all subsequent tool calls within the same SSE session — zero extra bcrypt.
+When an MCP client connects with an API key, the `_resolve_token` function validates the key then returns a fresh short-lived JWT instead of the raw API key. The JWT is stored in a `ContextVar` and reused for all subsequent tool calls within the same MCP session — zero extra bcrypt.
 
 ```python
 if user:

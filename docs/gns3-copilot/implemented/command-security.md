@@ -131,6 +131,20 @@ The forbidden commands list is loaded from the external [GNS3-Skills](https://gi
 
 > **Note:** `diagnostic_commands` is specific to display tools. Config tools use `config_commands` instead.
 
+## Related Mechanism: MCP Console Guard
+
+The MCP interactive console tools (`console_exec` / `console_send`, Linux shell consoles) have a separate guard with a **different purpose**: it blocks *screen-interactive* commands (`top`, `less`, `tail -f`, `vi`, REPLs) that would hang a console session — not long-running commands, which the console tools handle by design (`console_send` + `console_read` + `Ctrl-C` interrupt).
+
+| | Batch command filter (this document) | MCP console guard |
+|---|---|---|
+| Protects against | Long-running / dangerous commands exceeding tool timeouts | Screen-interactive commands hanging the console |
+| Used by | Copilot batch config/display tools | MCP `console_exec` / `console_send` (Linux shells) |
+| Matching | Case-insensitive prefix | First word (basename) + batch-flag exception |
+| Feedback | Command stripped from batch, reason in `blocked_info` | Rejection with the non-interactive alternative in `suggestion` |
+| Rules source | `config/forbidden_commands.txt` (GNS3-Skills) | Builtin tables + `config/console_guard.txt` (GNS3-Skills) overrides |
+
+The guard rules file uses `family: head -> suggestion` lines (`!family: head` removes a builtin rule; the tools currently use the `shell` family). Implementation: `gns3server/agent/mcp/console_guard.py`; see [MCP service doc](../../features/mcp-service.md) for the console tools.
+
 ## Module Structure
 
 **Command Filter:** `gns3server/agent/gns3_copilot/utils/command_filter.py`
