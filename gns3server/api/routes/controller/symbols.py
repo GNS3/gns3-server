@@ -21,6 +21,7 @@ API routes for symbols.
 
 import logging
 import os
+from os.path import commonpath
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends, Request, Response, status
@@ -170,7 +171,7 @@ async def delete_symbol(symbol_id: str) -> None:
 
     # Check if it's a built-in symbol (in resource directory)
     symbols_resource_dir = get_resource("symbols")
-    if symbols_resource_dir and os.path.commonprefix([symbols_resource_dir, symbol_path]) == symbols_resource_dir:
+    if symbols_resource_dir and commonpath([symbols_resource_dir, symbol_path]) == symbols_resource_dir:
         raise ControllerForbiddenError("Cannot delete built-in symbols")
 
     # Delete the file
