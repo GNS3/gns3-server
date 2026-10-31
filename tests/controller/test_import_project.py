@@ -256,7 +256,7 @@ async def test_import_with_images(config, tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_iou_linux_no_vm(linux_platform, tmpdir, controller):
+async def test_import_iou_linux_no_vm(tmpdir, controller):
     """
     On non linux host IOU should be local if we don't have a GNS3 VM
     """
@@ -294,7 +294,7 @@ async def test_import_iou_linux_no_vm(linux_platform, tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_iou_linux_with_vm(linux_platform, tmpdir, controller):
+async def test_import_iou_linux_with_vm(tmpdir, controller):
     """
     On non linux host IOU should be vm if we have a GNS3 VM configured
     """
@@ -340,112 +340,7 @@ async def test_import_iou_linux_with_vm(linux_platform, tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_nat_non_linux(windows_platform, tmpdir, controller):
-    """
-    On non linux host NAT should be moved to the GNS3 VM
-    """
-
-    project_id = str(uuid.uuid4())
-    controller._computes["vm"] = AsyncioMagicMock()
-
-    topology = {
-        "project_id": str(uuid.uuid4()),
-        "name": "test",
-        "type": "topology",
-        "topology": {
-            "nodes": [
-                {
-                    "compute_id": "local",
-                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
-                    "node_type": "nat",
-                    "name": "test",
-                    "properties": {},
-                }
-            ],
-            "links": [],
-            "computes": [],
-            "drawings": [],
-        },
-        "revision": 5,
-        "version": "2.0.0",
-    }
-
-    with open(str(tmpdir / "project.gns3"), "w+") as f:
-        json.dump(topology, f)
-
-    zip_path = str(tmpdir / "project.zip")
-    with zipfile.ZipFile(zip_path, "w") as myzip:
-        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
-
-    with open(zip_path, "rb") as f:
-        project = await import_project(controller, project_id, f)
-
-    with open(os.path.join(project.path, "test.gns3")) as f:
-        topo = json.load(f)
-        assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
-
-
-@pytest.mark.asyncio
-async def test_import_iou_non_linux(windows_platform, tmpdir, controller):
-    """
-    On non linux host IOU should be moved to the GNS3 VM
-    """
-
-    project_id = str(uuid.uuid4())
-    controller._computes["vm"] = AsyncioMagicMock()
-
-    topology = {
-        "project_id": str(uuid.uuid4()),
-        "name": "test",
-        "type": "topology",
-        "topology": {
-            "nodes": [
-                {
-                    "compute_id": "local",
-                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
-                    "node_type": "iou",
-                    "name": "test",
-                    "properties": {},
-                },
-                {"compute_id": "local", "node_type": "vpcs", "name": "test2", "properties": {}},
-            ],
-            "links": [],
-            "computes": [],
-            "drawings": [],
-        },
-        "revision": 5,
-        "version": "2.0.0",
-    }
-
-    with open(str(tmpdir / "project.gns3"), "w+") as f:
-        json.dump(topology, f)
-
-    zip_path = str(tmpdir / "project.zip")
-    with zipfile.ZipFile(zip_path, "w") as myzip:
-        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
-
-    with open(zip_path, "rb") as f:
-        with asyncio_patch("gns3server.controller.import_project._move_files_to_compute") as mock:
-            project = await import_project(controller, project_id, f)
-            controller._computes["vm"].post.assert_called_with(
-                "/projects", data={"name": "test", "project_id": project_id}
-            )
-
-    with open(os.path.join(project.path, "test.gns3")) as f:
-        topo = json.load(f)
-        assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
-        assert topo["topology"]["nodes"][1]["compute_id"] == "local"
-
-    mock.assert_called_with(
-        controller._computes["vm"],
-        project_id,
-        project.path,
-        os.path.join("project-files", "iou", topo["topology"]["nodes"][0]["node_id"]),
-    )
-
-
-@pytest.mark.asyncio
-async def test_import_node_id(linux_platform, tmpdir, controller):
+async def test_import_node_id(tmpdir, controller):
     """
     When importing a node, node_id should change
     """
@@ -534,52 +429,6 @@ async def test_import_node_id(linux_platform, tmpdir, controller):
         assert os.path.exists(
             os.path.join(project.path, "project-files", "iou", topo["topology"]["nodes"][0]["node_id"], "startup.cfg")
         )
-
-
-@pytest.mark.asyncio
-async def test_import_keep_compute_ids(windows_platform, tmpdir, controller):
-    """
-    On linux host IOU should be moved to the GNS3 VM
-    """
-
-    project_id = str(uuid.uuid4())
-    controller._computes["vm"] = AsyncioMagicMock()
-
-    topology = {
-        "project_id": str(uuid.uuid4()),
-        "name": "test",
-        "type": "topology",
-        "topology": {
-            "nodes": [
-                {
-                    "compute_id": "local",
-                    "node_id": "0fd3dd4d-dc93-4a04-a9b9-7396a9e22e8b",
-                    "node_type": "iou",
-                    "name": "test",
-                    "properties": {},
-                }
-            ],
-            "links": [],
-            "computes": [],
-            "drawings": [],
-        },
-        "revision": 5,
-        "version": "2.0.0",
-    }
-
-    with open(str(tmpdir / "project.gns3"), "w+") as f:
-        json.dump(topology, f)
-
-    zip_path = str(tmpdir / "project.zip")
-    with zipfile.ZipFile(zip_path, "w") as myzip:
-        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
-
-    with open(zip_path, "rb") as f:
-        project = await import_project(controller, project_id, f, keep_compute_ids=True)
-
-    with open(os.path.join(project.path, "test.gns3")) as f:
-        topo = json.load(f)
-        assert topo["topology"]["nodes"][0]["compute_id"] == "local"
 
 
 @pytest.mark.asyncio

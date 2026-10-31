@@ -24,7 +24,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 
 log = logging.getLogger(__name__)
 
@@ -61,10 +60,6 @@ class VirtualBox(BaseManager):
                 vboxmanage_path = shutil.which(vboxmanage_path)
         else:
             log.info("A path to VBoxManage has not been configured, trying to find it...")
-            if sys.platform.startswith("darwin"):
-                vboxmanage_path_osx = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
-                if os.path.exists(vboxmanage_path_osx):
-                    vboxmanage_path = vboxmanage_path_osx
             if not vboxmanage_path:
                 vboxmanage_path = shutil.which("vboxmanage")
             if not vboxmanage_path:

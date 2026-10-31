@@ -112,8 +112,8 @@ class VirtualBoxSettings(BaseModel):
 class VMwareSettings(BaseModel):
     vmrun_path: Optional[str] = None
     vmnet_start_range: int = Field(2, ge=1, le=255)
-    vmnet_end_range: int = Field(255, ge=1, le=255)  # should be limited to 19 on Windows
-    block_host_traffic: bool = False
+    vmnet_end_range: int = Field(255, ge=1, le=255)
+    block_host_traffic: bool = False  # deprecated, will be removed in a future version
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
     @model_validator(mode="after")

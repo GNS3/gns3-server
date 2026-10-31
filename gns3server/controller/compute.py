@@ -383,8 +383,6 @@ class Compute:
         # a manually disconnected compute is not lazily reconnected either: the
         # request fails like for any unreachable compute
         if not self._connected and not self._manual_disconnect and not dont_connect:
-            if self._id == "vm" and not self._controller.gns3vm.running:
-                await self._controller.gns3vm.start()
             await self.connect()
         if not self._connected and not dont_connect:
             raise ComputeError(f"Cannot connect to compute '{self._name}' with request {method} {path}")

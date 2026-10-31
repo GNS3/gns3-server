@@ -340,15 +340,6 @@ async def controller_ws_notifications(
 #         # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
 #         log.error("Could not export debug information {}".format(e), exc_info=1)
 #
-#     try:
-#         if Controller.instance().gns3vm.engine == "vmware":
-#             vmx_path = Controller.instance().gns3vm.current_engine().vmx_path
-#             if vmx_path:
-#                 shutil.copy(vmx_path, os.path.join(debug_dir, os.path.basename(vmx_path)))
-#     except OSError as e:
-#         # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
-#         log.error("Could not copy VMware VMX file {}".format(e), exc_info=1)
-#
 #     for compute in list(Controller.instance().computes.values()):
 #         try:
 #             r = await compute.get("/debug", raw=True)

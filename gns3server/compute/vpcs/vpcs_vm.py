@@ -24,10 +24,8 @@ import logging
 import os
 import re
 import shutil
-import signal
 import socket
 import subprocess
-import sys
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import monitor_process, subprocess_check_output, wait_for_process_termination
@@ -262,13 +260,10 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
                     log.info(f"Starting VPCS: {command}")
                     self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
                     log.info(f"Logging to {self._vpcs_stdout_file}")
-                    flags = 0
-                    if sys.platform.startswith("win32"):
-                        flags = subprocess.CREATE_NEW_PROCESS_GROUP
                     with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
                         self.command_line = " ".join(command)
                         self._process = await asyncio.create_subprocess_exec(
-                            *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir, creationflags=flags
+                            *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
                         )
                         monitor_process(self._process, self._termination_callback)
 
@@ -480,17 +475,11 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
         """
 
         log.info(f"Stopping VPCS instance {self.name} PID={self._process.pid}")
-        if sys.platform.startswith("win32"):
-            try:
-                self._process.send_signal(signal.CTRL_BREAK_EVENT)
-            except (SystemError, OSError):
-                pass
-        else:
-            try:
-                self._process.terminate()
-            # Sometime the process may already be dead when we garbage collect
-            except ProcessLookupError:
-                pass
+        try:
+            self._process.terminate()
+        # Sometime the process may already be dead when we garbage collect
+        except ProcessLookupError:
+            pass
 
     def read_vpcs_stdout(self):
         """

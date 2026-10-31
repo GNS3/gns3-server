@@ -23,7 +23,6 @@ import shutil
 import socket
 import stat
 import struct
-import sys
 
 import aiofiles
 
@@ -307,10 +306,6 @@ class BaseManager:
         :returns: True or False
         """
 
-        if sys.platform.startswith("darwin"):
-            if os.stat(executable).st_uid == 0:
-                return True
-
         if os.geteuid() == 0:
             # we are root, so we should have privileged access.
             return True
@@ -321,9 +316,9 @@ class BaseManager:
             # the executable has set UID bit.
             return True
 
-        # test if the executable has the CAP_NET_RAW capability (Linux only)
+        # test if the executable has the CAP_NET_RAW capability
         try:
-            if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
+            if "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
                 required = (1 << 13) | ((1 << 12) if require_net_admin else 0)
                 if struct.unpack("<IIIII", caps)[1] & required == required:

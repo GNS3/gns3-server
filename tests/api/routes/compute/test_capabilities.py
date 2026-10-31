@@ -35,7 +35,7 @@ async def _no_tap_probe():
 
 
 class TestCapabilitiesRoutes:
-    async def test_get(self, app: FastAPI, compute_client: AsyncClient, windows_platform, monkeypatch) -> None:
+    async def test_get(self, app: FastAPI, compute_client: AsyncClient, monkeypatch) -> None:
 
         async def no_probe():
             return None

@@ -44,8 +44,6 @@ from .appliance import Appliance as Appliance
 from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
 from .controller_error import ControllerError, ControllerNotFoundError
-from .gns3vm import GNS3VM
-from .gns3vm.gns3_vm_error import GNS3VMError
 from .node import Node
 from .notification import Notification
 from .project import Project
@@ -131,7 +129,6 @@ class Controller:
         self._projects = {}
         self._ssl_context = None
         self._notification = Notification(self)
-        self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
         self._appliance_manager = ApplianceManager()
         self._iou_license_settings = {"iourc_content": "", "license_check": False}
@@ -213,11 +210,6 @@ class Controller:
                 except (ControllerError, KeyError):
                     pass  # Skip not available servers at loading
 
-        try:
-            await self.gns3vm.auto_start_vm()
-        except GNS3VMError as e:
-            log.warning(str(e))
-
         await self.load_projects()
         self._start_projects_monitor()
 
@@ -273,7 +265,6 @@ class Controller:
             # We don't care if a compute is down at this step
             except (ComputeError, ControllerError, OSError):
                 pass
-        await self.gns3vm.exit_vm()
         self.save()
         self._computes = {}
         self._projects = {}
@@ -605,11 +596,6 @@ class Controller:
         if compute_id not in self._computes:
             # We disallow to create from the outside the local and VM server
             if (compute_id == "local" or compute_id == "vm") and not force:
-                return None
-
-            # It seem we have error with a gns3vm imported as a remote server and conflict
-            # with GNS3 VM settings. That's why we ignore server name gns3vm
-            if name == "gns3vm":
                 return None
 
             for compute in self._computes.values():
