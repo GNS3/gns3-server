@@ -532,7 +532,7 @@ def get_injection_skill(
     Get injection fault skill by device_type, with configurable detail level.
 
     Args:
-        device_type: The injection fault type (e.g., "injection_ospf")
+        device_type: The injection fault type (e.g., "injection_ospf_issues")
         detail: Detail level - "index" (names only), "summary" (+desc/sev/diff), "full" (all)
         issue: Optional specific issue key to retrieve
 
@@ -602,18 +602,23 @@ def list_available_injection_skills(context: list[str] | None = None) -> list[di
 
     Args:
         context: List of protocol/service keywords (e.g., ["ospf", "bgp", "vlan"]).
-                 Only returns skills whose category matches any keyword.
+                 A skill matches when a keyword appears in its category, its
+                 key or one of its declared protocols (case-insensitive), so
+                 aliases such as "ebgp" or "ospfv3" work.
 
     Returns:
         List of skill info dicts with device_type, name, and category.
     """
     skills = []
+    keywords = [str(kw).lower() for kw in context] if context else []
     for did, skill in INJECTION_SKILLS_REGISTRY.items():
         category = skill.get("category", "")
-        if context:
-            # Match if skill category contains any context keyword
-            category_lower = category.lower()
-            if not any(kw.lower() in category_lower or kw.lower() in did.lower() for kw in context):
+        if keywords:
+            haystacks = [str(category).lower(), did.lower()]
+            protocols = skill.get("protocols")
+            if isinstance(protocols, list):
+                haystacks.extend(str(protocol).lower() for protocol in protocols)
+            if not any(keyword in haystack for keyword in keywords for haystack in haystacks):
                 continue
         skills.append(
             {
@@ -777,13 +782,13 @@ class InjectionSkillsTool(BaseTool):
     1. List faults for YOUR topology protocols (REQUIRED):
        {"action": "list", "context": ["ospf", "bgp"]}
     2. Get specific fault details:
-       {"device_type": "injection_ospf", "issue": "ospf_hello_dead_mismatch"}
-       {"device_type": "injection_ospf", "detail": "index"}
+       {"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
+       {"device_type": "injection_ospf_issues", "detail": "index"}
 
     PARAMETERS:
     - action: "list" or "get"
     - context: [str] - REQUIRED for action="list". Protocols from your topology.
-    - device_type: Required for action="get" (e.g., "injection_ospf")
+    - device_type: Required for action="get" (e.g., "injection_ospf_issues")
     - detail: "index" | "summary" | "full"
     - issue: Get single fault detail by key
     """

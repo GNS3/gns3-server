@@ -17,18 +17,20 @@
 #
 
 """
-device_skill_get — the MCP surface of the GNS3-Skills repository.
+MCP surface of the GNS3-Skills repository: device_skill_get and
+injection_skill_get.
 
-The copilot's DeviceSkillsTool already proved the access pattern
-(list -> topic index -> single topic; bodies load ONLY on an explicit
-topic request). This handler reuses the same framework-free core —
-get_skill() / list_available_skills() over SKILLS_REGISTRY — instead of
-the LangChain tool shell, so both surfaces stay in step by construction
-and share the SkillsManager hot reload.
+Both reuse the copilot's framework-free core instead of the LangChain
+tool shell, so the access protocols stay in step by construction:
 
-The protocol is multi-call by design: list -> a device's topic index ->
-one topic body. The caller picks the key from the list and passes it
-back unchanged; there is no name guessing in this layer.
+- device_skill_get: list -> device topic index -> one topic body
+  (get_skill / list_available_skills over SKILLS_REGISTRY).
+- injection_skill_get: topology context -> fault category -> one fault
+  (get_injection_skill / list_available_injection_skills over
+  INJECTION_SKILLS_REGISTRY).
+
+The caller picks each key from the previous call and passes it back
+unchanged; there is no name guessing in this layer.
 """
 
 import logging
@@ -81,6 +83,67 @@ def device_skills_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> d
         detail=params.get("detail", "full"),
         issue=params.get("issue"),
         topic=params.get("topic"),
+    )
+    if "error" in result:
+        return {"status": "failed", **result}
+    return {"status": "ok", "skill": result}
+
+
+def injection_skills_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """List or fetch fault-injection skills from the GNS3-Skills repository.
+
+    action "list" requires ``context`` — the protocols/services found in
+    the topology — and returns only the matching fault categories.
+    Otherwise one category (detail index/summary/full) or a single issue.
+    """
+    try:
+        from gns3server.agent.gns3_copilot.skills import registry
+    except Exception as e:
+        log.debug("injection_skill_get: skills registry unavailable: %s", e)
+        return {"status": "failed", "error": f"Skills subsystem unavailable: {e}"}
+
+    if not registry.INJECTION_SKILLS_REGISTRY and registry.get_skills_manager() is None:
+        return {
+            "status": "failed",
+            "error": "Skills repository is not initialized. Configure the GNS3-Skills repository "
+            "(skills_repo_url) and retry — the initial clone may still be running.",
+        }
+
+    action = params.get("action")
+    if not action:
+        # No explicit action: list when there is no category to fetch.
+        action = "list" if not params.get("device_type") else "get"
+
+    if action == "list":
+        context = params.get("context")
+        if not isinstance(context, list) or not context:
+            return {
+                "status": "failed",
+                "error": "context is required when action='list'",
+                "hint": 'Pass the protocols/services found in the topology, e.g. {"context": ["ospf", "bgp"]}',
+                "total_available": len(registry.INJECTION_SKILLS_REGISTRY),
+            }
+        skills = registry.list_available_injection_skills(context=context)
+        return {
+            "status": "ok",
+            "count": len(skills),
+            "total_available": len(registry.INJECTION_SKILLS_REGISTRY),
+            "context": context,
+            "fault_types": skills,
+        }
+
+    device_type = params.get("device_type")
+    if not device_type:
+        return {
+            "status": "failed",
+            "error": "Provide device_type (the fault category key from the list), e.g. 'injection_ospf_issues'",
+            "hint": "injection_skill_get(action='list', context=[...]) enumerates the matching categories",
+        }
+
+    result = registry.get_injection_skill(
+        device_type,
+        detail=params.get("detail", "full"),
+        issue=params.get("issue"),
     )
     if "error" in result:
         return {"status": "failed", **result}

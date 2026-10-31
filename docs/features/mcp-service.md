@@ -102,7 +102,7 @@ from the API key automatically — long-lived sessions keep working
 
 ## Available Tools
 
-**79 tools** across 11 categories:
+**80 tools** across 11 categories:
 
 ### Project (14)
 
@@ -232,7 +232,7 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | `server_version` | Get GNS3 server version |
 | `server_statistics` | Get server statistics (computes, projects, nodes) |
 
-### Device Config (4)
+### Device Config & Skills (5)
 
 | Tool | Description |
 |------|-------------|
@@ -240,6 +240,7 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | `device_show_run` | Run read-only show commands on devices (whitelist-enforced). Supports Jinja2 `template` + `vars` |
 | `vpcs_config_set` | Configure VPCS devices in batch (Nornir + Netmiko, parallel, VPCS command syntax validated) — the VPCS counterpart of `device_config_send` |
 | `device_skill_get` | Read device knowledge from the GNS3-Skills repository (list → topic index → single topic; same access protocol as the copilot's `device_skills` tool) |
+| `injection_skill_get` | Read fault-injection knowledge from the GNS3-Skills repository (topology context → fault category → single fault; same protocol as the copilot's `injection_skills` tool) |
 
 **Which tool when** — the console-facing tools divide the work by shape:
 
@@ -250,6 +251,7 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | Inspect many devices read-only, one call | `device_show_run` (command whitelist — safe for AI) |
 | Network OS console, any interaction | `device_config_send` / `device_show_run` (batch drivers manage config mode themselves) |
 | Unfamiliar device: read its quirks before driving the console | `device_skill_get` (list first, then fetch by key) |
+| Practise troubleshooting: inject a realistic fault | `injection_skill_get` (list with the topology's protocols, then one fault) + `device_config_send` |
 | VNC console | `node_console` (returns a websocat URL) |
 
 The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is auto-detected from the node's `device_type:<type>` tag in GNS3.
@@ -331,6 +333,19 @@ device_skill_get(device_type="gns3_vpcs_telnet")         # single-file device: c
 Step 2 returns the base skill plus the topic index; topic bodies load **only** on an explicit `topic` request (step 3). The key is passed back exactly as step 1 returned it.
 
 The repository ships two device layouts: split directories (`device/frr/` = `_base.yaml` + one file per protocol topic) and single files (`device/vpcs.yaml`). Single-file skills have **no topics** — step 2 with the default `full` detail returns the complete skill and there is no step 3. On such a skill, `detail="index"` returns a `sections` list (`config_commands`, `display_commands`, `notes`, ...) instead of an empty body, so the caller knows there is content to fetch.
+
+#### Fault Injection Skills (`injection_skill_get`)
+
+The same repository carries fault-injection knowledge for troubleshooting practice: per protocol, a set of realistic faults with symptoms, injection commands and verification steps. The list step is **context-filtered** — it requires the protocols/services found in the topology:
+
+```python
+injection_skill_get(action="list", context=["ospf", "bgp"])                # 1. matching fault categories
+injection_skill_get(device_type="injection_ospf_issues", detail="index")    # 2. fault names in that category
+injection_skill_get(device_type="injection_ospf_issues",
+                    issue="ospf_hello_dead_mismatch")                       # 3. one fault's full detail
+```
+
+`context` is matched case-insensitively against each skill's category, key and declared `protocols`, so aliases such as `ebgp` and `ospfv3` work. Category keys are derived from the repository filenames (`injection_<file>_issues`) — always pass the key returned by step 1. Step 3 returns the injection commands; apply them with `device_config_send` and verify with `device_show_run`.
 
 ### Device Config Workflow
 

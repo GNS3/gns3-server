@@ -148,7 +148,7 @@ from .server import (
     get_statistics_handler,
     get_version_handler,
 )
-from .skills import device_skills_handler
+from .skills import device_skills_handler, injection_skills_handler
 from .snapshots import (
     create_snapshot_handler,
     delete_snapshot_handler,
@@ -2247,6 +2247,58 @@ async def device_skill_get(
     if issue is not None:
         params["issue"] = issue
     return await asyncio.to_thread(_run_handler_sync, device_skills_handler, params)
+
+
+@mcp.tool()
+async def injection_skill_get(
+    action: Annotated[
+        str | None,
+        Field(description='"list" (requires context) to find fault categories; "get" (default with device_type)'),
+    ] = None,
+    context: Annotated[
+        list[str] | None,
+        Field(
+            description='REQUIRED for action="list": protocols/services found in the topology, '
+            'e.g. ["ospf", "bgp"]. Returns only the matching fault categories'
+        ),
+    ] = None,
+    device_type: Annotated[
+        str | None,
+        Field(description="Fault category key from action='list', e.g. 'injection_ospf_issues'"),
+    ] = None,
+    detail: Annotated[str | None, Field(description='"index" | "summary" | "full" (default)')] = None,
+    issue: Annotated[
+        str | None,
+        Field(description="Single fault key from the category's issue index, e.g. 'ospf_hello_dead_mismatch'"),
+    ] = None,
+) -> list[dict[str, Any]]:
+    """Read fault-injection knowledge from the GNS3-Skills repository.
+
+    Multi-call by design — analyze the topology first, then:
+      1. Find the fault categories that fit it (context REQUIRED):
+         injection_skill_get(action="list", context=["ospf", "bgp"])
+      2. Get one category's fault index (names only):
+         injection_skill_get(device_type="injection_ospf_issues", detail="index")
+      3. Get ONE fault's full detail:
+         injection_skill_get(device_type="injection_ospf_issues", issue="ospf_hello_dead_mismatch")
+
+    Then inject it with device_config_send, and verify with device_show_run.
+
+    context matches the skill's category, key and declared protocols
+    (case-insensitive), so aliases such as "ebgp" and "ospfv3" work.
+    Category keys are derived from the repository filenames — always pass
+    the key exactly as action="list" returned it.
+    """
+    params: dict[str, Any] = {"action": action}
+    if context is not None:
+        params["context"] = context
+    if device_type is not None:
+        params["device_type"] = device_type
+    if detail is not None:
+        params["detail"] = detail
+    if issue is not None:
+        params["issue"] = issue
+    return await asyncio.to_thread(_run_handler_sync, injection_skills_handler, params)
 
 
 # ── Auth‑wrapped Streamable HTTP app ──────────────────────────────────

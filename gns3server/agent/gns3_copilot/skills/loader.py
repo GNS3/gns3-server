@@ -85,7 +85,7 @@ class SkillsLoader:
                 if not skill_data:
                     logger.warning(f"Skipping empty YAML file: {yaml_file}")
                     continue
-                # Generate key from filename (e.g., "ospf_issues.yaml" -> "injection_ospf")
+                # Generate key from filename (e.g., "ospf_issues.yaml" -> "injection_ospf_issues")
                 skill_key = f"injection_{yaml_file.stem}"
                 skills[skill_key] = skill_data
                 logger.debug(f"Loaded injection skill: {skill_key} from {yaml_file}")

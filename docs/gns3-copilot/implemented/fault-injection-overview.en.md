@@ -85,7 +85,7 @@ sequenceDiagram
     DC-->>LLM: running configs
     LLM->>Skill: list context=["ospf"]
     Skill-->>LLM: matching fault types
-    LLM->>Skill: get device_type=injection_ospf
+    LLM->>Skill: get device_type=injection_ospf_issues
     Skill-->>LLM: fault definition + injection commands
     LLM->>CC: execute config injection
     CC-->>LLM: injection result
