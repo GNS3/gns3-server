@@ -1057,9 +1057,24 @@ def test_get_qemu_img(vm, tmpdir):
 @pytest.mark.asyncio
 async def test_run_with_kvm(vm):
 
-    with patch("os.path.exists", return_value=True) as os_path:
+    with (
+        patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"),
+        patch("os.path.exists", return_value=True) as os_path,
+    ):
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
         assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is True
+        os_path.assert_called_with("/dev/kvm")
+
+
+@pytest.mark.asyncio
+async def test_run_with_kvm_arm64(vm):
+
+    with (
+        patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="aarch64"),
+        patch("os.path.exists", return_value=True) as os_path,
+    ):
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
+        assert await vm._run_with_hardware_acceleration("qemu-system-aarch64", "") is True
         os_path.assert_called_with("/dev/kvm")
 
 
@@ -1074,7 +1089,10 @@ async def test_run_with_kvm_options_no_kvm(vm):
 @pytest.mark.asyncio
 async def test_run_with_kvm_not_x86(vm):
 
-    with patch("os.path.exists", return_value=True):
+    with (
+        patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"),
+        patch("os.path.exists", return_value=True),
+    ):
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
         vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):
@@ -1084,7 +1102,10 @@ async def test_run_with_kvm_not_x86(vm):
 @pytest.mark.asyncio
 async def test_run_with_kvm_dev_kvm_missing(vm):
 
-    with patch("os.path.exists", return_value=False):
+    with (
+        patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"),
+        patch("os.path.exists", return_value=False),
+    ):
         vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
         vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):

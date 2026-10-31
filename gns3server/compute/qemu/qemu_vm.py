@@ -24,6 +24,7 @@ import json
 import logging
 import math
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -2749,8 +2750,9 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         enable_hardware_accel = self.manager.config.settings.Qemu.enable_hardware_acceleration
         require_hardware_accel = self.manager.config.settings.Qemu.require_hardware_acceleration
         if enable_hardware_accel and "-machine accel=tcg" not in options:
-            # Turn OFF hardware acceleration for non x86 architectures
             supported_binaries = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
+            if platform.machine() in ("aarch64", "arm64"):
+                supported_binaries = ["qemu-system-aarch64"]
             if os.path.basename(qemu_path) not in supported_binaries:
                 if require_hardware_accel:
                     raise QemuError(
