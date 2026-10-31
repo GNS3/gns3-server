@@ -86,6 +86,9 @@ Generates a fresh 24h JWT → stored in ContextVar for the session
 Tool handlers run in the session task created by that request → they use this JWT
   ↓
 Later requests re-validate the credential (result cached ~5 min → no repeated bcrypt)
+  ↓
+Once the session's JWT ages past its 24h lifetime, tool handlers renew it
+from the API key automatically — long-lived sessions keep working
 ```
 
 ### Concurrency

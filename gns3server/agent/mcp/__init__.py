@@ -238,6 +238,11 @@ _jwt_username_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("
 # download/console URLs must carry the same version, or the revocation check
 # (token_data.token_version != user.token_version) rejects them as "revoked".
 _jwt_token_version_var: contextvars.ContextVar[int] = contextvars.ContextVar("mcp_jwt_token_version", default=0)
+# The raw API key the session authenticated with (None for JWT logins). The
+# session task cannot see contextvars set by later requests, so the JWT it
+# inherited at initialize ages past its 24h lifetime while the transport
+# keeps authenticating fine — _gns3_ctx() uses this key to renew that JWT.
+_jwt_api_key_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("mcp_jwt_api_key", default=None)
 
 
 # ── Token validation ──────────────────────────────────────────────────
@@ -370,14 +375,58 @@ mcp = _create_mcp_server()
 # ── Tool handlers ─────────────────────────────────────────────────────
 
 
-def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
-    """Run a synchronous Gns3Connector handler in a thread."""
-    ctx = {
+def _renew_expired_jwt(token: str | None, api_key: str | None, username: str | None, token_version: int) -> str | None:
+    """Renew the session task's JWT once it has aged past its lifetime.
+
+    Tool handlers run in the session task created at initialize and inherit
+    its context; contextvars set by later requests never reach them. For
+    API-key sessions (the documented long-lived setup — keys never expire)
+    that means the minted 24h JWT eventually expires under a healthy
+    transport: every request still re-validates the key, but tool calls
+    would send the stale JWT and fail with 401.
+
+    The renewal is cheap by construction: every tools/call POST passes the
+    auth wrapper first, which re-validates the API key and refreshes the
+    module-level _api_key_cache with a freshly minted JWT — so by the time a
+    tool handler runs, a current JWT for this key is already cached. Only
+    when that cache entry has gone stale (idle gap) do we re-mint here
+    synchronously; no DB round-trip, the username/token_version validated at
+    initialize are re-used.
+
+    Returns the effective JWT, or None when renewal is not possible (JWT
+    login: the client's own credential expiring is the client's business).
+    """
+    if not token or not api_key:
+        return token
+    try:
+        auth_service.get_token_data(token)
+        return token  # still valid
+    except Exception:
+        pass
+    cached = _api_key_cache.get(api_key)
+    if cached is not None and cached[0] > time.monotonic():
+        return cached[1]
+    fresh = auth_service.create_access_token(username or "", token_version=token_version)
+    _cache_api_key(api_key, fresh, username or "", token_version)
+    log.info("Renewed the MCP session's expired JWT from its API key (user %s)", username)
+    return fresh
+
+
+def _gns3_ctx() -> dict[str, Any]:
+    """Build the Gns3Connector context from the request's contextvars."""
+    return {
         "server_url": _server_url(),
-        "jwt_token": _jwt_token_var.get(),
+        "jwt_token": _renew_expired_jwt(
+            _jwt_token_var.get(), _jwt_api_key_var.get(), _jwt_username_var.get(), _jwt_token_version_var.get()
+        ),
         "jwt_username": _jwt_username_var.get(),
         "jwt_token_version": _jwt_token_version_var.get(),
     }
+
+
+def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
+    """Run a synchronous Gns3Connector handler in a thread."""
+    ctx = _gns3_ctx()
 
     def run(h, p):
         return h(p, ctx)
@@ -2191,6 +2240,11 @@ def _make_auth_wrapper(inner_app):
                 await response(scope, receive, send)
                 return
             _jwt_token_var.set(resolved)
+            # Remember the raw API key: the session task created by the
+            # initialize request inherits this context and uses it to renew
+            # its JWT once the minted one ages out (see _renew_expired_jwt).
+            if token.startswith("gns3_"):
+                _jwt_api_key_var.set(token)
         await inner_app(scope, receive, send)
 
     return auth_wrapper
