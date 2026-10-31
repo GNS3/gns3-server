@@ -429,10 +429,12 @@ IP/MASK     : 192.168.1.20/24"""
 
         instance = self.VPCSTelnet.__new__(self.VPCSTelnet)
 
-        # Mock necessary attributes
+        # Mock necessary attributes. The read loop polls read_channel
+        # (netmiko's decorated method needs the session lock, which only
+        # __init__ creates), not read_until_pattern.
         instance.remote_conn = MagicMock()
         instance.remote_conn.write = MagicMock()
-        instance.read_until_pattern = MagicMock(return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>")
+        instance.read_channel = MagicMock(return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>")
 
         # Mock _strip_ansi_codes to verify it's called
         instance._strip_ansi_codes = Mock(return_value="NAME        : PC2\nPC2>")
