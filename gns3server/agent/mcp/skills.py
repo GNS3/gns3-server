@@ -49,12 +49,22 @@ def device_skills_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> d
         log.debug("device_skill_get: skills registry unavailable: %s", e)
         return {"status": "failed", "error": f"Skills subsystem unavailable: {e}"}
 
+    # First call on a fresh server may race the background repository
+    # load; triggering the (idempotent, retryable) init avoids returning
+    # an empty list just because the clone has not finished yet.
+    if not registry.SKILLS_REGISTRY and registry.get_skills_manager() is None:
+        return {
+            "status": "failed",
+            "error": "Skills repository is not initialized. Configure the GNS3-Skills repository "
+            "(skills_repo_url) and retry — the initial clone may still be running.",
+        }
+
     action = params.get("action")
     if not action:
         # No explicit action: list when nothing to get, get otherwise.
         action = "list" if not params.get("device_type") else "get"
     if action == "list":
-        skills = registry.list_available_skills()
+        skills = registry.list_available_skills(params.get("category"))
         return {"status": "ok", "count": len(skills), "skills": skills}
 
     device_type = params.get("device_type")
@@ -67,6 +77,7 @@ def device_skills_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> d
 
     result = registry.get_skill(
         device_type,
+        category=params.get("category"),
         detail=params.get("detail", "full"),
         issue=params.get("issue"),
         topic=params.get("topic"),

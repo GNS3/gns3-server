@@ -2197,6 +2197,7 @@ async def device_skill_get(
         Field(description="Skill key exactly as action='list' returns it, e.g. 'frr_vtysh', 'cisco_ios_telnet'"),
     ] = None,
     action: Annotated[str | None, Field(description='"list" to enumerate skills; "get" (default) to fetch one')] = None,
+    category: Annotated[str | None, Field(description='Optional category filter, e.g. "device" or "feature"')] = None,
     topic: Annotated[
         str | None,
         Field(
@@ -2216,12 +2217,18 @@ async def device_skill_get(
 
     Step 2 returns the base skill plus the topic index; step 3 loads the
     targeted body. Pass the key exactly as step 1 returned it.
+    Devices without topics (single-file skills such as gns3_vpcs_telnet
+    or nokia_srlinux_cli) are complete at step 2 with the default full
+    detail — there is no topic step, and detail="index" only lists their
+    sections (config_commands, display_commands, ...).
+    category="device" or "feature" narrows both list and get.
     Skills carry the operational quirks the generic tools cannot know:
     FRR's console lands directly in vtysh (no -c on its ping, 'do' prefixes
     inside scripted config), VPCS command syntax, IOS paging pitfalls.
 
-    Requires the skills repository to be configured (cloned); when none is
-    loaded the error says so and action="list" returns an empty set.
+    Requires the skills repository to be configured (cloned); an
+    uninitialized repository fails with a clear error, while an empty but
+    initialized repository returns an empty list.
 
     IF YOUR CLIENT OFFERS SUBAGENTS: on long tasks, delegate steps 1-2
     to a subagent and ask it to return the exact command/quirk snippets
@@ -2231,6 +2238,8 @@ async def device_skill_get(
     params: dict[str, Any] = {"action": action}
     if device_type is not None:
         params["device_type"] = device_type
+    if category is not None:
+        params["category"] = category
     if topic is not None:
         params["topic"] = topic
     if detail is not None:

@@ -322,11 +322,15 @@ The GNS3-Skills repository (the same one the embedded copilot reads) carries per
 
 ```python
 device_skill_get(action="list")                          # 1. every loaded skill
+device_skill_get(action="list", category="device")       #    optional category filter
 device_skill_get(device_type="frr_vtysh")                # 2. that device's skill + topic index
 device_skill_get(device_type="frr_vtysh", topic="bgp")   # 3. one targeted topic body
+device_skill_get(device_type="gns3_vpcs_telnet")         # single-file device: complete skill
 ```
 
 Step 2 returns the base skill plus the topic index; topic bodies load **only** on an explicit `topic` request (step 3). The key is passed back exactly as step 1 returned it.
+
+The repository ships two device layouts: split directories (`device/frr/` = `_base.yaml` + one file per protocol topic) and single files (`device/vpcs.yaml`). Single-file skills have **no topics** — step 2 with the default `full` detail returns the complete skill and there is no step 3. On such a skill, `detail="index"` returns a `sections` list (`config_commands`, `display_commands`, `notes`, ...) instead of an empty body, so the caller knows there is content to fetch.
 
 ### Device Config Workflow
 

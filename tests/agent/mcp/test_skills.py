@@ -33,7 +33,13 @@ FAKE_SKILLS = {
         "topics": {"bgp": {"name": "BGP", "syntax": "router bgp <asn>"}},
     },
     "cisco_ios_telnet": {"name": "IOS", "description": "IOS quirks", "category": "device"},
-    "gns3_vpcs_telnet": {"name": "VPCS", "description": "VPCS syntax", "category": "device"},
+    "gns3_vpcs_telnet": {
+        "name": "VPCS",
+        "description": "VPCS syntax",
+        "category": "device",
+        "config_commands": {"ip": {"syntax": "ip <address>/<mask>"}},
+    },
+    "topology_planner": {"name": "Topology Planner", "description": "Planning", "category": "feature"},
 }
 
 
@@ -48,17 +54,31 @@ class TestDeviceSkillsHandler:
     def test_list(self):
         result = device_skills_handler({"action": "list"}, {})
         assert result["status"] == "ok"
-        assert result["count"] == 3
+        assert result["count"] == 4
         assert {s["device_type"] for s in result["skills"]} == set(FAKE_SKILLS)
 
     def test_no_args_defaults_to_list(self):
         result = device_skills_handler({}, {})
-        assert result["status"] == "ok" and result["count"] == 3
+        assert result["status"] == "ok" and result["count"] == 4
+
+    def test_list_filtered_by_category(self):
+        result = device_skills_handler({"action": "list", "category": "feature"}, {})
+        assert result["status"] == "ok"
+        assert [s["device_type"] for s in result["skills"]] == ["topology_planner"]
 
     def test_get_by_key(self):
         result = device_skills_handler({"device_type": "frr_vtysh"}, {})
         assert result["status"] == "ok"
         assert result["skill"]["name"] == "FRR"
+
+    def test_get_with_matching_category(self):
+        result = device_skills_handler({"device_type": "frr_vtysh", "category": "device"}, {})
+        assert result["status"] == "ok"
+
+    def test_get_with_wrong_category(self):
+        result = device_skills_handler({"device_type": "frr_vtysh", "category": "feature"}, {})
+        assert result["status"] == "failed"
+        assert "not in category" in result["error"]
 
     def test_topic_body_only_on_explicit_request(self):
         indexed = device_skills_handler({"device_type": "frr_vtysh"}, {})["skill"]
@@ -66,6 +86,13 @@ class TestDeviceSkillsHandler:
 
         topic = device_skills_handler({"device_type": "frr_vtysh", "topic": "bgp"}, {})["skill"]
         assert topic["topic"] == {"bgp": {"name": "BGP", "syntax": "router bgp <asn>"}}
+
+    def test_index_sections_for_topicless_skill(self):
+        # Single-file skills have no topics; index names their sections
+        # instead of returning an empty shell.
+        result = device_skills_handler({"device_type": "gns3_vpcs_telnet", "detail": "index"}, {})
+        assert result["status"] == "ok"
+        assert result["skill"]["sections"] == ["config_commands"]
 
     def test_unknown_key_lists_available(self):
         # Not a key the list would return — the error carries the loaded
@@ -79,3 +106,16 @@ class TestDeviceSkillsHandler:
         result = device_skills_handler({"action": "get"}, {})
         assert result["status"] == "failed"
         assert "Provide device_type" in result["error"]
+
+    def test_uninitialized_repository_reports_failure(self, monkeypatch):
+        monkeypatch.setattr(skills_registry, "SKILLS_REGISTRY", {})
+        monkeypatch.setattr(skills_registry, "get_skills_manager", lambda: None)
+        result = device_skills_handler({"action": "list"}, {})
+        assert result["status"] == "failed"
+        assert "not initialized" in result["error"]
+
+    def test_empty_but_initialized_repository_lists_zero(self, monkeypatch):
+        monkeypatch.setattr(skills_registry, "SKILLS_REGISTRY", {})
+        monkeypatch.setattr(skills_registry, "get_skills_manager", object)
+        result = device_skills_handler({"action": "list"}, {})
+        assert result == {"status": "ok", "count": 0, "skills": []}

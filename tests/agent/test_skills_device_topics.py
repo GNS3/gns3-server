@@ -260,6 +260,16 @@ class TestGetSkillTopics:
         result = get_skill("frr_vtysh", detail="index")
         assert result["topics"]["bgp"] == "BGP (FRR 10.x)"
 
+    def test_index_sections_for_single_file_device(self, device_registry):
+        # No topics/issues to index: name the content sections instead of
+        # returning an empty body.
+        result = get_skill("gns3_vpcs_telnet", detail="index")
+        assert result["sections"] == ["config_commands"]
+
+    def test_summary_sections_for_single_file_device(self, device_registry):
+        result = get_skill("gns3_vpcs_telnet", detail="summary")
+        assert result["sections"] == ["config_commands"]
+
     def test_summary_includes_topic_descriptions(self, device_registry):
         result = get_skill("frr_vtysh", detail="summary")
         assert result["topics"]["ospf"] == {

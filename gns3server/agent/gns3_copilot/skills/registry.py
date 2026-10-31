@@ -355,6 +355,11 @@ def get_skills_repository_info() -> dict[str, Any]:
     return manager.get_repository_info()
 
 
+# Descriptive keys that are not content sections; excluded from the
+# section list returned for skills that have no topics/issues.
+_SKILL_META_KEYS = frozenset({"name", "description", "device_type", "category", "issues", "topics"})
+
+
 def get_skill(
     device_type: str,
     category: str | None = None,
@@ -450,6 +455,12 @@ def get_skill(
         }
         if topics:
             result["topics"] = {k: v.get("name", k) for k, v in topics.items()}
+        else:
+            # Single-file device/feature skills have no topics: name the
+            # top-level sections so the index is not an empty shell.
+            sections = [k for k in skill if k not in _SKILL_META_KEYS]
+            if sections:
+                result["sections"] = sections
         return result
 
     if detail == "summary":
@@ -472,6 +483,10 @@ def get_skill(
             result["topics"] = {
                 k: {"name": v.get("name", k), "description": v.get("description", "")} for k, v in topics.items()
             }
+        else:
+            sections = [k for k in skill if k not in _SKILL_META_KEYS]
+            if sections:
+                result["sections"] = sections
         return result
 
     # Full detail: topic bodies are replaced by the topic index
