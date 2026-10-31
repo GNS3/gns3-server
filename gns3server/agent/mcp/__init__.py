@@ -148,6 +148,7 @@ from .server import (
     get_statistics_handler,
     get_version_handler,
 )
+from .skills import device_skills_handler
 from .snapshots import (
     create_snapshot_handler,
     delete_snapshot_handler,
@@ -2187,6 +2188,56 @@ async def vpcs_config_set(
             "device_configs": device_configs,
         },
     )
+
+
+@mcp.tool()
+async def device_skill_get(
+    device_type: Annotated[
+        str | None,
+        Field(description="Skill key exactly as action='list' returns it, e.g. 'frr_vtysh', 'cisco_ios_telnet'"),
+    ] = None,
+    action: Annotated[str | None, Field(description='"list" to enumerate skills; "get" (default) to fetch one')] = None,
+    topic: Annotated[
+        str | None,
+        Field(
+            description='Protocol topic key from the topic index, e.g. "ospf", "bgp". '
+            "Topic bodies load ONLY on an explicit topic request — every other call returns the base skill plus the topic index"
+        ),
+    ] = None,
+    detail: Annotated[str | None, Field(description='"index" | "summary" | "full" (default)')] = None,
+    issue: Annotated[str | None, Field(description="Single troubleshooting-issue key from the skill")] = None,
+) -> list[dict[str, Any]]:
+    """Read device knowledge from the GNS3-Skills repository — BEFORE driving an unfamiliar console.
+
+    TOKEN-EFFICIENT USAGE (same protocol as the copilot's device_skills tool):
+      1. List every skill:             device_skill_get(action="list")
+      2. Device skill list (topics):   device_skill_get(device_type="frr_vtysh")
+      3. ONE targeted topic body:      device_skill_get(device_type="frr_vtysh", topic="bgp")
+
+    Step 2 returns the base skill plus the topic index; step 3 loads the
+    targeted body. Pass the key exactly as step 1 returned it.
+    Skills carry the operational quirks the generic tools cannot know:
+    FRR's console lands directly in vtysh (no -c on its ping, 'do' prefixes
+    inside scripted config), VPCS command syntax, IOS paging pitfalls.
+
+    Requires the skills repository to be configured (cloned); when none is
+    loaded the error says so and action="list" returns an empty set.
+
+    IF YOUR CLIENT OFFERS SUBAGENTS: on long tasks, delegate steps 1-2
+    to a subagent and ask it to return the exact command/quirk snippets
+    you need — not a prose summary. The full skill bodies then never
+    occupy this conversation's context.
+    """
+    params: dict[str, Any] = {"action": action}
+    if device_type is not None:
+        params["device_type"] = device_type
+    if topic is not None:
+        params["topic"] = topic
+    if detail is not None:
+        params["detail"] = detail
+    if issue is not None:
+        params["issue"] = issue
+    return await asyncio.to_thread(_run_handler_sync, device_skills_handler, params)
 
 
 # ── Auth‑wrapped Streamable HTTP app ──────────────────────────────────

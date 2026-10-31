@@ -102,7 +102,7 @@ from the API key automatically — long-lived sessions keep working
 
 ## Available Tools
 
-**78 tools** across 11 categories:
+**79 tools** across 11 categories:
 
 ### Project (14)
 
@@ -232,13 +232,25 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | `server_version` | Get GNS3 server version |
 | `server_statistics` | Get server statistics (computes, projects, nodes) |
 
-### Device Config (3)
+### Device Config (4)
 
 | Tool | Description |
 |------|-------------|
-| `device_config_send` | Push config commands to devices via console (Nornir + Netmiko). Supports Jinja2 `template` + `vars` |
-| `device_show_run` | Run read-only show commands on devices. Supports Jinja2 `template` + `vars` |
-| `vpcs_config_set` | Configure VPCS devices (IP, gateway, etc.) |
+| `device_config_send` | Push config commands to devices via console (Nornir + Netmiko), batch and parallel. Supports Jinja2 `template` + `vars` |
+| `device_show_run` | Run read-only show commands on devices (whitelist-enforced). Supports Jinja2 `template` + `vars` |
+| `vpcs_config_set` | Configure VPCS devices in batch (Nornir + Netmiko, parallel, VPCS command syntax validated) — the VPCS counterpart of `device_config_send` |
+| `device_skill_get` | Read device knowledge from the GNS3-Skills repository (list → topic index → single topic; same access protocol as the copilot's `device_skills` tool) |
+
+**Which tool when** — the console-facing tools divide the work by shape:
+
+| Scenario | Use |
+|---|---|
+| Push the same-shaped config to many network devices, one call | `device_config_send` (Jinja2 template + parallel fan-out) |
+| Configure many VPCS PCs in one call | `vpcs_config_set` (parallel, VPCS syntax validated) |
+| Inspect many devices read-only, one call | `device_show_run` (command whitelist — safe for AI) |
+| Network OS console, any interaction | `device_config_send` / `device_show_run` (batch drivers manage config mode themselves) |
+| Unfamiliar device: read its quirks before driving the console | `device_skill_get` (list first, then fetch by key) |
+| VNC console | `node_console` (returns a websocat URL) |
 
 The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is auto-detected from the node's `device_type:<type>` tag in GNS3.
 
@@ -303,6 +315,18 @@ node_file_write(project_id, node_id, "startup-config.cfg", config)
 node_stop(project_id, node_id)
 node_start(project_id, node_id)
 ```
+
+#### Device Skills (`device_skill_get`)
+
+The GNS3-Skills repository (the same one the embedded copilot reads) carries per-device operational knowledge that the generic tools cannot know: FRR's console lands directly in vtysh (its ping has no `-c`, scripted config needs `do` prefixes), VPCS command syntax, IOS paging pitfalls, SR Linux's TUI-only CLI. `device_skill_get` exposes it to MCP clients with the copilot's multi-call protocol — list, then the device's topic index, then one targeted body:
+
+```python
+device_skill_get(action="list")                          # 1. every loaded skill
+device_skill_get(device_type="frr_vtysh")                # 2. that device's skill + topic index
+device_skill_get(device_type="frr_vtysh", topic="bgp")   # 3. one targeted topic body
+```
+
+Step 2 returns the base skill plus the topic index; topic bodies load **only** on an explicit `topic` request (step 3). The key is passed back exactly as step 1 returned it.
 
 ### Device Config Workflow
 
