@@ -59,11 +59,18 @@ class HTTPClient:
         basic_auth = None
         if user:
             try:
-                basic_auth = aiohttp.BasicAuth(user, password.get_secret_value() if password else "", "utf-8")
+                basic_auth = aiohttp.encode_basic_auth(
+                    user, password.get_secret_value() if password else "", encoding="utf-8"
+                )
             except ValueError as e:
                 log.error(f"Basic authentication set-up error: {e}")
 
-        return client.request(method, url, auth=basic_auth, **kwargs)
+        headers = kwargs.pop("headers", None)
+        if basic_auth is not None:
+            headers = {key: value for key, value in (headers or {}).items() if key.lower() != "authorization"}
+            headers["Authorization"] = basic_auth
+            kwargs["headers"] = headers
+        return client.request(method, url, **kwargs)
 
     @classmethod
     def get(cls, path, **kwargs):

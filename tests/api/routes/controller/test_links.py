@@ -256,7 +256,7 @@ class TestLinkRoutes:
             response = await client.post(
                 app.url_path_for("create_link", project_id=project.id), json={"nodes": [bad, valid]}
             )
-            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_get_link(
         self, app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]

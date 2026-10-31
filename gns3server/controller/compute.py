@@ -134,12 +134,14 @@ class Compute:
             if password:
                 self._password = password
                 try:
-                    self._auth = aiohttp.BasicAuth(self._user, self._password.get_secret_value(), "utf-8")
+                    self._auth = aiohttp.encode_basic_auth(
+                        self._user, self._password.get_secret_value(), encoding="utf-8"
+                    )
                 except ValueError as e:
                     log.error(str(e))
             else:
                 self._password = None
-                self._auth = aiohttp.BasicAuth(self._user, "")
+                self._auth = aiohttp.encode_basic_auth(self._user, "", encoding="utf-8")
 
     def set_last_error(self, msg):
         """
@@ -353,7 +355,10 @@ class Compute:
         """
 
         url = self._getUrl(f"/projects/{project.id}/files/{path}")
-        response = await self._session().request("GET", url, auth=self._auth)
+        request_options = {"auth": None}
+        if self._auth:
+            request_options["headers"] = {"Authorization": self._auth}
+        response = await self._session().request("GET", url, **request_options)
         if response.status == 404:
             raise ControllerNotFoundError(f"{path} not found on compute")
         return response
@@ -368,7 +373,10 @@ class Compute:
         """
 
         url = self._getUrl(f"/{image_type}/images/{image}")
-        response = await self._session().request("GET", url, auth=self._auth)
+        request_options = {"auth": None}
+        if self._auth:
+            request_options["headers"] = {"Authorization": self._auth}
+        response = await self._session().request("GET", url, **request_options)
         if response.status == 404:
             raise ControllerNotFoundError(f"{image} not found on compute")
         return response
@@ -523,7 +531,10 @@ class Compute:
 
         ws_url = self._getUrl("/notifications/ws")
         try:
-            async with self._session().ws_connect(ws_url, auth=self._auth, heartbeat=10) as ws:
+            connection_options = {"heartbeat": 10}
+            if self._auth:
+                connection_options["headers"] = {"Authorization": self._auth}
+            async with self._session().ws_connect(ws_url, **connection_options) as ws:
                 log.info(f"Connected to compute '{self._id}' WebSocket '{ws_url}'")
                 async for response in ws:
                     if response.type == aiohttp.WSMsgType.TEXT:
@@ -598,6 +609,8 @@ class Compute:
         async with asynctimeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}
+            if self._auth:
+                headers["Authorization"] = self._auth
             chunked = None
             if data == {}:
                 data = None
@@ -622,13 +635,12 @@ class Compute:
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
-            log.debug(f"Attempting request to compute: {method} {url} {headers}")
+            log.debug(f"Attempting request to compute: {method} {url}")
             response = await self._session().request(
                 method,
                 url,
                 headers=headers,
                 data=data,
-                auth=self._auth,
                 params=params,
                 chunked=chunked,
                 timeout=timeout,

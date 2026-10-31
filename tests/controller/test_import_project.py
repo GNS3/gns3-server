@@ -120,7 +120,7 @@ async def write_file(path, z):
 @pytest.fixture
 def export_project_with_symlink(tmpdir, controller):
     async def _export(symlink_target):
-        project = Project(controller=controller, name="test")
+        project = Project(controller=controller, name="test", filename="project.gns3")
         project.dump = MagicMock()
 
         topology = {
@@ -147,6 +147,9 @@ def export_project_with_symlink(tmpdir, controller):
             ):
                 await export_project(z, project, str(tmpdir), include_images=False)
                 await write_file(zip_path, z)
+
+        with zipfile.ZipFile(zip_path) as archive:
+            assert archive.namelist().count("project.gns3") == 1
 
         return zip_path
 
