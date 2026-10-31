@@ -146,5 +146,5 @@ cd "$GNS3SERVER_DIR"
 git add gns3server/static/web-ui/*
 if [[ -n "$TAG" ]]
 then
-  git commit -m "Bundle web-ui ${TAG}"
+  git commit -m "Bundle web-ui ${TAG}: https://github.com/GNS3/gns3-web-ui/releases#release-${TAG}"
 fi
