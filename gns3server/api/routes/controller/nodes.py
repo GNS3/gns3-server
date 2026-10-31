@@ -866,11 +866,13 @@ async def ws_console(
             raise ControllerForbiddenError("Compute username is not set")
         user = user.strip()
         if user and password:
-            auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+            auth_header = aiohttp.encode_basic_auth(user, password.get_secret_value(), encoding="utf-8")
         else:
-            auth = aiohttp.BasicAuth(user, "")
+            auth_header = aiohttp.encode_basic_auth(user, "", encoding="utf-8")
         ssl_context = Controller.instance().ssl_context()
-        async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
+        async with HTTPClient.get_client().ws_connect(
+            ws_console_compute_url, headers={"Authorization": auth_header}, ssl_context=ssl_context
+        ) as ws:
             tasks = [
                 asyncio.ensure_future(ws_receive(ws)),
                 asyncio.ensure_future(ws_send(ws)),
@@ -964,12 +966,12 @@ async def vnc_console(
             raise ControllerForbiddenError("Compute username is not set")
         user = user.strip()
         if user and password:
-            auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+            auth_header = aiohttp.encode_basic_auth(user, password.get_secret_value(), encoding="utf-8")
         else:
-            auth = aiohttp.BasicAuth(user, "")
+            auth_header = aiohttp.encode_basic_auth(user, "", encoding="utf-8")
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(
-            vnc_console_compute_url, auth=auth, ssl_context=ssl_context
+            vnc_console_compute_url, headers={"Authorization": auth_header}, ssl_context=ssl_context
         ) as ws:
             tasks = [
                 asyncio.ensure_future(vnc_receive(ws)),

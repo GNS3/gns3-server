@@ -107,7 +107,6 @@ async def test_compute_httpQuery(compute):
             "https://example.com:84/v3/compute/projects",
             headers={"content-type": "application/json"},
             data=b'{"a": "b"}',
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
@@ -129,15 +128,13 @@ async def test_compute_httpQueryAuth(compute):
         mock.assert_called_with(
             "POST",
             "https://example.com:84/v3/compute/projects",
-            headers={"content-type": "application/json"},
+            headers={"content-type": "application/json", "Authorization": aiohttp.encode_basic_auth("root", "toor")},
             data=b'{"a": "b"}',
-            auth=compute._auth,
             params=None,
             chunked=None,
             timeout=120,
         )
-        assert compute._auth.login == "root"
-        assert compute._auth.password == "toor"
+        assert compute._auth == aiohttp.encode_basic_auth("root", "toor")
 
 
 # @pytest.mark.asyncio
@@ -200,7 +197,6 @@ async def test_compute_httpQueryNotConnectedInvalidVersion(compute):
             "https://example.com:84/v3/compute/capabilities",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
@@ -223,7 +219,6 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server(compute):
             "https://example.com:84/v3/compute/capabilities",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
@@ -246,7 +241,6 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server2(compute):
             "https://example.com:84/v3/compute/capabilities",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
@@ -293,7 +287,6 @@ async def test_compute_httpQuery_project(compute):
             "https://example.com:84/v3/compute/projects",
             headers={"content-type": "application/json"},
             data=json.dumps(project.asdict()),
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
@@ -455,7 +448,6 @@ async def test_forward_get(compute):
             "https://example.com:84/v3/compute/qemu/images",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=None,
@@ -487,7 +479,6 @@ async def test_forward_post(compute):
             "https://example.com:84/v3/compute/qemu/img",
             headers={"content-type": "application/json"},
             data=b'{"id": 42}',
-            auth=None,
             params=None,
             chunked=None,
             timeout=None,
@@ -509,7 +500,6 @@ async def test_list_files(project, compute):
             f"https://example.com:84/v3/compute/projects/{project.id}/files",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=None,
@@ -540,7 +530,6 @@ async def test_interfaces(compute):
             "https://example.com:84/v3/compute/network/interfaces",
             headers={"content-type": "application/json"},
             data=None,
-            auth=None,
             params=None,
             chunked=None,
             timeout=120,
