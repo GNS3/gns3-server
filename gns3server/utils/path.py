@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from os.path import commonpath
 from pathlib import Path
 
 from fastapi import HTTPException, status
@@ -58,7 +59,7 @@ def check_path_allowed(path: str):
     """
 
     project_directory = get_default_project_directory()
-    if len(os.path.commonprefix([project_directory, path])) == len(project_directory):
+    if len(commonpath([project_directory, path])) == len(project_directory):
         return
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"The path {path} is not allowed")

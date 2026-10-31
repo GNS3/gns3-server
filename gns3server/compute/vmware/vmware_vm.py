@@ -22,7 +22,6 @@ import asyncio
 import logging
 import os
 import platform
-import sys
 import tempfile
 from collections import OrderedDict
 
@@ -260,12 +259,7 @@ class VMwareVM(BaseNode):
             if self._get_vmx_setting(connected):
                 del self._vmx_pairs[connected]
 
-        use_ubridge = True
-        # use alternative method to find vmnet interfaces on macOS >= 11.0 (BigSur)
-        # because "bridge" interfaces are used instead and they are only created on the VM starts
-        if sys.platform.startswith("darwin") and parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
-            use_ubridge = False
-        self.manager.refresh_vmnet_list(ubridge=use_ubridge)
+        self.manager.refresh_vmnet_list(ubridge=True)
         # then configure VMware network adapters
         for adapter_number in range(0, self._adapters):
             custom_adapter = self._get_custom_adapter_settings(adapter_number)
@@ -349,21 +343,7 @@ class VMwareVM(BaseNode):
         vnet = self._get_vnet(adapter_number)
         await self._ubridge_send(f"bridge create {vnet}")
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
-        block_host_traffic = self.manager.config.settings.VMware.block_host_traffic
-
-        if sys.platform.startswith("darwin"):
-            if parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
-                # a bridge interface (bridge100, bridge101 etc.) is used instead of a vmnet interface
-                # on macOS >= 11.0 (Big Sur)
-                vmnet_interface = self.manager.find_bridge_interface(vmnet_interface)
-                if not vmnet_interface:
-                    raise VMwareError(f"Could not find bridge interface linked with {vmnet_interface}")
-                await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
-            else:
-                # special case on macOS, we cannot bind VMnet interfaces using the libpcap
-                await self._ubridge_send(f'bridge add_nio_fusion_vmnet {vnet} "{vmnet_interface}"')
-        else:
-            await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
+        await self._add_ubridge_ethernet_connection(vnet, vmnet_interface)
 
         if isinstance(nio, NIOUDP):
             await self._ubridge_send(f"bridge add_nio_udp {vnet} {nio.lport} {nio.rhost} {nio.rport}")

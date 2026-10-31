@@ -60,8 +60,6 @@ TYPED_OPERATIONS = [
     ("post", "/v3/projects/{project_id}/links/{link_id}/capture/wireshark/restart"),
     ("get", "/v3/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc"),
     ("post", "/v3/computes/{compute_id}/dynamips/auto_idlepc"),
-    ("get", "/v3/gns3vm/engines"),
-    ("get", "/v3/gns3vm/engines/{engine}/vms"),
     ("get", "/v3/access/acl/endpoints"),
 ]
 

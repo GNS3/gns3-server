@@ -31,7 +31,6 @@ from gns3server.compute.compute_error import (
 )
 from gns3server.compute.error import ImageMissingError, NodeError
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
-from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 from gns3server.version import __api_version__
 
 from . import (
@@ -111,15 +110,6 @@ async def compute_not_found_error_handler(request: Request, exc: ComputeNotFound
     log.error(f"Compute not found error: {exc}")
     return JSONResponse(
         status_code=404,
-        content={"message": str(exc)},
-    )
-
-
-@compute_api.exception_handler(GNS3VMError)
-async def compute_gns3vm_error_handler(request: Request, exc: GNS3VMError):
-    log.error(f"Compute GNS3 VM error: {exc}")
-    return JSONResponse(
-        status_code=409,
         content={"message": str(exc)},
     )
 

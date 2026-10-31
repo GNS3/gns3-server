@@ -26,7 +26,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
 
 from ...utils.asyncio import subprocess_check_output
 from ...utils.get_resource import get_resource
@@ -113,16 +112,6 @@ class Qemu(BaseManager):
             paths.update(os.environ["PATH"].split(os.pathsep))
         else:
             log.warning("The PATH environment variable doesn't exist")
-        # look for Qemu binaries in the current working directory and $PATH
-        if sys.platform.startswith("darwin") and hasattr(sys, "frozen"):
-            # add specific locations on Mac OS X regardless of what's in $PATH
-            paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
-            try:
-                exec_dir = os.path.dirname(os.path.abspath(sys.executable))
-                paths.add(os.path.abspath(os.path.join(exec_dir, "qemu/bin")))
-            # If the user run the server by hand from outside
-            except FileNotFoundError:
-                paths.add("/Applications/GNS3.app/Contents/MacOS/qemu/bin")
         return paths
 
     @staticmethod

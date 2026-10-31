@@ -38,6 +38,7 @@ except ImportError:
 
 import logging
 from io import DEFAULT_BUFFER_SIZE
+from os.path import commonpath
 from typing import AsyncGenerator, List
 
 import gns3server.db.models as models
@@ -73,7 +74,7 @@ async def list_images(image_type):
         # the reason is in the default directory manage file organization and
         # it should be flatten to keep things simple
         recurse = True
-        if os.path.commonprefix([directory, general_images_directory]) == general_images_directory:
+        if commonpath([directory, general_images_directory]) == general_images_directory:
             recurse = False
 
         directory = os.path.normpath(directory)
@@ -88,7 +89,7 @@ async def list_images(image_type):
                 files.add(filename)
 
                 # It the image is located in the standard directory the path is relative
-                if os.path.commonprefix([root, default_directory]) != default_directory:
+                if commonpath([root, default_directory]) != default_directory:
                     path = os.path.join(root, filename)
                 else:
                     path = os.path.relpath(os.path.join(root, filename), default_directory)

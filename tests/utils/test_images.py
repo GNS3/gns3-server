@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import threading
 
 import pytest
@@ -131,15 +130,14 @@ async def test_list_images(tmpdir, config):
     small_file = tmpdir / "images1" / "too_small.image"
     small_file.write(b"1", ensure=True)
 
-    if sys.platform.startswith("linux"):
-        # 64-bit IOU image
-        iou_image_1 = tmpdir / "images1" / "IOU" / "iou64.bin"
-        iou_image_1.write(b"\x7fELF\x02\x01\x01", ensure=True)
-        iou_image_1 = force_unix_path(str(iou_image_1))
-        # 32-bit IOU image
-        iou_image_2 = tmpdir / "images1" / "IOU" / "iou32.bin"
-        iou_image_2.write(b"\x7fELF\x01\x01\x01", ensure=True)  # 32-bit IOU image
-        iou_image_2 = force_unix_path(str(iou_image_2))
+    # 64-bit IOU image
+    iou_image_1 = tmpdir / "images1" / "IOU" / "iou64.bin"
+    iou_image_1.write(b"\x7fELF\x02\x01\x01", ensure=True)
+    iou_image_1 = force_unix_path(str(iou_image_1))
+    # 32-bit IOU image
+    iou_image_2 = tmpdir / "images1" / "IOU" / "iou32.bin"
+    iou_image_2.write(b"\x7fELF\x01\x01\x01", ensure=True)  # 32-bit IOU image
+    iou_image_2 = force_unix_path(str(iou_image_2))
 
     # Qemu image
     qemu_image_1 = tmpdir / "images1" / "QEMU" / "qemu_image.qcow2"
@@ -173,11 +171,10 @@ async def test_list_images(tmpdir, config):
         },
     ]
 
-    if sys.platform.startswith("linux"):
-        assert sorted(await list_images("iou"), key=lambda k: k["filename"]) == [
-            {"filename": "iou32.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c", "path": "iou32.bin"},
-            {"filename": "iou64.bin", "filesize": 7, "md5sum": "c73626d23469519894d58bc98bee9655", "path": "iou64.bin"},
-        ]
+    assert sorted(await list_images("iou"), key=lambda k: k["filename"]) == [
+        {"filename": "iou32.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c", "path": "iou32.bin"},
+        {"filename": "iou64.bin", "filesize": 7, "md5sum": "c73626d23469519894d58bc98bee9655", "path": "iou64.bin"},
+    ]
 
     assert await list_images("qemu") == [
         {

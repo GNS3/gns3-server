@@ -126,8 +126,6 @@ def main():
     Entry point for GNS3 server
     """
 
-    if sys.platform.startswith("win"):
-        raise SystemExit("Windows is not a supported platform to run the GNS3 server")
     _raise_open_files_limit()
     if "--daemon" in sys.argv:
         daemonize()

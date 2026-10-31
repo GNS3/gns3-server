@@ -23,12 +23,12 @@ import shutil
 import socket
 import stat
 import struct
-import sys
 
 import aiofiles
 
 log = logging.getLogger(__name__)
 
+from os.path import commonpath
 from typing import Type
 from uuid import UUID, uuid4
 
@@ -307,10 +307,6 @@ class BaseManager:
         :returns: True or False
         """
 
-        if sys.platform.startswith("darwin"):
-            if os.stat(executable).st_uid == 0:
-                return True
-
         if os.geteuid() == 0:
             # we are root, so we should have privileged access.
             return True
@@ -321,9 +317,9 @@ class BaseManager:
             # the executable has set UID bit.
             return True
 
-        # test if the executable has the CAP_NET_RAW capability (Linux only)
+        # test if the executable has the CAP_NET_RAW capability
         try:
-            if sys.platform.startswith("linux") and "security.capability" in os.listxattr(executable):
+            if "security.capability" in os.listxattr(executable):
                 caps = os.getxattr(executable, "security.capability")
                 required = (1 << 13) | ((1 << 12) if require_net_admin else 0)
                 if struct.unpack("<IIIII", caps)[1] & required == required:
@@ -485,7 +481,7 @@ class BaseManager:
         path = force_unix_path(path)
         for directory in valid_directory_prefices:
             log.debug(f"Searching for image '{orig_path}' in '{directory}'")
-            if os.path.commonprefix([directory, path]) == directory:
+            if commonpath([directory, path]) == directory:
                 if os.path.exists(path):
                     return path
                 raise ImageMissingError(orig_path)
@@ -530,7 +526,7 @@ class BaseManager:
             valid_directory_prefices.append(extra_dir)
 
         for directory in valid_directory_prefices:
-            if os.path.commonprefix([directory, path]) == directory:
+            if commonpath([directory, path]) == directory:
                 relpath = os.path.relpath(path, directory)
                 # We don't allow to recurse search from the top image directory just for image type directory (compatibility with old releases)
                 if os.sep not in relpath or directory == img_directory:
@@ -562,7 +558,7 @@ class BaseManager:
 
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
-        if os.path.commonprefix([directory, path]) != directory:
+        if commonpath([directory, path]) != directory:
             raise ComputeForbiddenError(f"Could not write image: {filename}, '{path}' is forbidden")
         log.info(f"Writing image file to '{path}'")
         try:

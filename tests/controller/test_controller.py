@@ -342,8 +342,6 @@ async def test_getProject(controller):
 @pytest.mark.asyncio
 async def test_start(controller):
 
-    controller.gns3vm.settings = {"enable": False, "engine": "vmware", "vmname": "GNS3 VM"}
-
     # with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
     with asyncio_patch("gns3server.controller.Controller._install_builtin_disks", return_value=[]):
         await controller.start()
@@ -353,73 +351,12 @@ async def test_start(controller):
 
 
 @pytest.mark.asyncio
-async def test_start_vm(controller):
-    """
-    Start the controller with a GNS3 VM
-    """
-
-    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "vmname": "GNS3 VM"}
-
-    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
-        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
-            with asyncio_patch("gns3server.controller.compute.Compute.connect"):
-                with asyncio_patch("gns3server.controller.Controller._install_builtin_disks", return_value=[]):
-                    await controller.start()
-                    assert mock.called
-    assert "local" in controller.computes
-    assert "vm" in controller.computes
-    assert len(controller.computes) == 2  # Local compute and vm are created
-
-
-@pytest.mark.asyncio
 async def test_stop(controller):
 
     c = await controller.add_compute(compute_id="test1", connect=False)
     c._connected = True
     await controller.stop()
     assert c.connected is False
-
-
-@pytest.mark.asyncio
-async def test_stop_vm(controller):
-    """
-    Stop GNS3 VM if configured
-    """
-
-    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "stop", "vmname": "GNS3 VM"}
-
-    controller.gns3vm.current_engine().running = True
-    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
-        await controller.stop()
-        assert mock.called
-
-
-@pytest.mark.asyncio
-async def test_suspend_vm(controller):
-    """
-    Suspend GNS3 VM if configured
-    """
-
-    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "suspend", "vmname": "GNS3 VM"}
-
-    controller.gns3vm.current_engine().running = True
-    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
-        await controller.stop()
-        assert mock.called
-
-
-@pytest.mark.asyncio
-async def test_keep_vm(controller):
-    """
-    Keep GNS3 VM if configured
-    """
-
-    controller.gns3vm.settings = {"enable": True, "engine": "vmware", "when_exit": "keep", "vmname": "GNS3 VM"}
-
-    controller.gns3vm.current_engine().running = True
-    with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
-        await controller.stop()
-        assert not mock.called
 
 
 @pytest.mark.asyncio

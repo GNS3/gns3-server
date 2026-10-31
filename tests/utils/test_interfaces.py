@@ -16,7 +16,6 @@
 
 import collections
 import socket
-import sys
 from unittest.mock import patch
 
 import psutil
@@ -153,16 +152,10 @@ def test_interfaces_without_stats_entry(config):
 
 def test_has_netmask(config):
 
-    if sys.platform.startswith("darwin"):
-        assert has_netmask("lo0") is True
-    else:
-        assert has_netmask("lo") is True
+    assert has_netmask("lo") is True
 
 
 def test_is_interface_up():
 
-    if sys.platform.startswith("darwin"):
-        assert is_interface_up("lo0") is True
-    else:
-        assert is_interface_up("lo") is True
-        assert is_interface_up("fake0") is False
+    assert is_interface_up("lo") is True
+    assert is_interface_up("fake0") is False

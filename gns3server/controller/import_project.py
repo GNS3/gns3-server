@@ -21,7 +21,6 @@ import logging
 import os
 import shutil
 import stat
-import sys
 import tempfile
 import uuid
 
@@ -131,26 +130,19 @@ async def import_project(
 
     # Modify the compute id of the node depending on compute capacity
     if not keep_compute_ids:
-        # For some VM type we move them to the GNS3 VM if possible
-        # unless it's a linux host without GNS3 VM
-        if not sys.platform.startswith("linux") or controller.has_compute("vm"):
+        # Round-robin through available compute resources.
+        # Only use computes that are connected to avoid import failures
+        available_computes = {
+            compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected
+        }
+        if available_computes:
+            compute_nodes = itertools.cycle(available_computes)
             for node in topology["topology"]["nodes"]:
-                if node["node_type"] in ("docker", "qemu", "iou", "nat"):
-                    node["compute_id"] = "vm"
+                node["compute_id"] = next(compute_nodes)
         else:
-            # Round-robin through available compute resources.
-            # Only use computes that are connected to avoid import failures
-            available_computes = {
-                compute_id: compute for compute_id, compute in controller.computes.items() if compute.connected
-            }
-            if available_computes:
-                compute_nodes = itertools.cycle(available_computes)
-                for node in topology["topology"]["nodes"]:
-                    node["compute_id"] = next(compute_nodes)
-            else:
-                # No remote computes are connected, use local only
-                for node in topology["topology"]["nodes"]:
-                    node["compute_id"] = "local"
+            # No remote computes are connected, use local only
+            for node in topology["topology"]["nodes"]:
+                node["compute_id"] = "local"
 
     compute_created = set()
     for node in topology["topology"]["nodes"]:

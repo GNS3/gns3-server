@@ -30,7 +30,6 @@ import shutil
 import socket
 import struct
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -1014,25 +1013,13 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         log.debug(f'QEMU VM "{self._name}" [{self._id}] has set the QEMU options to {options}')
 
-        # "-no-kvm" and "-no-hax' are deprecated since Qemu v5.2
+        # "-no-kvm" is deprecated since Qemu v5.2
+        # https://www.qemu.org/docs/master/about/removed-features.html#no-kvm-removed-in-5-2
         if "-no-kvm" in options:
             options = options.replace("-no-kvm", "-machine accel=tcg")
-        if "-no-hax" in options:
-            options = options.replace("-no-hax", "-machine accel=tcg")
 
         if "-enable-kvm" in options:
-            if not sys.platform.startswith("linux"):
-                # KVM can only be enabled on Linux
-                options = options.replace("-enable-kvm", "")
-            else:
-                options = options.replace("-enable-kvm", "-machine accel=kvm")
-
-        if "-enable-hax" in options:
-            if not sys.platform.startswith("darwin"):
-                # HAXM is only available on macOS
-                options = options.replace("-enable-hax", "")
-            else:
-                options = options.replace("-enable-hax", "-machine accel=hax")
+            options = options.replace("-enable-kvm", "-machine accel=kvm")
 
         self._options = options.strip()
 
@@ -1263,7 +1250,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             await self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
-            if "-enable-kvm" in command_string or "-enable-hax" in command_string:
+            if "-machine accel=kvm" in command_string:
                 self._hw_virtualization = True
 
             set_link_commands = []
@@ -2774,23 +2761,13 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 else:
                     return False
 
-            if sys.platform.startswith("linux") and not os.path.exists("/dev/kvm"):
+            if not os.path.exists("/dev/kvm"):
                 if require_hardware_accel:
                     raise QemuError(
                         "KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_hardware_acceleration = false to the [Qemu] section."
                     )
                 else:
                     return False
-            elif sys.platform.startswith("darwin"):
-                process = await asyncio.create_subprocess_shell("kextstat | grep com.intel.kext.intelhaxm")
-                await process.wait()
-                if process.returncode != 0:
-                    if require_hardware_accel:
-                        raise QemuError(
-                            "HAXM acceleration support is not installed on this host (com.intel.kext.intelhaxm extension not loaded)"
-                        )
-                    else:
-                        return False
             return True
         return False
 
@@ -2933,11 +2910,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         command.extend(["-smp", f"cpus={self._cpus},maxcpus={maxcpus},sockets=1"])
         kvm = False
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
-            if sys.platform.startswith("linux"):
-                command.extend(["-enable-kvm"])
-                kvm = True
-            elif sys.platform.startswith("darwin"):
-                command.extend(["-enable-hax"])
+            command.extend(["-machine", "accel=kvm"])
+            kvm = True
         command.extend(["-boot", f"order={self._boot_priority}"])
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
