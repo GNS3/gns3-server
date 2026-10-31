@@ -53,6 +53,13 @@ logger = logging.getLogger(__name__)
 # Matches sequences like: [1m (bold), [0m (reset), [4m (underline), etc.
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
+# VPCS prompt = "<node name>>" (the template's startup script runs
+# `set pcname <name>`, so a template-created node named PC1 prompts "PC1>").
+# The bare-binary default "VPCS>" shows up only when no startup script set a
+# name (e.g. raw API node creation) — kept as a fallback. A node name passed
+# via the `pcname` kwarg takes precedence (regex-escaped).
+DEFAULT_PROMPT_PATTERN = r"(?:PC\d+>|VPCS>)"
+
 
 class VPCSTelnet(BaseConnection):
     """
@@ -66,12 +73,28 @@ class VPCSTelnet(BaseConnection):
     - No configuration modes
     """
 
+    # Class-level default (overridden per instance when pcname is given);
+    # lets methods work on instances built without __init__ (unit tests).
+    _prompt_pattern = DEFAULT_PROMPT_PATTERN
+
     def __init__(
         self,
         *args,
+        pcname: str | None = None,
         **kwargs,
     ) -> None:
-        """Initialize VPCS Telnet connection."""
+        """Initialize VPCS Telnet connection.
+
+        Args:
+            pcname: the GNS3 node name. The VPCS prompt is "<node name>>"
+                    (set by the template's startup script), so a matching
+                    prompt pattern is built from it. Falls back to the
+                    default "PC<n>"/"VPCS>" patterns when not provided.
+        """
+        self._prompt_pattern = DEFAULT_PROMPT_PATTERN
+        if pcname:
+            self._prompt_pattern = rf"(?:{re.escape(pcname)}>|{DEFAULT_PROMPT_PATTERN})"
+
         # Set device type to identify this as a VPCS device
         kwargs.setdefault("device_type", "gns3_vpcs_telnet")
 
@@ -88,7 +111,7 @@ class VPCSTelnet(BaseConnection):
 
     def telnet_login(
         self,
-        pri_prompt_terminator: str = r"PC\d+>",
+        pri_prompt_terminator: str | None = None,
         alt_prompt_terminator: str = r"",
         username_pattern: str = r"(?:user:|username|login|user name)",
         pwd_pattern: str = r"assword",
@@ -103,11 +126,12 @@ class VPCSTelnet(BaseConnection):
 
         Strategy (matching telnetlib3 implementation):
         1. Send 4 newlines with 0.5s delay between each
-        2. Wait for VPCS prompt pattern (PC1>, PC2>, etc.)
+        2. Wait for VPCS prompt pattern (node name, PC<n>, or VPCS>)
         3. Return once prompt is detected
 
         Args:
-            pri_prompt_terminator: Primary prompt pattern (default: r"PC\\d+>")
+            pri_prompt_terminator: Prompt pattern (defaults to the node-name
+                pattern built in __init__)
             alt_prompt_terminator: Not used for VPCS
             username_pattern: Not used (kept for signature compatibility)
             pwd_pattern: Not used (kept for signature compatibility)
@@ -117,6 +141,8 @@ class VPCSTelnet(BaseConnection):
         Returns:
             Output from the connection process
         """
+        if pri_prompt_terminator is None:
+            pri_prompt_terminator = self._prompt_pattern
         delay_factor = self.select_delay_factor(delay_factor)
         return_msg = ""
 
@@ -166,10 +192,10 @@ class VPCSTelnet(BaseConnection):
         """
         Prepare the session after connection is established.
 
-        VPCS doesn't require special session preparation.
-        The telnet_login method already handles initialization with 4 newlines.
+        VPCS requires no session preparation — the node name (and thus the
+        prompt) is set by the node's own startup script, not by us: renaming
+        the PC here would change what the user sees in their topology.
         """
-        # No additional preparation needed
         logger.debug("VPCS session preparation completed")
 
     def send_command(
@@ -187,16 +213,16 @@ class VPCSTelnet(BaseConnection):
         """
         Send a command to VPCS and return the output.
 
-        This method exactly matches the telnetlib3 implementation:
         1. Encode command as ASCII and append newline
-        2. Write command+newline as single byte sequence
-        3. Sleep for 5 seconds
-        4. Wait for prompt pattern and capture output
-        5. Return captured output
+        2. Drain stale output from a previous command on this cached session
+        3. Write command+newline as a single byte sequence
+        4. Read until the prompt pattern appears; on timeout return the
+           partial output collected so far instead of discarding it
 
         Args:
             command_string: The command to send
-            expect_string: Pattern to expect (default: VPCS prompt r"PC\\d+>")
+            expect_string: Pattern to expect (default: the prompt pattern
+                built in __init__ from pcname)
             read_timeout: Timeout for reading output
             delay_factor: Not used (kept for signature compatibility)
             max_loops: Not used (kept for signature compatibility)
@@ -210,29 +236,42 @@ class VPCSTelnet(BaseConnection):
         """
         # Use VPCS prompt as default expect_string
         if expect_string is None:
-            expect_string = r"PC\d+>"
+            expect_string = self._prompt_pattern
 
         # CRITICAL: Match telnetlib3 behavior exactly
         # tn.write(command.encode(encoding="ascii") + b"\n")
         cmd_bytes = command_string.encode(encoding="ascii") + b"\n"
+        # Drain stale output from a previous command on this cached session
+        # before writing, so it cannot bleed into this command's result.
+        try:
+            self.read_channel()
+        except Exception:
+            pass
         self.remote_conn.write(cmd_bytes)
 
         logger.debug("VPCS: Sent command '%s' (%d bytes)", command_string, len(cmd_bytes))
 
-        # Sleep for 5 seconds (matching telnetlib3: sleep(5))
-        time.sleep(5)
-
-        # Wait for prompt pattern and capture output
-        # This matches telnetlib3: tn.expect([rb"PC\d+>"]) + tn.read_very_eager()
-        # read_until_pattern returns the output including the matched pattern
-        try:
-            output = self.read_until_pattern(pattern=expect_string, read_timeout=10)
-            logger.debug("VPCS: read_until_pattern returned %d chars", len(output))
-        except Exception as e:
-            # If pattern not found, try to read whatever is available
-            logger.debug("VPCS: Pattern not found, reading available output: %s", e)
-            output = self.read_channel()
-            logger.debug("VPCS: read_channel returned %d chars", len(output) if output else 0)
+        # The read loop is owned here rather than delegated to netmiko's
+        # read_until_pattern: on timeout that helper RAISES and discards the
+        # output it has already read, so a command slower than the timeout
+        # (e.g. a ping whose output lands after ARP resolution) would return
+        # an empty string that looks like success. The prompt appears as soon
+        # as the device finishes the command; on timeout the partial output is
+        # returned instead (the timeout stays the backstop — no fixed sleep).
+        timeout = read_timeout or 10
+        deadline = time.monotonic() + timeout
+        output = ""
+        while True:
+            chunk = self.read_channel() or ""
+            if chunk:
+                output += chunk
+                if re.search(expect_string, output):
+                    logger.debug("VPCS: prompt detected after %d chars", len(output))
+                    break
+            if time.monotonic() >= deadline:
+                logger.debug("VPCS: prompt not seen within %.1fs; returning partial output", timeout)
+                break
+            time.sleep(0.05)
 
         if isinstance(output, bytes):
             output = output.decode("utf-8", errors="replace")
@@ -266,12 +305,12 @@ class VPCSTelnet(BaseConnection):
         """
         Send command using timing-based delay.
 
-        For VPCS, timing-based and pattern-based methods are identical,
-        both use the telnetlib3 implementation pattern with fixed 5s delay.
+        For VPCS, timing-based and pattern-based methods are identical —
+        both delegate to send_command's prompt-pattern read loop.
 
         Args:
             command_string: The command to send
-            delay_factor: Not used (fixed 5s delay for VPCS)
+            delay_factor: Not used (the read loop is deadline-based)
             max_loops: Not used (kept for signature compatibility)
             strip_prompt: Remove prompt from output
             strip_command: Remove command from output
