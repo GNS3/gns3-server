@@ -22,7 +22,6 @@ import logging
 import os
 import re
 import uuid
-from os.path import commonpath
 
 from ..config import Config
 from ..utils import int_to_macaddress, macaddress_to_int
@@ -421,7 +420,7 @@ class Node:
         try:
             if not val.startswith(":") and os.path.isabs(val):
                 default_symbol_directory = Config.instance().settings.Server.symbols_path
-                if commonpath([default_symbol_directory, val]) != default_symbol_directory:
+                if os.path.commonprefix([default_symbol_directory, val]) != default_symbol_directory:
                     val = os.path.basename(val)
         except OSError:
             pass
