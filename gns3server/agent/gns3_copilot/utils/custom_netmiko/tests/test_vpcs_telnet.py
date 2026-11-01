@@ -240,9 +240,10 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
         """Test that send_command uses VPCS prompt as default expect_string."""
         import inspect
 
-        # Check that expect_string defaults to r"PC\d+>"
+        # The default expect_string is the per-instance prompt pattern built
+        # in __init__ from pcname (falls back to PC<n>/VPCS>).
         source = inspect.getsource(self.VPCSTelnet.send_command)
-        self.assertIn('expect_string = r"PC\\d+>"', source)
+        self.assertIn("expect_string = self._prompt_pattern", source)
 
     def test_send_command_timing_calls_send_command(self):
         """Test that send_command_timing delegates to send_command."""
@@ -283,9 +284,11 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
         """Test that telnet_login has correct default prompt pattern."""
         import inspect
 
-        # Check default prompt terminator
+        # The default prompt terminator is the per-instance prompt pattern
+        # built in __init__ from pcname (None -> self._prompt_pattern).
         source = inspect.getsource(self.VPCSTelnet.telnet_login)
-        self.assertIn('pri_prompt_terminator: str = r"PC\\d+>"', source)
+        self.assertIn("pri_prompt_terminator: str | None = None", source)
+        self.assertIn("pri_prompt_terminator = self._prompt_pattern", source)
 
     def test_telnet_login_sends_newlines(self):
         """Test that telnet_login sends 4 newlines."""
