@@ -198,6 +198,7 @@ class QemuSettingsUpdate(BaseModel):
     kvmclock: Optional[QemuKvmclock] = None
     allow_unsafe_options: Optional[bool] = None
     ovmf_firmware_dir: Optional[str] = None
+    aavmf_firmware_dir: Optional[str] = None
 
 
 class WebWiresharkSettingsUpdate(BaseModel):

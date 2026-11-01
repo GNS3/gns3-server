@@ -79,6 +79,15 @@ async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
 
 
 @pytest.fixture(scope="function")
+def uefi_vm(vm, tmp_path, monkeypatch):
+
+    working_dir = tmp_path / "node"
+    working_dir.mkdir()
+    monkeypatch.setattr(vm.project, "node_working_directory", lambda node: str(working_dir))
+    return vm
+
+
+@pytest.fixture(scope="function")
 def running_subprocess_mock():
 
     mm = MagicMock()
@@ -453,6 +462,101 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "guest_platform,dir_setting,code_name,vars_name",
+    [
+        ("x86_64", "ovmf_firmware_dir", "OVMF_CODE_4M.fd", "OVMF_VARS_4M.fd"),
+        ("aarch64", "aavmf_firmware_dir", "AAVMF_CODE.fd", "AAVMF_VARS.fd"),
+    ],
+)
+@pytest.mark.parametrize("system_code,system_vars", [(False, False), (True, True), (True, False), (False, True)])
+async def test_uefi_firmware_selection(
+    uefi_vm, tmp_path, images_dir, guest_platform, dir_setting, code_name, vars_name, system_code, system_vars
+):
+
+    vm = uefi_vm
+    vm._uefi = True
+    vm._platform = guest_platform
+    firmware_dir = tmp_path / "firmware"
+    firmware_dir.mkdir()
+    setattr(vm.manager.config.settings.Qemu, dir_setting, str(firmware_dir))
+    code_path = firmware_dir / code_name.lower() if system_code else Path(images_dir) / code_name
+    vars_path = firmware_dir / vars_name.lower() if system_vars else Path(images_dir) / vars_name
+    code_path.write_bytes(b"firmware")
+    vars_path.write_bytes(b"initial variables")
+    if guest_platform == "aarch64":
+        # An old x86 variables store must not select x86 firmware for an ARM guest.
+        (Path(vm.working_dir) / "OVMF_VARS.fd").write_bytes(b"x86 variables")
+
+    options = vm._bios_option()
+    vars_node_path = Path(vm.working_dir) / vars_name
+    assert options == [
+        "-drive",
+        f"if=pflash,format=raw,readonly,file={code_path}",
+        "-drive",
+        f"if=pflash,format=raw,file={vars_node_path}",
+        "-object",
+        "rng-random,filename=/dev/urandom,id=rng0",
+        "-device",
+        "virtio-rng-pci,rng=rng0",
+    ]
+    assert vars_node_path.read_bytes() == b"initial variables"
+    command = await vm._build_command()
+    assert " ".join(options) in " ".join(command)
+    vars_node_path.write_bytes(b"updated variables")
+    assert vm._bios_option() == options
+    assert vars_node_path.read_bytes() == b"updated variables"
+    assert vars_path.read_bytes() == b"initial variables"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "guest_platform,dir_setting,code_name,vars_name",
+    [
+        ("x86_64", "ovmf_firmware_dir", "OVMF_CODE.fd", "OVMF_VARS.fd"),
+        ("x86_64", "ovmf_firmware_dir", "OVMF_CODE_4M.fd", "OVMF_VARS_4M.fd"),
+        ("aarch64", "aavmf_firmware_dir", "AAVMF_CODE.fd", "AAVMF_VARS.fd"),
+    ],
+)
+async def test_uefi_existing_variables_store(
+    uefi_vm, tmp_path, images_dir, guest_platform, dir_setting, code_name, vars_name
+):
+
+    vm = uefi_vm
+    vm._uefi = True
+    vm._platform = guest_platform
+    setattr(vm.manager.config.settings.Qemu, dir_setting, str(tmp_path / "missing"))
+    code_path = Path(images_dir) / code_name
+    code_path.write_bytes(b"firmware")
+    vars_node_path = Path(vm.working_dir) / vars_name
+    vars_node_path.write_bytes(b"existing variables")
+
+    options = vm._bios_option()
+    assert options[:4] == [
+        "-drive",
+        f"if=pflash,format=raw,readonly,file={code_path}",
+        "-drive",
+        f"if=pflash,format=raw,file={vars_node_path}",
+    ]
+    assert vars_node_path.read_bytes() == b"existing variables"
+
+
+@pytest.mark.asyncio
+async def test_aarch64_uefi_variables_copy_error(uefi_vm, tmp_path):
+
+    vm = uefi_vm
+    vm._uefi = True
+    vm._platform = "aarch64"
+    (tmp_path / "AAVMF_CODE.fd").write_bytes(b"firmware")
+    (tmp_path / "AAVMF_VARS.fd").write_bytes(b"variables")
+    vm.manager.config.settings.Qemu.aavmf_firmware_dir = str(tmp_path)
+
+    with patch("gns3server.compute.qemu.qemu_vm.shutil.copyfile", side_effect=OSError("Permission denied")):
+        with pytest.raises(QemuError, match=r"Cannot copy AAVMF_VARS\.fd file"):
+            vm._bios_option()
+
+
+@pytest.mark.asyncio
 async def test_uefi_with_bios_image_already_configured(vm, tmpdir, fake_qemu_img_binary):
 
     vm._bios_image = str(tmpdir / "test.img")
@@ -545,6 +649,31 @@ async def test_set_process_priority_normal(vm, fake_qemu_img_binary):
         vm._process.pid = 42
         await vm._set_process_priority()
         assert not process.called
+
+
+@pytest.mark.parametrize(
+    ("host_machine", "expected"),
+    [
+        ("x86_64", ["-machine", "virt,gic-version=3", "-cpu", "neoverse-n1"]),
+        ("aarch64", ["-machine", "virt,gic-version=host", "-cpu", "max"]),
+        ("arm64", ["-machine", "virt,gic-version=host", "-cpu", "max"]),
+    ],
+)
+def test_arm64_options(vm, host_machine, expected):
+    vm._platform = "aarch64"
+    with patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value=host_machine):
+        assert vm._arm64_options("") == expected
+
+
+def test_arm64_options_with_custom_cpu(vm):
+    vm._platform = "aarch64"
+    with patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"):
+        assert vm._arm64_options("-cpu cortex-a72") == ["-machine", "virt,gic-version=3"]
+
+
+def test_arm64_options_for_other_platform(vm):
+    vm._platform = "x86_64"
+    assert vm._arm64_options("") == []
 
 
 def test_json(vm, compute_project):

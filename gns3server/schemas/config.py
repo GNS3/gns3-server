@@ -101,6 +101,7 @@ class QemuSettings(BaseModel):
     )
     allow_unsafe_options: bool = Field(False, description="Allow unsafe additional command line options")
     ovmf_firmware_dir: str = Field("/usr/share/OVMF", description="Path to the OVMF firmware directory")
+    aavmf_firmware_dir: str = Field("/usr/share/AAVMF", description="Path to the AAVMF firmware directory for aarch64")
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
