@@ -2049,6 +2049,23 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         super(QemuVM, QemuVM).console_type.__set__(self, new_console_type)
 
+    def _arm64_options(self, additional_options):
+
+        if self.platform == "aarch64":
+            arm64_machine = platform.machine() in ("aarch64", "arm64")
+            if arm64_machine:
+                arm64_options = ["-machine", "virt,gic-version=host"]
+            else:
+                arm64_options = ["-machine", "virt,gic-version=3"]
+            if "-cpu" not in additional_options:
+                if arm64_machine:
+                    arm64_options.extend(["-cpu", "max"])
+                else:
+                    arm64_options.extend(["-cpu", "neoverse-n1"])
+            return arm64_options
+        else:
+            return []
+
     def _serial_options(self, internal_console_port, external_console_port):
 
         if external_console_port:
@@ -2512,54 +2529,48 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
 
         elif self._uefi:
-            system_ovmf_firmware_dir = Path(self.manager.config.settings.Qemu.ovmf_firmware_dir)
-            log.debug(f"Using OVMF firmware directory: {system_ovmf_firmware_dir}")
-            old_ovmf_vars_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
-            if os.path.exists(old_ovmf_vars_path):
-                # the node has its own UEFI variables store already, we must also use the old UEFI firmware
-                ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            if self.platform == "aarch64":
+                firmware_dir = Path(self.manager.config.settings.Qemu.aavmf_firmware_dir)
+                firmware_name = "AAVMF_CODE.fd"
+                vars_name = "AAVMF_VARS.fd"
             else:
-                # Use a manual case-insensitive search instead
-                try:
-                    system_ovmf_firmware_path = next(
-                        (f for f in system_ovmf_firmware_dir.glob("*.fd") if f.name.lower() == "ovmf_code_4m.fd"), None
-                    )
-                except (FileNotFoundError, StopIteration):
-                    system_ovmf_firmware_path = None
-
-                if system_ovmf_firmware_path:
-                    ovmf_firmware_path = str(system_ovmf_firmware_path)
+                firmware_dir = Path(self.manager.config.settings.Qemu.ovmf_firmware_dir)
+                firmware_name = "OVMF_CODE_4M.fd"
+                vars_name = "OVMF_VARS_4M.fd"
+            log.debug(f"Using UEFI firmware directory: {firmware_dir}")
+            old_ovmf_vars_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if self.platform != "aarch64" and os.path.exists(old_ovmf_vars_path):
+                # the node has its own UEFI variables store already, we must also use the old UEFI firmware
+                firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+                vars_node_path = old_ovmf_vars_path
+            else:
+                system_firmware_path = next(
+                    (f for f in firmware_dir.glob("*.fd") if f.name.lower() == firmware_name.lower()), None
+                )
+                if system_firmware_path:
+                    firmware_path = str(system_firmware_path)
                 else:
                     # otherwise, get the UEFI firmware from the images directory
-                    ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE_4M.fd")
+                    firmware_path = self.manager.get_abs_image_path(firmware_name)
 
-            log.debug(f"Configuring UEFI boot mode using OVMF file: '{ovmf_firmware_path}'")
-            options.extend(["-drive", f"if=pflash,format=raw,readonly,file={ovmf_firmware_path}"])
-
-            # try to use the UEFI variables store from the system first
-            try:
-                system_ovmf_vars_path = next(
-                    (f for f in system_ovmf_firmware_dir.glob("*.fd") if f.name.lower() == "ovmf_vars_4m.fd"), None
-                )
-            except (FileNotFoundError, StopIteration):
-                system_ovmf_vars_path = None
-            if system_ovmf_vars_path:
-                ovmf_vars_path = str(system_ovmf_vars_path)
-            else:
-                # otherwise, get the UEFI variables store from the images directory
-                ovmf_vars_path = self.manager.get_abs_image_path("OVMF_VARS_4M.fd")
-
-            # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
-            if os.path.exists(old_ovmf_vars_path):
-                ovmf_vars_node_path = old_ovmf_vars_path
-            else:
-                ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS_4M.fd")
-                if not os.path.exists(ovmf_vars_node_path):
+                # Each node must have its own writable UEFI variables store.
+                vars_node_path = os.path.join(self.working_dir, vars_name)
+                if not os.path.exists(vars_node_path):
+                    system_vars_path = next(
+                        (f for f in firmware_dir.glob("*.fd") if f.name.lower() == vars_name.lower()), None
+                    )
+                    if system_vars_path:
+                        vars_path = str(system_vars_path)
+                    else:
+                        vars_path = self.manager.get_abs_image_path(vars_name)
                     try:
-                        shutil.copyfile(ovmf_vars_path, ovmf_vars_node_path)
+                        shutil.copyfile(vars_path, vars_node_path)
                     except OSError as e:
-                        raise QemuError(f"Cannot copy OVMF_VARS_4M.fd file to the node working directory: {e}")
-            options.extend(["-drive", f"if=pflash,format=raw,file={ovmf_vars_node_path}"])
+                        raise QemuError(f"Cannot copy {vars_name} file to the node working directory: {e}")
+
+            log.debug(f"Configuring UEFI boot mode using firmware file: '{firmware_path}'")
+            options.extend(["-drive", f"if=pflash,format=raw,readonly,file={firmware_path}"])
+            options.extend(["-drive", f"if=pflash,format=raw,file={vars_node_path}"])
 
             # edk2 firmware requires a Random Number Generator (RNG) device in order to turn network adapters on
             options.extend(["-object", "rng-random,filename=/dev/urandom,id=rng0"])
@@ -2910,10 +2921,10 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if self._cpus > maxcpus:
             maxcpus = self._cpus
         command.extend(["-smp", f"cpus={self._cpus},maxcpus={maxcpus},sockets=1"])
-        kvm = False
+        kvm_enabled = False
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             command.extend(["-machine", "accel=kvm"])
-            kvm = True
+            kvm_enabled = True
         command.extend(["-boot", f"order={self._boot_priority}"])
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
@@ -2945,7 +2956,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 for opt in additional_opt_list:
                     if opt in FORBIDDEN_OPTIONS:
                         raise QemuError(f"Forbidden additional option: {opt}")
-        if kvm:
+        command.extend(self._arm64_options(additional_options))
+        if kvm_enabled:
             kvmclock_off_reason = self._kvmclock_off_reason()
             if kvmclock_off_reason:
                 log.info(
