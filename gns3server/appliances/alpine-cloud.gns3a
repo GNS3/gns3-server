@@ -9,31 +9,59 @@
     "documentation_url": "http://wiki.alpinelinux.org",
     "product_name": "Alpine Linux",
     "product_url": "https://www.alpinelinux.org/cloud/",
-    "registry_version": 4,
+    "registry_version": 8,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "\nUsername: alpine\nPassword: alpine",
-    "port_name_format": "Ethernet{0}",
-    "qemu": {
-        "adapter_type": "virtio-net-pci",
-        "adapters": 1,
-        "ram": 1024,
-        "hda_disk_interface": "virtio",
-        "arch": "x86_64",
-        "console_type": "telnet",
-        "boot_priority": "c",
-        "kvm": "require",
-        "options": "-nographic"
-    },
+    "settings": [
+        {
+            "name": "default",
+            "default": true,
+            "template_type": "qemu",
+            "template_properties": {
+                "port_name_format": "eth{0}",
+                "adapter_type": "virtio-net-pci",
+                "adapters": 1,
+                "ram": 1024,
+                "hda_disk_interface": "virtio",
+                "console_type": "telnet",
+                "boot_priority": "c",
+                "options": "-nographic",
+                "uefi": true
+            }
+        },
+        {
+            "name": "x86_64",
+            "template_type": "qemu",
+            "template_properties": {
+                "platform": "x86_64"
+            }
+        },
+        {
+            "name": "aarch64",
+            "template_type": "qemu",
+            "template_properties": {
+                "platform": "aarch64"
+            }
+        }
+    ],
     "images": [
         {
-            "filename": "generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2",
-            "version": "3.21.2",
-            "md5sum": "b40825dff2867e0ffaffbc4c87674462",
-            "filesize": 189726720,
+            "filename": "alpine-3.24.3-x86_64-cloudinit-r0.qcow2",
+            "version": "3.24.3 (x86_64)",
+            "md5sum": "1777b468113613662364905bb24b996a",
+            "filesize": 157810688,
             "download_url": "https://www.alpinelinux.org/cloud/",
-            "direct_download_url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2"
+            "direct_download_url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.3-x86_64-cloudinit-r0.qcow2"
+        },
+        {
+            "filename": "alpine-3.24.3-aarch64-cloudinit-r0.qcow2",
+            "version": "3.24.3 (aarch64)",
+            "md5sum": "deb9e822f5304540329762c241dab60d",
+            "filesize": 157810688,
+            "download_url": "https://www.alpinelinux.org/cloud/",
+            "direct_download_url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.3-aarch64-cloudinit-r0.qcow2"
         },
         {
             "filename": "alpine-cloud-init-data.iso",
@@ -46,9 +74,18 @@
     ],
     "versions": [
         {
-            "name": "3.21.2",
+            "name": "3.24.3 (x86_64)",
+            "settings": "x86_64",
             "images": {
-                "hda_disk_image": "generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2",
+                "hda_disk_image": "alpine-3.24.3-x86_64-cloudinit-r0.qcow2",
+                "cdrom_image": "alpine-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "3.24.3 (aarch64)",
+            "settings": "aarch64",
+            "images": {
+                "hda_disk_image": "alpine-3.24.3-aarch64-cloudinit-r0.qcow2",
                 "cdrom_image": "alpine-cloud-init-data.iso"
             }
         }
