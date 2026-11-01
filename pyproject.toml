@@ -72,6 +72,10 @@ addopts = ["-m", "not e2e"]
 markers = [
     "e2e: live end-to-end tests (real server, kernel interfaces, emulators)",
 ]
+filterwarnings = [
+    '''ignore:'asyncio\.iscoroutinefunction' is deprecated:DeprecationWarning:langsmith\._internal\._beta_decorator''',
+    '''ignore:_pytest\.python\.CallSpec2 has been renamed to CallSpec\.:pytest.PytestRemovedIn10Warning:anyio\.pytest_plugin''',
+]
 asyncio_default_fixture_loop_scope = "function"
 
 
@@ -276,4 +280,3 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 strict_equality = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-
