@@ -504,7 +504,13 @@ async def test_grep_hit_on_long_output_returns_only_matches():
 @contextlib.asynccontextmanager
 async def _serve_console(received, replies):
     """aiohttp WS server behaving like a console: banner on connect (BINARY,
-    the way the compute side ships it), reply per received line."""
+    the way the compute side ships it), reply per received line.
+
+    ``replies`` is a str (sent whole) or a list of byte frames — the compute
+    side ships output as one BINARY frame per arbitrary read(1024) burst.
+    Commands arrive as BINARY frames (websocat runs in -b mode) and are
+    recorded as bytes.
+    """
 
     from aiohttp import WSMsgType, web
 
@@ -513,9 +519,13 @@ async def _serve_console(received, replies):
         await ws.prepare(request)
         await ws.send_bytes(b"Welcome to the console\r\n")
         async for msg in ws:
-            if msg.type == WSMsgType.TEXT:
+            if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
                 received.append(msg.data)
-                await ws.send_bytes(replies.encode())
+                if isinstance(replies, (list, tuple)):
+                    for frame in replies:
+                        await ws.send_bytes(frame)
+                else:
+                    await ws.send_bytes(replies.encode())
         return ws
 
     app = web.Application()
@@ -546,7 +556,7 @@ async def test_real_websocat_session_end_to_end():
             )
 
     assert "uptime 5m" in result
-    assert received == ["show version\r\n"]
+    assert received == [b"show version\r\n"]
 
 
 @pytest.mark.asyncio
@@ -567,3 +577,30 @@ async def test_real_websocat_stays_open_the_full_window():
             elapsed = time.monotonic() - started
 
     assert elapsed >= 1.8  # it did not bail out after the echo ack
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(shutil.which("websocat") is None, reason="websocat is not installed")
+async def test_real_websocat_binary_mode_keeps_frame_splits_byte_exact():
+    """The compute ships output as one BINARY frame per arbitrary read(1024)
+    burst. websocat text mode (-t, also the default) appends a newline after
+    every received message and turns CR/LF into spaces — the field symptom
+    was output diced into short lines mid-word ("Password: " split in
+    three) and lost carriage-return redraws. Binary mode must preserve the
+    stream exactly across frame boundaries."""
+
+    frames = [b"R1# show ", b"ver", b"sion\r\n", b"lineA\rlineB\r\n"]
+    received = []
+    async with _serve_console(received, replies=frames) as base:
+        with patch(f"{AH}._get_connector", return_value=_MockConnector(_node_payload())):
+            result = await console_exec(
+                "11111111-1111-1111-1111-111111111111",
+                "22222222-2222-2222-2222-222222222222",
+                "show version",
+                2,
+                gns3_ctx=_ctx(base),
+            )
+
+    # frame boundaries must not become line breaks, and CR must survive
+    assert "R1# show version\r\n" in result
+    assert "lineA\rlineB\r\n" in result

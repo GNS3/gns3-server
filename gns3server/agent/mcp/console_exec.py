@@ -22,10 +22,10 @@ node_console_exec: one-shot node console executor.
 Server-side equivalent of the client-side chain this workflow used to need:
 
     node_console (mint URL+ticket) -> bash: { sleep ..; printf 'cmd\r\n'; .. }
-                                      | timeout N websocat -t --no-close '<url>'
+                                      | timeout N websocat -b --no-close '<url>'
 
 One tool call is one complete console session: the server spawns
-``timeout N websocat -t --no-close <url>``, feeds the command lines through
+``timeout N websocat -b --no-close <url>``, feeds the command lines through
 stdin, keeps reading stdout until the timeout kills websocat, and returns the
 collected output as plain text. No session state survives the call; node-side
 state (config mode, running pings) persists across calls by nature of the
@@ -161,7 +161,17 @@ async def _resolve_console_node(
 
 
 async def _spawn(url: str, seconds: int) -> asyncio.subprocess.Process:
-    """Start ``timeout <seconds> websocat -t --no-close <url>``.
+    """Start ``timeout <seconds> websocat -b --no-close <url>``.
+
+    Binary mode is mandatory, not a preference: in text mode (-t, and also
+    the default) websocat appends a ``\\n`` after every received WebSocket
+    message and turns CR/LF inside a message into spaces. The compute ships
+    console output as one BINARY frame per ``read(1024)`` burst, so text mode
+    injects a newline at every arbitrary frame boundary — output arrives
+    diced into short lines mid-word (field symptom: prompts split into
+    pieces, "narrow columns"). ``-b`` is byte-exact in both directions;
+    binary command frames are still handled as data by the compute console
+    handler.
 
     The subprocess gets its own process group: websocat is a child of
     ``timeout``, and a cancelled call must take down the whole tree (an
@@ -172,7 +182,7 @@ async def _spawn(url: str, seconds: int) -> asyncio.subprocess.Process:
         "timeout",
         str(seconds),
         "websocat",
-        "-t",
+        "-b",
         "--no-close",
         url,
         stdin=asyncio.subprocess.PIPE,
