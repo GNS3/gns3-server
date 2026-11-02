@@ -71,10 +71,10 @@ Token-efficient usage pattern:
 
 ```json
 // Step 1: List issue names only (~300 tokens)
-{"device_type": "injection_ospf", "detail": "index"}
+{"device_type": "injection_ospf_issues", "detail": "index"}
 
 // Step 2: Get single issue detail (~500 tokens)
-{"device_type": "injection_ospf", "issue": "ospf_hello_dead_mismatch"}
+{"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
 ```
 
 ### Parameters
@@ -83,7 +83,7 @@ Token-efficient usage pattern:
 |-----------|----------|-------------|
 | `action` | No (`"get"`) | `"list"` to browse, `"get"` for details |
 | `context` | **Yes** for `action="list"` | Protocols found in topology: `["ospf", "bgp"]` |
-| `device_type` | Yes for `action="get"` | e.g. `"injection_ospf"` |
+| `device_type` | Yes for `action="get"` | e.g. `"injection_ospf_issues"` |
 | `detail` | No (`"full"`) | `"index"` (names), `"summary"` (+desc), `"full"` (all) |
 | `issue` | No | Single issue key for targeted detail |
 
@@ -107,10 +107,10 @@ sequenceDiagram
     LLM->>InjectionSkillsTool: {"action": "list", "context": ["ospf", "vlan"]}
     InjectionSkillsTool-->>LLM: Matching fault categories
 
-    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf", "detail": "index"}
+    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf_issues", "detail": "index"}
     InjectionSkillsTool-->>LLM: Issue names (token-efficient)
 
-    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf", "issue": "ospf_hello_dead_mismatch"}
+    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
     InjectionSkillsTool-->>LLM: Full fault detail + config commands
 
     LLM->>DeviceCommands: Inject fault configuration

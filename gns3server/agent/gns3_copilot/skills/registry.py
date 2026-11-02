@@ -355,6 +355,11 @@ def get_skills_repository_info() -> dict[str, Any]:
     return manager.get_repository_info()
 
 
+# Descriptive keys that are not content sections; excluded from the
+# section list returned for skills that have no topics/issues.
+_SKILL_META_KEYS = frozenset({"name", "description", "device_type", "category", "issues", "topics"})
+
+
 def get_skill(
     device_type: str,
     category: str | None = None,
@@ -450,6 +455,12 @@ def get_skill(
         }
         if topics:
             result["topics"] = {k: v.get("name", k) for k, v in topics.items()}
+        else:
+            # Single-file device/feature skills have no topics: name the
+            # top-level sections so the index is not an empty shell.
+            sections = [k for k in skill if k not in _SKILL_META_KEYS]
+            if sections:
+                result["sections"] = sections
         return result
 
     if detail == "summary":
@@ -472,6 +483,10 @@ def get_skill(
             result["topics"] = {
                 k: {"name": v.get("name", k), "description": v.get("description", "")} for k, v in topics.items()
             }
+        else:
+            sections = [k for k in skill if k not in _SKILL_META_KEYS]
+            if sections:
+                result["sections"] = sections
         return result
 
     # Full detail: topic bodies are replaced by the topic index
@@ -517,7 +532,7 @@ def get_injection_skill(
     Get injection fault skill by device_type, with configurable detail level.
 
     Args:
-        device_type: The injection fault type (e.g., "injection_ospf")
+        device_type: The injection fault type (e.g., "injection_ospf_issues")
         detail: Detail level - "index" (names only), "summary" (+desc/sev/diff), "full" (all)
         issue: Optional specific issue key to retrieve
 
@@ -587,18 +602,23 @@ def list_available_injection_skills(context: list[str] | None = None) -> list[di
 
     Args:
         context: List of protocol/service keywords (e.g., ["ospf", "bgp", "vlan"]).
-                 Only returns skills whose category matches any keyword.
+                 A skill matches when a keyword appears in its category, its
+                 key or one of its declared protocols (case-insensitive), so
+                 aliases such as "ebgp" or "ospfv3" work.
 
     Returns:
         List of skill info dicts with device_type, name, and category.
     """
     skills = []
+    keywords = [str(kw).lower() for kw in context] if context else []
     for did, skill in INJECTION_SKILLS_REGISTRY.items():
         category = skill.get("category", "")
-        if context:
-            # Match if skill category contains any context keyword
-            category_lower = category.lower()
-            if not any(kw.lower() in category_lower or kw.lower() in did.lower() for kw in context):
+        if keywords:
+            haystacks = [str(category).lower(), did.lower()]
+            protocols = skill.get("protocols")
+            if isinstance(protocols, list):
+                haystacks.extend(str(protocol).lower() for protocol in protocols)
+            if not any(keyword in haystack for keyword in keywords for haystack in haystacks):
                 continue
         skills.append(
             {
@@ -762,13 +782,13 @@ class InjectionSkillsTool(BaseTool):
     1. List faults for YOUR topology protocols (REQUIRED):
        {"action": "list", "context": ["ospf", "bgp"]}
     2. Get specific fault details:
-       {"device_type": "injection_ospf", "issue": "ospf_hello_dead_mismatch"}
-       {"device_type": "injection_ospf", "detail": "index"}
+       {"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
+       {"device_type": "injection_ospf_issues", "detail": "index"}
 
     PARAMETERS:
     - action: "list" or "get"
     - context: [str] - REQUIRED for action="list". Protocols from your topology.
-    - device_type: Required for action="get" (e.g., "injection_ospf")
+    - device_type: Required for action="get" (e.g., "injection_ospf_issues")
     - detail: "index" | "summary" | "full"
     - issue: Get single fault detail by key
     """

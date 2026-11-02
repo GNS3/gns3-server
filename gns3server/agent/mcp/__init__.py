@@ -18,19 +18,22 @@
 """
 MCP (Model Context Protocol) service for GNS3 server.
 
-Implements the standard MCP protocol over SSE transport using FastMCP:
+Implements the standard MCP protocol over the Streamable HTTP transport
+using the official MCP SDK (mcp.server.mcpserver.MCPServer):
 
-  /v3/mcp/sse     — SSE stream
-  /v3/mcp/messages/ — JSON-RPC messages
+  /v3/mcp/transport  — POST (JSON-RPC), GET (optional server stream),
+                       DELETE (session termination)
 
 Tools are registered via @mcp.tool() decorators.
 """
 
 import asyncio
+import contextlib
 import contextvars
 import json
 import logging
 import socket
+import time
 from typing import Annotated, Any
 from urllib.parse import parse_qs
 from uuid import UUID
@@ -38,7 +41,7 @@ from uuid import UUID
 import bcrypt
 from fastapi import APIRouter
 from fastapi.responses import Response
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -145,6 +148,7 @@ from .server import (
     get_statistics_handler,
     get_version_handler,
 )
+from .skills import device_skills_handler, injection_skills_handler
 from .snapshots import (
     create_snapshot_handler,
     delete_snapshot_handler,
@@ -221,8 +225,11 @@ async def wait_for_mcp_ready() -> bool:
 
 
 # ── Per‑connection JWT token  ─────────────────────────────────────────
-# Set during SSE authentication, read by tool handlers running in the
-# same asyncio task (contextvars propagate through asyncio.to_thread).
+# Set during request authentication, read by tool handlers running in the
+# session task that inherited it (contextvars propagate through
+# asyncio.to_thread). In stateful Streamable HTTP the session task is
+# created by the opening (initialize) request, so handlers see the token
+# presented when the session was established.
 
 _jwt_token_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("mcp_jwt_token", default=None)
 # Username extracted during token validation — used by handlers to generate
@@ -232,9 +239,35 @@ _jwt_username_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("
 # download/console URLs must carry the same version, or the revocation check
 # (token_data.token_version != user.token_version) rejects them as "revoked".
 _jwt_token_version_var: contextvars.ContextVar[int] = contextvars.ContextVar("mcp_jwt_token_version", default=0)
+# The raw API key the session authenticated with (None for JWT logins). The
+# session task cannot see contextvars set by later requests, so the JWT it
+# inherited at initialize ages past its 24h lifetime while the transport
+# keeps authenticating fine — _gns3_ctx() uses this key to renew that JWT.
+_jwt_api_key_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("mcp_jwt_api_key", default=None)
 
 
 # ── Token validation ──────────────────────────────────────────────────
+
+# Short-lived cache of API-key resolutions. Streamable HTTP authenticates
+# every request (not once per connection like SSE), and each API-key check
+# costs a bcrypt round (~hundreds of ms of CPU). Cache the minted JWT (and
+# the username/token_version contextvars) for a few minutes per key.
+# Revocation lag is bounded by the TTL — the minted 24h JWT outlives the
+# cache anyway, so this matches the previous per-connection behavior.
+_API_KEY_CACHE_TTL = 300.0  # seconds
+_API_KEY_CACHE_MAX = 128
+_api_key_cache: dict[str, tuple[float, str, str, int]] = {}  # token -> (expires_at, jwt, username, token_version)
+
+
+def _cache_api_key(token: str, jwt: str, username: str, token_version: int) -> None:
+    """Store an API-key resolution, pruning the cache when it exceeds the size cap."""
+    now = time.monotonic()
+    if len(_api_key_cache) >= _API_KEY_CACHE_MAX:
+        for stale in [k for k, v in _api_key_cache.items() if v[0] <= now]:
+            del _api_key_cache[stale]
+        if len(_api_key_cache) >= _API_KEY_CACHE_MAX:
+            _api_key_cache.pop(next(iter(_api_key_cache)))
+    _api_key_cache[token] = (now + _API_KEY_CACHE_TTL, jwt, username, token_version)
 
 
 async def _resolve_token(token: str) -> str | None:
@@ -246,7 +279,7 @@ async def _resolve_token(token: str) -> str | None:
     Returns None if the token is invalid.
     """
     # API keys (gns3_...) are never valid JWTs — skip the JWT attempt for them
-    # so it doesn't log a spurious "JWT rejected" line on every API-key connection.
+    # so it doesn't log a spurious "JWT rejected" line on every API-key request.
     if not token.startswith("gns3_"):
         try:
             token_data = auth_service.get_token_data(token)
@@ -255,6 +288,15 @@ async def _resolve_token(token: str) -> str | None:
             return token
         except Exception:
             pass
+
+    cached = _api_key_cache.get(token)
+    if cached is not None:
+        expires_at, jwt, username, token_version = cached
+        if expires_at > time.monotonic():
+            _jwt_username_var.set(username)
+            _jwt_token_version_var.set(token_version)
+            return jwt
+        del _api_key_cache[token]
 
     # Try API key — format: gns3_<api_key_id>_<random_secret> → O(1) lookup
     if token.startswith("gns3_") and _app is not None:
@@ -279,6 +321,7 @@ async def _resolve_token(token: str) -> str | None:
                                     fresh_token = auth_service.create_access_token(
                                         user.username, token_version=user.token_version
                                     )
+                                    _cache_api_key(token, fresh_token, user.username, user.token_version)
                                     return fresh_token
             except Exception:
                 pass
@@ -304,28 +347,27 @@ def _server_url() -> str:
     return f"{scheme}://{host}:{cfg.Server.port}"
 
 
-# ── FastMCP Server ────────────────────────────────────────────────────
+# ── MCP Server ────────────────────────────────────────────────────────
 
 
-def _create_mcp_server() -> FastMCP:
-    """Create MCP server with security settings from configuration."""
+def _create_mcp_server() -> MCPServer:
+    """Create the MCP server (transport security is applied when the HTTP app is built)."""
+    return MCPServer("GNS3 MCP Server")
+
+
+def _transport_security() -> TransportSecuritySettings:
+    """Build transport security settings from configuration."""
     cfg = Config.instance().settings.Server
 
-    # Always pass an explicit TransportSecuritySettings to prevent FastMCP
+    # Always pass an explicit TransportSecuritySettings to prevent the SDK
     # from auto-enabling protection when host is localhost (its default).
     if cfg.mcp_enable_dns_rebinding_protection:
-        transport_security = TransportSecuritySettings(
+        return TransportSecuritySettings(
             enable_dns_rebinding_protection=True,
             allowed_hosts=cfg.mcp_allowed_hosts or ["127.0.0.1:*", "localhost:*"],
             allowed_origins=cfg.mcp_allowed_origins or ["http://127.0.0.1:*", "http://localhost:*"],
         )
-    else:
-        transport_security = TransportSecuritySettings(
-            enable_dns_rebinding_protection=False,
-        )
-
-    mcp = FastMCP("GNS3 MCP Server", transport_security=transport_security)
-    return mcp
+    return TransportSecuritySettings(enable_dns_rebinding_protection=False)
 
 
 mcp = _create_mcp_server()
@@ -334,14 +376,58 @@ mcp = _create_mcp_server()
 # ── Tool handlers ─────────────────────────────────────────────────────
 
 
-def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
-    """Run a synchronous Gns3Connector handler in a thread."""
-    ctx = {
+def _renew_expired_jwt(token: str | None, api_key: str | None, username: str | None, token_version: int) -> str | None:
+    """Renew the session task's JWT once it has aged past its lifetime.
+
+    Tool handlers run in the session task created at initialize and inherit
+    its context; contextvars set by later requests never reach them. For
+    API-key sessions (the documented long-lived setup — keys never expire)
+    that means the minted 24h JWT eventually expires under a healthy
+    transport: every request still re-validates the key, but tool calls
+    would send the stale JWT and fail with 401.
+
+    The renewal is cheap by construction: every tools/call POST passes the
+    auth wrapper first, which re-validates the API key and refreshes the
+    module-level _api_key_cache with a freshly minted JWT — so by the time a
+    tool handler runs, a current JWT for this key is already cached. Only
+    when that cache entry has gone stale (idle gap) do we re-mint here
+    synchronously; no DB round-trip, the username/token_version validated at
+    initialize are re-used.
+
+    Returns the effective JWT, or None when renewal is not possible (JWT
+    login: the client's own credential expiring is the client's business).
+    """
+    if not token or not api_key:
+        return token
+    try:
+        auth_service.get_token_data(token)
+        return token  # still valid
+    except Exception:
+        pass
+    cached = _api_key_cache.get(api_key)
+    if cached is not None and cached[0] > time.monotonic():
+        return cached[1]
+    fresh = auth_service.create_access_token(username or "", token_version=token_version)
+    _cache_api_key(api_key, fresh, username or "", token_version)
+    log.info("Renewed the MCP session's expired JWT from its API key (user %s)", username)
+    return fresh
+
+
+def _gns3_ctx() -> dict[str, Any]:
+    """Build the Gns3Connector context from the request's contextvars."""
+    return {
         "server_url": _server_url(),
-        "jwt_token": _jwt_token_var.get(),
+        "jwt_token": _renew_expired_jwt(
+            _jwt_token_var.get(), _jwt_api_key_var.get(), _jwt_username_var.get(), _jwt_token_version_var.get()
+        ),
         "jwt_username": _jwt_username_var.get(),
         "jwt_token_version": _jwt_token_version_var.get(),
     }
+
+
+def _run_handler_sync(handler, params: dict[str, Any]) -> list[dict[str, Any]]:
+    """Run a synchronous Gns3Connector handler in a thread."""
+    ctx = _gns3_ctx()
 
     def run(h, p):
         return h(p, ctx)
@@ -2104,17 +2190,131 @@ async def vpcs_config_set(
     )
 
 
-# ── Auth‑wrapped SSE app ──────────────────────────────────────────────
+@mcp.tool()
+async def device_skill_get(
+    device_type: Annotated[
+        str | None,
+        Field(description="Skill key exactly as action='list' returns it, e.g. 'frr_vtysh', 'cisco_ios_telnet'"),
+    ] = None,
+    action: Annotated[str | None, Field(description='"list" to enumerate skills; "get" (default) to fetch one')] = None,
+    category: Annotated[str | None, Field(description='Optional category filter, e.g. "device" or "feature"')] = None,
+    topic: Annotated[
+        str | None,
+        Field(
+            description='Protocol topic key from the topic index, e.g. "ospf", "bgp". '
+            "Topic bodies load ONLY on an explicit topic request — every other call returns the base skill plus the topic index"
+        ),
+    ] = None,
+    detail: Annotated[str | None, Field(description='"index" | "summary" | "full" (default)')] = None,
+    issue: Annotated[str | None, Field(description="Single troubleshooting-issue key from the skill")] = None,
+) -> list[dict[str, Any]]:
+    """Read device knowledge from the GNS3-Skills repository — BEFORE driving an unfamiliar console.
+
+    TOKEN-EFFICIENT USAGE (same protocol as the copilot's device_skills tool):
+      1. List every skill:             device_skill_get(action="list")
+      2. Device skill list (topics):   device_skill_get(device_type="frr_vtysh")
+      3. ONE targeted topic body:      device_skill_get(device_type="frr_vtysh", topic="bgp")
+
+    Step 2 returns the base skill plus the topic index; step 3 loads the
+    targeted body. Pass the key exactly as step 1 returned it.
+    Devices without topics (single-file skills such as gns3_vpcs_telnet
+    or nokia_srlinux_cli) are complete at step 2 with the default full
+    detail — there is no topic step, and detail="index" only lists their
+    sections (config_commands, display_commands, ...).
+    category="device" or "feature" narrows both list and get.
+    Skills carry the operational quirks the generic tools cannot know:
+    FRR's console lands directly in vtysh (no -c on its ping, 'do' prefixes
+    inside scripted config), VPCS command syntax, IOS paging pitfalls.
+
+    Requires the skills repository to be configured (cloned); an
+    uninitialized repository fails with a clear error, while an empty but
+    initialized repository returns an empty list.
+
+    IF YOUR CLIENT OFFERS SUBAGENTS: on long tasks, delegate steps 1-2
+    to a subagent and ask it to return the exact command/quirk snippets
+    you need — not a prose summary. The full skill bodies then never
+    occupy this conversation's context.
+    """
+    params: dict[str, Any] = {"action": action}
+    if device_type is not None:
+        params["device_type"] = device_type
+    if category is not None:
+        params["category"] = category
+    if topic is not None:
+        params["topic"] = topic
+    if detail is not None:
+        params["detail"] = detail
+    if issue is not None:
+        params["issue"] = issue
+    return await asyncio.to_thread(_run_handler_sync, device_skills_handler, params)
+
+
+@mcp.tool()
+async def injection_skill_get(
+    action: Annotated[
+        str | None,
+        Field(description='"list" (requires context) to find fault categories; "get" (default with device_type)'),
+    ] = None,
+    context: Annotated[
+        list[str] | None,
+        Field(
+            description='REQUIRED for action="list": protocols/services found in the topology, '
+            'e.g. ["ospf", "bgp"]. Returns only the matching fault categories'
+        ),
+    ] = None,
+    device_type: Annotated[
+        str | None,
+        Field(description="Fault category key from action='list', e.g. 'injection_ospf_issues'"),
+    ] = None,
+    detail: Annotated[str | None, Field(description='"index" | "summary" | "full" (default)')] = None,
+    issue: Annotated[
+        str | None,
+        Field(description="Single fault key from the category's issue index, e.g. 'ospf_hello_dead_mismatch'"),
+    ] = None,
+) -> list[dict[str, Any]]:
+    """Read fault-injection knowledge from the GNS3-Skills repository.
+
+    Multi-call by design — analyze the topology first, then:
+      1. Find the fault categories that fit it (context REQUIRED):
+         injection_skill_get(action="list", context=["ospf", "bgp"])
+      2. Get one category's fault index (names only):
+         injection_skill_get(device_type="injection_ospf_issues", detail="index")
+      3. Get ONE fault's full detail:
+         injection_skill_get(device_type="injection_ospf_issues", issue="ospf_hello_dead_mismatch")
+
+    Then inject it with device_config_send, and verify with device_show_run.
+
+    context matches the skill's category, key and declared protocols
+    (case-insensitive), so aliases such as "ebgp" and "ospfv3" work.
+    Category keys are derived from the repository filenames — always pass
+    the key exactly as action="list" returned it.
+    """
+    params: dict[str, Any] = {"action": action}
+    if context is not None:
+        params["context"] = context
+    if device_type is not None:
+        params["device_type"] = device_type
+    if detail is not None:
+        params["detail"] = detail
+    if issue is not None:
+        params["issue"] = issue
+    return await asyncio.to_thread(_run_handler_sync, injection_skills_handler, params)
+
+
+# ── Auth‑wrapped Streamable HTTP app ──────────────────────────────────
 
 
 def _make_auth_wrapper(inner_app):
-    """Wrap the SSE app with JWT validation.
+    """Wrap the Streamable HTTP app with JWT validation.
+
+    Every request (POST / GET / DELETE) is authenticated. This is stricter
+    than the SSE transport, where only the opening GET was checked and
+    POSTs were trusted by session.
 
     Supports two ways to pass the token (checked in order):
       1. Authorization: Bearer <jwt> header
-      2. ?token=<jwt> query parameter
-
-    POST messages are passed through (authenticated by their session).
+      2. ?token=<jwt> query parameter (kept for GET streams opened by
+         clients that cannot set headers)
     """
 
     async def auth_wrapper(scope, receive, send):
@@ -2131,7 +2331,7 @@ def _make_auth_wrapper(inner_app):
             await response(scope, receive, send)
             return
 
-        if scope["type"] == "http" and scope["method"] == "GET":
+        if scope["type"] == "http":
             token = None
             headers = dict(scope.get("headers", []))
             auth = headers.get(b"authorization", b"").decode()
@@ -2152,6 +2352,11 @@ def _make_auth_wrapper(inner_app):
                 await response(scope, receive, send)
                 return
             _jwt_token_var.set(resolved)
+            # Remember the raw API key: the session task created by the
+            # initialize request inherits this context and uses it to renew
+            # its JWT once the minted one ages out (see _renew_expired_jwt).
+            if token.startswith("gns3_"):
+                _jwt_api_key_var.set(token)
         await inner_app(scope, receive, send)
 
     return auth_wrapper
@@ -2170,19 +2375,51 @@ async def mcp_root():
         "version": "1.0.0",
         "authentication": ["Authorization: Bearer <jwt>", "?token=<jwt>"],
         "transports": {
-            "sse": "/v3/mcp/transport/sse",
+            "streamable_http": "/v3/mcp/transport",
         },
     }
 
 
+# The auth-wrapped Streamable HTTP app — built once, mounted on the FastAPI
+# app by register_starlette_routes() and reused by mcp_session_manager_lifespan().
+_streamable_app = None
+
+
+def _ensure_streamable_app():
+    """Build the auth-wrapped Streamable HTTP app on first use."""
+    global _streamable_app
+    if _streamable_app is None:
+        _streamable_app = _make_auth_wrapper(
+            mcp.streamable_http_app(
+                streamable_http_path="/transport",
+                transport_security=_transport_security(),
+            )
+        )
+    return _streamable_app
+
+
+@contextlib.asynccontextmanager
+async def mcp_session_manager_lifespan():
+    """Run the Streamable HTTP session manager for the lifetime of the GNS3 app.
+
+    Starlette does not run lifespans of mounted sub-apps, so the manager must
+    be entered in the FastAPI lifespan (gns3server.core.tasks.lifespan).
+    Enter it before startup finishes: the MCP ready gate opens at the end of
+    startup, and no request may pass it before the session manager is running
+    (its task group would otherwise reject the request).
+    """
+    _ensure_streamable_app()
+    async with mcp.session_manager.run():
+        yield
+
+
 def register_starlette_routes(app):
-    """Mount MCP transports on the FastAPI app."""
+    """Mount the MCP Streamable HTTP transport on the FastAPI app."""
     global _app
     _app = app
-    sse_app = _make_auth_wrapper(mcp.sse_app(mount_path=""))
-    app.mount("/v3/mcp/transport", sse_app, name="mcp-sse")
-    log.info("MCP SSE server mounted at /v3/mcp/transport")
+    app.mount("/v3/mcp", _ensure_streamable_app(), name="mcp-streamable-http")
+    log.info("MCP Streamable HTTP server mounted at /v3/mcp/transport")
 
     # Log registered MCP tools for verification
-    tool_names = list(mcp._tool_manager._tools.keys())
-    log.info("MCP tools registered (%d): %s", len(tool_names), ", ".join(sorted(tool_names)))
+    tool_names = sorted(tool.name for tool in mcp._tool_manager.list_tools())
+    log.info("MCP tools registered (%d): %s", len(tool_names), ", ".join(tool_names))

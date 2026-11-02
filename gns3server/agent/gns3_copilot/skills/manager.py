@@ -101,32 +101,59 @@ class SkillsManager:
         Initialize the skills repository.
 
         Behavior:
-        - If no local repo → clone from remote
-        - If local repo exists → open and run _update_if_needed()
+        - No local directory → create it and clone from remote
+        - Local git repo → open and run _update_if_needed()
+        - Local directory without .git → use it as a local-only source
+          (cloning into a non-empty directory cannot work, and local
+          content must stay usable without Git)
 
         Returns:
             True if successful, False otherwise
         """
         try:
-            if not self.local_path.exists():
-                logger.info(f"Creating skills directory: {self.local_path}")
-                self.local_path.mkdir(parents=True, exist_ok=True)
-
-            if not (self.local_path / ".git").exists():
-                return self._clone()
-
-            # Repo exists, open it
-            try:
-                self._repo = git.Repo(self.local_path)
-            except Exception as e:
-                logger.error(f"Failed to open existing repository: {e}")
+            if not self._ensure_repo():
                 return False
-
             self._update_if_needed()
             return True
         except Exception as e:
             logger.error(f"Failed to initialize skills repository: {e}")
             return False
+
+    def _ensure_repo(self) -> bool:
+        """Prepare the local skills directory and open/clone the repo.
+
+        A non-empty directory without .git is accepted as a local-only
+        skills source: automatic updates are skipped, the files still load.
+        """
+        if not self.local_path.exists():
+            logger.info(f"Creating skills directory: {self.local_path}")
+            self.local_path.mkdir(parents=True, exist_ok=True)
+
+        if not GIT_AVAILABLE:
+            logger.warning("GitPython is not installed; using local files without automatic updates")
+            self._repo = None
+            return True
+
+        if not (self.local_path / ".git").exists():
+            try:
+                is_empty = not any(self.local_path.iterdir())
+            except OSError:
+                is_empty = True
+            if is_empty:
+                return self._clone()
+            logger.warning(
+                "Skills directory %s is not a git repository; using local files without automatic updates",
+                self.local_path,
+            )
+            self._repo = None
+            return True
+
+        try:
+            self._repo = git.Repo(self.local_path)
+        except Exception as e:
+            logger.error(f"Failed to open existing repository: {e}")
+            return False
+        return True
 
     def _update_if_needed(self) -> None:
         """
@@ -137,7 +164,15 @@ class SkillsManager:
         - Up to date → nothing
         - Network error → use existing files, log warning
         """
-        if not GIT_AVAILABLE or self._repo is None:
+        if not GIT_AVAILABLE:
+            return
+        if not self.local_path.exists():
+            # The directory can disappear or move between reloads (manual
+            # clone/rename); re-create/clone instead of failing forever.
+            if not self._ensure_repo():
+                logger.warning("Skills repository is unavailable; using local files")
+                return
+        if self._repo is None:
             return
 
         # Check for uncommitted changes
@@ -190,62 +225,64 @@ class SkillsManager:
 
     def reload_skills(self) -> bool:
         """
-        Hot reload skills from YAML files into the registry.
+        Hot reload skills from YAML files into the registries.
 
-        Loads the latest skill definitions from YAML files and updates
-        the INJECTION_SKILLS_REGISTRY.
+        Injection, device and feature skills load independently: a missing
+        or empty directory keeps the previously loaded entries of that
+        category instead of blocking the others.
 
         Returns:
-            True if successful, False otherwise
+            True if at least one category loaded, False otherwise
         """
         try:
             # Import here to avoid circular dependency
             from .registry import INJECTION_SKILLS_REGISTRY, SKILLS_REGISTRY
 
-            # Load new injection skills from YAML files
-            new_injection_skills = self.loader.load_injection_skills()
+            # Load and validate injection skills (invalid ones are dropped
+            # before merging; validate_skill_format logs the reason).
+            new_injection_skills = {
+                skill_key: skill_data
+                for skill_key, skill_data in self.loader.load_injection_skills().items()
+                if self.loader.validate_skill_format(skill_data)
+            }
 
-            if not new_injection_skills:
-                logger.warning("No injection skills loaded, keeping existing skills")
-                return False
-
-            # Validate injection skills (drop invalid ones before merging)
-            valid_injection_skills = {}
-            for skill_key, skill_data in new_injection_skills.items():
-                if self.loader.validate_skill_format(skill_data):
-                    valid_injection_skills[skill_key] = skill_data
-                else:
-                    logger.error(f"Invalid skill format for {skill_key}, skipping")
-
-            if not valid_injection_skills:
-                logger.warning("No valid injection skills loaded, keeping existing skills")
-                return False
-            new_injection_skills = valid_injection_skills
-
-            # Load new device skills from YAML files
+            # Load new device and feature skills from YAML files
             new_device_skills = self.loader.load_device_skills()
-
-            # Load new feature skills from YAML files
             new_feature_skills = self.loader.load_feature_skills()
 
-            # Merge device and feature skills into single registry
-            all_skills = {}
-            all_skills.update(new_device_skills)
-            all_skills.update(new_feature_skills)
+            if not new_injection_skills and not new_device_skills and not new_feature_skills:
+                logger.warning("No skills loaded from any category, keeping existing skills")
+                return False
 
-            # Update registries (safe replace - never leaves dict empty)
-            for k in list(INJECTION_SKILLS_REGISTRY):
-                if k not in new_injection_skills:
-                    del INJECTION_SKILLS_REGISTRY[k]
-            INJECTION_SKILLS_REGISTRY.update(new_injection_skills)
+            # Injection: an absent injection/ directory keeps old entries.
+            if new_injection_skills:
+                for k in list(INJECTION_SKILLS_REGISTRY):
+                    if k not in new_injection_skills:
+                        del INJECTION_SKILLS_REGISTRY[k]
+                INJECTION_SKILLS_REGISTRY.update(new_injection_skills)
+            else:
+                logger.warning("No valid injection skills loaded, keeping existing injection skills")
 
-            for k in list(SKILLS_REGISTRY):
-                if k not in all_skills:
-                    del SKILLS_REGISTRY[k]
-            SKILLS_REGISTRY.update(all_skills)
+            # Device/feature: replace each category that yielded content and
+            # keep the old entries of a category that yielded none.
+            if new_device_skills or new_feature_skills:
+                all_skills: Dict[str, Dict[str, Any]] = {}
+                all_skills.update(
+                    new_device_skills or {k: v for k, v in SKILLS_REGISTRY.items() if v.get("category") == "device"}
+                )
+                all_skills.update(
+                    new_feature_skills or {k: v for k, v in SKILLS_REGISTRY.items() if v.get("category") == "feature"}
+                )
+                for k in list(SKILLS_REGISTRY):
+                    if k not in all_skills:
+                        del SKILLS_REGISTRY[k]
+                SKILLS_REGISTRY.update(all_skills)
+            else:
+                logger.warning("No device/feature skills loaded, keeping existing device/feature skills")
 
             logger.info(
-                f"Loaded {len(new_injection_skills)} injection skills, {len(new_device_skills)} device skills, and {len(new_feature_skills)} feature skills"
+                f"Loaded {len(new_injection_skills)} injection skills, "
+                f"{len(new_device_skills)} device skills, and {len(new_feature_skills)} feature skills"
             )
             return True
         except Exception as e:
@@ -256,8 +293,8 @@ class SkillsManager:
         """
         Hot reload packet analysis protocol definitions from YAML files.
 
-        Loads the latest protocol definitions from YAML files and updates
-        the PACKET_ANALYSIS_REGISTRY.
+        An empty result (missing or empty directory) keeps the existing
+        registry and reports failure, matching the skills/prompts behavior.
 
         Returns:
             True if successful, False otherwise
@@ -267,6 +304,9 @@ class SkillsManager:
 
             # Load new packet analysis protocols from YAML files
             new_protocols = self.loader.load_packet_analysis_protocols()
+            if not new_protocols:
+                logger.warning("No packet analysis protocols loaded, keeping existing protocols")
+                return False
 
             # Update registry (safe replace - never leaves dict empty)
             for k in list(PACKET_ANALYSIS_REGISTRY):

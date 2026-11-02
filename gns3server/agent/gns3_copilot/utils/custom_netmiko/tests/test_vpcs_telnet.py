@@ -240,9 +240,10 @@ class TestVPCSTelnetSendCommand(unittest.TestCase):
         """Test that send_command uses VPCS prompt as default expect_string."""
         import inspect
 
-        # Check that expect_string defaults to r"PC\d+>"
+        # The default expect_string is the per-instance prompt pattern built
+        # in __init__ from pcname (falls back to PC<n>/VPCS>).
         source = inspect.getsource(self.VPCSTelnet.send_command)
-        self.assertIn('expect_string = r"PC\\d+>"', source)
+        self.assertIn("expect_string = self._prompt_pattern", source)
 
     def test_send_command_timing_calls_send_command(self):
         """Test that send_command_timing delegates to send_command."""
@@ -283,9 +284,11 @@ class TestVPCSTelnetTelnetLogin(unittest.TestCase):
         """Test that telnet_login has correct default prompt pattern."""
         import inspect
 
-        # Check default prompt terminator
+        # The default prompt terminator is the per-instance prompt pattern
+        # built in __init__ from pcname (None -> self._prompt_pattern).
         source = inspect.getsource(self.VPCSTelnet.telnet_login)
-        self.assertIn('pri_prompt_terminator: str = r"PC\\d+>"', source)
+        self.assertIn("pri_prompt_terminator: str | None = None", source)
+        self.assertIn("pri_prompt_terminator = self._prompt_pattern", source)
 
     def test_telnet_login_sends_newlines(self):
         """Test that telnet_login sends 4 newlines."""
@@ -429,10 +432,12 @@ IP/MASK     : 192.168.1.20/24"""
 
         instance = self.VPCSTelnet.__new__(self.VPCSTelnet)
 
-        # Mock necessary attributes
+        # Mock necessary attributes. The read loop polls read_channel
+        # (netmiko's decorated method needs the session lock, which only
+        # __init__ creates), not read_until_pattern.
         instance.remote_conn = MagicMock()
         instance.remote_conn.write = MagicMock()
-        instance.read_until_pattern = MagicMock(return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>")
+        instance.read_channel = MagicMock(return_value="\x1b[1mNAME\x1b[0m        : PC2\nPC2>")
 
         # Mock _strip_ansi_codes to verify it's called
         instance._strip_ansi_codes = Mock(return_value="NAME        : PC2\nPC2>")

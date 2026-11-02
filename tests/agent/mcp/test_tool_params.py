@@ -105,6 +105,8 @@ HANDLER_FILES = {
     "device_config_send_handler": "device_config.py",
     "device_show_run_handler": "device_config.py",
     "vpcs_config_set_handler": "device_config.py",
+    "device_skills_handler": "skills.py",
+    "injection_skills_handler": "skills.py",
 }
 
 

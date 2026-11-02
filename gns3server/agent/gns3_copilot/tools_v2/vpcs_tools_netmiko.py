@@ -450,7 +450,10 @@ class VPCSCommands(BaseTool):
                 }
                 continue
 
-            # VPCS devices use gns3_vpcs_telnet device type
+            # VPCS devices use gns3_vpcs_telnet device type. pcname wires the
+            # driver's prompt pattern to the node name: the template's startup
+            # script runs `set pcname <name>`, so a node renamed away from
+            # PC<n> prompts "<name>>" and never matches the default pattern.
             host_entry = {
                 "port": port,
                 "platform": "vpcs",
@@ -459,6 +462,7 @@ class VPCSCommands(BaseTool):
                     "netmiko": {
                         "extras": {
                             "device_type": "gns3_vpcs_telnet",
+                            "pcname": device_name,
                             "fast_cli": False,
                             "global_delay_factor": 2.0,
                         }
