@@ -809,6 +809,10 @@ async def node_console_exec(
       spelling "\\x03" is NOT translated and would arrive as text.
     - command="" sends a single Enter — wakes an idle console and shows the
       prompt.
+    - QEMU serial getty login: send the username and the password in the SAME
+      call. login flushes typed-ahead input before printing "Password: ", so
+      a password sent in a separate call is lost (Login incorrect loop). The
+      logged-in shell then persists across calls.
 
     Timeout: the session stays open for the FULL window (like
     `timeout N websocat`). Output keeps arriving the whole time; there is no
