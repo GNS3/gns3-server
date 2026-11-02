@@ -47,14 +47,12 @@ Copilot-side callers build the context with :func:`build_gns3_ctx`, which
 pulls the request-scoped user JWT from the context variables.
 """
 
-import hashlib
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from gns3server.agent.gns3_copilot.gns3_client.connector import Gns3Connector
 from gns3server.services import access_ticket_service
-from gns3server.services.access_tickets import DEFAULT_TICKET_TTL
 from gns3server.utils.drawings import build_ellipse_svg, build_rectangle_svg, build_text_svg
 
 log = logging.getLogger(__name__)
@@ -446,56 +444,6 @@ def update_node_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dic
 
     url = f"{conn.base_url}/projects/{project_id}/nodes/{node_id}"
     return conn.http_call("put", url, json_data=update_data).json()
-
-
-def get_node_console_info_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
-    project_id = params.get("project_id")
-    node_id = params.get("node_id")
-    if not project_id or not node_id:
-        return {"error": "project_id and node_id are required"}
-    conn = _get_connector(gns3_ctx)
-    node = conn.http_call("get", f"{conn.base_url}/projects/{project_id}/nodes/{node_id}").json()
-
-    console_type = node.get("console_type", "unknown")
-    # Short-lived console ticket (10 min, multi-use, bound to this node's
-    # console endpoints). Deliberately a short random string instead of a JWT:
-    # LLM clients retype this URL into shell commands and reliably corrupted
-    # the ~200-char JWT previously embedded here (dropped header segment →
-    # "Missing 'alg' value in header" on the server).
-    username = gns3_ctx.get("jwt_username")
-    ticket = (
-        access_ticket_service.mint(
-            username,
-            token_version=gns3_ctx.get("jwt_token_version", 0),
-            project_id=project_id,
-            node_id=node_id,
-        )
-        if username
-        else None
-    )
-    raw_url = f"{gns3_ctx['server_url']}/v3/projects/{project_id}/nodes/{node_id}/console/ws"
-    if ticket:
-        raw_url += f"?token={ticket}"
-    # Convert http scheme to ws for direct websocat usage
-    ws_url = raw_url.replace("https://", "wss://").replace("http://", "ws://")
-
-    result = {
-        "node_id": node_id,
-        "node_name": node.get("name"),
-        "console_type": console_type,
-        "ws_url": ws_url,
-        "command": f"websocat -t --no-close {ws_url}",
-    }
-    if ticket:
-        # Fingerprint of the minted token: compare it against what actually reached the
-        # server (logged on WebSocket auth rejection) to detect copy corruption, and
-        # re-request the URL once token_ttl_seconds has elapsed.
-        result["token_sha256_prefix"] = hashlib.sha256(ticket.encode()).hexdigest()[:8]
-        result["token_ttl_seconds"] = DEFAULT_TICKET_TTL
-    if console_type in ("vnc",) and ticket:
-        # Same node binding covers the vnc endpoint (identical path params)
-        result["vnc_url"] = f"/v3/projects/{project_id}/nodes/{node_id}/console/vnc?token={ticket}"
-    return result
 
 
 # ── Node file handlers ────────────────────────────────────────────────────

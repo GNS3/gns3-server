@@ -43,7 +43,6 @@ HANDLER_FILES = {
     "create_node_handler": API_HANDLERS_FILE,
     "delete_node_handler": API_HANDLERS_FILE,
     "update_node_handler": API_HANDLERS_FILE,
-    "get_node_console_info_handler": API_HANDLERS_FILE,
     "list_node_files_handler": API_HANDLERS_FILE,
     "get_node_file_handler": API_HANDLERS_FILE,
     "write_node_file_handler": API_HANDLERS_FILE,

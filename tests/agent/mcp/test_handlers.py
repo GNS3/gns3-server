@@ -327,44 +327,6 @@ class TestNode:
             result = suspend_node_handler({"project_id": "p1", "node_ids": ["n1"]}, ctx)
             assert result[0]["status"] == "success"
 
-    def test_console(self, ctx):
-        from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_node_console_info_handler
-        from gns3server.services import access_ticket_service
-
-        with patch(f"{AH}._get_connector") as m:
-            m.return_value = _mock_conn({"console_url": "ws://host/console"})
-            result = get_node_console_info_handler({"project_id": "p1", "node_id": "n1"}, ctx)
-            assert "command" in result
-            # the URL embeds a short console ticket (not a JWT) redeemable for this node
-            assert "?token=gns3t_" in result["ws_url"]
-            ticket = result["ws_url"].split("token=")[1]
-            assert ticket in result["command"]
-            assert result["token_ttl_seconds"] == 600
-            assert len(result["token_sha256_prefix"]) == 8
-            redeemed = access_ticket_service.redeem(ticket, {"project_id": "p1", "node_id": "n1"})
-            assert redeemed is not None and redeemed.username == "admin"
-            assert "vnc_url" not in result  # console_type is not vnc
-
-    def test_console_vnc_uses_same_ticket(self, ctx):
-        from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_node_console_info_handler
-
-        with patch(f"{AH}._get_connector") as m:
-            m.return_value = _mock_conn({"console_type": "vnc"})
-            result = get_node_console_info_handler({"project_id": "p1", "node_id": "n1"}, ctx)
-            ticket = result["ws_url"].split("token=")[1]
-            # one node-bound ticket covers both console endpoints (identical path params)
-            assert result["vnc_url"] == f"/v3/projects/p1/nodes/n1/console/vnc?token={ticket}"
-
-    def test_console_without_username_omits_token(self, ctx):
-        from gns3server.agent.gns3_copilot.gns3_client.api_handlers import get_node_console_info_handler
-
-        unauthenticated_ctx = {k: v for k, v in ctx.items() if k != "jwt_username"}
-        with patch(f"{AH}._get_connector") as m:
-            m.return_value = _mock_conn({"console_url": "ws://host/console"})
-            result = get_node_console_info_handler({"project_id": "p1", "node_id": "n1"}, unauthenticated_ctx)
-            assert "token=" not in result["ws_url"]
-            assert "token_sha256_prefix" not in result
-
     @staticmethod
     def _file_conn(text):
         conn = _mock_conn()
