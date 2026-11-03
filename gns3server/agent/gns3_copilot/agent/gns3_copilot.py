@@ -49,6 +49,7 @@ Copilot Modes:
 import json
 import logging
 import operator
+import time
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -463,8 +464,11 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     if budget_exhausted:
         prepared_messages = [*prepared_messages, SystemMessage(content=BUDGET_WRAPUP_INSTRUCTION)]
 
-    # Invoke model with prepared messages
+    # Invoke model with prepared messages. The elapsed time makes a slow
+    # first token or an SDK retry visible in the logs.
+    started_at = time.monotonic()
     response = model_to_call.invoke(prepared_messages)
+    elapsed_s = time.monotonic() - started_at
 
     # Add metadata with created_at timestamp to AI response
     if hasattr(response, "metadata"):
@@ -482,8 +486,9 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
             logger.warning("Could not add metadata to AI response")
 
     logger.info(
-        "LLM call completed: tool_calls=%d",
+        "LLM call completed: tool_calls=%d, elapsed=%.1fs",
         len(response.tool_calls) if hasattr(response, "tool_calls") else 0,
+        elapsed_s,
     )
 
     return {

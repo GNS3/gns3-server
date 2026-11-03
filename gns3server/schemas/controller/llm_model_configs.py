@@ -63,6 +63,15 @@ class LLMModelConfigData(BaseModel):
             "50 lab_automation_assistant, 100 troubleshooting_injection"
         ),
     )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
+        ),
+    )
 
     # Allow extra fields for extensibility
     # Ensure all fields are included in serialization, even if None
@@ -100,6 +109,15 @@ class LLMModelConfigCreate(BaseModel):
             "Max LangGraph super-steps per copilot turn "
             "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
             "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
         ),
     )
 
@@ -140,6 +158,15 @@ class LLMModelConfigUpdate(BaseModel):
             "Max LangGraph super-steps per copilot turn "
             "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
             "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
         ),
     )
 
@@ -187,6 +214,15 @@ class LLMModelConfigDataWithoutSecret(BaseModel):
             "Max LangGraph super-steps per copilot turn "
             "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
             "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
         ),
     )
 

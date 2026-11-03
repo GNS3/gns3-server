@@ -226,6 +226,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | `context_strategy` | string | Context trimming strategy: "conservative" (60%), "balanced" (75%), "aggressive" (85%). Default: "balanced" |
 | `copilot_mode` | string | GNS3-Copilot mode: "teaching_assistant" (diagnostics only, default) or "lab_automation_assistant" (full configuration access) |
 | `max_steps` | integer | Step budget of one copilot turn, as the LangGraph recursion limit (1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, 50 lab_automation_assistant, 100 troubleshooting_injection |
+| `request_timeout` | number | LLM request timeout in seconds (openai/deepseek/anthropic/xai). Default 120. A silent connection fails fast instead of waiting for the SDK default of 600s |
 | `is_default` | boolean | Set as default (default: false) |
 
 **Important Notes:**
@@ -255,6 +256,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | `is_default` | boolean (optional) | Default flag |
 | `copilot_mode` | string (optional) | GNS3-Copilot mode: "teaching_assistant" or "lab_automation_assistant" |
 | `max_steps` | integer (optional) | Step budget of one copilot turn (LangGraph recursion limit). Leave empty for the per-mode default |
+| `request_timeout` | number (optional) | LLM request timeout in seconds. Leave empty for the 120s default |
 | `expected_version` | integer (optional) | **Optimistic locking version** |
 
 **Note:** When using `expected_version`, the API will verify the version hasn't changed since you read the data. If it has, you'll receive a 409 Conflict error.
