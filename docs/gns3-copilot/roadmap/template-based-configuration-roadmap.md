@@ -161,7 +161,7 @@ User Request: "Configure OSPF on all routers"
 │                                                              │
 │ Process:                                                     │
 │ 1. Render template with parameters (0 tokens)               │
-│ 2. Call existing ExecuteMultipleDeviceConfigCommands        │
+│ 2. Call existing device_config_send        │
 │ 3. Return execution results                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -2068,7 +2068,7 @@ langgraph>=0.0.20
 
 ### Integration Points
 
-- `gns3server/agent/gns3_copilot/tools_v2/config_tools_nornir.py` (existing)
+- `gns3server/agent/gns3_copilot/gns3_client/device_config_commands.py` (existing)
 - `gns3server/agent/gns3_copilot/prompts/lab_automation_assistant_prompt.py` (update)
 - `gns3server/agent/gns3_copilot/gns3_client/gns3_topology_reader.py` (existing)
 - `gns3server/agent/gns3_copilot/utils/command_filter.py` (existing)

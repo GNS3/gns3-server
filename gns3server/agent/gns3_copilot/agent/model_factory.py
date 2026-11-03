@@ -38,6 +38,38 @@ from langchain.chat_models import init_chat_model
 
 logger = logging.getLogger(__name__)
 
+# Request controls for providers whose chat models accept the OpenAI-style
+# parameters. Others (ollama, google-genai, ...) reject unknown kwargs at
+# construction time, so the parameters are added only where they work.
+_REQUEST_CONTROL_PROVIDERS = frozenset({"openai", "deepseek", "anthropic", "xai"})
+
+# Without a timeout a wedged connection waits for the SDK default of 600s
+# (seen in the field: one request stayed silent for 10 minutes, then the
+# SDK retried on a fresh connection and got 200 OK in under a second).
+# 120s is long enough for a slow first token and short enough to fail fast.
+DEFAULT_REQUEST_TIMEOUT_S = 120.0
+DEFAULT_MAX_RETRIES = 1
+
+
+def _request_controls(llm_config: Optional[dict[str, Any]]) -> dict[str, Any]:
+    """Build timeout/retry/usage kwargs for the chat model.
+
+    ``request_timeout`` in the LLM model config overrides the default.
+    ``stream_usage`` keeps usage_metadata available when the model streams
+    (astream_events makes it stream even with streaming=False).
+    """
+    config = llm_config or {}
+    if config.get("provider") not in _REQUEST_CONTROL_PROVIDERS:
+        return {}
+    timeout = config.get("request_timeout", DEFAULT_REQUEST_TIMEOUT_S)
+    try:
+        timeout = float(timeout)
+    except (TypeError, ValueError):
+        timeout = DEFAULT_REQUEST_TIMEOUT_S
+    if timeout <= 0:
+        timeout = DEFAULT_REQUEST_TIMEOUT_S
+    return {"timeout": timeout, "max_retries": DEFAULT_MAX_RETRIES, "stream_usage": True}
+
 
 def _load_llm_config(
     llm_config: Optional[dict[str, Any]] = None,
@@ -117,6 +149,7 @@ def create_base_model(
             "temperature": config_vars["temperature"],
             "configurable_fields": "any",
             "config_prefix": "foo",
+            **_request_controls(llm_config),
         }
 
         # Disable DeepSeek thinking mode to avoid reasoning_content handling issues
@@ -184,6 +217,7 @@ def create_title_model(
             "temperature": "1.0",  # Higher temperature for more creative titles
             "configurable_fields": "any",
             "config_prefix": "foo",
+            **_request_controls(llm_config),
         }
 
         # Disable DeepSeek thinking mode to avoid reasoning_content handling issues

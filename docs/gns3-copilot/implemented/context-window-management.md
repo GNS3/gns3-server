@@ -27,7 +27,7 @@ graph TD
     end
 
     subgraph "gns3_copilot.py"
-        G[llm_call node] --> H[Get topology via GNS3TopologyTool]
+        G[llm_call node] --> H[Get topology via gns3_topology_reader]
         H --> A
         A --> I[model_with_tools.invoke]
     end
@@ -58,7 +58,7 @@ graph TD
 
 ```mermaid
 flowchart TD
-    A[llm_call node invoked] --> B[Get topology via GNS3TopologyTool]
+    A[llm_call node invoked] --> B[Get topology via gns3_topology_reader]
     B --> C[Create pre_model_hook]
     C --> D[Inject topology into system prompt]
     D --> E{topology data available?}
@@ -133,7 +133,7 @@ In the `llm_call` node of `gns3_copilot.py`:
 
 1. Get `llm_config` from request-scoped context variable
 2. Get `project_id` from `config["configurable"]`
-3. Retrieve topology via `GNS3TopologyTool._run(project_id)`
+3. Retrieve topology via `gns3_topology_reader._run(project_id)`
 4. Select tools based on `copilot_mode` (`teaching_assistant` vs `lab_automation_assistant`)
 5. Load system prompt and create `pre_model_hook`
 6. **Directly call** `pre_hook({"messages": messages, "topology_info": topology_info})` to prepare messages

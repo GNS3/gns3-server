@@ -49,6 +49,7 @@ Copilot Modes:
 import json
 import logging
 import operator
+import time
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -64,6 +65,7 @@ from gns3server.agent.gns3_copilot.agent.context_manager import (
     create_pre_model_hook,
 )
 from gns3server.agent.gns3_copilot.agent.model_factory import (
+    create_base_model,
     create_base_model_with_tools,
     create_title_model,
 )
@@ -72,26 +74,14 @@ from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     get_current_llm_config,
 )
 from gns3server.agent.gns3_copilot.prompts import load_system_prompt
-from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool, InjectionSkillsTool, PacketAnalysisSkillsTool
+from gns3server.agent.gns3_copilot.skills import PacketAnalysisSkillsTool
 from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 from gns3server.agent.gns3_copilot.tools_v2 import (
-    ExecuteMultipleDeviceCommands,
-    ExecuteMultipleDeviceConfigCommands,
-    GNS3CreateEllipseDrawingTool,
-    GNS3CreateNodeTool,
-    GNS3CreateRectangleDrawingTool,
-    GNS3CreateTextDrawingTool,
     GNS3LinkTool,
-    GNS3PacketFilterTool,
-    GNS3StartNodeTool,
-    GNS3StopNodeTool,
-    GNS3SuspendNodeTool,
-    GNS3TemplateTool,
-    GNS3UpdateNodeNameTool,
     GNS3WaitTool,
     PacketAnalysisTool,
+    adapted_mcp_tools,
 )
-from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
 
 # Set up logger for GNS3-Copilot
 logger = logging.getLogger(__name__)
@@ -100,69 +90,151 @@ logger = logging.getLogger(__name__)
 # system. The model_factory module handles model creation with configuration
 # from the database.
 
-# Define tools for different copilot modes
-# Teaching assistant mode: READ-ONLY diagnostic tools only
+# Define tools for different copilot modes.
+#
+# MCP-backed tools are adapted from the MCP server registration (single
+# source of truth for names, descriptions and argument schemas — see
+# tools_v2/mcp_bridge.py). Only project-scoped tools are eligible: the
+# copilot runs inside one open project, so project management and server
+# administration tools are filtered out by the bridge.
+#
+# Copilot-native tools remain where they add value over the MCP version:
+# - GNS3LinkTool ("link_create"): resolves port NAMES to adapter/port
+#   numbers so the model does not need a node_get round-trip per link
+# - GNS3WaitTool ("wait_seconds"): boot wait timer, pairs with node_start
+# - PacketAnalysisTool/PacketAnalysisSkillsTool: tshark analysis, no MCP
+#   counterpart by design (server-side pcap analysis was rejected)
+# - GNS3TopologyTool: aggregated nodes+links+ports view in one call
+
+# Teaching assistant mode: read-only diagnostics, topology building and
+# traffic-insight visibility (markers highlight packets on links)
 TEACHING_ASSISTANT_MODE_TOOLS = [
-    GNS3TemplateTool(),  # Get GNS3 node templates
-    GNS3CreateNodeTool(),  # Create new nodes in GNS3
-    GNS3LinkTool(),  # Create links between nodes
-    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
-    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
-    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
-    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
-    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
-    GNS3UpdateNodeNameTool(),  # Update node name
-    ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
-    # (READ-ONLY)
-    PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
-    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
-    DeviceSkillsTool(),  # Get device-specific skills and command knowledge
+    *adapted_mcp_tools(
+        names=[
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "node_list",
+            "node_get",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "node_start",
+            "link_list",
+            "link_marker",
+            "device_show_run",
+            "device_skill_get",
+        ]
+    ),
+    GNS3LinkTool(),  # native: port-name resolution
+    GNS3WaitTool(),  # wait for nodes to boot (pairs with node_start)
+    PacketAnalysisTool(),  # protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
-# Lab automation assistant mode: Full diagnostic AND configuration tools
+# Lab automation assistant mode: full diagnostic AND configuration tools,
+# plus generic console access (node_console_exec works without a
+# device_type tag — Docker/Linux/VPCS nodes) and project snapshots
 LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
-    GNS3TemplateTool(),  # Get GNS3 node templates
-    GNS3CreateNodeTool(),  # Create new nodes in GNS3
-    GNS3LinkTool(),  # Create links between nodes
-    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
-    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
-    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
-    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
-    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
-    GNS3StopNodeTool(),  # Stop GNS3 nodes
-    GNS3SuspendNodeTool(),  # Suspend GNS3 nodes (preserve state)
-    GNS3UpdateNodeNameTool(),  # Update node name
-    ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
-    # (READ-ONLY)
-    ExecuteMultipleDeviceConfigCommands(),  # Execute configuration commands
-    VPCSCommands(),  # Execute VPCS commands using Netmiko
-    PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
-    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
-    DeviceSkillsTool(),  # Get device-specific skills and command knowledge
+    *adapted_mcp_tools(
+        names=[
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "node_list",
+            "node_start",
+            "node_stop",
+            "node_suspend",
+            "node_console_exec",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "device_show_run",
+            "device_config_send",
+            "vpcs_config_set",
+            "device_skill_get",
+            "snapshot_list",
+            "snapshot_create",
+            "snapshot_delete",
+            "snapshot_restore",
+        ]
+    ),
+    GNS3LinkTool(),  # native: port-name resolution
+    GNS3WaitTool(),  # wait for nodes to boot (pairs with node_start)
+    PacketAnalysisTool(),  # protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
-# Troubleshooting injection mode: Tools for injecting network faults
-# Focused on configuration commands and injection skills for fault injection
+# Troubleshooting injection mode: fault injection plus the capture loop
+# (inject → capture the link → verify with the downloaded pcap)
 TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
-    ExecuteMultipleDeviceCommands(),  # Get device configurations (READ-ONLY)
-    ExecuteMultipleDeviceConfigCommands(),  # Inject configuration changes
-    GNS3PacketFilterTool(),  # Manage packet filters on links (delay, loss, corrupt, etc.)
-    InjectionSkillsTool(),  # Query injection skills and fault types
-    GNS3TopologyTool(),  # Get topology information
+    *adapted_mcp_tools(
+        names=[
+            "device_show_run",
+            "device_config_send",
+            "link_update",
+            "link_available_filters",
+            "link_capture_start",
+            "link_capture_stop",
+            "link_capture_download",
+            "marker_definition",
+            "injection_skill_get",
+        ]
+    ),
+    GNS3TopologyTool(),  # aggregated topology view (nodes + links + ports)
 ]
 
 # Default tools (legacy support - will be overridden by mode-specific tools)
 tools = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 
+# LangGraph recursion limit per copilot mode: the hard cap on super-steps
+# per user turn. One LLM call plus one tool execution costs two steps, so
+# 25 is about 11 tool rounds; lab mode needs more room (topology build,
+# configure, verify), fault injection more still.
+MODE_RECURSION_LIMITS = {
+    "teaching_assistant": 25,
+    "lab_automation_assistant": 50,
+    "troubleshooting_injection": 100,
+}
+DEFAULT_RECURSION_LIMIT = 25
+
+
+def resolve_recursion_limit(llm_config: dict | None) -> int:
+    """Resolve the LangGraph recursion limit for one user turn.
+
+    ``max_steps`` in the LLM model config wins when set to a positive
+    integer; otherwise the per-mode default applies. The value is a hard
+    safety cap, not a quality target: without it a tool loop or a routing
+    bug can spin forever and burn tokens.
+    """
+    config = llm_config or {}
+    mode = (config.get("copilot_mode") or "teaching_assistant").lower()
+    default = MODE_RECURSION_LIMITS.get(mode, DEFAULT_RECURSION_LIMIT)
+    try:
+        configured = int(config.get("max_steps"))
+    except (TypeError, ValueError):
+        return default
+    return configured if configured > 0 else default
+
+
+# Injected before the final LLM call when the step budget runs out. The
+# model gets no tools in that call, so it can only produce text.
+BUDGET_WRAPUP_INSTRUCTION = (
+    "The tool-step budget for this turn is exhausted. Do not call any tools. "
+    "Reply with a short summary: what you completed, what is still unfinished, "
+    "and what the user should do next (for example, ask to continue)."
+)
+
 # Create combined tool lookup for tool_node (supports all modes)
 # tool_node will receive tool calls based on mode-specific tools bound to the
-# model
-# Combine all tools from all modes and deduplicate by tool name
+# model. The registry must cover every mode: a tool bound to the model but
+# missing here would raise KeyError when the LLM calls it.
 ALL_TOOLS = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 tools_by_name = {tool.name: tool for tool in ALL_TOOLS}
 
-# Add troubleshooting injection tools to the global tool registry
-for tool in TROUBLESHOOTING_INJECTION_MODE_TOOLS:
+for tool in TEACHING_ASSISTANT_MODE_TOOLS + TROUBLESHOOTING_INJECTION_MODE_TOOLS:
     if tool.name not in tools_by_name:
         tools_by_name[tool.name] = tool
 
@@ -228,7 +300,11 @@ class MessagesState(TypedDict):
                  operator.add
         llm_calls: Counter for tracking the number of LLM invocations
         remaining_steps: Is automatically managed by LangGraph's RemainingSteps
-                       to track and limit recursion depth.
+                       to track and limit recursion depth. The value comes from
+                       the recursion_limit in the run config, not from inputs.
+        budget_exhausted: True once the step budget ran out and the graph
+                       switched to the final summary call (no tools bound).
+                       Reset to False at the start of every user turn.
         conversation_title: Optional conversation title for session
                           identification and management
         topology_info: Dictionary containing GNS3 project topology information
@@ -241,6 +317,9 @@ class MessagesState(TypedDict):
     llm_calls: int
 
     remaining_steps: RemainingSteps
+
+    # True when the step budget is used up and the turn ends with a summary
+    budget_exhausted: bool
 
     # Optional conversation title
     conversation_title: str | None
@@ -352,15 +431,26 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
         # token estimation
     )
 
-    # Create fresh model with tools for each LLM call
-    logger.debug(
-        "Creating model with tools: provider=%s, model=%s, mode=%s, tools=%d",
-        llm_config.get("provider"),
-        llm_config.get("model"),
-        copilot_mode,
-        len(mode_tools),
-    )
-    model_with_tools = create_base_model_with_tools(mode_tools, llm_config=llm_config)
+    # When the step budget ran out, this is the final summary call: no tools
+    # are bound, so the model can only answer in text, and an instruction
+    # tells it to wrap up instead of planning more work.
+    budget_exhausted = bool(state.get("budget_exhausted"))
+    if budget_exhausted:
+        logger.warning(
+            "Step budget exhausted; making the final summary call without tools (provider=%s, model=%s)",
+            llm_config.get("provider"),
+            llm_config.get("model"),
+        )
+        model_to_call = create_base_model(llm_config)
+    else:
+        logger.debug(
+            "Creating model with tools: provider=%s, model=%s, mode=%s, tools=%d",
+            llm_config.get("provider"),
+            llm_config.get("model"),
+            copilot_mode,
+            len(mode_tools),
+        )
+        model_to_call = create_base_model_with_tools(mode_tools, llm_config=llm_config)
 
     # Call pre_hook directly to prepare messages (topology injection +
     # trimming)
@@ -371,8 +461,14 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     prepared_messages = prepared_state["messages"]
     logger.info("Messages prepared: %d → %d", len(messages), len(prepared_messages))
 
-    # Invoke model with prepared messages
-    response = model_with_tools.invoke(prepared_messages)
+    if budget_exhausted:
+        prepared_messages = [*prepared_messages, SystemMessage(content=BUDGET_WRAPUP_INSTRUCTION)]
+
+    # Invoke model with prepared messages. The elapsed time makes a slow
+    # first token or an SDK retry visible in the logs.
+    started_at = time.monotonic()
+    response = model_to_call.invoke(prepared_messages)
+    elapsed_s = time.monotonic() - started_at
 
     # Add metadata with created_at timestamp to AI response
     if hasattr(response, "metadata"):
@@ -390,8 +486,9 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
             logger.warning("Could not add metadata to AI response")
 
     logger.info(
-        "LLM call completed: tool_calls=%d",
+        "LLM call completed: tool_calls=%d, elapsed=%.1fs",
         len(response.tool_calls) if hasattr(response, "tool_calls") else 0,
+        elapsed_s,
     )
 
     return {
@@ -608,6 +705,11 @@ def should_continue(
     if last_message.tool_calls:
         return "tool_node"
 
+    # Final summary after the step budget ran out: end the turn, skip the
+    # title call (it would need one more super-step we may not have)
+    if state.get("budget_exhausted"):
+        return END
+
     # First full interaction completed and title not yet generated
     if current_title in [None, "New Conversation"]:
         return "title_generator_node"
@@ -616,23 +718,41 @@ def should_continue(
     return END
 
 
+def budget_wrapup(state: MessagesState) -> dict:
+    """Switch the graph to the final summary call after the step budget ran out.
+
+    The next llm_call binds no tools and appends BUDGET_WRAPUP_INSTRUCTION,
+    so the turn ends with a text answer that tells the user where the work
+    stopped instead of ending silently on a tool result.
+    """
+    logger.warning(
+        "Step budget nearly exhausted (remaining_steps=%s); switching to the summary call",
+        state.get("remaining_steps"),
+    )
+    return {"budget_exhausted": True, "session_id": state.get("session_id")}
+
+
 # Routing logic after the tool node, Check remaining_steps
-def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", END]:
+def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", "budget_wrapup", END]:
     """
     Routing logic after tool execution to prevent infinite recursion.
 
-    Determines whether to continue with another LLM call or end the
-    conversation based on remaining steps and message type.
+    Determines whether to continue with another LLM call, switch to the
+    final summary call, or end the conversation based on remaining steps and
+    message type.
 
     Args:
         state: Current conversation state with messages and remaining steps
 
     Returns:
-        "llm_call" to continue processing, END to terminate conversation
+        "llm_call" to continue processing, "budget_wrapup" for the final
+        summary call, END to terminate the conversation.
 
     Logic:
         - If abort flag is set → end the conversation
         - If the last message is ToolMessage and steps >= 4: continue to LLM
+        - If the last message is ToolMessage and steps < 4: wrap up with one
+          final summary call (no tools bound)
         - Otherwise: end the conversation to prevent infinite loops
     """
     # Check abort flag first
@@ -643,7 +763,7 @@ def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", END]:
     last_message = state["messages"][-1]
     if isinstance(last_message, ToolMessage):
         if state["remaining_steps"] < 4:
-            return END
+            return "budget_wrapup"
         return "llm_call"
 
     return END
@@ -656,6 +776,7 @@ agent_builder = StateGraph(MessagesState)
 # Add nodes
 agent_builder.add_node("llm_call", llm_call)
 agent_builder.add_node("tool_node", tool_node)
+agent_builder.add_node("budget_wrapup", budget_wrapup)
 agent_builder.add_node("title_generator_node", generate_title)
 agent_builder.add_node("abort_handler_node", abort_handler_node)
 
@@ -684,9 +805,11 @@ agent_builder.add_conditional_edges(
     {
         "llm_call": "llm_call",  # Continue to LLM if tools executed and steps
         # remain
+        "budget_wrapup": "budget_wrapup",  # Final summary call, no tools
         END: END,  # End conversation to prevent infinite loops
     },
 )
 
+agent_builder.add_edge("budget_wrapup", "llm_call")
 agent_builder.add_edge("title_generator_node", END)
 agent_builder.add_edge("abort_handler_node", END)

@@ -16,17 +16,17 @@ flowchart TB
     end
 
     subgraph "② Topology Analysis & Fault Selection"
-        D --> E["GNS3TopologyTool\nget topology info"]
-        E --> F["ExecuteMultipleDeviceCommands\nget device configs"]
-        F --> G["InjectionSkillsTool\nquery available fault types"]
+        D --> E["gns3_topology_reader\nget topology info"]
+        E --> F["device_show_run\nget device configs"]
+        F --> G["injection_skill_get\nquery available fault types"]
         G --> H{"Injection Skills Repository\ngns3/gns3-skills"}
         H --> I["Return matching fault definitions\nwith config injection commands"]
     end
 
     subgraph "③ Fault Injection"
         I --> J["Choose injection method"]
-        J --> K["ExecuteMultipleDeviceConfigCommands\ninject config changes"]
-        J --> L["GNS3PacketFilterTool\ninject link-layer faults"]
+        J --> K["device_config_send\ninject config changes"]
+        J --> L["link_update\ninject link-layer faults"]
     end
 
     subgraph "④ Result Confirmation"
@@ -40,11 +40,11 @@ flowchart TB
 
 | Tool | Source File | Purpose | Available Modes |
 |---|---|---|---|
-| `InjectionSkillsTool` | `registry.py` (skills module) | Query protocol-level fault definitions (config change commands) | troubleshooting_injection |
-| `GNS3PacketFilterTool` | `gns3_packet_filter.py` | Link-layer fault injection (delay, loss, corruption, BPF) | troubleshooting_injection |
-| `ExecuteMultipleDeviceConfigCommands` | `config_tools_nornir.py` | Batch device config changes | troubleshooting_injection |
-| `ExecuteMultipleDeviceCommands` | `display_tools_nornir.py` | Read device configurations (read-only) | troubleshooting_injection |
-| `GNS3TopologyTool` | `gns3_client` | Get project topology information | troubleshooting_injection |
+| `injection_skill_get` | `registry.py` (skills module) | Query protocol-level fault definitions (config change commands) | troubleshooting_injection |
+| `link_update` | MCP tool via `tools_v2/mcp_bridge.py` | Link-layer fault injection (delay, loss, corruption, BPF) | troubleshooting_injection |
+| `device_config_send` | `gns3_client/device_config_commands.py` | Batch device config changes | troubleshooting_injection |
+| `device_show_run` | `gns3_client/device_show_commands.py` | Read device configurations (read-only) | troubleshooting_injection |
+| `gns3_topology_reader` | `gns3_client` | Get project topology information | troubleshooting_injection |
 
 ## Fault Injection API
 
@@ -54,7 +54,7 @@ flowchart TB
 
 **Prerequisite**: Project must be in `opened` status, otherwise returns 403.
 
-## GNS3PacketFilterTool Link Filters
+## link_update Link Filters
 
 | Filter Type | Function | Parameters |
 |---|---|---|
@@ -71,11 +71,11 @@ sequenceDiagram
     participant U as User
     participant API as POST /chat/inject
     participant LLM as LLM Node
-    participant Topo as GNS3TopologyTool
-    participant DC as ExecuteMultipleDeviceCommands
-    participant CC as ExecuteMultipleDeviceConfigCommands
-    participant Skill as InjectionSkillsTool
-    participant Filter as GNS3PacketFilterTool
+    participant Topo as gns3_topology_reader
+    participant DC as device_show_run
+    participant CC as device_config_send
+    participant Skill as injection_skill_get
+    participant Filter as link_update
 
     U->>API: Inject an OSPF fault
     API->>LLM: set mode=troubleshooting_injection
@@ -97,8 +97,8 @@ sequenceDiagram
 ## Key Design Points
 
 1. **Dedicated API Endpoint** — `POST /chat/inject` is the dedicated entry point, automatically switching to `troubleshooting_injection` mode
-2. **LLM-driven Fault Selection** — The LLM analyzes the topology then queries matching faults via `InjectionSkillsTool`; no hardcoded fault scenarios
+2. **LLM-driven Fault Selection** — The LLM analyzes the topology then queries matching faults via `injection_skill_get`; no hardcoded fault scenarios
 3. **Dual-Layer Injection** — Device-level config changes + link-level network impairment, covering complete troubleshooting scenarios
 4. **Fully Reversible** — Every injection includes restore commands; link filters can be cleared with `action: clear`
 5. **Safety First** — BPF syntax is pre-validated via tshark; config commands are restricted by `command_filter`
-6. **Context Filtering** — `InjectionSkillsTool` requires a `context` parameter, returning only faults matching the topology protocols
+6. **Context Filtering** — `injection_skill_get` requires a `context` parameter, returning only faults matching the topology protocols

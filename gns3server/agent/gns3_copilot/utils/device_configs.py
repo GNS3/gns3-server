@@ -23,14 +23,22 @@
 # Project Home: https://github.com/yueguobin/gns3-copilot
 #
 """
-Device config entry normalization shared by the tools_v2 executors.
+Device config entry normalization shared by the device command runners.
 
-Callers (LLM agents via MCP, or gns3-copilot directly) may send the same
-device several times in one batch. Every downstream stage keys by
-device_name, so duplicates must merge before execution, not after.
+Callers (LLM agents via MCP, or the copilot through the MCP tool bridge)
+may send the same device several times in one batch. Every downstream
+stage keys by device_name, so duplicates must merge before execution, not
+after. This module also renders the optional per-device Jinja2 template
+into the commands field.
 """
 
+import logging
 from typing import Any
+
+from jinja2 import Template as JinjaTemplate
+from jinja2 import TemplateError as JinjaError
+
+logger = logging.getLogger(__name__)
 
 
 def merge_duplicate_device_configs(
@@ -75,4 +83,53 @@ def merge_duplicate_device_configs(
             entry = dict(config)
             entry[commands_field] = commands
             merged[name] = entry
+    return list(merged.values())
+
+
+def render_device_template(
+    template: str,
+    device_configs: list[dict[str, Any]],
+    commands_field: str = "config_commands",
+) -> list[dict[str, Any]]:
+    """
+    Render a Jinja2 template for each device's vars into the commands field.
+
+    Entries with the same device_name are merged into a single entry
+    so they share one Nornir session and avoid output fragmentation.
+
+    Each device in device_configs can have:
+      - "vars": dict of template variables (rendered into commands_field)
+      - commands_field: existing commands merged after rendering if present
+
+    Returns a one-entry error list on template failure so callers can pass
+    it straight through to the LLM.
+
+    Args:
+        commands_field: field name for the rendered commands, e.g. "config_commands", "commands"
+    """
+    try:
+        jinja = JinjaTemplate(template)
+    except JinjaError as e:
+        # a syntactically invalid template must not escape as a raw exception
+        error_msg = f"Template rendering failed: {e}"
+        logger.error(error_msg)
+        return [{"status": "failed", "error": error_msg}]
+    merged: dict[str, dict[str, Any]] = {}
+    for dev in device_configs:
+        name = dev.get("device_name")
+        if not name:
+            continue
+        vars_data = dev.get("vars", {})
+        if name not in merged:
+            merged[name] = {"device_name": name, commands_field: list(dev.get(commands_field, []))}
+        entry = merged[name]
+        if vars_data:
+            try:
+                output = jinja.render(**vars_data)
+                lines = [line for line in output.splitlines() if line.strip()]
+                entry[commands_field].extend(lines)
+            except JinjaError as e:
+                error_msg = f"Template rendering failed for '{name}': {e}"
+                logger.error(error_msg)
+                return [{"status": "failed", "error": error_msg}]
     return list(merged.values())

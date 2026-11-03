@@ -138,6 +138,17 @@ def _get_handler_params(handler_name):
                 and sub.func.value.id in ("params", "params_data")
             ):
                 return {"*"}
+        # Same for a handler that delegates the WHOLE params dict to a callee
+        # (e.g. device_config_send_handler → DeviceConfigCommandRunner().run()):
+        # the callee decides what to read, so the per-key check cannot see
+        # through it. isinstance(params, dict) is a type check, not a forward.
+        for sub in ast.walk(node):
+            if (
+                isinstance(sub, ast.Call)
+                and not (isinstance(sub.func, ast.Name) and sub.func.id == "isinstance")
+                and any(isinstance(a, ast.Name) and a.id == "params" for a in sub.args)
+            ):
+                return {"*"}
         # Found the handler function, search for params.get("xxx")
         for sub in ast.walk(node):
             if not isinstance(sub, ast.Call):

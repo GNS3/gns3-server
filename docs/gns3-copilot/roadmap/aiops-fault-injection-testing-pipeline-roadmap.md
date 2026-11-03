@@ -101,8 +101,8 @@ Systematically inject network faults and validate AIOps detection using the exis
 
 ### 2.2 Fault Injection
 
-- Use existing `manage_gns3_packet_filter` tool for network-level faults
-- Use existing `execute_multiple_device_config_commands` for configuration faults
+- Use existing `link_update` tool for network-level faults
+- Use existing `device_config_send` for configuration faults
 - Use existing `InjectionSkillsTool` to query and select appropriate faults
 - Support combined faults (multiple simultaneous issues)
 - Auto-recovery between scenarios (restore baseline state)

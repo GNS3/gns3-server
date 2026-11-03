@@ -12,7 +12,7 @@ See LICENSE file for licensing information.
 
 GNS3 Copilot provides protocol-oriented packet analysis that allows the AI assistant to diagnose network issues from live GNS3 captures. Protocol definitions (tshark fields, display filters, check rules) are stored as YAML files in the external GNS3-Skills repository and loaded into memory at startup.
 
-The system exposes two LangChain tools: `PacketAnalysisSkillsTool` queries protocol definitions, and `PacketAnalysisTool` runs tshark against downloaded pcap files using the LLM-constructed arguments.
+The system exposes two LangChain tools: `packet_analysis_skills` queries protocol definitions, and `packet_analysis` runs tshark against downloaded pcap files using the LLM-constructed arguments.
 
 ## Architecture
 
@@ -26,8 +26,8 @@ graph TD
         SM[SkillsManager]
         SL[SkillsLoader]
         REG[PACKET_ANALYSIS_REGISTRY<br/>in-memory dict]
-        SKILL[PacketAnalysisSkillsTool<br/>query protocol definitions]
-        TOOL[PacketAnalysisTool<br/>run tshark on captures]
+        SKILL[packet_analysis_skills<br/>query protocol definitions]
+        TOOL[packet_analysis<br/>run tshark on captures]
     end
 
     subgraph "tshark"
@@ -89,8 +89,8 @@ checks:
 ```mermaid
 sequenceDiagram
     participant LLM as LLM Agent
-    participant SKILL as PacketAnalysisSkillsTool
-    participant TOOL as PacketAnalysisTool
+    participant SKILL as packet_analysis_skills
+    participant TOOL as packet_analysis
     participant tshark as tshark
     participant GNS3 as GNS3 Server
 
@@ -117,12 +117,12 @@ The packet analysis tools are available in two copilot modes:
 
 | Tool | Teaching Assistant | Lab Automation | Troubleshooting Injection |
 |------|:------------------:|:--------------:|:-------------------------:|
-| `PacketAnalysisTool` | Yes | Yes | No |
-| `PacketAnalysisSkillsTool` | Yes | Yes | No |
+| `packet_analysis` | Yes | Yes | No |
+| `packet_analysis_skills` | Yes | Yes | No |
 
 ## Tool Interface
 
-### PacketAnalysisSkillsTool (`packet_analysis_skills`)
+### packet_analysis_skills
 
 Queries protocol definitions from the `PACKET_ANALYSIS_REGISTRY`. Used before running tshark to look up valid field names, display filters, and anomaly checks.
 
@@ -131,7 +131,7 @@ Queries protocol definitions from the `PACKET_ANALYSIS_REGISTRY`. Used before ru
 | List protocols | `{"action": "list"}` | `{count, protocols: [{protocol, name, description}]}` |
 | Get protocol | `{"action": "get", "protocol": "ospf"}` | Protocol definition with fields, filters, checks |
 
-### PacketAnalysisTool (`packet_analysis`)
+### packet_analysis
 
 Runs tshark against a downloaded GNS3 capture file. Supports two modes:
 

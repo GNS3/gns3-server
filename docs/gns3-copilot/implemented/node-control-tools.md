@@ -12,11 +12,13 @@ See LICENSE file for licensing information.
 
 GNS3-Copilot provides tools for managing the lifecycle of network devices and topology in GNS3 projects. These tools enable AI agents to create, connect, start, stop, suspend, and manage nodes as part of automated lab management workflows.
 
+> **Tool source (single source of truth):** most copilot tools are no longer hand-written LangChain wrappers. They are adapted from the MCP server's tool registration by `tools_v2/mcp_bridge.py` — tool names, descriptions and argument schemas are identical to the MCP tools (`node_create`, `node_start`, `device_show_run`, ...). The bridge filters the MCP registration down to project-scoped tools (the copilot runs inside one open project; `project_*`, `compute_*`, `appliance_*`, `image_*` and server administration tools are excluded) and bridges the copilot's request JWT into the MCP context. Copilot-native tools remain only where they add value: `link_create` (port-name resolution), `wait_seconds`, `packet_analysis`, `packet_analysis_skills`, `gns3_topology_reader`.
+
 ## Available Tools
 
-### GNS3TemplateTool 🆕
+### template_list 🆕
 
-**Tool Name:** `get_gns3_templates`
+**Tool Name:** `template_list`
 
 **Description:** Retrieves all available device templates from the GNS3 server, including template names, IDs, and types. Filters out built-in utility templates that are not useful for network device configuration.
 
@@ -70,13 +72,13 @@ The following built-in utility templates are excluded as they are not actual net
 
 **Use Cases:**
 - Discover available device types before creating nodes
-- Get template_id for GNS3CreateNodeTool
+- Get template_id for node_create
 - Template inventory management
 - Focus on network devices rather than utility templates
 
-### GNS3CreateNodeTool 🆕
+### node_create 🆕
 
-**Tool Name:** `create_gns3_node`
+**Tool Name:** `node_create`
 
 **Description:** Creates multiple nodes in a GNS3 project using specified templates and coordinates.
 
@@ -94,7 +96,8 @@ The following built-in utility templates are excluded as they are not actual net
     {
       "template_id": "uuid-of-template2",
       "x": -200,
-      "y": 300
+      "y": 300,
+      "compute_id": "uuid-of-remote-compute"
     }
   ]
 }
@@ -127,6 +130,7 @@ The following built-in utility templates are excluded as they are not actual net
 - Uses templates for consistent node configuration
 - X/Y coordinate positioning for topology layout
 - Optional `name` field to set node name directly (if omitted, GNS3 assigns default name)
+- Optional `compute_id` field to place the node on a remote compute (if omitted, `local`)
 - **Important**: Ensure distance between any two nodes is greater than 250px for clear interface labels
 
 **Use Cases:**
@@ -136,12 +140,12 @@ The following built-in utility templates are excluded as they are not actual net
 
 **Implementation Details:**
 - Calls `POST /projects/{project_id}/nodes` for each node
-- Uses template_id from GNS3TemplateTool
+- Uses template_id from template_list
 - Assigns default names sequentially (e.g., R1, R2, R3)
 
 ### GNS3LinkTool 🆕
 
-**Tool Name:** `create_gns3_link`
+**Tool Name:** `link_create`
 
 **Description:** Creates one or more links between nodes in a GNS3 project by connecting their network ports.
 
@@ -155,6 +159,13 @@ The following built-in utility templates are excluded as they are not actual net
       "port1": "Ethernet0/0",
       "node_id2": "uuid-of-node2",
       "port2": "Ethernet0/0"
+    },
+    {
+      "node_id1": "uuid-of-node2",
+      "port1": "Serial0/0/0",
+      "node_id2": "uuid-of-node3",
+      "port2": "Serial0/0/0",
+      "link_type": "serial"
     }
   ]
 }
@@ -176,6 +187,7 @@ The following built-in utility templates are excluded as they are not actual net
 **Features:**
 - Batch create multiple links
 - Automatic port discovery by name
+- Optional `link_type` field per link (`ethernet` default, or `serial`)
 - Error handling for individual link failures
 - Port names must match topology data
 
@@ -190,9 +202,9 @@ The following built-in utility templates are excluded as they are not actual net
 - Uses adapter_number and port_number for port identification
 - Supports both physical and virtual interfaces
 
-### GNS3UpdateNodeNameTool 🆕
+### node_update 🆕
 
-**Tool Name:** `update_gns3_node_name`
+**Tool Name:** `node_update`
 
 **Description:** Updates the name of one or multiple nodes in a GNS3 project.
 
@@ -240,9 +252,9 @@ The following built-in utility templates are excluded as they are not actual net
 - Cannot rename while node is started (except special node types)
 - CAN rename while node is suspended
 
-### GNS3StartNodeTool
+### node_start
 
-**Tool Name:** `start_gns3_node`
+**Tool Name:** `node_start`
 
 **Description:** Starts one or multiple nodes in a GNS3 project with progress tracking and status monitoring. Features dynamic wait time calculation based on device types for optimal performance.
 
@@ -317,7 +329,7 @@ The tool automatically detects node types and calculates optimal wait times:
 - Logs device types and selected wait strategy
 - Progress bar displays calculated wait time
 
-### GNS3StartNodeQuickTool 🆕
+### node_start 🆕
 
 **Tool Name:** `start_gns3_node_quick`
 
@@ -355,7 +367,7 @@ The tool automatically detects node types and calculates optimal wait times:
 
 **When to Use Quick vs Regular Start:**
 
-| Scenario | Use `start_gns3_node` | Use `start_gns3_node_quick` |
+| Scenario | Use `node_start` | Use `start_gns3_node_quick` |
 |----------|----------------------|-----------------------------|
 | Interactive lab startup | ✅ | ❌ |
 | CI/CD pipeline | ❌ | ✅ |
@@ -367,11 +379,11 @@ The tool automatically detects node types and calculates optimal wait times:
 - Calls `POST /projects/{project_id}/nodes/{node_id}/start` for each node
 - Returns immediately after sending start commands (no progress bar)
 - Status reflects command send result, not boot completion
-- Source: `gns3_start_node.py` (same file as `GNS3StartNodeTool`)
+- Source: MCP tool `node_start`, adapted via `tools_v2/mcp_bridge.py`
 
-### GNS3StopNodeTool
+### node_stop
 
-**Tool Name:** `stop_gns3_node`
+**Tool Name:** `node_stop`
 
 **Description:** Stops one or multiple nodes in a GNS3 project.
 
@@ -416,9 +428,9 @@ The tool automatically detects node types and calculates optimal wait times:
 - Retrieves updated status after stop command
 - Returns detailed results for each node
 
-### GNS3SuspendNodeTool
+### node_suspend
 
-**Tool Name:** `suspend_gns3_node`
+**Tool Name:** `node_suspend`
 
 **Description:** Suspends one or multiple nodes in a GNS3 project. Suspended nodes preserve their state in memory and can be quickly resumed.
 
@@ -502,21 +514,18 @@ The tool automatically detects node types and calculates optimal wait times:
 
 ```
 gns3server/agent/gns3_copilot/tools_v2/
-├── gns3_create_node.py     # Node creation tool 🆕
-├── gns3_create_link.py     # Link creation tool 🆕
-├── gns3_get_node_temp.py   # Template retrieval tool 🆕
-├── gns3_update_node_name.py # Node rename tool 🆕
-├── gns3_start_node.py      # Start node tool (+ GNS3StartNodeQuickTool)
-├── gns3_stop_node.py       # Stop node tool
-├── gns3_suspend_node.py    # Suspend node tool
-├── config_tools_nornir.py  # Configuration command execution
-├── display_tools_nornir.py # Display command execution
-└── packet_capture_tools.py # Packet capture analysis
+├── mcp_bridge.py           # Adapts MCP server tools into LangChain tools (most tools)
+├── gns3_create_link.py     # Native link_create (port-name resolution)
+├── gns3_wait.py            # Native wait_seconds (boot wait timer)
+├── packet_analysis_tool.py # Native packet_analysis (tshark)
+├── device_config_commands.py  # Shared runner behind MCP device_config_send
+├── device_show_commands.py   # Shared runner behind MCP device_show_run
+└── vpcs_commands.py          # Shared runner behind MCP vpcs_config_set
 ```
 
 ### API Integration
 
-The tools call the shared REST handler layer (`gns3_copilot.gns3_client.api_handlers`), the same functions the MCP service exposes as MCP tools:
+Most tools are generated from the MCP server registration (`agent/mcp/__init__.py`) by `mcp_bridge.adapted_mcp_tools()` — the MCP registration is the single source of truth for names, descriptions and argument schemas. Underneath, both the MCP tools and the copilot-native tools call the shared REST handler layer (`gns3_copilot.gns3_client.api_handlers`):
 
 ```python
 from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
@@ -558,7 +567,7 @@ listing = get_nodes_handler({"project_id": project_id}, gns3_ctx)
 
 ### Progress Tracking
 
-**GNS3StartNodeTool** includes visual progress bar with dynamic wait time:
+**node_start** includes visual progress bar with dynamic wait time:
 
 ```
 Starting 3 node(s), please wait...
@@ -567,15 +576,15 @@ Starting 3 node(s), please wait...
 
 Wait time is calculated by `calculate_startup_time()` based on node types (see Dynamic Wait Time Strategy above). No hardcoded duration.
 
-**GNS3StartNodeQuickTool** does NOT include progress tracking:
+**node_start** does NOT include progress tracking:
 - Returns immediately after sending start commands
 - Nodes boot in background
 
-**GNS3StopNodeTool** does not include progress tracking:
+**node_stop** does not include progress tracking:
 - Stop operations are typically fast (< 5 seconds)
 - Immediate API response provides status feedback
 
-**GNS3SuspendNodeTool** does not include progress tracking:
+**node_suspend** does not include progress tracking:
 - Suspend operations are typically fast (< 10 seconds)
 - Immediate API response provides status feedback
 
@@ -602,59 +611,67 @@ stateDiagram-v2
 | **Suspended** | ✅ Yes     | ✅ Yes     | ❌ No         | ✅ Yes       |
 
 *Except special node types: cloud, nat, ethernet_switch, ethernet_hub, frame_relay_switch, atm_switch
-Note: These special node types are filtered out by GNS3TemplateTool and won't appear in template listings for network lab creation.
+Note: These special node types are filtered out by template_list and won't appear in template listings for network lab creation.
 
 ## Copilot Mode Integration
 
 ### Teaching Assistant Mode
 
 **Tools Available:**
-- `GNS3TemplateTool` - List available device templates 🆕
-- `GNS3CreateNodeTool` - Create nodes in topology 🆕
-- `GNS3LinkTool` - Create links between nodes 🆕
-- `GNS3UpdateNodeNameTool` - Rename nodes 🆕
-- `GNS3StartNodeTool` - For diagnostics requiring started nodes
-- `ExecuteMultipleDeviceCommands` - Execute show/display/debug commands (READ-ONLY)
-- `PacketCaptureTool` - Analyze packets from active capture
-- `DeviceSkillsTool` - Get device-specific skills and command knowledge
+- `template_list` / `template_get` - List and inspect device templates
+- `node_create` - Create nodes in topology
+- `node_list` / `node_get` - Inspect nodes (field projection keeps responses small)
+- `node_update` - Rename nodes
+- `node_start` - For diagnostics requiring started nodes
+- `link_create` - Create links between nodes (native: port-name resolution)
+- `link_list` - Inspect links
+- `link_marker` - Traffic-insight markers (highlight matching packets)
+- `drawing_create_*` - Canvas annotations (text, rectangle, ellipse)
+- `device_show_run` - Execute show/display/debug commands (READ-ONLY)
+- `device_skill_get` - Get device-specific skills and command knowledge
+- `wait_seconds` - Boot wait timer
+- `packet_analysis` / `packet_analysis_skills` - Analyze packets and query protocol knowledge
 
 **Capabilities:**
-- READ-ONLY diagnostic tools
-- Can create and manage topology (nodes, links, names)
+- READ-ONLY device diagnostics
+- Can create and manage topology (nodes, links, names, annotations)
+- Traffic-insight markers for teaching scenarios
 - Cannot stop or suspend nodes (prevents disruption of active labs)
 - Cannot execute configuration commands
 
 ### Lab Automation Assistant Mode
 
 **Tools Available:**
-- `GNS3TemplateTool` - List available device templates 🆕
-- `GNS3CreateNodeTool` - Create nodes in topology 🆕
-- `GNS3LinkTool` - Create links between nodes 🆕
-- `GNS3UpdateNodeNameTool` - Rename nodes 🆕
-- `GNS3StartNodeTool` - Full lab deployment
-- `GNS3StopNodeTool` - Full lab shutdown
-- `GNS3SuspendNodeTool` - Lab pause with state preservation
-- `ExecuteMultipleDeviceCommands` - Execute show/display/debug commands (READ-ONLY)
-- `ExecuteMultipleDeviceConfigCommands` - Execute configuration commands
-- `VPCSCommands` - Execute VPCS commands using Netmiko
-- `PacketCaptureTool` - Analyze packets from active capture
-- `DeviceSkillsTool` - Get device-specific skills and command knowledge
+- `template_list` / `template_get` - List and inspect device templates
+- `node_create` / `node_update` / `node_list` - Create, rename, inspect nodes
+- `node_start` / `node_stop` / `node_suspend` - Full lifecycle control
+- `node_console_exec` - Raw console access (works without a device_type tag)
+- `link_create` - Create links between nodes (native: port-name resolution)
+- `drawing_create_*` - Canvas annotations (text, rectangle, ellipse)
+- `device_show_run` - Execute show/display/debug commands (READ-ONLY)
+- `device_config_send` - Execute configuration commands (Jinja2 templates supported)
+- `vpcs_config_set` - Execute VPCS commands using Netmiko
+- `device_skill_get` - Get device-specific skills and command knowledge
+- `snapshot_list` / `snapshot_create` / `snapshot_delete` / `snapshot_restore` - Project snapshots
+- `wait_seconds` - Boot wait timer
+- `packet_analysis` / `packet_analysis_skills` - Analyze packets and query protocol knowledge
 
 **Capabilities:**
 - Full diagnostic and configuration tools
 - Complete topology and lifecycle management (create, connect, start/stop/suspend)
-- Device configuration via Nornir/Netmiko
+- Device configuration via Nornir/Netmiko (Jinja2 template batch mode)
+- Generic console access for Docker/Linux/VPCS nodes
 - Automated workflows with state preservation
-- Lab snapshot capabilities for later resumption
+- Project snapshot save/restore
 
 ## Usage Examples
 
 ### Example 1: Start Nodes with Progress
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3StartNodeTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_start
 
-tool = GNS3StartNodeTool()
+tool = node_start()
 result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1", "node-2", "node-3"]}))
 
 # Output includes progress bar and final status
@@ -663,9 +680,9 @@ result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1
 ### Example 2: Stop Nodes
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3StopNodeTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_stop
 
-tool = GNS3StopNodeTool()
+tool = node_stop()
 result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1", "node-2"]}))
 
 # Immediate return with stop status
@@ -675,30 +692,30 @@ result = tool._run(json.dumps({"project_id": "abc-123-def", "node_ids": ["node-1
 
 ```python
 # Lab deployment
-start_tool = GNS3StartNodeTool()
+start_tool = node_start()
 start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 
 # ... Run tests ...
 
 # Lab shutdown
-stop_tool = GNS3StopNodeTool()
+stop_tool = node_stop()
 stop_result = stop_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 ```
 
 ### Example 4: Lab Pause and Resume
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_suspend
 
 # Start lab
-start_tool = GNS3StartNodeTool()
+start_tool = node_start()
 start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 
 # ... Configure devices ...
 # ... Run some tests ...
 
 # Suspend lab (preserves all state)
-suspend_tool = GNS3SuspendNodeTool()
+suspend_tool = node_suspend()
 suspend_result = suspend_tool._run(json.dumps({"project_id": project_id, "node_ids": all_node_ids}))
 # Nodes suspended - state preserved in memory
 
@@ -712,14 +729,14 @@ start_result = start_tool._run(json.dumps({"project_id": project_id, "node_ids":
 ### Example 5: Suspend While Renaming Nodes
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3SuspendNodeTool, GNS3UpdateNodeNameTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_suspend, node_update
 
 # Suspend nodes first (allows renaming)
-suspend_tool = GNS3SuspendNodeTool()
+suspend_tool = node_suspend()
 suspend_result = suspend_tool._run(json.dumps({"project_id": project_id, "node_ids": node_ids}))
 
 # Now rename nodes (possible while suspended!)
-rename_tool = GNS3UpdateNodeNameTool()
+rename_tool = node_update()
 rename_result = rename_tool._run(
     json.dumps(
         {
@@ -739,9 +756,9 @@ rename_result = rename_tool._run(
 ### Example 6: Get Available Templates 🆕
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3TemplateTool
+from gns3server.agent.gns3_copilot.tools_v2 import template_list
 
-tool = GNS3TemplateTool()
+tool = template_list()
 result = tool._run("")
 
 # Returns all available device templates
@@ -756,9 +773,9 @@ result = tool._run("")
 ### Example 7: Create Topology Nodes 🆕
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3CreateNodeTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_create
 
-tool = GNS3CreateNodeTool()
+tool = node_create()
 result = tool._run(
     json.dumps(
         {
@@ -808,9 +825,9 @@ result = tool._run(
 ### Example 9: Apply Naming Convention 🆕
 
 ```python
-from gns3server.agent.gns3_copilot.tools_v2 import GNS3UpdateNodeNameTool
+from gns3server.agent.gns3_copilot.tools_v2 import node_update
 
-tool = GNS3UpdateNodeNameTool()
+tool = node_update()
 result = tool._run(
     json.dumps(
         {
@@ -832,20 +849,20 @@ result = tool._run(
 
 ```python
 from gns3server.agent.gns3_copilot.tools_v2 import (
-    GNS3TemplateTool,
-    GNS3CreateNodeTool,
+    template_list,
+    node_create,
     GNS3LinkTool,
-    GNS3UpdateNodeNameTool,
-    GNS3StartNodeTool,
+    node_update,
+    node_start,
 )
 
 # Step 1: Get available templates
-template_tool = GNS3TemplateTool()
+template_tool = template_list()
 templates = template_tool._run("")
 # Find router and switch template_ids...
 
 # Step 2: Create nodes
-create_tool = GNS3CreateNodeTool()
+create_tool = node_create()
 nodes = create_tool._run(
     json.dumps(
         {
@@ -884,7 +901,7 @@ links = link_tool._run(
 )
 
 # Step 4: Apply naming
-name_tool = GNS3UpdateNodeNameTool()
+name_tool = node_update()
 names = name_tool._run(
     json.dumps(
         {
@@ -899,7 +916,7 @@ names = name_tool._run(
 )
 
 # Step 5: Start nodes
-start_tool = GNS3StartNodeTool()
+start_tool = node_start()
 start_result = start_tool._run(
     json.dumps({"project_id": project_id, "node_ids": [n["node_id"] for n in nodes["created_nodes"]]})
 )
@@ -1016,7 +1033,7 @@ _Status: ✅ Implemented - Topology management tools available in both modes. Fu
 
 _Changelog:_
 - **2026-03-14 (Evening)**: Added dynamic wait time calculation
-  - `GNS3StartNodeTool` now calculates optimal wait times based on device types
+  - `node_start` now calculates optimal wait times based on device types
   - Fast devices (VPCS: 15s, IOU: 25s) start much faster than before
   - Conservative timing accounts for slower hardware environments
   - Slow devices (QEMU, Dynamips, etc.) use conservative 120s base time
@@ -1025,6 +1042,6 @@ _Changelog:_
   - Logs selected strategy and detected device types
 
 - **2026-03-14 (Morning)**: Added template filtering
-  - `GNS3TemplateTool` now filters out built-in utility templates (cloud, nat, ethernet_hub, ethernet_switch, frame_relay_switch, atm_switch)
+  - `template_list` now filters out built-in utility templates (cloud, nat, ethernet_hub, ethernet_switch, frame_relay_switch, atm_switch)
   - Focuses on network devices suitable for lab configuration
   - Logs filtered count for transparency
