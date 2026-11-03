@@ -44,7 +44,7 @@ async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(w
         log.info(f"New client {client} has connected to compute WebSocket")
         try:
             with NotificationManager.instance().queue() as queue:
-                while True:
+                while not websocket.app.state.exiting:
                     notification = await queue.get_json(5)
                     await websocket.send_text(notification)
         except (ConnectionClosed, WebSocketDisconnect):

@@ -308,7 +308,7 @@ async def controller_ws_notifications(
     log.info(f"New client {client} has connected to controller WebSocket")
     try:
         with Controller.instance().notification.controller_queue() as queue:
-            while True:
+            while not websocket.app.state.exiting:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):

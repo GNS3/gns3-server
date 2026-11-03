@@ -42,6 +42,12 @@ from gns3server.version import __version__
 
 log = logging.getLogger(__name__)
 
+# Uvicorn waits for open connections forever by default. A long-lived
+# streaming response (for example the MCP GET/SSE stream) would then block
+# Ctrl+C indefinitely. Bound the wait so remaining tasks are cancelled and
+# the lifespan shutdown (controller and project cleanup) always runs.
+GRACEFUL_SHUTDOWN_TIMEOUT = 10
+
 
 class Server:
     _stream_handler = None
@@ -222,6 +228,24 @@ class Server:
             log.critical("Can't write pid file %s: %s", path, str(e))
             sys.exit(1)
 
+    @staticmethod
+    def _create_uvicorn_config(app, host: str, port: int, access_log: bool) -> uvicorn.Config:
+        """
+        Build the uvicorn configuration.
+        """
+
+        server_config = Config.instance().settings.Server
+        return uvicorn.Config(
+            app,
+            host=host,
+            port=port,
+            access_log=access_log,
+            ssl_certfile=server_config.certfile,
+            ssl_keyfile=server_config.certkey,
+            lifespan="on",
+            timeout_graceful_shutdown=GRACEFUL_SHUTDOWN_TIMEOUT,
+        )
+
     async def run(self, parser, args):
 
         self._setup_logging(args)
@@ -301,15 +325,7 @@ class Server:
             if config.Server.enable_ssl:
                 log.info("SSL is enabled")
 
-            config = uvicorn.Config(
-                app,
-                host=host,
-                port=port,
-                access_log=access_log,
-                ssl_certfile=config.Server.certfile,
-                ssl_keyfile=config.Server.certkey,
-                lifespan="on",
-            )
+            config = self._create_uvicorn_config(app, host, port, access_log)
 
             # overwrite uvicorn loggers with our own logger
             for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):

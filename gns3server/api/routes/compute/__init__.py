@@ -67,6 +67,7 @@ compute_api = FastAPI(
 )
 
 compute_api.state.controller_host = None
+compute_api.state.exiting = False
 
 
 @compute_api.exception_handler(ComputeError)

@@ -23,7 +23,13 @@ import pytest
 
 from gns3server.config import Config
 from gns3server.main import parse_arguments as parse
-from gns3server.server import Server
+from gns3server.server import GRACEFUL_SHUTDOWN_TIMEOUT, Server
+
+
+def test_uvicorn_config_bounds_graceful_shutdown(config):
+
+    uvicorn_config = Server._create_uvicorn_config(None, "127.0.0.1", 3080, False)
+    assert uvicorn_config.timeout_graceful_shutdown == GRACEFUL_SHUTDOWN_TIMEOUT
 
 
 def test_locale_check():

@@ -15,23 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
-# @pytest.mark.asyncio
-# async def test_notification_ws(compute_api):
-#
-#     # FIXME: how to test websockets
-#     pass
+import pytest
+from fastapi import FastAPI
 
-# with compute_api.ws("/notifications/ws") as ws:
+from gns3server.api.routes.compute import compute_api
+from gns3server.api.routes.compute.notifications import project_ws_notifications
 
-# answer = await ws.receive_text()
-# print(answer)
-# answer = json.loads(answer)
-#
-# assert answer["action"] == "ping"
-#
-# NotificationManager.instance().emit("test", {})
-#
-# answer = await ws.receive_text()
-# answer = json.loads(answer)
-# assert answer["action"] == "test"
+
+@pytest.mark.asyncio
+async def test_compute_ws_stops_when_app_is_exiting(app: FastAPI, monkeypatch) -> None:
+
+    monkeypatch.setattr(compute_api.state, "exiting", True)
+    websocket = MagicMock()
+    websocket.app = compute_api
+    websocket.client = SimpleNamespace(host="127.0.0.1", port=1000)
+    websocket.send_text = AsyncMock()
+
+    await asyncio.wait_for(project_ws_notifications(websocket=websocket), timeout=1)
+
+    websocket.send_text.assert_not_awaited()
