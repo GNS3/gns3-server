@@ -104,7 +104,8 @@ logger = logging.getLogger(__name__)
 #   counterpart by design (server-side pcap analysis was rejected)
 # - GNS3TopologyTool: aggregated nodes+links+ports view in one call
 
-# Teaching assistant mode: READ-ONLY diagnostics plus topology building
+# Teaching assistant mode: read-only diagnostics, topology building and
+# traffic-insight visibility (markers highlight packets on links)
 TEACHING_ASSISTANT_MODE_TOOLS = [
     *adapted_mcp_tools(
         names=[
@@ -112,10 +113,14 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
             "template_get",
             "node_create",
             "node_update",
+            "node_list",
+            "node_get",
             "drawing_create_text",
             "drawing_create_rectangle",
             "drawing_create_ellipse",
             "node_start",
+            "link_list",
+            "link_marker",
             "device_show_run",
             "device_skill_get",
         ]
@@ -126,7 +131,9 @@ TEACHING_ASSISTANT_MODE_TOOLS = [
     PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
-# Lab automation assistant mode: Full diagnostic AND configuration tools
+# Lab automation assistant mode: full diagnostic AND configuration tools,
+# plus generic console access (node_console_exec works without a
+# device_type tag — Docker/Linux/VPCS nodes) and project snapshots
 LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     *adapted_mcp_tools(
         names=[
@@ -134,16 +141,22 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
             "template_get",
             "node_create",
             "node_update",
-            "drawing_create_text",
-            "drawing_create_rectangle",
-            "drawing_create_ellipse",
+            "node_list",
             "node_start",
             "node_stop",
             "node_suspend",
+            "node_console_exec",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
             "device_show_run",
             "device_config_send",
             "vpcs_config_set",
             "device_skill_get",
+            "snapshot_list",
+            "snapshot_create",
+            "snapshot_delete",
+            "snapshot_restore",
         ]
     ),
     GNS3LinkTool(),  # native: port-name resolution
@@ -152,8 +165,8 @@ LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
     PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
-# Troubleshooting injection mode: Tools for injecting network faults
-# Focused on configuration commands and injection skills for fault injection
+# Troubleshooting injection mode: fault injection plus the capture loop
+# (inject → capture the link → verify with the downloaded pcap)
 TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
     *adapted_mcp_tools(
         names=[
@@ -161,6 +174,10 @@ TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
             "device_config_send",
             "link_update",
             "link_available_filters",
+            "link_capture_start",
+            "link_capture_stop",
+            "link_capture_download",
+            "marker_definition",
             "injection_skill_get",
         ]
     ),
@@ -172,13 +189,12 @@ tools = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 
 # Create combined tool lookup for tool_node (supports all modes)
 # tool_node will receive tool calls based on mode-specific tools bound to the
-# model
-# Combine all tools from all modes and deduplicate by tool name
+# model. The registry must cover every mode: a tool bound to the model but
+# missing here would raise KeyError when the LLM calls it.
 ALL_TOOLS = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 tools_by_name = {tool.name: tool for tool in ALL_TOOLS}
 
-# Add troubleshooting injection tools to the global tool registry
-for tool in TROUBLESHOOTING_INJECTION_MODE_TOOLS:
+for tool in TEACHING_ASSISTANT_MODE_TOOLS + TROUBLESHOOTING_INJECTION_MODE_TOOLS:
     if tool.name not in tools_by_name:
         tools_by_name[tool.name] = tool
 

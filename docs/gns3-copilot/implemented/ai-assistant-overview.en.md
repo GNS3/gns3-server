@@ -101,21 +101,29 @@ sequenceDiagram
 
 | Tool | teaching_assistant | lab_automation_assistant | troubleshooting_injection |
 |---|---|---|---|
-| `template_list` get templates | ✓ | ✓ | |
+| `template_list` / `template_get` templates | ✓ | ✓ | |
 | `node_create` create nodes | ✓ | ✓ | |
-| `link_create` create links (native) | ✓ | ✓ | |
-| `node_start` start nodes | ✓ | ✓ | |
+| `node_list` / `node_get` inspect nodes | ✓ | ✓ | |
 | `node_update` rename | ✓ | ✓ | |
-| `node_stop` stop nodes | | ✓ | |
-| `node_suspend` suspend nodes | | ✓ | |
+| `node_start` start nodes | ✓ | ✓ | |
+| `node_stop` / `node_suspend` stop/suspend | | ✓ | |
+| `node_console_exec` raw console access | | ✓ | |
+| `link_create` create links (native, port names) | ✓ | ✓ | |
+| `link_list` inspect links | ✓ | | |
+| `link_marker` traffic-insight markers | ✓ | | |
+| `drawing_create_*` canvas annotations | ✓ | ✓ | |
 | `device_show_run` read-only commands | ✓ | ✓ | ✓ |
 | `device_config_send` config commands | | ✓ | ✓ |
 | `vpcs_config_set` VPCS commands | | ✓ | |
+| `device_skill_get` device skills | ✓ | ✓ | |
+| `snapshot_list` / `snapshot_create` / `snapshot_delete` / `snapshot_restore` snapshots | | ✓ | |
+| `link_update` / `link_available_filters` fault filters | | | ✓ |
+| `link_capture_start` / `link_capture_stop` / `link_capture_download` capture | | | ✓ |
+| `marker_definition` project-wide markers | | | ✓ |
+| `injection_skill_get` fault injection skills | | | ✓ |
+| `wait_seconds` boot wait (native) | ✓ | ✓ | |
 | `packet_analysis` live packet analysis (native) | ✓ | ✓ | |
 | `packet_analysis_skills` protocol knowledge (native) | ✓ | ✓ | |
-| `device_skill_get` device skills | ✓ | ✓ | |
-| `link_update` link filters | | | ✓ |
-| `injection_skill_get` fault injection skills | | | ✓ |
 | `gns3_topology_reader` topology info (native) | | | ✓ |
 
 The mode is selected in the `llm_call` node via `copilot_mode`, which picks the corresponding tool list and binds it to the LLM model instance through `create_base_model_with_tools(mode_tools, llm_config)`.

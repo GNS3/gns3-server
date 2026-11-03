@@ -618,43 +618,51 @@ Note: These special node types are filtered out by template_list and won't appea
 ### Teaching Assistant Mode
 
 **Tools Available:**
-- `template_list` - List available device templates 🆕
-- `node_create` - Create nodes in topology 🆕
-- `GNS3LinkTool` - Create links between nodes 🆕
-- `node_update` - Rename nodes 🆕
+- `template_list` / `template_get` - List and inspect device templates
+- `node_create` - Create nodes in topology
+- `node_list` / `node_get` - Inspect nodes (field projection keeps responses small)
+- `node_update` - Rename nodes
 - `node_start` - For diagnostics requiring started nodes
+- `link_create` - Create links between nodes (native: port-name resolution)
+- `link_list` - Inspect links
+- `link_marker` - Traffic-insight markers (highlight matching packets)
+- `drawing_create_*` - Canvas annotations (text, rectangle, ellipse)
 - `device_show_run` - Execute show/display/debug commands (READ-ONLY)
-- `PacketCaptureTool` - Analyze packets from active capture
-- `DeviceSkillsTool` - Get device-specific skills and command knowledge
+- `device_skill_get` - Get device-specific skills and command knowledge
+- `wait_seconds` - Boot wait timer
+- `packet_analysis` / `packet_analysis_skills` - Analyze packets and query protocol knowledge
 
 **Capabilities:**
-- READ-ONLY diagnostic tools
-- Can create and manage topology (nodes, links, names)
+- READ-ONLY device diagnostics
+- Can create and manage topology (nodes, links, names, annotations)
+- Traffic-insight markers for teaching scenarios
 - Cannot stop or suspend nodes (prevents disruption of active labs)
 - Cannot execute configuration commands
 
 ### Lab Automation Assistant Mode
 
 **Tools Available:**
-- `template_list` - List available device templates 🆕
-- `node_create` - Create nodes in topology 🆕
-- `GNS3LinkTool` - Create links between nodes 🆕
-- `node_update` - Rename nodes 🆕
-- `node_start` - Full lab deployment
-- `node_stop` - Full lab shutdown
-- `node_suspend` - Lab pause with state preservation
+- `template_list` / `template_get` - List and inspect device templates
+- `node_create` / `node_update` / `node_list` - Create, rename, inspect nodes
+- `node_start` / `node_stop` / `node_suspend` - Full lifecycle control
+- `node_console_exec` - Raw console access (works without a device_type tag)
+- `link_create` - Create links between nodes (native: port-name resolution)
+- `drawing_create_*` - Canvas annotations (text, rectangle, ellipse)
 - `device_show_run` - Execute show/display/debug commands (READ-ONLY)
-- `device_config_send` - Execute configuration commands
+- `device_config_send` - Execute configuration commands (Jinja2 templates supported)
 - `vpcs_config_set` - Execute VPCS commands using Netmiko
-- `PacketCaptureTool` - Analyze packets from active capture
-- `DeviceSkillsTool` - Get device-specific skills and command knowledge
+- `device_skill_get` - Get device-specific skills and command knowledge
+- `snapshot_list` / `snapshot_create` / `snapshot_delete` / `snapshot_restore` - Project snapshots
+- `wait_seconds` - Boot wait timer
+- `packet_analysis` / `packet_analysis_skills` - Analyze packets and query protocol knowledge
 
 **Capabilities:**
 - Full diagnostic and configuration tools
 - Complete topology and lifecycle management (create, connect, start/stop/suspend)
-- Device configuration via Nornir/Netmiko
+- Device configuration via Nornir/Netmiko (Jinja2 template batch mode)
+- Generic console access for Docker/Linux/VPCS nodes
 - Automated workflows with state preservation
-- Lab snapshot capabilities for later resumption
+- Project snapshot save/restore
 
 ## Usage Examples
 

@@ -194,3 +194,112 @@ def test_invoke_without_token_returns_error(monkeypatch: pytest.MonkeyPatch) -> 
     result = tool.invoke({"x": 5})
 
     assert "error" in result
+
+
+class TestModeToolsets:
+    """Pin the exact copilot mode toolset composition.
+
+    The mode tables are the visible capability contract of the copilot:
+    adapted MCP tools plus a few copilot-native ones. Any change here is a
+    deliberate product decision and must update this test.
+    """
+
+    @staticmethod
+    def _names(tools: list) -> set[str]:
+        return {tool.name for tool in tools}
+
+    @pytest.fixture(scope="class")
+    def modes(self) -> dict[str, set[str]]:
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+            LAB_AUTOMATION_ASSISTANT_MODE_TOOLS,
+            TEACHING_ASSISTANT_MODE_TOOLS,
+            TROUBLESHOOTING_INJECTION_MODE_TOOLS,
+        )
+
+        return {
+            "teaching": self._names(TEACHING_ASSISTANT_MODE_TOOLS),
+            "lab": self._names(LAB_AUTOMATION_ASSISTANT_MODE_TOOLS),
+            "injection": self._names(TROUBLESHOOTING_INJECTION_MODE_TOOLS),
+        }
+
+    def test_teaching_assistant(self, modes: dict[str, set[str]]) -> None:
+        assert modes["teaching"] == {
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "node_list",
+            "node_get",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "node_start",
+            "link_list",
+            "link_marker",
+            "device_show_run",
+            "device_skill_get",
+            # copilot-native
+            "link_create",
+            "wait_seconds",
+            "packet_analysis",
+            "packet_analysis_skills",
+        }
+
+    def test_lab_automation_assistant(self, modes: dict[str, set[str]]) -> None:
+        assert modes["lab"] == {
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "node_list",
+            "node_start",
+            "node_stop",
+            "node_suspend",
+            "node_console_exec",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "device_show_run",
+            "device_config_send",
+            "vpcs_config_set",
+            "device_skill_get",
+            "snapshot_list",
+            "snapshot_create",
+            "snapshot_delete",
+            "snapshot_restore",
+            # copilot-native
+            "link_create",
+            "wait_seconds",
+            "packet_analysis",
+            "packet_analysis_skills",
+        }
+
+    def test_troubleshooting_injection(self, modes: dict[str, set[str]]) -> None:
+        assert modes["injection"] == {
+            "device_show_run",
+            "device_config_send",
+            "link_update",
+            "link_available_filters",
+            "link_capture_start",
+            "link_capture_stop",
+            "link_capture_download",
+            "marker_definition",
+            "injection_skill_get",
+            # copilot-native
+            "gns3_topology_reader",
+        }
+
+    def test_no_administration_tools_leak_into_any_mode(self, modes: dict[str, set[str]]) -> None:
+        banned_prefixes = ("project_", "compute_", "appliance_", "image_", "server_")
+        banned = {"template_create", "template_update", "template_delete"}
+        for mode_name, names in modes.items():
+            leaked = {n for n in names if n.startswith(banned_prefixes)} | (names & banned)
+            assert not leaked, f"{mode_name} mode leaks administration tools: {leaked}"
+
+    def test_every_mode_tool_is_resolvable(self, modes: dict[str, set[str]]) -> None:
+        """Every tool name in every mode must be constructible (no typos)."""
+        from gns3server.agent.gns3_copilot.agent.gns3_copilot import tools_by_name
+
+        for mode_name, names in modes.items():
+            missing = names - set(tools_by_name)
+            assert not missing, f"{mode_name} mode references unknown tools: {missing}"
