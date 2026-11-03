@@ -135,7 +135,7 @@ from the API key automatically — long-lived sessions keep working
 | `node_start` | Start node(s) — `node_id` or `node_ids` array |
 | `node_stop` | Stop node(s) — `node_id` or `node_ids` array |
 | `node_suspend` | Suspend node(s) — `node_id` or `node_ids` array |
-| `node_console` | Get WebSocket console URL |
+| `node_console_exec` | Run commands on a node's console (one call = one complete session) |
 | `node_file_list` | List files in node directory |
 | `node_file_get` | Read a file (with offset/limit) |
 | `node_file_write` | Write a file |
@@ -252,7 +252,7 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 | Network OS console, any interaction | `device_config_send` / `device_show_run` (batch drivers manage config mode themselves) |
 | Unfamiliar device: read its quirks before driving the console | `device_skill_get` (list first, then fetch by key) |
 | Practise troubleshooting: inject a realistic fault | `injection_skill_get` (list with the topology's protocols, then one fault) + `device_config_send` |
-| VNC console | `node_console` (returns a websocat URL) |
+| Any console interaction outside those drivers (incl. Docker/Linux nodes) | `node_console_exec` (one call = one session, plain-text output) |
 
 The tool connects to each device's console via telnet/SSH. Nodes must be in the `started` state (use `node_start` or `node_start_all`). Device type is auto-detected from the node's `device_type:<type>` tag in GNS3.
 
@@ -516,11 +516,26 @@ sequenceDiagram
 - Tool handlers use `Gns3Connector` (from `gns3_copilot.gns3_client.connector`) via the shared handler layer (`gns3_copilot.gns3_client.api_handlers`), keeping the MCP layer decoupled
 - The JWT token is stored in a `contextvars.ContextVar` so it is available within tool handler threads (Python ≥ 3.9 propagates contextvars through `asyncio.to_thread`). In stateful Streamable HTTP the session task inherits the context of the opening request, so handlers see the token presented at `initialize`
 
-### Console WebSocket
+### Node Console Execution
 
-The `node_console` tool returns a WebSocket URL for connecting to a node's console. The URL includes a short-lived **access ticket** (10 min) — a short random string (`gns3t_…`, 22 chars) minted server-side and bound to that node's console endpoints. `link_capture_download` uses the same kind of ticket bound to one exact resource path instead of embedding a Bearer JWT in the returned curl command. Tickets replaced the long JWTs previously embedded in these URLs/commands: LLM clients retyping them into shell commands reliably corrupted a ~200-char JWT, while a short ticket survives copying. Re-request the URL when the ticket expires (logging out also invalidates outstanding tickets). This endpoint is protocol-agnostic — it works for **telnet**, **ssh**, and **vnc** console types alike. The WebSocket simply proxies raw byte streams between the client and the compute node; protocol negotiation (e.g. SSH key exchange) happens on the compute side.
+The `node_console_exec` tool runs commands on a node's text console server-side. One tool call is one complete console session: the server spawns `timeout N websocat -b --no-close '<console-ws-url>'`, feeds the command lines through stdin (one line per turn, ~0.3 s pacing, `\r\n` line endings), keeps reading stdout until the timeout kills websocat, and returns the collected output as plain text (`output: …`, or bare error text — no JSON envelope, no status field: the server cannot judge whether the command itself succeeded). Works for **telnet** and **ssh** console types on all computes (the controller proxies the WebSocket); **vnc** consoles have no text channel and fail with a plain message. The client never sees a URL or token — the whole websocat chain is an implementation detail.
 
-The WebSocket URL is constructed using the server's `_server_url()`, which resolves the host as follows:
+Binary mode (`-b`) is required, not cosmetic: in text mode (`-t`, and also the default) websocat appends a newline after every received WebSocket message and turns CR/LF inside a message into spaces. The compute ships console output as one BINARY frame per `read(1024)` burst, so text mode injects a newline at every arbitrary frame boundary — output comes back diced into short lines mid-word, and carriage-return redraws are lost. `-b` is byte-exact in both directions; binary command frames are still handled as data by the compute console handler.
+
+Prerequisites: the node must be started, and the host running gns3server must have the `websocat` binary on its PATH (a missing binary returns a plain install hint).
+
+Output handling (the funnel):
+
+- Raw console bytes are decoded as UTF-8 with replacement — telnet negotiation and ANSI escapes are **not** stripped; stray bytes in the output are expected.
+- `grep=<python regex>` filters the captured lines (Python `re`, a superset of `grep -E`).
+- Up to 50 lines return as-is; beyond that a 10-line sample returns with retrieval hints.
+- `regrep=true` re-uses the node's last captured output — re-filter (`grep=`) or dump its tail (`full=true`) without re-running the command (no side effects).
+- `full=true` returns the last 400 lines / 64 KiB.
+- When output exceeds 50 lines, the full capture is also written to the node's files (`console-capture.txt`, overwritten per session) and the hint includes a `curl` URL with a short-lived **access ticket** (10 min) bound to that exact download path — the same mechanism `link_capture_download` uses. Tickets are short random strings (`gns3t_…`); they replaced long Bearer JWTs in returned URLs because LLM clients reliably corrupted those when retyping them (logging out invalidates outstanding tickets).
+
+Node-side state persists between calls (config mode, running pings, pager position) — a new session lands where the previous one ended. On QEMU serial consoles, log in in ONE call: send the username and the password in the same `command` string. `login` flushes typed-ahead input before printing `Password: `, so a password sent in a separate call is lost and the console loops on `Login incorrect`. Once logged in, the shell persists across calls. Control keys are sent as real characters: an interrupt is `"\u0003"` as its own line in the `command` string; the 4-character spelling `"\x03"` is not translated. `command=""` sends a single Enter (wake an idle console / read the prompt). The session stays open the full `timeout` window (default 15 s, max 300 s) — set it just above the expected output time.
+
+The console WebSocket URL is built from the server's `_server_url()`, which resolves the host as follows:
 
 | `Server.host` value | Resolved host in URL |
 |:---|:---|
@@ -529,16 +544,7 @@ The WebSocket URL is constructed using the server's `_server_url()`, which resol
 | `::` (IPv6 any) | Detected via default route interface IP |
 | Detection failure | Fallback to `127.0.0.1` |
 
-When `Server.host` is `0.0.0.0` (listen on all interfaces), the MCP server discovers the default route interface IP using a UDP socket connect to `8.8.8.8:80` — no network data is sent, the operating system simply selects the interface that would be used for the default route. This ensures the returned WebSocket URL uses a reachable address (e.g. `192.168.1.3` instead of `127.0.0.1`).
-
-If the configured host is already a specific IP or hostname (not `0.0.0.0`), it is used directly in the URL without modification.
-
-Use `websocat` to connect from the command line (use the `command` returned by `node_console` verbatim — never reconstruct the URL by hand):
-
-```bash
-# The host in the URL is automatically resolved to a reachable address
-websocat ws://192.168.1.3:3080/v3/projects/{project_id}/nodes/{node_id}/console/ws?token=<console_ticket>
-```
+When `Server.host` is `0.0.0.0` (listen on all interfaces), the MCP server discovers the default route interface IP using a UDP socket connect to `8.8.8.8:80` — no network data is sent, the operating system simply selects the interface that would be used for the default route. This ensures the console URL uses a reachable address (e.g. `192.168.1.3` instead of `127.0.0.1`). If the configured host is already a specific IP or hostname (not `0.0.0.0`), it is used directly without modification.
 
 ### Source Files
 

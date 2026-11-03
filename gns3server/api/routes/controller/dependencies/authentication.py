@@ -191,10 +191,13 @@ async def get_current_active_user_from_websocket(
     try:
         if token.startswith(TICKET_PREFIX):
             # Node-bound access tickets ("gns3t_…"): short-lived credentials
-            # for one node's console endpoints, minted by the node_console
-            # MCP tool. redeem() confines them to the route matching their
-            # binding, so they cannot authenticate the notification/wireshark
-            # sockets that share this dependency.
+            # for one node's console endpoints. No MCP tool currently mints
+            # them (node_console_exec connects server-side with the session
+            # JWT), but the redemption path is kept as the designated
+            # mechanism for handing node console access to external clients.
+            # redeem() confines them to the route matching their binding, so
+            # they cannot authenticate the notification/wireshark sockets
+            # that share this dependency.
             ticket = access_ticket_service.redeem(token, websocket.path_params)
             if ticket is None:
                 raise HTTPException(

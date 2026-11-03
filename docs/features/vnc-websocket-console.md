@@ -58,7 +58,7 @@ graph LR
 **URL**: `ws://{controller_host}:{port}/v3/projects/{project_id}/nodes/{node_id}/console/vnc?token={jwt_token}`
 
 **Authentication**:
-- JWT token via query parameter, **or** a short-lived console ticket (`gns3t_…`, minted per node by the `node_console` MCP tool, valid 10 min, bound to this node's console endpoints)
+- JWT token via query parameter, **or** a short-lived console ticket (`gns3t_…`, valid 10 min, bound to this node's console endpoints — no MCP tool currently mints these; the redemption path is reserved for handing node console access to external clients)
 - User must have `Node.Console` privilege
 
 **WebSocket Subprotocols**:
@@ -179,7 +179,7 @@ sequenceDiagram
 
 1. **Authentication**:
    - JWT token validation via `has_privilege_on_websocket("Node.Console")` dependency
-   - Token passed as query parameter: `?token={jwt}`, or a console ticket (`gns3t_…`) redeemable only on the node it was minted for
+   - Token passed as query parameter: `?token={jwt}` (the server also redeems node-bound console tickets, `gns3t_…`, on these routes)
 
 2. **Authorization**:
    - RBAC privilege check: `Node.Console`

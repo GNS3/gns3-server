@@ -60,7 +60,6 @@ from gns3server.agent.gns3_copilot.gns3_client.api_handlers import (
     duplicate_node_handler,
     get_link_handler,
     get_links_handler,
-    get_node_console_info_handler,
     get_node_file_handler,
     get_node_handler,
     get_node_links_handler,
@@ -109,6 +108,7 @@ from .computes import (
     get_compute_images_handler,
     list_computes_handler,
 )
+from .console_exec import DEFAULT_TIMEOUT_S, DIRECT_LINES, FULL_LINES, MAX_TIMEOUT_S, console_exec
 from .device_config import (
     device_config_send_handler,
     device_show_run_handler,
@@ -754,38 +754,95 @@ async def node_update(
 
 
 @mcp.tool()
-async def node_console(
+async def node_console_exec(
     project_id: Annotated[str, Field(description="Project name or UUID containing the node")],
-    node_id: Annotated[str, Field(description="Node name or UUID to get console info for")],
-) -> list[dict[str, Any]]:
-    """Get WebSocket console connection info for a node.
+    node_id: Annotated[str, Field(description="Node name or UUID to run commands on")],
+    command: Annotated[
+        str,
+        Field(
+            description="Commands, one per line (\\n-separated). Empty = a single Enter (wake the console / read the prompt)."
+        ),
+    ] = "",
+    timeout: Annotated[  # noqa: ASYNC109 - timeout is the session length, not an async deadline
+        float,
+        Field(
+            description=f"Session length in seconds, 1-{int(MAX_TIMEOUT_S)} (default {int(DEFAULT_TIMEOUT_S)}). "
+            "The session stays open the FULL window — set it just above the expected output time."
+        ),
+    ] = DEFAULT_TIMEOUT_S,
+    grep: Annotated[
+        str | None,
+        Field(
+            description="Optional Python regex (superset of grep -E). Only matching lines of the output are returned, "
+            "e.g. 'ospf|bgp', '^R1#'."
+        ),
+    ] = None,
+    regrep: Annotated[
+        bool,
+        Field(
+            description="Re-use this node's last captured output instead of running a new session "
+            "(no re-run, no side effects). Combine with grep= or full=true."
+        ),
+    ] = False,
+    full: Annotated[
+        bool,
+        Field(
+            description=f"Return the last {FULL_LINES} lines / 64 KiB of output instead of the {DIRECT_LINES}-line summary."
+        ),
+    ] = False,
+) -> str:
+    """Run commands on a node's text console and return the output (one call = one complete session).
 
-    Returns the console type (telnet/ssh/vnc) and a ready-to-run websocat
-    command with a short-lived access token (10 min) already embedded.
+    The server connects to the node's console WebSocket, sends your command
+    lines, keeps collecting output until the timeout expires, disconnects,
+    and returns everything that came back as plain text. Works for telnet and
+    ssh console types on all computes (the controller proxies the WebSocket).
+    Node-side state persists between calls (config mode, running pings,
+    pager position) — a new session lands where the previous one ended.
 
-    IMPORTANT — copy the returned values EXACTLY:
-      - Run the returned "command" string verbatim; it already contains the
-        full URL with token. NEVER construct or edit the URL yourself, and
-        NEVER copy the token by hand — a mistyped token is rejected.
-      - The token expires after token_ttl_seconds (10 min): call this tool
-        again to get a fresh one; do not reuse an old URL.
+    Console input:
+    - command: one command per line (\\n-separated). Each line is sent with a
+      console line ending, lines are paced ~0.3 s apart so none is dropped.
+    - A line containing only a control character is a keypress, not a
+      command: interrupt a running command with a real Ctrl-C character — in
+      JSON tool arguments that is "\\u0003" as its own line. The 4-character
+      spelling "\\x03" is NOT translated and would arrive as text.
+    - command="" sends a single Enter — wakes an idle console and shows the
+      prompt.
+    - QEMU serial getty login: send the username and the password in the SAME
+      call. login flushes typed-ahead input before printing "Password: ", so
+      a password sent in a separate call is lost (Login incorrect loop). The
+      logged-in shell then persists across calls.
 
-    Sending device commands after connecting:
-      > timeout 10 websocat -t --no-close "ws://..." <<< $'\\r\\nenable\\r\\nshow version\\r\\nexit\\r\\n'
+    Timeout: the session stays open for the FULL window (like
+    `timeout N websocat`). Output keeps arriving the whole time; there is no
+    early return. ~15 s fits a few show commands; big config blocks or
+    `show tech-support` need 30 s or more.
 
-      - Use \\r\\n (not \\n) to match console protocol line endings
-      - Use $'...' format for escape sequences in bash
-      - --no-close keeps the WebSocket open after stdin (heredoc) hits EOF, so
-        device output is not cut off before it arrives
-      - Set a timeout to prevent hanging connections
+    Output is raw console bytes decoded as UTF-8 with replacement — telnet
+    negotiation and ANSI escape sequences may show up as stray bytes; that
+    is expected. When more than 50 lines would come back, only a 10-line
+    sample returns, with instructions to narrow (grep=), re-filter the cached
+    capture without re-running (regrep=true), dump its tail (full=true), or
+    download the whole capture with curl.
+
+    Failures (node not started, VNC console, websocat missing on the server
+    host, silent console) return plain text describing the problem — there
+    is no status field, read the text itself.
+
+    Example — two checks on one router, 20 s window:
+      node_console_exec(project_id="ospf-lab", node_id="R1",
+          command="show ip ospf neighbor\\nshow ip route summary", timeout=20)
     """
-    return await asyncio.to_thread(
-        _run_handler_sync,
-        get_node_console_info_handler,
-        {
-            "project_id": project_id,
-            "node_id": node_id,
-        },
+    return await console_exec(
+        project_id,
+        node_id,
+        command,
+        timeout,
+        grep=grep,
+        regrep=regrep,
+        full=full,
+        gns3_ctx=_gns3_ctx(),
     )
 
 
@@ -2146,7 +2203,7 @@ async def device_show_run(
     - Each node must have a device_type:<type> tag set in GNS3
       (e.g. device_type:cisco_ios_telnet, device_type:gns3_huawei_telnet_ce).
       Nodes without this tag will fail with "device_type tag not found".
-      Docker/Linux nodes are not supported (use node_console instead).
+      Docker/Linux nodes are not supported (use node_console_exec instead).
 
     Error contract: every failure is reported in-band as an entry with
     status "failed" and an "error" message (per-device entries also carry
