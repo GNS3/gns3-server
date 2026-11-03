@@ -104,9 +104,9 @@ VPCS output often contains ANSI terminal codes. The `_strip_ansi_codes()` method
 
 ### VPCS Tool Usage
 
-The VPCS driver is used by the `execute_vpcs_commands` tool:
+The VPCS driver is used by the `vpcs_config_set` tool:
 
-> File: `gns3server/agent/gns3_copilot/tools_v2/vpcs_tools_netmiko.py`
+> File: `gns3server/agent/gns3_copilot/gns3_client/vpcs_commands.py`
 
 **VPCS Connection Parameters:**
 
@@ -172,7 +172,7 @@ The VPCS built-in template includes `"tags": ["device_type:gns3_vpcs_telnet"]`, 
 **Unified Tool Architecture:**
 - ✅ Uses Nornir for connection management (same as network device tools)
 - ✅ Uses Netmiko for command execution (consistent with other tools)
-- ✅ Follows same patterns as `config_tools_nornir.py` and `display_tools_nornir.py`
+- ✅ Follows same patterns as `gns3_client/device_config_commands.py` and `gns3_client/device_show_commands.py`
 - ✅ Simplified codebase - no need for separate telnetlib3 implementation
 
 **Migration from telnetlib3:**
@@ -634,7 +634,7 @@ graph TD
 
 ### GNS3 Copilot Tool Usage
 
-> Tools: `tools_v2/display_tools_nornir.py`, `tools_v2/config_tools_nornir.py`, `tools_v2/vpcs_tools_netmiko.py`
+> Tools: `gns3_client/device_show_commands.py`, `gns3_client/device_config_commands.py`, `gns3_client/vpcs_commands.py`
 
 Each tool reads node tags to determine `device_type`, builds host-level Nornir inventory, and dispatches commands to the appropriate Netmiko driver. Multi-vendor topologies are handled transparently — each device uses its own driver.
 
@@ -657,17 +657,17 @@ gns3server/agent/gns3_copilot/
 │   └── get_gns3_device_port.py     # Device port extraction
 │       └── get_device_ports_from_topology()  # Extract ports + device_type from tags
 ├── tools_v2/
-│   ├── display_tools_nornir.py     # Multi-vendor display commands
-│   ├── config_tools_nornir.py      # Multi-vendor config commands
+│   ├── device_show_commands.py     # Multi-vendor display commands (shared w/ MCP)
+│   ├── device_config_commands.py   # Multi-vendor config commands (shared w/ MCP)
 │   │   └── _expand_multiline_commands()   # Expand banner commands
-│   └── vpcs_tools_netmiko.py      # VPCS commands using Nornir + Netmiko
-│       └── VPCSCommands           # VPCS tool class
+│   └── vpcs_commands.py            # VPCS commands using Nornir + Netmiko (shared w/ MCP)
+│       └── vpcs_config_set class   # VPCS tool (MCP-shared)
 ```
 
 **Key Architectural Changes (2026-03-14):**
 - ❌ Removed: `vpcs_tools_telnetlib3.py` - Replaced with Netmiko implementation
 - ✅ Added: `vpcs_telnet.py` - Custom VPCS driver for Netmiko
-- ✅ Added: `vpcs_tools_netmiko.py` - VPCS tool using Nornir + Netmiko
+- ✅ Added: `gns3_client/vpcs_commands.py` - VPCS tool using Nornir + Netmiko
 - ✅ Simplified: Unified tool architecture - all tools use Nornir + Netmiko
 - ✅ Updated: Module structure - all tools follow same pattern
 
@@ -752,7 +752,7 @@ _Unit Tests: ✅ 52/52 passing (9 Huawei + 15 Ruijie + 28 VPCS)_
 _Changelog:_
 - **2026-03-14**: Added VPCS support and unified tool architecture
   - Implemented `VPCSTelnet` custom Netmiko driver for VPCS simulator
-  - Replaced `vpcs_tools_telnetlib3.py` with `vpcs_tools_netmiko.py`
+  - Replaced `vpcs_tools_telnetlib3.py` with `gns3_client/vpcs_commands.py`
   - Unified all tools to use Nornir + Netmiko architecture
   - Removed dependency on telnetlib3 for VPCS devices
   - Improved code consistency and maintainability

@@ -72,26 +72,14 @@ from gns3server.agent.gns3_copilot.gns3_client.context_helpers import (
     get_current_llm_config,
 )
 from gns3server.agent.gns3_copilot.prompts import load_system_prompt
-from gns3server.agent.gns3_copilot.skills import DeviceSkillsTool, InjectionSkillsTool, PacketAnalysisSkillsTool
+from gns3server.agent.gns3_copilot.skills import PacketAnalysisSkillsTool
 from gns3server.agent.gns3_copilot.skills.registry import get_prompt
 from gns3server.agent.gns3_copilot.tools_v2 import (
-    ExecuteMultipleDeviceCommands,
-    ExecuteMultipleDeviceConfigCommands,
-    GNS3CreateEllipseDrawingTool,
-    GNS3CreateNodeTool,
-    GNS3CreateRectangleDrawingTool,
-    GNS3CreateTextDrawingTool,
     GNS3LinkTool,
-    GNS3PacketFilterTool,
-    GNS3StartNodeTool,
-    GNS3StopNodeTool,
-    GNS3SuspendNodeTool,
-    GNS3TemplateTool,
-    GNS3UpdateNodeNameTool,
     GNS3WaitTool,
     PacketAnalysisTool,
+    adapted_mcp_tools,
 )
-from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
 
 # Set up logger for GNS3-Copilot
 logger = logging.getLogger(__name__)
@@ -100,55 +88,83 @@ logger = logging.getLogger(__name__)
 # system. The model_factory module handles model creation with configuration
 # from the database.
 
-# Define tools for different copilot modes
-# Teaching assistant mode: READ-ONLY diagnostic tools only
+# Define tools for different copilot modes.
+#
+# MCP-backed tools are adapted from the MCP server registration (single
+# source of truth for names, descriptions and argument schemas — see
+# tools_v2/mcp_bridge.py). Only project-scoped tools are eligible: the
+# copilot runs inside one open project, so project management and server
+# administration tools are filtered out by the bridge.
+#
+# Copilot-native tools remain where they add value over the MCP version:
+# - GNS3LinkTool ("link_create"): resolves port NAMES to adapter/port
+#   numbers so the model does not need a node_get round-trip per link
+# - GNS3WaitTool ("wait_seconds"): boot wait timer, pairs with node_start
+# - PacketAnalysisTool/PacketAnalysisSkillsTool: tshark analysis, no MCP
+#   counterpart by design (server-side pcap analysis was rejected)
+# - GNS3TopologyTool: aggregated nodes+links+ports view in one call
+
+# Teaching assistant mode: READ-ONLY diagnostics plus topology building
 TEACHING_ASSISTANT_MODE_TOOLS = [
-    GNS3TemplateTool(),  # Get GNS3 node templates
-    GNS3CreateNodeTool(),  # Create new nodes in GNS3
-    GNS3LinkTool(),  # Create links between nodes
-    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
-    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
-    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
-    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
-    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
-    GNS3UpdateNodeNameTool(),  # Update node name
-    ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
-    # (READ-ONLY)
-    PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
-    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
-    DeviceSkillsTool(),  # Get device-specific skills and command knowledge
+    *adapted_mcp_tools(
+        names=[
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "node_start",
+            "device_show_run",
+            "device_skill_get",
+        ]
+    ),
+    GNS3LinkTool(),  # native: port-name resolution
+    GNS3WaitTool(),  # wait for nodes to boot (pairs with node_start)
+    PacketAnalysisTool(),  # protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
 # Lab automation assistant mode: Full diagnostic AND configuration tools
 LAB_AUTOMATION_ASSISTANT_MODE_TOOLS = [
-    GNS3TemplateTool(),  # Get GNS3 node templates
-    GNS3CreateNodeTool(),  # Create new nodes in GNS3
-    GNS3LinkTool(),  # Create links between nodes
-    GNS3CreateTextDrawingTool(),  # Add text labels to the canvas
-    GNS3CreateRectangleDrawingTool(),  # Add rectangle annotations to the canvas
-    GNS3CreateEllipseDrawingTool(),  # Add ellipse annotations to the canvas
-    GNS3StartNodeTool(),  # Start GNS3 nodes (returns immediately)
-    GNS3WaitTool(),  # Wait for nodes to boot (pair with start_gns3_node)
-    GNS3StopNodeTool(),  # Stop GNS3 nodes
-    GNS3SuspendNodeTool(),  # Suspend GNS3 nodes (preserve state)
-    GNS3UpdateNodeNameTool(),  # Update node name
-    ExecuteMultipleDeviceCommands(),  # Execute show/display/debug commands
-    # (READ-ONLY)
-    ExecuteMultipleDeviceConfigCommands(),  # Execute configuration commands
-    VPCSCommands(),  # Execute VPCS commands using Netmiko
-    PacketAnalysisTool(),  # Protocol-oriented packet analysis with tshark
-    PacketAnalysisSkillsTool(),  # Query packet analysis protocol definitions
-    DeviceSkillsTool(),  # Get device-specific skills and command knowledge
+    *adapted_mcp_tools(
+        names=[
+            "template_list",
+            "template_get",
+            "node_create",
+            "node_update",
+            "drawing_create_text",
+            "drawing_create_rectangle",
+            "drawing_create_ellipse",
+            "node_start",
+            "node_stop",
+            "node_suspend",
+            "device_show_run",
+            "device_config_send",
+            "vpcs_config_set",
+            "device_skill_get",
+        ]
+    ),
+    GNS3LinkTool(),  # native: port-name resolution
+    GNS3WaitTool(),  # wait for nodes to boot (pairs with node_start)
+    PacketAnalysisTool(),  # protocol-oriented packet analysis with tshark
+    PacketAnalysisSkillsTool(),  # query packet analysis protocol definitions
 ]
 
 # Troubleshooting injection mode: Tools for injecting network faults
 # Focused on configuration commands and injection skills for fault injection
 TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
-    ExecuteMultipleDeviceCommands(),  # Get device configurations (READ-ONLY)
-    ExecuteMultipleDeviceConfigCommands(),  # Inject configuration changes
-    GNS3PacketFilterTool(),  # Manage packet filters on links (delay, loss, corrupt, etc.)
-    InjectionSkillsTool(),  # Query injection skills and fault types
-    GNS3TopologyTool(),  # Get topology information
+    *adapted_mcp_tools(
+        names=[
+            "device_show_run",
+            "device_config_send",
+            "link_update",
+            "link_available_filters",
+            "injection_skill_get",
+        ]
+    ),
+    GNS3TopologyTool(),  # aggregated topology view (nodes + links + ports)
 ]
 
 # Default tools (legacy support - will be overridden by mode-specific tools)

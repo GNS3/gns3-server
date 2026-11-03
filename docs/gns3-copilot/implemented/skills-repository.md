@@ -82,7 +82,7 @@ SKILLS_REGISTRY["frr_vtysh"] = { ..._base.yaml..., "topics": { "ospf": {...}, "b
 
 Topic files must declare `device_type` (matching their `_base.yaml`), `topic` and `name`; the CI validator in the skills repository enforces this.
 
-The `device_skills` tool exposes a three-step drill-down (mirroring `injection_skills`'s list → index → issue pattern):
+The `device_skill_get` tool exposes a three-step drill-down (mirroring `injection_skill_get`'s list → index → issue pattern):
 
 ```json
 {"action": "list"}

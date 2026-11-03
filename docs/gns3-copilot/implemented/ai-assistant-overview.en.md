@@ -101,22 +101,22 @@ sequenceDiagram
 
 | Tool | teaching_assistant | lab_automation_assistant | troubleshooting_injection |
 |---|---|---|---|
-| `GNS3TemplateTool` get templates | ✓ | ✓ | |
-| `GNS3CreateNodeTool` create nodes | ✓ | ✓ | |
-| `GNS3LinkTool` create links | ✓ | ✓ | |
-| `GNS3StartNodeTool` start nodes | ✓ | ✓ | |
-| `GNS3UpdateNodeNameTool` rename | ✓ | ✓ | |
-| `GNS3StopNodeTool` stop nodes | | ✓ | |
-| `GNS3SuspendNodeTool` suspend nodes | | ✓ | |
-| `ExecuteMultipleDeviceCommands` read-only commands | ✓ | ✓ | ✓ |
-| `ExecuteMultipleDeviceConfigCommands` config commands | | ✓ | ✓ |
-| `VPCSCommands` VPCS commands | | ✓ | |
-| `PacketAnalysisTool` live packet analysis | ✓ | ✓ | |
-| `PacketAnalysisSkillsTool` protocol knowledge | ✓ | ✓ | |
-| `DeviceSkillsTool` device skills | ✓ | ✓ | |
-| `GNS3PacketFilterTool` link filters | | | ✓ |
-| `InjectionSkillsTool` fault injection skills | | | ✓ |
-| `GNS3TopologyTool` topology info | | | ✓ |
+| `template_list` get templates | ✓ | ✓ | |
+| `node_create` create nodes | ✓ | ✓ | |
+| `link_create` create links (native) | ✓ | ✓ | |
+| `node_start` start nodes | ✓ | ✓ | |
+| `node_update` rename | ✓ | ✓ | |
+| `node_stop` stop nodes | | ✓ | |
+| `node_suspend` suspend nodes | | ✓ | |
+| `device_show_run` read-only commands | ✓ | ✓ | ✓ |
+| `device_config_send` config commands | | ✓ | ✓ |
+| `vpcs_config_set` VPCS commands | | ✓ | |
+| `packet_analysis` live packet analysis (native) | ✓ | ✓ | |
+| `packet_analysis_skills` protocol knowledge (native) | ✓ | ✓ | |
+| `device_skill_get` device skills | ✓ | ✓ | |
+| `link_update` link filters | | | ✓ |
+| `injection_skill_get` fault injection skills | | | ✓ |
+| `gns3_topology_reader` topology info (native) | | | ✓ |
 
 The mode is selected in the `llm_call` node via `copilot_mode`, which picks the corresponding tool list and binds it to the LLM model instance through `create_base_model_with_tools(mode_tools, llm_config)`.
 

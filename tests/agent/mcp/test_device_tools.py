@@ -16,9 +16,9 @@ from gns3server.agent.gns3_copilot.utils.device_configs import (
     merge_duplicate_device_configs,
 )
 
-VPCS_MOD = "gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko"
-DISPLAY_MOD = "gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir"
-CONFIG_MOD = "gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir"
+VPCS_MOD = "gns3server.agent.gns3_copilot.gns3_client.vpcs_commands"
+DISPLAY_MOD = "gns3server.agent.gns3_copilot.gns3_client.device_show_commands"
+CONFIG_MOD = "gns3server.agent.gns3_copilot.gns3_client.device_config_commands"
 
 PROJECT_ID = "0c0fde25-6ead-4413-a283-ea8fd2324291"
 
@@ -50,10 +50,10 @@ def _aggregated_result(output_by_device):
 
 class TestVPCSNodeTypeGuard:
     def test_non_vpcs_node_is_rejected(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
         with patch(f"{VPCS_MOD}.get_device_ports_from_topology", return_value=_topology_ports("iou")) as topo:
-            result = VPCSCommands()._run(
+            result = VpcsCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -68,10 +68,10 @@ class TestVPCSNodeTypeGuard:
         assert "not a VPCS node" in result[0]["error"]
 
     def test_missing_node_type_is_rejected(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
         with patch(f"{VPCS_MOD}.get_device_ports_from_topology", return_value={"PC1": {"port": 5000}}):
-            result = VPCSCommands()._run(
+            result = VpcsCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -83,18 +83,18 @@ class TestVPCSNodeTypeGuard:
         assert "unknown-type" in result[0]["error"]
 
     def test_vpcs_node_passes_the_guard(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
-        tool = VPCSCommands()
+        tool = VpcsCommandRunner()
         nornir = MagicMock()
         host_result = MagicMock(failed=False)
         host_result.result = "OK"
         nornir.run.return_value = {"PC1": host_result}
         with (
             patch(f"{VPCS_MOD}.get_device_ports_from_topology", return_value=_topology_ports("vpcs")),
-            patch.object(VPCSCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(VpcsCommandRunner, "_initialize_nornir", return_value=nornir),
         ):
-            result = tool._run(
+            result = tool.run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -106,18 +106,18 @@ class TestVPCSNodeTypeGuard:
         assert result[0]["output"] == "OK"
 
     def test_execution_failure_reports_failed_with_error(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
-        tool = VPCSCommands()
+        tool = VpcsCommandRunner()
         nornir = MagicMock()
         host_result = MagicMock(failed=True)
         host_result.result = "Command failed (ReadTimeout)"
         nornir.run.return_value = {"PC1": host_result}
         with (
             patch(f"{VPCS_MOD}.get_device_ports_from_topology", return_value=_topology_ports("vpcs")),
-            patch.object(VPCSCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(VpcsCommandRunner, "_initialize_nornir", return_value=nornir),
         ):
-            result = tool._run(
+            result = tool.run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -138,7 +138,7 @@ class TestVPCSConsoleHostPropagation:
     """
 
     def test_remote_compute_hostname_reaches_nornir_inventory(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
         with patch(
             f"{VPCS_MOD}.get_device_ports_from_topology",
@@ -147,7 +147,7 @@ class TestVPCSConsoleHostPropagation:
                 "PC2": {"port": 5001, "node_type": "vpcs"},
             },
         ):
-            hosts_data = VPCSCommands()._prepare_device_hosts_data(
+            hosts_data = VpcsCommandRunner()._prepare_device_hosts_data(
                 [
                     {"device_name": "PC1", "commands": ["ip 10.0.0.1/24"]},
                     {"device_name": "PC2", "commands": ["ip 10.0.0.2/24"]},
@@ -167,10 +167,10 @@ class TestDeviceToolErrorContract:
     """
 
     def test_topology_level_error_has_status(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
         with patch(f"{VPCS_MOD}.get_device_ports_from_topology", side_effect=ValueError("topology unreachable")):
-            result = VPCSCommands()._run(
+            result = VpcsCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -181,15 +181,15 @@ class TestDeviceToolErrorContract:
         assert result == [{"status": "failed", "error": "topology unreachable"}]
 
     def test_config_tool_topology_level_error_has_status(self):
-        from gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir import (
-            ExecuteMultipleDeviceConfigCommands,
+        from gns3server.agent.gns3_copilot.gns3_client.device_config_commands import (
+            DeviceConfigCommandRunner,
         )
 
         with patch(
-            "gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir.get_device_ports_from_topology",
+            "gns3server.agent.gns3_copilot.gns3_client.device_config_commands.get_device_ports_from_topology",
             side_effect=ValueError("no valid devices"),
         ):
-            result = ExecuteMultipleDeviceConfigCommands()._run(
+            result = DeviceConfigCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": "0c0fde25-6ead-4413-a283-ea8fd2324291",
@@ -217,12 +217,44 @@ class TestDeviceToolErrorContract:
             assert "required" in result[0]["error"]
 
     def test_template_render_error_has_status(self):
-        from gns3server.agent.mcp.device_config import _render_template
+        from gns3server.agent.gns3_copilot.utils.device_configs import render_device_template
 
-        result = _render_template("{{ unclosed", [{"device_name": "R1", "vars": {"n": 1}}])
+        result = render_device_template("{{ unclosed", [{"device_name": "R1", "vars": {"n": 1}}])
         assert len(result) == 1
         assert result[0]["status"] == "failed"
         assert "Template rendering failed" in result[0]["error"]
+
+    def test_template_flows_through_the_config_runner(self):
+        """The optional Jinja2 template reaches the execution layer rendered."""
+        from gns3server.agent.gns3_copilot.gns3_client.device_config_commands import (
+            DeviceConfigCommandRunner,
+        )
+
+        nornir = MagicMock()
+        nornir.run.return_value = _aggregated_result({"R1": "ok", "R2": "ok"})
+        with (
+            patch(
+                f"{CONFIG_MOD}.get_device_ports_from_topology",
+                return_value={"R1": {"port": 5000, "node_type": "iou"}, "R2": {"port": 5001, "node_type": "iou"}},
+            ),
+            patch.object(DeviceConfigCommandRunner, "_initialize_nornir", return_value=nornir),
+        ):
+            result = DeviceConfigCommandRunner().run(
+                {
+                    "project_id": PROJECT_ID,
+                    "template": "interface lo{{ n }}\nip address {{ ip }} 255.255.255.255",
+                    "device_configs": [
+                        {"device_name": "R1", "vars": {"n": 0, "ip": "1.1.1.1"}},
+                        {"device_name": "R2", "vars": {"n": 1, "ip": "2.2.2.2"}},
+                    ],
+                }
+            )
+
+        assert nornir.run.call_args.kwargs["device_configs_map"] == {
+            "R1": ["interface lo0", "ip address 1.1.1.1 255.255.255.255"],
+            "R2": ["interface lo1", "ip address 2.2.2.2 255.255.255.255"],
+        }
+        assert [row["device_name"] for row in result] == ["R1", "R2"]
 
 
 class TestDuplicateDeviceMerging:
@@ -236,17 +268,17 @@ class TestDuplicateDeviceMerging:
     """
 
     def test_show_run_merges_same_device_entries(self):
-        from gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir import (
-            ExecuteMultipleDeviceCommands,
+        from gns3server.agent.gns3_copilot.gns3_client.device_show_commands import (
+            DeviceShowCommandRunner,
         )
 
         nornir = MagicMock()
         nornir.run.return_value = _aggregated_result({"R1": "merged output", "R2": "r2 output"})
         with (
             patch(f"{DISPLAY_MOD}.get_device_ports_from_topology", return_value=_topology_two_devices()),
-            patch.object(ExecuteMultipleDeviceCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(DeviceShowCommandRunner, "_initialize_nornir", return_value=nornir),
         ):
-            result = ExecuteMultipleDeviceCommands()._run(
+            result = DeviceShowCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": PROJECT_ID,
@@ -271,8 +303,8 @@ class TestDuplicateDeviceMerging:
         assert result[0]["diagnostic_commands"] == ["show ip route", "show ip interface brief"]
 
     def test_config_send_merges_same_device_entries(self):
-        from gns3server.agent.gns3_copilot.tools_v2.config_tools_nornir import (
-            ExecuteMultipleDeviceConfigCommands,
+        from gns3server.agent.gns3_copilot.gns3_client.device_config_commands import (
+            DeviceConfigCommandRunner,
         )
 
         nornir = MagicMock()
@@ -281,9 +313,9 @@ class TestDuplicateDeviceMerging:
             patch(
                 f"{CONFIG_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}
             ),
-            patch.object(ExecuteMultipleDeviceConfigCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(DeviceConfigCommandRunner, "_initialize_nornir", return_value=nornir),
         ):
-            result = ExecuteMultipleDeviceConfigCommands()._run(
+            result = DeviceConfigCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": PROJECT_ID,
@@ -303,7 +335,7 @@ class TestDuplicateDeviceMerging:
         assert result[0]["config_commands"] == ["int lo0", "ip address 1.1.1.1 255.255.255.255", "exit"]
 
     def test_vpcs_merges_same_device_entries(self):
-        from gns3server.agent.gns3_copilot.tools_v2.vpcs_tools_netmiko import VPCSCommands
+        from gns3server.agent.gns3_copilot.gns3_client.vpcs_commands import VpcsCommandRunner
 
         nornir = MagicMock()
         host_result = MagicMock(failed=False)
@@ -311,9 +343,9 @@ class TestDuplicateDeviceMerging:
         nornir.run.return_value = {"PC1": host_result}
         with (
             patch(f"{VPCS_MOD}.get_device_ports_from_topology", return_value=_topology_ports("vpcs")),
-            patch.object(VPCSCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(VpcsCommandRunner, "_initialize_nornir", return_value=nornir),
         ):
-            result = VPCSCommands()._run(
+            result = VpcsCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": PROJECT_ID,
@@ -332,8 +364,8 @@ class TestDuplicateDeviceMerging:
 
     def test_blocked_commands_accumulate_across_duplicate_entries(self):
         """Blocked-command info must not last-win between same-device entries."""
-        from gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir import (
-            ExecuteMultipleDeviceCommands,
+        from gns3server.agent.gns3_copilot.gns3_client.device_show_commands import (
+            DeviceShowCommandRunner,
         )
 
         def fake_filter(commands):
@@ -347,10 +379,10 @@ class TestDuplicateDeviceMerging:
             patch(
                 f"{DISPLAY_MOD}.get_device_ports_from_topology", return_value={"R1": {"port": 5000, "node_type": "iou"}}
             ),
-            patch.object(ExecuteMultipleDeviceCommands, "_initialize_nornir", return_value=nornir),
+            patch.object(DeviceShowCommandRunner, "_initialize_nornir", return_value=nornir),
             patch(f"{DISPLAY_MOD}.filter_forbidden_commands", side_effect=fake_filter),
         ):
-            result = ExecuteMultipleDeviceCommands()._run(
+            result = DeviceShowCommandRunner().run(
                 json.dumps(
                     {
                         "project_id": PROJECT_ID,
@@ -368,11 +400,11 @@ class TestDuplicateDeviceMerging:
 
     def test_entry_without_device_name_fails_the_whole_batch(self):
         """An unaddressable entry must abort with an error, not vanish."""
-        from gns3server.agent.gns3_copilot.tools_v2.display_tools_nornir import (
-            ExecuteMultipleDeviceCommands,
+        from gns3server.agent.gns3_copilot.gns3_client.device_show_commands import (
+            DeviceShowCommandRunner,
         )
 
-        result = ExecuteMultipleDeviceCommands()._run(
+        result = DeviceShowCommandRunner().run(
             json.dumps(
                 {
                     "project_id": PROJECT_ID,

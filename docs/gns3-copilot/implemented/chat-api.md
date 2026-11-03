@@ -285,7 +285,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
   "tool_call": {
     "id": "call_123",
     "type": "function",
-    "function": {"name": "execute_multiple_device_commands", "arguments": ""}
+    "function": {"name": "device_show_run", "arguments": ""}
   },
   "session_id": "xxx"
 }
@@ -296,7 +296,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
   "tool_call": {
     "id": "call_123",
     "type": "function",
-    "function": {"name": "execute_multiple_device_commands", "arguments": "{\"device_names\": [\"R1\"], "}
+    "function": {"name": "device_show_run", "arguments": "{\"device_names\": [\"R1\"], "}
   },
   "session_id": "xxx"
 }
@@ -307,7 +307,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
   "tool_call": {
     "id": "call_123",
     "type": "function",
-    "function": {"name": "execute_multiple_device_commands", "arguments": "{\"device_names\": [\"R1\"], \"commands\": [\"show ver\"]}"}
+    "function": {"name": "device_show_run", "arguments": "{\"device_names\": [\"R1\"], \"commands\": [\"show ver\"]}"}
   },
   "session_id": "xxx"
 }
@@ -319,7 +319,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
     "id": "call_123",
     "type": "function",
     "function": {
-      "name": "execute_multiple_device_commands",
+      "name": "device_show_run",
       "arguments": "{\"device_names\": [\"R1\"], \"commands\": [\"show ver\"]}",
       "complete": true
     }
@@ -330,7 +330,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
 // Tool starts execution (associated via tool_call_id)
 {
   "type": "tool_start",
-  "tool_name": "execute_multiple_device_commands",
+  "tool_name": "device_show_run",
   "tool_call_id": "call_123",
   "session_id": "xxx"
 }
@@ -338,7 +338,7 @@ Chat API uses Server-Sent Events (SSE) for streaming transmission.
 // Tool execution complete
 {
   "type": "tool_end",
-  "tool_name": "execute_multiple_device_commands",
+  "tool_name": "device_show_run",
   "tool_output": "[\n  {\n    \"device_name\": \"R-1\",\n    \"status\": \"success\",\n    \"output\": \"Cisco IOS Software, \\n   IOSv Software (X86_64_LINUX_IOSD-UNIVERSALK9-M), Version 15.2(1.90)\"\n  },\n  {\n    \"device_name\": \"R-2\",\n    \"status\": \"failed\",\n    \"error\": \"Connection timeout\"\n  }\n]",
   "session_id": "xxx"
 }
@@ -841,8 +841,8 @@ The agent supports two tool sets, selected by `copilot_mode` in the user's LLM c
 
 | Mode | Tools | Description |
 |------|-------|-------------|
-| `teaching_assistant` (default) | GNS3Template, GNS3CreateNode, GNS3Link, GNS3StartNode, GNS3UpdateNodeName, ExecuteMultipleDeviceCommands, PacketCapture, DeviceSkills | Read-only diagnostic + node creation |
-| `lab_automation_assistant` | All teaching_assistant tools + GNS3StopNode, GNS3SuspendNode, ExecuteMultipleDeviceConfigCommands, VPCSCommands | Full diagnostic + configuration tools |
+| `teaching_assistant` (default) | GNS3Template, GNS3CreateNode, GNS3Link, GNS3StartNode, GNS3UpdateNodeName, device_show_run, PacketCapture, DeviceSkills | Read-only diagnostic + node creation |
+| `lab_automation_assistant` | All teaching_assistant tools + node_stop, node_suspend, device_config_send, vpcs_config_set | Full diagnostic + configuration tools |
 
 **Why Serialize in tool_node?**
 
