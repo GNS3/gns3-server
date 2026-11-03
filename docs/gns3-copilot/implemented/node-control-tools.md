@@ -76,7 +76,7 @@ The following built-in utility templates are excluded as they are not actual net
 
 ### GNS3CreateNodeTool 🆕
 
-**Tool Name:** `create_gns3_node`
+**Tool Name:** `node_create`
 
 **Description:** Creates multiple nodes in a GNS3 project using specified templates and coordinates.
 
@@ -94,7 +94,8 @@ The following built-in utility templates are excluded as they are not actual net
     {
       "template_id": "uuid-of-template2",
       "x": -200,
-      "y": 300
+      "y": 300,
+      "compute_id": "uuid-of-remote-compute"
     }
   ]
 }
@@ -127,6 +128,7 @@ The following built-in utility templates are excluded as they are not actual net
 - Uses templates for consistent node configuration
 - X/Y coordinate positioning for topology layout
 - Optional `name` field to set node name directly (if omitted, GNS3 assigns default name)
+- Optional `compute_id` field to place the node on a remote compute (if omitted, `local`)
 - **Important**: Ensure distance between any two nodes is greater than 250px for clear interface labels
 
 **Use Cases:**
@@ -141,7 +143,7 @@ The following built-in utility templates are excluded as they are not actual net
 
 ### GNS3LinkTool 🆕
 
-**Tool Name:** `create_gns3_link`
+**Tool Name:** `link_create`
 
 **Description:** Creates one or more links between nodes in a GNS3 project by connecting their network ports.
 
@@ -155,6 +157,13 @@ The following built-in utility templates are excluded as they are not actual net
       "port1": "Ethernet0/0",
       "node_id2": "uuid-of-node2",
       "port2": "Ethernet0/0"
+    },
+    {
+      "node_id1": "uuid-of-node2",
+      "port1": "Serial0/0/0",
+      "node_id2": "uuid-of-node3",
+      "port2": "Serial0/0/0",
+      "link_type": "serial"
     }
   ]
 }
@@ -176,6 +185,7 @@ The following built-in utility templates are excluded as they are not actual net
 **Features:**
 - Batch create multiple links
 - Automatic port discovery by name
+- Optional `link_type` field per link (`ethernet` default, or `serial`)
 - Error handling for individual link failures
 - Port names must match topology data
 

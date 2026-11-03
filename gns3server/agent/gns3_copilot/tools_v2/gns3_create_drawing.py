@@ -95,7 +95,7 @@ class GNS3CreateTextDrawingTool(_GNS3CreateDrawingToolBase):
     computed width/height/line_height, or an "error" key on failure.
     """
 
-    name: str = "create_gns3_text_drawing"
+    name: str = "drawing_create_text"
     description: str = """
     Adds a text label to the GNS3 project canvas.
     Input: JSON with project_id, x, y (top-left corner), text and optional
@@ -123,7 +123,7 @@ class GNS3CreateRectangleDrawingTool(_GNS3CreateDrawingToolBase):
     A dictionary with the created drawing, or an "error" key on failure.
     """
 
-    name: str = "create_gns3_rectangle_drawing"
+    name: str = "drawing_create_rectangle"
     description: str = """
     Adds a rectangle to the GNS3 project canvas.
     Input: JSON with project_id, x, y, width, height and optional fill,
@@ -150,7 +150,7 @@ class GNS3CreateEllipseDrawingTool(_GNS3CreateDrawingToolBase):
     A dictionary with the created drawing, or an "error" key on failure.
     """
 
-    name: str = "create_gns3_ellipse_drawing"
+    name: str = "drawing_create_ellipse"
     description: str = """
     Adds an ellipse or circle to the GNS3 project canvas.
     Input: JSON with project_id, x, y, width, height (bounding box) and

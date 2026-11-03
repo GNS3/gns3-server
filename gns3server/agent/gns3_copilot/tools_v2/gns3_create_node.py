@@ -99,11 +99,12 @@ class GNS3CreateNodeTool(BaseTool):
     If error occurs during validation, returns dict with error message.
     """
 
-    name: str = "create_gns3_node"
+    name: str = "node_create"
     description: str = """
     Creates multiple nodes in a GNS3 project using templates and coordinates.
     Input is a JSON object with project_id and array of nodes.
-    Each node requires: template_id, x, y. Optional: name (to set node name directly).
+    Each node requires: template_id, x, y. Optional: name (to set node name directly),
+    compute_id (compute to place the node on, default "local").
     Example input:
         {
             "project_id": "uuid-of-project",
@@ -118,7 +119,8 @@ class GNS3CreateNodeTool(BaseTool):
                     "template_id": "uuid-of-template2",
                     "x": -200,
                     "y": 300,
-                    "name": "R2"
+                    "name": "R2",
+                    "compute_id": "uuid-of-remote-compute"
                 }
             ]
         }
@@ -176,6 +178,7 @@ class GNS3CreateNodeTool(BaseTool):
                 x = node_data.get("x")
                 y = node_data.get("y")
                 name = node_data.get("name")
+                compute_id = node_data.get("compute_id")
 
                 if not all(
                     [
@@ -208,6 +211,7 @@ class GNS3CreateNodeTool(BaseTool):
                     x = node_data.get("x")
                     y = node_data.get("y")
                     name = node_data.get("name")
+                    compute_id = node_data.get("compute_id")
 
                     logger.info(
                         "Creating node %d/%d with template %s at (%s, %s), name=%s...",
@@ -219,17 +223,19 @@ class GNS3CreateNodeTool(BaseTool):
                         name,
                     )
 
-                    # Create node via the shared REST handler
-                    created = create_node_handler(
-                        {
-                            "project_id": project_id,
-                            "template_id": template_id,
-                            "x": x,
-                            "y": y,
-                            "name": name,
-                        },
-                        gns3_ctx,
-                    )
+                    # Create node via the shared REST handler. compute_id is
+                    # passed only when set — the handler defaults to "local".
+                    node_params: dict[str, Any] = {
+                        "project_id": project_id,
+                        "template_id": template_id,
+                        "x": x,
+                        "y": y,
+                    }
+                    if name:
+                        node_params["name"] = name
+                    if compute_id:
+                        node_params["compute_id"] = compute_id
+                    created = create_node_handler(node_params, gns3_ctx)
                     if isinstance(created, list):
                         raise RuntimeError("Unexpected batch response when creating a single node")
                     if "error" in created:
