@@ -64,6 +64,7 @@ from gns3server.agent.gns3_copilot.agent.context_manager import (
     create_pre_model_hook,
 )
 from gns3server.agent.gns3_copilot.agent.model_factory import (
+    create_base_model,
     create_base_model_with_tools,
     create_title_model,
 )
@@ -187,6 +188,44 @@ TROUBLESHOOTING_INJECTION_MODE_TOOLS = [
 # Default tools (legacy support - will be overridden by mode-specific tools)
 tools = LAB_AUTOMATION_ASSISTANT_MODE_TOOLS
 
+# LangGraph recursion limit per copilot mode: the hard cap on super-steps
+# per user turn. One LLM call plus one tool execution costs two steps, so
+# 25 is about 11 tool rounds; lab mode needs more room (topology build,
+# configure, verify), fault injection more still.
+MODE_RECURSION_LIMITS = {
+    "teaching_assistant": 25,
+    "lab_automation_assistant": 50,
+    "troubleshooting_injection": 100,
+}
+DEFAULT_RECURSION_LIMIT = 25
+
+
+def resolve_recursion_limit(llm_config: dict | None) -> int:
+    """Resolve the LangGraph recursion limit for one user turn.
+
+    ``max_steps`` in the LLM model config wins when set to a positive
+    integer; otherwise the per-mode default applies. The value is a hard
+    safety cap, not a quality target: without it a tool loop or a routing
+    bug can spin forever and burn tokens.
+    """
+    config = llm_config or {}
+    mode = (config.get("copilot_mode") or "teaching_assistant").lower()
+    default = MODE_RECURSION_LIMITS.get(mode, DEFAULT_RECURSION_LIMIT)
+    try:
+        configured = int(config.get("max_steps"))
+    except (TypeError, ValueError):
+        return default
+    return configured if configured > 0 else default
+
+
+# Injected before the final LLM call when the step budget runs out. The
+# model gets no tools in that call, so it can only produce text.
+BUDGET_WRAPUP_INSTRUCTION = (
+    "The tool-step budget for this turn is exhausted. Do not call any tools. "
+    "Reply with a short summary: what you completed, what is still unfinished, "
+    "and what the user should do next (for example, ask to continue)."
+)
+
 # Create combined tool lookup for tool_node (supports all modes)
 # tool_node will receive tool calls based on mode-specific tools bound to the
 # model. The registry must cover every mode: a tool bound to the model but
@@ -260,7 +299,11 @@ class MessagesState(TypedDict):
                  operator.add
         llm_calls: Counter for tracking the number of LLM invocations
         remaining_steps: Is automatically managed by LangGraph's RemainingSteps
-                       to track and limit recursion depth.
+                       to track and limit recursion depth. The value comes from
+                       the recursion_limit in the run config, not from inputs.
+        budget_exhausted: True once the step budget ran out and the graph
+                       switched to the final summary call (no tools bound).
+                       Reset to False at the start of every user turn.
         conversation_title: Optional conversation title for session
                           identification and management
         topology_info: Dictionary containing GNS3 project topology information
@@ -273,6 +316,9 @@ class MessagesState(TypedDict):
     llm_calls: int
 
     remaining_steps: RemainingSteps
+
+    # True when the step budget is used up and the turn ends with a summary
+    budget_exhausted: bool
 
     # Optional conversation title
     conversation_title: str | None
@@ -384,15 +430,26 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
         # token estimation
     )
 
-    # Create fresh model with tools for each LLM call
-    logger.debug(
-        "Creating model with tools: provider=%s, model=%s, mode=%s, tools=%d",
-        llm_config.get("provider"),
-        llm_config.get("model"),
-        copilot_mode,
-        len(mode_tools),
-    )
-    model_with_tools = create_base_model_with_tools(mode_tools, llm_config=llm_config)
+    # When the step budget ran out, this is the final summary call: no tools
+    # are bound, so the model can only answer in text, and an instruction
+    # tells it to wrap up instead of planning more work.
+    budget_exhausted = bool(state.get("budget_exhausted"))
+    if budget_exhausted:
+        logger.warning(
+            "Step budget exhausted; making the final summary call without tools (provider=%s, model=%s)",
+            llm_config.get("provider"),
+            llm_config.get("model"),
+        )
+        model_to_call = create_base_model(llm_config)
+    else:
+        logger.debug(
+            "Creating model with tools: provider=%s, model=%s, mode=%s, tools=%d",
+            llm_config.get("provider"),
+            llm_config.get("model"),
+            copilot_mode,
+            len(mode_tools),
+        )
+        model_to_call = create_base_model_with_tools(mode_tools, llm_config=llm_config)
 
     # Call pre_hook directly to prepare messages (topology injection +
     # trimming)
@@ -403,8 +460,11 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     prepared_messages = prepared_state["messages"]
     logger.info("Messages prepared: %d → %d", len(messages), len(prepared_messages))
 
+    if budget_exhausted:
+        prepared_messages = [*prepared_messages, SystemMessage(content=BUDGET_WRAPUP_INSTRUCTION)]
+
     # Invoke model with prepared messages
-    response = model_with_tools.invoke(prepared_messages)
+    response = model_to_call.invoke(prepared_messages)
 
     # Add metadata with created_at timestamp to AI response
     if hasattr(response, "metadata"):
@@ -640,6 +700,11 @@ def should_continue(
     if last_message.tool_calls:
         return "tool_node"
 
+    # Final summary after the step budget ran out: end the turn, skip the
+    # title call (it would need one more super-step we may not have)
+    if state.get("budget_exhausted"):
+        return END
+
     # First full interaction completed and title not yet generated
     if current_title in [None, "New Conversation"]:
         return "title_generator_node"
@@ -648,23 +713,41 @@ def should_continue(
     return END
 
 
+def budget_wrapup(state: MessagesState) -> dict:
+    """Switch the graph to the final summary call after the step budget ran out.
+
+    The next llm_call binds no tools and appends BUDGET_WRAPUP_INSTRUCTION,
+    so the turn ends with a text answer that tells the user where the work
+    stopped instead of ending silently on a tool result.
+    """
+    logger.warning(
+        "Step budget nearly exhausted (remaining_steps=%s); switching to the summary call",
+        state.get("remaining_steps"),
+    )
+    return {"budget_exhausted": True, "session_id": state.get("session_id")}
+
+
 # Routing logic after the tool node, Check remaining_steps
-def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", END]:
+def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", "budget_wrapup", END]:
     """
     Routing logic after tool execution to prevent infinite recursion.
 
-    Determines whether to continue with another LLM call or end the
-    conversation based on remaining steps and message type.
+    Determines whether to continue with another LLM call, switch to the
+    final summary call, or end the conversation based on remaining steps and
+    message type.
 
     Args:
         state: Current conversation state with messages and remaining steps
 
     Returns:
-        "llm_call" to continue processing, END to terminate conversation
+        "llm_call" to continue processing, "budget_wrapup" for the final
+        summary call, END to terminate the conversation.
 
     Logic:
         - If abort flag is set → end the conversation
         - If the last message is ToolMessage and steps >= 4: continue to LLM
+        - If the last message is ToolMessage and steps < 4: wrap up with one
+          final summary call (no tools bound)
         - Otherwise: end the conversation to prevent infinite loops
     """
     # Check abort flag first
@@ -675,7 +758,7 @@ def recursion_limit_continue(state: MessagesState) -> Literal["llm_call", END]:
     last_message = state["messages"][-1]
     if isinstance(last_message, ToolMessage):
         if state["remaining_steps"] < 4:
-            return END
+            return "budget_wrapup"
         return "llm_call"
 
     return END
@@ -688,6 +771,7 @@ agent_builder = StateGraph(MessagesState)
 # Add nodes
 agent_builder.add_node("llm_call", llm_call)
 agent_builder.add_node("tool_node", tool_node)
+agent_builder.add_node("budget_wrapup", budget_wrapup)
 agent_builder.add_node("title_generator_node", generate_title)
 agent_builder.add_node("abort_handler_node", abort_handler_node)
 
@@ -716,9 +800,11 @@ agent_builder.add_conditional_edges(
     {
         "llm_call": "llm_call",  # Continue to LLM if tools executed and steps
         # remain
+        "budget_wrapup": "budget_wrapup",  # Final summary call, no tools
         END: END,  # End conversation to prevent infinite loops
     },
 )
 
+agent_builder.add_edge("budget_wrapup", "llm_call")
 agent_builder.add_edge("title_generator_node", END)
 agent_builder.add_edge("abort_handler_node", END)

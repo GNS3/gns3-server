@@ -225,6 +225,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | `max_tokens` | integer | **⚠️ Reserved for future use, not currently implemented** |
 | `context_strategy` | string | Context trimming strategy: "conservative" (60%), "balanced" (75%), "aggressive" (85%). Default: "balanced" |
 | `copilot_mode` | string | GNS3-Copilot mode: "teaching_assistant" (diagnostics only, default) or "lab_automation_assistant" (full configuration access) |
+| `max_steps` | integer | Step budget of one copilot turn, as the LangGraph recursion limit (1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, 50 lab_automation_assistant, 100 troubleshooting_injection |
 | `is_default` | boolean | Set as default (default: false) |
 
 **Important Notes:**
@@ -253,6 +254,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 | `context_strategy` | string (optional) | Context trimming strategy |
 | `is_default` | boolean (optional) | Default flag |
 | `copilot_mode` | string (optional) | GNS3-Copilot mode: "teaching_assistant" or "lab_automation_assistant" |
+| `max_steps` | integer (optional) | Step budget of one copilot turn (LangGraph recursion limit). Leave empty for the per-mode default |
 | `expected_version` | integer (optional) | **Optimistic locking version** |
 
 **Note:** When using `expected_version`, the API will verify the version hasn't changed since you read the data. If it has, you'll receive a 409 Conflict error.
@@ -261,7 +263,7 @@ For a complete list of LangChain-supported providers, see: https://python.langch
 - `max_tokens`: Reserved for future implementation. Currently not used by the system. The maximum output tokens are controlled automatically by the LLM provider based on the model and input size.
 
 **Update Limitations:**
-- `context_strategy` and `copilot_mode` can be set to new values but **cannot be cleared to null** via update. This is because the API filters out null values before processing.
+- `context_strategy`, `copilot_mode` and `max_steps` can be set to new values but **cannot be cleared to null** via update. This is because the API filters out null values before processing.
 
 ### LLMModelConfigResponse
 

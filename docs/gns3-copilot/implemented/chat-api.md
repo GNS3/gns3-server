@@ -821,15 +821,16 @@ OpenAI-compatible message model.
   3. First interaction without title → `title_generator_node`
   4. Otherwise → `END`
 
-- **recursion_limit_continue** (after `tool_node`): Routes to `llm_call` or `END` based on:
+- **recursion_limit_continue** (after `tool_node`): Routes to `llm_call`, `budget_wrapup` or `END` based on:
   1. Check abort flag → `END`
-  2. Remaining steps < 4 → `END` (prevent infinite loops)
+  2. Remaining steps < 4 → `budget_wrapup` (one final summary call, no tools)
   3. Otherwise → `llm_call`
 
 **State** (`MessagesState`):
 - `messages`: Conversation messages (cumulative with `operator.add`)
 - `llm_calls`: LLM invocation counter
-- `remaining_steps`: Recursion depth tracker (initial: 20)
+- `remaining_steps`: LangGraph managed value (`recursion_limit - step`); the limit is the per-mode default or `max_steps` from the LLM config. Passing it in inputs has no effect
+- `budget_exhausted`: Set by `budget_wrapup`, reset at the start of every user turn
 - `conversation_title`: Auto-generated title
 - `topology_info`: GNS3 project topology data
 - `session_id`: Session identifier (for abort tracking)
