@@ -95,7 +95,10 @@ class QemuTemplate(TemplateBase):
         False, description="Automatically create a config disk on HDD disk interface (secondary slave)"
     )
     tpm: Optional[bool] = Field(False, description="Enable Trusted Platform Module (TPM)")
-    uefi: Optional[bool] = Field(False, description="Enable UEFI boot mode")
+    uefi: Optional[bool] = Field(
+        default_factory=lambda data: data.get("platform") == QemuPlatform.aarch64,
+        description="Enable UEFI boot mode",
+    )
     on_close: Optional[QemuOnCloseAction] = Field(
         QemuOnCloseAction.power_off, description="Action to execute on the VM is closed"
     )

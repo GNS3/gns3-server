@@ -455,7 +455,7 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write("1")
 
     options = await vm._build_command()
-    assert " ".join(["-drive", f"if=pflash,format=raw,readonly,file={ovmf_code_path}"]) in " ".join(options)
+    assert " ".join(["-drive", f"if=pflash,format=raw,readonly=on,file={ovmf_code_path}"]) in " ".join(options)
     assert " ".join(
         ["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]
     ) in " ".join(options)
@@ -492,7 +492,7 @@ async def test_uefi_firmware_selection(
     vars_node_path = Path(vm.working_dir) / vars_name
     assert options == [
         "-drive",
-        f"if=pflash,format=raw,readonly,file={code_path}",
+        f"if=pflash,format=raw,readonly=on,file={code_path}",
         "-drive",
         f"if=pflash,format=raw,file={vars_node_path}",
         "-object",
@@ -534,7 +534,7 @@ async def test_uefi_existing_variables_store(
     options = vm._bios_option()
     assert options[:4] == [
         "-drive",
-        f"if=pflash,format=raw,readonly,file={code_path}",
+        f"if=pflash,format=raw,readonly=on,file={code_path}",
         "-drive",
         f"if=pflash,format=raw,file={vars_node_path}",
     ]
@@ -581,7 +581,7 @@ async def test_spice_option(vm, fake_qemu_img_binary):
     vm._console = 5905
     options = await vm._build_command()
     assert "-spice addr=127.0.0.1,port=5905,disable-ticketing=on" in " ".join(options)
-    assert "-vga qxl" in " ".join(options)
+    assert "-device virtio-gpu-pci" in " ".join(options)
 
 
 @pytest.mark.asyncio

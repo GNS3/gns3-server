@@ -2070,16 +2070,12 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         if external_console_port:
             return ["-serial", f"telnet:127.0.0.1:{internal_console_port},server,nowait"]
-        else:
-            return []
 
     def _vnc_options(self, port):
 
         if port:
             vnc_port = port - 5900  # subtract by 5900 to get the display number
-            return ["-vnc", f"{self._manager.port_manager.console_host}:{vnc_port}"]
-        else:
-            return []
+            return ["-vnc", f"{self._manager.port_manager.console_host}:{vnc_port}", "-device", "virtio-gpu-pci"]
 
     def _spice_options(self, port):
 
@@ -2094,9 +2090,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         console_host = "::"
                 except OSError as e:
                     raise QemuError(f"Could not check if IPv6 is enabled: {e}")
-            return ["-spice", f"addr={console_host},port={port},disable-ticketing=on", "-vga", "qxl"]
-        else:
-            return []
+            return ["-spice", f"addr={console_host},port={port},disable-ticketing=on", "-device", "virtio-gpu-pci"]
 
     def _spice_with_agent_options(self, port):
 
@@ -2124,17 +2118,29 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
     def _console_options(self):
 
+        console_options = []
         if self._console_type in ("telnet", "ssh") and self._wrap_console:
-            return self._serial_options(self._internal_console_port, self.console)
+            console_options = self._serial_options(self._internal_console_port, self.console)
         elif self._console_type == "vnc":
-            return self._vnc_options(self.console)
+            console_options = self._vnc_options(self.console)
         elif self._console_type == "spice":
-            return self._spice_options(self.console)
+            console_options = self._spice_options(self.console)
         elif self._console_type == "spice+agent":
-            return self._spice_with_agent_options(self.console)
+            console_options = self._spice_with_agent_options(self.console)
         elif self._console_type != "none":
             raise QemuError(f"Console type {self._console_type} is unknown")
-        return []
+
+        if self._console_type in ("vnc", "spice"):
+            if self.platform == "aarch64":
+                # add a USB controller with a keyboard and mouse
+                console_options.extend(
+                    ["-device", "qemu-xhci,id=usb", "-device", "usb-kbd,bus=usb.0", "-device", "usb-tablet,bus=usb.0"]
+                )
+            else:
+                # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
+                console_options.extend(["-machine", "usb=on", "-device", "usb-tablet"])
+
+        return console_options
 
     def _aux_options(self):
 
@@ -2569,7 +2575,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         raise QemuError(f"Cannot copy {vars_name} file to the node working directory: {e}")
 
             log.debug(f"Configuring UEFI boot mode using firmware file: '{firmware_path}'")
-            options.extend(["-drive", f"if=pflash,format=raw,readonly,file={firmware_path}"])
+            options.extend(["-drive", f"if=pflash,format=raw,readonly=on,file={firmware_path}"])
             options.extend(["-drive", f"if=pflash,format=raw,file={vars_node_path}"])
 
             # edk2 firmware requires a Random Number Generator (RNG) device in order to turn network adapters on
@@ -2745,7 +2751,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         Disable graphics for Qemu if no graphics options are specified.
         """
 
-        if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl-spice", "-vnc"]):
+        if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl-spice", "-vnc", "-spice"]):
             return []
         return ["-display", "none"]
 
@@ -2966,10 +2972,6 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 )
                 command.extend(self._kvmclock_off_options(additional_opt_list))
         command.extend(additional_opt_list)
-
-        # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
-        if self._console_type == "vnc":
-            command.extend(["-machine", "usb=on", "-device", "usb-tablet"])
         return command
 
     def asdict(self):
