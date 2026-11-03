@@ -26,10 +26,10 @@
 
 GNS3-Copilot wait tool.
 
-start_gns3_node returns as soon as the start commands are accepted — nodes
+node_start returns as soon as the start commands are accepted — nodes
 keep booting in the background. This tool gives the agent a deliberate
 pause it controls itself (instead of a hard-coded progress bar inside the
-start tool), so the usual flow is: start_gns3_node → wait_seconds → check
+start tool), so the usual flow is: node_start → wait_seconds → check
 node status / run show commands.
 """
 
@@ -67,7 +67,7 @@ class GNS3WaitTool(BaseTool):
     name: str = "wait_seconds"
     description: str = """
     Pause execution for a given number of seconds (1-600), then continue.
-    Use after start_gns3_node (which returns immediately) to let nodes
+    Use after node_start (which returns immediately) to let nodes
     boot before checking status: VPCS/IOU ~15-30s, IOS/IOL routers
     ~60-120s, heavy NOS images (XRd, SR Linux) 2-5min. Prefer several
     short waits with a status check in between over one long blind wait.

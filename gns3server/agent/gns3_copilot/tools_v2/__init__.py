@@ -22,53 +22,36 @@
 #
 # Project Home: https://github.com/yueguobin/gns3-copilot
 #
-"""
 
+"""
 GNS3-Copilot Tools Package
 
-This package provides various tools for interacting with GNS3 network simulator:
-- Device configuration command execution
-- Display command execution
-- Multiple device command execution using Nornir
-- VPCS device configuration using Netmiko
-- Node and link management
-- Packet filter management
+Most copilot tools are now adapted from the MCP server registration via
+``mcp_bridge.adapted_mcp_tools()`` — the MCP tools are the single source
+of truth for names, descriptions and argument schemas (see
+``mcp_bridge.MCP_ALLOWED_TOOLS`` for the project-scoped filter).
 
-Main modules:
-- config_tools_nornir: Multiple device configuration command execution tool using Nornir
-- display_tools_nornir: Multiple device command execution tool using Nornir
-- vpcs_tools_netmiko: VPCS device configuration tool using Netmiko
-- gns3_create_node: GNS3 node creation tool
-- gns3_create_link: GNS3 link creation tool
-- gns3_create_drawing: GNS3 canvas drawing tools (text, rectangle, ellipse)
-- gns3_start_node: GNS3 node startup tool (immediate return, no boot wait)
-- gns3_wait: Wait timer tool (pair with node start to let devices boot)
-- gns3_get_node_temp: GNS3 template retrieval tool
-- gns3_update_node_name: GNS3 node name update tool
-- gns3_packet_filter: GNS3 packet filter management tool
+This package keeps only the copilot-native tools that add behavior the
+MCP counterparts lack:
 
-Note: GNS3TopologyTool is now available from gns3_client package
+- gns3_create_link: link creation with port-NAME resolution ("link_create";
+  shadows the adapted MCP tool of the same name)
+- gns3_wait: boot wait timer ("wait_seconds"; pairs with node_start)
+- packet_analysis_tool: server-side tshark pcap analysis ("packet_analysis";
+  no MCP counterpart by design)
+
+The Nornir/Netmiko device command runners live in the shared layer as
+plain classes (gns3_client/device_config_commands.py, device_show_commands.py,
+vpcs_commands.py) behind the MCP device_config_send / device_show_run /
+vpcs_config_set tools, which the copilot uses through the bridge.
 
 Author: Yue Guobin (岳国宾)
 """
 
 # Import main tool classes
-from .config_tools_nornir import ExecuteMultipleDeviceConfigCommands
-from .display_tools_nornir import ExecuteMultipleDeviceCommands
-from .gns3_create_drawing import (
-    GNS3CreateEllipseDrawingTool,
-    GNS3CreateRectangleDrawingTool,
-    GNS3CreateTextDrawingTool,
-)
 from .gns3_create_link import GNS3LinkTool
-from .gns3_create_node import GNS3CreateNodeTool
-from .gns3_get_node_temp import GNS3TemplateTool
-from .gns3_packet_filter import GNS3PacketFilterTool
-from .gns3_start_node import GNS3StartNodeQuickTool, GNS3StartNodeTool
-from .gns3_stop_node import GNS3StopNodeTool
-from .gns3_suspend_node import GNS3SuspendNodeTool
-from .gns3_update_node_name import GNS3UpdateNodeNameTool
 from .gns3_wait import GNS3WaitTool
+from .mcp_bridge import adapted_mcp_tools
 from .packet_analysis_tool import PacketAnalysisTool
 
 # Dynamic version management
@@ -83,25 +66,10 @@ __author__ = "Yue Guobin (岳国宾)"
 __description__ = "AI-powered network automation assistant for GNS3"
 __url__ = "https://github.com/yueguobin/gns3-copilot"
 
-# Export main tool classes
+# Export main tool classes and the MCP bridge
 __all__ = [
-    "ExecuteMultipleDeviceCommands",
-    "ExecuteMultipleDeviceConfigCommands",
-    "GNS3CreateEllipseDrawingTool",
-    "GNS3CreateNodeTool",
-    "GNS3CreateRectangleDrawingTool",
-    "GNS3CreateTextDrawingTool",
     "GNS3LinkTool",
-    "GNS3PacketFilterTool",
-    "GNS3StartNodeQuickTool",
-    "GNS3StartNodeTool",
-    "GNS3StopNodeTool",
-    "GNS3SuspendNodeTool",
-    "GNS3TemplateTool",
-    "GNS3UpdateNodeNameTool",
     "GNS3WaitTool",
     "PacketAnalysisTool",
+    "adapted_mcp_tools",
 ]
-
-# Package initialization message
-# print(f"GNS3-Copilot Tools package loaded (version {__version__})")

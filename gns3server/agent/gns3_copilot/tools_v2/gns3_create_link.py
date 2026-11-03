@@ -57,7 +57,7 @@ class GNS3LinkTool(BaseTool):
     with error handling for individual link failures.
     """
 
-    name: str = "create_gns3_link"
+    name: str = "link_create"
     description: str = """
     Creates one or more links between nodes in a GNS3 project.
 
@@ -68,6 +68,7 @@ class GNS3LinkTool(BaseTool):
     - `port1` (str): Port name of the first node (e.g., 'Ethernet0/0').
     - `node_id2` (str): UUID of the second node.
     - `port2` (str): Port name of the second node (e.g., 'Ethernet0/0').
+    - `link_type` (str, optional): Link type - "ethernet" (default) or "serial".
     Note: Port names must match those from `gns3_topology_reader` tool.
 
     Example Input:
@@ -79,6 +80,13 @@ class GNS3LinkTool(BaseTool):
                 "port1": "Ethernet0/0",
                 "node_id2": "uuid-of-node2",
                 "port2": "Ethernet0/0"
+            },
+            {
+                "node_id1": "uuid-of-node2",
+                "port1": "Serial0/0/0",
+                "node_id2": "uuid-of-node3",
+                "port2": "Serial0/0/0",
+                "link_type": "serial"
             }
         ]
     }
@@ -160,6 +168,7 @@ class GNS3LinkTool(BaseTool):
                     port1 = link_data.get("port1")
                     node_id2 = link_data.get("node_id2")
                     port2 = link_data.get("port2")
+                    link_type = link_data.get("link_type")
 
                     # Validate link parameters
                     if not all([node_id1, port1, node_id2, port2]):
@@ -200,28 +209,29 @@ class GNS3LinkTool(BaseTool):
                         created_links.append({"error": error_msg})
                         continue
 
-                    # Create the link via the shared REST handler
-                    link_resp = create_link_handler(
-                        {
-                            "project_id": project_id,
-                            "nodes": [
-                                {
-                                    "node_id": node_id1,
-                                    "adapter_number": port1_info.get("adapter_number", 0),
-                                    "port_number": port1_info.get("port_number", 0),
-                                    "label": {"text": port1_info.get("short_name") or port1},
-                                },
-                                {
-                                    "node_id": node_id2,
-                                    "adapter_number": port2_info.get("adapter_number", 0),
-                                    "port_number": port2_info.get("port_number", 0),
-                                    "label": {"text": port2_info.get("short_name") or port2},
-                                },
-                            ],
-                            "fields": ["link_id"],
-                        },
-                        gns3_ctx,
-                    )
+                    # Create the link via the shared REST handler. link_type
+                    # is passed only when set — the server defaults to ethernet.
+                    link_params: dict[str, Any] = {
+                        "project_id": project_id,
+                        "nodes": [
+                            {
+                                "node_id": node_id1,
+                                "adapter_number": port1_info.get("adapter_number", 0),
+                                "port_number": port1_info.get("port_number", 0),
+                                "label": {"text": port1_info.get("short_name") or port1},
+                            },
+                            {
+                                "node_id": node_id2,
+                                "adapter_number": port2_info.get("adapter_number", 0),
+                                "port_number": port2_info.get("port_number", 0),
+                                "label": {"text": port2_info.get("short_name") or port2},
+                            },
+                        ],
+                        "fields": ["link_id"],
+                    }
+                    if link_type:
+                        link_params["link_type"] = link_type
+                    link_resp = create_link_handler(link_params, gns3_ctx)
                     if isinstance(link_resp, list):
                         raise RuntimeError("Unexpected batch response when creating a single link")
                     if "error" in link_resp:

@@ -855,7 +855,7 @@ async def link_list(
     fields: Annotated[
         list[str] | None,
         Field(
-            description='Optional: return only these fields. e.g. ["link_id","nodes"]. Available: link_id, project_id, link_type, kernel_datapath, nodes, suspend, filters, capturing, capture_file_name, link_style'
+            description='Optional: return only these fields. e.g. ["link_id","nodes"]. Available: link_id, project_id, link_type, kernel_datapath, nodes, suspend, filters, show_filters_icon, capturing, capture_file_name, link_style'
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
@@ -945,6 +945,9 @@ async def link_update(
 
     Supported kwargs:
     - suspend: boolean - Suspend or resume the link
+    - show_filters_icon: boolean - Show the filter icon in the Web UI (server
+      default true). Set false to keep the canvas clean when injecting
+      practice faults
     - filters: dict - Packet filters (values MUST be positional arrays). Types
       marked (K) run on kernel-datapath links only (both endpoints on one
       compute with an anchor of their own) and are rejected with 409 on relay

@@ -43,7 +43,10 @@ import aiosqlite
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from gns3server.agent.gns3_copilot.agent.gns3_copilot import agent_builder
+from gns3server.agent.gns3_copilot.agent.gns3_copilot import (
+    agent_builder,
+    resolve_recursion_limit,
+)
 from gns3server.agent.gns3_copilot.chat_sessions_repository import (
     ChatSessionsRepository,
 )
@@ -282,13 +285,13 @@ class AgentService:
             )
 
         # Build config - only thread-safe identifiers
-        # Determine recursion_limit based on copilot_mode
+        # The recursion limit is the step budget of one user turn: the
+        # per-mode default, or max_steps from the LLM model config when set.
+        # RemainingSteps is a managed value derived from this limit; passing
+        # it in inputs has no effect.
         copilot_mode = (llm_config or {}).get("copilot_mode", "teaching_assistant").lower()
-        if copilot_mode == "troubleshooting_injection":
-            recursion_limit = 100  # Need more recursion depth for fault injection workflow
-            log.debug("Using extended recursion_limit for troubleshooting_injection mode: 100")
-        else:
-            recursion_limit = 25  # Default recursion limit
+        recursion_limit = resolve_recursion_limit(llm_config)
+        log.debug("Using recursion_limit %d for copilot_mode %s", recursion_limit, copilot_mode)
 
         config = {
             "configurable": {
@@ -302,15 +305,8 @@ class AgentService:
             "recursion_limit": recursion_limit,
         }
 
-        # Build inputs
-        # Determine remaining_steps based on copilot_mode
-        # Troubleshooting injection mode needs more steps for multi-tool workflow
-        if copilot_mode == "troubleshooting_injection":
-            remaining_steps = 50  # Need more steps for fault injection workflow
-            log.debug("Using extended remaining_steps for troubleshooting_injection mode: 50")
-        else:
-            remaining_steps = 20  # Default for other modes
-
+        # Build inputs. budget_exhausted is reset per user turn: the
+        # checkpoint keeps it from a previous turn that ended on a summary.
         inputs = {
             "messages": [
                 HumanMessage(
@@ -320,7 +316,7 @@ class AgentService:
                 )
             ],
             "llm_calls": 0,
-            "remaining_steps": remaining_steps,
+            "budget_exhausted": False,
             "session_id": session_id,
             "abort": False,
         }

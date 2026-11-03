@@ -61,4 +61,4 @@ The `troubleshooting_injection.md` prompt in the GNS3-Skills repository gains an
 - [ ] gns3-server: implement injection fault recording in agent chat session flow
 - [ ] gns3-server: implement injection history query across sessions per project
 - [ ] gns3-server: inject history into system prompt via `context_manager.py`
-- [ ] gns3-server: add `exclude` parameter to `InjectionSkillsTool` for filtering used faults
+- [ ] gns3-server: add `exclude` parameter to `injection_skill_get` for filtering used faults

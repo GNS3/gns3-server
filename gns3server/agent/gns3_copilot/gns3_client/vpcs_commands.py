@@ -28,8 +28,8 @@ This module provides a tool to execute commands on VPCS devices
 in a GNS3 topology using Nornir with Netmiko.
 
 ⚠️ WARNING: This module is shared with the MCP (Model Context Protocol) service.
-VPCSCommands._run() is called by the MCP vpcs_config_set handler.
-The jwt_token/url parameters were added for MCP compatibility.
+VpcsCommandRunner.run() is called by the MCP vpcs_config_set handler
+and by the copilot through the MCP tool bridge.
 Modifications must be tested with BOTH gns3-copilot AND MCP.
 """
 
@@ -38,8 +38,6 @@ import logging
 import re
 from typing import Any
 
-from langchain.tools import BaseTool
-from langchain_core.callbacks import CallbackManagerForToolRun
 from netmiko.exceptions import ReadTimeout
 from nornir import InitNornir
 from nornir.core import Nornir
@@ -98,15 +96,17 @@ def _get_nornir_defaults() -> dict[str, Any]:
     return {"data": {"location": "gns3"}}
 
 
-class VPCSCommands(BaseTool):
+class VpcsCommandRunner:
     """
-    A tool for VPCS (Virtual PC Simulator) devices.
+    Runs commands on VPCS (Virtual PC Simulator) devices in a GNS3 topology.
 
-    **VPCS-SPECIFIC TOOL** - This tool ONLY works with VPCS virtual PC devices.
+    **VPCS-SPECIFIC RUNNER** - This runner ONLY works with VPCS virtual PC
+    devices.
 
-    **IMPORTANT DISTINCTION:**
-    Unlike network devices (routers/switches), VPCS devices are lightweight virtual PCs.
-    Commands like 'ip' are basic PC IP config, NOT network device config.
+    Shared implementation behind the MCP ``vpcs_config_set`` tool; the
+    copilot reaches it through the MCP tool bridge. Not a LangChain tool —
+    the tool name/description contract lives in the MCP registration
+    (agent/mcp/__init__.py).
 
     **Allowed VPCS Commands:**
     - IP configuration: ip <address>/<mask> <gateway>
@@ -117,63 +117,26 @@ class VPCSCommands(BaseTool):
     - Save/Load: save, load
     """
 
-    name: str = "execute_vpcs_commands"
-    description: str = """
-    **VPCS VIRTUAL PC TOOL** - Configure and test Virtual PC Simulator devices.
-
-    This tool ONLY works with VPCS devices, NOT routers/switches.
-
-    **IMPORTANT: VPCS vs Network Devices**
-    - VPCS = Lightweight virtual PCs for lab testing (NOT network infra)
-    - 'ip' command on VPCS = Basic PC IP config (like 'ipconfig' on Windows)
-    - NOT the same as configuring router interfaces or routing protocols
-
-    **When to Use This Tool:**
-    - Configure IP addresses on virtual PCs: ip 10.10.0.12/24 10.10.0.254
-    - Test connectivity from PCs: ping 10.10.0.254
-    - View PC IP configuration: ip, show ip
-    - Display ARP table: arp
-    - Check PC version: version
-
-    **Input Format:**
-        {
-            "project_id": "<PROJECT_UUID>",
-            "device_configs": [
-                {
-                    "device_name": "PC1",
-                    "commands": ["ip", "ping 10.10.0.254"]
-                },
-                {
-                    "device_name": "PC2",
-                    "commands": ["show ip"]
-                }
-            ]
-        }
-
-    **Returns:** PC command outputs for IP config and connectivity testing.
-
-    **Note:** For network devices, use execute_multiple_device_commands.
-    """
-
-    def _run(
+    def run(
         self,
-        tool_input: str | bytes | list[Any] | dict[str, Any],
-        run_manager: CallbackManagerForToolRun | None = None,
-        jwt_token: str | None = None,
-        url: str | None = None,
-        **kwargs: Any,
+        params: dict[str, Any] | str,
+        gns3_ctx: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Execute commands on multiple VPCS devices in GNS3 topology.
 
         Args:
-            tool_input: JSON string with project_id and VPCS commands.
-            jwt_token: JWT token for GNS3 API auth (MCP handlers).
-            url: GNS3 server URL (MCP handlers).
+            params: ``{"project_id", "device_configs"}``. A JSON string is
+                accepted for backward compatibility.
+            gns3_ctx: handler context with ``jwt_token`` / ``server_url``.
 
         Returns:
             List of dicts with device names and command outputs.
         """
+        jwt_token = (gns3_ctx or {}).get("jwt_token")
+        url = (gns3_ctx or {}).get("server_url")
+
+        tool_input = params
         # Log received input
         logger.debug("Received input: %s", tool_input)
 
@@ -625,7 +588,7 @@ if __name__ == "__main__":
         }
     )
 
-    exe_cmd = VPCSCommands()
-    result = exe_cmd._run(tool_input=command_groups)
+    exe_cmd = VpcsCommandRunner()
+    result = exe_cmd.run(params=command_groups)
     print("Execution results:")
     print(json.dumps(result, indent=2, ensure_ascii=False))

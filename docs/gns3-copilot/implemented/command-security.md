@@ -79,8 +79,8 @@ flowchart TD
 
 | Tool | File | Filter | Multi-line Expansion | Result Fields |
 |------|------|--------|---------------------|---------------|
-| `ExecuteMultipleDeviceCommands` | `display_tools_nornir.py` | Yes | No | `diagnostic_commands` |
-| `ExecuteMultipleDeviceConfigCommands` | `config_tools_nornir.py` | Yes | Yes | `config_commands` |
+| `device_show_run` | `gns3_client/device_show_commands.py` | Yes | No | `diagnostic_commands` |
+| `device_config_send` | `gns3_client/device_config_commands.py` | Yes | Yes | `config_commands` |
 
 ## Command Filtering System
 
@@ -143,8 +143,8 @@ The forbidden commands list is loaded from the external [GNS3-Skills](https://gi
 | `reload_forbidden_commands()` | Directly load and cache commands from skills repository |
 
 **Integration points:**
-- `display_tools_nornir.py` — `_filter_forbidden_commands_from_device_configs()`
-- `config_tools_nornir.py` — `_filter_forbidden_commands_from_device_configs()` + `_expand_multiline_commands()`
+- `gns3_client/device_show_commands.py` — `_filter_forbidden_commands_from_device_configs()`
+- `gns3_client/device_config_commands.py` — `_filter_forbidden_commands_from_device_configs()` + `_expand_multiline_commands()`
 
 ## Configuration Safety (AI Prompt Level)
 
@@ -158,7 +158,7 @@ In addition to the command filter, the AI agent is instructed via system prompt 
 
 ## Multi-line Command Handling
 
-Commands containing `\n` are automatically split before execution by `config_tools_nornir.py:_expand_multiline_commands()`.
+Commands containing `\n` are automatically split before execution by `device_config_commands.py:_expand_multiline_commands()`.
 
 **Example:** `["banner motd #\nWelcome\n#"]` becomes `["banner motd #", "Welcome", "#"]`
 

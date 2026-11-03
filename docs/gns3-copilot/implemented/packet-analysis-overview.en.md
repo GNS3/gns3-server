@@ -10,7 +10,7 @@ See LICENSE file for licensing information.
 ```mermaid
 flowchart TB
     subgraph "① Analysis Trigger & Knowledge Query"
-        A["User asks\n'e.g. Analyze OSPF neighbor state'"] --> B["LLM calls\nPacketAnalysisSkillsTool"]
+        A["User asks\n'e.g. Analyze OSPF neighbor state'"] --> B["LLM calls\npacket_analysis_skills"]
         B --> C{"Protocol Knowledge Repository\ngns3/gns3-skills"}
         C --> D["Returns protocol definition\nfields/base_filter/check_rules"]
         B --> E["LLM calls\nsearch_fields mode"]
@@ -21,7 +21,7 @@ flowchart TB
     subgraph "② Live Capture & Analysis"
         D --> H["LLM constructs tshark_args"]
         G --> H
-        H --> I["PacketAnalysisTool\ncapture analysis mode"]
+        H --> I["packet_analysis\ncapture analysis mode"]
         I --> J["GET /capture/file\ndownload live PCAP"]
         J --> K["Pre-validate -e field names"]
         K --> L["tshark -r pcap\nrun analysis"]
@@ -33,8 +33,8 @@ flowchart TB
 
 | Tool | Source File | Purpose | Available Modes |
 |---|---|---|---|
-| `PacketAnalysisTool` | `packet_analysis_tool.py` | Download live PCAP + tshark analysis | teaching / lab_automation |
-| `PacketAnalysisSkillsTool` | `registry.py` (skills module) | Query protocol-level analysis knowledge (fields, filters) | teaching / lab_automation |
+| `packet_analysis` | `packet_analysis_tool.py` | Download live PCAP + tshark analysis | teaching / lab_automation |
+| `packet_analysis_skills` | `registry.py` (skills module) | Query protocol-level analysis knowledge (fields, filters) | teaching / lab_automation |
 
 ## Agent Workflow (LangGraph)
 
@@ -42,8 +42,8 @@ flowchart TB
 sequenceDiagram
     participant U as User
     participant LLM as LLM Node
-    participant Skills as PacketAnalysisSkillsTool
-    participant Pcap as PacketAnalysisTool
+    participant Skills as packet_analysis_skills
+    participant Pcap as packet_analysis
 
     U->>LLM: OSPF neighbors can't establish, analyze
     LLM->>Skills: get protocol=ospf

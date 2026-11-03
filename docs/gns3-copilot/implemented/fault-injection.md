@@ -26,13 +26,13 @@ graph TD
 
     subgraph "Skills Repository"
         IS[INJECTION_SKILLS_REGISTRY<br/>39 categories, 368 issues]
-        SK[injection_skills Tool]
+        SK[injection_skill_get Tool]
     end
 
     subgraph "Tools"
-        DC[execute_multiple_device_commands]
-        CC[execute_multiple_device_config_commands]
-        GK[GNS3TopologyTool]
+        DC[device_show_run]
+        CC[device_config_send]
+        GK[gns3_topology_reader]
     end
 
     TG -->|Get topology| GK
@@ -45,7 +45,7 @@ graph TD
 
 ## Injection Skills Tool
 
-The `InjectionSkillsTool` (LangChain `BaseTool`) is the primary interface for querying available faults.
+The `injection_skill_get` (LangChain `BaseTool`) is the primary interface for querying available faults.
 
 ### Listing Faults (with context filter)
 
@@ -92,7 +92,7 @@ Token-efficient usage pattern:
 ```mermaid
 sequenceDiagram
     participant LLM
-    participant InjectionSkillsTool
+    participant injection_skill_get
     participant TopologyTool
     participant DeviceCommands
 
@@ -104,14 +104,14 @@ sequenceDiagram
 
     Note over LLM: Analyze which protocols are in use
 
-    LLM->>InjectionSkillsTool: {"action": "list", "context": ["ospf", "vlan"]}
-    InjectionSkillsTool-->>LLM: Matching fault categories
+    LLM->>injection_skill_get: {"action": "list", "context": ["ospf", "vlan"]}
+    injection_skill_get-->>LLM: Matching fault categories
 
-    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf_issues", "detail": "index"}
-    InjectionSkillsTool-->>LLM: Issue names (token-efficient)
+    LLM->>injection_skill_get: {"device_type": "injection_ospf_issues", "detail": "index"}
+    injection_skill_get-->>LLM: Issue names (token-efficient)
 
-    LLM->>InjectionSkillsTool: {"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
-    InjectionSkillsTool-->>LLM: Full fault detail + config commands
+    LLM->>injection_skill_get: {"device_type": "injection_ospf_issues", "issue": "ospf_hello_dead_mismatch"}
+    injection_skill_get-->>LLM: Full fault detail + config commands
 
     LLM->>DeviceCommands: Inject fault configuration
     DeviceCommands-->>LLM: Execution result

@@ -53,6 +53,25 @@ class LLMModelConfigData(BaseModel):
     copilot_mode: Optional[str] = Field(
         None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
     )
+    max_steps: Optional[int] = Field(
+        None,
+        gt=0,
+        le=500,
+        description=(
+            "Max LangGraph super-steps per copilot turn "
+            "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
+            "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
+        ),
+    )
 
     # Allow extra fields for extensibility
     # Ensure all fields are included in serialization, even if None
@@ -81,6 +100,25 @@ class LLMModelConfigCreate(BaseModel):
     )
     copilot_mode: Optional[str] = Field(
         None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+    )
+    max_steps: Optional[int] = Field(
+        None,
+        gt=0,
+        le=500,
+        description=(
+            "Max LangGraph super-steps per copilot turn "
+            "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
+            "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
+        ),
     )
 
     # Allow extra config fields
@@ -111,6 +149,25 @@ class LLMModelConfigUpdate(BaseModel):
     )
     copilot_mode: Optional[str] = Field(
         None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+    )
+    max_steps: Optional[int] = Field(
+        None,
+        gt=0,
+        le=500,
+        description=(
+            "Max LangGraph super-steps per copilot turn "
+            "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
+            "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
+        ),
     )
 
     # Allow extra config fields
@@ -148,6 +205,25 @@ class LLMModelConfigDataWithoutSecret(BaseModel):
     )
     copilot_mode: Optional[str] = Field(
         None, description="GNS3-Copilot mode: 'teaching_assistant' or 'lab_automation_assistant'"
+    )
+    max_steps: Optional[int] = Field(
+        None,
+        gt=0,
+        le=500,
+        description=(
+            "Max LangGraph super-steps per copilot turn "
+            "(1 LLM call + 1 tool run = 2 steps). Defaults: 25 teaching_assistant, "
+            "50 lab_automation_assistant, 100 troubleshooting_injection"
+        ),
+    )
+    request_timeout: Optional[float] = Field(
+        None,
+        gt=0,
+        le=3600,
+        description=(
+            "LLM request timeout in seconds (openai/deepseek/anthropic/xai providers). "
+            "Default 120. A silent connection fails fast instead of waiting 600s"
+        ),
     )
 
     # Allow extra fields for extensibility
