@@ -659,7 +659,7 @@ async def project_ws_notifications(
     log.info(f"New client has connected to the notification stream for project ID '{project.id}' (WebSocket method)")
     try:
         with controller.notification.project_queue(project.id) as queue:
-            while True:
+            while not websocket.app.state.exiting:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):
@@ -701,7 +701,7 @@ async def project_marker_ws_notifications(
     )
     try:
         with controller.notification.project_marker_queue(project.id) as queue:
-            while True:
+            while not websocket.app.state.exiting:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):

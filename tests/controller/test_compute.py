@@ -640,7 +640,10 @@ async def test_connect_notification_poison_frame_autoreconnects(compute, monkeyp
     #  would execute module-level from-imports while the autouse fixture's
     #  monkeypatches are active, freezing patched objects into namespaces)
     monkeypatch.delattr(sys, "_called_from_test", raising=False)
-    monkeypatch.setattr(gns3_app.state, "exiting", False)
+    # plain assignment instead of monkeypatch.setattr: Starlette's State keeps
+    # attributes in an internal dict, so pytest 9.2+ teardown would delete the
+    # attribute for the rest of the test session
+    gns3_app.state.exiting = False
 
     async def fake_connect():
         compute._reconnect_attempted = True

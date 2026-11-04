@@ -14,14 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import uuid
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
 
 from gns3server import schemas
+from gns3server.api.routes.controller.controller import controller_ws_notifications
+from gns3server.api.routes.controller.projects import (
+    project_marker_ws_notifications,
+    project_ws_notifications,
+)
 from gns3server.utils.notification_queue import NotificationQueue
 
 STREAM_PATHS = ["/v3/notifications", "/v3/projects/{project_id}/notifications"]
@@ -86,3 +94,60 @@ class TestNotificationSchema:
         notification = schemas.Notification.model_validate(message)
         assert notification.action == schemas.NotificationAction.log_warning
         assert notification.compute_id == "local"
+
+
+def _fake_websocket(app: FastAPI) -> MagicMock:
+
+    websocket = MagicMock()
+    websocket.app = app
+    websocket.client = SimpleNamespace(host="127.0.0.1", port=1000)
+    websocket.send_text = AsyncMock()
+    return websocket
+
+
+class TestNotificationWebSocketShutdown:
+    """Notification WebSockets must stop when the server is shutting down.
+
+    Otherwise uvicorn has to wait for them during graceful shutdown.
+    """
+
+    # Do not use monkeypatch.setattr on app.state: Starlette's State keeps
+    # attributes in an internal dict, not in the instance __dict__, so pytest
+    # 9.2+ cannot read back the old value and its teardown deletes the
+    # attribute for the rest of the test session.
+
+    @pytest.mark.asyncio
+    async def test_controller_ws_stops_when_app_is_exiting(self, app: FastAPI) -> None:
+
+        app.state.exiting = True
+        try:
+            websocket = _fake_websocket(app)
+            await asyncio.wait_for(controller_ws_notifications(websocket, current_user=MagicMock()), timeout=1)
+            websocket.send_text.assert_not_awaited()
+        finally:
+            app.state.exiting = False
+
+    @pytest.mark.asyncio
+    async def test_project_ws_stops_when_app_is_exiting(self, app: FastAPI, project) -> None:
+
+        project.auto_close = False
+        app.state.exiting = True
+        try:
+            websocket = _fake_websocket(app)
+            await asyncio.wait_for(project_ws_notifications(project.id, websocket, current_user=MagicMock()), timeout=1)
+            websocket.send_text.assert_not_awaited()
+        finally:
+            app.state.exiting = False
+
+    @pytest.mark.asyncio
+    async def test_marker_ws_stops_when_app_is_exiting(self, app: FastAPI, project) -> None:
+
+        app.state.exiting = True
+        try:
+            websocket = _fake_websocket(app)
+            await asyncio.wait_for(
+                project_marker_ws_notifications(project.id, websocket, current_user=MagicMock()), timeout=1
+            )
+            websocket.send_text.assert_not_awaited()
+        finally:
+            app.state.exiting = False

@@ -134,6 +134,8 @@ unicorn_exit_handler = UvicornServer.handle_exit
 
 def handle_exit(*args, **kwargs):
     app.state.exiting = True
+    # The compute API is a mounted sub-app with its own State object.
+    compute_api.state.exiting = True
     unicorn_exit_handler(*args, **kwargs)
 
 
