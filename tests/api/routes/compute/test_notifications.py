@@ -20,21 +20,25 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import FastAPI
 
 from gns3server.api.routes.compute import compute_api
 from gns3server.api.routes.compute.notifications import project_ws_notifications
 
 
 @pytest.mark.asyncio
-async def test_compute_ws_stops_when_app_is_exiting(app: FastAPI, monkeypatch) -> None:
+async def test_compute_ws_stops_when_app_is_exiting() -> None:
 
-    monkeypatch.setattr(compute_api.state, "exiting", True)
-    websocket = MagicMock()
-    websocket.app = compute_api
-    websocket.client = SimpleNamespace(host="127.0.0.1", port=1000)
-    websocket.send_text = AsyncMock()
+    # plain assignment: see the note in test_notifications.py — monkeypatch
+    # cannot round-trip attributes of Starlette's State on pytest 9.2+
+    compute_api.state.exiting = True
+    try:
+        websocket = MagicMock()
+        websocket.app = compute_api
+        websocket.client = SimpleNamespace(host="127.0.0.1", port=1000)
+        websocket.send_text = AsyncMock()
 
-    await asyncio.wait_for(project_ws_notifications(websocket=websocket), timeout=1)
+        await asyncio.wait_for(project_ws_notifications(websocket=websocket), timeout=1)
 
-    websocket.send_text.assert_not_awaited()
+        websocket.send_text.assert_not_awaited()
+    finally:
+        compute_api.state.exiting = False
