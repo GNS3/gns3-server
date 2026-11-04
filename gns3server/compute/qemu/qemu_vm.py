@@ -2575,8 +2575,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                         raise QemuError(f"Cannot copy {vars_name} file to the node working directory: {e}")
 
             log.debug(f"Configuring UEFI boot mode using firmware file: '{firmware_path}'")
-            options.extend(["-drive", f"if=pflash,format=raw,readonly=on,file={firmware_path}"])
-            options.extend(["-drive", f"if=pflash,format=raw,file={vars_node_path}"])
+            options.extend(["-drive", f"file={firmware_path},if=pflash,unit=0,format=raw,readonly=on"])
+            options.extend(["-drive", f"file={vars_node_path},if=pflash,unit=1,format=raw"])
 
             # edk2 firmware requires a Random Number Generator (RNG) device in order to turn network adapters on
             options.extend(["-object", "rng-random,filename=/dev/urandom,id=rng0"])
@@ -2931,6 +2931,13 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             command.extend(["-machine", "accel=kvm"])
             kvm_enabled = True
+        else:
+            self.project.emit(
+                "log.warning",
+                {
+                    "message": f'QEMU VM "{self._name}": KVM hardware acceleration is not available, performance will be reduced'
+                },
+            )
         command.extend(["-boot", f"order={self._boot_priority}"])
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())

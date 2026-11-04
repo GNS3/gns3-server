@@ -455,9 +455,9 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write("1")
 
     options = await vm._build_command()
-    assert " ".join(["-drive", f"if=pflash,format=raw,readonly=on,file={ovmf_code_path}"]) in " ".join(options)
+    assert " ".join(["-drive", f"file={ovmf_code_path},if=pflash,unit=0,format=raw,readonly=on"]) in " ".join(options)
     assert " ".join(
-        ["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS_4M.fd"))]
+        ["-drive", f"file={os.path.join(vm.working_dir, 'OVMF_VARS_4M.fd')},if=pflash,unit=1,format=raw"]
     ) in " ".join(options)
 
 
@@ -492,9 +492,9 @@ async def test_uefi_firmware_selection(
     vars_node_path = Path(vm.working_dir) / vars_name
     assert options == [
         "-drive",
-        f"if=pflash,format=raw,readonly=on,file={code_path}",
+        f"file={code_path},if=pflash,unit=0,format=raw,readonly=on",
         "-drive",
-        f"if=pflash,format=raw,file={vars_node_path}",
+        f"file={vars_node_path},if=pflash,unit=1,format=raw",
         "-object",
         "rng-random,filename=/dev/urandom,id=rng0",
         "-device",
@@ -534,9 +534,9 @@ async def test_uefi_existing_variables_store(
     options = vm._bios_option()
     assert options[:4] == [
         "-drive",
-        f"if=pflash,format=raw,readonly=on,file={code_path}",
+        f"file={code_path},if=pflash,unit=0,format=raw,readonly=on",
         "-drive",
-        f"if=pflash,format=raw,file={vars_node_path}",
+        f"file={vars_node_path},if=pflash,unit=1,format=raw",
     ]
     assert vars_node_path.read_bytes() == b"existing variables"
 
