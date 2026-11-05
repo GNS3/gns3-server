@@ -221,6 +221,46 @@ class TestResourcePools:
             assert response.status_code == status.HTTP_200_OK
             assert len(response.json()) == 3
 
+    async def test_list_projects_legacy_without_created_by(
+        self, app: FastAPI, controller: Controller, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """
+        Projects created before GNS3 3.1 have no created_by field. They should
+        remain visible through a direct ACE (the pre-3.1 visibility rule)
+        instead of being hidden from every non-superadmin user.
+        """
+
+        # Clean up any existing ACEs from previous tests
+        await RbacRepository(db_session).delete_all_ace_starting_with_path("/projects")
+        await RbacRepository(db_session).delete_all_ace_starting_with_path("/pools")
+
+        legacy_id = str(uuid.uuid4())  # created with GNS3 < 3.1, no created_by
+        owned_id = str(uuid.uuid4())
+        other_id = str(uuid.uuid4())
+        await controller.add_project(project_id=legacy_id, name="LegacyProject")
+        await controller.add_project(project_id=owned_id, name="OwnedProject", created_by=test_user.username)
+        await controller.add_project(project_id=other_id, name="OtherProject", created_by="admin")
+
+        group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
+        role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
+        ace = ACECreate(
+            path="/projects", ace_type="group", propagate=True, group_id=str(group_id), role_id=str(role_id)
+        )
+        await RbacRepository(db_session).create_ace(ace)
+
+        access_token = auth_service.create_access_token(test_user.username)
+        async with AsyncClient(
+            base_url="http://test-api",
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
+            transport=ASGIWebSocketTransport(app=app),
+        ) as user_client:
+            response = await user_client.get(app.url_path_for("get_projects"))
+            assert response.status_code == status.HTTP_200_OK
+            projects = response.json()
+            # the legacy project (no owner) and the user's own project are visible,
+            # but the project owned by another user is not
+            assert {p["name"] for p in projects} == {"LegacyProject", "OwnedProject"}
+
 
 # class TestProjectsWithRbac:
 #
