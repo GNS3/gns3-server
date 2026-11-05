@@ -83,6 +83,7 @@ from .controller.users import (
     UserGroup,
     UserGroupCreate,
     UserGroupUpdate,
+    UserPrivileges,
     UserUpdate,
 )
 from .version import Version
@@ -397,6 +398,7 @@ __all__ = [
     "UserGroup",
     "UserGroupCreate",
     "UserGroupUpdate",
+    "UserPrivileges",
     "UserUpdate",
     "VMware",
     "VMwareCreate",

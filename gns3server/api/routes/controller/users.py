@@ -165,6 +165,31 @@ async def update_logged_in_user(
     return await users_repo.update_user(current_user.user_id, user_update)
 
 
+@router.get("/me/privileges", response_model=schemas.UserPrivileges)
+async def get_logged_in_user_privileges(
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> schemas.UserPrivileges:
+    """
+    Get the effective privileges of the current active user.
+
+    The privileges are the union of everything granted by the roles assigned
+    to the user (directly or through group membership), flattened across all
+    resource paths. This is meant for rendering purposes (e.g. showing or
+    hiding parts of the UI): the server remains the authority for permission
+    checks and can still deny a privilege on a specific resource path.
+
+    Example: curl -X GET http://host:port/v3/access/users/me/privileges -H "Authorization: Bearer <token>"
+    """
+
+    if current_user.is_superadmin:
+        privileges = sorted(privilege.name for privilege in await rbac_repo.get_privileges())
+        return schemas.UserPrivileges(is_superadmin=True, privileges=privileges)
+
+    privilege_names = await rbac_repo.get_user_privileges(current_user.user_id)
+    return schemas.UserPrivileges(is_superadmin=False, privileges=sorted(privilege_names))
+
+
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(has_privilege("User.Audit"))])
 async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[models.User]:
     """

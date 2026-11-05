@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Any, List, Optional, Union, cast
+from typing import Any, List, Optional, Set, Union, cast
 from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import Select, delete, select, update
-from sqlalchemy.engine import CursorResult
+from sqlalchemy.engine import CursorResult, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -178,6 +178,42 @@ class RbacRepository(BaseRepository):
         query = select(models.Privilege)
         result = await self._db_session.execute(query)
         return list(result.scalars().all())
+
+    async def get_user_privileges(self, user_id: UUID) -> Set[str]:
+        """
+        Get the names of all privileges granted to a user through its roles,
+        via ACEs on the user itself and on the groups the user belongs to.
+
+        This is a flattened view that ignores resource paths: the authoritative
+        check remains check_user_has_privilege(), which takes paths into account.
+        """
+
+        privilege_names: Set[str] = set()
+
+        # privileges granted by ACEs on the user itself
+        user_result: Result[Any] = await self._db_session.execute(
+            select(models.Privilege.name)
+            .join(models.Privilege.roles)
+            .join(models.Role.acl_entries)
+            .join(models.ACE.user)
+            .filter(models.User.user_id == user_id)
+            .filter(models.ACE.allowed.is_(True))
+        )
+        privilege_names.update(name for (name,) in user_result.all())
+
+        # privileges granted by ACEs on the groups the user belongs to
+        group_result: Result[Any] = await self._db_session.execute(
+            select(models.Privilege.name)
+            .join(models.Privilege.roles)
+            .join(models.Role.acl_entries)
+            .join(models.ACE.group)
+            .join(models.UserGroup.users)
+            .filter(models.User.user_id == user_id)
+            .filter(models.ACE.allowed.is_(True))
+        )
+        privilege_names.update(name for (name,) in group_result.all())
+
+        return privilege_names
 
     async def get_ace(self, ace_id: UUID) -> Optional[models.ACE]:
         """
