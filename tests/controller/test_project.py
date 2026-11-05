@@ -936,14 +936,34 @@ async def test_duplicate(project, controller):
         compute, "test", None, node_type="vmware", properties={"startup_config": "test.cfg"}
     )
 
-    new_project = await project.duplicate(name="Hello")
+    new_project = await project.duplicate(name="Hello", user="user1")
     assert new_project.id != project.id
     assert new_project.name == "Hello"
+    assert new_project.created_by == "user1"
 
     await new_project.open()
 
     assert list(new_project.nodes.values())[0].compute.id == "remote"
     assert list(new_project.nodes.values())[1].compute.id == "remote"
+
+
+@pytest.mark.asyncio
+async def test_duplicate_created_by(project, controller):
+    """
+    The duplicated project is owned by the user who duplicated it (fast path)
+    """
+
+    project.created_by = "alice"
+    project.dump()
+
+    new_project = await project.duplicate(name="Hello", user="bob")
+    assert new_project.created_by == "bob"
+    # the original project keeps its owner
+    assert project.created_by == "alice"
+
+    # without a user the original owner is kept (backward compatible)
+    new_project = await project.duplicate(name="Hello2")
+    assert new_project.created_by == "alice"
 
 
 def test_snapshots(project):

@@ -526,6 +526,8 @@ class TestControllerProjectRoutes:
         with open(os.path.join(project.path, "demo")) as f:
             content = f.read()
         assert content == "hello"
+        # the imported project is owned by the user who imported it
+        assert project.created_by == "admin"
 
     async def test_import_with_project_name(
         self, app: FastAPI, client: AsyncClient, tmpdir, controller: Controller
@@ -556,6 +558,8 @@ class TestControllerProjectRoutes:
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "hello"
+        # the duplicated project is owned by the user who duplicated it
+        assert response.json()["created_by"] == "admin"
 
     async def test_lock_unlock(self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
