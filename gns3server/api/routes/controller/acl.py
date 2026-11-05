@@ -204,9 +204,6 @@ async def create_ace(
     """
 
     for route_path in _iter_route_paths(request.app.routes, include_mounted_routes=True):
-        print(route_path)
-
-    for route_path in _iter_route_paths(request.app.routes, include_mounted_routes=True):
         # remove the prefix (e.g. "/v3") from the route path
         normalized_path = re.sub(r"^/v[0-9]", "", route_path)
         # replace route path ID parameters by a UUID regex
