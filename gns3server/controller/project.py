@@ -2158,7 +2158,7 @@ class Project:
         while self._loading:
             await asyncio.sleep(0.5)
 
-    async def duplicate(self, name=None, reset_mac_addresses=True):
+    async def duplicate(self, name=None, reset_mac_addresses=True, user=None):
         """
         Duplicate a project
 
@@ -2169,6 +2169,7 @@ class Project:
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param reset_mac_addresses: Reset MAC addresses for the new project
+        :param user: The user duplicating the project. The new project is owned by this user
         """
 
         # If the project was not open we open it temporary
@@ -2180,7 +2181,7 @@ class Project:
         assert self._status != "closed"
 
         try:
-            proj = await self._fast_duplication(name, reset_mac_addresses)
+            proj = await self._fast_duplication(name, reset_mac_addresses=reset_mac_addresses, user=user)
             if proj:
                 if previous_status == "closed":
                     await self.close()
@@ -2222,6 +2223,7 @@ class Project:
                             name=name,
                             reset_mac_addresses=reset_mac_addresses,
                             keep_compute_ids=True,
+                            user=user,
                         )
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
@@ -2233,7 +2235,7 @@ class Project:
 
         return project
 
-    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True):
+    async def _fast_duplication(self, name=None, location=None, reset_mac_addresses=True, user=None):
         """
         Fast duplication of a project.
 
@@ -2242,6 +2244,7 @@ class Project:
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the duplicated project
+        :param user: The user duplicating the project. The new project is owned by this user
         """
 
         # We don't duplicate a running project
@@ -2279,6 +2282,9 @@ class Project:
         topology["auto_start"] = False
         topology["auto_open"] = False
         topology["auto_close"] = False
+
+        if user:
+            topology["created_by"] = user
 
         # regenerate IDs for the duplicated project
         regenerate_topology_ids(topology, new_project_path, reset_mac_addresses)
