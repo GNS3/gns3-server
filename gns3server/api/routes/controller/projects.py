@@ -126,10 +126,12 @@ async def get_projects(
 
     # Step 2: Filter direct ACE projects by created_by
     # Direct project sharing is only available through resource pools
+    # Projects created before the created_by field existed (GNS3 < 3.1) have no
+    # owner: fall back to the ACE-only visibility rule instead of hiding them.
     for p in controller.projects.values():
         if name is not None and p.name != name:
             continue
-        if p.id in direct_ace_ids and p.created_by == current_user.username:
+        if p.id in direct_ace_ids and (p.created_by is None or p.created_by == current_user.username):
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
                 seen_project_ids.add(p.id)
