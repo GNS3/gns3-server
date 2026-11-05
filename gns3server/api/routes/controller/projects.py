@@ -886,7 +886,11 @@ async def duplicate_project(
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     reset_mac_addresses = project_data.reset_mac_addresses
-    new_project = await project.duplicate(name=project_data.name, reset_mac_addresses=reset_mac_addresses)
+    new_project = await project.duplicate(
+        name=project_data.name,
+        reset_mac_addresses=reset_mac_addresses,
+        user=current_user.username,
+    )
 
     # Add the new project in the same resource pools if the duplicated project belongs to any
     if pool_memberships:
