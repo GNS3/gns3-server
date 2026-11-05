@@ -27,9 +27,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import gns3server.db.models as models
 from gns3server.config import Config
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
-from gns3server.schemas.controller.users import User
+from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.users import User, UserCreate, UserGroupCreate
 from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
 
@@ -711,3 +714,143 @@ class TestSuperAdmin:
         }
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status.HTTP_200_OK
+
+
+class TestUserPrivileges:
+    """
+    Tests for GET /access/users/me/privileges.
+
+    Every test creates its own users, groups and ACEs: no shared rows with
+    other tests in this file, and authentication is sent per-request so the
+    class stays order-independent.
+    """
+
+    async def _create_user(self, db_session: AsyncSession, username: str) -> models.User:
+
+        return await UsersRepository(db_session).create_user(
+            UserCreate(username=username, email=f"{username}@email.com", password="secret_password")
+        )
+
+    async def _create_group_with_member(
+        self, db_session: AsyncSession, name: str, user: models.User
+    ) -> models.UserGroup:
+
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.create_user_group(UserGroupCreate(name=name))
+        await users_repo.add_member_to_user_group(group.user_group_id, user)
+        return group
+
+    @staticmethod
+    def _headers(username: str) -> dict:
+
+        token = auth_service.create_access_token(username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        return {"Authorization": f"Bearer {token}"}
+
+    async def test_superadmin_gets_all_privileges(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        rbac_repo = RbacRepository(db_session)
+        expected = sorted(privilege.name for privilege in await rbac_repo.get_privileges())
+
+        response = await client.get(app.url_path_for("get_logged_in_user_privileges"), headers=self._headers("admin"))
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["is_superadmin"] is True
+        assert data["privileges"] == expected
+
+    async def test_user_without_ace_has_no_privileges(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user(db_session, "priv_no_ace")
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["is_superadmin"] is False
+        assert data["privileges"] == []
+
+    async def test_privileges_from_user_ace(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
+
+        user = await self._create_user(db_session, "priv_user_ace")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        await rbac_repo.create_ace(
+            ACECreate(path="/projects", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+        expected = sorted(privilege.name for privilege in await rbac_repo.get_role_privileges(role.role_id))
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["privileges"] == expected
+
+    async def test_privileges_from_group_ace(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
+
+        user = await self._create_user(db_session, "priv_group_ace")
+        group = await self._create_group_with_member(db_session, "priv_group", user)
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Auditor")
+        await rbac_repo.create_ace(
+            ACECreate(path="/projects", ace_type="group", group_id=group.user_group_id, role_id=role.role_id)
+        )
+        expected = sorted(privilege.name for privilege in await rbac_repo.get_role_privileges(role.role_id))
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["privileges"] == expected
+
+    async def test_privileges_are_the_union_of_user_and_group_aces(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user(db_session, "priv_union")
+        group = await self._create_group_with_member(db_session, "priv_union_group", user)
+        rbac_repo = RbacRepository(db_session)
+        user_role = await rbac_repo.get_role_by_name("Auditor")
+        group_role = await rbac_repo.get_role_by_name("User")
+        await rbac_repo.create_ace(
+            ACECreate(path="/projects", ace_type="user", user_id=user.user_id, role_id=user_role.role_id)
+        )
+        await rbac_repo.create_ace(
+            ACECreate(path="/templates", ace_type="group", group_id=group.user_group_id, role_id=group_role.role_id)
+        )
+        expected = set(privilege.name for privilege in await rbac_repo.get_role_privileges(user_role.role_id))
+        expected.update(privilege.name for privilege in await rbac_repo.get_role_privileges(group_role.role_id))
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["is_superadmin"] is False
+        assert data["privileges"] == sorted(expected)
+
+    async def test_denial_ace_is_not_reported_as_a_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user(db_session, "priv_denied")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        await rbac_repo.create_ace(
+            ACECreate(path="/projects", ace_type="user", user_id=user.user_id, role_id=role.role_id, allowed=False)
+        )
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["privileges"] == []
+
+    async def test_privileges_require_authentication(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers={"Authorization": "Bearer invalid_token"}
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

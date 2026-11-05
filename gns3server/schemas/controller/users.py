@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
@@ -67,6 +67,20 @@ class User(DateTimeModelMixin, UserBase):
     last_login: Optional[datetime] = None
     is_superadmin: bool = False
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserPrivileges(BaseModel):
+    """
+    Effective privileges of the logged in user, flattened across all roles
+    assigned to the user (directly or through group membership).
+
+    This is a hint for rendering purposes only: the server remains the
+    authority for permission checks and can still deny a privilege listed
+    here on a specific resource path.
+    """
+
+    is_superadmin: bool
+    privileges: List[str]
 
 
 class UserGroupBase(BaseModel):
