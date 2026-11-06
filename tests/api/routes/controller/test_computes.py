@@ -197,7 +197,31 @@ class TestComputeFeatures:
                 app.url_path_for("docker_pull_image", compute_id=test_compute.compute_id),
                 json={"image": "nginx:latest"},
             )
-            compute.forward.assert_called_with("POST", "docker", "images/pull", data={"image": "nginx:latest"})
+            compute.forward.assert_called_with(
+                "POST", "docker", "images/pull", data={"image": "nginx:latest"}, params=None
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_compute_pull_docker_image_progress_id(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+
+        compute = MagicMock()
+        compute.forward = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.post(
+                app.url_path_for("docker_pull_image", compute_id=test_compute.compute_id),
+                json={"image": "nginx:latest"},
+                params={"progress_id": "abc123"},
+            )
+            compute.forward.assert_called_with(
+                "POST",
+                "docker",
+                "images/pull",
+                data={"image": "nginx:latest"},
+                params={"progress_id": "abc123"},
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_compute_delete_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:

@@ -215,16 +215,26 @@ async def docker_get_images(compute_id: Union[str, UUID]) -> List[schemas.Comput
     dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def docker_pull_image(
-    compute_id: Union[str, UUID], image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")
+    compute_id: Union[str, UUID],
+    image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$"),
+    progress_id: Optional[str] = Query(
+        None, pattern=r"^\S+$", description="Client supplied id to correlate progress notifications"
+    ),
 ) -> None:
     """
     Pull or update a Docker image on a compute.
+
+    The pull progress is reported on the controller notification stream as
+    docker.image.pull events (started, downloading, completed or failed). The
+    optional progress_id is echoed in every event so a client can correlate
+    them with its own request.
 
     Required privilege: Compute.Modify
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
-    await compute.forward("POST", "docker", "images/pull", data={"image": image})
+    params = {"progress_id": progress_id} if progress_id is not None else None
+    await compute.forward("POST", "docker", "images/pull", data={"image": image}, params=params)
 
 
 @router.post(

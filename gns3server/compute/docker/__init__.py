@@ -51,6 +51,11 @@ DOCKER_MINIMUM_VERSION = "19.03.8"
 DOCKER_PREFERRED_API_VERSION = "1.44"
 CHUNK_SIZE = 1024 * 8  # 8KB
 
+# A pull streams progress from the daemon for its whole duration: when no data
+# arrives for this many seconds the registry is unreachable and the pull would
+# otherwise hang forever. This is an idle timeout, not a total time limit.
+PULL_IDLE_TIMEOUT = 60
+
 
 class Docker(BaseManager):
     _NODE_CLASS = DockerVM
@@ -291,7 +296,8 @@ class Docker(BaseManager):
         :param path: Endpoint in API
         :param data: Dictionary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
-        :param timeout: Timeout
+        :param timeout: Total timeout in seconds, an aiohttp ClientTimeout object
+            for a finer policy (e.g. an idle socket read timeout), or None for no timeout
         :returns: HTTP response
         """
 
@@ -302,7 +308,7 @@ class Docker(BaseManager):
             # not a dict (e.g. a Docker image tar stream): let aiohttp stream the raw body
             headers = {"content-type": "application/x-tar"}
         if timeout is None:
-            timeout = 60 * 60 * 24 * 31  # One month timeout
+            timeout = aiohttp.ClientTimeout(total=None)
 
         if path == "version":
             url = "http://docker/" + path
@@ -361,7 +367,8 @@ class Docker(BaseManager):
         Pulls an image from the Docker repository
 
         :params image: Image name
-        :params progress_callback: A function that receive a log message about image download progress
+        :params progress_callback: A function that receives a dict with the
+            overall progress of the pull: layer counts and the latest daemon message
         :params force: Pull the image even if it is already available locally
         """
 
@@ -372,10 +379,23 @@ class Docker(BaseManager):
             except DockerHttp404Error:
                 pass
 
-        if progress_callback:
-            progress_callback(f"Pulling '{image}' from Docker repository")
+        layers_total = 0
+        layers_done = 0
+
+        def report(message):
+            if progress_callback:
+                progress_callback({"layers_total": layers_total, "layers_done": layers_done, "message": message})
+
         try:
-            response = await self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
+            # The daemon streams progress lines for the whole pull: an idle
+            # socket read for a minute means the registry is unreachable and
+            # the pull would otherwise hang forever.
+            response = await self.http_query(
+                "POST",
+                "images/create",
+                params={"fromImage": image},
+                timeout=aiohttp.ClientTimeout(total=None, sock_read=PULL_IDLE_TIMEOUT),
+            )
         except DockerError as e:
             raise DockerError(
                 f"Could not pull the '{image}' image from Docker repository, "
@@ -392,7 +412,11 @@ class Docker(BaseManager):
                         f"Disconnected while pulling Docker image '{image}' from Docker repository"
                     ) from e
                 except TimeoutError as e:
-                    raise DockerError(f"Timeout while pulling Docker image '{image}' from Docker repository") from e
+                    raise DockerError(
+                        f"Timeout while pulling Docker image '{image}' from Docker repository: "
+                        f"no data received for {PULL_IDLE_TIMEOUT} seconds, "
+                        f"please check your Internet connection or Docker registry mirror"
+                    ) from e
                 if not chunk:
                     break
                 content += chunk.decode("utf-8")
@@ -409,8 +433,14 @@ class Docker(BaseManager):
                             error = error_detail.get("message")
                         if error:
                             raise DockerError(error)
-                        if "progress" in answer and progress_callback:
-                            progress_callback("Pulling image {}:{}: {}".format(image, answer["id"], answer["progress"]))
+                        status = answer.get("status", "")
+                        if status == "Pulling fs layer":
+                            layers_total += 1
+                        elif status in ("Pull complete", "Already exists"):
+                            layers_done += 1
+                        message = answer.get("progress") or status
+                        if message:
+                            report(message)
                         content = content[index:]
                 except ValueError:  # Partial JSON
                     pass
@@ -419,9 +449,6 @@ class Docker(BaseManager):
                 raise DockerError(f"Invalid response while pulling Docker image '{image}'")
         finally:
             response.close()
-
-        if progress_callback:
-            progress_callback(f"Success pulling image {image}")
 
     @locking
     async def load_image(self, stream, image=None, digest=None, progress_callback=None):

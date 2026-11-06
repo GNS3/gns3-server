@@ -21,7 +21,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 import pytest_asyncio
 
-from gns3server.compute.docker import DOCKER_MINIMUM_API_VERSION, DOCKER_PREFERRED_API_VERSION, Docker
+from gns3server.compute.docker import (
+    DOCKER_MINIMUM_API_VERSION,
+    DOCKER_PREFERRED_API_VERSION,
+    PULL_IDLE_TIMEOUT,
+    Docker,
+)
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
@@ -168,7 +173,44 @@ async def test_pull_image():
     with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
             await Docker.instance().pull_image("ubuntu")
-            mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
+            args, kwargs = mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == {"fromImage": "ubuntu"}
+            # no total timeout (a pull can take as long as it needs) but an
+            # idle socket read timeout, so an unreachable registry fails
+            assert kwargs["timeout"].total is None
+            assert kwargs["timeout"].sock_read == PULL_IDLE_TIMEOUT
+
+
+@pytest.mark.asyncio
+async def test_pull_image_reports_aggregated_progress():
+
+    class Content:
+        def __init__(self):
+            self._chunks = [
+                b'{"status": "Pulling fs layer", "id": "sha256:a"}\n'
+                b'{"status": "Pulling fs layer", "id": "sha256:b"}\n'
+                b'{"status": "Downloading", "id": "sha256:a", "progress": "[==>   ] 40/100"}\n'
+                b'{"status": "Pull complete", "id": "sha256:a"}\n',
+                b'{"status": "Pull complete", "id": "sha256:b"}\n',
+                b"",
+            ]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    progress = []
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+            await Docker.instance().pull_image("ubuntu", progress_callback=progress.append)
+    # the callback sees the running totals of layers, not raw daemon lines
+    assert progress[0] == {"layers_total": 1, "layers_done": 0, "message": "Pulling fs layer"}
+    assert progress[1] == {"layers_total": 2, "layers_done": 0, "message": "Pulling fs layer"}
+    assert {"layers_total": 2, "layers_done": 0, "message": "[==>   ] 40/100"} in progress
+    assert progress[-1] == {"layers_total": 2, "layers_done": 2, "message": "Pull complete"}
 
 
 @pytest.mark.asyncio
@@ -191,7 +233,10 @@ async def test_force_pull_image():
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as pull_mock:
             await Docker.instance().pull_image("ubuntu", force=True)
             query_mock.assert_not_called()
-            pull_mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
+            args, kwargs = pull_mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == {"fromImage": "ubuntu"}
+            assert kwargs["timeout"].sock_read == PULL_IDLE_TIMEOUT
 
 
 @pytest.mark.asyncio

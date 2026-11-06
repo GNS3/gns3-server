@@ -120,6 +120,34 @@ async def test_dispatch_node_updated(controller, node, project):
 
 
 @pytest.mark.asyncio
+async def test_dispatch_docker_image_routed_to_controller_stream(controller, project):
+    """
+    docker.image.* events are scoped to a compute, not to a project: they must
+    reach the controller stream even when no project is open, and not the
+    project stream.
+    """
+
+    notif = controller.notification
+    with notif.controller_queue() as controller_q, notif.project_queue(project.id) as project_q:
+        await controller_q.get(0.1)  # ping
+        await project_q.get(0.1)  # ping
+
+        await notif.dispatch(
+            "docker.image.pull", {"image": "debian", "state": "started"}, project_id=None, compute_id="local"
+        )
+
+        msg = await controller_q.get(5)
+        assert msg == (
+            "docker.image.pull",
+            {"image": "debian", "state": "started", "compute_id": "local"},
+            {},
+        )
+        # the project stream only carries its periodic ping
+        msg = await project_q.get(0.2)
+        assert msg[0] == "ping"
+
+
+@pytest.mark.asyncio
 async def test_dispatch_marker_routed_to_marker_channel(controller, project):
     """
     marker.* events are dispatched to the dedicated marker channel, not the

@@ -19,6 +19,7 @@ API routes for images.
 """
 
 import os
+import time
 import urllib.parse
 from typing import List, Optional
 
@@ -26,9 +27,15 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.iou import IOU
+from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.qemu import Qemu
+
+# Daemon progress lines arrive dozens of times per second per layer: emit at
+# most one downloading event per second per pull.
+PULL_PROGRESS_INTERVAL = 1.0
 
 router = APIRouter()
 
@@ -44,13 +51,51 @@ async def get_docker_images() -> List[dict]:
 
 
 @router.post("/docker/images/pull", status_code=status.HTTP_204_NO_CONTENT)
-async def pull_docker_image(image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")) -> None:
+async def pull_docker_image(
+    image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$"),
+    progress_id: Optional[str] = Query(
+        None, pattern=r"^\S+$", description="Client supplied id to correlate progress notifications"
+    ),
+) -> None:
     """
     Pull or update a Docker image.
+
+    The pull progress is reported as docker.image.pull notifications: a
+    started event, throttled downloading events and a terminal completed or
+    failed event. The optional progress_id is echoed in every event so a
+    client can correlate them with its own request.
     """
 
     docker_manager = Docker.instance()
-    await docker_manager.pull_image(image, force=True)
+
+    def emit(state: str, message: Optional[str] = None, progress: Optional[dict] = None) -> None:
+        event = {"image": image, "state": state}
+        if message is not None:
+            event["message"] = message
+        if progress is not None:
+            event["layers_total"] = progress["layers_total"]
+            event["layers_done"] = progress["layers_done"]
+        if progress_id is not None:
+            event["progress_id"] = progress_id
+        NotificationManager.instance().emit("docker.image.pull", event)
+
+    last_emit = 0.0
+
+    def progress_callback(progress: dict) -> None:
+        nonlocal last_emit
+        now = time.monotonic()
+        if now - last_emit < PULL_PROGRESS_INTERVAL:
+            return
+        last_emit = now
+        emit("downloading", progress["message"], progress)
+
+    emit("started", f"Pulling '{image}' from Docker repository")
+    try:
+        await docker_manager.pull_image(image, progress_callback=progress_callback, force=True)
+    except DockerError as e:
+        emit("failed", str(e))
+        raise
+    emit("completed", f"Success pulling image {image}")
 
 
 @router.post("/docker/images/load", status_code=status.HTTP_204_NO_CONTENT)
