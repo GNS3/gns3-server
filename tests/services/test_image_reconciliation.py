@@ -222,6 +222,22 @@ async def test_external_symlinks_hidden_files_and_libraries_are_not_imported(inv
     assert outside.read_bytes() == QCOW
 
 
+async def test_non_image_files_next_to_images_are_ignored(inventory, config):
+    """Files a user keeps next to images (scripts, notes, licenses) must not be
+    reported as invalid images nor turn the sync job partial."""
+
+    image_file(config, "IOU/CiscoIOUKeygen.py", b"#!/usr/bin/env python\ndef main(): ...")
+    image_file(config, "IOU/README.md", b"# IOU images")
+    image_file(config, "QEMU/notes.TXT", b"my qemu notes")
+    image_file(config, "IOS/license.lic", b"license text")
+    result = await scan(inventory)
+    assert result["counts"]["scanned"] == 0
+    assert result["counts"]["invalid"] == 0
+    assert result["counts"]["errors"] == 0
+    assert result["errors"] == []
+    assert result["status"] == "completed"
+
+
 @pytest.mark.parametrize(
     "name,data,expected",
     [
