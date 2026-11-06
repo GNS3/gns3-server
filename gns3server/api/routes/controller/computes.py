@@ -26,7 +26,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Reques
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ComputeConflictError, ControllerBadRequestError, ControllerError
+from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -277,14 +277,14 @@ async def docker_delete_image(
     """
     Delete a Docker image on a compute.
 
-    The compute refuses to delete an image used by a container (even a stopped
-    one) and answers a conflict naming the GNS3 nodes and projects using it,
-    unless force is set.
+    The deletion is refused while templates reference the image, unless force
+    is set. The compute also refuses an image used by a container (even a
+    stopped one) and answers a conflict naming the GNS3 nodes and projects
+    using it.
 
-    Templates referencing the image do not block the deletion but are named in
-    the conflict error, and a docker.image.deleted notification reporting them
-    is emitted on the controller notification stream after a successful
-    deletion.
+    After a successful deletion a docker.image.deleted notification is
+    emitted on the controller notification stream, with the templates that
+    referenced the image, so clients can refresh their image lists.
 
     Required privilege: Compute.Modify
     """
@@ -303,17 +303,21 @@ async def docker_delete_image(
         and canonical_docker_image_name(str(template.image)) == canonical_image
     ]
 
+    if referencing_templates and not force:
+        # refuse before touching the compute: the client can prompt the user
+        # and repeat with force once the user confirms
+        raise ControllerError(
+            f"Image '{image}' is referenced by template(s): {', '.join(referencing_templates)}. "
+            f"Delete the templates first or repeat with force=true.",
+            code="image_referenced_by_templates",
+            details={"referenced_by_templates": referencing_templates},
+        )
+
     compute = Controller.instance().get_compute(str(compute_id))
-    try:
-        await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
-    except ComputeConflictError as e:
-        if referencing_templates:
-            response = e.response()
-            response["message"] += f" The image is also referenced by template(s): {', '.join(referencing_templates)}."
-            raise ComputeConflictError(e.url(), response) from e
-        raise
-    # tell the clients which templates pointed at the deleted image: their
-    # nodes can no longer start
+    await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
+    # tell the clients the image changed on this compute: they can refresh
+    # their image lists, and the templates that referenced the image can no
+    # longer start their nodes
     Controller.instance().notification.controller_emit(
         "docker.image.deleted",
         {
