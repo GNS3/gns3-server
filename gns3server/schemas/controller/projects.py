@@ -139,3 +139,18 @@ class ProjectStats(BaseModel):
     drawings: int
     snapshots: int
     markers: int
+
+
+class ProjectPrivileges(BaseModel):
+    """
+    Effective privileges of the logged in user on a single project, evaluated
+    on the project's resource path (so ACEs scoped to that project and
+    resource pools containing it are reflected).
+
+    This is a hint for rendering purposes only (e.g. showing or hiding buttons
+    in the project view): the server remains the authority for permission
+    checks on each request.
+    """
+
+    is_superadmin: bool
+    privileges: List[str]
