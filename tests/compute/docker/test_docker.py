@@ -260,6 +260,24 @@ async def test_pull_image_error():
 
 
 @pytest.mark.asyncio
+async def test_pull_image_not_found_is_not_reported_as_a_network_error():
+    """
+    A 404 from the registry means the image name is wrong or the registry needs
+    authentication: telling the user to check the Internet connection sends
+    them in the wrong direction.
+    """
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch(
+            "gns3server.compute.docker.Docker.http_query",
+            side_effect=DockerHttp404Error("Docker has returned an error: 404 pull access denied for debian13"),
+        ):
+            with pytest.raises(DockerError, match="not found in the registry") as error:
+                await Docker.instance().pull_image("debian13")
+    assert "Internet connection" not in str(error.value)
+
+
+@pytest.mark.asyncio
 async def test_pull_image_rejects_incomplete_response():
 
     class Content:

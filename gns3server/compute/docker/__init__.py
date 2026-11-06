@@ -396,10 +396,17 @@ class Docker(BaseManager):
                 params={"fromImage": image},
                 timeout=aiohttp.ClientTimeout(total=None, sock_read=PULL_IDLE_TIMEOUT),
             )
+        except DockerHttp404Error as e:
+            raise DockerError(
+                f"Could not pull the '{image}' image: it was not found in the registry. "
+                f"Check the image name or run 'docker login' on the compute host "
+                f"(original error: {e})"
+            )
         except DockerError as e:
             raise DockerError(
-                f"Could not pull the '{image}' image from Docker repository, "
-                f"please check your Internet connection (original error: {e})"
+                f"Could not pull the '{image}' image from Docker repository. "
+                f"Check the image name, the registry authentication and your Internet connection "
+                f"(original error: {e})"
             )
         # The pull api will stream status via an HTTP JSON stream
         content = ""
