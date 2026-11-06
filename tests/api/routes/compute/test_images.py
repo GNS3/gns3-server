@@ -55,6 +55,25 @@ class TestImagesRoutes:
             assert hasattr(stream, "__aiter__")
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
+    async def test_delete_docker_image(self, app: FastAPI, compute_client: AsyncClient) -> None:
+
+        with asyncio_patch("gns3server.compute.docker.Docker.delete_image") as mock:
+            response = await compute_client.delete(
+                app.url_path_for("compute:delete_docker_image", image="ios-xr/xrd-control-plane:24.4.1")
+            )
+            mock.assert_called_once_with("ios-xr/xrd-control-plane:24.4.1", force=False)
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_delete_docker_image_force(self, app: FastAPI, compute_client: AsyncClient) -> None:
+
+        with asyncio_patch("gns3server.compute.docker.Docker.delete_image") as mock:
+            response = await compute_client.delete(
+                app.url_path_for("compute:delete_docker_image", image="ubuntu:latest"),
+                params={"force": "true"},
+            )
+            mock.assert_called_once_with("ubuntu:latest", force=True)
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
     async def test_load_docker_image_with_image_and_digest(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
         digest = "sha256:" + "a" * 64

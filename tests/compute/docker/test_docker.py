@@ -132,11 +132,14 @@ async def test_list_images():
         images = await Docker.instance().list_images()
         mock.assert_called_with("GET", "images/json", params={"all": 0})
     assert len(images) == 5
-    assert {"image": "ubuntu:12.04"} in images
-    assert {"image": "ubuntu:precise"} in images
-    assert {"image": "ubuntu:latest"} in images
-    assert {"image": "ubuntu:12.10"} in images
-    assert {"image": "ubuntu:quantal"} in images
+    by_tag = {image["image"]: image for image in images}
+    assert by_tag["ubuntu:12.04"]["id"] == "8dbd9e392a964056420e5d58ca5cc376ef18e2de93b5cc90e868a1bbc8318c1c"
+    assert by_tag["ubuntu:12.04"]["size"] == 131506275
+    assert by_tag["ubuntu:12.04"]["created"] == 1365714795
+    # tags of the same image share its id
+    assert by_tag["ubuntu:precise"]["id"] == by_tag["ubuntu:12.04"]["id"]
+    assert "<none>:<none>" not in by_tag
+    assert {"ubuntu:precise", "ubuntu:latest", "ubuntu:12.10", "ubuntu:quantal"} <= set(by_tag)
 
 
 @pytest.mark.asyncio
@@ -328,6 +331,36 @@ async def test_load_image_error():
         with pytest.raises(DockerError, match="invalid tar file"):
             await Docker.instance().load_image(tar_stream())
         response.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_image():
+
+    docker = Docker.instance()
+    docker._image_id_translations["ubuntu:latest"] = ("sha256:" + "a" * 64, "sha256:" + "b" * 64)
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
+        await docker.delete_image("ubuntu:latest", force=True)
+        mock.assert_called_with("DELETE", "images/ubuntu:latest", params={"force": True})
+    # deleting the image drops the id translation recorded for a previous sync
+    assert docker.image_id_translation("ubuntu:latest") is None
+
+
+@pytest.mark.asyncio
+async def test_delete_image_error_keeps_translation():
+    """
+    When the daemon refuses the deletion the image is still there, so the id
+    translation recorded for a previous sync stays valid.
+    """
+
+    docker = Docker.instance()
+    translation = ("sha256:" + "a" * 64, "sha256:" + "b" * 64)
+    docker._image_id_translations["ubuntu:latest"] = translation
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerError("conflict: image is in use")):
+        with pytest.raises(DockerError, match="image is in use"):
+            await docker.delete_image("ubuntu:latest")
+    assert docker.image_id_translation("ubuntu:latest") == translation
 
 
 @pytest.mark.asyncio

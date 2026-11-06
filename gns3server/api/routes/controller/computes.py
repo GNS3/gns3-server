@@ -247,6 +247,29 @@ async def docker_load_image(compute_id: Union[str, UUID], request: Request) -> N
     await compute.http_query("POST", "/docker/images/load", data=request.stream(), timeout=None)
 
 
+@router.delete(
+    "/{compute_id}/docker/images/{image:path}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
+)
+async def docker_delete_image(
+    compute_id: Union[str, UUID],
+    image: str,
+    force: bool = Query(False, description="Remove the image even if a container uses it"),
+) -> None:
+    """
+    Delete a Docker image on a compute.
+
+    The compute refuses to delete an image used by a container (even a stopped
+    one) and answers a conflict, unless force is set.
+
+    Required privilege: Compute.Modify
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
+
+
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])
 async def virtualbox_vms(compute_id: Union[str, UUID]) -> List[schemas.ComputeVirtualBoxVM]:
     """

@@ -526,5 +526,25 @@ class Docker(BaseManager):
             if image["RepoTags"]:
                 for tag in image["RepoTags"]:
                     if tag != "<none>:<none>":
-                        images.append({"image": tag})
+                        images.append(
+                            {
+                                "image": tag,
+                                "id": image.get("Id"),
+                                "size": image.get("Size"),
+                                "created": image.get("Created"),
+                            }
+                        )
         return sorted(images, key=lambda i: i["image"])
+
+    async def delete_image(self, image, force=False):
+        """
+        Delete a Docker image from the Docker daemon.
+
+        :param image: Image name or id
+        :param force: Remove the image even if a container uses it
+        """
+
+        await self.query("DELETE", f"images/{image}", params={"force": force})
+        # the image id translation recorded when this image was synced from the
+        # controller no longer matches anything on this daemon
+        self._image_id_translations.pop(image, None)

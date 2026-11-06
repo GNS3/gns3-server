@@ -182,7 +182,10 @@ class TestComputeFeatures:
         ) as mock:
             response = await client.get(app.url_path_for("docker_get_images", compute_id=compute_id))
             mock.assert_called_with("GET", "docker", "images")
-            assert response.json() == [{"image": "docker1"}, {"image": "docker2"}]
+            assert response.json() == [
+                {"image": "docker1", "id": None, "size": None, "created": None},
+                {"image": "docker2", "id": None, "size": None, "created": None},
+            ]
 
     async def test_compute_pull_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
@@ -195,6 +198,27 @@ class TestComputeFeatures:
                 json={"image": "nginx:latest"},
             )
             compute.forward.assert_called_with("POST", "docker", "images/pull", data={"image": "nginx:latest"})
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_compute_delete_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for(
+                    "docker_delete_image",
+                    compute_id=test_compute.compute_id,
+                    image="ios-xr/xrd-control-plane:24.4.1",
+                ),
+                params={"force": True},
+            )
+            compute.http_query.assert_called_once_with(
+                "DELETE",
+                "/docker/images/ios-xr/xrd-control-plane:24.4.1",
+                params={"force": "true"},
+            )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_compute_load_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:

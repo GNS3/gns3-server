@@ -73,6 +73,22 @@ async def load_docker_image(
     await docker_manager.load_image(request.stream(), image=image, digest=digest)
 
 
+@router.delete("/docker/images/{image:path}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_docker_image(
+    image: str,
+    force: bool = Query(False, description="Remove the image even if a container uses it"),
+) -> None:
+    """
+    Delete a Docker image from the Docker daemon.
+
+    The daemon refuses to delete an image used by a container (even a stopped
+    one) and answers a conflict, unless force is set.
+    """
+
+    docker_manager = Docker.instance()
+    await docker_manager.delete_image(urllib.parse.unquote(image), force=force)
+
+
 @router.get("/dynamips/images")
 async def get_dynamips_images() -> List[dict]:
     """
