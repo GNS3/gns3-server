@@ -295,6 +295,7 @@ class RbacRepository(BaseRepository):
 
         query = delete(models.ACE).where(models.ACE.path.startswith(path)).execution_options(synchronize_session=False)
         result = await self._db_session.execute(query)
+        await self._db_session.commit()
         self._rbac_state.mark_dirty()
         log.debug(f"{cast(CursorResult, result).rowcount} ACE(s) have been deleted")
 

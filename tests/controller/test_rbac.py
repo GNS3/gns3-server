@@ -146,6 +146,27 @@ class TestPrivileges:
         authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
         assert authorized is True
 
+    async def test_delete_all_ace_starting_with_path_is_committed(self, db_session: AsyncSession):
+        """
+        Production requests get a fresh session that is only closed at
+        teardown, rolling back uncommitted work: the bulk ACE deletion must
+        be committed to survive the end of the request.
+        """
+
+        rbac_repo = RbacRepository(db_session)
+        group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
+        role_id = (await rbac_repo.get_role_by_name("User")).role_id
+        path = f"/projects/{uuid.uuid4()}"
+        await rbac_repo.create_ace(
+            ACECreate(path=path, ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role_id))
+        )
+
+        await rbac_repo.delete_all_ace_starting_with_path(path)
+        # simulate the production session teardown: close() rolls back the
+        # open transaction and an uncommitted deletion would be lost
+        await db_session.rollback()
+        assert await rbac_repo.check_ace_exists(path) is False
+
 
 class TestResourcePools:
     async def test_resource_pool(self, test_user: User, db_session: AsyncSession):
