@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,7 +28,8 @@ from gns3server.compute.docker import (
     PULL_IDLE_TIMEOUT,
     Docker,
 )
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp409Error
+from gns3server.compute.project_manager import ProjectManager
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
@@ -432,6 +434,93 @@ async def test_delete_image_error_keeps_translation():
         with pytest.raises(DockerError, match="image is in use"):
             await docker.delete_image("ubuntu:latest")
     assert docker.image_id_translation("ubuntu:latest") == translation
+
+
+DAEMON_DELETE_CONFLICT = (
+    "Docker has returned an error: 409 conflict: unable to remove repository reference "
+    '"alpine:3" (must force) - container 6d59f00236ff is using its referenced image d529dd0c6e55'
+)
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_names_the_node_and_project():
+    """
+    A container blocking the deletion is reported as the GNS3 node and project
+    it belongs to, not as a raw container id.
+    """
+
+    docker = Docker.instance()
+    project_id = str(uuid.uuid4())
+    project = ProjectManager.instance().create_project(name="test-lab", project_id=project_id)
+
+    async def query(method, path, **kwargs):
+        assert path.startswith("images/") or path.startswith("containers/")
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": f"/GNS3.alpine-1.{project_id}", "State": {"Running": True}}
+
+    try:
+        with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+            with pytest.raises(DockerHttp409Error) as excinfo:
+                await docker.delete_image("alpine:3")
+        message = str(excinfo.value)
+        assert "node 'alpine-1' in project 'test-lab' (running)" in message
+        assert "force=true" in message
+        assert "6d59f00236ff" not in message
+    finally:
+        ProjectManager.instance().remove_project(project.id)
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_reports_a_leftover_container():
+    """
+    When the project of the blocking container is closed on this compute the
+    container is reported as a leftover.
+    """
+
+    docker = Docker.instance()
+
+    async def query(method, path, **kwargs):
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": f"/GNS3.E2E-2.{uuid.uuid4()}", "State": {"Running": False}}
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+        with pytest.raises(DockerHttp409Error, match="leftover container of node 'E2E-2' \\(stopped"):
+            await docker.delete_image("alpine:3")
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_reports_a_non_gns3_container():
+    """
+    A container created outside GNS3 is reported by its plain container name.
+    """
+
+    docker = Docker.instance()
+
+    async def query(method, path, **kwargs):
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": "/my-own-container", "State": {"Running": True}}
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+        with pytest.raises(DockerHttp409Error, match="container 'my-own-container' \\(running\\)"):
+            await docker.delete_image("alpine:3")
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_without_containers_is_not_rewritten():
+    """
+    A daemon conflict naming no container (e.g. a multi repository reference)
+    is passed through unchanged.
+    """
+
+    docker = Docker.instance()
+    original = "Docker has returned an error: 409 conflict: image is referenced in multiple repositories"
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp409Error(original)):
+        with pytest.raises(DockerHttp409Error, match="multiple repositories"):
+            await docker.delete_image("alpine:3")
 
 
 @pytest.mark.asyncio

@@ -24,6 +24,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from gns3server.controller import Controller
+from gns3server.controller.controller_error import ComputeConflictError
 from gns3server.schemas.controller.computes import Compute
 
 pytestmark = pytest.mark.asyncio
@@ -259,6 +260,82 @@ class TestComputeFeatures:
             )
             compute.http_query.assert_not_called()
             assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_compute_delete_docker_image_conflict_names_referencing_templates(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        """
+        Templates do not block the deletion but are named in the conflict
+        error, matched through their image reference spelling.
+        """
+
+        new_template = {
+            "name": "Alpine conflict test",
+            "compute_id": "local",
+            # a different spelling of the deleted 'alpine:3'
+            "image": "docker.io/library/alpine:3",
+            "template_type": "docker",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=new_template)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(
+            side_effect=ComputeConflictError(
+                "http://localhost:3080/docker/images/alpine:3",
+                {
+                    "message": "Cannot delete image 'alpine:3': it is still used by node 'alpine-1' "
+                    "in project 'lab' (running). Delete the node or container first, or repeat with force=true."
+                },
+            )
+        )
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for("docker_delete_image", compute_id=test_compute.compute_id, image="alpine:3")
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+            message = response.json()["message"]
+            assert "node 'alpine-1' in project 'lab'" in message
+            assert "referenced by template(s): Alpine conflict test" in message
+
+    async def test_compute_delete_docker_image_notifies_referencing_templates(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        """
+        A successful deletion emits a docker.image.deleted notification with
+        the templates referencing the deleted image.
+        """
+
+        new_template = {
+            "name": "Alpine delete test",
+            "compute_id": "local",
+            # an image no other test in this class references: the assertion
+            # below is exact and the class shares one database
+            "image": "gns3/delete-event-test:1",
+            "template_type": "docker",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=new_template)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for(
+                    "docker_delete_image", compute_id=test_compute.compute_id, image="gns3/delete-event-test:1"
+                )
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            controller.return_value.notification.controller_emit.assert_called_once_with(
+                "docker.image.deleted",
+                {
+                    "compute_id": str(test_compute.compute_id),
+                    "image": "gns3/delete-event-test:1",
+                    "referenced_by_templates": ["Alpine delete test"],
+                },
+            )
 
     async def test_compute_load_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 

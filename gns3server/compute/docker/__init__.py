@@ -22,6 +22,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 
@@ -29,6 +30,7 @@ import aiohttp
 import platformdirs
 
 from gns3server.compute.base_manager import BaseManager
+from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.docker.docker_error import (
     DockerError,
     DockerHttp304Error,
@@ -38,6 +40,7 @@ from gns3server.compute.docker.docker_error import (
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
+from gns3server.compute.project_manager import ProjectManager
 from gns3server.config import Config
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
@@ -55,6 +58,16 @@ CHUNK_SIZE = 1024 * 8  # 8KB
 # arrives for this many seconds the registry is unreachable and the pull would
 # otherwise hang forever. This is an idle timeout, not a total time limit.
 PULL_IDLE_TIMEOUT = 60
+
+# Docker names GNS3 node containers "GNS3.{node name}.{project_id}", so a
+# container name can be translated back into the node and project that block
+# an image deletion. The node name may itself contain dots.
+GNS3_CONTAINER_NAME_RE = re.compile(
+    r"^GNS3\.(?P<node>.+)\.(?P<project_id>[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$"
+)
+# The containers blocking an image deletion, as named by the daemon, e.g.
+# 'container 6d59f00236ff is using its referenced image d529dd0c6e55'
+CONFLICTING_CONTAINER_RE = re.compile(r"container ([0-9a-f]{12,64})\b")
 
 
 class Docker(BaseManager):
@@ -582,11 +595,61 @@ class Docker(BaseManager):
         """
         Delete a Docker image from the Docker daemon.
 
+        When the daemon refuses because containers use the image, the error
+        names the GNS3 nodes and projects behind them instead of raw
+        container ids.
+
         :param image: Image name or id
         :param force: Remove the image even if a container uses it
         """
 
-        await self.query("DELETE", f"images/{image}", params={"force": str(force).lower()})
+        try:
+            await self.query("DELETE", f"images/{image}", params={"force": str(force).lower()})
+        except DockerHttp409Error as e:
+            blockers = await self._describe_containers_using_image(str(e))
+            if blockers:
+                raise DockerHttp409Error(
+                    f"Cannot delete image '{image}': it is still used by {blockers}. "
+                    f"Delete the node or container first, or repeat with force=true."
+                ) from e
+            raise
         # the image id translation recorded when this image was synced from the
         # controller no longer matches anything on this daemon
         self._image_id_translations.pop(image, None)
+
+    async def _describe_containers_using_image(self, daemon_error: str) -> str:
+        """
+        Translate the container ids named in a daemon image deletion conflict
+        into node, project or container descriptions.
+
+        :param daemon_error: the raw daemon conflict message
+        :returns: a comma separated description, empty when the message names
+            no container
+        """
+
+        descriptions = []
+        for container_id in CONFLICTING_CONTAINER_RE.findall(daemon_error):
+            try:
+                info = await self.query("GET", f"containers/{container_id}/json")
+            except DockerError:
+                info = None
+            if not info:
+                # the container cannot be inspected (or already vanished)
+                descriptions.append(f"container '{container_id}'")
+                continue
+            name = info.get("Name", container_id).lstrip("/")
+            state = "running" if info.get("State", {}).get("Running") else "stopped"
+            match = GNS3_CONTAINER_NAME_RE.match(name)
+            if match:
+                node = match.group("node")
+                try:
+                    project = ProjectManager.instance().get_project(match.group("project_id"))
+                except ComputeError:
+                    # the project is closed on this compute: a leftover container
+                    descriptions.append(f"leftover container of node '{node}' ({state}, its project is closed)")
+                else:
+                    descriptions.append(f"node '{node}' in project '{project.name}' ({state})")
+            else:
+                # a container created outside GNS3
+                descriptions.append(f"container '{name}' ({state})")
+        return ", ".join(descriptions)

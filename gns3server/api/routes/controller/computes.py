@@ -26,11 +26,16 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Reques
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
+from gns3server.controller.controller_error import ComputeConflictError, ControllerBadRequestError, ControllerError
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.computes import ComputesService
-from gns3server.utils.images import DOCKER_IMAGE_NAME_PATTERN, validate_docker_image_name
+from gns3server.utils.images import (
+    DOCKER_IMAGE_NAME_PATTERN,
+    canonical_docker_image_name,
+    validate_docker_image_name,
+)
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
@@ -267,12 +272,19 @@ async def docker_delete_image(
     compute_id: Union[str, UUID],
     image: str = Path(..., pattern=DOCKER_IMAGE_NAME_PATTERN),
     force: bool = Query(False, description="Remove the image even if a container uses it"),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
 ) -> None:
     """
     Delete a Docker image on a compute.
 
     The compute refuses to delete an image used by a container (even a stopped
-    one) and answers a conflict, unless force is set.
+    one) and answers a conflict naming the GNS3 nodes and projects using it,
+    unless force is set.
+
+    Templates referencing the image do not block the deletion but are named in
+    the conflict error, and a docker.image.deleted notification reporting them
+    is emitted on the controller notification stream after a successful
+    deletion.
 
     Required privilege: Compute.Modify
     """
@@ -282,8 +294,34 @@ async def docker_delete_image(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
 
+    canonical_image = canonical_docker_image_name(image)
+    referencing_templates = [
+        str(template.name)
+        for template in await templates_repo.get_templates()
+        if isinstance(template, models.DockerTemplate)
+        and template.image
+        and canonical_docker_image_name(str(template.image)) == canonical_image
+    ]
+
     compute = Controller.instance().get_compute(str(compute_id))
-    await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
+    try:
+        await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
+    except ComputeConflictError as e:
+        if referencing_templates:
+            response = e.response()
+            response["message"] += f" The image is also referenced by template(s): {', '.join(referencing_templates)}."
+            raise ComputeConflictError(e.url(), response) from e
+        raise
+    # tell the clients which templates pointed at the deleted image: their
+    # nodes can no longer start
+    Controller.instance().notification.controller_emit(
+        "docker.image.deleted",
+        {
+            "compute_id": str(compute_id),
+            "image": image,
+            "referenced_by_templates": referencing_templates,
+        },
+    )
 
 
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])
