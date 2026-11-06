@@ -368,9 +368,24 @@ class Docker(BaseManager):
 
         :params image: Image name
         :params progress_callback: A function that receives a dict with the
-            overall progress of the pull: layer counts and the latest daemon message
+            overall progress of the pull: layer counts and the latest daemon
+            message. The first call carries state="started" and happens once
+            the pull owns the compute pull lock, so a caller queued behind
+            another pull only sees it when the pull really begins.
         :params force: Pull the image even if it is already available locally
         """
+
+        layers_total = 0
+        layers_done = 0
+
+        def report(message, state=None):
+            if progress_callback:
+                progress = {"layers_total": layers_total, "layers_done": layers_done, "message": message}
+                if state is not None:
+                    progress["state"] = state
+                progress_callback(progress)
+
+        report(f"Pulling '{image}' from Docker repository", state="started")
 
         if not force:
             try:
@@ -378,13 +393,6 @@ class Docker(BaseManager):
                 return  # We already have the image skip the download
             except DockerHttp404Error:
                 pass
-
-        layers_total = 0
-        layers_done = 0
-
-        def report(message):
-            if progress_callback:
-                progress_callback({"layers_total": layers_total, "layers_done": layers_done, "message": message})
 
         try:
             # The daemon streams progress lines for the whole pull: an idle

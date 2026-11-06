@@ -21,7 +21,7 @@ API routes for computes.
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, Query, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
 
 import gns3server.db.models as models
 from gns3server import schemas
@@ -30,6 +30,7 @@ from gns3server.controller.controller_error import ControllerBadRequestError, Co
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services.computes import ComputesService
+from gns3server.utils.images import DOCKER_IMAGE_NAME_PATTERN, validate_docker_image_name
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
@@ -264,7 +265,7 @@ async def docker_load_image(compute_id: Union[str, UUID], request: Request) -> N
 )
 async def docker_delete_image(
     compute_id: Union[str, UUID],
-    image: str,
+    image: str = Path(..., pattern=DOCKER_IMAGE_NAME_PATTERN),
     force: bool = Query(False, description="Remove the image even if a container uses it"),
 ) -> None:
     """
@@ -275,6 +276,11 @@ async def docker_delete_image(
 
     Required privilege: Compute.Modify
     """
+
+    try:
+        validate_docker_image_name(image)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
 
     compute = Controller.instance().get_compute(str(compute_id))
     await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})

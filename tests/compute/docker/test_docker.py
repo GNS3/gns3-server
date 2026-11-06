@@ -207,8 +207,14 @@ async def test_pull_image_reports_aggregated_progress():
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
             await Docker.instance().pull_image("ubuntu", progress_callback=progress.append)
     # the callback sees the running totals of layers, not raw daemon lines
-    assert progress[0] == {"layers_total": 1, "layers_done": 0, "message": "Pulling fs layer"}
-    assert progress[1] == {"layers_total": 2, "layers_done": 0, "message": "Pulling fs layer"}
+    assert progress[0] == {
+        "layers_total": 0,
+        "layers_done": 0,
+        "message": "Pulling 'ubuntu' from Docker repository",
+        "state": "started",
+    }
+    assert progress[1] == {"layers_total": 1, "layers_done": 0, "message": "Pulling fs layer"}
+    assert progress[2] == {"layers_total": 2, "layers_done": 0, "message": "Pulling fs layer"}
     assert {"layers_total": 2, "layers_done": 0, "message": "[==>   ] 40/100"} in progress
     assert progress[-1] == {"layers_total": 2, "layers_done": 2, "message": "Pull complete"}
 

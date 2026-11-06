@@ -27,7 +27,12 @@ pytestmark = pytest.mark.asyncio
 class TestImagesRoutes:
     async def test_pull_docker_image(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
-        with asyncio_patch("gns3server.compute.docker.Docker.pull_image") as mock:
+        async def fake_pull(image, progress_callback=None, force=False):
+            progress_callback(
+                {"layers_total": 0, "layers_done": 0, "message": "Pulling 'nginx:latest'", "state": "started"}
+            )
+
+        with asyncio_patch("gns3server.compute.docker.Docker.pull_image", side_effect=fake_pull) as mock:
             with asyncio_patch("gns3server.compute.notification_manager.NotificationManager.emit") as emit_mock:
                 response = await compute_client.post(
                     app.url_path_for("compute:pull_docker_image"), json={"image": "nginx:latest"}
@@ -44,7 +49,11 @@ class TestImagesRoutes:
 
     async def test_pull_docker_image_progress_id(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
-        with asyncio_patch("gns3server.compute.docker.Docker.pull_image"):
+        async def fake_pull(image, progress_callback=None, force=False):
+            progress_callback({"layers_total": 1, "layers_done": 0, "message": "Pulling", "state": "started"})
+            progress_callback({"layers_total": 1, "layers_done": 0, "message": "[==>   ] 10/100"})
+
+        with asyncio_patch("gns3server.compute.docker.Docker.pull_image", side_effect=fake_pull):
             with asyncio_patch("gns3server.compute.notification_manager.NotificationManager.emit") as emit_mock:
                 response = await compute_client.post(
                     app.url_path_for("compute:pull_docker_image"),
@@ -57,6 +66,7 @@ class TestImagesRoutes:
     async def test_pull_docker_image_reports_downloading(self, app: FastAPI, compute_client: AsyncClient) -> None:
 
         async def fake_pull(image, progress_callback=None, force=False):
+            progress_callback({"layers_total": 2, "layers_done": 0, "message": "Pulling", "state": "started"})
             progress_callback({"layers_total": 2, "layers_done": 1, "message": "[==>   ] 40/100"})
 
         with asyncio_patch("gns3server.compute.docker.Docker.pull_image", side_effect=fake_pull):
@@ -117,6 +127,14 @@ class TestImagesRoutes:
             )
             mock.assert_called_once_with("ios-xr/xrd-control-plane:24.4.1", force=False)
             assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_delete_docker_image_rejects_path_traversal(self, app: FastAPI, compute_client: AsyncClient) -> None:
+        # percent encoded so the client does not normalize the ".." segments
+        # away before the request reaches the server
+        with asyncio_patch("gns3server.compute.docker.Docker.delete_image") as mock:
+            response = await compute_client.delete("/v3/compute/docker/images/a%2F..%2F..%2Fversion")
+            mock.assert_not_called()
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_delete_docker_image_force(self, app: FastAPI, compute_client: AsyncClient) -> None:
 

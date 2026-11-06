@@ -23,7 +23,7 @@ import time
 import urllib.parse
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query, Request, status
+from fastapi import APIRouter, Body, HTTPException, Path, Query, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.compute.docker import Docker
@@ -32,6 +32,7 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.iou import IOU
 from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.qemu import Qemu
+from gns3server.utils.images import DOCKER_IMAGE_NAME_PATTERN, validate_docker_image_name
 
 # Daemon progress lines arrive dozens of times per second per layer: emit at
 # most one downloading event per second per pull.
@@ -83,13 +84,17 @@ async def pull_docker_image(
 
     def progress_callback(progress: dict) -> None:
         nonlocal last_emit
+        # the started event comes from the pull itself, once it owns the lock,
+        # and is never throttled
+        if progress.get("state") == "started":
+            emit("started", progress["message"])
+            return
         now = time.monotonic()
         if now - last_emit < PULL_PROGRESS_INTERVAL:
             return
         last_emit = now
         emit("downloading", progress["message"], progress)
 
-    emit("started", f"Pulling '{image}' from Docker repository")
     try:
         await docker_manager.pull_image(image, progress_callback=progress_callback, force=True)
     except DockerError as e:
@@ -120,7 +125,7 @@ async def load_docker_image(
 
 @router.delete("/docker/images/{image:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_docker_image(
-    image: str,
+    image: str = Path(..., pattern=DOCKER_IMAGE_NAME_PATTERN),
     force: bool = Query(False, description="Remove the image even if a container uses it"),
 ) -> None:
     """
@@ -130,8 +135,13 @@ async def delete_docker_image(
     one) and answers a conflict, unless force is set.
     """
 
+    image = urllib.parse.unquote(image)
+    try:
+        validate_docker_image_name(image)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
     docker_manager = Docker.instance()
-    await docker_manager.delete_image(urllib.parse.unquote(image), force=force)
+    await docker_manager.delete_image(image, force=force)
 
 
 @router.get("/dynamips/images")

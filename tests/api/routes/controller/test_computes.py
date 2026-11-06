@@ -245,6 +245,21 @@ class TestComputeFeatures:
             )
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
+    async def test_compute_delete_docker_image_rejects_path_traversal(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        # percent encoded so the client does not normalize the ".." segments
+        # away before the request reaches the server
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                f"/v3/computes/{test_compute.compute_id}/docker/images/a%2F..%2F..%2Fversion"
+            )
+            compute.http_query.assert_not_called()
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
     async def test_compute_load_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
         compute = MagicMock()

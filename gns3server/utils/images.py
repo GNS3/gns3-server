@@ -53,6 +53,24 @@ log = logging.getLogger(__name__)
 # Include the first ISO 9660 volume descriptor in image type detection.
 IMAGE_HEADER_SIZE = 16 * 2048 + 7
 
+# A Docker image reference: name, optional registry, tag and digest. Callers
+# must also reject ".." (not expressible here, the pydantic regex engine has no
+# lookaround) so a name cannot escape the daemon API path it is interpolated
+# into: see validate_docker_image_name.
+DOCKER_IMAGE_NAME_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$"
+
+
+def validate_docker_image_name(image: str) -> None:
+    """
+    Reject Docker image names that could escape the daemon API path they are
+    interpolated into.
+
+    :raises ValueError: when the name is not safe
+    """
+
+    if ".." in image:
+        raise ValueError(f"Invalid Docker image name: {image}")
+
 
 async def list_images(image_type):
     """
