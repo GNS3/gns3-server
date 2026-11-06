@@ -544,7 +544,7 @@ class Docker(BaseManager):
         :param force: Remove the image even if a container uses it
         """
 
-        await self.query("DELETE", f"images/{image}", params={"force": force})
+        await self.query("DELETE", f"images/{image}", params={"force": str(force).lower()})
         # the image id translation recorded when this image was synced from the
         # controller no longer matches anything on this daemon
         self._image_id_translations.pop(image, None)

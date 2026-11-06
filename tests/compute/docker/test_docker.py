@@ -341,7 +341,9 @@ async def test_delete_image():
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
         await docker.delete_image("ubuntu:latest", force=True)
-        mock.assert_called_with("DELETE", "images/ubuntu:latest", params={"force": True})
+        # the daemon query string only accepts strings, ints and floats: a
+        # Python bool would make the aiohttp URL builder raise a TypeError
+        mock.assert_called_with("DELETE", "images/ubuntu:latest", params={"force": "true"})
     # deleting the image drops the id translation recorded for a previous sync
     assert docker.image_id_translation("ubuntu:latest") is None
 
