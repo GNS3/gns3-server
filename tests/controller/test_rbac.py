@@ -29,7 +29,7 @@ from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.pools import ResourceCreate, ResourcePoolCreate
-from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.rbac import ACECreate, ACEUpdate
 from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio
@@ -80,26 +80,57 @@ class TestPrivileges:
         authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
         assert authorized == result
 
+    async def _get_or_create_projects_ace(
+        self, db_session: AsyncSession, *, propagate: bool, allowed: bool = True
+    ) -> None:
+        """
+        The tests must not depend on the /projects ACE created by another test:
+        reuse it when present, otherwise create it with the requested flags.
+        """
+
+        rbac_repo = RbacRepository(db_session)
+        ace = await rbac_repo.get_ace_by_path("/projects")
+        if ace is None:
+            group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
+            role_id = (await rbac_repo.get_role_by_name("User")).role_id
+            await rbac_repo.create_ace(
+                ACECreate(
+                    path="/projects",
+                    ace_type="group",
+                    propagate=propagate,
+                    allowed=allowed,
+                    group_id=str(group_id),
+                    role_id=str(role_id),
+                )
+            )
+        else:
+            await rbac_repo.update_ace(
+                ace.ace_id,
+                ACEUpdate(
+                    ace_type=ace.ace_type,
+                    path=ace.path,
+                    role_id=ace.role_id,
+                    propagate=propagate,
+                    allowed=allowed,
+                ),
+            )
+
     async def test_propagate(self, test_user: User, db_session: AsyncSession):
 
         privilege = "Project.Audit"
         path = "/projects/44929147-47bb-460a-90ae-c782c4dbb6ef"
-        authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
+        rbac_repo = RbacRepository(db_session)
+        authorized = await rbac_repo.check_user_has_privilege(test_user.user_id, path, privilege)
         assert authorized is False
 
-        ace = await RbacRepository(db_session).get_ace_by_path("/projects")
-        ace.propagate = True
-        await db_session.commit()
+        await self._get_or_create_projects_ace(db_session, propagate=True)
 
-        authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
+        authorized = await rbac_repo.check_user_has_privilege(test_user.user_id, path, privilege)
         assert authorized is True
 
     async def test_allowed(self, test_user: User, db_session: AsyncSession):
 
-        ace = await RbacRepository(db_session).get_ace_by_path("/projects")
-        ace.allowed = False
-        ace.propagate = True
-        await db_session.commit()
+        await self._get_or_create_projects_ace(db_session, propagate=True, allowed=False)
 
         privilege = "Project.Audit"
         path = "/projects/44929147-47bb-460a-90ae-c782c4dbb6ef"

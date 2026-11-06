@@ -27,7 +27,7 @@ from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.compute.port_manager import PortManager
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes
+from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes, load_rbac_state
 from gns3server.services.image_reconciliation import get_image_reconciliation_service
 from gns3server.utils.http_client import HTTPClient
 
@@ -73,6 +73,9 @@ async def startup(app: FastAPI) -> None:
 
     # retrieve the computes from the database
     computes = await get_computes(app)
+
+    # load the in-memory RBAC snapshot before serving requests
+    await load_rbac_state(app)
 
     await Controller.instance().start(computes)
 

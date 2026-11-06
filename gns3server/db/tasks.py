@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from gns3server import schemas
 from gns3server.config import Config
+from gns3server.db.rbac_state import RbacState
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.images import read_image_info
@@ -197,6 +198,16 @@ async def get_computes(app: FastAPI) -> List[schemas.Compute]:
                 continue
             computes.append(compute)
     return computes
+
+
+async def load_rbac_state(app: FastAPI) -> None:
+    """
+    Load the in-memory RBAC snapshot at startup, so permission checks do
+    not hit the database on the request path.
+    """
+
+    async with AsyncSession(app.state._db_engine) as db_session:
+        await RbacState.instance().reload(db_session)
 
 
 async def update_disk_checksums(updated_disks: List[str]) -> None:
