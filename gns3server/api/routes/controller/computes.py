@@ -21,7 +21,7 @@ API routes for computes.
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, Request, status
 
 import gns3server.db.models as models
 from gns3server import schemas
@@ -225,6 +225,26 @@ async def docker_pull_image(
 
     compute = Controller.instance().get_compute(str(compute_id))
     await compute.forward("POST", "docker", "images/pull", data={"image": image})
+
+
+@router.post(
+    "/{compute_id}/docker/images/load",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
+)
+async def docker_load_image(compute_id: Union[str, UUID], request: Request) -> None:
+    """
+    Load a Docker image on a compute from a docker save tar stream.
+
+    The tar archive (plain or gzip compressed) is streamed to the compute
+    and loaded into its Docker daemon, without buffering the whole file
+    in the controller memory.
+
+    Required privilege: Compute.Modify
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    await compute.http_query("POST", "docker/images/load", data=request.stream(), timeout=None)
 
 
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])

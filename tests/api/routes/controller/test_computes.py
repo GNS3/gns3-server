@@ -197,6 +197,26 @@ class TestComputeFeatures:
             compute.forward.assert_called_with("POST", "docker", "images/pull", data={"image": "nginx:latest"})
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
+    async def test_compute_load_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.post(
+                app.url_path_for("docker_load_image", compute_id=test_compute.compute_id),
+                content=b"docker save tar data",
+                headers={"Content-Type": "application/octet-stream"},
+            )
+            compute.http_query.assert_called_once()
+            args, kwargs = compute.http_query.call_args
+            assert args[0] == "POST"
+            assert args[1] == "docker/images/load"
+            assert kwargs["timeout"] is None
+            # the request body must be streamed, not buffered
+            assert hasattr(kwargs["data"], "__aiter__")
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
     async def test_compute_list_virtualbox_vms(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {"protocol": "http", "host": "localhost", "port": 4242, "user": "julien", "password": "secure"}
