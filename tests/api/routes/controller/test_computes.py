@@ -211,7 +211,7 @@ class TestComputeFeatures:
             compute.http_query.assert_called_once()
             args, kwargs = compute.http_query.call_args
             assert args[0] == "POST"
-            assert args[1] == "docker/images/load"
+            assert args[1] == "/docker/images/load"
             assert kwargs["timeout"] is None
             # the request body must be streamed, not buffered
             assert hasattr(kwargs["data"], "__aiter__")

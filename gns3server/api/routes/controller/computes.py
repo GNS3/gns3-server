@@ -244,7 +244,7 @@ async def docker_load_image(compute_id: Union[str, UUID], request: Request) -> N
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
-    await compute.http_query("POST", "docker/images/load", data=request.stream(), timeout=None)
+    await compute.http_query("POST", "/docker/images/load", data=request.stream(), timeout=None)
 
 
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])
