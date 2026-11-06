@@ -20,7 +20,9 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.schemas.controller.rbac import ACECreate
 from gns3server.schemas.controller.users import User, UserGroupCreate
 
 pytestmark = pytest.mark.asyncio
@@ -83,6 +85,36 @@ class TestGroupRoutes:
         group_in_db = await user_repo.get_user_group_by_name("Administrators")
         response = await client.delete(app.url_path_for("delete_user_group", user_group_id=group_in_db.user_group_id))
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_delete_group_removes_ace_on_group_path(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        A user ACE on the group path is not covered by the group_id foreign key
+        cascade: deleting the group must remove it by path.
+        """
+
+        response = await client.post(app.url_path_for("create_user_group"), json={"name": "ace_cleanup_group"})
+        assert response.status_code == status.HTTP_201_CREATED
+        group_id = response.json()["user_group_id"]
+
+        # any existing user works: the ACE references the user, not the group
+        user = await UsersRepository(db_session).get_user_by_username("admin")
+        role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
+        rbac_repo = RbacRepository(db_session)
+        await rbac_repo.create_ace(
+            ACECreate(
+                path=f"/access/groups/{group_id}",
+                ace_type="user",
+                propagate=False,
+                user_id=str(user.user_id),
+                role_id=str(role_id),
+            )
+        )
+
+        response = await client.delete(app.url_path_for("delete_user_group", user_group_id=group_id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert await rbac_repo.check_ace_exists(f"/access/groups/{group_id}") is False
 
 
 class TestGroupMembersRoutes:
