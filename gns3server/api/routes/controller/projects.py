@@ -191,6 +191,46 @@ def get_project(response: Response, project: Project = Depends(dep_project)) -> 
     return project_dict
 
 
+@router.get(
+    "/{project_id}/me/privileges",
+    response_model=schemas.ProjectPrivileges,
+    responses=GET_RESPONSES,
+    dependencies=[Depends(has_privilege("Project.Audit"))],
+)
+async def get_logged_in_user_privileges_on_project(
+    current_user: schemas.User = Depends(get_current_active_user),
+    project: Project = Depends(dep_project),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> schemas.ProjectPrivileges:
+    """
+    Get the effective privileges of the current user on this project.
+
+    Unlike /access/users/me/privileges (flattened across all resource paths),
+    each privilege is evaluated on the project's resource path, so the result
+    reflects ACEs scoped to this project and resource pools containing it.
+    This is meant for rendering purposes (e.g. showing or hiding buttons in
+    the project view): the server remains the authority for permission checks.
+
+    Required privilege: Project.Audit
+
+    Example: curl -X GET http://host:port/v3/projects/{project_id}/me/privileges -H "Authorization: Bearer <token>"
+    """
+
+    if current_user.is_superadmin:
+        privilege_names = sorted(privilege.name for privilege in await rbac_repo.get_privileges())
+        return schemas.ProjectPrivileges(is_superadmin=True, privileges=privilege_names)
+
+    path = f"/projects/{project.id}"
+    # the flat view is the superset: only privileges granted somewhere can be
+    # granted on this path, so only those need to be evaluated against it
+    candidates = await rbac_repo.get_user_privileges(current_user.user_id)
+    project_privileges = []
+    for name in candidates:
+        if await rbac_repo.check_user_has_privilege(current_user.user_id, path, name):
+            project_privileges.append(name)
+    return schemas.ProjectPrivileges(is_superadmin=False, privileges=sorted(project_privileges))
+
+
 @router.put(
     "/{project_id}",
     response_model=schemas.Project,

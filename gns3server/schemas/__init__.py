@@ -71,6 +71,7 @@ from .controller.projects import (
     ProjectCreate,
     ProjectDuplicate,
     ProjectFile,
+    ProjectPrivileges,
     ProjectStats,
     ProjectUpdate,
 )
@@ -351,6 +352,7 @@ __all__ = [
     "ProjectDuplicate",
     "ProjectFile",
     "ProjectMarker",
+    "ProjectPrivileges",
     "ProjectStats",
     "ProjectUpdate",
     "Qemu",
