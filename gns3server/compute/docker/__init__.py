@@ -35,12 +35,12 @@ from gns3server.compute.docker.docker_error import (
     DockerHttp404Error,
     DockerHttp409Error,
 )
+from gns3server.compute.docker.docker_images import DockerImagesMixin
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.iol_docker_vm import IOLDockerVM
 from gns3server.compute.docker.vendor_docker_vm import VendorDockerVM
 from gns3server.config import Config
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import locking
 
 log = logging.getLogger(__name__)
 
@@ -49,10 +49,9 @@ log = logging.getLogger(__name__)
 DOCKER_MINIMUM_API_VERSION = "1.40"
 DOCKER_MINIMUM_VERSION = "19.03.8"
 DOCKER_PREFERRED_API_VERSION = "1.44"
-CHUNK_SIZE = 1024 * 8  # 8KB
 
 
-class Docker(BaseManager):
+class Docker(DockerImagesMixin, BaseManager):
     _NODE_CLASS = DockerVM
 
     def __init__(self):
@@ -291,7 +290,8 @@ class Docker(BaseManager):
         :param path: Endpoint in API
         :param data: Dictionary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
-        :param timeout: Timeout
+        :param timeout: Total timeout in seconds, an aiohttp ClientTimeout object
+            for a finer policy (e.g. an idle socket read timeout), or None for no timeout
         :returns: HTTP response
         """
 
@@ -302,7 +302,7 @@ class Docker(BaseManager):
             # not a dict (e.g. a Docker image tar stream): let aiohttp stream the raw body
             headers = {"content-type": "application/x-tar"}
         if timeout is None:
-            timeout = 60 * 60 * 24 * 31  # One month timeout
+            timeout = aiohttp.ClientTimeout(total=None)
 
         if path == "version":
             url = "http://docker/" + path
@@ -354,177 +354,3 @@ class Docker(BaseManager):
         url = "http://docker/v" + self._api_version + "/" + path
         connection = await self._session.ws_connect(url, origin="http://docker", autoping=True)
         return connection
-
-    @locking
-    async def pull_image(self, image, progress_callback=None, force=False):
-        """
-        Pulls an image from the Docker repository
-
-        :params image: Image name
-        :params progress_callback: A function that receive a log message about image download progress
-        :params force: Pull the image even if it is already available locally
-        """
-
-        if not force:
-            try:
-                await self.query("GET", f"images/{image}/json")
-                return  # We already have the image skip the download
-            except DockerHttp404Error:
-                pass
-
-        if progress_callback:
-            progress_callback(f"Pulling '{image}' from Docker repository")
-        try:
-            response = await self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
-        except DockerError as e:
-            raise DockerError(
-                f"Could not pull the '{image}' image from Docker repository, "
-                f"please check your Internet connection (original error: {e})"
-            )
-        # The pull api will stream status via an HTTP JSON stream
-        content = ""
-        try:
-            while True:
-                try:
-                    chunk = await response.content.read(CHUNK_SIZE)
-                except aiohttp.ServerDisconnectedError as e:
-                    raise DockerError(
-                        f"Disconnected while pulling Docker image '{image}' from Docker repository"
-                    ) from e
-                except TimeoutError as e:
-                    raise DockerError(f"Timeout while pulling Docker image '{image}' from Docker repository") from e
-                if not chunk:
-                    break
-                content += chunk.decode("utf-8")
-
-                try:
-                    while True:
-                        content = content.lstrip(" \r\n\t")
-                        answer, index = json.JSONDecoder().raw_decode(content)
-                        if not isinstance(answer, dict):
-                            raise DockerError(f"Invalid response while pulling Docker image '{image}'")
-                        error_detail = answer.get("errorDetail")
-                        error = answer.get("error")
-                        if not error and isinstance(error_detail, dict):
-                            error = error_detail.get("message")
-                        if error:
-                            raise DockerError(error)
-                        if "progress" in answer and progress_callback:
-                            progress_callback("Pulling image {}:{}: {}".format(image, answer["id"], answer["progress"]))
-                        content = content[index:]
-                except ValueError:  # Partial JSON
-                    pass
-
-            if content.strip():
-                raise DockerError(f"Invalid response while pulling Docker image '{image}'")
-        finally:
-            response.close()
-
-        if progress_callback:
-            progress_callback(f"Success pulling image {image}")
-
-    @locking
-    async def load_image(self, stream, image=None, digest=None, progress_callback=None):
-        """
-        Load a Docker image into the Docker daemon from a docker save tar stream
-
-        :param stream: An async iterable of bytes (the tar produced by docker save)
-        :param image: Tag of the image in the archive. Together with digest, the
-            (controller digest, local id) pair is remembered so that node creation
-            can accept the digest the controller pinned for this image
-        :param digest: Image id as reported by the Docker daemon on the controller
-            host (the value the controller pins in the node create payload)
-        :param progress_callback: A function that receive a log message about image load progress
-        """
-
-        if progress_callback:
-            progress_callback("Loading Docker image from stream")
-        response = await self.http_query("POST", "images/load", data=stream, timeout=None)
-        # The load api will stream status via an HTTP JSON stream
-        content = ""
-        try:
-            while True:
-                try:
-                    chunk = await response.content.read(CHUNK_SIZE)
-                except aiohttp.ServerDisconnectedError as e:
-                    raise DockerError("Disconnected while loading Docker image") from e
-                except TimeoutError as e:
-                    raise DockerError("Timeout while loading Docker image") from e
-                if not chunk:
-                    break
-                content += chunk.decode("utf-8", errors="ignore")
-
-                try:
-                    while True:
-                        content = content.lstrip(" \r\n\t")
-                        answer, index = json.JSONDecoder().raw_decode(content)
-                        if not isinstance(answer, dict):
-                            raise DockerError("Invalid response while loading Docker image")
-                        error_detail = answer.get("errorDetail")
-                        error = answer.get("error")
-                        if not error and isinstance(error_detail, dict):
-                            error = error_detail.get("message")
-                        if error:
-                            raise DockerError(error)
-                        if "stream" in answer and progress_callback:
-                            progress_callback(answer["stream"].rstrip())
-                        content = content[index:]
-                except ValueError:  # Partial JSON
-                    pass
-
-            if content.strip():
-                raise DockerError("Invalid response while loading Docker image")
-        finally:
-            response.close()
-
-        if progress_callback:
-            progress_callback("Docker image loaded")
-
-        if image and digest:
-            await self._remember_image_id_translation(image, digest)
-
-    async def _remember_image_id_translation(self, image, controller_digest):
-        """
-        Remember how the local daemon identifies an image that was just loaded
-        from the controller.
-
-        Docker ids are not comparable across image stores: for the same content
-        a classic store reports the config digest, while a containerd store (or
-        an image loaded from an OCI archive) reports the manifest digest. The
-        controller pins the id of its own daemon, so recording the pair lets
-        DockerVM accept that pin for the image it actually received instead of
-        asking for another full sync on every node creation.
-        """
-
-        try:
-            image_infos = await self.query("GET", f"images/{image}/json")
-        except DockerError as e:
-            log.warning(f"Image '{image}' has been loaded but cannot be inspected: {e}")
-            return
-        local_id = image_infos.get("Id")
-        if local_id:
-            self._image_id_translations[image] = (controller_digest, local_id)
-
-    def image_id_translation(self, image):
-        """
-        :returns: the (controller digest, local id) pair recorded the last time
-            this image was loaded from the controller, None otherwise
-        """
-
-        return self._image_id_translations.get(image)
-
-    async def list_images(self):
-        """
-        Gets Docker image list.
-
-        :returns: list of dicts
-        :rtype: list
-        """
-
-        images = []
-        for image in await self.query("GET", "images/json", params={"all": 0}):
-            if image["RepoTags"]:
-                for tag in image["RepoTags"]:
-                    if tag != "<none>:<none>":
-                        images.append({"image": tag})
-        return sorted(images, key=lambda i: i["image"])

@@ -16,13 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
-from gns3server.compute.docker import DOCKER_MINIMUM_API_VERSION, DOCKER_PREFERRED_API_VERSION, Docker
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
+from gns3server.compute.docker import (
+    DOCKER_MINIMUM_API_VERSION,
+    DOCKER_PREFERRED_API_VERSION,
+    Docker,
+)
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp409Error
+from gns3server.compute.docker.docker_images import PULL_IDLE_TIMEOUT
+from gns3server.compute.project_manager import ProjectManager
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
@@ -132,11 +139,64 @@ async def test_list_images():
         images = await Docker.instance().list_images()
         mock.assert_called_with("GET", "images/json", params={"all": 0})
     assert len(images) == 5
-    assert {"image": "ubuntu:12.04"} in images
-    assert {"image": "ubuntu:precise"} in images
-    assert {"image": "ubuntu:latest"} in images
-    assert {"image": "ubuntu:12.10"} in images
-    assert {"image": "ubuntu:quantal"} in images
+    by_tag = {image["image"]: image for image in images}
+    assert by_tag["ubuntu:12.04"]["id"] == "8dbd9e392a964056420e5d58ca5cc376ef18e2de93b5cc90e868a1bbc8318c1c"
+    assert by_tag["ubuntu:12.04"]["size"] == 131506275
+    assert by_tag["ubuntu:12.04"]["created"] == 1365714795
+    # tags of the same image share its id
+    assert by_tag["ubuntu:precise"]["id"] == by_tag["ubuntu:12.04"]["id"]
+    assert "<none>:<none>" not in by_tag
+    assert {"ubuntu:precise", "ubuntu:latest", "ubuntu:12.10", "ubuntu:quantal"} <= set(by_tag)
+
+
+@pytest.mark.asyncio
+async def test_list_images_created_fallback_to_oci_label():
+    """
+    Images built without a created timestamp (e.g. reproducible Ubuntu images)
+    report 0 from the daemon: the build time comes from the OCI created label.
+    """
+
+    response = [
+        {
+            # zero timestamp, the label is used (Z suffix, nanosecond precision)
+            "RepoTags": ["ubuntu:latest"],
+            "Id": "febc1a2eec1f",
+            "Created": 0,
+            "Size": 78101592,
+            "Labels": {"org.opencontainers.image.created": "2026-10-25T10:26:07.538865123Z"},
+        },
+        {
+            # zero timestamp without a label stays at zero
+            "RepoTags": ["no-label:latest"],
+            "Id": "aaaaaa",
+            "Created": 0,
+            "Size": 1,
+        },
+        {
+            # the daemon timestamp wins over the label when it is set
+            "RepoTags": ["normal:latest"],
+            "Id": "bbbbbb",
+            "Created": 1365714795,
+            "Size": 1,
+            "Labels": {"org.opencontainers.image.created": "2000-01-01T00:00:00Z"},
+        },
+        {
+            # a broken label is ignored, the timestamp stays at zero
+            "RepoTags": ["broken-label:latest"],
+            "Id": "cccccc",
+            "Created": 0,
+            "Size": 1,
+            "Labels": {"org.opencontainers.image.created": "not a date"},
+        },
+    ]
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        images = await Docker.instance().list_images()
+    by_tag = {image["image"]: image for image in images}
+    assert by_tag["ubuntu:latest"]["created"] == 1792923967
+    assert by_tag["no-label:latest"]["created"] == 0
+    assert by_tag["normal:latest"]["created"] == 1365714795
+    assert by_tag["broken-label:latest"]["created"] == 0
 
 
 @pytest.mark.asyncio
@@ -165,7 +225,50 @@ async def test_pull_image():
     with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
             await Docker.instance().pull_image("ubuntu")
-            mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
+            args, kwargs = mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == {"fromImage": "ubuntu", "tag": "latest"}
+            # no total timeout (a pull can take as long as it needs) but an
+            # idle socket read timeout, so an unreachable registry fails
+            assert kwargs["timeout"].total is None
+            assert kwargs["timeout"].sock_read == PULL_IDLE_TIMEOUT
+
+
+@pytest.mark.asyncio
+async def test_pull_image_reports_aggregated_progress():
+
+    class Content:
+        def __init__(self):
+            self._chunks = [
+                b'{"status": "Pulling fs layer", "id": "sha256:a"}\n'
+                b'{"status": "Pulling fs layer", "id": "sha256:b"}\n'
+                b'{"status": "Downloading", "id": "sha256:a", "progress": "[==>   ] 40/100"}\n'
+                b'{"status": "Pull complete", "id": "sha256:a"}\n',
+                b'{"status": "Pull complete", "id": "sha256:b"}\n',
+                b"",
+            ]
+
+        async def read(self, size):
+            return self._chunks.pop(0)
+
+    response = MagicMock()
+    response.content = Content()
+
+    progress = []
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response):
+            await Docker.instance().pull_image("ubuntu", progress_callback=progress.append)
+    # the callback sees the running totals of layers, not raw daemon lines
+    assert progress[0] == {
+        "layers_total": 0,
+        "layers_done": 0,
+        "message": "Pulling 'ubuntu' from Docker repository",
+        "state": "started",
+    }
+    assert progress[1] == {"layers_total": 1, "layers_done": 0, "message": "Pulling fs layer"}
+    assert progress[2] == {"layers_total": 2, "layers_done": 0, "message": "Pulling fs layer"}
+    assert {"layers_total": 2, "layers_done": 0, "message": "[==>   ] 40/100"} in progress
+    assert progress[-1] == {"layers_total": 2, "layers_done": 2, "message": "Pull complete"}
 
 
 @pytest.mark.asyncio
@@ -188,7 +291,40 @@ async def test_force_pull_image():
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as pull_mock:
             await Docker.instance().pull_image("ubuntu", force=True)
             query_mock.assert_not_called()
-            pull_mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
+            args, kwargs = pull_mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == {"fromImage": "ubuntu", "tag": "latest"}
+            assert kwargs["timeout"].sock_read == PULL_IDLE_TIMEOUT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "image, expected_params",
+    [
+        # without a tag or digest the daemon would pull every tag of the
+        # repository: default to latest so the pull targets a single tag
+        ("ubuntu", {"fromImage": "ubuntu", "tag": "latest"}),
+        ("gns3/ubuntu", {"fromImage": "gns3/ubuntu", "tag": "latest"}),
+        # the ':' before the last '/' is a registry port, not a tag
+        ("registry:5000/ubuntu", {"fromImage": "registry:5000/ubuntu", "tag": "latest"}),
+        ("registry:5000/gns3/ubuntu", {"fromImage": "registry:5000/gns3/ubuntu", "tag": "latest"}),
+        # an explicit tag or digest is left alone
+        ("ubuntu:24.04", {"fromImage": "ubuntu:24.04"}),
+        ("registry:5000/ubuntu:24.04", {"fromImage": "registry:5000/ubuntu:24.04"}),
+        ("ubuntu@sha256:8b2f", {"fromImage": "ubuntu@sha256:8b2f"}),
+    ],
+)
+async def test_pull_image_targets_a_single_tag(image, expected_params):
+
+    response = MagicMock()
+    response.content.read = AsyncioMagicMock(return_value=b"")
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as pull_mock:
+            await Docker.instance().pull_image(image)
+            args, kwargs = pull_mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == expected_params
 
 
 @pytest.mark.asyncio
@@ -209,6 +345,24 @@ async def test_pull_image_error():
             with pytest.raises(DockerError, match="image not found"):
                 await Docker.instance().pull_image("missing")
             response.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_pull_image_not_found_is_not_reported_as_a_network_error():
+    """
+    A 404 from the registry means the image name is wrong or the registry needs
+    authentication: telling the user to check the Internet connection sends
+    them in the wrong direction.
+    """
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch(
+            "gns3server.compute.docker.Docker.http_query",
+            side_effect=DockerHttp404Error("Docker has returned an error: 404 pull access denied for debian13"),
+        ):
+            with pytest.raises(DockerError, match="not found in the registry") as error:
+                await Docker.instance().pull_image("debian13")
+    assert "Internet connection" not in str(error.value)
 
 
 @pytest.mark.asyncio
@@ -328,6 +482,125 @@ async def test_load_image_error():
         with pytest.raises(DockerError, match="invalid tar file"):
             await Docker.instance().load_image(tar_stream())
         response.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_image():
+
+    docker = Docker.instance()
+    docker._image_id_translations["ubuntu:latest"] = ("sha256:" + "a" * 64, "sha256:" + "b" * 64)
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
+        await docker.delete_image("ubuntu:latest", force=True)
+        # the daemon query string only accepts strings, ints and floats: a
+        # Python bool would make the aiohttp URL builder raise a TypeError
+        mock.assert_called_with("DELETE", "images/ubuntu:latest", params={"force": "true"})
+    # deleting the image drops the id translation recorded for a previous sync
+    assert docker.image_id_translation("ubuntu:latest") is None
+
+
+@pytest.mark.asyncio
+async def test_delete_image_error_keeps_translation():
+    """
+    When the daemon refuses the deletion the image is still there, so the id
+    translation recorded for a previous sync stays valid.
+    """
+
+    docker = Docker.instance()
+    translation = ("sha256:" + "a" * 64, "sha256:" + "b" * 64)
+    docker._image_id_translations["ubuntu:latest"] = translation
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerError("conflict: image is in use")):
+        with pytest.raises(DockerError, match="image is in use"):
+            await docker.delete_image("ubuntu:latest")
+    assert docker.image_id_translation("ubuntu:latest") == translation
+
+
+DAEMON_DELETE_CONFLICT = (
+    "Docker has returned an error: 409 conflict: unable to remove repository reference "
+    '"alpine:3" (must force) - container 6d59f00236ff is using its referenced image d529dd0c6e55'
+)
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_names_the_node_and_project():
+    """
+    A container blocking the deletion is reported as the GNS3 node and project
+    it belongs to, not as a raw container id.
+    """
+
+    docker = Docker.instance()
+    project_id = str(uuid.uuid4())
+    project = ProjectManager.instance().create_project(name="test-lab", project_id=project_id)
+
+    async def query(method, path, **kwargs):
+        assert path.startswith("images/") or path.startswith("containers/")
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": f"/GNS3.alpine-1.{project_id}", "State": {"Running": True}}
+
+    try:
+        with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+            with pytest.raises(DockerHttp409Error) as excinfo:
+                await docker.delete_image("alpine:3")
+        message = str(excinfo.value)
+        assert "node 'alpine-1' in project 'test-lab' (running)" in message
+        assert "force=true" in message
+        assert "6d59f00236ff" not in message
+    finally:
+        ProjectManager.instance().remove_project(project.id)
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_reports_a_leftover_container():
+    """
+    When the project of the blocking container is closed on this compute the
+    container is reported as a leftover.
+    """
+
+    docker = Docker.instance()
+
+    async def query(method, path, **kwargs):
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": f"/GNS3.E2E-2.{uuid.uuid4()}", "State": {"Running": False}}
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+        with pytest.raises(DockerHttp409Error, match="leftover container of node 'E2E-2' \\(stopped"):
+            await docker.delete_image("alpine:3")
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_reports_a_non_gns3_container():
+    """
+    A container created outside GNS3 is reported by its plain container name.
+    """
+
+    docker = Docker.instance()
+
+    async def query(method, path, **kwargs):
+        if method == "DELETE":
+            raise DockerHttp409Error(DAEMON_DELETE_CONFLICT)
+        return {"Name": "/my-own-container", "State": {"Running": True}}
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=query):
+        with pytest.raises(DockerHttp409Error, match="container 'my-own-container' \\(running\\)"):
+            await docker.delete_image("alpine:3")
+
+
+@pytest.mark.asyncio
+async def test_delete_image_conflict_without_containers_is_not_rewritten():
+    """
+    A daemon conflict naming no container (e.g. a multi repository reference)
+    is passed through unchanged.
+    """
+
+    docker = Docker.instance()
+    original = "Docker has returned an error: 409 conflict: image is referenced in multiple repositories"
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp409Error(original)):
+        with pytest.raises(DockerHttp409Error, match="multiple repositories"):
+            await docker.delete_image("alpine:3")
 
 
 @pytest.mark.asyncio

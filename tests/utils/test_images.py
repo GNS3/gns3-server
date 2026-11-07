@@ -20,7 +20,13 @@ import threading
 import pytest
 
 from gns3server.utils import force_unix_path
-from gns3server.utils.images import images_directories, list_images, md5sum, remove_checksum
+from gns3server.utils.images import (
+    canonical_docker_image_name,
+    images_directories,
+    list_images,
+    md5sum,
+    remove_checksum,
+)
 
 
 def test_images_directories(tmpdir, config):
@@ -106,6 +112,29 @@ def test_remove_checksum(tmpdir):
     assert not os.path.exists(str(tmpdir / "hello.md5sum"))
 
     remove_checksum(str(tmpdir / "not_exists"))
+
+
+@pytest.mark.parametrize(
+    "reference, expected",
+    (
+        ("alpine", "library/alpine:latest"),
+        ("alpine:3", "library/alpine:3"),
+        ("library/alpine:3", "library/alpine:3"),
+        ("docker.io/library/alpine:3", "library/alpine:3"),
+        ("index.docker.io/library/alpine:3", "library/alpine:3"),
+        ("localhost/alpine:3", "library/alpine:3"),
+        ("gns3/frr", "gns3/frr:latest"),
+        ("gns3/frr:latest", "gns3/frr:latest"),
+        ("quay.io/some/namespace/image:2.0", "some/namespace/image:2.0"),
+        ("alpine@sha256:" + "a" * 64, "library/alpine@sha256:" + "a" * 64),
+        ("alpine:3@sha256:" + "a" * 64, "library/alpine@sha256:" + "a" * 64),
+    ),
+)
+def test_canonical_docker_image_name(reference, expected):
+
+    assert canonical_docker_image_name(reference) == expected
+    # the canonical form is stable: canonicalizing twice does not change it
+    assert canonical_docker_image_name(expected) == expected
 
 
 @pytest.mark.asyncio

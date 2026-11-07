@@ -146,6 +146,9 @@ class ComputeDockerImage(BaseModel):
     """
 
     image: str = Field(..., description="Docker image name")
+    id: Optional[str] = Field(None, description="Docker image id reported by the daemon")
+    size: Optional[int] = Field(None, description="Docker image size in bytes")
+    created: Optional[Union[int, str]] = Field(None, description="Docker image creation date (unix timestamp)")
 
 
 class AutoIdlePC(BaseModel):

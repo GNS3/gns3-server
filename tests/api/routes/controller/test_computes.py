@@ -182,7 +182,10 @@ class TestComputeFeatures:
         ) as mock:
             response = await client.get(app.url_path_for("docker_get_images", compute_id=compute_id))
             mock.assert_called_with("GET", "docker", "images")
-            assert response.json() == [{"image": "docker1"}, {"image": "docker2"}]
+            assert response.json() == [
+                {"image": "docker1", "id": None, "size": None, "created": None},
+                {"image": "docker2", "id": None, "size": None, "created": None},
+            ]
 
     async def test_compute_pull_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
 
@@ -194,7 +197,188 @@ class TestComputeFeatures:
                 app.url_path_for("docker_pull_image", compute_id=test_compute.compute_id),
                 json={"image": "nginx:latest"},
             )
-            compute.forward.assert_called_with("POST", "docker", "images/pull", data={"image": "nginx:latest"})
+            compute.forward.assert_called_with(
+                "POST", "docker", "images/pull", data={"image": "nginx:latest"}, params=None
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_compute_pull_docker_image_progress_id(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+
+        compute = MagicMock()
+        compute.forward = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.post(
+                app.url_path_for("docker_pull_image", compute_id=test_compute.compute_id),
+                json={"image": "nginx:latest"},
+                params={"progress_id": "abc123"},
+            )
+            compute.forward.assert_called_with(
+                "POST",
+                "docker",
+                "images/pull",
+                data={"image": "nginx:latest"},
+                params={"progress_id": "abc123"},
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_compute_delete_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for(
+                    "docker_delete_image",
+                    compute_id=test_compute.compute_id,
+                    image="ios-xr/xrd-control-plane:24.4.1",
+                ),
+                params={"force": True},
+            )
+            compute.http_query.assert_called_once_with(
+                "DELETE",
+                "/docker/images/ios-xr/xrd-control-plane:24.4.1",
+                params={"force": "true"},
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_compute_delete_docker_image_rejects_path_traversal(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        # percent encoded so the client does not normalize the ".." segments
+        # away before the request reaches the server
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                f"/v3/computes/{test_compute.compute_id}/docker/images/a%2F..%2F..%2Fversion"
+            )
+            compute.http_query.assert_not_called()
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_compute_delete_docker_image_refused_while_referenced_by_templates(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        """
+        A deletion is refused while a template references the image, matched
+        through the image reference spelling, and the compute is not touched.
+        """
+
+        new_template = {
+            "name": "Alpine conflict test",
+            "compute_id": "local",
+            # a different spelling of the deleted 'alpine:3'
+            "image": "docker.io/library/alpine:3",
+            "template_type": "docker",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=new_template)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for("docker_delete_image", compute_id=test_compute.compute_id, image="alpine:3")
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+            body = response.json()
+            assert body["code"] == "image_referenced_by_templates"
+            assert body["details"]["referenced_by_templates"] == ["Alpine conflict test"]
+            assert "referenced by template(s): Alpine conflict test" in body["message"]
+            compute.http_query.assert_not_called()
+
+    async def test_compute_delete_docker_image_force_overrides_template_reference(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        """
+        force=true deletes an image referenced by templates and the deletion
+        notification reports them.
+        """
+
+        new_template = {
+            "name": "Alpine force test",
+            "compute_id": "local",
+            # an image no other test in this class references: the assertions
+            # below are exact and the class shares one database
+            "image": "gns3/force-delete-test:2",
+            "template_type": "docker",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=new_template)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for(
+                    "docker_delete_image", compute_id=test_compute.compute_id, image="gns3/force-delete-test:2"
+                ),
+                params={"force": True},
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            compute.http_query.assert_called_once_with(
+                "DELETE", "/docker/images/gns3/force-delete-test:2", params={"force": "true"}
+            )
+            controller.return_value.notification.controller_emit.assert_called_once_with(
+                "docker.image.deleted",
+                {
+                    "compute_id": str(test_compute.compute_id),
+                    "image": "gns3/force-delete-test:2",
+                    "referenced_by_templates": ["Alpine force test"],
+                },
+            )
+
+    async def test_compute_delete_docker_image_notifies_without_templates(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+        """
+        A deletion nothing references still emits a docker.image.deleted
+        notification, so clients can refresh their image lists.
+        """
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.delete(
+                app.url_path_for(
+                    "docker_delete_image", compute_id=test_compute.compute_id, image="gns3/delete-event-test:1"
+                )
+            )
+            assert response.status_code == status.HTTP_204_NO_CONTENT
+            controller.return_value.notification.controller_emit.assert_called_once_with(
+                "docker.image.deleted",
+                {
+                    "compute_id": str(test_compute.compute_id),
+                    "image": "gns3/delete-event-test:1",
+                    "referenced_by_templates": [],
+                },
+            )
+
+    async def test_compute_load_docker_image(self, app: FastAPI, client: AsyncClient, test_compute: Compute) -> None:
+
+        compute = MagicMock()
+        compute.http_query = AsyncioMagicMock(return_value={})
+        with patch("gns3server.api.routes.controller.computes.Controller.instance") as controller:
+            controller.return_value.get_compute.return_value = compute
+            response = await client.post(
+                app.url_path_for("docker_load_image", compute_id=test_compute.compute_id),
+                content=b"docker save tar data",
+                headers={"Content-Type": "application/octet-stream"},
+            )
+            compute.http_query.assert_called_once()
+            args, kwargs = compute.http_query.call_args
+            assert args[0] == "POST"
+            assert args[1] == "/docker/images/load"
+            assert kwargs["timeout"] is None
+            # the request body must be streamed, not buffered
+            assert hasattr(kwargs["data"], "__aiter__")
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_compute_list_virtualbox_vms(self, app: FastAPI, client: AsyncClient) -> None:

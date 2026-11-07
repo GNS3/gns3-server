@@ -126,6 +126,12 @@ class Notification:
         elif action == "ping":
             event["compute_id"] = compute_id
             self.project_emit(action, event)
+        elif action.startswith("docker.image."):
+            # Image operations are scoped to a compute, not to a project, and
+            # clients that are not in a project still need them: emit on the
+            # controller stream, like compute.updated.
+            event["compute_id"] = compute_id
+            self.controller_emit(action, event)
         elif action.startswith("marker."):
             self.marker_emit(action, event, project_id)
         else:

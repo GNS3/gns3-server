@@ -21,7 +21,7 @@ API routes for computes.
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
 
 import gns3server.db.models as models
 from gns3server import schemas
@@ -29,7 +29,13 @@ from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.computes import ComputesService
+from gns3server.utils.images import (
+    DOCKER_IMAGE_NAME_PATTERN,
+    canonical_docker_image_name,
+    validate_docker_image_name,
+)
 
 from .dependencies.database import get_repository
 from .dependencies.rbac import has_privilege
@@ -215,16 +221,111 @@ async def docker_get_images(compute_id: Union[str, UUID]) -> List[schemas.Comput
     dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def docker_pull_image(
-    compute_id: Union[str, UUID], image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")
+    compute_id: Union[str, UUID],
+    image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$"),
+    progress_id: Optional[str] = Query(
+        None, pattern=r"^\S+$", description="Client supplied id to correlate progress notifications"
+    ),
 ) -> None:
     """
     Pull or update a Docker image on a compute.
+
+    The pull progress is reported on the controller notification stream as
+    docker.image.pull events (started, downloading, completed or failed). The
+    optional progress_id is echoed in every event so a client can correlate
+    them with its own request.
 
     Required privilege: Compute.Modify
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
-    await compute.forward("POST", "docker", "images/pull", data={"image": image})
+    params = {"progress_id": progress_id} if progress_id is not None else None
+    await compute.forward("POST", "docker", "images/pull", data={"image": image}, params=params)
+
+
+@router.post(
+    "/{compute_id}/docker/images/load",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
+)
+async def docker_load_image(compute_id: Union[str, UUID], request: Request) -> None:
+    """
+    Load a Docker image on a compute from a docker save tar stream.
+
+    The tar archive (plain or gzip compressed) is streamed to the compute
+    and loaded into its Docker daemon, without buffering the whole file
+    in the controller memory.
+
+    Required privilege: Compute.Modify
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    await compute.http_query("POST", "/docker/images/load", data=request.stream(), timeout=None)
+
+
+@router.delete(
+    "/{compute_id}/docker/images/{image:path}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
+)
+async def docker_delete_image(
+    compute_id: Union[str, UUID],
+    image: str = Path(..., pattern=DOCKER_IMAGE_NAME_PATTERN),
+    force: bool = Query(False, description="Remove the image even if a container uses it"),
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+) -> None:
+    """
+    Delete a Docker image on a compute.
+
+    The deletion is refused while templates reference the image, unless force
+    is set. The compute also refuses an image used by a container (even a
+    stopped one) and answers a conflict naming the GNS3 nodes and projects
+    using it.
+
+    After a successful deletion a docker.image.deleted notification is
+    emitted on the controller notification stream, with the templates that
+    referenced the image, so clients can refresh their image lists.
+
+    Required privilege: Compute.Modify
+    """
+
+    try:
+        validate_docker_image_name(image)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
+
+    canonical_image = canonical_docker_image_name(image)
+    referencing_templates = [
+        str(template.name)
+        for template in await templates_repo.get_templates()
+        if isinstance(template, models.DockerTemplate)
+        and template.image
+        and canonical_docker_image_name(str(template.image)) == canonical_image
+    ]
+
+    if referencing_templates and not force:
+        # refuse before touching the compute: the client can prompt the user
+        # and repeat with force once the user confirms
+        raise ControllerError(
+            f"Image '{image}' is referenced by template(s): {', '.join(referencing_templates)}. "
+            f"Delete the templates first or repeat with force=true.",
+            code="image_referenced_by_templates",
+            details={"referenced_by_templates": referencing_templates},
+        )
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    await compute.http_query("DELETE", f"/docker/images/{image}", params={"force": str(force).lower()})
+    # tell the clients the image changed on this compute: they can refresh
+    # their image lists, and the templates that referenced the image can no
+    # longer start their nodes
+    Controller.instance().notification.controller_emit(
+        "docker.image.deleted",
+        {
+            "compute_id": str(compute_id),
+            "image": image,
+            "referenced_by_templates": referencing_templates,
+        },
+    )
 
 
 @router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])

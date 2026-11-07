@@ -53,6 +53,62 @@ log = logging.getLogger(__name__)
 # Include the first ISO 9660 volume descriptor in image type detection.
 IMAGE_HEADER_SIZE = 16 * 2048 + 7
 
+# A Docker image reference: name, optional registry, tag and digest. Callers
+# must also reject ".." (not expressible here, the pydantic regex engine has no
+# lookaround) so a name cannot escape the daemon API path it is interpolated
+# into: see validate_docker_image_name.
+DOCKER_IMAGE_NAME_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$"
+
+
+def validate_docker_image_name(image: str) -> None:
+    """
+    Reject Docker image names that could escape the daemon API path they are
+    interpolated into.
+
+    :raises ValueError: when the name is not safe
+    """
+
+    if ".." in image:
+        raise ValueError(f"Invalid Docker image name: {image}")
+
+
+def canonical_docker_image_name(image: str) -> str:
+    """
+    Normalize a Docker image reference for name comparisons.
+
+    Registry hosts are dropped, Docker Hub's implicit "library/" namespace and
+    the implicit ":latest" tag are made explicit, so "alpine",
+    "library/alpine:latest" and "docker.io/library/alpine" all normalize to
+    the same string. A reference pinned by digest keeps its digest and loses
+    its tag.
+    """
+
+    reference = image.strip()
+    if "/" in reference:
+        registry, _, remainder = reference.partition("/")
+        if registry == "localhost" or "." in registry or ":" in registry:
+            # the first path element is a registry host, not a namespace
+            reference = remainder
+    if "@" in reference:
+        repository, _, digest = reference.rpartition("@")
+        if not repository:
+            return reference  # a bare digest, nothing to normalize
+        # with a digest pinned the tag does not take part in the identity
+        repository = repository.partition(":")[0]
+        return f"{_canonical_docker_repository(repository)}@{digest}"
+    repository, separator, tag = reference.rpartition(":")
+    if not separator or not repository:
+        repository, tag = reference, "latest"
+    return f"{_canonical_docker_repository(repository)}:{tag or 'latest'}"
+
+
+def _canonical_docker_repository(repository: str) -> str:
+
+    if "/" not in repository:
+        # images without a namespace live in Docker Hub's "library/" namespace
+        return f"library/{repository}"
+    return repository
+
 
 async def list_images(image_type):
     """

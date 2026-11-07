@@ -733,13 +733,13 @@ class Compute:
     async def delete(self, path, **kwargs):
         return await self.http_query("DELETE", path, **kwargs)
 
-    async def forward(self, method, type, path, data=None):
+    async def forward(self, method, type, path, data=None, params=None):
         """
         Forward a call to the emulator on compute
         """
         try:
             action = f"/{type}/{path}"
-            res = await self.http_query(method, action, data=data, timeout=None)
+            res = await self.http_query(method, action, data=data, timeout=None, params=params)
         except aiohttp.ServerDisconnectedError:
             raise ControllerError(f"Connection lost to {self._id} during {method} {action}")
         return res.json

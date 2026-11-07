@@ -19,16 +19,24 @@ API routes for images.
 """
 
 import os
+import time
 import urllib.parse
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query, Request, status
+from fastapi import APIRouter, Body, HTTPException, Path, Query, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_error import DockerError
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.iou import IOU
+from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.qemu import Qemu
+from gns3server.utils.images import DOCKER_IMAGE_NAME_PATTERN, validate_docker_image_name
+
+# Daemon progress lines arrive dozens of times per second per layer: emit at
+# most one downloading event per second per pull.
+PULL_PROGRESS_INTERVAL = 1.0
 
 router = APIRouter()
 
@@ -44,13 +52,55 @@ async def get_docker_images() -> List[dict]:
 
 
 @router.post("/docker/images/pull", status_code=status.HTTP_204_NO_CONTENT)
-async def pull_docker_image(image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$")) -> None:
+async def pull_docker_image(
+    image: str = Body(..., embed=True, min_length=1, pattern=r"^\S+$"),
+    progress_id: Optional[str] = Query(
+        None, pattern=r"^\S+$", description="Client supplied id to correlate progress notifications"
+    ),
+) -> None:
     """
     Pull or update a Docker image.
+
+    The pull progress is reported as docker.image.pull notifications: a
+    started event, throttled downloading events and a terminal completed or
+    failed event. The optional progress_id is echoed in every event so a
+    client can correlate them with its own request.
     """
 
     docker_manager = Docker.instance()
-    await docker_manager.pull_image(image, force=True)
+
+    def emit(state: str, message: Optional[str] = None, progress: Optional[dict] = None) -> None:
+        event = {"image": image, "state": state}
+        if message is not None:
+            event["message"] = message
+        if progress is not None:
+            event["layers_total"] = progress["layers_total"]
+            event["layers_done"] = progress["layers_done"]
+        if progress_id is not None:
+            event["progress_id"] = progress_id
+        NotificationManager.instance().emit("docker.image.pull", event)
+
+    last_emit = 0.0
+
+    def progress_callback(progress: dict) -> None:
+        nonlocal last_emit
+        # the started event comes from the pull itself, once it owns the lock,
+        # and is never throttled
+        if progress.get("state") == "started":
+            emit("started", progress["message"])
+            return
+        now = time.monotonic()
+        if now - last_emit < PULL_PROGRESS_INTERVAL:
+            return
+        last_emit = now
+        emit("downloading", progress["message"], progress)
+
+    try:
+        await docker_manager.pull_image(image, progress_callback=progress_callback, force=True)
+    except DockerError as e:
+        emit("failed", str(e))
+        raise
+    emit("completed", f"Success pulling image {image}")
 
 
 @router.post("/docker/images/load", status_code=status.HTTP_204_NO_CONTENT)
@@ -71,6 +121,27 @@ async def load_docker_image(
 
     docker_manager = Docker.instance()
     await docker_manager.load_image(request.stream(), image=image, digest=digest)
+
+
+@router.delete("/docker/images/{image:path}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_docker_image(
+    image: str = Path(..., pattern=DOCKER_IMAGE_NAME_PATTERN),
+    force: bool = Query(False, description="Remove the image even if a container uses it"),
+) -> None:
+    """
+    Delete a Docker image from the Docker daemon.
+
+    The daemon refuses to delete an image used by a container (even a stopped
+    one) and answers a conflict, unless force is set.
+    """
+
+    image = urllib.parse.unquote(image)
+    try:
+        validate_docker_image_name(image)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
+    docker_manager = Docker.instance()
+    await docker_manager.delete_image(image, force=force)
 
 
 @router.get("/dynamips/images")

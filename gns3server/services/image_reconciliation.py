@@ -47,8 +47,34 @@ def utcnow():
     return datetime.now(UTC).replace(tzinfo=None)
 
 
+# Files that are never images: scripts, documentation and certificates users
+# keep next to their images (e.g. the Cisco IOU keygen script). Skipping them
+# keeps them out of the catalog and stops them from triggering rescans.
+IGNORED_EXTENSIONS = {
+    ".cfg",
+    ".conf",
+    ".crt",
+    ".json",
+    ".key",
+    ".lic",
+    ".license",
+    ".log",
+    ".md",
+    ".pem",
+    ".py",
+    ".sh",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
+
 def ignored(name):
-    return name.startswith(".") or name.endswith((".tmp", ".md5sum"))
+    return (
+        name.startswith(".")
+        or name.endswith((".tmp", ".md5sum"))
+        or os.path.splitext(name)[1].lower() in IGNORED_EXTENSIONS
+    )
 
 
 def configured_roots():
