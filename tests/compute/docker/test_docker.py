@@ -150,6 +150,56 @@ async def test_list_images():
 
 
 @pytest.mark.asyncio
+async def test_list_images_created_fallback_to_oci_label():
+    """
+    Images built without a created timestamp (e.g. reproducible Ubuntu images)
+    report 0 from the daemon: the build time comes from the OCI created label.
+    """
+
+    response = [
+        {
+            # zero timestamp, the label is used (Z suffix, nanosecond precision)
+            "RepoTags": ["ubuntu:latest"],
+            "Id": "febc1a2eec1f",
+            "Created": 0,
+            "Size": 78101592,
+            "Labels": {"org.opencontainers.image.created": "2026-10-25T10:26:07.538865123Z"},
+        },
+        {
+            # zero timestamp without a label stays at zero
+            "RepoTags": ["no-label:latest"],
+            "Id": "aaaaaa",
+            "Created": 0,
+            "Size": 1,
+        },
+        {
+            # the daemon timestamp wins over the label when it is set
+            "RepoTags": ["normal:latest"],
+            "Id": "bbbbbb",
+            "Created": 1365714795,
+            "Size": 1,
+            "Labels": {"org.opencontainers.image.created": "2000-01-01T00:00:00Z"},
+        },
+        {
+            # a broken label is ignored, the timestamp stays at zero
+            "RepoTags": ["broken-label:latest"],
+            "Id": "cccccc",
+            "Created": 0,
+            "Size": 1,
+            "Labels": {"org.opencontainers.image.created": "not a date"},
+        },
+    ]
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        images = await Docker.instance().list_images()
+    by_tag = {image["image"]: image for image in images}
+    assert by_tag["ubuntu:latest"]["created"] == 1792923967
+    assert by_tag["no-label:latest"]["created"] == 0
+    assert by_tag["normal:latest"]["created"] == 1365714795
+    assert by_tag["broken-label:latest"]["created"] == 0
+
+
+@pytest.mark.asyncio
 async def test_pull_image():
 
     class Response:

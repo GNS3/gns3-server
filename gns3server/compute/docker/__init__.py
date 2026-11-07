@@ -25,6 +25,7 @@ import os
 import re
 import shutil
 import sys
+from datetime import UTC, datetime
 
 import aiohttp
 import platformdirs
@@ -68,6 +69,38 @@ GNS3_CONTAINER_NAME_RE = re.compile(
 # The containers blocking an image deletion, as named by the daemon, e.g.
 # 'container 6d59f00236ff is using its referenced image d529dd0c6e55'
 CONFLICTING_CONTAINER_RE = re.compile(r"container ([0-9a-f]{12,64})\b")
+
+# Images built for reproducibility, such as the Ubuntu images assembled with
+# rockcraft, carry no created timestamp in their config and Docker reports 0
+# (displayed as 1970-01-01). Their build tool writes the real time in this
+# OCI label instead.
+OCI_CREATED_LABEL = "org.opencontainers.image.created"
+
+
+def image_created_timestamp(image: dict) -> int:
+    """
+    Build time of an image as a Unix timestamp.
+
+    The daemon timestamp wins when it is set. When it is zero, fall back to
+    the OCI created label, if present.
+
+    :param image: an image summary as returned by the daemon images API
+    """
+
+    created = image.get("Created") or 0
+    if created > 0:
+        return created
+    label = (image.get("Labels") or {}).get(OCI_CREATED_LABEL, "")
+    if not label:
+        return created
+    try:
+        built = datetime.fromisoformat(label)
+    except ValueError:
+        log.warning(f"Ignoring invalid {OCI_CREATED_LABEL} label: {label!r}")
+        return created
+    if built.tzinfo is None:
+        built = built.replace(tzinfo=UTC)
+    return int(built.timestamp())
 
 
 class Docker(BaseManager):
@@ -594,7 +627,7 @@ class Docker(BaseManager):
                                 "image": tag,
                                 "id": image.get("Id"),
                                 "size": image.get("Size"),
-                                "created": image.get("Created"),
+                                "created": image_created_timestamp(image),
                             }
                         )
         return sorted(images, key=lambda i: i["image"])
