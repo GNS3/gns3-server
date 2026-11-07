@@ -150,6 +150,36 @@ class TestUserRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 4  # admin, user1, user2 and user3 should exist
 
+    async def test_delete_user_removes_ace_on_user_path(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        A group ACE on the user path is not covered by the user_id foreign key
+        cascade: deleting the user must remove it by path.
+        """
+
+        new_user = {"username": "ace_cleanup_user", "email": "ace_cleanup_user@email.com", "password": "test_password"}
+        response = await client.post(app.url_path_for("create_user"), json=new_user)
+        assert response.status_code == status.HTTP_201_CREATED
+        user_id = response.json()["user_id"]
+
+        group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
+        role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
+        rbac_repo = RbacRepository(db_session)
+        await rbac_repo.create_ace(
+            ACECreate(
+                path=f"/access/users/{user_id}",
+                ace_type="group",
+                propagate=False,
+                group_id=str(group_id),
+                role_id=str(role_id),
+            )
+        )
+
+        response = await client.delete(app.url_path_for("delete_user", user_id=user_id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert await rbac_repo.check_ace_exists(f"/access/users/{user_id}") is False
+
 
 class TestAuthTokens:
     async def test_can_create_token_successfully(

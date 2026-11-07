@@ -27,6 +27,7 @@ from gns3server.compute.project_manager import ProjectManager
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.db.models import Base, Compute, User
+from gns3server.db.rbac_state import RbacState
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.computes import Protocol
@@ -81,6 +82,10 @@ async def db_session(db_engine):
         with patch("gns3server.services.authentication.AuthService.hash_password", return_value=hashed_password):
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
+
+    # the RBAC snapshot is process-wide: drop it so it reloads from the
+    # freshly recreated tables instead of holding data from a previous class
+    RbacState.instance().reset()
 
     session = AsyncSession(db_engine, expire_on_commit=False)
     try:

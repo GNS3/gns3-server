@@ -26,6 +26,7 @@ from sqlalchemy.orm import selectinload
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.db.rbac_state import RbacState
 
 from .base import BaseRepository
 
@@ -36,6 +37,7 @@ class ResourcePoolsRepository(BaseRepository):
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
+        self._rbac_state = RbacState.instance()
 
     async def get_resource(self, resource_id: UUID) -> Optional[models.Resource]:
         """
@@ -65,6 +67,7 @@ class ResourcePoolsRepository(BaseRepository):
         )
         self._db_session.add(db_resource)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_resource)
         return db_resource
 
@@ -76,6 +79,7 @@ class ResourcePoolsRepository(BaseRepository):
         query = delete(models.Resource).where(models.Resource.resource_id == resource_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def get_resource_memberships(self, resource_id: UUID) -> List[models.ResourcePool]:
@@ -127,6 +131,7 @@ class ResourcePoolsRepository(BaseRepository):
         db_resource_pool = models.ResourcePool(name=resource_pool.name)
         self._db_session.add(db_resource_pool)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_resource_pool)
         return db_resource_pool
 
@@ -146,6 +151,7 @@ class ResourcePoolsRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         resource_pool_db = await self.get_resource_pool(resource_pool_id)
         if resource_pool_db:
             await self._db_session.refresh(resource_pool_db)  # force refresh of updated_at value
@@ -167,6 +173,7 @@ class ResourcePoolsRepository(BaseRepository):
         query = delete(models.ResourcePool).where(models.ResourcePool.resource_pool_id == resource_pool_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def add_resource_to_pool(
@@ -188,6 +195,7 @@ class ResourcePoolsRepository(BaseRepository):
 
         resource_pool_db.resources.append(resource)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(resource_pool_db)
         return resource_pool_db
 
@@ -210,6 +218,7 @@ class ResourcePoolsRepository(BaseRepository):
 
         resource_pool_db.resources.remove(resource)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(resource_pool_db)
 
         return resource_pool_db

@@ -26,6 +26,7 @@ from sqlalchemy.orm import selectinload
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.db.rbac_state import RbacState
 from gns3server.services import auth_service
 
 from .base import BaseRepository
@@ -38,6 +39,7 @@ class UsersRepository(BaseRepository):
 
         super().__init__(db_session)
         self._auth_service = auth_service
+        self._rbac_state = RbacState.instance()
 
     async def get_user(self, user_id: UUID) -> Optional[models.User]:
         """
@@ -86,6 +88,7 @@ class UsersRepository(BaseRepository):
         )
         self._db_session.add(db_user)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_user)
         return db_user
 
@@ -105,6 +108,7 @@ class UsersRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         user_db = await self.get_user(user_id)
         if user_db:
             await self._db_session.refresh(user_db)  # force refresh of updated_at value
@@ -132,6 +136,7 @@ class UsersRepository(BaseRepository):
         query = delete(models.User).where(models.User.user_id == user_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
@@ -208,6 +213,7 @@ class UsersRepository(BaseRepository):
         db_user_group = models.UserGroup(name=user_group.name)
         self._db_session.add(db_user_group)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_user_group)
         return db_user_group
 
@@ -223,6 +229,7 @@ class UsersRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         user_group_db = await self.get_user_group(user_group_id)
         if user_group_db:
             await self._db_session.refresh(user_group_db)  # force refresh of updated_at value
@@ -236,6 +243,7 @@ class UsersRepository(BaseRepository):
         query = delete(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def add_member_to_user_group(self, user_group_id: UUID, user: models.User) -> Union[None, models.UserGroup]:
@@ -255,6 +263,7 @@ class UsersRepository(BaseRepository):
 
         user_group_db.users.append(user)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(user_group_db)
         return user_group_db
 
@@ -277,6 +286,7 @@ class UsersRepository(BaseRepository):
 
         user_group_db.users.remove(user)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(user_group_db)
         return user_group_db
 

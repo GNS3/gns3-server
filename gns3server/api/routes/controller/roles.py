@@ -135,7 +135,7 @@ async def delete_role(
     success = await rbac_repo.delete_role(role_id)
     if not success:
         raise ControllerError(f"Role '{role_id}' could not be deleted")
-    await rbac_repo.delete_all_ace_starting_with_path(f"/roles/{role_id}")
+    await rbac_repo.delete_all_ace_starting_with_path(f"/access/roles/{role_id}")
 
 
 @router.get(

@@ -290,7 +290,7 @@ async def delete_user(
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerError(f"User '{user_id}' could not be deleted")
-    await rbac_repo.delete_all_ace_starting_with_path(f"/users/{user_id}")
+    await rbac_repo.delete_all_ace_starting_with_path(f"/access/users/{user_id}")
 
 
 @router.get(

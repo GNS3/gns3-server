@@ -16,17 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Any, List, Optional, Set, Union, cast
-from urllib.parse import urlparse
+from typing import List, Optional, Set, Union, cast
 from uuid import UUID
 
-from sqlalchemy import Select, delete, select, update
-from sqlalchemy.engine import CursorResult, Result
+from sqlalchemy import delete, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.db.rbac_state import RbacState
 
 from .base import BaseRepository
 
@@ -37,6 +37,7 @@ class RbacRepository(BaseRepository):
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
+        self._rbac_state = RbacState.instance()
 
     async def get_role(self, role_id: UUID) -> Optional[models.Role]:
         """
@@ -76,6 +77,7 @@ class RbacRepository(BaseRepository):
         )
         self._db_session.add(db_role)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return await self.get_role(db_role.role_id)
 
     async def update_role(self, role_id: UUID, role_update: schemas.RoleUpdate) -> Optional[models.Role]:
@@ -88,6 +90,7 @@ class RbacRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         role_db = await self.get_role(role_id)
         if role_db:
             await self._db_session.refresh(role_db)  # force refresh of updated_at value
@@ -101,6 +104,7 @@ class RbacRepository(BaseRepository):
         query = delete(models.Role).where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def add_privilege_to_role(self, role_id: UUID, privilege: models.Privilege) -> Union[None, models.Role]:
@@ -123,6 +127,7 @@ class RbacRepository(BaseRepository):
 
         role_db.privileges.append(privilege)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(role_db)
         return role_db
 
@@ -139,6 +144,7 @@ class RbacRepository(BaseRepository):
 
         role_db.privileges.remove(privilege)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(role_db)
         return role_db
 
@@ -188,32 +194,8 @@ class RbacRepository(BaseRepository):
         check remains check_user_has_privilege(), which takes paths into account.
         """
 
-        privilege_names: Set[str] = set()
-
-        # privileges granted by ACEs on the user itself
-        user_result: Result[Any] = await self._db_session.execute(
-            select(models.Privilege.name)
-            .join(models.Privilege.roles)
-            .join(models.Role.acl_entries)
-            .join(models.ACE.user)
-            .filter(models.User.user_id == user_id)
-            .filter(models.ACE.allowed.is_(True))
-        )
-        privilege_names.update(name for (name,) in user_result.all())
-
-        # privileges granted by ACEs on the groups the user belongs to
-        group_result: Result[Any] = await self._db_session.execute(
-            select(models.Privilege.name)
-            .join(models.Privilege.roles)
-            .join(models.Role.acl_entries)
-            .join(models.ACE.group)
-            .join(models.UserGroup.users)
-            .filter(models.User.user_id == user_id)
-            .filter(models.ACE.allowed.is_(True))
-        )
-        privilege_names.update(name for (name,) in group_result.all())
-
-        return privilege_names
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.user_privilege_names(user_id)
 
     async def get_ace(self, ace_id: UUID) -> Optional[models.ACE]:
         """
@@ -275,6 +257,7 @@ class RbacRepository(BaseRepository):
         db_ace = models.ACE(**create_values)
         self._db_session.add(db_ace)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_ace)
         return db_ace
 
@@ -288,6 +271,7 @@ class RbacRepository(BaseRepository):
 
         await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         ace_db = await self.get_ace(ace_id)
         if ace_db:
             await self._db_session.refresh(ace_db)  # force refresh of updated_at value
@@ -301,6 +285,7 @@ class RbacRepository(BaseRepository):
         query = delete(models.ACE).where(models.ACE.ace_id == ace_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def delete_all_ace_starting_with_path(self, path: str) -> None:
@@ -310,109 +295,13 @@ class RbacRepository(BaseRepository):
 
         query = delete(models.ACE).where(models.ACE.path.startswith(path)).execution_options(synchronize_session=False)
         result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        self._rbac_state.mark_dirty()
         log.debug(f"{cast(CursorResult, result).rowcount} ACE(s) have been deleted")
-
-    @staticmethod
-    def _check_path_with_aces(path: str, aces) -> bool:
-        """
-        Compare path with existing ACEs to check if the user has the required privilege on that path.
-        """
-
-        parsed_url = urlparse(path)
-        original_path = path
-        path_components = parsed_url.path.split("/")
-        # traverse the path in reverse order
-        for i in range(len(path_components), 0, -1):
-            path = "/".join(path_components[:i])
-            if not path:
-                path = "/"
-            for ace_path, ace_propagate, ace_allowed, ace_privilege in aces:
-                if ace_path == path:
-                    if not ace_allowed:
-                        raise PermissionError(f"Permission denied for {path}")
-                    if path == original_path or ace_propagate:
-                        return True  # only allow if the path is the original path or the ACE is set to propagate
-        return False
-
-    async def _get_resources_in_pools(self, aces, path: Optional[str] = None) -> List[models.Resource]:
-        """
-        Get all resources in pools.
-        """
-
-        pool_resources = []
-        for ace_path, ace_propagate, ace_allowed, ace_privilege in aces:
-            if ace_path.startswith("/pool"):
-                resource_pool_id = ace_path.split("/")[2]
-                query = (
-                    select(models.Resource)
-                    .join(models.Resource.resource_pools)
-                    .filter(models.ResourcePool.resource_pool_id == resource_pool_id)
-                )
-
-                result = await self._db_session.execute(query)
-                resources = result.scalars().all()
-
-                for resource in resources:
-                    # we only support projects in resource pools for now
-                    if resource.resource_type == "project":
-                        if path:
-                            if path.startswith(f"/projects/{resource.resource_id}"):
-                                pool_resources.append(resource)
-                        else:
-                            pool_resources.append(resource)
-        return pool_resources
-
-    async def _get_user_aces(self, user_id: UUID, privilege_name: str):
-        """
-        Retrieve all user ACEs matching the user_id and privilege name.
-        """
-
-        query: Select[Any, Any, Any, Any] = (
-            select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
-            .join(models.Privilege.roles)
-            .join(models.Role.acl_entries)
-            .join(models.ACE.user)
-            .filter(models.User.user_id == user_id)
-            .filter(models.Privilege.name == privilege_name)
-            .order_by(models.ACE.path.desc())
-        )
-
-        result = await self._db_session.execute(query)
-        return result.all()
-
-    async def _get_group_aces(self, user_id: UUID, privilege_name: str):
-        """
-        Retrieve all group ACEs matching the user_id and privilege name.
-        """
-
-        query: Select[Any, Any, Any, Any] = (
-            select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name)
-            .join(models.Privilege.roles)
-            .join(models.Role.acl_entries)
-            .join(models.ACE.group)
-            .join(models.UserGroup.users)
-            .filter(models.User.user_id == user_id)
-            .filter(models.Privilege.name == privilege_name)
-        )
-
-        result = await self._db_session.execute(query)
-        return result.all()
-
-    async def get_user_pool_resources(self, user_id: UUID, privilege_name: str) -> List[models.Resource]:
-        """
-        Get all resources in pools belonging to a user and groups
-        """
-
-        user_aces = await self._get_user_aces(user_id, privilege_name)
-        pool_resources = await self._get_resources_in_pools(user_aces)
-        group_aces = await self._get_group_aces(user_id, privilege_name)
-        pool_resources.extend(await self._get_resources_in_pools(group_aces))
-        return list(set(pool_resources))
 
     async def get_accessible_project_ids(self, user_id: UUID, privilege_name: str, all_project_ids: List[str]):
         """
         Batch check which projects a user can access via direct ACE or resource pools.
-        Performs 3 fixed DB queries regardless of project count.
 
         Returns:
             (direct_ace_ids, pool_accessible_ids) where:
@@ -420,72 +309,8 @@ class RbacRepository(BaseRepository):
             - pool_accessible_ids: projects in resource pools the user can access (no created_by filter)
         """
 
-        user_aces = await self._get_user_aces(user_id, privilege_name)
-        group_aces = await self._get_group_aces(user_id, privilege_name)
-
-        # Single query for all resources and their pool memberships
-        query = select(models.Resource).options(selectinload(models.Resource.resource_pools))
-        result = await self._db_session.execute(query)
-        all_resources = result.scalars().all()
-
-        # Precompute pool_id -> set of project_ids
-        pool_to_projects: dict[str, set[str]] = {}
-        for r in all_resources:
-            if r.resource_type == "project":
-                for pool in r.resource_pools:
-                    pool_to_projects.setdefault(str(pool.resource_pool_id), set()).add(str(r.resource_id))
-
-        # --- User ACE: direct path check ---
-        direct_ace_ids = set()
-        user_denied = set()
-
-        for pid in all_project_ids:
-            path = f"/projects/{pid}"
-            try:
-                if self._check_path_with_aces(path, user_aces):
-                    direct_ace_ids.add(pid)
-            except PermissionError:
-                user_denied.add(pid)
-
-        # --- User ACE: pool check ---
-        user_pool_ids = {
-            ace_path.split("/")[2]
-            for ace_path, _, ace_allowed, _ in user_aces
-            if ace_path.startswith("/pools/") and ace_allowed
-        }
-
-        pool_accessible_ids = set()
-        for pool_id, project_ids in pool_to_projects.items():
-            if pool_id in user_pool_ids:
-                for pid in project_ids:
-                    if pid not in user_denied:
-                        pool_accessible_ids.add(pid)
-
-        # --- Group ACE: direct path check (skip already accessible or denied) ---
-        for pid in all_project_ids:
-            if pid in direct_ace_ids or pid in user_denied:
-                continue
-            path = f"/projects/{pid}"
-            try:
-                if self._check_path_with_aces(path, group_aces):
-                    direct_ace_ids.add(pid)
-            except PermissionError:
-                pass
-
-        # --- Group ACE: pool check ---
-        group_pool_ids = {
-            ace_path.split("/")[2]
-            for ace_path, _, ace_allowed, _ in group_aces
-            if ace_path.startswith("/pools/") and ace_allowed
-        }
-
-        for pool_id, project_ids in pool_to_projects.items():
-            if pool_id in group_pool_ids:
-                for pid in project_ids:
-                    if pid not in user_denied and pid not in pool_accessible_ids:
-                        pool_accessible_ids.add(pid)
-
-        return direct_ace_ids, pool_accessible_ids
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.accessible_project_ids(user_id, privilege_name, all_project_ids)
 
     async def check_user_has_privilege(self, user_id: UUID, path: str, privilege_name: str) -> bool:
         """
@@ -497,40 +322,10 @@ class RbacRepository(BaseRepository):
         * Privileges for individual users always replace group privileges.
         * Privileges for groups apply when the user is member of that group.
         * Privileges on deeper levels replace those inherited from an upper level.
+
+        The check runs against the in-memory RBAC snapshot (rebuilt after
+        any RBAC write), see gns3server.db.rbac_state.
         """
 
-        query = select(models.Resource)
-        result = await self._db_session.execute(query)
-        resources = result.scalars().all()
-        projects_in_pools = [f"/projects/{r.resource_id}" for r in resources if r.resource_type == "project"]
-        path_is_in_pool = False
-        for project_in_pool in projects_in_pools:
-            if path.startswith(project_in_pool):
-                path_is_in_pool = True
-                break
-
-        aces = await self._get_user_aces(user_id, privilege_name)
-        try:
-            # Check regular ACEs first
-            if self._check_path_with_aces(path, aces):
-                # the user has an ACE matching the path and privilege, there is no need to check group ACEs
-                return True
-            # Then check resource pool ACEs
-            if path_is_in_pool:
-                if await self._get_resources_in_pools(aces, path):
-                    return True
-        except PermissionError:
-            return False
-
-        aces = await self._get_group_aces(user_id, privilege_name)
-        try:
-            # Check regular ACEs first
-            if self._check_path_with_aces(path, aces):
-                return True
-            # Then check resource pool ACEs
-            if path_is_in_pool:
-                if await self._get_resources_in_pools(aces, path):
-                    return True
-        except PermissionError:
-            return False
-        return False
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.user_has_privilege(user_id, path, privilege_name)

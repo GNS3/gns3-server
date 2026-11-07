@@ -140,7 +140,7 @@ async def delete_user_group(
     success = await users_repo.delete_user_group(user_group_id)
     if not success:
         raise ControllerError(f"User group '{user_group_id}' could not be deleted")
-    await rbac_repo.delete_all_ace_starting_with_path(f"/groups/{user_group_id}")
+    await rbac_repo.delete_all_ace_starting_with_path(f"/access/groups/{user_group_id}")
 
 
 @router.get(
