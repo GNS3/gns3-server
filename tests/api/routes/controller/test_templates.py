@@ -31,7 +31,11 @@ from gns3server import schemas
 from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
 from gns3server.controller import Config, Controller
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 from gns3server.services.templates import BUILTIN_TEMPLATES
 from tests.utils import asyncio_patch
 
@@ -1690,3 +1694,36 @@ class TestImageAssociationWithTemplate:
         assert response.status_code == 200, response.text
         await db_session.refresh(template, ["images"])
         assert template.images == []
+
+
+class TestTemplatePrivilegeEnforcement:
+    """
+    The Template.Audit checks on the template read routes were commented out in 2023
+    as a workaround for a web-ui bug and are now restored.
+    """
+
+    async def test_template_routes_deny_without_privilege(self, app: FastAPI, client: AsyncClient, test_user) -> None:
+
+        token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = await client.get(app.url_path_for("get_templates"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.get(app.url_path_for("get_template", template_id=str(uuid.uuid4())), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_template_list_allowed_with_ace(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        users_repo = UsersRepository(db_session)
+        user = await users_repo.create_user(schemas.UserCreate(username="template-user", password="password"))
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        await rbac_repo.create_ace(
+            schemas.ACECreate(path="/templates", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_templates"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK

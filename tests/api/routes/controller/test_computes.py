@@ -22,9 +22,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.controller import Controller
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.computes import Compute
+from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.users import User, UserCreate
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
 
@@ -598,3 +605,43 @@ class TestComputeDisconnect:
 
         response = await client.post(app.url_path_for("disconnect_compute", compute_id=str(uuid.uuid4())))
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestComputePrivilegeEnforcement:
+    """
+    The Compute.Audit checks on connect/disconnect and the compute read routes were
+    commented out in 2023 as a workaround for a web-ui bug and are now restored.
+    """
+
+    async def test_compute_routes_deny_without_privilege(
+        self, app: FastAPI, client: AsyncClient, test_user: User
+    ) -> None:
+
+        token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # the privilege check runs as a route dependency and must deny before the handler is called
+        response = await client.get(app.url_path_for("get_computes"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.get(app.url_path_for("get_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("connect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("disconnect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_compute_list_allowed_with_ace(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        users_repo = UsersRepository(db_session)
+        user = await users_repo.create_user(UserCreate(username="compute-user", password="password"))
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        await rbac_repo.create_ace(
+            ACECreate(path="/computes", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_computes"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK
