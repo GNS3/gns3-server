@@ -25,10 +25,10 @@ import pytest_asyncio
 from gns3server.compute.docker import (
     DOCKER_MINIMUM_API_VERSION,
     DOCKER_PREFERRED_API_VERSION,
-    PULL_IDLE_TIMEOUT,
     Docker,
 )
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp409Error
+from gns3server.compute.docker.docker_images import PULL_IDLE_TIMEOUT
 from gns3server.compute.project_manager import ProjectManager
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
