@@ -177,7 +177,7 @@ async def test_pull_image():
             await Docker.instance().pull_image("ubuntu")
             args, kwargs = mock.call_args
             assert args == ("POST", "images/create")
-            assert kwargs["params"] == {"fromImage": "ubuntu"}
+            assert kwargs["params"] == {"fromImage": "ubuntu", "tag": "latest"}
             # no total timeout (a pull can take as long as it needs) but an
             # idle socket read timeout, so an unreachable registry fails
             assert kwargs["timeout"].total is None
@@ -243,8 +243,38 @@ async def test_force_pull_image():
             query_mock.assert_not_called()
             args, kwargs = pull_mock.call_args
             assert args == ("POST", "images/create")
-            assert kwargs["params"] == {"fromImage": "ubuntu"}
+            assert kwargs["params"] == {"fromImage": "ubuntu", "tag": "latest"}
             assert kwargs["timeout"].sock_read == PULL_IDLE_TIMEOUT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "image, expected_params",
+    [
+        # without a tag or digest the daemon would pull every tag of the
+        # repository: default to latest so the pull targets a single tag
+        ("ubuntu", {"fromImage": "ubuntu", "tag": "latest"}),
+        ("gns3/ubuntu", {"fromImage": "gns3/ubuntu", "tag": "latest"}),
+        # the ':' before the last '/' is a registry port, not a tag
+        ("registry:5000/ubuntu", {"fromImage": "registry:5000/ubuntu", "tag": "latest"}),
+        ("registry:5000/gns3/ubuntu", {"fromImage": "registry:5000/gns3/ubuntu", "tag": "latest"}),
+        # an explicit tag or digest is left alone
+        ("ubuntu:24.04", {"fromImage": "ubuntu:24.04"}),
+        ("registry:5000/ubuntu:24.04", {"fromImage": "registry:5000/ubuntu:24.04"}),
+        ("ubuntu@sha256:8b2f", {"fromImage": "ubuntu@sha256:8b2f"}),
+    ],
+)
+async def test_pull_image_targets_a_single_tag(image, expected_params):
+
+    response = MagicMock()
+    response.content.read = AsyncioMagicMock(return_value=b"")
+
+    with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
+        with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=response) as pull_mock:
+            await Docker.instance().pull_image(image)
+            args, kwargs = pull_mock.call_args
+            assert args == ("POST", "images/create")
+            assert kwargs["params"] == expected_params
 
 
 @pytest.mark.asyncio

@@ -407,6 +407,14 @@ class Docker(BaseManager):
             except DockerHttp404Error:
                 pass
 
+        params = {"fromImage": image}
+        if "@" not in image:
+            # Without a tag or digest the daemon pulls every tag of the
+            # repository. Only a ':' after the last '/' is a tag separator:
+            # before it, it is a registry port (e.g. registry:5000/repo).
+            if ":" not in image.rpartition("/")[2]:
+                params["tag"] = "latest"
+
         try:
             # The daemon streams progress lines for the whole pull: an idle
             # socket read for a minute means the registry is unreachable and
@@ -414,7 +422,7 @@ class Docker(BaseManager):
             response = await self.http_query(
                 "POST",
                 "images/create",
-                params={"fromImage": image},
+                params=params,
                 timeout=aiohttp.ClientTimeout(total=None, sock_read=PULL_IDLE_TIMEOUT),
             )
         except DockerHttp404Error as e:
