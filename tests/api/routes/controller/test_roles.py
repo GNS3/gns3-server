@@ -44,7 +44,7 @@ class TestRolesRoutes:
 
         response = await client.get(app.url_path_for("get_roles"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 8  # 7 default roles + role1
+        assert len(response.json()) == 3  # 2 default roles + role1
 
     async def test_update_role(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 

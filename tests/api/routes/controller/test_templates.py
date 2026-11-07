@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server import schemas
 from gns3server.api.routes.controller.dependencies.authentication import get_current_active_user
 from gns3server.controller import Config, Controller
+from gns3server.db.models import User
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -1699,12 +1700,26 @@ class TestImageAssociationWithTemplate:
 class TestTemplatePrivilegeEnforcement:
     """
     The Template.Audit checks on the template read routes were commented out in 2023
-    as a workaround for a web-ui bug and are now restored.
+    as a workaround for a web-ui bug and are now restored. Users inserted directly
+    (not via create_user) stay out of the "Users" group and only hold the
+    privileges the test grants them.
     """
 
-    async def test_template_routes_deny_without_privilege(self, app: FastAPI, client: AsyncClient, test_user) -> None:
+    @staticmethod
+    async def _create_user_out_of_band(db_session: AsyncSession, username: str) -> User:
 
-        token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        db_user = User(username=username, hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+        return db_user
+
+    async def test_template_routes_deny_without_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user_out_of_band(db_session, "template-no-privilege")
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         headers = {"Authorization": f"Bearer {token}"}
 
         response = await client.get(app.url_path_for("get_templates"), headers=headers)
@@ -1716,14 +1731,26 @@ class TestTemplatePrivilegeEnforcement:
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        users_repo = UsersRepository(db_session)
-        user = await users_repo.create_user(schemas.UserCreate(username="template-user", password="password"))
+        user = await self._create_user_out_of_band(db_session, "template-ace-user")
         rbac_repo = RbacRepository(db_session)
         role = await rbac_repo.get_role_by_name("Administrator")
         await rbac_repo.create_ace(
             schemas.ACECreate(path="/templates", ace_type="user", user_id=user.user_id, role_id=role.role_id)
         )
 
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_templates"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_new_user_can_list_templates_out_of_the_box(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # create_user adds the user to the "Users" group and the seeded default ACE
+        # grants that group the "User" role (which contains Template.Audit) on "/"
+        user = await UsersRepository(db_session).create_user(
+            schemas.UserCreate(username="template-standard-user", password="password")
+        )
         token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         response = await client.get(app.url_path_for("get_templates"), headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == status.HTTP_200_OK
