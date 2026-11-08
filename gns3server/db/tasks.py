@@ -144,6 +144,9 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.a6c8e1b2d490_add_second_qemu_cdrom import (
                             upgrade as upgrade_cdrom,
                         )
+                        from gns3server.db_migrations.versions.c5e9a3f7d821_seed_default_aces import (
+                            upgrade as upgrade_default_aces,
+                        )
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
@@ -155,6 +158,9 @@ async def connect_to_db(app: FastAPI) -> None:
                             upgrade()
                             upgrade_cdrom()
                             upgrade_cdrom_interfaces()
+                            # this database is stamped to head without running the
+                            # migrations: seed the default ACEs here as well
+                            upgrade_default_aces()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
