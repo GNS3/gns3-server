@@ -222,6 +222,9 @@ async def create_user(
     if user_create.email and await users_repo.get_user_by_email(user_create.email):
         raise ControllerBadRequestError(f"Email '{user_create.email}' is already registered")
 
+    if not await users_repo.get_user_group(user_create.user_group_id):
+        raise ControllerNotFoundError(f"User group '{user_create.user_group_id}' not found")
+
     return await users_repo.create_user(user_create)
 
 

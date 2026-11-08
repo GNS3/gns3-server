@@ -22,6 +22,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.api.errors import code_for_status
 from gns3server.controller.compute import Compute
@@ -64,9 +65,17 @@ class TestErrorResponses:
         assert body["code"] == "unauthorized"
         assert "detail" not in body
 
-    async def test_forbidden(self, app: FastAPI, client: AsyncClient, test_user: User, project: Project) -> None:
+    async def test_forbidden(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project
+    ) -> None:
 
-        token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        # a user outside the "Users" group gets no privileges from the default
+        # seeded ACEs, so deleting a project is forbidden
+        user = User(username="no_privileges_user", hashed_password=auth_service.hash_password("secret_password"))
+        db_session.add(user)
+        await db_session.commit()
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         response = await client.delete(
             app.url_path_for("delete_project", project_id=project.id),
             headers={"Authorization": f"Bearer {token}"},

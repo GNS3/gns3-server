@@ -42,6 +42,7 @@ class UserCreate(UserBase):
 
     username: str = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
     password: SecretStr = Field(..., min_length=8, max_length=100)
+    user_group_id: UUID = Field(..., description="The user group the new user belongs to")
 
 
 class UserUpdate(PartialUpdateModel, UserBase):

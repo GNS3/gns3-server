@@ -106,7 +106,7 @@ class TestACLRoutes:
 
         response = await client.get(app.url_path_for("get_aces"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 2
+        assert len(response.json()) == 9  # 2 created by the tests above + the 7 default seeded ACEs
 
     async def test_update_ace(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, test_user: User, role_id: str

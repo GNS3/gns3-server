@@ -25,11 +25,12 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.controller import Controller
+from gns3server.db.models import User
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.computes import Compute
 from gns3server.schemas.controller.rbac import ACECreate
-from gns3server.schemas.controller.users import User, UserCreate
+from gns3server.schemas.controller.users import UserCreate
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
@@ -611,13 +612,25 @@ class TestComputePrivilegeEnforcement:
     """
     The Compute.Audit checks on connect/disconnect and the compute read routes were
     commented out in 2023 as a workaround for a web-ui bug and are now restored.
+    Users inserted directly (not via create_user) stay out of the "Users" group and
+    only hold the privileges the test grants them.
     """
 
+    @staticmethod
+    async def _create_user_out_of_band(db_session: AsyncSession, username: str) -> User:
+
+        db_user = User(username=username, hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+        return db_user
+
     async def test_compute_routes_deny_without_privilege(
-        self, app: FastAPI, client: AsyncClient, test_user: User
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        token = auth_service.create_access_token(test_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        user = await self._create_user_out_of_band(db_session, "compute-no-privilege")
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         headers = {"Authorization": f"Bearer {token}"}
 
         # the privilege check runs as a route dependency and must deny before the handler is called
@@ -634,14 +647,28 @@ class TestComputePrivilegeEnforcement:
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        users_repo = UsersRepository(db_session)
-        user = await users_repo.create_user(UserCreate(username="compute-user", password="password"))
+        user = await self._create_user_out_of_band(db_session, "compute-ace-user")
         rbac_repo = RbacRepository(db_session)
         role = await rbac_repo.get_role_by_name("Administrator")
         await rbac_repo.create_ace(
             ACECreate(path="/computes", ace_type="user", user_id=user.user_id, role_id=role.role_id)
         )
 
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_computes"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_new_user_can_list_computes_out_of_the_box(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # a user created in the "Users" group gets the "User" role (which
+        # contains Compute.Audit) on "/computes" from the seeded default ACEs
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.get_user_group_by_name("Users")
+        user = await users_repo.create_user(
+            UserCreate(username="compute-standard-user", password="password", user_group_id=group.user_group_id)
+        )
         token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
         response = await client.get(app.url_path_for("get_computes"), headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == status.HTTP_200_OK

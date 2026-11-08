@@ -26,6 +26,7 @@ from sqlalchemy.orm import selectinload
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.db.models.users import user_group_map
 from gns3server.db.rbac_state import RbacState
 from gns3server.services import auth_service
 
@@ -79,7 +80,7 @@ class UsersRepository(BaseRepository):
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
         """
-        Create a new user.
+        Create a new user and add it to the given user group.
         """
 
         hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
@@ -87,6 +88,10 @@ class UsersRepository(BaseRepository):
             username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
         )
         self._db_session.add(db_user)
+        await self._db_session.flush()  # assign the user id
+        await self._db_session.execute(
+            user_group_map.insert().values(user_id=db_user.user_id, user_group_id=user.user_group_id)
+        )
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
         await self._db_session.refresh(db_user)

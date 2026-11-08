@@ -136,21 +136,19 @@ async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncGenerator[
 @pytest_asyncio.fixture(loop_scope="class", scope="class")
 async def test_user(db_session: AsyncSession) -> User:
 
+    user_repo = UsersRepository(db_session)
+    existing_user = await user_repo.get_user_by_username("user1")
+    if existing_user:
+        return existing_user
+
+    group = await user_repo.get_user_group_by_name("Users")
     new_user = schemas.UserCreate(
         username="user1",
         email="user1@email.com",
         password="user1_password",
+        user_group_id=group.user_group_id,
     )
-    user_repo = UsersRepository(db_session)
-    existing_user = await user_repo.get_user_by_username(new_user.username)
-    if existing_user:
-        return existing_user
-    user = await user_repo.create_user(new_user)
-
-    # add new user to the "Users" group
-    group = await user_repo.get_user_group_by_name("Users")
-    await user_repo.add_member_to_user_group(group.user_group_id, user)
-    return user
+    return await user_repo.create_user(new_user)
 
 
 @pytest_asyncio.fixture(loop_scope="class", scope="class")

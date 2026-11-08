@@ -53,29 +53,30 @@ class TestPrivileges:
     @pytest.mark.parametrize(
         "privilege, path, result",
         (
+            # privileges carried by the "User" role are granted by the default ACEs
+            # seeded on each top-level resource path (nothing is granted outside them)
             ("User.Allocate", "/users", False),
-            ("Project.Allocate", "/projects", False),
             ("Project.Allocate", "/projects", True),
             ("Project.Audit", "/projects/e451ad73-2519-4f83-87fe-a8e821792d44", True),
-            ("Project.Audit", "/templates", False),
+            ("Project.Audit", "/templates", True),
             ("Template.Audit", "/templates", True),
             ("Template.Allocate", "/templates", False),
             ("Compute.Audit", "/computes", True),
             ("Compute.Audit", "/computes/local", True),
             ("Symbol.Audit", "/symbols", True),
             ("Symbol.Audit", "/symbols/default_symbols", True),
+            ("Appliance.Audit", "/appliances", True),
+            ("Image.Audit", "/images", True),
+            ("Snapshot.Allocate", "/projects/e451ad73-2519-4f83-87fe-a8e821792d44/snapshots", True),
+            ("LLMConfig.Audit", "/access/users/e451ad73-2519-4f83-87fe-a8e821792d44/llm-model-configs", True),
+            # a privilege carried by the "User" role is still denied on a path
+            # without a matching seeded ACE (no blanket ACE on "/" anymore)
+            ("Project.Audit", "/pools", False),
         ),
     )
     async def test_default_privileges_user_group(
         self, test_user: User, db_session: AsyncSession, privilege: str, path: str, result: bool
     ) -> None:
-
-        # add an ACE for path
-        if result:
-            group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
-            role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
-            ace = ACECreate(path=path, ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role_id))
-            await RbacRepository(db_session).create_ace(ace)
 
         authorized = await RbacRepository(db_session).check_user_has_privilege(test_user.user_id, path, privilege)
         assert authorized == result
@@ -115,17 +116,28 @@ class TestPrivileges:
                 ),
             )
 
-    async def test_propagate(self, test_user: User, db_session: AsyncSession):
+    async def test_propagate(self, db_session: AsyncSession):
+
+        # a user outside the "Users" group has no default privileges
+        user = User(username="propagate-user", hashed_password=auth_service.hash_password("password"))
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)  # the id must be a UUID, not the str default
 
         privilege = "Project.Audit"
-        path = "/projects/44929147-47bb-460a-90ae-c782c4dbb6ef"
+        # a unique path so the shared "/projects" ACE used by other tests is not disturbed
+        base_path = f"/projects/{uuid.uuid4()}"
+        path = f"{base_path}/nodes"
         rbac_repo = RbacRepository(db_session)
-        authorized = await rbac_repo.check_user_has_privilege(test_user.user_id, path, privilege)
+        authorized = await rbac_repo.check_user_has_privilege(user.user_id, path, privilege)
         assert authorized is False
 
-        await self._get_or_create_projects_ace(db_session, propagate=True)
+        role_id = (await rbac_repo.get_role_by_name("User")).role_id
+        await rbac_repo.create_ace(
+            ACECreate(path=base_path, ace_type="user", propagate=True, user_id=str(user.user_id), role_id=str(role_id))
+        )
 
-        authorized = await rbac_repo.check_user_has_privilege(test_user.user_id, path, privilege)
+        authorized = await rbac_repo.check_user_has_privilege(user.user_id, path, privilege)
         assert authorized is True
 
     async def test_allowed(self, test_user: User, db_session: AsyncSession):
@@ -199,19 +211,21 @@ class TestResourcePools:
         assert authorized is True
 
     async def test_list_projects_in_resource_pool(
-        self, app: FastAPI, controller: Controller, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+        self, app: FastAPI, controller: Controller, base_client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        # Clean up any existing ACEs from previous tests
-        await RbacRepository(db_session).delete_all_ace_starting_with_path("/projects")
-        await RbacRepository(db_session).delete_all_ace_starting_with_path("/pools")
+        # a user outside the "Users" group has no default privileges: access comes only from the ACEs below
+        user = User(username="pool-list-user", hashed_password=auth_service.hash_password("password"))
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)  # the id must be a UUID, not the str default
 
         uuid1 = str(uuid.uuid4())
         uuid2 = str(uuid.uuid4())
         uuid3 = str(uuid.uuid4())
-        await controller.add_project(project_id=uuid1, name="Project1", created_by=test_user.username)
-        await controller.add_project(project_id=uuid2, name="Project2", created_by=test_user.username)
-        await controller.add_project(project_id=uuid3, name="Project3", created_by=test_user.username)
+        await controller.add_project(project_id=uuid1, name="Project1", created_by=user.username)
+        await controller.add_project(project_id=uuid2, name="Project2", created_by=user.username)
+        await controller.add_project(project_id=uuid3, name="Project3", created_by=user.username)
 
         # Create resource pool and add uuid2 to it
         pools_repo = ResourcePoolsRepository(db_session)
@@ -222,21 +236,20 @@ class TestResourcePools:
         resource = await pools_repo.create_resource(resource_create)
         await pools_repo.add_resource_to_pool(pool_in_db.resource_pool_id, resource)
 
-        group_id = (await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id
         role_id = (await RbacRepository(db_session).get_role_by_name("User")).role_id
 
         # Give user access to resource pool only
         ace = ACECreate(
             path=f"/pools/{pool_in_db.resource_pool_id}",
-            ace_type="group",
+            ace_type="user",
             propagate=False,
-            group_id=str(group_id),
+            user_id=str(user.user_id),
             role_id=str(role_id),
         )
         await RbacRepository(db_session).create_ace(ace)
 
         # Create a new client with test user authentication
-        access_token = auth_service.create_access_token(test_user.username)
+        access_token = auth_service.create_access_token(user.username)
         async with AsyncClient(
             base_url="http://test-api",
             headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
@@ -255,7 +268,7 @@ class TestResourcePools:
 
             # Now give user access to /projects (in addition to resource pool)
             ace = ACECreate(
-                path="/projects", ace_type="group", propagate=True, group_id=str(group_id), role_id=str(role_id)
+                path="/projects", ace_type="user", propagate=True, user_id=str(user.user_id), role_id=str(role_id)
             )
             await RbacRepository(db_session).create_ace(ace)
 
