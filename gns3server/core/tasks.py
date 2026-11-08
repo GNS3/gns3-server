@@ -21,12 +21,14 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.compute import MODULES
 from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.compute.port_manager import PortManager
 from gns3server.config import Config
 from gns3server.controller import Controller
+from gns3server.db.project_acl import ensure_all_project_aces
 from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes, load_rbac_state
 from gns3server.services.image_reconciliation import get_image_reconciliation_service
 from gns3server.utils.http_client import HTTPClient
@@ -76,6 +78,16 @@ async def startup(app: FastAPI) -> None:
 
     # load the in-memory RBAC snapshot before serving requests
     await load_rbac_state(app)
+
+    # The default ACE on /projects does not propagate: every project gets an
+    # owner ACE for its creator. Projects loaded from disk (startup, directory
+    # scans and POST /projects/load) are covered by this hook.
+    async def _ensure_project_aces():
+        async with AsyncSession(app.state._db_engine) as db_session:
+            projects = [(project.id, project.created_by) for project in Controller.instance().projects.values()]
+            await ensure_all_project_aces(db_session, projects)
+
+    Controller.instance().set_project_aces_hook(_ensure_project_aces)
 
     await Controller.instance().start(computes)
 

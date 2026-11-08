@@ -1,5 +1,7 @@
 # RBAC User Isolation Roadmap
 
+> **Superseded (2026-11)**: project isolation no longer relies on the `created_by` list filter. The default ACE on `/projects` does not propagate, every project gets an owner ACE for its creator, and ownerless projects are restricted to superadmins. See [Project Ownership](../../features/rbac-project-ownership.md). The rest of this document is kept as the historical design.
+
 ## Overview
 
 GNS3 3.0 ships with a complete RBAC framework (ACE + Role + Privilege models), but the user isolation layer is incomplete. Users can see resources they should not have access to because:

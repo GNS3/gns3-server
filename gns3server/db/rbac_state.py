@@ -52,6 +52,11 @@ import gns3server.db.models as models
 
 log = logging.getLogger(__name__)
 
+# Sentinels returned by _check_path_role: the path is denied by a matching
+# deny ACE, or no ACE matched at all.
+_ACE_DENIED = object()
+_ACE_NO_MATCH = object()
+
 
 @dataclass(frozen=True)
 class AceEntry:
@@ -240,6 +245,49 @@ class RbacState:
                     if path == original_path or ace.propagate:
                         return True  # only allow if the path is the original path or the ACE is set to propagate
         return False
+
+    @staticmethod
+    def _check_path_role(path: str, aces: Iterable[AceEntry]):
+        """
+        Role id of the ACE that decides the path, or one of the module
+        sentinels when the path is denied or no ACE matches.
+
+        Mirrors _check_path_with_aces (deepest path first, a deny wins over
+        an allow, an allow only applies to the exact path or when the ACE
+        propagates) and is used to grant a resource creator the same role
+        that allowed the creation, applied to the new resource path.
+        """
+
+        parsed_url = urlparse(path)
+        original_path = path
+        path_components = parsed_url.path.split("/")
+        for i in range(len(path_components), 0, -1):
+            candidate = "/".join(path_components[:i])
+            if not candidate:
+                candidate = "/"
+            for ace in aces:
+                if ace.path == candidate:
+                    if not ace.allowed:
+                        return _ACE_DENIED
+                    if candidate == original_path or ace.propagate:
+                        return ace.role_id
+        return _ACE_NO_MATCH
+
+    def effective_role_id(self, user_id: UUID, path: str, privilege_name: str) -> Optional[UUID]:
+        """
+        Role id of the ACE that decides a privilege check for the user.
+
+        User ACEs are evaluated before group ACEs, exactly like
+        user_has_privilege. Returns None when the check is denied or when no
+        ACE matches.
+        """
+
+        role_id = self._check_path_role(path, self._user_aces(user_id, privilege_name))
+        if role_id is _ACE_NO_MATCH:
+            role_id = self._check_path_role(path, self._group_aces(user_id, privilege_name))
+        if role_id is _ACE_NO_MATCH or role_id is _ACE_DENIED:
+            return None
+        return role_id
 
     def _pool_grants_path(self, aces: Iterable[AceEntry], path: str) -> bool:
         """

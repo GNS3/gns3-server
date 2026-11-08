@@ -140,6 +140,7 @@ class Controller:
         self._projects_scan_lock = asyncio.Lock()
         self._projects_monitor_loop = None
         self._projects_monitor_thread_id = None
+        self._project_aces_hook = None
         log.info(f'Loading controller vars file "{self._vars_file}"')
 
     async def start(self, computes=None):
@@ -394,6 +395,24 @@ class Controller:
                                     log.warning(f"Could not load project from '{project_file}': {e}", exc_info=True)
             except OSError as e:
                 log.error(str(e))
+
+            # Projects loaded from disk may predate the per-project owner ACEs
+            # (or have been copied into the projects directory): make sure the
+            # owner ACE exists before any client can access them.
+            if self._project_aces_hook is not None:
+                try:
+                    await self._project_aces_hook()
+                except Exception as e:
+                    log.warning(f"Could not ensure the project owner ACEs: {e}", exc_info=True)
+
+    def set_project_aces_hook(self, hook):
+        """
+        Set the async callback making sure every loaded project has its owner ACE.
+
+        The callback is invoked after the projects are (re)loaded from disk.
+        """
+
+        self._project_aces_hook = hook
 
     def _start_projects_monitor(self):
         """

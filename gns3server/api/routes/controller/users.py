@@ -28,6 +28,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerError,
@@ -290,10 +291,20 @@ async def delete_user(
     if user.is_superadmin:
         raise ControllerForbiddenError("The super admin cannot be deleted")
 
+    # Projects owned by the user lose their owner ACE when the user row is
+    # deleted (the ACE is removed by the foreign key cascade): warn so an
+    # administrator can grant access again through an explicit ACE.
+    owned_projects = [p.name for p in Controller.instance().projects.values() if p.created_by == user.username]
+
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerError(f"User '{user_id}' could not be deleted")
     await rbac_repo.delete_all_ace_starting_with_path(f"/access/users/{user_id}")
+    if owned_projects:
+        log.warning(
+            f"Deleted user '{user.username}' owned project(s) {', '.join(owned_projects)}: "
+            "they are now restricted to superadmins until an ACE is granted again"
+        )
 
 
 @router.get(

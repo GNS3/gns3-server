@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import uuid
 from typing import List, Optional, Set, Union, cast
 from uuid import UUID
 
@@ -261,6 +262,24 @@ class RbacRepository(BaseRepository):
         await self._db_session.refresh(db_ace)
         return db_ace
 
+    async def create_aces(self, aces: List[schemas.ACECreate]) -> int:
+        """
+        Create several ACEs in a single transaction.
+        """
+
+        if not aces:
+            return 0
+        for ace_create in aces:
+            values = ace_create.model_dump(exclude_unset=True)
+            # The ACE id default returns a string while the GUID column returns
+            # a UUID object: assign it here so SQLAlchemy does not have to map
+            # a sentinel value in a batched insert.
+            values.setdefault("ace_id", uuid.uuid4())
+            self._db_session.add(models.ACE(**values))
+        await self._db_session.commit()
+        self._rbac_state.mark_dirty()
+        return len(aces)
+
     async def update_ace(self, ace_id: UUID, ace_update: schemas.ACEUpdate) -> Optional[models.ACE]:
         """
         Update an ACE
@@ -329,3 +348,13 @@ class RbacRepository(BaseRepository):
 
         await self._rbac_state.ensure_loaded(self._db_session)
         return self._rbac_state.user_has_privilege(user_id, path, privilege_name)
+
+    async def get_effective_role_id(self, user_id: UUID, path: str, privilege_name: str) -> Optional[UUID]:
+        """
+        Role id of the ACE that decides a privilege check for the user.
+
+        Returns None when the check is denied or when no ACE matches.
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.effective_role_id(user_id, path, privilege_name)

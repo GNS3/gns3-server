@@ -64,12 +64,26 @@ def create_default_aces(target, connection, **kw):
     # added to the "Users" group). One ACE per resource path instead of a single
     # ACE on "/": each entry can be tightened (e.g. "/projects/<uuid>") or
     # removed on its own, without deny entries carved out of a blanket grant.
-    default_paths = ("/projects", "/templates", "/computes", "/symbols", "/appliances", "/images", "/access/users")
-    for path in default_paths:
+    #
+    # The "/projects" ACE does not propagate: it covers the collection endpoints
+    # only (POST /projects). Access to a project itself comes from a per-project
+    # owner ACE created when the project is created, so a project is private to
+    # its creator until it is shared through an explicit ACE or a resource pool
+    # (see gns3server.db.project_acl).
+    default_aces = (
+        ("/projects", False),
+        ("/templates", True),
+        ("/computes", True),
+        ("/symbols", True),
+        ("/appliances", True),
+        ("/images", True),
+        ("/access/users", True),
+    )
+    for path, propagate in default_aces:
         stmt = target.insert().values(
             ace_type="group",
             path=path,
-            propagate=True,
+            propagate=propagate,
             allowed=True,
             role_id=role_id,
             group_id=group_id,

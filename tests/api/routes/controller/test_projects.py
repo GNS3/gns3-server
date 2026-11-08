@@ -248,11 +248,19 @@ class TestControllerProjectRoutes:
 
     async def test_load_project(self, app: FastAPI, client: AsyncClient, project: Project, config) -> None:
 
+        # loading a project from disk is only allowed on a local server
+        config.settings.Server.local = True
         with asyncio_patch("gns3server.controller.Controller.load_project", return_value=project) as mock:
             response = await client.post(app.url_path_for("load_project"), json={"path": "/tmp/test.gns3"})
             assert response.status_code == status.HTTP_201_CREATED
             mock.assert_called_with("/tmp/test.gns3")
             assert response.json()["project_id"] == project.id
+
+    async def test_load_project_non_local(self, app: FastAPI, client: AsyncClient, project: Project, config) -> None:
+
+        config.settings.Server.local = False
+        response = await client.post(app.url_path_for("load_project"), json={"path": "/tmp/test.gns3"})
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # @pytest.mark.asyncio
     # async def test_notification(controller_api, http_client, project, controller):

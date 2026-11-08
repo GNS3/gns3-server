@@ -48,18 +48,25 @@ from fastapi import (
 )
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
 from gns3server.api.openapi import ZIP_MEDIA_TYPE, binary_request_body, binary_response
 from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESPONSES, NDJSONResponse
+from gns3server.config import Config
 from gns3server.controller import Controller, marker_replay
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerError
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerForbiddenError,
+)
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.link import _UNSET
 from gns3server.controller.marker_replay import SharkdError, SharkdMissingError
 from gns3server.controller.project import Project
+from gns3server.db.project_acl import ensure_project_owner_ace
 from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
@@ -76,7 +83,7 @@ from .dependencies.concurrency import (
     serialize_updates,
     set_etag,
 )
-from .dependencies.database import get_repository
+from .dependencies.database import get_db_session, get_repository
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 responses: dict[int | str, dict[str, Any]] = {
@@ -124,23 +131,13 @@ async def get_projects(
         current_user.user_id, "Project.Audit", all_project_ids
     )
 
-    # Step 2: Filter direct ACE projects by created_by
-    # Direct project sharing is only available through resource pools
-    # Projects created before the created_by field existed (GNS3 < 3.1) have no
-    # owner: fall back to the ACE-only visibility rule instead of hiding them.
+    # A project is visible through its ACE (owner ACE or an explicit share) or
+    # through a resource pool. There is no created_by fallback: projects without
+    # an owner ACE stay restricted to superadmins.
     for p in controller.projects.values():
         if name is not None and p.name != name:
             continue
-        if p.id in direct_ace_ids and (p.created_by is None or p.created_by == current_user.username):
-            if p.id not in seen_project_ids:
-                projects.append(p.asdict())
-                seen_project_ids.add(p.id)
-
-    # Step 3: Resource pool projects (no created_by filter)
-    for p in controller.projects.values():
-        if name is not None and p.name != name:
-            continue
-        if p.id in pool_accessible_ids:
+        if p.id in direct_ace_ids or p.id in pool_accessible_ids:
             if p.id not in seen_project_ids:
                 projects.append(p.asdict())
                 seen_project_ids.add(p.id)
@@ -159,6 +156,7 @@ async def get_projects(
 async def create_project(
     project_data: schemas.ProjectCreate,
     current_user: schemas.User = Depends(get_current_active_user),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.Project:
     """
     Create a new project.
@@ -170,6 +168,9 @@ async def create_project(
     project_dict = jsonable_encoder(project_data, exclude_unset=True)
     project_dict["created_by"] = current_user.username
     project = await controller.add_project(**project_dict)
+    # The default ACE on /projects does not propagate: grant the creator access
+    # to the project through an owner ACE.
+    await ensure_project_owner_ace(db_session, project.id, current_user.username)
     return project.asdict()
 
 
@@ -619,18 +620,25 @@ async def open_project(project: Project = Depends(dep_project)) -> schemas.Proje
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}},
-    dependencies=[Depends(has_privilege("Project.Allocate"))],
+    dependencies=[Depends(has_privilege("Server.Modify"))],
 )
-async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
+async def load_project(
+    path: str = Body(..., embed=True),
+    db_session: AsyncSession = Depends(get_db_session),
+) -> schemas.Project:
     """
     Load a project (local server only).
 
-    Required privilege: Project.Allocate
+    Required privilege: Server.Modify
     """
+
+    if Config.instance().settings.Server.local is False:
+        raise ControllerForbiddenError("You can only load a project on a local server")
 
     controller = Controller.instance()
     dot_gns3_file = path
     project = await controller.load_project(dot_gns3_file)
+    await ensure_project_owner_ace(db_session, project.id, project.created_by)
     return project.asdict()
 
 
@@ -846,13 +854,14 @@ async def export_project(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     openapi_extra=binary_request_body(ZIP_MEDIA_TYPE),
-    dependencies=[Depends(has_privilege("Project.Allocate"))],
 )
 async def import_project(
     project_id: UUID,
     request: Request,
     name: Optional[str] = None,
     current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.Project:
     """
     Import a project from a portable archive.
@@ -861,6 +870,18 @@ async def import_project(
     """
 
     controller = Controller.instance()
+
+    # The client picks the target project ID. A brand new project is covered by
+    # the collection ACE on /projects (the default ACE does not propagate),
+    # while importing on top of an existing project requires access to it.
+    if not current_user.is_superadmin:
+        path = f"/projects/{project_id}" if str(project_id) in controller.projects else "/projects"
+        if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, "Project.Allocate"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied (privilege Project.Allocate is required)",
+            )
+
     # We write the content to a temporary location and then we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.
     try:
@@ -883,6 +904,7 @@ async def import_project(
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
         raise ControllerError(f"Could not import the project: {e}")
+    await ensure_project_owner_ace(db_session, project.id, project.created_by)
     return project.asdict()
 
 
@@ -899,6 +921,7 @@ async def duplicate_project(
     current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
     pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository)),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.Project:
     """
     Duplicate a project.
@@ -931,6 +954,8 @@ async def duplicate_project(
         reset_mac_addresses=reset_mac_addresses,
         user=current_user.username,
     )
+    # The duplicated project is owned by the user who duplicated it.
+    await ensure_project_owner_ace(db_session, new_project.id, new_project.created_by)
 
     # Add the new project in the same resource pools if the duplicated project belongs to any
     if pool_memberships:
