@@ -38,7 +38,6 @@ from gns3server.controller.controller_error import ControllerError, ControllerFo
 from gns3server.db.rbac_state import RbacState
 from gns3server.version import __version__
 
-from .dependencies.authentication import get_current_active_user
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 log = logging.getLogger(__name__)
@@ -113,12 +112,14 @@ def check_version(version: schemas.Version) -> dict:
 
 @router.post(
     "/reload",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(has_privilege("Server.Modify"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def reload() -> None:
     """
     Reload the controller
+
+    Required privilege: Server.Modify
     """
 
     await Controller.instance().reload()
@@ -126,13 +127,15 @@ async def reload() -> None:
 
 @router.post(
     "/shutdown",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(has_privilege("Server.Modify"))],
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
 )
 async def shutdown() -> None:
     """
     Shutdown the server
+
+    Required privilege: Server.Modify
     """
 
     if Config.instance().settings.Server.local is False:
@@ -160,10 +163,12 @@ async def shutdown() -> None:
     os.kill(os.getpid(), signal.SIGTERM)
 
 
-@router.get("/iou_license", dependencies=[Depends(get_current_active_user)], response_model=schemas.IOULicense)
+@router.get("/iou_license", dependencies=[Depends(has_privilege("Server.Audit"))], response_model=schemas.IOULicense)
 def get_iou_license() -> schemas.IOULicense:
     """
     Return the IOU license settings
+
+    Required privilege: Server.Audit
     """
 
     return Controller.instance().iou_license
@@ -171,13 +176,15 @@ def get_iou_license() -> schemas.IOULicense:
 
 @router.put(
     "/iou_license",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(has_privilege("Server.Modify"))],
     status_code=status.HTTP_200_OK,
     response_model=schemas.IOULicense,
 )
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
     """
     Update the IOU license settings.
+
+    Required privilege: Server.Modify
     """
 
     controller = Controller().instance()
@@ -191,11 +198,13 @@ async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULice
     "/statistics",
     response_model=schemas.ServerStatistics,
     response_model_exclude_unset=True,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(has_privilege("Server.Audit"))],
 )
 async def statistics() -> dict:
     """
     Return server statistics including compute resources, projects, and nodes.
+
+    Required privilege: Server.Audit
     """
 
     controller = Controller.instance()

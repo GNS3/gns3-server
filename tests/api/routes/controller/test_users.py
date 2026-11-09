@@ -366,7 +366,9 @@ class TestUnauthorizedUser:
         assert response.json().get("refresh_token") is not None
 
         token = response.json().get("access_token")
-        response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
+        # the probe endpoint only needs authentication, not a privilege: the
+        # test user is a regular user and statistics requires Server.Audit
+        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"), params={"token": token})
         assert response.status_code == status.HTTP_200_OK
 
 

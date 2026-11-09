@@ -689,8 +689,9 @@ class TestComputeRuntimeState:
 
 class TestComputePrivilegeEnforcement:
     """
-    The Compute.Audit checks on connect/disconnect and the compute read routes were
-    commented out in 2023 as a workaround for a web-ui bug and are now restored.
+    The compute read routes require Compute.Audit, and connect/disconnect require
+    Compute.Modify: they change the connection state, so reading the list must not
+    imply being able to disconnect a compute (disconnect even forces with force=true).
     Users inserted directly (not via create_user) stay out of the "Users" group and
     only hold the privileges the test grants them.
     """
@@ -721,6 +722,47 @@ class TestComputePrivilegeEnforcement:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         response = await client.post(app.url_path_for("disconnect_compute", compute_id="local"), headers=headers)
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_audit_alone_cannot_connect_or_disconnect(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # a user created in the "Users" group gets the "User" role (which
+        # contains Compute.Audit, not Compute.Modify) on "/computes" from the
+        # seeded default ACEs: the list works, the state-changing routes do not
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.get_user_group_by_name("Users")
+        user = await users_repo.create_user(
+            UserCreate(username="compute-audit-only-user", password="password", user_group_id=group.user_group_id)
+        )
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = await client.get(app.url_path_for("get_computes"), headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        response = await client.post(app.url_path_for("connect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("disconnect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_connect_allowed_with_modify_ace(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user_out_of_band(db_session, "compute-modify-ace-user")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")  # holds every privilege
+        await rbac_repo.create_ace(
+            ACECreate(path="/computes", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # the privilege check passes and the handler runs: an unknown compute
+        # answers 404, a denied user would never get past the dependency (403)
+        response = await client.post(app.url_path_for("connect_compute", compute_id=str(uuid.uuid4())), headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_compute_list_allowed_with_ace(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession

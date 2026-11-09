@@ -73,13 +73,13 @@ async def create_compute(
 @router.post(
     "/{compute_id}/connect",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(has_privilege("Compute.Audit"))],
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def connect_compute(compute_id: Union[str, UUID]) -> None:
     """
     Connect to compute on the controller.
 
-    Required privilege: Compute.Audit
+    Required privilege: Compute.Modify
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
@@ -91,7 +91,7 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
     "/{compute_id}/disconnect",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={409: {"model": schemas.ErrorMessage, "description": "Compute is used by opened projects"}},
-    dependencies=[Depends(has_privilege("Compute.Audit"))],
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool] = False) -> None:
     """
@@ -105,7 +105,7 @@ async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool]
     controller-side control channel (notification stream and HTTP session) is
     torn down, nodes keep running unmanaged.
 
-    Required privilege: Compute.Audit
+    Required privilege: Compute.Modify
     """
 
     if str(compute_id) == "local":

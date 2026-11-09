@@ -68,6 +68,9 @@ A denied WebSocket reports the same shape as an authentication failure: one `log
 | `WS` | `/v3/notifications/ws` | WebSocket stream, one notification per text frame | `Notification.Audit` |
 | `GET` | `/v3/computes` | All computes with runtime state, local included | `Compute.Audit` |
 | `GET` | `/v3/computes/{compute_id}` | One compute, runtime state and capabilities included | `Compute.Audit` |
+| `POST` | `/v3/computes/{compute_id}/connect` | Connect a compute | `Compute.Modify` |
+| `POST` | `/v3/computes/{compute_id}/disconnect` | Disconnect a compute | `Compute.Modify` |
+| `GET` | `/v3/statistics` | Server-wide statistics (the dashboard replacement for the `ping` payload) | `Server.Audit` |
 
 ## Notes
 
