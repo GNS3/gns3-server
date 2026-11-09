@@ -221,6 +221,13 @@ class Compute:
         return self._connected
 
     @property
+    def last_error(self):
+        """
+        :returns: Last connection error, or None
+        """
+        return self._last_error
+
+    @property
     def id(self):
         """
         :returns: Compute identifier (string)

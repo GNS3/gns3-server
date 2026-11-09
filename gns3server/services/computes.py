@@ -16,7 +16,7 @@
 
 
 import asyncio
-from typing import List, Union
+from typing import List, Optional, Union
 from uuid import UUID
 
 import gns3server.db.models as models
@@ -29,6 +29,10 @@ from gns3server.controller.controller_error import (
     ControllerNotFoundError,
 )
 from gns3server.db.repositories.computes import ComputesRepository
+
+# runtime state kept in memory by the controller, absent from the database
+# rows: the response schema types all of them as optional
+RUNTIME_FIELDS = ("connected", "last_error", "cpu_usage_percent", "memory_usage_percent", "disk_usage_percent")
 
 
 async def _connect_in_background(compute: Compute) -> None:
@@ -53,16 +57,52 @@ def _schedule_background_connect(compute: Compute) -> None:
     task.add_done_callback(_background_connect_tasks.discard)
 
 
+def _compute_name(compute: Union[models.Compute, dict]) -> str:
+
+    if isinstance(compute, dict):
+        return compute["name"]
+    return str(compute.name)
+
+
 class ComputesService:
     def __init__(self, computes_repo: ComputesRepository):
 
         self._computes_repo = computes_repo
         self._controller = Controller.instance()
 
-    async def get_computes(self) -> List[models.Compute]:
+    def _with_runtime_state(self, db_compute: models.Compute) -> Union[models.Compute, dict]:
+        """
+        Overlay the runtime state the controller keeps in memory (connected
+        flag, last error, resource usage) on top of the static database row.
+        The capabilities payload is not part of the overlay: it is large and
+        clients that need it fetch computes one by one.
+        """
 
-        db_computes = await self._computes_repo.get_computes()
-        return db_computes
+        compute = self._controller.computes.get(str(db_compute.compute_id))
+        if compute is None:
+            return db_compute  # never loaded by the controller: static row only
+        values = db_compute.asdict()
+        values.update({field: getattr(compute, field) for field in RUNTIME_FIELDS})
+        return values
+
+    async def get_computes(self, name: Optional[str] = None) -> List[Union[models.Compute, dict]]:
+        """
+        Every compute known by the controller: the database rows overlaid
+        with their runtime state, plus the built-in local compute which
+        only lives in the controller and never goes to the database.
+        """
+
+        computes: List[Union[models.Compute, dict]] = [
+            self._with_runtime_state(db_compute) for db_compute in await self._computes_repo.get_computes()
+        ]
+        local_compute = self._controller.computes.get("local")
+        if local_compute is not None:
+            # drop unset fields (e.g. user) as the response schema types them as str;
+            # capabilities stay out of the list, see _with_runtime_state
+            computes.append({k: v for k, v in local_compute.asdict().items() if v is not None and k != "capabilities"})
+        if name is not None:
+            computes = [compute for compute in computes if _compute_name(compute) == name]
+        return computes
 
     async def create_compute(self, compute_create: schemas.ComputeCreate, connect: bool = False) -> models.Compute:
 
@@ -93,7 +133,16 @@ class ComputesService:
         db_compute = await self._computes_repo.get_compute(compute_id)
         if not db_compute:
             raise ControllerNotFoundError(f"Compute '{compute_id}' not found")
-        return db_compute
+        compute = self._controller.computes.get(str(compute_id))
+        if compute is None:
+            return db_compute
+        # overlay the runtime state, including the capabilities payload the
+        # compute reports once connected (absent from the database row)
+        values = db_compute.asdict()
+        values.update({field: getattr(compute, field) for field in RUNTIME_FIELDS})
+        if compute.capabilities:
+            values["capabilities"] = compute.capabilities
+        return values
 
     async def update_compute(
         self, compute_id: Union[str, UUID], compute_update: schemas.ComputeUpdate

@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket, WebSocketDi
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from fastapi.routing import Mount
+from sqlalchemy.ext.asyncio import AsyncSession
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server import schemas
@@ -34,13 +35,37 @@ from gns3server.api.responses import NDJSON_MEDIA_TYPE, NOTIFICATION_STREAM_RESP
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
+from gns3server.db.rbac_state import RbacState
 from gns3server.version import __version__
 
-from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
+from .dependencies.authentication import get_current_active_user
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+NOTIFICATION_PRIVILEGE = "Notification.Audit"
+NOTIFICATIONS_PATH = "/notifications"
+
+
+async def _notification_privilege_valid(app: FastAPI, current_user: schemas.User) -> bool:
+    """
+    Re-check the stream privilege while the stream is open, so a user whose
+    access was revoked is disconnected on the next ping tick (at most 5
+    seconds) instead of receiving events until they disconnect themselves.
+
+    The check runs against the in-memory RBAC snapshot; a database session
+    is opened only when an administrative write marked it outdated.
+    """
+
+    if current_user.is_superadmin:
+        return True
+    rbac_state = RbacState.instance()
+    if rbac_state.needs_reload:
+        async with AsyncSession(app.state._db_engine) as db_session:
+            await rbac_state.reload(db_session)
+    return rbac_state.user_has_privilege(current_user.user_id, NOTIFICATIONS_PATH, NOTIFICATION_PRIVILEGE)
 
 
 def get_server_uptime_seconds() -> int:
@@ -262,17 +287,22 @@ async def statistics() -> dict:
 
 @router.get(
     "/notifications",
-    dependencies=[Depends(get_current_active_user)],
     response_class=NDJSONResponse,
     responses=NOTIFICATION_STREAM_RESPONSES,
 )
-async def controller_http_notifications(request: Request) -> StreamingResponse:
+async def controller_http_notifications(
+    request: Request, current_user: schemas.User = Depends(has_privilege(NOTIFICATION_PRIVILEGE))
+) -> StreamingResponse:
     """
     Receive controller notifications from an HTTP stream of newline delimited JSON objects (see the Notification schema).
 
     The same messages are available as WebSocket text frames on `/v3/notifications/ws`.
     Controller actions: `compute.*`, `template.*`, `project.created`, `project.updated`, `project.opened`,
-    `project.closed`, `project.deleted`, `settings.updated`, `log.*` and `ping`.
+    `project.closed`, `project.deleted`, `settings.updated`, `log.*`, `docker.image.*` and `ping`
+    (host statistics in `ping`).
+
+    Required privilege: Notification.Audit. The privilege is re-checked while
+    the stream is open: a revoked client is disconnected on the next ping.
     """
 
     from gns3server.api.server import app
@@ -284,6 +314,9 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
         try:
             with Controller.instance().notification.controller_queue() as queue:
                 while not app.state.exiting:
+                    if not await _notification_privilege_valid(app, current_user):
+                        log.info(f"Client {client} has lost the {NOTIFICATION_PRIVILEGE} privilege: closing the stream")
+                        return
                     msg = await queue.get_json(5)
                     yield f"{msg}\n".encode()
         finally:
@@ -294,11 +327,14 @@ async def controller_http_notifications(request: Request) -> StreamingResponse:
 
 @router.websocket("/notifications/ws")
 async def controller_ws_notifications(
-    websocket: WebSocket, current_user: schemas.User = Depends(get_current_active_user_from_websocket)
+    websocket: WebSocket, current_user: schemas.User = Depends(has_privilege_on_websocket(NOTIFICATION_PRIVILEGE))
 ) -> None:
     """
     Receive controller notifications from a WebSocket, one Notification JSON object per text frame.
     Same messages as the HTTP stream `/v3/notifications`.
+
+    Required privilege: Notification.Audit. The privilege is re-checked while
+    the stream is open: a revoked client is disconnected on the next ping.
     """
 
     if current_user is None:
@@ -309,6 +345,10 @@ async def controller_ws_notifications(
     try:
         with Controller.instance().notification.controller_queue() as queue:
             while not websocket.app.state.exiting:
+                if not await _notification_privilege_valid(websocket.app, current_user):
+                    log.info(f"Client {client} has lost the {NOTIFICATION_PRIVILEGE} privilege: closing the WebSocket")
+                    await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+                    return
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):

@@ -122,6 +122,16 @@ class RbacState:
 
         self._dirty = True
 
+    @property
+    def needs_reload(self) -> bool:
+        """
+        Whether the next read must rebuild the snapshot from the database.
+        Long-lived consumers (notification streams) poll this to pick up
+        administrative changes without holding a database session open.
+        """
+
+        return not self._loaded or self._dirty
+
     async def reload(self, db_session: AsyncSession) -> None:
         """
         Rebuild the snapshot from the database, whatever its state.
@@ -189,7 +199,7 @@ class RbacState:
         Rebuild the snapshot if it has never been loaded or is dirty.
         """
 
-        if not self._loaded or self._dirty:
+        if self.needs_reload:
             await self.reload(db_session)
 
     #

@@ -150,9 +150,10 @@ async def get_compute(
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
     name: Optional[str] = Query(None, description="Return only computes whose name exactly matches (case-sensitive)"),
-) -> List[models.Compute]:
+) -> List[Union[models.Compute, dict]]:
     """
-    Return all computes known by the controller.
+    Return all computes known by the controller: the registered computes with
+    their runtime state (connected, usage), plus the built-in local compute.
 
     Required privilege: Compute.Audit
 
@@ -160,10 +161,7 @@ async def get_computes(
     - name: Exact, case-sensitive match on the compute name.
     """
 
-    computes = await ComputesService(computes_repo).get_computes()
-    if name is not None:
-        computes = [compute for compute in computes if compute.name == name]
-    return computes
+    return await ComputesService(computes_repo).get_computes(name=name)
 
 
 @router.put(

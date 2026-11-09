@@ -60,9 +60,18 @@ def has_privilege_on_websocket(privilege_name: str):
             path = re.sub(r"^/v[0-9]", "", websocket.url.path)  # remove the prefix (e.g. "/v3") from URL path
             log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
             if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, privilege_name):
-                raise HTTPException(
-                    status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)"
+                # The socket is already accepted at this point: an HTTPException
+                # cannot become an HTTP response, so report the denial like the
+                # authentication dependency does (log.error notification, then
+                # close) and return None for the handler to bail out.
+                err_msg = (
+                    f"Permission denied while connecting to controller WebSocket "
+                    f"(privilege {privilege_name} is required)"
                 )
+                await websocket.send_json({"action": "log.error", "event": {"message": err_msg}})
+                log.error(err_msg)
+                await websocket.close(code=1008)
+                return None
         return current_user
 
     return get_user_and_check_privilege

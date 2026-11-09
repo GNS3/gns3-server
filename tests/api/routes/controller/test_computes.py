@@ -608,6 +608,85 @@ class TestComputeDisconnect:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+class TestComputeRuntimeState:
+    """
+    GET /computes merges the runtime state the controller keeps in memory
+    (connected, last error, usage) into the static database rows and appends
+    the built-in local compute, which never goes to the database: clients can
+    sense compute state through the REST list instead of the global
+    notification stream.
+    """
+
+    @staticmethod
+    async def _create_compute(client: AsyncClient, app: FastAPI, name: str, port: int) -> str:
+
+        params = {"name": name, "protocol": "http", "host": "localhost", "port": port}
+        response = await client.post(app.url_path_for("create_compute"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        return response.json()["compute_id"]
+
+    async def test_list_includes_local_compute(self, app: FastAPI, client: AsyncClient, controller) -> None:
+
+        await controller.add_compute(
+            compute_id="local", name="local", host="127.0.0.1", port=3080, force=True, connect=False
+        )
+
+        response = await client.get(app.url_path_for("get_computes"))
+        assert response.status_code == status.HTTP_200_OK
+        entry = next(compute for compute in response.json() if compute["compute_id"] == "local")
+        assert entry["name"] == "local"
+        assert "connected" in entry  # runtime state is part of the list
+        assert "capabilities" not in entry  # the payload is too large for a list
+
+        response = await client.get(app.url_path_for("get_computes"), params={"name": "local"})
+        assert [compute["compute_id"] for compute in response.json()] == ["local"]
+
+    async def test_list_overlays_runtime_state(self, app: FastAPI, client: AsyncClient, controller) -> None:
+
+        compute_id = await self._create_compute(client, app, "runtime-list-compute", 4910)
+        compute = controller.get_compute(compute_id)
+        compute._connected = True
+        compute._cpu_usage_percent = 12.5
+
+        response = await client.get(app.url_path_for("get_computes"))
+        entry = next(compute for compute in response.json() if compute["compute_id"] == compute_id)
+        assert entry["connected"] is True
+        assert entry["cpu_usage_percent"] == 12.5
+
+    async def test_get_overlays_runtime_state_and_capabilities(
+        self, app: FastAPI, client: AsyncClient, controller
+    ) -> None:
+
+        compute_id = await self._create_compute(client, app, "runtime-get-compute", 4911)
+        compute = controller.get_compute(compute_id)
+        compute._connected = True
+        compute._last_error = None
+        compute._capabilities = {
+            "version": "3.1.0",
+            "node_types": ["docker"],
+            "platform": "linux",
+            "cpus": 4,
+            "memory": 1024,
+            "disk_size": 2048,
+        }
+
+        response = await client.get(app.url_path_for("get_compute", compute_id=compute_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["connected"] is True
+        assert response.json()["capabilities"]["version"] == "3.1.0"
+
+    async def test_row_without_controller_state_stays_static(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+
+        # the fixture only inserts the database row, the controller does not
+        # know the compute: the list falls back to the static registration
+        response = await client.get(app.url_path_for("get_computes"))
+        entry = next(compute for compute in response.json() if compute["compute_id"] == str(test_compute.compute_id))
+        assert "connected" not in entry
+        assert "capabilities" not in entry
+
+
 class TestComputePrivilegeEnforcement:
     """
     The Compute.Audit checks on connect/disconnect and the compute read routes were

@@ -150,6 +150,9 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.c5e9a3f7d821_seed_default_aces import (
                             upgrade as upgrade_default_aces,
                         )
+                        from gns3server.db_migrations.versions.c8d4b6e2f913_add_notification_audit_privilege import (
+                            upgrade as upgrade_notification_privilege,
+                        )
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
@@ -164,8 +167,9 @@ async def connect_to_db(app: FastAPI) -> None:
                             # this database is stamped to head without running the
                             # migrations: seed the default ACEs here as well
                             upgrade_default_aces()
-                            # ... and apply the later change on top of the seed
+                            # ... and apply the later changes on top of the seed
                             upgrade_projects_ace_scope()
+                            upgrade_notification_privilege()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
