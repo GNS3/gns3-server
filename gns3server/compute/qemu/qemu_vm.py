@@ -74,6 +74,10 @@ HYPERV_CLOCKSOURCES = ("hyperv_clocksource_tsc_page", "hyperv_clocksource_msr")
 # guest CPU features turned off on such hosts
 KVMCLOCK_OFF_FEATURES = ("kvmclock", "tsc-deadline")
 
+PCIE_PLATFORMS = ("aarch64", "i386", "x86_64")
+PCIE_ADAPTER_TYPES = ("e1000e", "igb", "virtio-net-pci", "vmxnet3")
+MAX_PCIE_ADAPTERS = 232
+
 
 def host_clocksource():
     """
@@ -2066,6 +2070,29 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         else:
             return []
 
+    def _machine_options(self, additional_options):
+
+        if self.platform not in PCIE_PLATFORMS:
+            return []
+        for index, option in enumerate(additional_options):
+            if option in ("-machine", "-M") and index + 1 < len(additional_options):
+                for part in additional_options[index + 1].split(","):
+                    machine_type = part.removeprefix("type=")
+                    if "=" in machine_type:
+                        continue
+                    if self.platform == "aarch64":
+                        compatible = machine_type == "virt" or machine_type.startswith("virt-")
+                    else:
+                        compatible = machine_type == "q35" or machine_type.startswith("pc-q35-")
+                    if not compatible:
+                        raise QemuError(
+                            f"Machine type '{machine_type}' is incompatible with the PCIe network layout; "
+                            f"use {'virt' if self.platform == 'aarch64' else 'q35'}"
+                        )
+        if self.platform == "aarch64":
+            return self._arm64_options(shlex.join(additional_options))
+        return ["-machine", "q35"]
+
     def _serial_options(self, internal_console_port, external_console_port):
 
         if external_console_port:
@@ -2674,6 +2701,35 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             ["-net", "none"]
         )  # we do not want any user networking back-end if no adapter is connected.
 
+        custom_adapters = [self._get_custom_adapter_settings(n) for n in range(self.adapters)]
+        adapter_types = [settings.get("adapter_type", self._adapter_type) for settings in custom_adapters]
+        pcie_adapters = {
+            n
+            for n, adapter_type in enumerate(adapter_types)
+            if self.platform in PCIE_PLATFORMS and adapter_type in PCIE_ADAPTER_TYPES
+        }
+        if len(pcie_adapters) > MAX_PCIE_ADAPTERS:
+            raise QemuError(f"At most {MAX_PCIE_ADAPTERS} PCIe network adapters are supported")
+        if self.platform in PCIE_PLATFORMS:
+            io_ports = sum(adapter_types[n] in ("e1000e", "igb") for n in pcie_adapters)
+            legacy_bridges = (self.adapters - len(pcie_adapters) + 31) // 32
+            if io_ports + legacy_bridges > 9:
+                raise QemuError(
+                    "The network layout exceeds PCI I/O space: at most 9 I/O-bearing root ports "
+                    "and legacy PCI bridge groups are supported in total; use virtio-net-pci or vmxnet3"
+                )
+        # Eight root-port functions per slot, leaving slots 0, 1 and 31 for platform devices.
+        for port_number, adapter_number in enumerate(sorted(pcie_adapters)):
+            slot, function = 2 + port_number // 8, port_number % 8
+            network_options.extend(
+                [
+                    "-device",
+                    f"pcie-root-port,id=gns3-pcie-{adapter_number},bus=pcie.0,"
+                    f"addr=0x{slot:x}.{function},multifunction=on,chassis={port_number + 1},hotplug=off",
+                ]
+            )
+
+        # Legacy PCI NICs share bridges to avoid exhausting the 64 KiB I/O space.
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
         # Reserve 32 devices on root pci_bridge,
         # since the number of devices used by templates may differ significantly
@@ -2687,8 +2743,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
             nio = adapter.get_nio(0)
 
-            custom_adapter = self._get_custom_adapter_settings(adapter_number)
-            adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
+            custom_adapter = custom_adapters[adapter_number]
+            adapter_type = adapter_types[adapter_number]
             custom_mac_address = custom_adapter.get("mac_address")
             if custom_mac_address:
                 mac = int_to_macaddress(macaddress_to_int(custom_mac_address))
@@ -2696,8 +2752,10 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             device_string = f"{adapter_type},mac={mac}"
             if adapter_type == "virtio-net-pci":
                 device_string = f"{device_string},speed=10000,duplex=full"
-            bridge_id = math.floor(pci_device_id / 32)
-            if bridge_id > 0:
+            if adapter_number in pcie_adapters:
+                device_string = f"{device_string},bus=gns3-pcie-{adapter_number},addr=0x00"
+            else:
+                bridge_id = math.floor(pci_device_id / 32)
                 if pci_bridges_created < bridge_id:
                     network_options.extend(["-device", f"i82801b11-bridge,id=dmi_pci_bridge{bridge_id}"])
                     network_options.extend(
@@ -2709,7 +2767,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     pci_bridges_created += 1
                 addr = pci_device_id % 32
                 device_string = f"{device_string},bus=pci-bridge{bridge_id},addr=0x{addr:02x}"
-            pci_device_id += 1
+                pci_device_id += 1
             # Every adapter is backed by its own TAP (created before launch,
             # see _create_taps): the netdev is a kernel-side interface the
             # link attaches to, not a UDP socket into uBridge. A legacy
@@ -2919,6 +2977,16 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         additional_options = additional_options.replace("%guest-cid%", str(self._guest_cid))
         if self._console_type != "none" and self._console:
             additional_options = additional_options.replace("%console-port%", str(self._console))
+        try:
+            additional_opt_list = shlex.split(additional_options)
+        except ValueError as e:
+            raise QemuError(f"Invalid additional options: {additional_options} error {e}")
+        allow_unsafe_options = self.manager.config.settings.Qemu.allow_unsafe_options
+        if allow_unsafe_options is False:
+            for opt in additional_opt_list:
+                if opt in FORBIDDEN_OPTIONS:
+                    raise QemuError(f"Forbidden additional option: {opt}")
+        machine_options = self._machine_options(additional_opt_list)
         command = [self.qemu_path]
         command.extend(["-name", vm_name])
         command.extend(["-m", f"{self._ram}M"])
@@ -2927,6 +2995,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         if self._cpus > maxcpus:
             maxcpus = self._cpus
         command.extend(["-smp", f"cpus={self._cpus},maxcpus={maxcpus},sockets=1"])
+        command.extend(machine_options)
         kvm_enabled = False
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             command.extend(["-machine", "accel=kvm"])
@@ -2939,6 +3008,8 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 },
             )
         command.extend(["-boot", f"order={self._boot_priority}"])
+        # Reserve root-port addresses before other devices receive automatic PCI addresses.
+        command.extend(await self._network_options())
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
         command.extend(self._linux_boot_options())
@@ -2947,7 +3018,6 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         command.extend(self._console_options())
         command.extend(self._aux_options())
         command.extend(self._monitor_options())
-        command.extend(await self._network_options())
         # bios options must be last to have predictable NIC numbering, see https://github.com/GNS3/gns3-server/issues/2838
         command.extend(self._bios_option())
         if self.on_close != "save_vm_state":
@@ -2958,18 +3028,6 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             command.extend(await self._disable_graphics())
         if self._tpm:
             command.extend(self._tpm_options())
-        additional_opt_list = []
-        if additional_options:
-            try:
-                additional_opt_list = shlex.split(additional_options)
-            except ValueError as e:
-                raise QemuError(f"Invalid additional options: {additional_options} error {e}")
-            allow_unsafe_options = self.manager.config.settings.Qemu.allow_unsafe_options
-            if allow_unsafe_options is False:
-                for opt in additional_opt_list:
-                    if opt in FORBIDDEN_OPTIONS:
-                        raise QemuError(f"Forbidden additional option: {opt}")
-        command.extend(self._arm64_options(additional_options))
         if kvm_enabled:
             kvmclock_off_reason = self._kvmclock_off_reason()
             if kvmclock_off_reason:

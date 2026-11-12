@@ -729,12 +729,10 @@ async def test_build_command(vm, fake_qemu_binary):
             "256M",
             "-smp",
             "cpus=1,maxcpus=1,sockets=1",
+            "-machine",
+            "q35",
             "-boot",
             "order=c",
-            "-uuid",
-            vm.id,
-            "-serial",
-            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -745,6 +743,10 @@ async def test_build_command(vm, fake_qemu_binary):
             f"e1000,mac={vm._mac_address},bus=pci-bridge1,addr=0x00,netdev=gns3-0",
             "-netdev",
             f"socket,id=gns3-0,udp=127.0.0.1:{nio.rport},localaddr=127.0.0.1:{nio.lport}",
+            "-uuid",
+            vm.id,
+            "-serial",
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-display",
             "none",
         ]
@@ -823,12 +825,10 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             "256M",
             "-smp",
             "cpus=1,maxcpus=1,sockets=1",
+            "-machine",
+            "q35",
             "-boot",
             "order=c",
-            "-uuid",
-            vm.id,
-            "-serial",
-            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-net",
             "none",
             "-device",
@@ -843,6 +843,10 @@ async def test_build_command_two_adapters(vm, fake_qemu_binary):
             f"e1000,mac={int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)},bus=pci-bridge1,addr=0x01,netdev=gns3-1",
             "-netdev",
             f"socket,id=gns3-1,udp=127.0.0.1:{nio2.rport},localaddr=127.0.0.1:{nio2.lport}",
+            "-uuid",
+            vm.id,
+            "-serial",
+            f"telnet:127.0.0.1:{vm._internal_console_port},server,nowait",
             "-display",
             "none",
         ]
@@ -919,7 +923,154 @@ async def test_build_command_with_virtio_net_pci_adapter(vm):
     vm._adapter_type = "virtio-net-pci"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
-    assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,bus=pci-bridge1,addr=0x00,netdev=gns3-0" in cmd
+    assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,bus=gns3-pcie-0,addr=0x00,netdev=gns3-0" in cmd
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("guest_platform", ["aarch64", "i386", "x86_64"])
+@pytest.mark.parametrize("adapter_type", ["e1000e", "igb", "virtio-net-pci", "vmxnet3"])
+async def test_network_options_pcie_root_ports(vm, guest_platform, adapter_type):
+
+    vm._platform = guest_platform
+    vm.adapter_type = adapter_type
+    vm.adapters = 9
+    options = await vm._network_options()
+    assert not any("pci-bridge" in option for option in options)
+    for n in range(9):
+        assert (
+            f"pcie-root-port,id=gns3-pcie-{n},bus=pcie.0,addr=0x{2 + n // 8:x}.{n % 8},"
+            f"multifunction=on,chassis={n + 1},hotplug=off"
+        ) in options
+        assert any(f",bus=gns3-pcie-{n},addr=0x00,netdev=gns3-{n}" in option for option in options)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("count", [0, 100, 232])
+async def test_network_options_pcie_adapter_count(vm, count):
+
+    vm.adapter_type = "virtio-net-pci"
+    vm.adapters = count
+    options = await vm._network_options()
+    assert sum(option.startswith("pcie-root-port,") for option in options) == count
+    assert sum(option.startswith("virtio-net-pci,") for option in options) == count
+    if count:
+        assert f",bus=gns3-pcie-{count - 1},addr=0x00,netdev=gns3-{count - 1}" in options[-3]
+
+
+@pytest.mark.asyncio
+async def test_network_options_too_many_pcie_adapters(vm):
+
+    vm.adapter_type = "virtio-net-pci"
+    vm.adapters = 233
+    with pytest.raises(QemuError, match="At most 232 PCIe network adapters"):
+        await vm._network_options()
+    assert vm._local_udp_tunnels == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("adapter_type", ["e1000e", "igb"])
+async def test_network_options_pcie_io_space_limit(vm, adapter_type):
+
+    vm.adapter_type = adapter_type
+    vm.adapters = 10
+    with pytest.raises(QemuError, match="exceeds PCI I/O space"):
+        await vm._network_options()
+
+
+@pytest.mark.asyncio
+async def test_network_options_mixed_io_space_limit(vm):
+
+    vm.adapters = 41
+    vm.custom_adapters = [{"adapter_number": n, "adapter_type": "e1000e"} for n in range(8)]
+    with pytest.raises(QemuError, match="exceeds PCI I/O space"):
+        await vm._network_options()
+
+
+@pytest.mark.asyncio
+async def test_network_options_mixed_pci_and_pcie(vm):
+
+    vm.adapters = 3
+    vm.custom_adapters = [{"adapter_number": 1, "adapter_type": "virtio-net-pci", "mac_address": "00:00:ab:0e:0f:09"}]
+    options = await vm._network_options()
+    assert sum(option.startswith("pcie-root-port,") for option in options) == 1
+    assert "pcie-root-port,id=gns3-pcie-1,bus=pcie.0,addr=0x2.0,multifunction=on,chassis=1,hotplug=off" in options
+    assert (
+        "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,bus=gns3-pcie-1,addr=0x00,netdev=gns3-1"
+        in options
+    )
+    assert any(",bus=pci-bridge1,addr=0x00,netdev=gns3-0" in option for option in options)
+    assert any(",bus=pci-bridge1,addr=0x01,netdev=gns3-2" in option for option in options)
+
+
+@pytest.mark.asyncio
+async def test_network_options_other_platform_preserves_pci(vm):
+
+    vm._platform = "ppc"
+    vm.adapter_type = "virtio-net-pci"
+    options = await vm._network_options()
+    assert not any(option.startswith("pcie-root-port,") for option in options)
+    assert any(",bus=pci-bridge1,addr=0x00,netdev=gns3-0" in option for option in options)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("count", [32, 33, 275])
+async def test_network_options_legacy_bridge_capacity(vm, count):
+
+    vm.adapters = count
+    options = await vm._network_options()
+    assert sum(option.startswith("pci-bridge,") for option in options) == (count + 31) // 32
+    assert sum(option.startswith("e1000,") for option in options) == count
+    assert not any(option.startswith("pcie-root-port,") for option in options)
+
+
+@pytest.mark.parametrize("guest_platform", ["i386", "x86_64"])
+@pytest.mark.parametrize("options", [[], ["-machine", "q35"], ["-M", "pc-q35-6.2"], ["-machine", "type=q35,accel=tcg"]])
+def test_machine_options_q35(vm, guest_platform, options):
+
+    vm._platform = guest_platform
+    assert vm._machine_options(options) == ["-machine", "q35"]
+
+
+@pytest.mark.parametrize(
+    ("guest_platform", "machine"),
+    [("x86_64", "pc"), ("i386", "type=pc-i440fx-6.2"), ("aarch64", "virtually-not-virt")],
+)
+def test_machine_options_incompatible_machine(vm, guest_platform, machine):
+
+    vm._platform = guest_platform
+    with pytest.raises(QemuError, match="incompatible with the PCIe network layout"):
+        vm._machine_options(["-machine", machine])
+
+
+def test_machine_options_arm64(vm):
+
+    vm._platform = "aarch64"
+    with patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"):
+        assert vm._machine_options(["-machine", "type=virt-6.2", "-cpu", "cortex-a72"]) == [
+            "-machine",
+            "virt,gic-version=3",
+        ]
+
+
+def test_machine_options_other_platform(vm):
+
+    vm._platform = "ppc"
+    assert vm._machine_options(["-machine", "mac99"]) == []
+
+
+@pytest.mark.asyncio
+async def test_build_command_pcie_ports_precede_other_devices(vm):
+
+    vm.adapter_type = "virtio-net-pci"
+    disk_device = "virtio-blk-pci,id=test-disk"
+    with (
+        asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()),
+        patch.object(vm, "_disk_options", new=AsyncioMagicMock(return_value=["-device", disk_device])),
+    ):
+        cmd = await vm._build_command()
+    root_port = next(option for option in cmd if option.startswith("pcie-root-port,"))
+    assert cmd.index(root_port) < cmd.index(disk_device)
+    assert cmd.index(root_port) < cmd.index("-serial")
 
 
 @pytest.mark.asyncio
