@@ -996,6 +996,81 @@ class TestNodeConsoleWebSocketRoutes:
         assert websocket.sent == []
         assert compute_ws.closed
 
+    @staticmethod
+    def _capturing_ws_connect(monkeypatch, messages: List[aiohttp.WSMessage], captured: dict) -> None:
+        """
+        Same as _forward_compute_ws but records the URL and headers passed to
+        the compute ws_connect() call.
+        """
+
+        compute_ws = FakeComputeConsoleWebSocket(messages)
+
+        def ws_connect(url, **kwargs):
+            captured["url"] = url
+            captured["headers"] = kwargs.get("headers")
+            return compute_ws
+
+        monkeypatch.setattr(
+            HTTPClient,
+            "get_client",
+            classmethod(lambda cls: SimpleNamespace(ws_connect=ws_connect)),
+        )
+
+    async def test_console_ws_authenticates_with_compute_credentials(
+        self, compute_credentials, project: Project, controller, monkeypatch
+    ) -> None:
+        """
+        The console WebSocket must authenticate with the credentials stored on the
+        compute, not with the local server credentials: a remote compute has its own
+        credentials and would always reject the local ones (issue #3076).
+        """
+
+        remote_compute = Compute(
+            "remote.example.com",
+            controller,
+            host="127.0.0.1",
+            port=3080,
+            user="remote-user",
+            password=SecretStr("remote-password"),
+        )
+        node = Node(project, remote_compute, "test", node_type="vpcs")
+        project._nodes[node.id] = node
+
+        captured: dict = {}
+        self._capturing_ws_connect(
+            monkeypatch, [aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None)], captured
+        )
+        websocket = FakeClientWebSocket()
+
+        await ws_console(websocket, current_user=MagicMock(), node=node)
+
+        # the local server credentials ("admin"/"password", set by compute_credentials) must not be used
+        assert captured["headers"]["Authorization"] == aiohttp.encode_basic_auth(
+            "remote-user", "remote-password", encoding="utf-8"
+        )
+
+    async def test_console_ws_without_compute_user_sends_no_auth_header(
+        self, compute_credentials, project: Project, controller, monkeypatch
+    ) -> None:
+        """
+        A compute without a user connects without an Authorization header, like any
+        other controller to compute request.
+        """
+
+        remote_compute = Compute("remote.example.com", controller, host="127.0.0.1", port=3080)
+        node = Node(project, remote_compute, "test", node_type="vpcs")
+        project._nodes[node.id] = node
+
+        captured: dict = {}
+        self._capturing_ws_connect(
+            monkeypatch, [aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, "device output", None)], captured
+        )
+        websocket = FakeClientWebSocket()
+
+        await ws_console(websocket, current_user=MagicMock(), node=node)
+
+        assert "Authorization" not in captured["headers"]
+
 
 class _FakeComputeWebSocket:
     """

@@ -33,7 +33,6 @@ from fastapi.routing import APIRoute
 
 from gns3server import schemas
 from gns3server.api.openapi import binary_request_body, binary_response
-from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
@@ -859,19 +858,14 @@ async def ws_console(
     try:
         # forward WebSocket data in both directions between the client and the compute console WebSocket
         log.info(f"Forwarding console WebSocket to '{ws_console_compute_url}'")
-        server_config = Config.instance().settings.Server
-        user = server_config.compute_username
-        password = server_config.compute_password
-        if not user:
-            raise ControllerForbiddenError("Compute username is not set")
-        user = user.strip()
-        if user and password:
-            auth_header = aiohttp.encode_basic_auth(user, password.get_secret_value(), encoding="utf-8")
-        else:
-            auth_header = aiohttp.encode_basic_auth(user, "", encoding="utf-8")
+        # authenticate with the credentials of this compute, not with the local server
+        # credentials: they only match for the local compute
+        headers = {}
+        if compute.auth_header:
+            headers["Authorization"] = compute.auth_header
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(
-            ws_console_compute_url, headers={"Authorization": auth_header}, ssl_context=ssl_context
+            ws_console_compute_url, headers=headers, ssl_context=ssl_context
         ) as ws:
             tasks = [
                 asyncio.ensure_future(ws_receive(ws)),
@@ -959,19 +953,14 @@ async def vnc_console(
     try:
         # forward WebSocket data in both directions between the client and the compute VNC console WebSocket
         log.info(f"Forwarding VNC console WebSocket to '{vnc_console_compute_url}'")
-        server_config = Config.instance().settings.Server
-        user = server_config.compute_username
-        password = server_config.compute_password
-        if not user:
-            raise ControllerForbiddenError("Compute username is not set")
-        user = user.strip()
-        if user and password:
-            auth_header = aiohttp.encode_basic_auth(user, password.get_secret_value(), encoding="utf-8")
-        else:
-            auth_header = aiohttp.encode_basic_auth(user, "", encoding="utf-8")
+        # authenticate with the credentials of this compute, not with the local server
+        # credentials: they only match for the local compute
+        headers = {}
+        if compute.auth_header:
+            headers["Authorization"] = compute.auth_header
         ssl_context = Controller.instance().ssl_context()
         async with HTTPClient.get_client().ws_connect(
-            vnc_console_compute_url, headers={"Authorization": auth_header}, ssl_context=ssl_context
+            vnc_console_compute_url, headers=headers, ssl_context=ssl_context
         ) as ws:
             tasks = [
                 asyncio.ensure_future(vnc_receive(ws)),

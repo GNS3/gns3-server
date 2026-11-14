@@ -23,6 +23,7 @@ import logging
 import socket
 import sys
 from asyncio import timeout as asynctimeout
+from typing import Optional
 
 import aiohttp
 from fastapi import HTTPException
@@ -294,6 +295,15 @@ class Compute:
     @password.setter
     def password(self, value):
         self._set_auth(self._user, value)
+
+    @property
+    def auth_header(self) -> Optional[str]:
+        """
+        Value for the Authorization header when sending requests to this compute,
+        or None when the compute has no user configured.
+        """
+
+        return self._auth
 
     @property
     def cpu_usage_percent(self):
