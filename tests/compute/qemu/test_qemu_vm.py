@@ -671,11 +671,6 @@ def test_arm64_options_with_custom_cpu(vm):
         assert vm._arm64_options("-cpu cortex-a72") == ["-machine", "virt,gic-version=3"]
 
 
-def test_arm64_options_for_other_platform(vm):
-    vm._platform = "x86_64"
-    assert vm._arm64_options("") == []
-
-
 def test_json(vm, compute_project):
 
     json = vm.asdict()

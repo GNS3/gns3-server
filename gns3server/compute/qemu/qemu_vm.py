@@ -2055,22 +2055,19 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
     def _arm64_options(self, additional_options, include_machine=True):
 
-        if self.platform == "aarch64":
-            arm64_machine = platform.machine() in ("aarch64", "arm64")
-            arm64_options = []
-            if include_machine:
-                if arm64_machine:
-                    arm64_options.extend(["-machine", "virt,gic-version=host"])
-                else:
-                    arm64_options.extend(["-machine", "virt,gic-version=3"])
-            if "-cpu" not in additional_options:
-                if arm64_machine:
-                    arm64_options.extend(["-cpu", "max"])
-                else:
-                    arm64_options.extend(["-cpu", "neoverse-n1"])
-            return arm64_options
-        else:
-            return []
+        arm64_host = platform.machine() in ("aarch64", "arm64")
+        arm64_options = []
+        if include_machine:
+            if arm64_host:
+                arm64_options.extend(["-machine", "virt,gic-version=host"])
+            else:
+                arm64_options.extend(["-machine", "virt,gic-version=3"])
+        if "-cpu" not in additional_options:
+            if arm64_host:
+                arm64_options.extend(["-cpu", "max"])
+            else:
+                arm64_options.extend(["-cpu", "neoverse-n1"])
+        return arm64_options
 
     @staticmethod
     def _machine_type(additional_options):
