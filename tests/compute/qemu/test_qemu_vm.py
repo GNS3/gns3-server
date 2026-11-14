@@ -1024,32 +1024,41 @@ async def test_network_options_legacy_bridge_capacity(vm, count):
 
 
 @pytest.mark.parametrize("guest_platform", ["i386", "x86_64"])
-@pytest.mark.parametrize("options", [[], ["-machine", "q35"], ["-M", "pc-q35-6.2"], ["-machine", "type=q35,accel=tcg"]])
-def test_machine_options_q35(vm, guest_platform, options):
+@pytest.mark.parametrize(
+    ("options", "expected"),
+    [
+        ([], ["-machine", "q35"]),
+        (["-machine", "q35"], []),
+        (["-M", "pc-q35-6.2"], []),
+        (["-machine", "type=q35,accel=tcg"], []),
+    ],
+)
+def test_machine_options_q35(vm, guest_platform, options, expected):
 
     vm._platform = guest_platform
-    assert vm._machine_options(options) == ["-machine", "q35"]
+    assert vm._machine_options(options) == expected
+    assert vm._uses_pcie_network_layout(options)
 
 
 @pytest.mark.parametrize(
     ("guest_platform", "machine"),
     [("x86_64", "pc"), ("i386", "type=pc-i440fx-6.2"), ("aarch64", "virtually-not-virt")],
 )
-def test_machine_options_incompatible_machine(vm, guest_platform, machine):
+def test_machine_options_custom_machine_uses_legacy_layout(vm, guest_platform, machine):
 
     vm._platform = guest_platform
-    with pytest.raises(QemuError, match="incompatible with the PCIe network layout"):
-        vm._machine_options(["-machine", machine])
+    with patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"):
+        expected = ["-cpu", "neoverse-n1"] if guest_platform == "aarch64" else []
+        assert vm._machine_options(["-machine", machine]) == expected
+    assert not vm._uses_pcie_network_layout(["-machine", machine])
 
 
 def test_machine_options_arm64(vm):
 
     vm._platform = "aarch64"
     with patch("gns3server.compute.qemu.qemu_vm.platform.machine", return_value="x86_64"):
-        assert vm._machine_options(["-machine", "type=virt-6.2", "-cpu", "cortex-a72"]) == [
-            "-machine",
-            "virt,gic-version=3",
-        ]
+        assert vm._machine_options(["-machine", "type=virt-6.2", "-cpu", "cortex-a72"]) == []
+        assert vm._uses_pcie_network_layout(["-machine", "type=virt-6.2", "-cpu", "cortex-a72"])
 
 
 def test_machine_options_other_platform(vm):
@@ -1071,6 +1080,19 @@ async def test_build_command_pcie_ports_precede_other_devices(vm):
     root_port = next(option for option in cmd if option.startswith("pcie-root-port,"))
     assert cmd.index(root_port) < cmd.index(disk_device)
     assert cmd.index(root_port) < cmd.index("-serial")
+
+
+@pytest.mark.asyncio
+async def test_build_command_custom_machine_uses_legacy_network_layout(vm):
+
+    vm._platform = "x86_64"
+    vm._options = "-machine pc"
+    vm.adapters = 1
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        cmd = await vm._build_command()
+    assert cmd[-2:] == ["-machine", "pc"]
+    assert not any(option.startswith("pcie-root-port,") for option in cmd)
+    assert any(option.startswith("pci-bridge,") for option in cmd)
 
 
 @pytest.mark.asyncio

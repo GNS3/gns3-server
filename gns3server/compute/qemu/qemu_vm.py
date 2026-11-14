@@ -2053,14 +2053,16 @@ class QemuVM(KernelDatapathMixin, BaseNode):
 
         super(QemuVM, QemuVM).console_type.__set__(self, new_console_type)
 
-    def _arm64_options(self, additional_options):
+    def _arm64_options(self, additional_options, include_machine=True):
 
         if self.platform == "aarch64":
             arm64_machine = platform.machine() in ("aarch64", "arm64")
-            if arm64_machine:
-                arm64_options = ["-machine", "virt,gic-version=host"]
-            else:
-                arm64_options = ["-machine", "virt,gic-version=3"]
+            arm64_options = []
+            if include_machine:
+                if arm64_machine:
+                    arm64_options.extend(["-machine", "virt,gic-version=host"])
+                else:
+                    arm64_options.extend(["-machine", "virt,gic-version=3"])
             if "-cpu" not in additional_options:
                 if arm64_machine:
                     arm64_options.extend(["-cpu", "max"])
@@ -2070,25 +2072,39 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         else:
             return []
 
+    @staticmethod
+    def _machine_type(additional_options):
+
+        machine_type = None
+        for index, option in enumerate(additional_options):
+            if option not in ("-machine", "-M") or index + 1 >= len(additional_options):
+                continue
+            for part in additional_options[index + 1].split(","):
+                if part.startswith("type="):
+                    machine_type = part.removeprefix("type=") or machine_type
+                    break
+                if "=" not in part:
+                    machine_type = part
+                    break
+        return machine_type
+
+    def _uses_pcie_network_layout(self, additional_options=()):
+
+        machine_type = self._machine_type(additional_options)
+        if self.platform in ("i386", "x86_64"):
+            machine_type = machine_type or "q35"
+            return machine_type == "q35" or machine_type.startswith("pc-q35-")
+        if self.platform == "aarch64":
+            machine_type = machine_type or "virt"
+            return machine_type == "virt" or machine_type.startswith("virt-")
+        return False
+
     def _machine_options(self, additional_options):
 
-        if self.platform not in PCIE_PLATFORMS:
+        if self.platform not in PCIE_PLATFORMS or self._machine_type(additional_options):
+            if self.platform == "aarch64":
+                return self._arm64_options(shlex.join(additional_options), include_machine=False)
             return []
-        for index, option in enumerate(additional_options):
-            if option in ("-machine", "-M") and index + 1 < len(additional_options):
-                for part in additional_options[index + 1].split(","):
-                    machine_type = part.removeprefix("type=")
-                    if "=" in machine_type:
-                        continue
-                    if self.platform == "aarch64":
-                        compatible = machine_type == "virt" or machine_type.startswith("virt-")
-                    else:
-                        compatible = machine_type == "q35" or machine_type.startswith("pc-q35-")
-                    if not compatible:
-                        raise QemuError(
-                            f"Machine type '{machine_type}' is incompatible with the PCIe network layout; "
-                            f"use {'virt' if self.platform == 'aarch64' else 'q35'}"
-                        )
         if self.platform == "aarch64":
             return self._arm64_options(shlex.join(additional_options))
         return ["-machine", "q35"]
@@ -2694,23 +2710,43 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         ]
         return options
 
-    async def _network_options(self):
+    async def _network_options(self, pcie_enabled=None):
 
         network_options = []
         network_options.extend(
             ["-net", "none"]
         )  # we do not want any user networking back-end if no adapter is connected.
+        if pcie_enabled is None:
+            pcie_enabled = self._uses_pcie_network_layout()
+
+        # PCIe network layout support:
+        # x86 guests (i386 and x86_64) default to q35; ARM64 guests default to virt.
+        # Explicit selections outside those machine families use the legacy PCI layout.
+        #
+        # PCIe-capable NICs (e1000e, igb, virtio-net-pci, and vmxnet3) each attach
+        # to a dedicated PCIe root port at downstream slot 0. Root ports are grouped into
+        # eight functions per root-bus slot. This gives path-based Linux interface names
+        # a consistent bus/slot pattern, such as enp1s0, enp2s0, and enp3s0.
+        # Exact names and bus numbers still depend on guest firmware, naming policy, and
+        # other devices. Legacy NICs such as e1000 and rtl8139 continue to share PCI
+        # bridges, with up to 32 NICs per bridge group.
+        #
+        # The PCIe layout supports at most 232 NIC root ports; disks, graphics, USB, and
+        # user-supplied devices can impose lower resource limits. NICs with I/O BARs
+        # (e1000e and igb) each consume an I/O bridge window. At most nine such
+        # root ports and legacy PCI bridge groups are allowed in total to avoid
+        # exhausting PCI I/O space. Use virtio-net-pci or vmxnet3 for large PCIe
+        # NIC configurations. The existing 275-NIC limit remains available with legacy
+        # NICs on shared bridges.
 
         custom_adapters = [self._get_custom_adapter_settings(n) for n in range(self.adapters)]
         adapter_types = [settings.get("adapter_type", self._adapter_type) for settings in custom_adapters]
         pcie_adapters = {
-            n
-            for n, adapter_type in enumerate(adapter_types)
-            if self.platform in PCIE_PLATFORMS and adapter_type in PCIE_ADAPTER_TYPES
+            n for n, adapter_type in enumerate(adapter_types) if pcie_enabled and adapter_type in PCIE_ADAPTER_TYPES
         }
         if len(pcie_adapters) > MAX_PCIE_ADAPTERS:
             raise QemuError(f"At most {MAX_PCIE_ADAPTERS} PCIe network adapters are supported")
-        if self.platform in PCIE_PLATFORMS:
+        if pcie_enabled:
             io_ports = sum(adapter_types[n] in ("e1000e", "igb") for n in pcie_adapters)
             legacy_bridges = (self.adapters - len(pcie_adapters) + 31) // 32
             if io_ports + legacy_bridges > 9:
@@ -3009,7 +3045,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             )
         command.extend(["-boot", f"order={self._boot_priority}"])
         # Reserve root-port addresses before other devices receive automatic PCI addresses.
-        command.extend(await self._network_options())
+        command.extend(await self._network_options(self._uses_pcie_network_layout(additional_opt_list)))
         command.extend(self._cdrom_option())
         command.extend(await self._disk_options())
         command.extend(self._linux_boot_options())
