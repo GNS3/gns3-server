@@ -1781,6 +1781,7 @@ async def snapshot_list(
 async def snapshot_create(
     project_id: Annotated[str, Field(description="Project name or UUID")],
     name: Annotated[str, Field(description="Name for the new snapshot")],
+    description: Annotated[str | None, Field(description="Optional description for the snapshot")] = None,
 ) -> list[dict[str, Any]]:
     """Create a new snapshot of a project.
 
@@ -1794,6 +1795,7 @@ async def snapshot_create(
         {
             "project_id": project_id,
             "name": name,
+            "description": description,
         },
     )
 

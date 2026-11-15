@@ -39,6 +39,14 @@ class SnapshotCreate(SnapshotBase):
     pass
 
 
+class SnapshotUpdate(BaseModel):
+    """
+    Properties for snapshot update.
+    """
+
+    description: Optional[str] = Field(None, description="Description of the snapshot")
+
+
 class Snapshot(SnapshotBase):
     snapshot_id: UUID
     project_id: UUID

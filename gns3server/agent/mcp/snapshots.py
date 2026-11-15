@@ -56,8 +56,12 @@ def create_snapshot_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) ->
     name = params.get("name")
     if not project_id or not name:
         return {"error": "project_id and name are required"}
+    body: dict[str, Any] = {"name": name}
+    description = params.get("description")
+    if description:
+        body["description"] = description
     conn = _get_connector(gns3_ctx)
-    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/snapshots", json_data={"name": name}).json()
+    result = conn.http_call("post", f"{conn.base_url}/projects/{project_id}/snapshots", json_data=body).json()
     return {"message": f"Snapshot '{name}' created", "snapshot": result}
 
 

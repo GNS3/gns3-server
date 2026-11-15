@@ -1713,18 +1713,33 @@ class Project:
             log.error(f"Cannot write snapshot config '{self._snapshot_conf_path}': {e}")
 
     @open_required
-    async def snapshot(self, name):
+    async def snapshot(self, name, description=None):
         """
         Snapshot the project
 
         :param name: Name of the snapshot
+        :param description: Description of the snapshot
         """
 
         if name in [snap.name for snap in self._snapshots.values()]:
             raise ControllerError(f"The snapshot name {name} already exists")
-        snapshot = Snapshot(self, name=name)
+        snapshot = Snapshot(self, name=name, description=description)
         await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
+        self._save_snapshot_config()
+        return snapshot
+
+    @open_required
+    def update_snapshot(self, snapshot_id, description=None):
+        """
+        Update a snapshot, for example its description
+
+        :param snapshot_id: ID of the snapshot
+        :param description: New description of the snapshot
+        """
+
+        snapshot = self.get_snapshot(snapshot_id)
+        snapshot.update(description=description)
         self._save_snapshot_config()
         return snapshot
 
