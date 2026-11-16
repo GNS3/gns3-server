@@ -340,8 +340,8 @@ class UsersRepository(BaseRepository):
 
         local_user = await self.get_user_by_username(username)
 
-        # 1. Superadmin local check first for emergency recovery
-        if local_user and local_user.is_superadmin:
+        # 1. Superadmin local check first for emergency recovery (local accounts only)
+        if local_user and local_user.auth_source == "local" and local_user.is_superadmin:
             if local_user.hashed_password is None:
                 log.warning(
                     f"User '{username}' has been authenticated without a password configured. Please set a new password."
