@@ -38,6 +38,45 @@ from gns3server.schemas.config import LDAPSettings
 
 log = logging.getLogger(__name__)
 
+# truststore on macOS/Windows enforces OS keychain certificate validation even when
+# verify_mode is explicitly configured as ssl.CERT_NONE. Ensure CERT_NONE is respected across platforms:
+try:
+    import truststore._api as trust_api
+
+    if not getattr(trust_api, "_gns3_cert_none_patched", False):
+        orig_verify = trust_api._verify_peercerts
+
+        def _safe_verify_peercerts(sock_or_sslobj, server_hostname=None):
+            ctx = getattr(sock_or_sslobj, "context", None)
+            if ctx and getattr(ctx, "verify_mode", None) == ssl.CERT_NONE:
+                return
+            return orig_verify(sock_or_sslobj, server_hostname=server_hostname)
+
+        trust_api._verify_peercerts = _safe_verify_peercerts
+        trust_api._gns3_cert_none_patched = True
+except Exception:
+    pass
+
+
+def _format_ldap_error(e: Exception) -> str:
+    """
+    Format LDAPException or nested socket errors into clean, human-readable strings.
+    """
+    current: Any = e
+    while hasattr(current, "args") and current.args:
+        first = current.args[0]
+        if isinstance(first, (tuple, list)) and first:
+            current = first[0]
+        elif isinstance(first, Exception):
+            current = first
+        else:
+            current = first
+            break
+    msg = str(current)
+    for artifact in ("('", "')", '("', '")', "',)", '",)', "\\'"):
+        msg = msg.replace(artifact, "")
+    return msg.strip("(),'\" ")
+
 
 @dataclass
 class LDAPUserProfile:
@@ -97,6 +136,7 @@ def _search_directory_groups(conn: Connection, user_dn: str, clean_username: str
             search_base=search_base,
             search_filter=grp_filter,
             attributes=["cn", "sAMAccountName", "name", "distinguishedName"],
+            size_limit=100,
         )
         for entry in conn.entries:
             groups.add(entry.entry_dn)
@@ -115,6 +155,7 @@ def _search_directory_groups(conn: Connection, user_dn: str, clean_username: str
                 search_base=search_base,
                 search_filter=ad_recursive_filter,
                 attributes=["cn", "sAMAccountName", "name"],
+                size_limit=100,
             )
             for entry in conn.entries:
                 groups.add(entry.entry_dn)
@@ -182,6 +223,7 @@ class LDAPService:
             user=user,
             password=password,
             auto_bind=False,
+            auto_referrals=False,
             receive_timeout=timeout,
             client_strategy=self._client_strategy,
         )
@@ -205,7 +247,13 @@ class LDAPService:
         settings: LDAPSettings,
     ) -> List[str]:
         raw_groups = _extract_entry_groups(user_entry)
-        searched_groups = _search_directory_groups(conn, user_dn, clean_username, settings)
+        # In Active Directory, user_entry already includes all memberOf groups.
+        # Skip slow, domain-wide directory queries if groups were already extracted from the user entry.
+        if raw_groups:
+            searched_groups: Set[str] = set()
+        else:
+            searched_groups = _search_directory_groups(conn, user_dn, clean_username, settings)
+
         all_raw_groups = raw_groups | searched_groups
         mapped = _map_to_user_groups(all_raw_groups, settings.group_mapping or {}, settings.default_group)
         log.info(
@@ -431,7 +479,7 @@ class LDAPService:
                 "user_search_successful": False,
                 "users_found": 0,
                 "latency_ms": latency,
-                "message": f"LDAP protocol error: {e}",
+                "message": f"LDAP protocol error: {_format_ldap_error(e)}",
             }
         except Exception as e:
             latency = round((time.perf_counter() - t0) * 1000, 2)
@@ -441,7 +489,7 @@ class LDAPService:
                 "user_search_successful": False,
                 "users_found": 0,
                 "latency_ms": latency,
-                "message": f"Connection error: {e}",
+                "message": f"Connection error: {_format_ldap_error(e)}",
             }
         finally:
             if conn.bound:
