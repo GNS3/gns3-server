@@ -155,7 +155,7 @@ from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
 from .controller.rbac import ACE, ACECreate, ACEEndpoint, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
 from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
-from .controller.snapshots import Snapshot, SnapshotCreate
+from .controller.snapshots import Snapshot, SnapshotCreate, SnapshotUpdate
 from .controller.statistics import (
     ComputeStatistics,
     ComputeStatisticsEntry,
@@ -387,6 +387,7 @@ __all__ = [
     "SettingsUpdateResponse",
     "Snapshot",
     "SnapshotCreate",
+    "SnapshotUpdate",
     "SymbolDimensions",
     "SymbolInfo",
     "Template",

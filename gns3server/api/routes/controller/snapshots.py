@@ -67,7 +67,7 @@ async def create_snapshot(
     Required privilege: Snapshot.Allocate
     """
 
-    snapshot = await project.snapshot(snapshot_data.name)
+    snapshot = await project.snapshot(snapshot_data.name, snapshot_data.description)
     return snapshot.asdict()
 
 
@@ -86,6 +86,24 @@ def get_snapshots(project: Project = Depends(dep_project)) -> List[schemas.Snaps
 
     snapshots = [s for s in project.snapshots.values()]
     return [s.asdict() for s in sorted(snapshots, key=lambda s: (s.created_at, s.name))]
+
+
+@router.put(
+    "/{snapshot_id}",
+    response_model=schemas.Snapshot,
+    dependencies=[Depends(has_privilege("Snapshot.Allocate"))],
+)
+async def update_snapshot(
+    snapshot_data: schemas.SnapshotUpdate, snapshot_id: UUID, project: Project = Depends(dep_project)
+) -> schemas.Snapshot:
+    """
+    Update a snapshot, for example its description.
+
+    Required privilege: Snapshot.Allocate
+    """
+
+    snapshot = project.update_snapshot(str(snapshot_id), snapshot_data.description)
+    return snapshot.asdict()
 
 
 @router.delete(
