@@ -263,7 +263,12 @@ class TestLdapAuthentication:
         assert data.get("username") == "alice"
 
     async def test_ldap_account_linking_by_email_prevents_duplicate_user(
-        self, app: FastAPI, unauthorized_client: AsyncClient, db_session: AsyncSession, config: Config, mock_ldap_directory
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        db_session: AsyncSession,
+        config: Config,
+        mock_ldap_directory,
     ) -> None:
         """
         Verify that logging in with an email and later logging in with a short name links to the exact same user_id.
@@ -299,3 +304,53 @@ class TestLdapAuthentication:
         # Ensure only 1 user exists for Alice in database
         all_alices = [u for u in await users_repo.get_users() if u.email == "alice@example.com"]
         assert len(all_alices) == 1
+
+    async def test_ldap_superadmin_group_provisioning_and_revocation(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        db_session: AsyncSession,
+        config: Config,
+        mock_ldap_directory,
+    ) -> None:
+        """
+        Verify users in configured superadmin_groups receive is_superadmin=True,
+        and users not in superadmin_groups receive is_superadmin=False.
+        Also verify that removing the group revokes superadmin on next login.
+        """
+        config.settings.LDAP.superadmin_groups = ["GNS3-Admins"]
+        users_repo = UsersRepository(db_session)
+
+        # 1. Alice is in GNS3-Admins -> should be provisioned with is_superadmin=True
+        resp_alice = await unauthorized_client.post(
+            app.url_path_for("login"),
+            data={"username": "alice", "password": "mock_alice_secret"},
+            headers=FORM_HEADERS,
+        )
+        assert resp_alice.status_code == status.HTTP_200_OK
+        alice_user = await users_repo.get_user_by_username("alice")
+        assert alice_user is not None
+        assert alice_user.is_superadmin is True
+
+        # 2. Bob is in GNS3-Users -> should be provisioned with is_superadmin=False
+        resp_bob = await unauthorized_client.post(
+            app.url_path_for("login"),
+            data={"username": "bob", "password": "mock_bob_secret"},
+            headers=FORM_HEADERS,
+        )
+        assert resp_bob.status_code == status.HTTP_200_OK
+        bob_user = await users_repo.get_user_by_username("bob")
+        assert bob_user is not None
+        assert bob_user.is_superadmin is False
+
+        # 3. Remove GNS3-Admins from superadmin_groups -> Alice logs in again -> superadmin revoked
+        config.settings.LDAP.superadmin_groups = []
+        resp_alice2 = await unauthorized_client.post(
+            app.url_path_for("login"),
+            data={"username": "alice", "password": "mock_alice_secret"},
+            headers=FORM_HEADERS,
+        )
+        assert resp_alice2.status_code == status.HTTP_200_OK
+        alice_user_updated = await users_repo.get_user_by_username("alice")
+        assert alice_user_updated is not None
+        assert alice_user_updated.is_superadmin is False

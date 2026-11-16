@@ -216,10 +216,15 @@ class UsersRepository(BaseRepository):
                 await self._db_session.execute(
                     update(models.User)
                     .where(models.User.user_id == existing_email_user.user_id)
-                    .values(username=profile.username, full_name=profile.full_name)
+                    .values(
+                        username=profile.username,
+                        full_name=profile.full_name,
+                        is_superadmin=profile.is_superadmin,
+                    )
                 )
                 existing_email_user.username = profile.username
                 existing_email_user.full_name = profile.full_name
+                existing_email_user.is_superadmin = profile.is_superadmin
                 return existing_email_user
             if existing_email_user:
                 log.warning("Email '%s' from LDAP is already in use by a local account", email)
@@ -232,7 +237,7 @@ class UsersRepository(BaseRepository):
             hashed_password=None,
             auth_source="ldap",
             is_active=True,
-            is_superadmin=False,
+            is_superadmin=profile.is_superadmin,
         )
         self._db_session.add(user)
         await self._db_session.flush()
@@ -264,6 +269,15 @@ class UsersRepository(BaseRepository):
         if profile.full_name and user.full_name != profile.full_name:
             update_data["full_name"] = profile.full_name
 
+        if user.is_superadmin != profile.is_superadmin:
+            log.info(
+                "Updating superadmin status for LDAP user '%s' from %s to %s",
+                user.username,
+                user.is_superadmin,
+                profile.is_superadmin,
+            )
+            update_data["is_superadmin"] = profile.is_superadmin
+
         if update_data:
             await self._db_session.execute(
                 update(models.User).where(models.User.user_id == user.user_id).values(update_data)
@@ -272,6 +286,8 @@ class UsersRepository(BaseRepository):
                 user.email = update_data["email"]
             if "full_name" in update_data:
                 user.full_name = update_data["full_name"]
+            if "is_superadmin" in update_data:
+                user.is_superadmin = update_data["is_superadmin"]
 
     async def _sync_user_groups(self, user: models.User, profile: LDAPUserProfile) -> None:
         target_group_ids: List[UUID] = []
