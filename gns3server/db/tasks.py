@@ -148,20 +148,11 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
                             upgrade as upgrade_multiuser,
                         )
-                        from gns3server.db_migrations.versions.c9e4f7a2b6d8_add_share_distribute_privileges import (
-                            upgrade as upgrade_share_distribute,
-                        )
-                        from gns3server.db_migrations.versions.d5b8e2c4a7f1_add_user_group_members_privilege import (
-                            upgrade as upgrade_group_members,
-                        )
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
                         from gns3server.db_migrations.versions.e2a7c9d4b601_add_cdrom_interfaces import (
                             upgrade as upgrade_cdrom_interfaces,
-                        )
-                        from gns3server.db_migrations.versions.f6d3a9c2e8b1_add_duplicate_export_privileges import (
-                            upgrade as upgrade_duplicate_export,
                         )
 
                         with Operations.context(MigrationContext.configure(connection)):
@@ -171,12 +162,8 @@ async def connect_to_db(app: FastAPI) -> None:
                             # this database is stamped to head without running the
                             # migrations: apply the consolidated multi-user
                             # migration (seed the default ACEs, the built-in
-                            # privileges and roles, and create the new tables),
-                            # then the privileges added after it
+                            # privileges and roles, and create the new tables)
                             upgrade_multiuser()
-                            upgrade_duplicate_export()
-                            upgrade_share_distribute()
-                            upgrade_group_members()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)

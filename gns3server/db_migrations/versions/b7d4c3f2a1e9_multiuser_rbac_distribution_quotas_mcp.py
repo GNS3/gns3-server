@@ -8,6 +8,11 @@ Consolidated migration covering the multi-user work shipped together:
 - add the Notification.Audit, Server.Audit, Server.Modify, Link.Marker and
   Project.Marker privileges and attach them to the built-in roles that
   should hold them;
+- add the Project.Duplicate, Project.Export, Project.Share, Project.Distribute
+  and User.GroupMembers privileges and attach them to the Administrator and
+  User roles only: a shared user or a distributed-copy recipient must not
+  pass the lab on, and a copy must not be duplicated or exported (its disks
+  can be thin overlays of the template project);
 - add the built-in "Lab member" role (the default role for distributed lab
   copies) with its project-scoped privileges;
 - add the user_preferences, distribution_records and mcp_tool_whitelist
@@ -52,6 +57,20 @@ MARKER_PRIVILEGES = (
     ("Project.Marker", "Manage project-level marker definitions"),
 )
 MARKER_ROLE_NAMES = ("Administrator", "User", "Lab member")
+
+# keep in sync with create_default_roles in gns3server/db/models/privileges.py
+# these leave the project scope (a copy lives elsewhere, an archive travels
+# off the server) or authorize other users on the project, and listing group
+# members is needed to fill the share dialog: the built-in "Lab member" role
+# deliberately does not receive them
+PROJECT_ACTION_PRIVILEGES = (
+    ("Project.Duplicate", "Duplicate a project"),
+    ("Project.Export", "Export a project as a portable archive"),
+    ("Project.Share", "Share a project with other users or groups"),
+    ("Project.Distribute", "Distribute a project as a frozen template"),
+    ("User.GroupMembers", "List the members of your own user groups"),
+)
+PROJECT_ACTION_ROLE_NAMES = ("Administrator", "User")
 
 # keep in sync with add_privileges_to_default_roles in gns3server/db/models/privileges.py
 LAB_MEMBER_ROLE_NAME = "Lab member"
@@ -369,6 +388,7 @@ def upgrade() -> None:
     _add_user_quota_columns()
     _add_privileges(connection, SERVER_PRIVILEGES, ("Administrator",))
     _add_privileges(connection, MARKER_PRIVILEGES, MARKER_ROLE_NAMES)
+    _add_privileges(connection, PROJECT_ACTION_PRIVILEGES, PROJECT_ACTION_ROLE_NAMES)
     _create_distribution_records()
     _create_mcp_tool_whitelist()
 
@@ -379,6 +399,7 @@ def downgrade() -> None:
 
     op.drop_table("mcp_tool_whitelist")
     _drop_distribution_records()
+    _remove_privileges(connection, (name for name, _ in PROJECT_ACTION_PRIVILEGES))
     _remove_privileges(connection, (name for name, _ in MARKER_PRIVILEGES))
     _remove_privileges(connection, (name for name, _ in SERVER_PRIVILEGES))
     for column in _GROUP_QUOTA_COLUMNS:
