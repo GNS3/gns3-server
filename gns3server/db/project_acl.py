@@ -37,7 +37,7 @@ instead, so re-sharing replaces the role (see ``upsert_project_share_ace``).
 """
 
 import logging
-from typing import Dict, Iterable, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, Optional, Tuple, Union, cast
 from uuid import UUID
 
 from sqlalchemy import select
@@ -45,6 +45,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.controller.controller_error import ControllerError
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 
@@ -178,25 +179,74 @@ async def upsert_project_share_ace(
     return ace, True
 
 
+async def migrate_project_owner_ids(db_session: AsyncSession, projects: Iterable[Any]) -> int:
+    """
+    Give legacy projects a stable owner id.
+
+    A project saved before owner ids existed carries ``created_by`` (a
+    username) only. Resolve the name once and persist ``created_by_id`` into
+    the project and its topology file. When the name resolves to nobody the
+    project is marked as owned by a deleted user instead: a user created
+    later under that name must never inherit it. Returns the number of
+    projects that got a stable owner state.
+    """
+
+    users_repo = UsersRepository(db_session)
+    migrated = 0
+    for project in projects:
+        if project.created_by_id is not None or project.created_by_deleted or not project.created_by:
+            continue
+        user = await users_repo.get_user_by_username(project.created_by)
+        if user is not None:
+            project.created_by_id = str(user.user_id)
+            log.info(f"Project '{project.id}': owner '{project.created_by}' got the stable id {user.user_id}")
+        else:
+            project.created_by_deleted = True
+            log.warning(
+                f"Project '{project.id}': owner '{project.created_by}' no longer exists, "
+                "the project stays restricted to superadmins"
+            )
+        try:
+            project.dump()
+        except ControllerError as e:
+            log.warning(f"Project '{project.id}': could not persist the stable owner id: {e}")
+        migrated += 1
+    return migrated
+
+
 async def ensure_all_project_aces(
-    db_session: AsyncSession, projects: Iterable[Tuple[Union[str, UUID], Optional[str]]]
+    db_session: AsyncSession,
+    projects: Iterable[Tuple[Union[str, UUID], Optional[str], Optional[Union[str, UUID]]]],
 ) -> int:
     """
     Create every missing owner ACE in a single transaction.
 
-    ``projects`` is an iterable of (project_id, created_by) pairs. Returns the
-    number of ACEs created.
+    ``projects`` is an iterable of (project_id, created_by, created_by_id)
+    triples. Owners are matched by their stable id only: the username is kept
+    for logging, never for matching, so a user created later under a deleted
+    owner's name cannot inherit the project. Legacy projects without an id
+    get one from ``migrate_project_owner_ids`` before they reach this
+    function. Returns the number of ACEs created.
     """
 
-    owners: Dict[str, str] = {}
-    for project_id, created_by in projects:
-        if created_by:
-            owners[project_ace_path(project_id)] = created_by
+    owners: Dict[str, Tuple[str, str]] = {}
+    for project_id, created_by, created_by_id in projects:
+        if created_by_id:
+            owners[project_ace_path(project_id)] = (created_by or "", str(created_by_id))
     if not owners:
         return 0
 
-    result = await db_session.execute(select(models.User).where(models.User.username.in_(set(owners.values()))))
-    users_by_name = {user.username: user for user in result.scalars()}
+    user_ids = set()
+    for _created_by, created_by_id in owners.values():
+        try:
+            user_ids.add(UUID(created_by_id))
+        except ValueError:
+            log.warning(f"Project owner id '{created_by_id}' is not a valid user id")
+
+    users_by_id: Dict[str, models.User] = {}
+    if user_ids:
+        result = await db_session.execute(select(models.User).where(models.User.user_id.in_(user_ids)))
+        users_by_id = {str(user.user_id): user for user in result.scalars()}
 
     result = await db_session.execute(select(models.ACE).where(models.ACE.path.in_(list(owners))))
     existing = set()
@@ -208,11 +258,12 @@ async def ensure_all_project_aces(
     rbac_repo = RbacRepository(db_session)
     role_cache: Dict[UUID, Optional[UUID]] = {}
     new_aces = []
-    for path, username in owners.items():
-        user = users_by_name.get(username)
+    for path, (created_by, created_by_id) in owners.items():
+        user = users_by_id.get(created_by_id)
         if user is None:
             log.warning(
-                f"Project owner '{username}' for '{path}' no longer exists: the project stays restricted to superadmins"
+                f"Project owner '{created_by}' ({created_by_id}) for '{path}' no longer exists: "
+                "the project stays restricted to superadmins"
             )
             continue
         user_id = cast(UUID, user.user_id)
@@ -222,7 +273,7 @@ async def ensure_all_project_aces(
             role_cache[user_id] = await _owner_role_id(rbac_repo, user_id)
         role_id = role_cache[user_id]
         if role_id is None:
-            log.error(f"Could not determine a role for the owner '{username}' of '{path}'")
+            log.error(f"Could not determine a role for the owner '{created_by}' of '{path}'")
             continue
         new_aces.append(
             schemas.ACECreate(

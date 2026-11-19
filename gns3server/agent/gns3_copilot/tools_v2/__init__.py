@@ -51,7 +51,7 @@ Author: Yue Guobin (岳国宾)
 # Import main tool classes
 from .gns3_create_link import GNS3LinkTool
 from .gns3_wait import GNS3WaitTool
-from .mcp_bridge import adapted_mcp_tools
+from .mcp_bridge import adapted_mcp_tools, bindable_tools
 from .packet_analysis_tool import PacketAnalysisTool
 
 # Dynamic version management
@@ -72,4 +72,5 @@ __all__ = [
     "GNS3WaitTool",
     "PacketAnalysisTool",
     "adapted_mcp_tools",
+    "bindable_tools",
 ]

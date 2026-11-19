@@ -79,6 +79,28 @@ async def dep_project(
     return project
 
 
+async def _visible_mcp_tools(username: Optional[str]) -> Optional[list[str]]:
+    """
+    MCP tools the user may see, as plain names (None = unrestricted).
+
+    The copilot binds its MCP tools to the LLM from the MCP registration,
+    so it must apply the same filter as the MCP server: privileges and the
+    per-group tool whitelist. A failed lookup fails open, like the gated
+    server itself (the REST endpoints stay the authority).
+    """
+
+    if not username:
+        return None
+    try:
+        from gns3server.agent.mcp.tool_access import visible_tool_names_for
+
+        visible = await visible_tool_names_for(username)
+    except Exception as e:
+        log.warning("Could not resolve the visible MCP tools for %s (%s); failing open", username, e)
+        return None
+    return sorted(visible) if visible is not None else None
+
+
 async def _check_session_owner(agent_service, session_id: str, user_id: str) -> None:
     """
     Refuse access to a chat session owned by another user.
@@ -160,6 +182,10 @@ async def stream_chat(
         llm_config.get("provider"),
         llm_config.get("model"),
     )
+
+    # The LLM call binds MCP tools per request: carry the user's visibility
+    # so it can drop the tools the MCP server would hide from this user.
+    llm_config["visible_mcp_tools"] = await _visible_mcp_tools(current_user.username)
 
     # TODO: Support runtime temperature override from request.temperature
     # Currently, temperature is loaded from the user's LLM config in the database.
@@ -541,6 +567,8 @@ async def inject_issue(
 
     # Override copilot_mode to troubleshooting_injection
     llm_config["copilot_mode"] = "troubleshooting_injection"
+    # same MCP visibility filter as the regular chat route
+    llm_config["visible_mcp_tools"] = await _visible_mcp_tools(current_user.username)
     log.debug(
         "LLM config loaded and mode set to troubleshooting_injection: user_id=%s, provider=%s, model=%s",
         user_id,

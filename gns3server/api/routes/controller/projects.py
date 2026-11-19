@@ -198,6 +198,7 @@ async def create_project(
     controller = Controller.instance()
     project_dict = jsonable_encoder(project_data, exclude_unset=True)
     project_dict["created_by"] = current_user.username
+    project_dict["created_by_id"] = str(current_user.user_id)
     project = await controller.add_project(**project_dict)
     # The default ACE on /projects does not propagate: grant the creator access
     # to the project through an owner ACE.
@@ -1001,6 +1002,7 @@ async def import_project(
                     f,
                     name=name,
                     user=current_user.username,
+                    user_id=str(current_user.user_id),
                 )
 
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
@@ -1117,6 +1119,7 @@ async def _distribute_project_copy(
         name=name,
         reset_mac_addresses=reset_mac_addresses,
         user=target.username,
+        user_id=str(target.user_id),
         overlay_from_master=overlay_from_master,
         archive_path=archive_path,
     )
@@ -1225,6 +1228,7 @@ async def duplicate_project(
         name=project_data.name,
         reset_mac_addresses=project_data.reset_mac_addresses,
         user=current_user.username,
+        user_id=str(current_user.user_id),
     )
     # The duplicated project is owned by the user who duplicated it.
     await ensure_project_owner_ace(db_session, new_project.id, new_project.created_by)

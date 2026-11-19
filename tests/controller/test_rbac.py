@@ -334,9 +334,15 @@ class TestResourcePools:
             ACECreate(path="/projects", ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role_id))
         )
 
+        admin_user = await UsersRepository(db_session).get_user_by_username("admin")
+        assert admin_user is not None
         created = await ensure_all_project_aces(
             db_session,
-            [(legacy_id, None), (owned_id, test_user.username), (other_id, "admin")],
+            [
+                (legacy_id, None, None),
+                (owned_id, test_user.username, str(test_user.user_id)),
+                (other_id, "admin", str(admin_user.user_id)),
+            ],
         )
         # owner ACEs for the owned project and the admin project, none for the
         # legacy project (no owner)
@@ -465,6 +471,72 @@ class TestProjectOwnership:
         assert await ensure_project_owner_ace(db_session, project_id, test_user.username) is True
         assert await ensure_project_owner_ace(db_session, project_id, test_user.username) is False
         assert await RbacRepository(db_session).get_ace_by_path(f"/projects/{project_id}") is not None
+
+    async def test_owner_ace_matches_the_stable_user_id_not_the_name(
+        self, controller: Controller, db_session: AsyncSession
+    ) -> None:
+        """
+        The owner ACE is rebuilt from the user id recorded on the project:
+        a new user who takes a deleted owner's name must not inherit it.
+        """
+
+        users_repo = UsersRepository(db_session)
+        username = f"reused-{uuid.uuid4().hex[:8]}"
+        old_user = await self._create_user_in_users_group(db_session, username)
+        project = await controller.add_project(name=f"owned-{uuid.uuid4().hex[:8]}", created_by=username)
+        owner_id = str(old_user.user_id)
+
+        # the owner is deleted, then someone else takes the same name
+        await users_repo.delete_user(old_user.user_id)
+        await self._create_user_in_users_group(db_session, username)
+
+        created = await ensure_all_project_aces(db_session, [(project.id, username, owner_id)])
+        assert created == 0
+        assert await RbacRepository(db_session).get_ace_by_path(f"/projects/{project.id}") is None
+
+    async def test_legacy_project_owner_id_is_backfilled(
+        self, controller: Controller, db_session: AsyncSession
+    ) -> None:
+        """
+        A project saved before owner ids existed gets its id from the name
+        once, and the id is persisted in its .gns3 file.
+        """
+
+        from gns3server.db.project_acl import migrate_project_owner_ids
+
+        user = await self._create_user_in_users_group(db_session, f"legacy-{uuid.uuid4().hex[:8]}")
+        project = await controller.add_project(name=f"legacy-{uuid.uuid4().hex[:8]}", created_by=user.username)
+        assert project.created_by_id is None
+
+        assert await migrate_project_owner_ids(db_session, [project]) == 1
+        assert project.created_by_id == str(user.user_id)
+
+        with open(project.topology_file, encoding="utf-8") as f:
+            assert json.load(f)["created_by_id"] == str(user.user_id)
+
+    async def test_legacy_project_with_a_missing_owner_is_marked(
+        self, controller: Controller, db_session: AsyncSession
+    ) -> None:
+        """
+        An owner name that resolves to nobody is marked as deleted: a user
+        created later under that name never inherits the owner ACE.
+        """
+
+        from gns3server.db.project_acl import migrate_project_owner_ids
+
+        username = f"gone-{uuid.uuid4().hex[:8]}"
+        project = await controller.add_project(name=f"orphan-{uuid.uuid4().hex[:8]}", created_by=username)
+
+        assert await migrate_project_owner_ids(db_session, [project]) == 1
+        assert project.created_by_id is None
+        assert project.created_by_deleted is True
+
+        # someone now takes the name: the marker blocks a second match and
+        # the project stays without an owner ACE
+        await self._create_user_in_users_group(db_session, username)
+        assert await migrate_project_owner_ids(db_session, [project]) == 0
+        assert project.created_by_id is None
+        assert await ensure_all_project_aces(db_session, [(project.id, username, project.created_by_id)]) == 0
 
     async def test_foreign_project_is_private(
         self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User

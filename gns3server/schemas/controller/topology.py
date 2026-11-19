@@ -69,6 +69,12 @@ class Topology(BaseModel):
     supplier: Optional[Supplier] = Field(None, description="Supplier of the project")
     variables: Optional[List[Variable]] = Field(None, description="Variables required to run the project")
     created_by: Optional[str] = Field(None, description="Username of the user who created the project")
+    created_by_id: Optional[str] = Field(
+        None, description="Stable id of the user who created the project (ownership is matched by id)"
+    )
+    created_by_deleted: Optional[bool] = Field(
+        None, description="The owner no longer existed when the project was migrated to a stable owner id"
+    )
     frozen: Optional[bool] = Field(None, description="The project is a distributed template frozen for modification")
     distribution_master_id: Optional[UUID] = Field(
         None, description="Project id of the template this distributed copy was created from"

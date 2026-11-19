@@ -324,6 +324,45 @@ async def test_count_usage_running(controller, project, compute, quota_state):
     assert count_usage("nobody") == (0, 0)
 
 
+def build_zip(tmpdir, node_types, project_id=None):
+    """
+    Build a minimal .gns3project import archive.
+    """
+
+    topology = {
+        "project_id": project_id or str(uuid.uuid4()),
+        "name": "test",
+        "revision": 6,
+        "type": "topology",
+        "topology": {
+            "computes": [],
+            "drawings": [],
+            "links": [],
+            "nodes": [
+                {
+                    "node_id": str(uuid.uuid4()),
+                    "node_type": t,
+                    "compute_id": "local",
+                    "name": f"n{i}",
+                    "properties": {},
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                }
+                for i, t in enumerate(node_types)
+            ],
+        },
+        "version": "2.0.0",
+    }
+    topology_file = tmpdir / "project.gns3"
+    with open(str(topology_file), "w+") as f:
+        json.dump(topology, f)
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, "w") as myzip:
+        myzip.write(str(topology_file), "project.gns3")
+    return zip_path
+
+
 async def test_import_project_quota_denied(controller, quota_state, tmpdir):
     """
     Importing a project for a user past its node quota is refused before
@@ -333,50 +372,47 @@ async def test_import_project_quota_denied(controller, quota_state, tmpdir):
 
     quota_state._limits = {"alice": QuotaLimits(max_nodes=2, max_running_nodes=None)}
 
-    def build_zip(node_types):
-        topology = {
-            "project_id": str(uuid.uuid4()),
-            "name": "test",
-            "revision": 6,
-            "type": "topology",
-            "topology": {
-                "computes": [],
-                "drawings": [],
-                "links": [],
-                "nodes": [
-                    {
-                        "node_id": str(uuid.uuid4()),
-                        "node_type": t,
-                        "compute_id": "local",
-                        "name": f"n{i}",
-                        "properties": {},
-                        "x": 0,
-                        "y": 0,
-                        "z": 0,
-                    }
-                    for i, t in enumerate(node_types)
-                ],
-            },
-            "version": "2.0.0",
-        }
-        topology_file = tmpdir / "project.gns3"
-        with open(str(topology_file), "w+") as f:
-            json.dump(topology, f)
-        zip_path = str(tmpdir / "project.zip")
-        with zipfile.ZipFile(zip_path, "w") as myzip:
-            myzip.write(str(topology_file), "project.gns3")
-        return zip_path
-
     # 2 resource nodes + 1 free switch: fits the quota of 2
-    with open(build_zip(["vpcs", "vpcs", "ethernet_switch"]), "rb") as f:
+    with open(build_zip(tmpdir, ["vpcs", "vpcs", "ethernet_switch"]), "rb") as f:
         project = await import_project(controller, str(uuid.uuid4()), f, user="alice")
     assert project.created_by == "alice"
 
     # a second import of the same archive no longer fits
-    with open(build_zip(["vpcs", "vpcs", "ethernet_switch"]), "rb") as f:
+    with open(build_zip(tmpdir, ["vpcs", "vpcs", "ethernet_switch"]), "rb") as f:
         with pytest.raises(ControllerForbiddenError, match="import"):
             await import_project(controller, str(uuid.uuid4()), f, user="alice")
 
     # imports without a future owner are not checked (system paths)
-    with open(build_zip(["vpcs"] * 10), "rb") as f:
+    with open(build_zip(tmpdir, ["vpcs"] * 10), "rb") as f:
         await import_project(controller, str(uuid.uuid4()), f)
+
+
+async def test_import_cannot_forge_a_snapshot_restore(controller, quota_state, tmpdir):
+    """
+    The project id comes from the client, so an archive that reuses it must
+    not pass for a snapshot restore. Only an import over a project the
+    controller already knows skips the quota check.
+    """
+
+    quota_state._limits = {"alice": QuotaLimits(max_nodes=2, max_running_nodes=None)}
+    project_id = str(uuid.uuid4())
+
+    # the archive claims the same id as the import URL, but no such project exists
+    with open(build_zip(tmpdir, ["vpcs", "vpcs", "vpcs"], project_id=project_id), "rb") as f:
+        with pytest.raises(ControllerForbiddenError, match="import"):
+            await import_project(controller, project_id, f, user="alice")
+    assert controller.projects.get(project_id) is None
+
+
+async def test_import_over_a_registered_project_skips_the_quota(controller, quota_state, tmpdir):
+    """
+    Replacing a project the controller knows (a snapshot restore) keeps the
+    node count it replaces: no quota slot is taken.
+    """
+
+    quota_state._limits = {"alice": QuotaLimits(max_nodes=1, max_running_nodes=None)}
+    existing = await controller.add_project(name="Existing")
+
+    with open(build_zip(tmpdir, ["vpcs", "vpcs", "vpcs"], project_id=existing.id), "rb") as f:
+        project = await import_project(controller, existing.id, f, location=existing.path, user="alice")
+    assert project is existing
