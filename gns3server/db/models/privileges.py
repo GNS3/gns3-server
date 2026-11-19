@@ -49,6 +49,7 @@ def create_default_roles(target, connection, **kw):
         {"description": "Create or delete a user", "name": "User.Allocate"},
         {"description": "View a user", "name": "User.Audit"},
         {"description": "Update a user", "name": "User.Modify"},
+        {"description": "List the members of your own user groups", "name": "User.GroupMembers"},
         {"description": "Create or delete a group", "name": "Group.Allocate"},
         {"description": "View a group", "name": "Group.Audit"},
         {"description": "Update a group", "name": "Group.Modify"},
@@ -150,6 +151,7 @@ def add_privileges_to_default_roles(target, connection, **kw):
 
     # add required privileges to the "User" role
     user_privileges = (
+        "User.GroupMembers",
         "Project.Allocate",
         "Project.Audit",
         "Project.Modify",

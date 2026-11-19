@@ -98,7 +98,7 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 33  # 32 seeded privileges + Template.Allocate added here
+        assert len(privileges) == 34  # 33 seeded privileges + Template.Allocate added here
 
     async def test_get_role_privileges(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -107,7 +107,7 @@ class TestRolesPrivilegesRoutes:
 
         response = await client.get(app.url_path_for("get_role_privileges", role_id=role_in_db.role_id))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 33  # 32 seeded privileges + Template.Allocate added above
+        assert len(response.json()) == 34  # 33 seeded privileges + Template.Allocate added above
 
     async def test_remove_privilege_from_role(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
@@ -124,4 +124,4 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 32  # 33 above - Symbol.Audit removed
+        assert len(privileges) == 33  # 34 above - Symbol.Audit removed

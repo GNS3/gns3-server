@@ -88,6 +88,27 @@ class UserPrivileges(BaseModel):
     privileges: List[str]
 
 
+class UserGroupMembers(BaseModel):
+    """
+    Members of one user group of the logged in user, as usernames only.
+
+    This is what a share or distribution dialog lists as candidate
+    recipients: a user sees the members of their own groups, never the
+    whole user base (that stays User.Audit).
+    """
+
+    group_name: str
+    members: List[str] = Field(..., description="Usernames of the group members, sorted")
+
+
+class UserGroupMembersResponse(BaseModel):
+    """
+    Every user group of the logged in user with its member usernames.
+    """
+
+    groups: List[UserGroupMembers] = Field(..., description="One entry per user group, sorted by group name")
+
+
 class UserQuotaUsage(BaseModel):
     """
     Effective node quotas of the logged in user (user value, or the group

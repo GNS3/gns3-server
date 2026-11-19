@@ -534,10 +534,11 @@ async def test_duplicate_export_privileges_are_added_on_upgrade(tmp_path, monkey
 @pytest.mark.parametrize("versioned", [False, True])
 @pytest.mark.asyncio
 async def test_share_distribute_privileges_are_added_on_upgrade(tmp_path, monkeypatch, versioned):
-    # the Project.Share and Project.Distribute privileges (c9e4f7a2b6d8) are
-    # attached to Administrator and User, and deliberately NOT to Lab member:
-    # a shared user or a copy recipient must not pass the lab on
-    privileges = ("Project.Share", "Project.Distribute")
+    # the Project.Share, Project.Distribute and User.GroupMembers privileges
+    # (c9e4f7a2b6d8) are attached to Administrator and User, and the project
+    # ones deliberately NOT to Lab member: a shared user or a copy recipient
+    # must not pass the lab on
+    privileges = ("Project.Share", "Project.Distribute", "User.GroupMembers")
     path = tmp_path / "controller.db"
     engine = sa.create_engine(f"sqlite:///{path}")
     with engine.connect() as connection:
@@ -545,9 +546,12 @@ async def test_share_distribute_privileges_are_added_on_upgrade(tmp_path, monkey
         # simulate a database from before the privileges existed
         connection.exec_driver_sql(
             "DELETE FROM privilege_role_map WHERE privilege_id IN"
-            " (SELECT privilege_id FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute'))"
+            " (SELECT privilege_id FROM privileges WHERE name IN"
+            " ('Project.Share', 'Project.Distribute', 'User.GroupMembers'))"
         )
-        connection.exec_driver_sql("DELETE FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute')")
+        connection.exec_driver_sql(
+            "DELETE FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute', 'User.GroupMembers')"
+        )
         if versioned:
             cfg = _alembic_config()
             cfg.attributes["connection"] = connection
@@ -567,7 +571,7 @@ async def test_share_distribute_privileges_are_added_on_upgrade(tmp_path, monkey
                     sa.text("SELECT COUNT(*) FROM privileges WHERE name = :name"), {"name": name}
                 )
                 assert count == 1, f"{name} was not backfilled exactly once"
-            for role, expected in (("Administrator", 2), ("User", 2), ("Lab member", 0)):
+            for role, expected in (("Administrator", 3), ("User", 3), ("Lab member", 0)):
                 attached = await connection.scalar(
                     sa.text(
                         "SELECT COUNT(*) FROM privilege_role_map m"
@@ -577,6 +581,48 @@ async def test_share_distribute_privileges_are_added_on_upgrade(tmp_path, monkey
                     ).bindparams(sa.bindparam("names", expanding=True)),
                     {"names": list(privileges), "role": role},
                 )
-                assert attached == expected, f"the '{role}' role holds {attached} of the two privileges"
+                assert attached == expected, f"the '{role}' role holds {attached} of the three privileges"
+    finally:
+        await app.state._db_engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_group_members_privilege_is_added_on_an_upgrade_from_share_distribute(tmp_path, monkeypatch):
+    # a database that already ran c9e4f7a2b6d8 (Project.Share/Distribute)
+    # only needs d5b8e2c4a7f1: User.GroupMembers is backfilled, the two
+    # others are left as they are
+    path = tmp_path / "controller.db"
+    engine = sa.create_engine(f"sqlite:///{path}")
+    with engine.connect() as connection:
+        Base.metadata.create_all(connection)
+        connection.exec_driver_sql(
+            "DELETE FROM privilege_role_map WHERE privilege_id IN"
+            " (SELECT privilege_id FROM privileges WHERE name = 'User.GroupMembers')"
+        )
+        connection.exec_driver_sql("DELETE FROM privileges WHERE name = 'User.GroupMembers'")
+        cfg = _alembic_config()
+        cfg.attributes["connection"] = connection
+        command.stamp(cfg, "c9e4f7a2b6d8")
+        connection.commit()
+    engine.dispose()
+
+    monkeypatch.setenv("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{path}")
+    app = FastAPI()
+    await connect_to_db(app)
+    try:
+        async with app.state._db_engine.connect() as connection:
+            count = await connection.scalar(sa.text("SELECT COUNT(*) FROM privileges WHERE name = 'User.GroupMembers'"))
+            assert count == 1, "User.GroupMembers was not backfilled"
+            for role in ("Administrator", "User"):
+                attached = await connection.scalar(
+                    sa.text(
+                        "SELECT COUNT(*) FROM privilege_role_map m"
+                        " JOIN privileges p ON p.privilege_id = m.privilege_id"
+                        " JOIN roles r ON r.role_id = m.role_id"
+                        " WHERE p.name = 'User.GroupMembers' AND r.name = :role"
+                    ),
+                    {"role": role},
+                )
+                assert attached == 1, f"the '{role}' role does not hold User.GroupMembers"
     finally:
         await app.state._db_engine.dispose()
