@@ -25,6 +25,7 @@ worker thread pool to preserve FastAPI's async event loop.
 import asyncio
 import logging
 import os
+import re
 import ssl
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -94,13 +95,16 @@ class LDAPUserProfile:
 def _extract_cn(dn_or_name: str) -> str:
     """
     Extract the Common Name (CN) from an LDAP Distinguished Name,
-    or return the input unchanged if it is not a DN.
+    or return the input unchanged if it is not a DN. Handles escaped
+    commas per RFC 4514.
     """
-    for part in dn_or_name.split(","):
-        part = part.strip()
-        if part.lower().startswith("cn="):
-            return part[3:].strip()
-    return dn_or_name.strip()
+    if not dn_or_name:
+        return ""
+    clean = dn_or_name.strip()
+    match = re.search(r"(?:^|,\s*)cn=((?:\\,|[^,])+)", clean, re.IGNORECASE)
+    if match:
+        return match.group(1).replace(r"\,", ",").strip()
+    return clean
 
 
 def _extract_entry_groups(user_entry: Any) -> Set[str]:
