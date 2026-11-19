@@ -158,6 +158,13 @@ async def update_server_settings(settings_update: schemas.SettingsUpdate) -> sch
     except OSError as e:
         raise ControllerError(f"Could not write the configuration file: {e}")
 
+    if Config.instance().settings.LDAP.enabled and not Config.instance().settings.Server.enable_ssl:
+        log.warning(
+            "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP. "
+            "Domain credentials will be transmitted in plaintext across the network unless "
+            "GNS3 is fronted by an HTTPS reverse proxy (e.g. Nginx, Caddy)."
+        )
+
     restart_required = sorted(set(changed) & RESTART_REQUIRED)
 
     # only send metadata, never settings values (they may contain secrets)

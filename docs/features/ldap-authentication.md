@@ -169,3 +169,58 @@ curl -X POST http://localhost:3080/v3/settings/ldap/test \
 4. **Transport Encryption Ordering (CWE-319):** StartTLS negotiation executes prior to transmitting bind credentials over the network.
 5. **Credential Immutability (CWE-284):** Password update endpoints (`PUT /v3/access/users/{id}` and `PUT /v3/access/users/me`) reject password change attempts on directory users with `HTTP 400 Bad Request`.
 6. **Non-Blocking Concurrency:** All network I/O executes in background threads (`asyncio.to_thread`), preventing denial of service on FastAPI's async event loop.
+7. **Cleartext Transmission Warning (CWE-319):** If LDAP authentication is enabled while native SSL is disabled (`Server.enable_ssl = False`), `gns3server` emits a prominent warning at startup and settings modification, alerting administrators to front the server with an HTTPS reverse proxy.
+
+---
+
+## Securing Web UI Communications (Reverse Proxy Architecture)
+
+Because `gns3-web-ui` dynamically negotiates API and WebSocket schemes based on `window.location.protocol`, placing `gns3server` behind an HTTPS reverse proxy automatically upgrades all communication:
+- Web UI REST requests (`/v3/access/users/login`) transition to encrypted **HTTPS**, protecting Active Directory credentials against LAN sniffing.
+- WebConsole, terminal, and notification streams transition to secure **`wss://`** WebSockets.
+
+### Production Caddy Configuration (Recommended)
+
+```caddy
+gns3.example.com {
+    tls /etc/ssl/certs/gns3.crt /etc/ssl/private/gns3.key
+    reverse_proxy 127.0.0.1:3080
+}
+```
+
+### Production Nginx Configuration
+
+```nginx
+# Rate limit to protect Active Directory accounts against brute-force lockouts
+limit_req_zone $binary_remote_addr zone=gns3_login:10m rate=5r/s;
+
+server {
+    listen 443 ssl http2;
+    server_name gns3.example.com;
+
+    ssl_certificate     /etc/ssl/certs/gns3.crt;
+    ssl_certificate_key /etc/ssl/private/gns3.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    location /v3/access/users/login {
+        limit_req zone=gns3_login burst=10 nodelay;
+        proxy_pass http://127.0.0.1:3080;
+        include proxy_params;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support for WebConsole and real-time notifications
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}
+```
