@@ -28,6 +28,12 @@ import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.config import Config
 from gns3server.db.rbac_state import RbacState
+
+try:
+    from gns3server.db.user_quota_state import UserQuotaState
+except ImportError:
+    UserQuotaState = None  # type: ignore[assignment, misc]
+
 from gns3server.services import auth_service, ldap_service
 from gns3server.services.ldap import LDAPService, LDAPUserProfile
 
@@ -43,6 +49,7 @@ class UsersRepository(BaseRepository):
         self._auth_service = auth_service
         self._ldap_service = ldap_service_instance or ldap_service
         self._rbac_state = RbacState.instance()
+        self._quota_state = UserQuotaState.instance() if UserQuotaState else None
 
     async def get_user(self, user_id: UUID) -> Optional[models.User]:
         """
@@ -186,20 +193,12 @@ class UsersRepository(BaseRepository):
                     profile.email,
                 )
                 if user.username.lower() != profile.username.lower():
-                    existing_named_user = await self.get_user_by_username(profile.username)
-                    if not existing_named_user:
-                        log.info(
-                            "Updating username for user_id %s from '%s' to canonical '%s'",
-                            user.user_id,
-                            user.username,
-                            profile.username,
-                        )
-                        await self._db_session.execute(
-                            update(models.User)
-                            .where(models.User.user_id == user.user_id)
-                            .values(username=profile.username)
-                        )
-                        user.username = profile.username
+                    log.info(
+                        "LDAP login for '%s' linked to existing account '%s' (user_id: %s); retaining original username to preserve project ownership",
+                        profile.username,
+                        user.username,
+                        user.user_id,
+                    )
         return user
 
     async def _create_or_adopt_ldap_user(self, profile: LDAPUserProfile) -> models.User:
@@ -217,12 +216,10 @@ class UsersRepository(BaseRepository):
                     update(models.User)
                     .where(models.User.user_id == existing_email_user.user_id)
                     .values(
-                        username=profile.username,
                         full_name=profile.full_name,
                         is_superadmin=profile.is_superadmin,
                     )
                 )
-                existing_email_user.username = profile.username
                 existing_email_user.full_name = profile.full_name
                 existing_email_user.is_superadmin = profile.is_superadmin
                 return existing_email_user
@@ -245,6 +242,14 @@ class UsersRepository(BaseRepository):
 
     async def _sync_user_profile_fields(self, user: models.User, profile: LDAPUserProfile) -> None:
         update_data = {}
+
+        if user.auth_source != "ldap":
+            from gns3server.config import Config
+
+            if user.username.lower() != Config.instance().settings.Controller.default_admin_username.lower():
+                log.info("Transitioning local user '%s' to LDAP authenticated account", user.username)
+                update_data["auth_source"] = "ldap"
+
         if profile.email and user.email != profile.email:
             existing_email_user = await self.get_user_by_email(profile.email)
             if not existing_email_user or existing_email_user.user_id == user.user_id:
@@ -288,6 +293,8 @@ class UsersRepository(BaseRepository):
                 user.full_name = update_data["full_name"]
             if "is_superadmin" in update_data:
                 user.is_superadmin = update_data["is_superadmin"]
+            if "auth_source" in update_data:
+                user.auth_source = update_data["auth_source"]
 
     async def _sync_user_groups(self, user: models.User, profile: LDAPUserProfile) -> None:
         target_group_ids: List[UUID] = []
@@ -304,9 +311,44 @@ class UsersRepository(BaseRepository):
 
         unique_group_ids = list(dict.fromkeys(target_group_ids))
 
-        await self._db_session.execute(
-            delete(models.user_group_map).where(models.user_group_map.c.user_id == user.user_id)
-        )
+        # Only synchronize memberships for groups governed by directory mappings or default group.
+        # This preserves existing memberships in local-only groups.
+        from gns3server.config import Config
+
+        ldap_config = Config.instance().settings.LDAP
+        managed_group_names = set(ldap_config.group_mapping.values())
+        if ldap_config.default_group:
+            managed_group_names.add(ldap_config.default_group)
+
+        # Ensure base privileges: if no mapped groups matched, fallback to default_group or 'Users'
+        if not unique_group_ids:
+            fallback_name = ldap_config.default_group or "Users"
+            fallback_grp = await self.get_user_group_by_name(fallback_name)
+            if not fallback_grp and fallback_name != "Users":
+                fallback_grp = await self.get_user_group_by_name("Users")
+            if fallback_grp:
+                unique_group_ids.append(fallback_grp.user_group_id)
+                managed_group_names.add(fallback_grp.name)
+                log.info(
+                    "Assigned fallback group '%s' to LDAP user '%s' to ensure base privileges",
+                    fallback_grp.name,
+                    profile.username,
+                )
+
+        managed_group_ids: List[UUID] = []
+        for name in managed_group_names:
+            grp = await self.get_user_group_by_name(name)
+            if grp:
+                managed_group_ids.append(grp.user_group_id)
+
+        if managed_group_ids:
+            await self._db_session.execute(
+                delete(models.user_group_map).where(
+                    models.user_group_map.c.user_id == user.user_id,
+                    models.user_group_map.c.user_group_id.in_(managed_group_ids),
+                )
+            )
+
         for group_id in unique_group_ids:
             await self._db_session.execute(
                 models.user_group_map.insert().values(user_id=user.user_id, user_group_id=group_id)
@@ -331,6 +373,8 @@ class UsersRepository(BaseRepository):
 
         user = await self._update_last_login(user)
         self._rbac_state.mark_dirty()
+        if self._quota_state:
+            self._quota_state.mark_dirty()
         return user
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
@@ -364,7 +408,8 @@ class UsersRepository(BaseRepository):
             return None
 
         # Directory-managed accounts cannot authenticate using local database fallback
-        if local_user.auth_source == "ldap":
+        # unless LDAP has been explicitly disabled globally (Disaster Recovery scenario)
+        if local_user.auth_source == "ldap" and Config.instance().settings.LDAP.enabled:
             return None
 
         if local_user.hashed_password is None:
