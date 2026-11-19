@@ -88,7 +88,12 @@ class UsersRepository(BaseRepository):
 
         hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
-            username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            hashed_password=hashed_password,
+            max_nodes=user.max_nodes,
+            max_running_nodes=user.max_running_nodes,
         )
         self._db_session.add(db_user)
         await self._db_session.flush()  # assign the user id
@@ -267,7 +272,11 @@ class UsersRepository(BaseRepository):
         Create a new user group.
         """
 
-        db_user_group = models.UserGroup(name=user_group.name)
+        db_user_group = models.UserGroup(
+            name=user_group.name,
+            default_max_nodes=user_group.default_max_nodes,
+            default_max_running_nodes=user_group.default_max_running_nodes,
+        )
         self._db_session.add(db_user_group)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
