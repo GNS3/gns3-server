@@ -1009,6 +1009,8 @@ class UDPLink(Link):
             inheritance copy; set automatically, never exposed to REST callers
         """
 
+        self._project.check_mutable("changing the link markers")
+
         if name in self._markers:
             raise ControllerError(f"Marker '{name}' already exists on link {self._id}")
 
@@ -1086,6 +1088,8 @@ class UDPLink(Link):
             inheritance guard (the project layer is the legitimate remover)
         """
 
+        self._project.check_mutable("changing the link markers")
+
         if name not in self._markers:
             raise ControllerNotFoundError(f"Marker '{name}' not found on link {self._id}")
 
@@ -1151,6 +1155,8 @@ class UDPLink(Link):
         :param inherited: set by project-level sync to bypass the inheritance
             guard (the project layer is the legitimate editor)
         """
+
+        self._project.check_mutable("changing the link markers")
 
         marker_info = self._markers.get(name)
         if not marker_info:

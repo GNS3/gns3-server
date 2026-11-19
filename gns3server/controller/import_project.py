@@ -138,6 +138,21 @@ async def import_project(
         if user:
             topology["created_by"] = user
 
+        # frozen and distribution_master_id are server-side distribution
+        # state: an archive must not forge them. A fake distribution_master_id
+        # would pass the imported project for a live copy of someone else's
+        # template and lock that template forever. When the import replaces a
+        # project the controller already knows (a snapshot restore), the
+        # state held by the server is kept.
+        topology.pop("frozen", None)
+        topology.pop("distribution_master_id", None)
+        replaced_project = controller.projects.get(str(project_id))
+        if replaced_project is not None:
+            if replaced_project.frozen:
+                topology["frozen"] = True
+            if replaced_project.distribution_master_id:
+                topology["distribution_master_id"] = str(replaced_project.distribution_master_id)
+
         if not restoring_snapshot:
             # Do not re-generate IDs if we are restoring a snapshot because they should be the same in a project
             regenerate_topology_ids(topology, path, reset_mac_addresses=reset_mac_addresses)

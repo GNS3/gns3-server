@@ -516,6 +516,21 @@ class TestControllerProjectRoutes:
         response = await client.get(app.url_path_for("get_file", project_id=project.id, file_path="//hello"))
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    async def test_write_file_on_a_frozen_project_is_refused(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
+        """
+        A frozen template's files include the base disk images the thin
+        overlays of its copies point at: writing one would break every copy.
+        """
+
+        project.frozen = True
+        response = await client.post(
+            app.url_path_for("write_file", project_id=project.id, file_path="hello"), content=b"world"
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert not os.path.exists(os.path.join(project.path, "hello"))
+
     async def test_import(self, app: FastAPI, client: AsyncClient, tmpdir, controller: Controller) -> None:
 
         with zipfile_zstd.ZipFile(str(tmpdir / "test.zip"), "w") as myzip:
@@ -558,6 +573,50 @@ class TestControllerProjectRoutes:
         assert response.status_code == status.HTTP_201_CREATED
         project = controller.get_project(project_id)
         assert project.name == "my-imported-project-name"
+
+    async def test_import_ignores_forged_distribution_fields(
+        self, app: FastAPI, client: AsyncClient, tmpdir, controller: Controller
+    ) -> None:
+        """
+        Distribution state belongs to the server. An archive that claims a
+        distribution_master_id would pass the imported project for a live
+        copy of someone else's template and lock that template forever.
+        """
+
+        forged_master_id = str(uuid.uuid4())
+        with zipfile_zstd.ZipFile(str(tmpdir / "test.zip"), "w") as myzip:
+            myzip.writestr(
+                "project.gns3",
+                json.dumps(
+                    {
+                        "project_id": "c6992992-ac72-47dc-833b-54aa334bcd05",
+                        # a modern file: no legacy conversion strips unknown
+                        # fields, so the forged state reaches the loader
+                        "type": "topology",
+                        "revision": 10,
+                        "version": "3.0.0",
+                        "name": "test",
+                        "topology": {"nodes": [], "links": [], "drawings": [], "computes": []},
+                        "frozen": True,
+                        "distribution_master_id": forged_master_id,
+                    }
+                ).encode(),
+            )
+
+        project_id = str(uuid.uuid4())
+        with open(str(tmpdir / "test.zip"), "rb") as f:
+            response = await client.post(app.url_path_for("import_project", project_id=project_id), content=f.read())
+        assert response.status_code == status.HTTP_201_CREATED
+
+        project = controller.get_project(project_id)
+        assert project.frozen is False
+        assert project.distribution_master_id is None
+
+        # a restart must not resurrect the forged fields from the file
+        with open(project.topology_file) as f:
+            topology = json.load(f)
+        assert "frozen" not in topology
+        assert "distribution_master_id" not in topology
 
     async def test_duplicate(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
