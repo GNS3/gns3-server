@@ -332,6 +332,13 @@ async def delete_project(
         )
 
     if project.frozen:
+        # a running job has not registered its first copy yet: the
+        # registered-copy check alone would let the template vanish under it
+        if _running_distributions(project):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A distribution of this project is in progress: wait for it to finish before deleting it",
+            )
         # the copies of a distributed template keep overlay disks pointing
         # at its files: the template cannot vanish while they exist
         live_usernames = await _live_distribution_copies(project)
@@ -1257,6 +1264,22 @@ async def _live_distribution_copies(project: Project) -> List[str]:
     return live_usernames
 
 
+def _running_distributions(project: Project) -> List[str]:
+    """
+    IDs of the distribution jobs started from this project that are still
+    running. A job registers its first copy only once its files and thin
+    overlays are ready: until then no project claims the template, so the
+    registered-copy check alone would let it be deleted or unfrozen under
+    the job.
+    """
+
+    return [
+        job.distribution_id
+        for job in DistributionRegistry.instance().get_for_project(str(project.id))
+        if job.status in ("running", "cancelling")
+    ]
+
+
 def _record_live_copies(results: List[dict]) -> List[str]:
     """
     Usernames whose copy recorded in a distribution's results still exists
@@ -2170,6 +2193,11 @@ async def unfreeze_project(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the project owner or a superadmin can unfreeze this project",
         )
+    if _running_distributions(project):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A distribution of this project is in progress: wait for it to finish before unfreezing it",
+        )
     live_usernames = await _live_distribution_copies(project)
     if live_usernames:
         raise HTTPException(
@@ -2249,6 +2277,10 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
 
     Required privilege: Project.Modify
     """
+
+    # a frozen template's files include the base disks the overlay disks of
+    # its copies point at: writing one would break every copy
+    project.check_mutable("writing project files")
 
     file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)

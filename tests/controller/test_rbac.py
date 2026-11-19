@@ -2266,6 +2266,76 @@ class TestProjectDistribution:
             response = await teacher_client.post(app.url_path_for("unfreeze_project", project_id=source_id))
             assert response.status_code == status.HTTP_409_CONFLICT
 
+    async def test_delete_is_refused_while_a_distribution_is_running(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """
+        A job creates its first copy late (copy, overlay, then registration):
+        until then no project claims the template, but the template must not
+        be deleted under the running job.
+        """
+
+        await TestProjectOwnership._seed_collection_ace(db_session)
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+
+            # the state of the source while the job runs: frozen, no copy
+            # registered yet
+            project = Controller.instance().get_project(source_id)
+            project.frozen = True
+            project.dump()
+
+            registry = DistributionRegistry.instance()
+            job = registry.create(source_id, "in-flight", test_user.username, 1)
+            try:
+                response = await teacher_client.delete(app.url_path_for("delete_project", project_id=source_id))
+                assert response.status_code == status.HTTP_409_CONFLICT
+                assert "in progress" in response.json()["message"]
+
+                # the job ends without creating a copy: the template can go
+                registry.complete(job)
+                response = await teacher_client.delete(app.url_path_for("delete_project", project_id=source_id))
+                assert response.status_code == status.HTTP_204_NO_CONTENT
+            finally:
+                registry._jobs.pop(job.distribution_id, None)
+
+    async def test_unfreeze_is_refused_while_a_distribution_is_running(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """
+        Unfreezing during a distribution would change what the recipients
+        not yet served are about to receive.
+        """
+
+        await TestProjectOwnership._seed_collection_ace(db_session)
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+
+            project = Controller.instance().get_project(source_id)
+            project.frozen = True
+            project.dump()
+
+            registry = DistributionRegistry.instance()
+            job = registry.create(source_id, "in-flight", test_user.username, 1)
+            try:
+                response = await teacher_client.post(app.url_path_for("unfreeze_project", project_id=source_id))
+                assert response.status_code == status.HTTP_409_CONFLICT
+                assert "in progress" in response.json()["message"]
+
+                registry.complete(job)
+                response = await teacher_client.post(app.url_path_for("unfreeze_project", project_id=source_id))
+                assert response.status_code == status.HTTP_200_OK
+            finally:
+                registry._jobs.pop(job.distribution_id, None)
+
 
 class TestProjectShare:
     """

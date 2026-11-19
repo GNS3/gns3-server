@@ -117,6 +117,29 @@ class TestSnapshotRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == project.name
 
+    async def test_restoring_a_snapshot_keeps_the_distribution_master_id(
+        self, app: FastAPI, client: AsyncClient, project: Project
+    ) -> None:
+        """
+        A restore rewrites the topology from the snapshot archive: the
+        server-side distribution state must survive, or the copy would stop
+        protecting its template.
+        """
+
+        master_id = str(uuid.uuid4())
+        project.distribution_master_id = master_id
+        project.dump()
+        snapshot = await project.snapshot("with-master")
+
+        response = await client.post(
+            app.url_path_for("restore_snapshot", project_id=project.id, snapshot_id=snapshot.id)
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        assert project.distribution_master_id == master_id
+        with open(project.topology_file, encoding="utf-8") as f:
+            assert json.load(f)["distribution_master_id"] == master_id
+
     async def test_create_snapshot(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
 
         response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})

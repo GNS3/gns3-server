@@ -1329,6 +1329,7 @@ class Project:
                 }
         return result
 
+    @frozen_guard("changing the marker definitions")
     async def pause_marker_definition(self, name):
         """
         Pause every inherited copy of a definition (``global-{name}``) on every
@@ -1355,6 +1356,7 @@ class Project:
         self.dump()
         self.emit_notification("project.updated", self.asdict())
 
+    @frozen_guard("changing the marker definitions")
     async def resume_marker_definition(self, name):
         """Resume every inherited copy of a definition (toggle on)."""
 
@@ -1415,6 +1417,7 @@ class Project:
                 "For a capture-node-relative direction on a single link, use a per-link marker."
             )
 
+    @frozen_guard("changing the marker definitions")
     async def create_marker_definition(
         self, name, bpf, tag=None, direction=None, color=None, highlight_duration=None, data_link_type="DLT_EN10MB"
     ):
@@ -1442,6 +1445,7 @@ class Project:
         self.dump()
         self.emit_notification("project.updated", self.asdict())
 
+    @frozen_guard("changing the marker definitions")
     async def update_marker_definition(
         self, name, bpf=None, tag=None, direction=_UNSET, color=None, highlight_duration=None, data_link_type=_UNSET
     ):
@@ -1507,6 +1511,7 @@ class Project:
         self.dump()
         self.emit_notification("project.updated", self.asdict())
 
+    @frozen_guard("changing the marker definitions")
     async def delete_marker_definition(self, name):
         """
         Delete a marker definition and remove every inherited copy from every link.
