@@ -240,6 +240,45 @@ def test_tool_visible_semantics() -> None:
 
 
 @pytest.mark.asyncio
+async def test_visible_tool_names_for_a_user(monkeypatch) -> None:
+    """The names the copilot may bind: privileges plus the group whitelist."""
+
+    from gns3server.agent.mcp import tool_access
+
+    async def fake_resolve(username):
+        # Node.Audit only; the whitelist also lists node_start, which the
+        # user has no privilege for
+        return frozenset({"Node.Audit"}), False, frozenset({"node_list", "node_get", "node_start"})
+
+    monkeypatch.setattr(tool_access, "resolve_user_privileges", fake_resolve)
+
+    names = await tool_access.visible_tool_names_for("alice")
+    assert names is not None
+    assert "node_list" in names
+    assert "node_get" in names
+    assert "node_start" not in names  # no Node.PowerMgmt
+    assert "project_get" not in names  # outside the group whitelist
+
+
+@pytest.mark.asyncio
+async def test_visible_tool_names_are_unrestricted_for_a_superadmin(monkeypatch) -> None:
+    from gns3server.agent.mcp import tool_access
+
+    async def fake_resolve(username):
+        return frozenset(), True, None
+
+    monkeypatch.setattr(tool_access, "resolve_user_privileges", fake_resolve)
+    assert await tool_access.visible_tool_names_for("admin") is None
+
+    # no resolvable identity: the callers fail open, like the gated server
+    async def fake_unavailable(username):
+        return None
+
+    monkeypatch.setattr(tool_access, "resolve_user_privileges", fake_unavailable)
+    assert await tool_access.visible_tool_names_for("nobody") is None
+
+
+@pytest.mark.asyncio
 async def test_gated_server_applies_group_whitelist(monkeypatch) -> None:
     from gns3server.agent.mcp import tool_access
 

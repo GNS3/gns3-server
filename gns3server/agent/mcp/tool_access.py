@@ -193,6 +193,47 @@ def tool_visible(name: str, privileges: FrozenSet[str], is_superadmin: bool) -> 
     return required <= privileges
 
 
+def tool_allowed_for_user(
+    name: str, privileges: FrozenSet[str], is_superadmin: bool, whitelist: Optional[FrozenSet[str]]
+) -> bool:
+    """One visibility decision shared by the gated server and the copilot.
+
+    The group whitelist narrows the privilege rule: a tool outside every
+    whitelist of the user's groups is hidden like a missing privilege.
+    """
+
+    if is_superadmin:
+        return True
+    if whitelist is not None and name not in whitelist:
+        return False
+    return tool_visible(name, privileges, is_superadmin)
+
+
+async def visible_tool_names_for(username: str) -> Optional[FrozenSet[str]]:
+    """Names of the MCP tools the user may see, or None when unrestricted.
+
+    None means every tool stays available: a superadmin, or a failed
+    lookup (the same fail-open rule as PrivilegeGatedMCPServer). In-process
+    consumers that build their own tool list (the copilot bridge) bind only
+    these names to the LLM.
+    """
+
+    resolved = await resolve_user_privileges(username)
+    if resolved is None:
+        return None
+    privileges, is_superadmin, whitelist = resolved
+    if is_superadmin:
+        return None
+
+    from . import mcp  # late import: the package owns the server instance
+
+    return frozenset(
+        tool.name
+        for tool in mcp._tool_manager.list_tools()
+        if tool_allowed_for_user(tool.name, privileges, is_superadmin, whitelist)
+    )
+
+
 async def resolve_user_privileges(username: str) -> tuple[FrozenSet[str], bool, Optional[FrozenSet[str]]] | None:
     """Flattened privilege set, superadmin flag and group whitelist for a user.
 
@@ -265,11 +306,7 @@ class PrivilegeGatedMCPServer(MCPServer):
         if resolved is None:
             return True
         privileges, is_superadmin, whitelist = resolved
-        if is_superadmin:
-            return True
-        if whitelist is not None and name not in whitelist:
-            return False  # outside every group whitelist: hidden like a missing privilege
-        return tool_visible(name, privileges, is_superadmin)
+        return tool_allowed_for_user(name, privileges, is_superadmin, whitelist)
 
     async def list_tools(self) -> list[Any]:
         tools = await super().list_tools()

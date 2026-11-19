@@ -28,7 +28,7 @@ from gns3server.compute.marker.marker_manager import MarkerManager
 from gns3server.compute.port_manager import PortManager
 from gns3server.config import Config
 from gns3server.controller import Controller
-from gns3server.db.project_acl import ensure_all_project_aces
+from gns3server.db.project_acl import ensure_all_project_aces, migrate_project_owner_ids
 from gns3server.db.tasks import (
     connect_to_db,
     disconnect_from_db,
@@ -93,8 +93,11 @@ async def startup(app: FastAPI) -> None:
     # scans and POST /projects/load) are covered by this hook.
     async def _ensure_project_aces():
         async with AsyncSession(app.state._db_engine) as db_session:
-            projects = [(project.id, project.created_by) for project in Controller.instance().projects.values()]
-            await ensure_all_project_aces(db_session, projects)
+            projects = list(Controller.instance().projects.values())
+            # Legacy projects carry a username only: resolve it once, persist
+            # the stable id (or the deleted-owner marker), then match by id.
+            await migrate_project_owner_ids(db_session, projects)
+            await ensure_all_project_aces(db_session, [(p.id, p.created_by, p.created_by_id) for p in projects])
 
     Controller.instance().set_project_aces_hook(_ensure_project_aces)
 

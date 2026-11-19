@@ -137,6 +137,8 @@ class Project:
         variables=None,
         supplier=None,
         created_by=None,
+        created_by_id=None,
+        created_by_deleted=False,
         frozen=False,
         distribution_master_id=None,
     ):
@@ -160,6 +162,12 @@ class Project:
         self._variables = variables
         self._supplier = supplier
         self._created_by = created_by
+        # Stable id of the owner: usernames are reused after a user is
+        # deleted, so ownership must be matched by id, never by name.
+        self._created_by_id = created_by_id
+        # Set when the project was migrated and its owner no longer existed:
+        # a user created later under the same name must not inherit it.
+        self._created_by_deleted = bool(created_by_deleted)
         # a distributed (template) project is frozen: the overlay disks of its
         # copies point at its files, so it must not change until they are gone
         self._frozen = frozen
@@ -445,6 +453,30 @@ class Project:
         Setter for the username of the user who created the project
         """
         self._created_by = created_by
+
+    @property
+    def created_by_id(self):
+        """
+        Stable id of the user who created the project, or None for a
+        project saved before owner ids existed.
+        """
+        return self._created_by_id
+
+    @created_by_id.setter
+    def created_by_id(self, created_by_id):
+        self._created_by_id = created_by_id
+
+    @property
+    def created_by_deleted(self):
+        """
+        Whether the owner recorded on the project no longer existed when the
+        project was migrated to a stable owner id.
+        """
+        return self._created_by_deleted
+
+    @created_by_deleted.setter
+    def created_by_deleted(self, created_by_deleted):
+        self._created_by_deleted = created_by_deleted
 
     @property
     def frozen(self):
@@ -2290,7 +2322,13 @@ class Project:
             await asyncio.sleep(0.5)
 
     async def duplicate(
-        self, name=None, reset_mac_addresses=True, user=None, overlay_from_master=False, archive_path=None
+        self,
+        name=None,
+        reset_mac_addresses=True,
+        user=None,
+        user_id=None,
+        overlay_from_master=False,
+        archive_path=None,
     ):
         """
         Duplicate a project
@@ -2303,6 +2341,7 @@ class Project:
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param reset_mac_addresses: Reset MAC addresses for the new project
         :param user: The user duplicating the project. The new project is owned by this user
+        :param user_id: Stable id of the user duplicating the project
         :param overlay_from_master: Create the copy for distribution: its QEMU
             disks become thin overlays pointing at this project's disks, and
             the copy is marked with this project's id. The project must not
@@ -2333,7 +2372,11 @@ class Project:
 
         try:
             proj = await self._fast_duplication(
-                name, reset_mac_addresses=reset_mac_addresses, user=user, overlay_from_master=overlay_from_master
+                name,
+                reset_mac_addresses=reset_mac_addresses,
+                user=user,
+                user_id=user_id,
+                overlay_from_master=overlay_from_master,
             )
             if proj:
                 if previous_status == "closed":
@@ -2355,11 +2398,11 @@ class Project:
                 with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                     archive_path = os.path.join(tmpdir, "project.gns3p")
                     await self.export_archive(archive_path)
-                    project = await self._import_duplicate(archive_path, name, reset_mac_addresses, user)
+                    project = await self._import_duplicate(archive_path, name, reset_mac_addresses, user, user_id)
             else:
                 # a distribution job exported the project once and reuses the
                 # archive for every recipient
-                project = await self._import_duplicate(archive_path, name, reset_mac_addresses, user)
+                project = await self._import_duplicate(archive_path, name, reset_mac_addresses, user, user_id)
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, UnicodeEncodeError) as e:
@@ -2393,7 +2436,7 @@ class Project:
                 async for chunk in zstream:
                     await f.write(chunk)
 
-    async def _import_duplicate(self, archive_path, name, reset_mac_addresses, user):
+    async def _import_duplicate(self, archive_path, name, reset_mac_addresses, user, user_id=None):
         """
         Import a copy of the project from a portable archive.
         """
@@ -2408,10 +2451,11 @@ class Project:
                 reset_mac_addresses=reset_mac_addresses,
                 keep_compute_ids=True,
                 user=user,
+                user_id=user_id,
             )
 
     async def _fast_duplication(
-        self, name=None, location=None, reset_mac_addresses=True, user=None, overlay_from_master=False
+        self, name=None, location=None, reset_mac_addresses=True, user=None, user_id=None, overlay_from_master=False
     ):
         """
         Fast duplication of a project.
@@ -2422,6 +2466,7 @@ class Project:
         :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the duplicated project
         :param user: The user duplicating the project. The new project is owned by this user
+        :param user_id: Stable id of the user duplicating the project
         :param overlay_from_master: Skip the QEMU disks and the snapshots, and
             create thin overlay disks pointing at this project's disks
             instead (distribution copy)
@@ -2498,8 +2543,13 @@ class Project:
             topology["auto_open"] = False
             topology["auto_close"] = False
 
+            # the owner is set from the trustable source, never copied
+            topology.pop("created_by_id", None)
+            topology.pop("created_by_deleted", None)
             if user:
                 topology["created_by"] = user
+                if user_id:
+                    topology["created_by_id"] = user_id
 
             # a copy is never a frozen template: the flag belongs to the
             # source project only, also when a frozen template is duplicated
@@ -2650,6 +2700,14 @@ class Project:
                 "created_by": self._created_by,
             }
         )
+        if self._created_by_id:
+            topo["created_by_id"] = self._created_by_id
+        else:
+            topo.pop("created_by_id", None)
+        if self._created_by_deleted:
+            topo["created_by_deleted"] = True
+        else:
+            topo.pop("created_by_deleted", None)
         if self._frozen:
             topo["frozen"] = True
         else:

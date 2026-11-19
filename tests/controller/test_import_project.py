@@ -79,6 +79,40 @@ async def test_import_project(tmpdir, controller):
 
 
 @pytest.mark.asyncio
+async def test_import_does_not_trust_the_archives_owner_id(tmpdir, controller):
+    """
+    Ownership is server state: an archive must not point the project's owner
+    ACE at another user, nor mark a live owner as deleted.
+    """
+
+    topology = {
+        "project_id": str(uuid.uuid4()),
+        "name": "test",
+        "revision": 6,
+        "type": "topology",
+        "created_by": "victim",
+        "created_by_id": str(uuid.uuid4()),
+        "created_by_deleted": True,
+        "topology": {"computes": [], "drawings": [], "links": [], "nodes": []},
+        "version": "2.0.0",
+    }
+
+    with open(str(tmpdir / "project.gns3"), "w+") as f:
+        json.dump(topology, f)
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, "w") as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = await import_project(controller, str(uuid.uuid4()), f)
+
+    with open(project.topology_file, encoding="utf-8") as f:
+        data = json.load(f)
+    assert data.get("created_by_id") is None
+    assert data.get("created_by_deleted") is None
+
+
+@pytest.mark.asyncio
 async def test_import_project_override(projects_dir, controller):
     """
     In the case of snapshot we will import a project for

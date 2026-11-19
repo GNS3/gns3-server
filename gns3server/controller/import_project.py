@@ -52,6 +52,7 @@ async def import_project(
     auto_open=False,
     auto_close=True,
     user=None,
+    user_id=None,
 ):
     """
     Import a project contain in a zip file
@@ -67,6 +68,7 @@ async def import_project(
     :param keep_compute_ids: keep compute IDs unchanged
     :param project_name: Original project name when restoring a snapshot
     :param user: User importing the project
+    :param user_id: Stable id of the user importing the project
 
     :returns: Project
     """
@@ -84,8 +86,14 @@ async def import_project(
 
     try:
         topology = json.loads(project_file)
-        # We import the project on top of an existing project (snapshots)
-        if topology["project_id"] == project_id:
+        # We import the project on top of an existing project (snapshots).
+        # The client chooses the project id in the URL, so the archive alone
+        # must not decide: an archive that reuses the URL id must not pass
+        # for a snapshot restore (it would skip the quota check and the id
+        # regeneration below). Only a project the controller already knows
+        # can be replaced.
+        replaced_project = controller.projects.get(str(project_id))
+        if replaced_project is not None and str(topology.get("project_id")) == str(project_id):
             project_name = topology["name"]
             restoring_snapshot = True
         else:
@@ -135,23 +143,37 @@ async def import_project(
         topology["auto_open"] = auto_open
         topology["auto_close"] = auto_close
 
-        if user:
-            topology["created_by"] = user
-
-        # frozen and distribution_master_id are server-side distribution
+        # frozen, distribution_master_id and the owner id are server-side
         # state: an archive must not forge them. A fake distribution_master_id
         # would pass the imported project for a live copy of someone else's
-        # template and lock that template forever. When the import replaces a
+        # template and lock that template forever, and a fake owner id would
+        # point the owner ACE at someone else. When the import replaces a
         # project the controller already knows (a snapshot restore), the
         # state held by the server is kept.
         topology.pop("frozen", None)
         topology.pop("distribution_master_id", None)
-        replaced_project = controller.projects.get(str(project_id))
+        # an owner id claimed by the archive is never trusted: it is either
+        # the importing user or the owner of the replaced project
+        topology.pop("created_by_id", None)
+        topology.pop("created_by_deleted", None)
+
+        if user:
+            topology["created_by"] = user
+            if user_id:
+                topology["created_by_id"] = user_id
+
         if replaced_project is not None:
             if replaced_project.frozen:
                 topology["frozen"] = True
             if replaced_project.distribution_master_id:
                 topology["distribution_master_id"] = str(replaced_project.distribution_master_id)
+            if not user:
+                # a snapshot restore keeps the owner the controller knows
+                topology["created_by"] = replaced_project.created_by
+                if replaced_project.created_by_id:
+                    topology["created_by_id"] = replaced_project.created_by_id
+                if replaced_project.created_by_deleted:
+                    topology["created_by_deleted"] = True
 
         if not restoring_snapshot:
             # Do not re-generate IDs if we are restoring a snapshot because they should be the same in a project

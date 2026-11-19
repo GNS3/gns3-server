@@ -98,6 +98,13 @@ def project_to_topology(project):
         "revision": GNS3_FILE_FORMAT_REVISION,
         "version": __version__,
     }
+    # Owned by a user: also write the stable id (matched by the owner ACE
+    # rebuild at startup). The deleted marker stops a later user with the
+    # same name from inheriting the project.
+    if project.created_by_id:
+        data["created_by_id"] = project.created_by_id
+    if project.created_by_deleted:
+        data["created_by_deleted"] = True
     # the distribution markers only appear on distributed projects, so every
     # other .gns3 file stays byte-identical to before
     if project.frozen:
