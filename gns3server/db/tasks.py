@@ -148,6 +148,9 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
                             upgrade as upgrade_multiuser,
                         )
+                        from gns3server.db_migrations.versions.c9e4f7a2b6d8_add_share_distribute_privileges import (
+                            upgrade as upgrade_share_distribute,
+                        )
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
@@ -169,6 +172,7 @@ async def connect_to_db(app: FastAPI) -> None:
                             # then the privileges added after it
                             upgrade_multiuser()
                             upgrade_duplicate_export()
+                            upgrade_share_distribute()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)

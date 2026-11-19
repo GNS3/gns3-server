@@ -529,3 +529,54 @@ async def test_duplicate_export_privileges_are_added_on_upgrade(tmp_path, monkey
                 assert attached == expected, f"the '{role}' role holds {attached} of the two privileges"
     finally:
         await app.state._db_engine.dispose()
+
+
+@pytest.mark.parametrize("versioned", [False, True])
+@pytest.mark.asyncio
+async def test_share_distribute_privileges_are_added_on_upgrade(tmp_path, monkeypatch, versioned):
+    # the Project.Share and Project.Distribute privileges (c9e4f7a2b6d8) are
+    # attached to Administrator and User, and deliberately NOT to Lab member:
+    # a shared user or a copy recipient must not pass the lab on
+    privileges = ("Project.Share", "Project.Distribute")
+    path = tmp_path / "controller.db"
+    engine = sa.create_engine(f"sqlite:///{path}")
+    with engine.connect() as connection:
+        Base.metadata.create_all(connection)
+        # simulate a database from before the privileges existed
+        connection.exec_driver_sql(
+            "DELETE FROM privilege_role_map WHERE privilege_id IN"
+            " (SELECT privilege_id FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute'))"
+        )
+        connection.exec_driver_sql("DELETE FROM privileges WHERE name IN ('Project.Share', 'Project.Distribute')")
+        if versioned:
+            cfg = _alembic_config()
+            cfg.attributes["connection"] = connection
+            command.stamp(cfg, "f6d3a9c2e8b1")
+        # else: unversioned database with the privileges already created by
+        # the code, upgraded through the manual startup chain
+        connection.commit()
+    engine.dispose()
+
+    monkeypatch.setenv("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{path}")
+    app = FastAPI()
+    await connect_to_db(app)
+    try:
+        async with app.state._db_engine.connect() as connection:
+            for name in privileges:
+                count = await connection.scalar(
+                    sa.text("SELECT COUNT(*) FROM privileges WHERE name = :name"), {"name": name}
+                )
+                assert count == 1, f"{name} was not backfilled exactly once"
+            for role, expected in (("Administrator", 2), ("User", 2), ("Lab member", 0)):
+                attached = await connection.scalar(
+                    sa.text(
+                        "SELECT COUNT(*) FROM privilege_role_map m"
+                        " JOIN privileges p ON p.privilege_id = m.privilege_id"
+                        " JOIN roles r ON r.role_id = m.role_id"
+                        " WHERE p.name IN :names AND r.name = :role"
+                    ).bindparams(sa.bindparam("names", expanding=True)),
+                    {"names": list(privileges), "role": role},
+                )
+                assert attached == expected, f"the '{role}' role holds {attached} of the two privileges"
+    finally:
+        await app.state._db_engine.dispose()

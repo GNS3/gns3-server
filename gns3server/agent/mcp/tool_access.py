@@ -75,15 +75,16 @@ TOOL_SPECS: dict[str, FrozenSet[str]] = {
     "project_unlock": frozenset({"Project.Modify"}),
     "project_locked": frozenset({"Project.Audit"}),
     "project_privileges": frozenset({"Project.Audit"}),
-    # distribution and sharing (owner-side workflows, all Project.Audit)
-    "project_distribute": frozenset({"Project.Audit"}),
+    # distribution and sharing (owner-side workflows: distributing freezes the
+    # source project, sharing authorizes other users on it)
+    "project_distribute": frozenset({"Project.Distribute"}),
     "project_distribution_list": frozenset({"Project.Audit"}),
     "project_distribution_cancel": frozenset({"Project.Audit"}),
     "distribution_list": frozenset({"Project.Audit"}),
     "distribution_delete": frozenset({"Project.Audit"}),
-    "project_share": frozenset({"Project.Audit"}),
-    "project_share_list": frozenset({"Project.Audit"}),
-    "project_share_delete": frozenset({"Project.Audit"}),
+    "project_share": frozenset({"Project.Share"}),
+    "project_share_list": frozenset({"Project.Share"}),
+    "project_share_delete": frozenset({"Project.Share"}),
     # account self-check endpoints only need an authenticated user
     "user_privileges": frozenset(),
     "user_quotas": frozenset(),
