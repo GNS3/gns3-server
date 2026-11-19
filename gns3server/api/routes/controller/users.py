@@ -388,8 +388,19 @@ async def update_user(
     Required privilege: User.Modify
     """
 
-    if user_update.username and await users_repo.get_user_by_username(user_update.username):
-        raise ControllerBadRequestError(f"Username '{user_update.username}' is already registered")
+    user = await users_repo.get_user(user_id)
+    if not user:
+        raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    if user_update.username and user_update.username != user.username:
+        # Ownership and quotas are keyed by the username (projects keep
+        # created_by as a string): a rename would cut the user off from
+        # their projects, so it is refused. Sending the current username
+        # is a no-op and stays allowed.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The username cannot be changed",
+        )
 
     if user_update.email and await users_repo.get_user_by_email(user_update.email):
         raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")

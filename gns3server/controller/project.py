@@ -2308,7 +2308,10 @@ class Project:
         self._loading = False
         self.emit_controller_notification("project.opened", self.asdict())
         # Should we start the nodes when project is open
-        if self._auto_start and auto_start:
+        # A frozen project never auto starts: its start_all is guarded and
+        # the synchronous guard would raise before a coroutine exists,
+        # breaking open() and the auto-open loop with it
+        if self._auto_start and auto_start and not self._frozen:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it

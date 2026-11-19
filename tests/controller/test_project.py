@@ -903,6 +903,21 @@ async def test_open_auto_start(controller):
         # assert project.start_all.called
 
 
+@pytest.mark.asyncio
+async def test_open_a_frozen_project_with_auto_start(controller):
+
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
+        project = Project(controller=controller, name="Test", auto_start=True)
+        project.dump()
+        await project.close()
+        project.frozen = True
+        # a frozen template never auto starts on open: the frozen guard is
+        # synchronous and would raise before a coroutine exists, breaking
+        # open() and the auto-open loop with it
+        await project.open()
+        assert project.status == "opened"
+
+
 def test_is_running(project, node):
     """
     If a node is started or paused return True

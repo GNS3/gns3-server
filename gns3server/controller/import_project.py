@@ -94,7 +94,10 @@ async def import_project(
         # can be replaced.
         replaced_project = controller.projects.get(str(project_id))
         if replaced_project is not None and str(topology.get("project_id")) == str(project_id):
-            project_name = topology["name"]
+            # The project keeps its current name: the object reads <name>.gns3
+            # on open, so writing the archive's (older) name would leave the
+            # import invisible and a second .gns3 file with the same id behind.
+            project_name = replaced_project.name
             restoring_snapshot = True
         else:
             # If the project name is already used we generate a new one
@@ -220,6 +223,15 @@ async def import_project(
         with open(dot_gns3_path, "w+") as f:
             json.dump(topology, f, indent=4, sort_keys=True)
         os.remove(os.path.join(path, "project.gns3"))
+        if replaced_project is not None:
+            # remove a topology file left under a different name (e.g. a
+            # rename that could not update the file on disk): after a restart
+            # the controller would load it again as the same project id
+            previous_topology_file = replaced_project.topology_file
+            if os.path.abspath(previous_topology_file) != os.path.abspath(dot_gns3_path) and os.path.exists(
+                previous_topology_file
+            ):
+                os.remove(previous_topology_file)
 
         images_path = os.path.join(path, "images")
         if os.path.exists(images_path):
