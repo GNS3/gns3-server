@@ -1510,3 +1510,95 @@ async def test_distributed_copy_cannot_be_duplicated(project, controller, tmp_pa
     project.distribution_master_id = str(uuid.uuid4())
     with pytest.raises(ControllerForbiddenError, match="distributed copy cannot be duplicated"):
         await project.duplicate(name="derived")
+
+
+async def _populate_scene(project):
+    """
+    Add two nodes, a link between them and a drawing to a project.
+    """
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = await project.add_node(compute, "n1", None, node_type="vpcs", properties={})
+    node2 = await project.add_node(compute, "n2", None, node_type="vpcs", properties={})
+    node1._ports = [EthernetPort("E0", 0, 0, 0)]
+    node2._ports = [EthernetPort("E0", 0, 1, 0)]
+
+    link = await project.add_link()
+    await link.add_node(node1, 0, 0)
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+        await link.add_node(node2, 1, 0)
+
+    project.emit_notification = MagicMock()
+    await project.add_drawing(None, svg="<svg></svg>")
+    return link
+
+
+@pytest.mark.asyncio
+async def test_stats_closed_project_counts_from_topology_file(controller, project):
+    """
+    A closed project has no scene elements in memory: the stats must come
+    from the .gns3 file (issue #1836).
+    """
+
+    await _populate_scene(project)
+    project.dump()
+
+    # same net effect as close(): the in-memory collections are emptied
+    project.reset()
+    project._status = "closed"
+
+    stats = project.stats()
+    assert stats["nodes"] == 2
+    assert stats["links"] == 1
+    assert stats["drawings"] == 1
+    assert stats["snapshots"] == 0
+    assert stats["markers"] == 0
+
+
+@pytest.mark.asyncio
+async def test_stats_closed_project_counts_markers_from_topology_file(controller, project):
+    """
+    The markers of a closed project are counted from the per-link markers
+    persisted in the .gns3 file.
+    """
+
+    link = await _populate_scene(project)
+    link.markers["http"] = {"bpf": "tcp port 80", "tag": "HTTP"}
+    project.dump()
+
+    project.reset()
+    project._status = "closed"
+
+    assert project.stats()["markers"] == 1
+
+
+@pytest.mark.asyncio
+async def test_stats_closed_project_without_topology_file(controller, project):
+    """
+    A project never dumped (no .gns3 file yet) falls back to the in-memory
+    counts instead of raising.
+    """
+
+    project._status = "closed"
+
+    assert project.stats() == {"nodes": 0, "links": 0, "drawings": 0, "snapshots": 0, "markers": 0}
+
+
+@pytest.mark.asyncio
+async def test_stats_opened_project_counts_from_memory(controller, project):
+    """
+    An opened project reports the live in-memory counts.
+    """
+
+    await _populate_scene(project)
+    project._status = "opened"
+
+    stats = project.stats()
+    assert stats["nodes"] == 2
+    assert stats["links"] == 1
+    assert stats["drawings"] == 1
