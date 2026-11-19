@@ -144,6 +144,47 @@ async def test_import_project_override(projects_dir, controller):
     assert project.name == "test"
 
 
+@pytest.mark.asyncio
+async def test_import_over_a_registered_project_is_visible(tmpdir, controller):
+    """
+    An import that replaces a registered project (a snapshot restore) must
+    keep the project's current name: the project object reads <name>.gns3
+    on open, so an archive written under its old name leaves the restore
+    invisible and a second .gns3 file behind.
+    """
+
+    project_id = str(uuid.uuid4())
+    existing = await controller.add_project(project_id=project_id, name="hello")
+    existing.dump()
+    await existing.close()
+
+    topology = {
+        "project_id": project_id,
+        "name": "test",  # the name the project had when the snapshot was taken
+        "scene_width": 3457,
+        "type": "topology",
+        "revision": 6,
+        "topology": {"computes": [], "drawings": [], "links": [], "nodes": []},
+        "version": "2.0.0",
+    }
+    with open(str(tmpdir / "project.gns3"), "w+") as f:
+        json.dump(topology, f)
+    zip_path = str(tmpdir / "project.zip")
+    with zipfile.ZipFile(zip_path, "w") as myzip:
+        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+
+    with open(zip_path, "rb") as f:
+        project = await import_project(controller, project_id, f, location=existing.path)
+
+    assert project is existing
+    await project.open()
+    assert project.name == "hello"
+    # the archive content is what the project now serves
+    assert project.scene_width == 3457
+    gns3_files = sorted(f for f in os.listdir(existing.path) if f.endswith(".gns3"))
+    assert gns3_files == ["hello.gns3"]
+
+
 async def write_file(path, z):
 
     with open(path, "wb") as f:

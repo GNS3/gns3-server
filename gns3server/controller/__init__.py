@@ -828,12 +828,15 @@ class Controller:
         Auto open the project with auto open enable
         """
 
-        try:
-            for project in self._projects.values():
-                if project.auto_open:
-                    await project.open()
-        except ControllerError as e:
-            log.error(f"Could not auto open projects: {e}")
+        for project in self._projects.values():
+            if not project.auto_open:
+                continue
+            # one project that fails to open must not stop the loop: the
+            # projects after it still need to open
+            try:
+                await project.open()
+            except ControllerError as e:
+                log.error(f"Could not auto open project '{project.name}': {e}")
 
     def get_free_project_name(self, base_name):
         """

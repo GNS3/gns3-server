@@ -134,7 +134,7 @@ class TestUserRoutes:
         (
             ("email", "user@email.com", status.HTTP_200_OK),
             ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
-            ("username", "user2", status.HTTP_400_BAD_REQUEST),
+            ("username", "another-name", status.HTTP_409_CONFLICT),
             ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
             ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
             ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
@@ -160,6 +160,55 @@ class TestUserRoutes:
         update_user[attr] = value
         response = await client.put(app.url_path_for("update_user", user_id=user_in_db.user_id), json=update_user)
         assert response.status_code == status_code
+
+    async def test_update_user_cannot_change_the_username(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Ownership and quotas are keyed by the username: a rename would cut
+        the user off from their projects, so it is refused.
+        """
+
+        response = await client.post(
+            app.url_path_for("create_user"),
+            json={
+                "username": "rename-me",
+                "email": "rename-me@email.com",
+                "password": "test_password",
+                "user_group_id": users_group_id,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        user_id = response.json()["user_id"]
+
+        user_repo = UsersRepository(db_session)
+        response = await client.put(app.url_path_for("update_user", user_id=user_id), json={"username": "renamed-user"})
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert await user_repo.get_user_by_username("rename-me") is not None
+        assert await user_repo.get_user_by_username("renamed-user") is None
+
+    async def test_update_user_accepts_the_same_username(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Sending the current username is a no-op, not an error.
+        """
+
+        response = await client.post(
+            app.url_path_for("create_user"),
+            json={
+                "username": "same-name",
+                "email": "same-name@email.com",
+                "password": "test_password",
+                "user_group_id": users_group_id,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        user_id = response.json()["user_id"]
+
+        response = await client.put(app.url_path_for("update_user", user_id=user_id), json={"username": "same-name"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["username"] == "same-name"
 
     async def test_users_saved_password_is_hashed(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
@@ -188,7 +237,9 @@ class TestUserRoutes:
 
         response = await client.get(app.url_path_for("get_users"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 4  # admin, user1, user2 and user3 should exist
+        # admin, user1, user2, user3 and the two users created by the update
+        # tests above should exist
+        assert len(response.json()) == 6
 
     async def test_delete_user_removes_ace_on_user_path(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
