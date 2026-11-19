@@ -768,8 +768,12 @@ class Project:
             return self._nodes[node_id]
 
         # Opening a project replays its existing nodes through add_node:
-        # they are not new creations and must not be quota-checked.
-        reservation = None if self._loading else reserve_create(self)
+        # they are not new creations and must not be quota-checked. Free
+        # node types (Ethernet switch, hub, cloud, NAT) are not counted by
+        # count_usage(), so they must not need a quota slot either.
+        reservation = None
+        if not self._loading and node_type in QUOTA_COUNTED_TYPES:
+            reservation = reserve_create(self)
         try:
             if compute.id not in self._computes:
                 self._computes.append(compute.id)

@@ -148,6 +148,31 @@ async def test_always_running_nodes_are_free(controller, project, compute, quota
         await project.add_node(compute, "n2", None, node_type="vpcs")
 
 
+async def test_free_node_types_are_allowed_at_the_limit(controller, project, compute, quota_state):
+    """
+    Free node types never take a quota slot, so a user who already used
+    every counted slot can still create them. The check is about the
+    counted types only: count_usage() does not count free nodes either.
+    """
+
+    quota_state._limits = {"alice": QuotaLimits(max_nodes=1, max_running_nodes=None)}
+    project.created_by = "alice"
+
+    # fill the only quota slot
+    await project.add_node(compute, "n1", None, node_type="vpcs")
+
+    # the free types stay available while the quota is exhausted
+    await project.add_node(compute, "sw1", None, node_type="ethernet_switch")
+    await project.add_node(compute, "hub1", None, node_type="ethernet_hub")
+    await project.add_node(compute, "cloud1", None, node_type="cloud")
+    await project.add_node(compute, "nat1", None, node_type="nat")
+    assert len(project.nodes) == 5
+
+    # a second counted node is still refused
+    with pytest.raises(ControllerForbiddenError, match="maximum number of nodes"):
+        await project.add_node(compute, "n2", None, node_type="vpcs")
+
+
 async def test_quota_spans_projects_and_closed_projects(controller, project, compute, quota_state):
     """
     The node quota covers every project owned by the user, including the

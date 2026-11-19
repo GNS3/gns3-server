@@ -102,6 +102,47 @@ class TestUserQuotaRoutes:
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    async def test_create_user_keeps_the_quota_fields(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        An admin sets the quotas when creating the user: the values must be
+        stored, not silently dropped.
+        """
+
+        repo = UsersRepository(db_session)
+        group = await repo.create_user_group(UserGroupCreate(name=f"quota-create-{uuid.uuid4().hex[:8]}"))
+        response = await client.post(
+            app.url_path_for("create_user"),
+            json={
+                "username": f"quota-new-{uuid.uuid4().hex[:8]}",
+                "password": "quota_password",
+                "user_group_id": str(group.user_group_id),
+                "max_nodes": 5,
+                "max_running_nodes": 2,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["max_nodes"] == 5
+        assert response.json()["max_running_nodes"] == 2
+
+    async def test_create_group_keeps_the_default_quota_fields(self, app: FastAPI, client: AsyncClient) -> None:
+        """
+        The group defaults sent at creation time must be stored as well.
+        """
+
+        response = await client.post(
+            app.url_path_for("create_user_group"),
+            json={
+                "name": f"quota-defaults-{uuid.uuid4().hex[:8]}",
+                "default_max_nodes": 10,
+                "default_max_running_nodes": 3,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["default_max_nodes"] == 10
+        assert response.json()["default_max_running_nodes"] == 3
+
     async def test_update_group_default_quotas(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
