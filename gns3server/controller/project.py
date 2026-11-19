@@ -2495,13 +2495,49 @@ class Project:
         return new_node
 
     def stats(self):
+        """
+        Return the project statistics.
 
+        A closed project keeps no scene elements in memory: the counts come
+        from the topology file instead (issue #1836).
+        """
+
+        if self._status == "closed":
+            stats = self._stats_from_topology_file()
+            if stats is not None:
+                return stats
         return {
             "nodes": len(self._nodes),
             "links": len(self._links),
             "drawings": len(self._drawings),
             "snapshots": len(self._snapshots),
             "markers": sum(len(link.markers) for link in self._links.values()),
+        }
+
+    def _stats_from_topology_file(self):
+        """
+        Count the scene elements from the .gns3 file. The snapshots are
+        already restored from the snapshot config, and the markers are
+        counted from the per-link markers persisted with each link. Return
+        None when the file cannot be read (e.g. a project never dumped), so
+        the caller falls back to the in-memory counts.
+        """
+
+        try:
+            with open(self.topology_file, encoding="utf-8") as f:
+                topology = json.load(f)
+        except (OSError, UnicodeDecodeError, ValueError) as e:
+            log.warning(f"Could not read the topology file of project '{self._name}' for the statistics: {e}")
+            return None
+
+        scene = topology.get("topology") or {}
+        links = scene.get("links") or []
+        return {
+            "nodes": len(scene.get("nodes") or []),
+            "links": len(links),
+            "drawings": len(scene.get("drawings") or []),
+            "snapshots": len(self._snapshots),
+            "markers": sum(len(link.get("markers") or {}) for link in links),
         }
 
     def asdict(self):
