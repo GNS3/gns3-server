@@ -975,3 +975,63 @@ class TestUserPrivileges:
             app.url_path_for("get_logged_in_user_privileges"), headers={"Authorization": "Bearer invalid_token"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_group_members_lists_own_groups_only(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        The group-members endpoint feeds the share and distribution dialogs:
+        the usernames of the user's own groups, sorted, and nothing else — no
+        emails, no users from groups the user is not a member of.
+        """
+
+        users_repo = UsersRepository(db_session)
+        user = await self._create_user(db_session, f"gm-{uuid.uuid4().hex[:8]}")
+        colleague = await self._create_user(db_session, f"peer-{uuid.uuid4().hex[:8]}")
+        second_group = await self._create_group_with_member(db_session, f"class-{uuid.uuid4().hex[:8]}", user)
+        # a user the caller shares no group with
+        foreign_group = await users_repo.create_user_group(UserGroupCreate(name=f"other-{uuid.uuid4().hex[:8]}"))
+        foreign_user = await users_repo.create_user(
+            UserCreate(
+                username=f"foreign-{uuid.uuid4().hex[:8]}",
+                email=f"foreign-{uuid.uuid4().hex[:8]}@email.com",
+                password="secret_password",
+                user_group_id=foreign_group.user_group_id,
+            )
+        )
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        groups = {group["group_name"]: group["members"] for group in response.json()["groups"]}
+        assert "Users" in groups
+        assert second_group.name in groups
+        assert foreign_group.name not in groups
+        assert user.username in groups["Users"]
+        assert colleague.username in groups["Users"]
+        assert all(foreign_user.username not in members for members in groups.values())
+        # usernames only: no email or other user detail leaks in the payload
+        assert "email" not in response.text
+
+    async def test_group_members_requires_the_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        A user outside the "Users" group has no ACE on /access/users: the
+        User.GroupMembers privilege check refuses them.
+        """
+
+        user = await self._create_user_out_of_band(db_session, f"gm-no-ace-{uuid.uuid4().hex[:8]}")
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_superadmin_can_list_group_members(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers("admin")
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "groups" in response.json()

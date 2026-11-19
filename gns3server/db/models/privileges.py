@@ -49,6 +49,7 @@ def create_default_roles(target, connection, **kw):
         {"description": "Create or delete a user", "name": "User.Allocate"},
         {"description": "View a user", "name": "User.Audit"},
         {"description": "Update a user", "name": "User.Modify"},
+        {"description": "List the members of your own user groups", "name": "User.GroupMembers"},
         {"description": "Create or delete a group", "name": "Group.Allocate"},
         {"description": "View a group", "name": "Group.Audit"},
         {"description": "Update a group", "name": "Group.Modify"},
@@ -70,6 +71,8 @@ def create_default_roles(target, connection, **kw):
         {"description": "Manage project-level marker definitions", "name": "Project.Marker"},
         {"description": "Duplicate a project", "name": "Project.Duplicate"},
         {"description": "Export a project as a portable archive", "name": "Project.Export"},
+        {"description": "Share a project with other users or groups", "name": "Project.Share"},
+        {"description": "Distribute a project as a frozen template", "name": "Project.Distribute"},
         {"description": "Create or delete project snapshots", "name": "Snapshot.Allocate"},
         {"description": "Restore a snapshot", "name": "Snapshot.Restore"},
         {"description": "View a snapshot", "name": "Snapshot.Audit"},
@@ -148,12 +151,15 @@ def add_privileges_to_default_roles(target, connection, **kw):
 
     # add required privileges to the "User" role
     user_privileges = (
+        "User.GroupMembers",
         "Project.Allocate",
         "Project.Audit",
         "Project.Modify",
         "Project.Marker",
         "Project.Duplicate",
         "Project.Export",
+        "Project.Share",
+        "Project.Distribute",
         "Snapshot.Allocate",
         "Snapshot.Audit",
         "Snapshot.Restore",
@@ -235,7 +241,9 @@ def add_privileges_to_default_roles(target, connection, **kw):
     # restore a snapshot, manage their own markers) but cannot modify the lab
     # topology. Project.Allocate is needed to open the project and lets the
     # recipient delete their copy; creating other projects is ruled by the
-    # collection ACE on /projects.
+    # collection ACE on /projects. Project.Share and Project.Distribute are
+    # deliberately absent: a shared user or a copy recipient must not pass
+    # the lab on to anyone else.
     lab_member_privileges = (
         "Project.Allocate",
         "Project.Audit",

@@ -1007,13 +1007,17 @@ async def _resolve_distribution_targets(
     users_repo: UsersRepository,
     rbac_repo: RbacRepository,
     project_data: schemas.ProjectDistribute,
-) -> Tuple[Optional[models.User], Optional[List[models.User]], UUID]:
+    current_user: schemas.User,
+) -> Tuple[Optional[models.User], Optional[List[models.User]], models.Role]:
     """
     Resolve the distribution target(s) and the role of their owner ACE.
 
     A distribution targets a single user, a list of users or a whole group.
-    Raises 404 when a user, the group or the role does not exist, 409 when
-    the group is empty. Everything is resolved before any work is done.
+    The caller cannot be a recipient: a distribution hands out reduced-role
+    copies to other people, someone who wants their own copy duplicates the
+    project instead. Raises 404 when a user, the group or the role does not
+    exist, 409 when the group is empty or a target is the caller. Everything
+    is resolved before any work is done.
     """
 
     role_name = project_data.owner_role or DISTRIBUTION_DEFAULT_ROLE
@@ -1028,7 +1032,8 @@ async def _resolve_distribution_targets(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Target user '{project_data.target_user}' does not exist",
             )
-        return target_user, None, role.role_id
+        _reject_caller_as_target(target_user, current_user)
+        return target_user, None, role
 
     if project_data.target_users:
         # every username must exist before the first copy is made; duplicates
@@ -1042,7 +1047,9 @@ async def _resolve_distribution_targets(
                     detail=f"Target user '{username}' does not exist",
                 )
             targets.append(user)
-        return None, targets, role.role_id
+        for user in targets:
+            _reject_caller_as_target(user, current_user)
+        return None, targets, role
 
     if project_data.target_group:
         group = await users_repo.get_user_group_by_name(project_data.target_group)
@@ -1057,12 +1064,25 @@ async def _resolve_distribution_targets(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Target group '{project_data.target_group}' has no members",
             )
-        return None, members, role.role_id
+        return None, members, role
 
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail="A distribution needs target_user, target_users or target_group",
     )
+
+
+def _reject_caller_as_target(target: models.User, current_user: schemas.User) -> None:
+    """
+    A distribution hands the lab to other people: the caller asks for copies
+    for them, and duplicates the project for a copy of their own.
+    """
+
+    if target.user_id == current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot distribute the project to yourself: duplicate it instead",
+        )
 
 
 async def _distribute_project_copy(
@@ -1413,7 +1433,7 @@ async def _run_distribution(
         **responses,
         409: {"model": schemas.ErrorMessage, "description": "Could not distribute project"},
     },
-    dependencies=[Depends(has_privilege("Project.Audit"))],
+    dependencies=[Depends(has_privilege("Project.Distribute"))],
 )
 async def distribute_project(
     project_data: schemas.ProjectDistribute,
@@ -1432,11 +1452,14 @@ async def distribute_project(
     locked by default (``lock_topology``). The copies' QEMU disks are thin
     overlays of the project's disks (a project with nodes on a remote
     compute falls back to full copies), and the project is frozen as a
-    template: it cannot be modified until every copy is deleted. Returns the
-    distribution job: poll ``GET /projects/{project_id}/distributions/{distribution_id}``
+    template: it cannot be modified until every copy is deleted. The caller
+    cannot be a recipient (duplicate the project instead), and the owner
+    role cannot carry privileges the caller does not hold on the project.
+    Returns the distribution job: poll
+    ``GET /projects/{project_id}/distributions/{distribution_id}``
     for the progress and the per-recipient results.
 
-    Required privilege: Project.Audit, plus Project.Allocate somewhere the copy can live
+    Required privilege: Project.Distribute, plus Project.Allocate somewhere the copy can live
     """
 
     if project.distribution_master_id is not None:
@@ -1447,9 +1470,10 @@ async def distribute_project(
 
     # Resolve the recipient(s) and the role of their owner ACE before the job
     # starts: a bad request must not distribute anything.
-    target_user, recipients, owner_role_id = await _resolve_distribution_targets(
-        UsersRepository(db_session), rbac_repo, project_data
+    target_user, recipients, owner_role = await _resolve_distribution_targets(
+        UsersRepository(db_session), rbac_repo, project_data, current_user
     )
+    await _check_share_role_width(rbac_repo, current_user, project, owner_role)
     await _duplicable_pool_memberships(current_user, project, rbac_repo, pools_repo)
 
     # the overlays' backing files must live on the same machine as the
@@ -1489,7 +1513,7 @@ async def distribute_project(
             job,
             str(project.id),
             names,
-            owner_role_id,
+            owner_role.role_id,
             project_data.reset_mac_addresses,
             project_data.lock_topology,
             overlay_from_master,
@@ -1510,8 +1534,9 @@ async def get_project_distributions(
 ) -> List[dict]:
     """
     Return the distribution history of a project from the persisted records
-    (the caller's own, plus every one for a superadmin): who distributed the
-    project, to which recipients and when, across controller restarts.
+    (the caller's own, plus every one on a project the caller owns, and
+    every one for a superadmin): who distributed the project, to which
+    recipients and when, across controller restarts.
 
     Required privilege: Project.Audit
     """
@@ -1526,7 +1551,9 @@ async def get_project_distributions(
     return [
         _distribution_record_asdict(record)
         for record in records
-        if current_user.is_superadmin or record.created_by == current_user.username
+        if current_user.is_superadmin
+        or record.created_by == current_user.username
+        or project.created_by == current_user.username
     ]
 
 
@@ -1539,25 +1566,37 @@ async def _get_owned_distribution_or_record(
     """
     Look up one distribution of the project — the live job (fresher than the
     last write-through) or, once its job is gone, its persisted record —
-    checking the caller is the user who started it (or a superadmin).
-    Exactly one of the two returns is set.
+    checking the caller is the user who started it, the owner of the project
+    (whose project a distribution freezes, so they must always be able to
+    read and clean it up), or a superadmin. Exactly one of the two returns
+    is set.
     """
+
+    def _refused() -> HTTPException:
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This distribution belongs to another user and to another user's project",
+        )
 
     job = DistributionRegistry.instance().get(str(distribution_id))
     if job is not None and job.project_id == str(project.id):
-        if not current_user.is_superadmin and job.created_by != current_user.username:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="This distribution was started by another user"
-            )
+        if (
+            not current_user.is_superadmin
+            and job.created_by != current_user.username
+            and project.created_by != current_user.username
+        ):
+            raise _refused()
         return job, None
 
     record = await DistributionRecordsRepository(db_session).get_record(distribution_id)
     if record is None or str(record.project_id) != str(project.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Could not find this distribution")
-    if not current_user.is_superadmin and record.created_by != current_user.username:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="This distribution was started by another user"
-        )
+    if (
+        not current_user.is_superadmin
+        and record.created_by != current_user.username
+        and project.created_by != current_user.username
+    ):
+        raise _refused()
     return None, record
 
 
@@ -1619,7 +1658,8 @@ async def cancel_project_distribution(
     refused with 409: the record is how those copies are found for a bulk
     cleanup.
 
-    Required privilege: Project.Audit, and only the user who started the distribution (or a superadmin)
+    Required privilege: Project.Audit, and only the user who started the distribution,
+    the project owner, or a superadmin
     """
 
     registry = DistributionRegistry.instance()
@@ -1678,7 +1718,8 @@ async def delete_distribution_copies(
     copy of every distribution of the project is gone the template can be
     unfrozen and modified again.
 
-    Required privilege: Project.Audit, and only the user who started the distribution (or a superadmin)
+    Required privilege: Project.Audit, and only the user who started the distribution,
+    the project owner, or a superadmin
     """
 
     registry = DistributionRegistry.instance()
@@ -1831,18 +1872,6 @@ async def delete_distribution(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-def _ensure_project_share_manager(project: Project, current_user: schemas.User) -> None:
-    """
-    Only the owner of a project (or a superadmin) can manage its shares.
-    """
-
-    if not current_user.is_superadmin and project.created_by != current_user.username:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the project owner or a superadmin can manage the shares of this project",
-        )
-
-
 def _share_result(ace: models.ACE, username: Optional[str], group_name: Optional[str], role_name: str) -> dict:
     """
     One share as returned by the share endpoints.
@@ -1875,14 +1904,24 @@ async def _share_aces(rbac_repo: RbacRepository, project: Project) -> List[model
 
 
 async def _resolve_share_targets(
-    users_repo: UsersRepository, share_data: schemas.ProjectShare
+    users_repo: UsersRepository, share_data: schemas.ProjectShare, owner_username: Optional[str]
 ) -> Tuple[Optional[List[models.User]], Optional[models.UserGroup]]:
     """
     Resolve the share target(s) and their role. A share targets a single user,
     a list of users or a whole group (one group ACE for all its members).
-    Raises 404 when a user or the group does not exist, 409 when the group is
-    empty. Everything is resolved before any ACE is written.
+    The project owner cannot be a target: the share upsert replaces an
+    existing user ACE, and on the owner it would replace the owner ACE and
+    its role. Raises 404 when a user or the group does not exist, 409 when
+    the group is empty or a target is the owner. Everything is resolved
+    before any ACE is written.
     """
+
+    def _reject_owner(target: models.User) -> None:
+        if target.username == owner_username:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The owner of the project cannot be a share target: it would replace the owner role",
+            )
 
     if share_data.target_user:
         user = await users_repo.get_user_by_username(share_data.target_user)
@@ -1891,6 +1930,7 @@ async def _resolve_share_targets(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Target user '{share_data.target_user}' does not exist",
             )
+        _reject_owner(user)
         return [user], None
 
     if share_data.target_users:
@@ -1903,6 +1943,8 @@ async def _resolve_share_targets(
                     detail=f"Target user '{username}' does not exist",
                 )
             targets.append(user)
+        for user in targets:
+            _reject_owner(user)
         return targets, None
 
     if share_data.target_group:
@@ -1930,10 +1972,11 @@ async def _check_share_role_width(
     rbac_repo: RbacRepository, current_user: schemas.User, project: Project, role: models.Role
 ) -> None:
     """
-    A share cannot grant a role with privileges the sharer does not hold on
-    the project: in particular, the owner of a distributed (frozen) copy
-    cannot unfreeze it by sharing it to anyone — themselves included — with a
-    wider role. Superadmins can share with any role.
+    A share, or the owner role handed out with a distribution copy, cannot
+    grant a role with privileges the caller does not hold on the project: in
+    particular, the owner of a distributed (frozen) copy cannot unfreeze it
+    by sharing it to anyone — themselves included — with a wider role.
+    Superadmins can share with any role.
     """
 
     if current_user.is_superadmin:
@@ -1955,7 +1998,7 @@ async def _check_share_role_width(
         **responses,
         409: {"model": schemas.ErrorMessage, "description": "Could not share project"},
     },
-    dependencies=[Depends(has_privilege("Project.Audit"))],
+    dependencies=[Depends(has_privilege("Project.Share"))],
 )
 async def share_project(
     share_data: schemas.ProjectShare,
@@ -1968,14 +2011,13 @@ async def share_project(
     Share a project with a single user, a list of users or a whole user group:
     no copy is created, the targets get access to this very project through an
     ACE carrying ``role`` (the built-in "Lab member" role by default). Sharing
-    again with the same target replaces its role. Only the project owner (or a
-    superadmin) can share, and a share cannot grant a role with privileges the
+    again with the same target replaces its role. The project owner cannot be
+    a target: a share updates an existing user ACE, so it would replace the
+    owner ACE and its role. A share cannot grant a role with privileges the
     sharer does not hold on the project.
 
-    Required privilege: Project.Audit
+    Required privilege: Project.Share
     """
-
-    _ensure_project_share_manager(project, current_user)
 
     role_name = share_data.role or DISTRIBUTION_DEFAULT_ROLE
     role = await rbac_repo.get_role_by_name(role_name)
@@ -1983,7 +2025,7 @@ async def share_project(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Role '{role_name}' does not exist")
     await _check_share_role_width(rbac_repo, current_user, project, role)
 
-    users, group = await _resolve_share_targets(UsersRepository(db_session), share_data)
+    users, group = await _resolve_share_targets(UsersRepository(db_session), share_data, project.created_by)
 
     shares = []
     if users is not None:
@@ -2004,11 +2046,10 @@ async def share_project(
 @router.get(
     "/{project_id}/shares",
     response_model=List[schemas.ProjectShareResult],
-    dependencies=[Depends(has_privilege("Project.Audit"))],
+    dependencies=[Depends(has_privilege("Project.Share"))],
 )
 async def get_project_shares(
     project: Project = Depends(dep_project),
-    current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> List[dict]:
     """
@@ -2016,10 +2057,8 @@ async def get_project_shares(
     share and is not listed; resource pool memberships are a different
     mechanism and are not listed either.
 
-    Required privilege: Project.Audit
+    Required privilege: Project.Share
     """
-
-    _ensure_project_share_manager(project, current_user)
 
     shares = []
     for ace in await _share_aces(rbac_repo, project):
@@ -2037,22 +2076,19 @@ async def get_project_shares(
         **responses,
         409: {"model": schemas.ErrorMessage, "description": "Could not delete share"},
     },
-    dependencies=[Depends(has_privilege("Project.Audit"))],
+    dependencies=[Depends(has_privilege("Project.Share"))],
 )
 async def delete_project_share(
     ace_id: UUID,
     project: Project = Depends(dep_project),
-    current_user: schemas.User = Depends(get_current_active_user),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Remove one share of a project. The owner ACE of the creator cannot be
     removed this way.
 
-    Required privilege: Project.Audit
+    Required privilege: Project.Share
     """
-
-    _ensure_project_share_manager(project, current_user)
 
     if ace_id not in {ace.ace_id for ace in await _share_aces(rbac_repo, project)}:
         raise ControllerNotFoundError(f"Share '{ace_id}' does not exist")

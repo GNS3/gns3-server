@@ -197,6 +197,32 @@ async def get_logged_in_user_privileges(
     return schemas.UserPrivileges(is_superadmin=False, privileges=sorted(privilege_names))
 
 
+@router.get(
+    "/me/group-members",
+    response_model=schemas.UserGroupMembersResponse,
+    dependencies=[Depends(has_privilege("User.GroupMembers"))],
+)
+async def get_logged_in_user_group_members(
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> schemas.UserGroupMembersResponse:
+    """
+    List the members of every user group of the current user, as usernames
+    only. This is what a share or distribution dialog offers as candidate
+    recipients: a user sees the members of their own groups, never the whole
+    user base (that stays User.Audit).
+
+    Example: curl -X GET http://host:port/v3/access/users/me/group-members -H "Authorization: Bearer <token>"
+    """
+
+    groups = await users_repo.get_user_memberships(current_user.user_id)
+    entries = []
+    for group in sorted(groups, key=lambda group: str(group.name)):
+        members = sorted(str(user.username) for user in await users_repo.get_user_group_members(group.user_group_id))
+        entries.append(schemas.UserGroupMembers(group_name=str(group.name), members=members))
+    return schemas.UserGroupMembersResponse(groups=entries)
+
+
 @router.get("/me/quotas", response_model=schemas.UserQuotaUsage)
 async def get_logged_in_user_quotas(
     current_user: schemas.User = Depends(get_current_active_user),

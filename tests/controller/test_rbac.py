@@ -36,7 +36,7 @@ from gns3server.controller import project as project_module
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.distribution import DistributionRegistry
 from gns3server.db.models import User
-from gns3server.db.project_acl import ensure_all_project_aces, ensure_project_owner_ace
+from gns3server.db.project_acl import ensure_all_project_aces, ensure_project_owner_ace, upsert_project_share_ace
 from gns3server.db.repositories.distribution_records import DistributionRecordsRepository
 from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -420,6 +420,22 @@ class TestProjectOwnership:
                 user_group_id=group.user_group_id,
             )
         )
+
+    @staticmethod
+    async def _create_role_with_privileges(db_session: AsyncSession, name: str, privilege_names) -> object:
+        """
+        Build a custom role carrying exactly the given privileges.
+        """
+
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.create_role(schemas.RoleCreate(name=name))
+        assert role is not None
+        for privilege_name in privilege_names:
+            privilege = await rbac_repo.get_privilege_by_name(privilege_name)
+            assert privilege is not None, f"Privilege '{privilege_name}' does not exist"
+            role = await rbac_repo.add_privilege_to_role(role.role_id, privilege)
+        assert role is not None
+        return role
 
     async def test_create_project_creates_owner_ace(
         self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
@@ -822,6 +838,142 @@ class TestProjectDistribution:
                 app.url_path_for("distribute_project", project_id=source_id),
                 json={"name": "copy", "target_user": student.username, "owner_role": "No such role"},
             )
+            assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_distribution_rejects_the_caller_as_target(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        student = await TestProjectOwnership._create_user_in_users_group(db_session, f"student-{uuid.uuid4().hex[:8]}")
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+
+            # a distribution hands the lab to other people: someone who wants
+            # their own copy duplicates the project instead
+            response = await teacher_client.post(
+                app.url_path_for("distribute_project", project_id=source_id),
+                json={"name": "copy", "target_user": test_user.username},
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+
+            response = await teacher_client.post(
+                app.url_path_for("distribute_project", project_id=source_id),
+                json={"name": "copy", "target_users": [student.username, test_user.username]},
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+
+            # a rejected distribution leaves nothing behind: no freeze, no job
+            response = await teacher_client.get(app.url_path_for("get_project", project_id=source_id))
+            assert response.json()["frozen"] is False
+            response = await teacher_client.get(app.url_path_for("get_project_distributions", project_id=source_id))
+            assert response.json() == []
+
+    async def test_distribution_owner_role_wider_than_the_caller_is_rejected(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        student = await TestProjectOwnership._create_user_in_users_group(db_session, f"student-{uuid.uuid4().hex[:8]}")
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+
+            # the owner role of the copies cannot be wider than what the
+            # caller holds on the project
+            response = await teacher_client.post(
+                app.url_path_for("distribute_project", project_id=source_id),
+                json={"name": "copy", "target_user": student.username, "owner_role": "Administrator"},
+            )
+            assert response.status_code == status.HTTP_403_FORBIDDEN
+
+            response = await teacher_client.get(app.url_path_for("get_project", project_id=source_id))
+            assert response.json()["frozen"] is False
+            response = await teacher_client.get(app.url_path_for("get_project_distributions", project_id=source_id))
+            assert response.json() == []
+
+    async def test_shared_lab_member_cannot_distribute(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        student = await TestProjectOwnership._create_user_in_users_group(db_session, f"student-{uuid.uuid4().hex[:8]}")
+        outsider = await TestProjectOwnership._create_user_in_users_group(db_session, f"peer-{uuid.uuid4().hex[:8]}")
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+            response = await teacher_client.post(
+                app.url_path_for("share_project", project_id=source_id),
+                json={"target_user": student.username},
+            )
+            assert response.status_code == status.HTTP_201_CREATED
+
+        # the shared user can see the project but cannot pass it on: the Lab
+        # member role carries no Project.Distribute
+        async with TestProjectOwnership._client_for(app, student) as student_client:
+            response = await student_client.post(
+                app.url_path_for("distribute_project", project_id=source_id),
+                json={"name": "copy", "target_user": outsider.username},
+            )
+            assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_project_owner_can_read_and_clean_a_distribution_started_by_another_user(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        student = await TestProjectOwnership._create_user_in_users_group(db_session, f"student-{uuid.uuid4().hex[:8]}")
+
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.post(
+                app.url_path_for("create_project"), json={"name": f"lab-{uuid.uuid4()}"}
+            )
+            source_id = response.json()["project_id"]
+
+        # a superadmin distributes the teacher's project and may pick any
+        # owner role (the width check does not apply to them)
+        admin = await UsersRepository(db_session).get_user_by_username("admin")
+        async with TestProjectOwnership._client_for(app, admin) as admin_client:
+            response = await admin_client.post(
+                app.url_path_for("distribute_project", project_id=source_id),
+                json={"name": "copy", "target_user": student.username, "owner_role": "Administrator"},
+            )
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            distribution_id = response.json()["distribution_id"]
+            job = await self._wait_for_distribution(app, admin_client, source_id, distribution_id)
+            copy_id = job["results"][0]["project"]["project_id"]
+
+        # the teacher did not start the distribution, but it is their project
+        # it froze: they can read it and clean it up
+        async with TestProjectOwnership._client_for(app, test_user) as teacher_client:
+            response = await teacher_client.get(
+                app.url_path_for("get_project_distribution", project_id=source_id, distribution_id=distribution_id)
+            )
+            assert response.status_code == status.HTTP_200_OK
+
+            response = await teacher_client.get(app.url_path_for("get_project_distributions", project_id=source_id))
+            assert {d["distribution_id"] for d in response.json()} == {distribution_id}
+
+            response = await teacher_client.delete(
+                app.url_path_for("delete_distribution_copies", project_id=source_id, distribution_id=distribution_id)
+            )
+            assert response.status_code == status.HTTP_200_OK
+            assert all(result["project_exists"] is False for result in response.json()["results"])
+
+            # with every copy gone the owner can unfreeze their project again
+            response = await teacher_client.post(app.url_path_for("unfreeze_project", project_id=source_id))
+            assert response.status_code == status.HTTP_200_OK
+
+        # the copy is gone: only a superadmin can still probe its path (other
+        # users lost their ACE with the deletion and are refused earlier)
+        async with TestProjectOwnership._client_for(app, admin) as admin_client:
+            response = await admin_client.get(app.url_path_for("get_project", project_id=copy_id))
             assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_recipient_can_delete_their_own_copy(
@@ -2118,12 +2270,16 @@ class TestProjectDistribution:
 class TestProjectShare:
     """
     Sharing a project (the /share endpoint) gives the targets access to this
-    very project through an ACE: no copy is created. Only the owner (or a
-    superadmin) can manage the shares. The default role is the built-in
-    "Lab member" role (use the lab, frozen topology), and a share cannot grant
-    a role wider than the sharer's own access to the project: the owner of a
-    distributed (frozen) copy cannot unfreeze it by sharing. Re-sharing with
-    the same target replaces its role; removing a share removes the access.
+    very project through an ACE: no copy is created. Sharing is ruled by the
+    Project.Share privilege (the built-in "Lab member" role does not carry
+    it, so a shared user cannot pass the project on; a user granted a
+    Share-capable role can share within what they hold). The default role is
+    the built-in "Lab member" role (use the lab, frozen topology), and a
+    share cannot grant a role wider than the sharer's own access to the
+    project: the owner of a distributed (frozen) copy cannot unfreeze it by
+    sharing. The owner is never a share target (it would replace the owner
+    ACE and its role). Re-sharing with the same target replaces its role;
+    removing a share removes the access.
     """
 
     @staticmethod
@@ -2404,6 +2560,80 @@ class TestProjectShare:
             )
             assert response.status_code == status.HTTP_409_CONFLICT
 
+    async def test_share_owner_target_is_rejected(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """
+        The owner already holds the owner ACE on the project: a share would
+        replace it and its role, so the owner can never be a share target.
+        """
+
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        project_id = await self._create_project(app, test_user)
+
+        async with TestProjectOwnership._client_for(app, test_user) as owner_client:
+            response = await owner_client.post(
+                app.url_path_for("share_project", project_id=project_id),
+                json={"target_user": test_user.username},
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+
+            response = await owner_client.post(
+                app.url_path_for("share_project", project_id=project_id),
+                json={"target_users": [test_user.username]},
+            )
+            assert response.status_code == status.HTTP_409_CONFLICT
+
+            # the owner ACE kept its role
+            rbac_repo = RbacRepository(db_session)
+            ace = await rbac_repo.get_ace_by_path(f"/projects/{project_id}")
+            user_role = await rbac_repo.get_role_by_name("User")
+            assert ace is not None
+            assert str(ace.role_id) == str(user_role.role_id)
+
+    async def test_delegate_with_share_privilege_can_share(
+        self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """
+        Sharing is ruled by Project.Share, not by ownership alone: a user
+        granted a Share-capable role on a project can share it, but only
+        within the privileges they hold.
+        """
+
+        await TestProjectOwnership._seed_collection_ace(db_session)
+        colleague = await TestProjectOwnership._create_user_in_users_group(db_session, f"peer-{uuid.uuid4().hex[:8]}")
+        outsider = await TestProjectOwnership._create_user_in_users_group(db_session, f"peer-{uuid.uuid4().hex[:8]}")
+        project_id = await self._create_project(app, test_user)
+
+        sharer_role = await TestProjectOwnership._create_role_with_privileges(
+            db_session,
+            f"delegate-{uuid.uuid4().hex[:8]}",
+            {"Project.Share", *TestProjectDistribution.LAB_MEMBER_PRIVILEGES},
+        )
+        await RbacRepository(db_session).create_ace(
+            ACECreate(
+                path=f"/projects/{project_id}",
+                ace_type="user",
+                propagate=True,
+                user_id=str(colleague.user_id),
+                role_id=str(sharer_role.role_id),
+            )
+        )
+
+        async with TestProjectOwnership._client_for(app, colleague) as colleague_client:
+            response = await colleague_client.post(
+                app.url_path_for("share_project", project_id=project_id),
+                json={"target_user": outsider.username},
+            )
+            assert response.status_code == status.HTTP_201_CREATED
+
+            # but never a role wider than what they hold
+            response = await colleague_client.post(
+                app.url_path_for("share_project", project_id=project_id),
+                json={"target_user": outsider.username, "role": "User"},
+            )
+            assert response.status_code == status.HTTP_403_FORBIDDEN
+
     async def test_only_owner_or_superadmin_can_manage_shares(
         self, app: FastAPI, base_client: AsyncClient, db_session: AsyncSession, test_user: User
     ) -> None:
@@ -2484,15 +2714,32 @@ class TestProjectShare:
         classmate = await TestProjectOwnership._create_user_in_users_group(db_session, f"peer-{uuid.uuid4().hex[:8]}")
         _, copy_id = await TestProjectDistribution._distribute(app, test_user, student.username)
 
+        # the copy owner only carries the Lab member role: no Project.Share,
+        # so they cannot pass the lab on to anyone
         async with TestProjectOwnership._client_for(app, student) as student_client:
-            # the frozen owner cannot unfreeze their copy by sharing, not even
-            # with themselves
-            for target in (student.username, classmate.username):
-                response = await student_client.post(
-                    app.url_path_for("share_project", project_id=copy_id),
-                    json={"target_user": target, "role": "User"},
-                )
-                assert response.status_code == status.HTTP_403_FORBIDDEN
+            response = await student_client.post(
+                app.url_path_for("share_project", project_id=copy_id),
+                json={"target_user": classmate.username},
+            )
+            assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        # a sharer who does hold Project.Share still cannot grant a role wider
+        # than what they have on the copy: the width rule survives the
+        # privilege gate. The role of the copy owner is widened directly on
+        # their owner ACE (the share endpoint refuses the owner as a target).
+        sharer_role = await TestProjectOwnership._create_role_with_privileges(
+            db_session,
+            f"pair-sharer-{uuid.uuid4().hex[:8]}",
+            {"Project.Share", *TestProjectDistribution.LAB_MEMBER_PRIVILEGES},
+        )
+        await upsert_project_share_ace(db_session, UUID(copy_id), sharer_role.role_id, user_id=student.user_id)
+
+        async with TestProjectOwnership._client_for(app, student) as student_client:
+            response = await student_client.post(
+                app.url_path_for("share_project", project_id=copy_id),
+                json={"target_user": classmate.username, "role": "User"},
+            )
+            assert response.status_code == status.HTTP_403_FORBIDDEN
 
             # sharing within what they hold is fine: a frozen pair share
             response = await student_client.post(
