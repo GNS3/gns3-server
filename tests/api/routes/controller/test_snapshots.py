@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import os
 import uuid
 from datetime import UTC, datetime
@@ -68,6 +69,43 @@ class TestSnapshotRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not os.path.exists(snapshot.path)
+
+    async def test_deleting_the_last_snapshot_empties_the_config(
+        self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
+    ) -> None:
+        """
+        A config left with a deleted snapshot keeps warning about a missing
+        file on every load: the config must be emptied with the last snapshot.
+        """
+
+        response = await client.delete(
+            app.url_path_for("delete_snapshot", project_id=project.id, snapshot_id=snapshot.id)
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        with open(project._snapshot_conf_path, encoding="utf-8") as f:
+            assert json.load(f) == []
+
+        # the ghost entry is gone for good: a reload stays silent and empty
+        project._load_snapshot_config()
+        assert list(project._snapshots.values()) == []
+
+    async def test_ghost_snapshot_entry_is_dropped_from_the_config(
+        self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
+    ) -> None:
+        """
+        An entry whose snapshot file was removed outside the API is skipped
+        on load, and the config is rewritten without it.
+        """
+
+        os.remove(snapshot.path)
+        # reset() clears the in-memory snapshots before reloading, like an open
+        project._snapshots = {}
+        project._load_snapshot_config()
+        assert list(project._snapshots.values()) == []
+
+        with open(project._snapshot_conf_path, encoding="utf-8") as f:
+            assert json.load(f) == []
 
     async def test_restore_snapshot(
         self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot

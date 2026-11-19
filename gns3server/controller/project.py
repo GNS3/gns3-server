@@ -167,6 +167,8 @@ class Project:
         # created from (the copy cannot be duplicated or exported)
         self._distribution_master_id = distribution_master_id
         self._snapshots_config_file = "snapshots.conf"
+        # set (and the config read) when the project is opened, see reset()
+        self._snapshot_conf_path: str | None = None
 
         self._loading = False
         self._closing = False
@@ -1700,7 +1702,13 @@ class Project:
 
     def _save_snapshot_config(self):
 
-        if not self._snapshots:
+        # An existing config must be rewritten even when no snapshot is left:
+        # deleting the last snapshot, or skipping a ghost entry whose file is
+        # gone, has to clean the config up — otherwise the ghost entry warns
+        # on every load forever.
+        if self._snapshot_conf_path is None:
+            return
+        if not self._snapshots and not os.path.isfile(self._snapshot_conf_path):
             return
 
         self._snapshot_conf = []
