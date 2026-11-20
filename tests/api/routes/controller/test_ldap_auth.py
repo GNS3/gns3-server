@@ -586,13 +586,13 @@ class TestLdapAuthentication:
         # 1. Create a custom local-only GNS3 group that is NOT in group_mapping
         group_resp = await client.post(
             app.url_path_for("create_user_group"),
-            json={"name": "CCIE-Lab-Cohort-1", "description": "Local lab group"},
+            json={"name": "CCIE-Study-Cohort-1", "description": "Local study group"},
         )
         assert group_resp.status_code == status.HTTP_201_CREATED
-        ccie_group = await users_repo.get_user_group_by_name("CCIE-Lab-Cohort-1")
+        ccie_group = await users_repo.get_user_group_by_name("CCIE-Study-Cohort-1")
         assert ccie_group is not None
 
-        # 2. Pre-create local user 'david' with membership in CCIE-Lab-Cohort-1
+        # 2. Pre-create local user 'david' with membership in CCIE-Study-Cohort-1
         create_resp = await client.post(
             app.url_path_for("create_user"),
             json=self._user_payload(
@@ -604,7 +604,7 @@ class TestLdapAuthentication:
         david_user = await users_repo.get_user_by_username("david")
         assert david_user is not None
 
-        # Assign david to CCIE-Lab-Cohort-1 manually via API
+        # Assign david to CCIE-Study-Cohort-1 manually via API
         assign_resp = await client.put(
             app.url_path_for("add_member_to_group", user_group_id=ccie_group.user_group_id, user_id=david_user.user_id),
         )
@@ -612,7 +612,7 @@ class TestLdapAuthentication:
 
         # Verify initial membership has the local group
         initial_memberships = await users_repo.get_user_memberships(david_user.user_id)
-        assert any(g.name == "CCIE-Lab-Cohort-1" for g in initial_memberships)
+        assert any(g.name == "CCIE-Study-Cohort-1" for g in initial_memberships)
 
         # 3. David logs in via LDAP (David has memberOf: GNS3-Users -> mapped to Users in mock_ldap_directory)
         login_resp = await unauthorized_client.post(
@@ -624,11 +624,11 @@ class TestLdapAuthentication:
 
         # 4. Verify that David now has:
         # - The managed group 'Users' (added by JIT)
-        # - AND RETAINS the local-only group 'CCIE-Lab-Cohort-1' (NOT deleted by JIT)
+        # - AND RETAINS the local-only group 'CCIE-Study-Cohort-1' (NOT deleted by JIT)
         updated_memberships = await users_repo.get_user_memberships(david_user.user_id)
         group_names = {g.name for g in updated_memberships}
         assert "Users" in group_names
-        assert "CCIE-Lab-Cohort-1" in group_names
+        assert "CCIE-Study-Cohort-1" in group_names
 
     async def test_adversarial_email_collision_cannot_hijack_local_account(
         self,
