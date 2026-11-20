@@ -100,11 +100,54 @@ from the API key automatically — long-lived sessions keep working
 | HTTP connection pool (`pool_connections`/`pool_maxsize`) | 500 / 1000 |
 | REST API node/link creation pool | 100 (`Pool(concurrency=100)`) |
 
+## Tool Visibility & Group Whitelist
+
+Which tools a session sees depends on who authenticated. Two layers decide:
+
+1. **Privileges.** Every tool declares the controller privileges its REST endpoints require (`gns3server/agent/mcp/tool_access.py`). `tools/list` returns only tools the current user could call somewhere, and `tools/call` re-checks before dispatch — a hidden tool answers exactly like an unknown one. Instance-level decisions (which exact project a user may open) stay with the REST endpoints: this layer only asks whether the user holds the privilege at any scope.
+2. **Group whitelist (optional).** An admin can narrow a user group to a subset of those tools. The whitelist only removes tools — it can never surface a tool the privileges would hide.
+
+A superadmin skips both layers and always sees every tool. When the privilege lookup itself fails (for example the database is unreachable), tools stay visible and the REST endpoints decide: visibility filtering is an experience layer, not the authority.
+
+Seven tools declare no privilege, so every authenticated user sees them: `project_list`, `user_privileges`, `user_quotas`, `compute_images`, `server_version`, `device_skill_get`, `injection_skill_get`. This explains a common surprise: the built-in `Administrators` and `Users` groups are created without privileges (`gns3server/db/models/users.py`), so a brand-new regular user starts with exactly these seven tools. Give the group a role to widen the set.
+
+```mermaid
+flowchart LR
+    A[Tool requested] --> B{Superadmin or lookup failed?}
+    B -- yes --> V[Visible]
+    B -- no --> C{Whitelist union set?}
+    C -- "name outside" --> H[Hidden]
+    C -- "not set, or inside" --> D{Privileges cover it?}
+    D -- yes --> V
+    D -- no --> H
+```
+
+### Group Whitelist
+
+The whitelist lives on the user group. The admin UI offers exactly the **candidates** — every tool the group's privileges could ever show (computed as a regular user, never as superadmin). REST endpoints:
+
+| Endpoint | Privilege | Effect |
+|----------|-----------|--------|
+| `GET /v3/access/groups/{user_group_id}/mcp_tools` | Group.Audit | Returns candidates, descriptions, the stored whitelist and a `bypass` flag. Stored names are returned as-is: a tool removed in a later release can still appear |
+| `PUT /v3/access/groups/{user_group_id}/mcp_tools` | Group.Modify | Replaces the whole whitelist. A name outside the candidates rejects the entire request (`400`) |
+| `DELETE /v3/access/groups/{user_group_id}/mcp_tools` | Group.Modify | Clears the whitelist; the group returns to privilege-only visibility |
+
+Effective rule for one user:
+
+- No group of the user carries a whitelist → unrestricted (privileges decide alone). Users in no group at all are unrestricted too.
+- Every group of the user carries a whitelist → the effective set is the union of them.
+- Some groups configured, one not → unrestricted: a group without a whitelist never restricts its members, so a single unconfigured group lifts the restriction (most permissive wins).
+- Superadmins are never restricted.
+
+A whitelist on a group without regular members affects nobody — superadmins bypass it and an empty group has nobody to restrict. The configuration stays stored, and adding a regular member later makes it effective again; the GET endpoint reports this state as `bypass: true`.
+
+Changes (privileges granted or revoked, whitelist edited, group membership) reach online sessions within a few seconds — resolved privileges are cached ~5 s per user.
+
 ## Available Tools
 
-**80 tools** across 11 categories:
+**91 tools** across 13 categories:
 
-### Project (14)
+### Project (15)
 
 | Tool | Description |
 |------|-------------|
@@ -122,6 +165,20 @@ from the API key automatically — long-lived sessions keep working
 | `project_lock` | Lock project (prevent edits) |
 | `project_unlock` | Unlock project |
 | `project_locked` | Check if project is locked |
+| `project_privileges` | Check YOUR effective privileges on one project (instance level — call before acting on a project you do not own; the global view is `user_privileges`) |
+
+### Distribution & Sharing (8)
+
+| Tool | Description |
+|------|-------------|
+| `project_distribute` | Distribute a project: every recipient gets their own copy (async job, `202`; poll with `project_distribution_list`) |
+| `project_distribution_list` | List one project's distribution history (who, to whom, when, status) |
+| `project_distribution_cancel` | Cancel a running distribution (the copy in flight completes, remaining recipients are skipped) or remove a finished record |
+| `distribution_list` | List your distribution history across all projects (superadmin: everyone's) |
+| `distribution_delete` | Remove one record from the cross-project history (running jobs refused `409`; copies untouched) |
+| `project_share` | Share a project: targets get access to THIS project, no copy (ACE-based; sharing again with the same target replaces its role) |
+| `project_share_list` | List who a project is shared with (user/group, role, ACE id) |
+| `project_share_delete` | Remove one share (revokes the target's access) |
 
 ### Node (22)
 
@@ -148,7 +205,7 @@ from the API key automatically — long-lived sessions keep working
 | `node_unisolate` | Un-isolate a node (resume links) |
 | `node_links` | List links connected to a node |
 
-### Link (9)
+### Link (12)
 
 | Tool | Description |
 |------|-------------|
@@ -161,6 +218,9 @@ from the API key automatically — long-lived sessions keep working
 | `link_capture_start` | Start capture(s) — `link_id` or `link_ids` array |
 | `link_capture_stop` | Stop capture(s) — `link_id` or `link_ids` array |
 | `link_capture_download` | Get PCAP download URL(s) — `link_id` or `link_ids` array |
+| `link_available_filters` | List the filter types this link accepts, with parameters and ranges — call before setting filters on `link_update` |
+| `link_marker` | Manage traffic-insight markers on a link (create/update/delete; BPF match, tag, direction; read markers via `link_get`) |
+| `marker_definition` | Manage project-level marker definitions — one BPF rule fanned out to every link as `global-{name}` |
 
 ### Template (5)
 
@@ -231,6 +291,13 @@ they require a vision-capable model to be genuinely useful. Revisit later.
 |------|-------------|
 | `server_version` | Get GNS3 server version |
 | `server_statistics` | Get server statistics (computes, projects, nodes) |
+
+### Account (2)
+
+| Tool | Description |
+|------|-------------|
+| `user_privileges` | List YOUR effective privileges, flattened across all resource paths (the global view; per-project: `project_privileges`) |
+| `user_quotas` | Get YOUR node quota limits and current usage (check before creating many nodes) |
 
 ### Device Config & Skills (5)
 
@@ -556,4 +623,5 @@ When `Server.host` is `0.0.0.0` (listen on all interfaces), the MCP server disco
 | `gns3server/agent/mcp/links.py` | Link tool handlers |
 | `gns3server/agent/mcp/templates.py` | Template tool handlers |
 | `gns3server/agent/mcp/computes.py` | Compute tool handlers |
+| `gns3server/agent/mcp/tool_access.py` | Tool visibility: privilege specs, group whitelist union, the gated server |
 | `gns3server/api/server.py` | Mounts MCP routes via `register_starlette_routes()` |
