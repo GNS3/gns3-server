@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from httpx_ws import aconnect_ws
+from httpx_ws.transport import ASGIWebSocketTransport
 
 from gns3server.compute.project import Project
 from tests.utils import asyncio_patch
@@ -268,6 +270,23 @@ class TestVPCSNodesRoutes:
                 response = await compute_client.post(url)
                 assert response.status_code == status.HTTP_204_NO_CONTENT
                 assert mock.called
+
+    async def test_vpcs_console_ws_rejects_invalid_credentials(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+        # regression test: the console handler must not run after compute WebSocket
+        # authentication failed (it used to crash with "AttributeError: 'NoneType'
+        # object has no attribute 'client'", see issue #3076)
+        ws_path = f"/v3/compute/projects/{vm['project_id']}/vpcs/nodes/{vm['node_id']}/console/ws"
+
+        with patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_websocket_console", new_callable=AsyncMock) as mock:
+            async with AsyncClient(base_url="http://test-api", transport=ASGIWebSocketTransport(app=app)) as ws_client:
+                async with aconnect_ws(ws_path, ws_client, auth=("wrong_user", "wrong_password")) as ws:
+                    json_error = await ws.receive_json()
+                    assert json_error["event"]["message"] == (
+                        "Could not authenticate while connecting to compute WebSocket: Could not validate credentials"
+                    )
+            assert not mock.called
 
     # @pytest.mark.asyncio
     # async def test_vpcs_pcap(self, app: FastAPI, compute_client: AsyncClient, vm, compute_project: Project):

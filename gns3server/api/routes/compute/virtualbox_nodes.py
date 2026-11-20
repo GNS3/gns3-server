@@ -329,7 +329,8 @@ async def console_ws(
     Console WebSocket.
     """
 
-    await node.start_websocket_console(websocket)
+    if websocket:
+        await node.start_websocket_console(websocket)
 
 
 @router.post(

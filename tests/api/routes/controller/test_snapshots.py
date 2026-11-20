@@ -88,6 +88,54 @@ class TestSnapshotRoutes:
         assert isinstance(data["created_at"], int)
         assert datetime.fromisoformat(data["created"]) == datetime.fromtimestamp(data["created_at"], tz=UTC)
 
+    async def test_create_snapshot_with_description(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        response = await client.post(
+            app.url_path_for("create_snapshot", project_id=project.id),
+            json={"name": "snap1", "description": "before adding the second node"},
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["description"] == "before adding the second node"
+
+        # the description must survive a reload of the snapshot config file
+        project._load_snapshot_config()
+        assert project.get_snapshot(data["snapshot_id"]).description == "before adding the second node"
+
+    async def test_update_snapshot(
+        self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
+    ) -> None:
+
+        response = await client.put(
+            app.url_path_for("update_snapshot", project_id=project.id, snapshot_id=snapshot.id),
+            json={"description": "before adding the second node"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["description"] == "before adding the second node"
+
+        # the new description must be saved in the snapshot config file
+        project._load_snapshot_config()
+        assert project.get_snapshot(snapshot.id).description == "before adding the second node"
+
+    async def test_update_snapshot_reset_description(
+        self, app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot
+    ) -> None:
+
+        response = await client.put(
+            app.url_path_for("update_snapshot", project_id=project.id, snapshot_id=snapshot.id),
+            json={"description": ""},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["description"].startswith("Snapshot 'test' taken on ")
+
+    async def test_update_snapshot_not_found(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        response = await client.put(
+            app.url_path_for("update_snapshot", project_id=project.id, snapshot_id=str(uuid.uuid4())),
+            json={"description": "test"},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
     async def test_snapshot_schema_timestamps(self, app: FastAPI) -> None:
 
         schemas = app.openapi()["components"]["schemas"]

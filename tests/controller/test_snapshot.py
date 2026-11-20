@@ -37,6 +37,30 @@ def test_snapshot_name(project):
     assert snapshot.path == os.path.join(project.path, "snapshots", "test1.gns3snapshot")
 
 
+def test_snapshot_description(project):
+    """
+    Test snapshot description handling
+    """
+
+    snapshot = Snapshot(project, name="test1", description="my description")
+    assert snapshot.description == "my description"
+
+    # a missing or empty description falls back to the default one
+    snapshot = Snapshot(project, name="test2")
+    assert snapshot.description.startswith("Snapshot 'test2' taken on ")
+    snapshot = Snapshot(project, name="test3", description="")
+    assert snapshot.description.startswith("Snapshot 'test3' taken on ")
+
+    # updating the description
+    snapshot.update(description="new description")
+    assert snapshot.description == "new description"
+    # an empty description resets to the default one
+    snapshot.update(description="")
+    assert snapshot.description.startswith("Snapshot 'test3' taken on ")
+    snapshot.update(description=None)
+    assert snapshot.description.startswith("Snapshot 'test3' taken on ")
+
+
 def test_snapshot_filename(project):
     """
     Test create a snapshot object with a filename

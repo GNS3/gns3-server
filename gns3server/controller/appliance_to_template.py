@@ -49,6 +49,12 @@ class ApplianceToTemplate:
     Appliance installation.
     """
 
+    def __init__(self):
+
+        from . import Controller
+
+        self._controller = Controller.instance()
+
     def new_template(self, appliance_config, version, server):
         """
         Creates a new template from an appliance.
@@ -89,17 +95,11 @@ class ApplianceToTemplate:
         if new_template.get("symbol") is None:
             if appliance_config["category"] == "guest":
                 if "docker" in appliance_config:
-                    new_template["symbol"] = ":/symbols/docker_guest.svg"
+                    new_template["symbol"] = self._controller.symbols.resolve_symbol("docker_guest")
                 else:
-                    new_template["symbol"] = ":/symbols/qemu_guest.svg"
-            elif appliance_config["category"] == "router":
-                new_template["symbol"] = ":/symbols/router.svg"
-            elif appliance_config["category"] == "switch":
-                new_template["symbol"] = ":/symbols/ethernet_switch.svg"
-            elif appliance_config["category"] == "multilayer_switch":
-                new_template["symbol"] = ":/symbols/multilayer_switch.svg"
-            elif appliance_config["category"] == "firewall":
-                new_template["symbol"] = ":/symbols/firewall.svg"
+                    new_template["symbol"] = self._controller.symbols.resolve_symbol("qemu_guest")
+            else:
+                new_template["symbol"] = self._controller.symbols.resolve_symbol(appliance_config.get("category"))
 
         if "qemu" in appliance_config:
             new_template["template_type"] = "qemu"
@@ -114,6 +114,7 @@ class ApplianceToTemplate:
             new_template["template_type"] = "docker"
             self._add_docker_config(new_template, appliance_config)
 
+        print(new_template)
         return new_template
 
     def _add_qemu_config(self, new_config, appliance_config, version):
@@ -225,17 +226,11 @@ class ApplianceToTemplate:
             # apply a default symbol based on the effective category and template type
             if category_before_remap == "guest":
                 if settings["template_type"] == "docker":
-                    new_template["symbol"] = ":/symbols/docker_guest.svg"
+                    new_template["symbol"] = self._controller.symbols.resolve_symbol("docker_guest")
                 else:
-                    new_template["symbol"] = ":/symbols/qemu_guest.svg"
+                    new_template["symbol"] = self._controller.symbols.resolve_symbol("qemu_guest")
             else:
-                symbols = {
-                    "router": ":/symbols/router.svg",
-                    "switch": ":/symbols/ethernet_switch.svg",
-                    "multilayer_switch": ":/symbols/multilayer_switch.svg",
-                    "firewall": ":/symbols/firewall.svg",
-                }
-                new_template["symbol"] = symbols.get(category_before_remap)
+                new_template["symbol"] = self._controller.symbols.resolve_symbol(category_before_remap)
 
         if version and version.get("images"):
             if settings["template_type"] == "iou":

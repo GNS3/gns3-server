@@ -74,12 +74,7 @@ class Snapshot:
             )
 
         if not description:
-            date = (
-                datetime.fromtimestamp(self._created_at, tz=UTC)
-                .replace(tzinfo=None)
-                .strftime(DESCRIPTION_DATETIME_FORMAT)
-            )
-            description = f"Snapshot '{self._name}' taken on {date}"
+            description = self._default_description()
 
         self._description = description
         self._filename = filename
@@ -104,6 +99,28 @@ class Snapshot:
     @property
     def created_at(self):
         return self._created_at
+
+    def _default_description(self) -> str:
+        """
+        Return the default description of the snapshot.
+        """
+
+        date = (
+            datetime.fromtimestamp(self._created_at, tz=UTC).replace(tzinfo=None).strftime(DESCRIPTION_DATETIME_FORMAT)
+        )
+        return f"Snapshot '{self._name}' taken on {date}"
+
+    def update(self, description: str | None = None) -> None:
+        """
+        Update the snapshot description. An empty or null description
+        resets it to the default one.
+
+        :param description: New description of the snapshot
+        """
+
+        if not description:
+            description = self._default_description()
+        self._description = description
 
     async def create(self):
         """

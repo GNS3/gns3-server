@@ -162,7 +162,7 @@ from .controller.settings import (
     SettingsUpdate,
     SettingsUpdateResponse,
 )
-from .controller.snapshots import Snapshot, SnapshotCreate
+from .controller.snapshots import Snapshot, SnapshotCreate, SnapshotUpdate
 from .controller.statistics import (
     ComputeStatistics,
     ComputeStatisticsEntry,
@@ -398,6 +398,7 @@ __all__ = [
     "SettingsUpdateResponse",
     "Snapshot",
     "SnapshotCreate",
+    "SnapshotUpdate",
     "SymbolDimensions",
     "SymbolInfo",
     "Template",

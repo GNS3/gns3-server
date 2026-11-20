@@ -205,11 +205,12 @@ def test_v8_multilayer_switch_category_mapping():
     assert template["category"] == "switch"
 
 
-def test_v8_default_symbol_fallback():
+def test_v8_default_symbol_fallback(controller):
     """
     Without any symbol, a docker guest gets the docker symbol, other guests the qemu one.
     """
 
+    controller.symbols.theme = "Classic"
     appliance = {
         "registry_version": 8,
         "name": "Test",
@@ -217,14 +218,38 @@ def test_v8_default_symbol_fallback():
         "settings": [{"name": "only", "template_type": "docker", "template_properties": {"image": "test:latest"}}],
     }
     template = ApplianceToTemplate().new_template(appliance, None, "local")
-    assert template["symbol"] == ":/symbols/docker_guest.svg"
+    assert template["symbol"] == ":/symbols/classic/docker_guest.svg"
     assert template["template_type"] == "docker"
     assert template["image"] == "test:latest"
 
     appliance["settings"][0]["template_type"] = "qemu"
     appliance["settings"][0]["template_properties"] = {"ram": 512}
     template = ApplianceToTemplate().new_template(appliance, None, "local")
-    assert template["symbol"] == ":/symbols/qemu_guest.svg"
+    assert template["symbol"] == ":/symbols/classic/qemu_guest.svg"
+
+
+@pytest.mark.parametrize(
+    ("category", "template_type", "expected_symbol"),
+    [
+        ("router", "qemu", ":/symbols/affinity/square/blue/router.svg"),
+        ("switch", "qemu", ":/symbols/affinity/square/blue/switch.svg"),
+        ("guest", "docker", ":/symbols/affinity/square/blue/docker.svg"),
+        ("guest", "qemu", ":/symbols/affinity/square/blue/client_vm.svg"),
+    ],
+)
+def test_v8_default_symbol_uses_active_theme(controller, category, template_type, expected_symbol):
+    controller.symbols.theme = "Affinity-square-blue"
+    properties = {"ram": 512} if template_type == "qemu" else {"image": "test:latest"}
+    appliance = {
+        "registry_version": 8,
+        "name": "Test",
+        "category": category,
+        "settings": [{"name": "only", "template_type": template_type, "template_properties": properties}],
+    }
+
+    template = ApplianceToTemplate().new_template(appliance, None, "local")
+
+    assert template["symbol"] == expected_symbol
 
 
 def test_v8_no_inheritance_when_disabled():
@@ -262,7 +287,8 @@ def test_v8_multiple_settings_without_default_raises():
         ApplianceToTemplate().new_template(appliance, VYOS_V8["versions"][1], "local")
 
 
-def test_v8_single_settings_selected_without_default_flag():
+def test_v8_single_settings_selected_without_default_flag(controller):
+    controller.symbols.theme = "Classic"
     appliance = {
         "registry_version": 8,
         "name": "Test",
@@ -271,7 +297,7 @@ def test_v8_single_settings_selected_without_default_flag():
     }
     template = ApplianceToTemplate().new_template(appliance, None, "local")
     assert template["ram"] == 1024
-    assert template["symbol"] == ":/symbols/router.svg"
+    assert template["symbol"] == ":/symbols/classic/router.svg"
 
 
 def test_v6_path_unchanged():
@@ -313,6 +339,28 @@ def test_v6_netmiko_device_type_copied_to_template():
 
     template = ApplianceToTemplate().new_template(appliance, None, "local")
     assert template["netmiko_device_type"] == "nokia_srl"
+
+
+@pytest.mark.parametrize(
+    ("category", "template_type", "expected_symbol"),
+    [
+        ("router", "qemu", ":/symbols/affinity/square/blue/router.svg"),
+        ("guest", "qemu", ":/symbols/affinity/square/blue/client_vm.svg"),
+        ("guest", "docker", ":/symbols/affinity/square/blue/docker.svg"),
+    ],
+)
+def test_v6_default_symbol_uses_active_theme(controller, category, template_type, expected_symbol):
+    controller.symbols.theme = "Affinity-square-blue"
+    appliance = {
+        "registry_version": 6,
+        "name": "Test",
+        "category": category,
+        template_type: {"ram": 512} if template_type == "qemu" else {"image": "test:latest"},
+    }
+
+    template = ApplianceToTemplate().new_template(appliance, {"images": {}}, "local")
+
+    assert template["symbol"] == expected_symbol
 
 
 def test_v8_iou_version_images_mapped_to_path():
@@ -478,12 +526,13 @@ def test_v8_multiple_defaults_inherit_first_same_type():
     assert template["cpus"] == 2
 
 
-def test_v8_symbol_fallback_uses_effective_category():
+def test_v8_symbol_fallback_uses_effective_category(controller):
     """
     The default symbol must reflect the effective category (template_properties,
     then version, then appliance), not the appliance-level one.
     """
 
+    controller.symbols.theme = "Classic"
     appliance = {
         "registry_version": 8,
         "name": "Test",
@@ -494,7 +543,7 @@ def test_v8_symbol_fallback_uses_effective_category():
     }
     template = ApplianceToTemplate().new_template(appliance, None, "local")
     assert template["category"] == "guest"
-    assert template["symbol"] == ":/symbols/qemu_guest.svg"
+    assert template["symbol"] == ":/symbols/classic/qemu_guest.svg"
 
     appliance = {
         "registry_version": 8,
@@ -507,7 +556,7 @@ def test_v8_symbol_fallback_uses_effective_category():
     version = {"name": "1.0", "category": "router"}
     template = ApplianceToTemplate().new_template(appliance, version, "local")
     assert template["category"] == "router"
-    assert template["symbol"] == ":/symbols/router.svg"
+    assert template["symbol"] == ":/symbols/classic/router.svg"
 
 
 def test_v8_reserved_keys_cannot_be_overridden():
