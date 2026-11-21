@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import configparser
+import json
+import logging
 import os
 
 import pytest
@@ -23,7 +25,7 @@ from httpx import AsyncClient
 
 from gns3server.config import Config
 from gns3server.schemas.controller.settings import SECRET_MASK
-from gns3server.services import auth_service
+from gns3server.services import auth_service, ldap_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
@@ -49,7 +51,16 @@ class TestSettingsRoutes:
         response = await client.get(app.url_path_for("get_server_settings"))
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
-        assert sorted(body.keys()) == ["Controller", "Dynamips", "IOU", "Qemu", "Server", "VPCS", "WebWireshark"]
+        assert sorted(body.keys()) == [
+            "Controller",
+            "Dynamips",
+            "IOU",
+            "LDAP",
+            "Qemu",
+            "Server",
+            "VPCS",
+            "WebWireshark",
+        ]
         # deprecated sections are not exposed
         assert "VirtualBox" not in body
         assert "VMware" not in body
@@ -59,6 +70,8 @@ class TestSettingsRoutes:
         # only generated when the server actually starts)
         assert body["Server"]["compute_password"] in ("", SECRET_MASK)
         assert body["Controller"]["default_admin_password"] in ("", SECRET_MASK)
+        assert body["LDAP"]["enabled"] is False
+        assert body["LDAP"]["uri"] == "ldap://localhost:389"
 
     async def test_get_settings_unauthorized(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -258,3 +271,106 @@ class TestSettingsRoutes:
         body = response.json()
         assert body["restart_required"] == []
         assert body["Server"]["host"]  # current values are returned
+
+    async def test_put_settings_ldap(
+        self, app: FastAPI, client: AsyncClient, config: Config, stable_jwt_secret: str
+    ) -> None:
+
+        response = await client.put(
+            app.url_path_for("update_server_settings"),
+            json={
+                "LDAP": {
+                    "enabled": True,
+                    "uri": "ldaps://ldap.example.com:636",
+                    "bind_dn": "cn=admin,dc=example,dc=com",
+                    "bind_password": "placeholder_password",
+                    "base_dn": "ou=users,dc=example,dc=com",
+                    "group_mapping": {"GNS3-Admins": "Administrators"},
+                }
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["LDAP"]["enabled"] is True
+        assert body["LDAP"]["uri"] == "ldaps://ldap.example.com:636"
+        assert body["LDAP"]["bind_dn"] == "cn=admin,dc=example,dc=com"
+        assert body["LDAP"]["bind_password"] == SECRET_MASK
+        assert body["LDAP"]["group_mapping"] == {"GNS3-Admins": "Administrators"}
+        assert "LDAP.enabled" not in body["restart_required"]
+
+        parsed = configparser.ConfigParser()
+        parsed.read(config._main_config_file)
+        assert parsed["LDAP"]["enabled"] == "True"
+        assert parsed["LDAP"]["uri"] == "ldaps://ldap.example.com:636"
+        assert parsed["LDAP"]["bind_password"] == "placeholder_password"
+        assert json.loads(parsed["LDAP"]["group_mapping"]) == {"GNS3-Admins": "Administrators"}
+
+    async def test_post_test_ldap_connection(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
+        from ldap3 import ALL, MOCK_SYNC, Connection, Server
+
+        server = Server("mock_ldap_test", get_info=ALL)
+        conn = Connection(
+            server,
+            user="cn=admin,dc=example,dc=com",
+            password="placeholder_password",
+            client_strategy=MOCK_SYNC,
+        )
+        conn.bind()
+        conn.strategy.add_entry(
+            "cn=admin,dc=example,dc=com",
+            {"userPassword": "placeholder_password", "cn": "admin"},
+        )
+        conn.strategy.add_entry(
+            "uid=testuser,ou=users,dc=example,dc=com",
+            {"objectClass": ["person"], "uid": "testuser"},
+        )
+
+        orig_server = ldap_service._server
+        orig_strategy = ldap_service._client_strategy
+        ldap_service._server = server
+        ldap_service._client_strategy = MOCK_SYNC
+
+        try:
+            response = await client.post(
+                app.url_path_for("test_ldap_connection"),
+                json={
+                    "enabled": True,
+                    "uri": "ldap://mock_ldap_test:389",
+                    "bind_dn": "cn=admin,dc=example,dc=com",
+                    "bind_password": "placeholder_password",
+                    "base_dn": "ou=users,dc=example,dc=com",
+                },
+            )
+            assert response.status_code == status.HTTP_200_OK
+            body = response.json()
+            assert body["status"] == "success"
+            assert body["bind_successful"] is True
+            assert body["user_search_successful"] is True
+            assert body["users_found"] >= 1
+            assert "Directory server bind successful" in body["message"]
+        finally:
+            ldap_service._server = orig_server
+            ldap_service._client_strategy = orig_strategy
+
+    async def test_update_settings_warns_when_ldap_enabled_without_ssl(
+        self, app: FastAPI, client: AsyncClient, config: Config, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """
+        Verify that enabling LDAP while native SSL is disabled logs a prominent security warning.
+        """
+        try:
+            with caplog.at_level(logging.WARNING):
+                response = await client.put(
+                    app.url_path_for("update_server_settings"),
+                    json={"LDAP": {"enabled": True}},
+                )
+                assert response.status_code == status.HTTP_200_OK
+                assert any(
+                    "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP" in record.message
+                    for record in caplog.records
+                )
+        finally:
+            await client.put(
+                app.url_path_for("update_server_settings"),
+                json={"LDAP": {"enabled": False}},
+            )

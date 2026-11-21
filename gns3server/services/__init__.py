@@ -16,6 +16,18 @@
 
 from .access_tickets import AccessTicketService
 from .authentication import AuthService
+from .ldap import LDAPService, LDAPUserProfile
 
 auth_service = AuthService()
 access_ticket_service = AccessTicketService()
+ldap_service = LDAPService()
+
+__all__ = [
+    "AccessTicketService",
+    "AuthService",
+    "LDAPService",
+    "LDAPUserProfile",
+    "access_ticket_service",
+    "auth_service",
+    "ldap_service",
+]

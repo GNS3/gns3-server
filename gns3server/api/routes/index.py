@@ -40,6 +40,11 @@ def debug(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context=kwargs)
 
 
+@router.get("/static/web-ui", include_in_schema=False)
+async def web_ui_redirect():
+    return RedirectResponse("/static/web-ui/bundled", status_code=308)
+
+
 @router.get("/static/web-ui/{file_path:path}", description="Web user interface", include_in_schema=False)
 async def web_ui(file_path: str):
 

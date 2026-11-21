@@ -66,6 +66,7 @@ class User(DateTimeModelMixin, UserBase):
     user_id: UUID
     last_login: Optional[datetime] = None
     is_superadmin: bool = False
+    auth_source: str = "local"
     model_config = ConfigDict(from_attributes=True)
 
 

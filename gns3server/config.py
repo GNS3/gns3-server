@@ -19,6 +19,7 @@ Reads the configuration file and store the settings for the server.
 """
 
 import configparser
+import json
 import logging
 import os
 import secrets
@@ -255,8 +256,12 @@ class Config:
             return str(value)
         if isinstance(value, Enum):
             return str(value.value)
+        if option == "superadmin_groups" and isinstance(value, list):
+            return json.dumps(value)
         if isinstance(value, list):
             return LIST_OPTION_SEPARATORS.get(option, ",").join(value)
+        if isinstance(value, dict):
+            return json.dumps(value)
         return str(value)
 
     def update_config(self, changes: dict) -> list:

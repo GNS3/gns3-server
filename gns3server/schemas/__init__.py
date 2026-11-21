@@ -16,7 +16,7 @@
 
 # General schemas
 from .common import ErrorMessage
-from .config import ServerConfig
+from .config import LDAPSettings, ServerConfig
 from .controller.appliances import Appliance, ApplianceVersion, ApplianceVersionCreate, ApplianceVersionV8
 from .controller.computes import (
     AutoIdlePC,
@@ -154,7 +154,14 @@ from .controller.netmiko import NetmikoDeviceType, NetmikoDeviceTypeList
 from .controller.notifications import Notification, NotificationAction
 from .controller.pools import Resource, ResourceCreate, ResourcePool, ResourcePoolCreate, ResourcePoolUpdate
 from .controller.rbac import ACE, ACECreate, ACEEndpoint, ACEUpdate, Privilege, Role, RoleCreate, RoleUpdate
-from .controller.settings import SettingsResponse, SettingsUpdate, SettingsUpdateResponse
+from .controller.settings import (
+    LDAPSettingsResponse,
+    LDAPSettingsUpdate,
+    LDAPTestConnectionResponse,
+    SettingsResponse,
+    SettingsUpdate,
+    SettingsUpdateResponse,
+)
 from .controller.snapshots import Snapshot, SnapshotCreate, SnapshotUpdate
 from .controller.statistics import (
     ComputeStatistics,
@@ -300,6 +307,10 @@ __all__ = [
     "ImageSyncRequest",
     "ImageType",
     "ImageUpload",
+    "LDAPSettings",
+    "LDAPSettingsResponse",
+    "LDAPSettingsUpdate",
+    "LDAPTestConnectionResponse",
     "LLMModelConfigCreate",
     "LLMModelConfigData",
     "LLMModelConfigInheritedResponse",

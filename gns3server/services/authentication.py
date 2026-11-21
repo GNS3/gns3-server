@@ -102,6 +102,7 @@ class AuthService:
             expires_in=settings.jwt_access_token_expire_minutes * 60,
             refresh_token=self.create_refresh_token(user.username, token_version=user.token_version),
             refresh_expires_in=settings.jwt_refresh_token_expire_minutes * 60,
+            username=user.username,
         )
 
     def get_token_data(self, token: str, secret_key: Optional[str] = None) -> TokenData:

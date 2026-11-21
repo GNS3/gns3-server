@@ -16,6 +16,7 @@ aiosqlite==0.22.1
 alembic==1.20.1
 bcrypt==5.0.0
 joserfc==1.7.7
+ldap3>=2.9.1
 email-validator==2.3.0
 watchdog==6.0.0 # upgrading to v7.0.0 creates issues
 zstandard==0.25.0
