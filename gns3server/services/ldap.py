@@ -251,7 +251,9 @@ class LDAPService:
         if start_tls and not uri.startswith("ldaps://"):
             try:
                 conn.open()
-                conn.start_tls()
+                if not conn.start_tls():
+                    log.error("LDAP StartTLS negotiation was rejected by server")
+                    return False
             except Exception as e:
                 log.error("LDAP StartTLS negotiation failed: %s", e)
                 return False

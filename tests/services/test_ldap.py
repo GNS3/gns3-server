@@ -203,3 +203,16 @@ async def test_ldap_test_connection_bind_failure(mock_ldap_server, default_setti
     assert result["bind_successful"] is False
     assert result["user_search_successful"] is False
     assert "Failed to bind" in result["message"]
+
+
+async def test_ldap_start_tls_failure_aborts_bind():
+    """Verify that if start_tls returns False or fails, _bind_connection aborts without binding."""
+    from unittest.mock import MagicMock
+
+    service = LDAPService()
+    mock_conn = MagicMock()
+    mock_conn.start_tls.return_value = False
+
+    success = service._bind_connection(mock_conn, start_tls=True, uri="ldap://dc.example.com:389")
+    assert success is False
+    assert not mock_conn.bind.called
