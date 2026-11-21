@@ -79,6 +79,37 @@ def _format_ldap_error(e: Exception) -> str:
     return msg.strip("(),'\" ")
 
 
+def _to_str(val: Any) -> Optional[str]:
+    """
+    Safely convert an LDAP attribute or raw value to a UTF-8 string,
+    decoding bytes if schema validation was disabled (check_names=False).
+    """
+    if val is None:
+        return None
+    if hasattr(val, "raw_values") and val.raw_values:
+        first = val.raw_values[0]
+        if isinstance(first, bytes):
+            return first.decode("utf-8", errors="replace")
+        return str(first)
+    if hasattr(val, "value"):
+        val = val.value
+    if val is None:
+        return None
+    if isinstance(val, bytes):
+        return val.decode("utf-8", errors="replace")
+    s = str(val)
+    if s.startswith("b'") and s.endswith("'"):
+        import ast
+
+        try:
+            parsed = ast.literal_eval(s)
+            if isinstance(parsed, bytes):
+                return parsed.decode("utf-8", errors="replace")
+        except Exception:
+            pass
+    return s
+
+
 @dataclass
 class LDAPUserProfile:
     """
@@ -127,12 +158,16 @@ def _extract_entry_groups(user_entry: Any) -> Set[str]:
         if not hasattr(user_entry, attr_name):
             continue
         attr = getattr(user_entry, attr_name)
-        values = getattr(attr, "values", None) or getattr(attr, "value", None)
+        values = getattr(attr, "raw_values", None) or getattr(attr, "values", None) or getattr(attr, "value", None)
         if isinstance(values, (list, tuple, set)):
             for val in values:
-                groups.add(str(val))
+                s = _to_str(val)
+                if s:
+                    groups.add(s)
         elif values:
-            groups.add(str(values))
+            s = _to_str(values)
+            if s:
+                groups.add(s)
     return groups
 
 
@@ -158,8 +193,9 @@ def _search_directory_groups(conn: Connection, user_dn: str, clean_username: str
             groups.add(entry.entry_dn)
             for attr in ("cn", "sAMAccountName", "name"):
                 val = getattr(entry, attr, None)
-                if val and val.value:
-                    groups.add(str(val.value))
+                s = _to_str(val)
+                if s:
+                    groups.add(s)
     except Exception as e:
         log.warning("LDAP group search query failed for %s: %s", clean_username, e)
 
@@ -254,6 +290,7 @@ class LDAPService:
             password=password,
             auto_bind=False,
             auto_referrals=False,
+            check_names=False,
             receive_timeout=timeout,
             client_strategy=self._client_strategy,
         )
@@ -328,15 +365,17 @@ class LDAPService:
         # 1. Primary: configured user_attr_username attribute
         if settings.user_attr_username:
             user_attr = getattr(user_entry, settings.user_attr_username, None)
-            if user_attr and user_attr.value:
-                canonical_username = str(user_attr.value).strip()
+            s = _to_str(user_attr)
+            if s:
+                canonical_username = s.strip()
 
         # 2. Secondary fallback across standard directory attributes
         if not canonical_username:
             for fallback_attr in ("sAMAccountName", "userPrincipalName", "uid", "cn"):
                 attr_val = getattr(user_entry, fallback_attr, None)
-                if attr_val and attr_val.value:
-                    canonical_username = str(attr_val.value).strip()
+                s = _to_str(attr_val)
+                if s:
+                    canonical_username = s.strip()
                     break
 
         # 3. Last resort: raw typed login string
@@ -346,20 +385,23 @@ class LDAPService:
         email = None
         if settings.user_attr_email:
             email_attr = getattr(user_entry, settings.user_attr_email, None)
-            if email_attr and email_attr.value:
-                email = str(email_attr.value).strip().lower()
+            s = _to_str(email_attr)
+            if s:
+                email = s.strip().lower()
 
         if not email:
             for fallback_email in ("mail", "userPrincipalName"):
                 em_val = getattr(user_entry, fallback_email, None)
-                if em_val and em_val.value and "@" in str(em_val.value):
-                    email = str(em_val.value).strip().lower()
+                s = _to_str(em_val)
+                if s and "@" in s:
+                    email = s.strip().lower()
                     break
 
         full_name = None
         fn_attr = getattr(user_entry, settings.user_attr_fullname, None)
-        if fn_attr and fn_attr.value:
-            full_name = str(fn_attr.value).strip()
+        s = _to_str(fn_attr)
+        if s:
+            full_name = s.strip()
 
         groups, is_superadmin = self._resolve_groups(conn, user_entry, user_dn, clean_username, settings)
         log.info(

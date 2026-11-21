@@ -227,3 +227,11 @@ async def test_extract_cn_rfc4514_escapes():
     assert _extract_cn(r"CN=Space\ Group\ ,DC=example,DC=com") == "Space Group "
     assert _extract_cn("GNS3-Admins") == "GNS3-Admins"
     assert _extract_cn("") == ""
+
+
+async def test_ldap_connection_disables_check_names():
+    """Verify that ldap3.Connection is initialized with check_names=False to allow cross-directory fallback attributes."""
+    service = LDAPService(client_strategy=MOCK_SYNC)
+    server = Server("mock_server")
+    conn = service._create_connection(server, "cn=admin", "password", timeout=5)
+    assert conn.check_names is False
