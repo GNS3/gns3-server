@@ -52,6 +52,7 @@ class User(BaseTable):
     token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
     auth_source: Mapped[str] = mapped_column(String, default="local", nullable=False, server_default="local")
     external_id: Mapped[Optional[str]] = mapped_column(String, index=True, nullable=True)
+    ldap_groups: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")

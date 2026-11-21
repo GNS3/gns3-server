@@ -23,10 +23,14 @@ def upgrade() -> None:
     if "external_id" not in existing:
         op.add_column("users", sa.Column("external_id", sa.String(), nullable=True))
         op.create_index("ix_users_external_id", "users", ["external_id"])
+    if "ldap_groups" not in existing:
+        op.add_column("users", sa.Column("ldap_groups", sa.String(), nullable=True))
 
 
 def downgrade() -> None:
     existing = {column["name"] for column in sa.inspect(op.get_bind()).get_columns("users")}
+    if "ldap_groups" in existing:
+        op.drop_column("users", "ldap_groups")
     if "external_id" in existing:
         op.drop_index("ix_users_external_id", table_name="users")
         op.drop_column("users", "external_id")

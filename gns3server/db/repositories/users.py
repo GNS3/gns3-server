@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Any, List, Optional, Union, cast
+from typing import Any, List, Optional, Set, Union, cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
@@ -293,11 +293,13 @@ class UsersRepository(BaseRepository):
 
     async def _sync_user_groups(self, user: models.User, profile: LDAPUserProfile) -> None:
         target_group_ids: List[UUID] = []
+        target_group_names: Set[str] = set()
         log.info("Resolving mapped groups for LDAP user '%s' (profile.groups: %s)", profile.username, profile.groups)
         for group_name in profile.groups:
             grp = await self.get_user_group_by_name(group_name)
             if grp:
                 target_group_ids.append(grp.user_group_id)
+                target_group_names.add(grp.name)
                 log.info(
                     "Assigned user '%s' to GNS3 group '%s' (UUID: %s)", profile.username, grp.name, grp.user_group_id
                 )
@@ -306,14 +308,27 @@ class UsersRepository(BaseRepository):
 
         unique_group_ids = list(dict.fromkeys(target_group_ids))
 
-        # Only synchronize memberships for groups governed by directory mappings or default group.
-        # This preserves existing memberships in local-only groups.
+        # Only synchronize memberships for groups governed by directory mappings or default group,
+        # plus any groups previously granted to this user by LDAP.
         from gns3server.config import Config
 
         ldap_config = Config.instance().settings.LDAP
         managed_group_names = set(ldap_config.group_mapping.values())
         if ldap_config.default_group:
             managed_group_names.add(ldap_config.default_group)
+
+        # Include groups previously granted to this user by LDAP so removed mappings are revoked
+        import json
+
+        previously_granted_names: Set[str] = set()
+        if user.ldap_groups:
+            try:
+                parsed = json.loads(user.ldap_groups)
+                if isinstance(parsed, list):
+                    previously_granted_names = set(parsed)
+            except Exception:
+                pass
+        managed_group_names.update(previously_granted_names)
 
         # Ensure base privileges: if no mapped groups matched, fallback to default_group or 'Users'
         if not unique_group_ids:
@@ -323,6 +338,7 @@ class UsersRepository(BaseRepository):
                 fallback_grp = await self.get_user_group_by_name("Users")
             if fallback_grp:
                 unique_group_ids.append(fallback_grp.user_group_id)
+                target_group_names.add(fallback_grp.name)
                 managed_group_names.add(fallback_grp.name)
                 log.info(
                     "Assigned fallback group '%s' to LDAP user '%s' to ensure base privileges",
@@ -348,6 +364,8 @@ class UsersRepository(BaseRepository):
             await self._db_session.execute(
                 models.user_group_map.insert().values(user_id=user.user_id, user_group_id=group_id)
             )
+
+        user.ldap_groups = json.dumps(list(target_group_names))
 
         if not unique_group_ids:
             log.warning(

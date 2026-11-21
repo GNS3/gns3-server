@@ -556,6 +556,56 @@ class TestLdapAuthentication:
         memberships = await users_repo.get_user_memberships(edward_user.user_id)
         assert any(grp.name == "Users" for grp in memberships)
 
+    async def test_ldap_group_revocation_reconciles_removed_mappings_and_preserves_local_groups(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        config: Config,
+        mock_ldap_directory,
+    ) -> None:
+        """
+        Verify that previously LDAP-granted group memberships are revoked when mapping changes,
+        while locally assigned groups are preserved.
+        """
+        users_repo = UsersRepository(db_session)
+
+        local_grp = await users_repo.get_user_group_by_name("LocalOnlyGroup")
+        if not local_grp:
+            local_grp = await users_repo.create_user_group(schemas.UserGroupCreate(name="LocalOnlyGroup"))
+
+        config.settings.LDAP.group_mapping = {"GNS3-Admins": "Administrators"}
+
+        resp1 = await unauthorized_client.post(
+            app.url_path_for("login"), data={"username": "alice", "password": "mock_alice_secret"}, headers=FORM_HEADERS
+        )
+        assert resp1.status_code == status.HTTP_200_OK
+
+        alice = await users_repo.get_user_by_username("alice")
+        assert alice is not None
+        groups1 = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+        assert "Administrators" in groups1
+
+        await db_session.execute(
+            models.user_group_map.insert().values(user_id=alice.user_id, user_group_id=local_grp.user_group_id)
+        )
+        await db_session.commit()
+        groups_after_manual = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+        assert "LocalOnlyGroup" in groups_after_manual
+        assert "Administrators" in groups_after_manual
+
+        config.settings.LDAP.group_mapping = {}
+
+        resp2 = await unauthorized_client.post(
+            app.url_path_for("login"), data={"username": "alice", "password": "mock_alice_secret"}, headers=FORM_HEADERS
+        )
+        assert resp2.status_code == status.HTTP_200_OK
+
+        groups_after_reconciliation = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+        assert "Administrators" not in groups_after_reconciliation
+        assert "LocalOnlyGroup" in groups_after_reconciliation
+
     async def test_ldap_superadmin_group_provisioning_and_revocation(
         self,
         app: FastAPI,
