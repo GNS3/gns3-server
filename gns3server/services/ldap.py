@@ -213,8 +213,9 @@ def _search_directory_groups(conn: Connection, user_dn: str, clean_username: str
                 groups.add(entry.entry_dn)
                 for attr in ("cn", "sAMAccountName", "name"):
                     val = getattr(entry, attr, None)
-                    if val and val.value:
-                        groups.add(str(val.value))
+                    s = _to_str(val)
+                    if s:
+                        groups.add(s)
         except Exception as e:
             log.debug("LDAP AD recursive group search skipped: %s", e)
 
@@ -316,13 +317,7 @@ class LDAPService:
         settings: LDAPSettings,
     ) -> Tuple[List[str], bool]:
         raw_groups = _extract_entry_groups(user_entry)
-        # In Active Directory, user_entry already includes all memberOf groups.
-        # Skip slow, domain-wide directory queries if groups were already extracted from the user entry.
-        if raw_groups:
-            searched_groups: Set[str] = set()
-        else:
-            searched_groups = _search_directory_groups(conn, user_dn, clean_username, settings)
-
+        searched_groups = _search_directory_groups(conn, user_dn, clean_username, settings)
         all_raw_groups = raw_groups | searched_groups
         mapped = _map_to_user_groups(all_raw_groups, settings.group_mapping or {}, settings.default_group)
         is_superadmin = _is_superadmin_member(all_raw_groups, settings.superadmin_groups or [])

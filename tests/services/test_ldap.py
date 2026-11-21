@@ -175,6 +175,33 @@ async def test_ldap_group_search_resolution(mock_ldap_server, default_settings):
     assert profile.groups == ["Users"]
 
 
+async def test_ldap_merge_direct_and_searched_groups(mock_ldap_server, default_settings):
+    admin_conn = Connection(mock_ldap_server, client_strategy=MOCK_SYNC)
+    admin_conn.bind()
+    admin_conn.strategy.add_entry(
+        "cn=GNS3-Staff,ou=groups,dc=example,dc=com",
+        {
+            "objectClass": ["groupOfNames"],
+            "cn": "GNS3-Staff",
+            "member": ["uid=alice,ou=users,dc=example,dc=com"],
+        },
+    )
+
+    default_settings.group_mapping = {
+        "GNS3-Admins": "Administrators",
+        "GNS3-Staff": "StaffGroup",
+    }
+    default_settings.group_search_base = "ou=groups,dc=example,dc=com"
+    default_settings.group_search_filter = "(&(objectClass=groupOfNames)(member={user_dn}))"
+
+    service = LDAPService(server=mock_ldap_server, client_strategy=MOCK_SYNC)
+    profile = await service.authenticate("alice", "mock_alice_password", default_settings)
+
+    assert profile is not None
+    assert "Administrators" in profile.groups
+    assert "StaffGroup" in profile.groups
+
+
 async def test_ldap_service_account_bind_failure(mock_ldap_server, default_settings):
     default_settings.bind_password = SecretStr("mock_incorrect_password")
     service = LDAPService(server=mock_ldap_server, client_strategy=MOCK_SYNC)
