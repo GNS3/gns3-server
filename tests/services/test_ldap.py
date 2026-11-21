@@ -216,3 +216,14 @@ async def test_ldap_start_tls_failure_aborts_bind():
     success = service._bind_connection(mock_conn, start_tls=True, uri="ldap://dc.example.com:389")
     assert success is False
     assert not mock_conn.bind.called
+
+
+async def test_extract_cn_rfc4514_escapes():
+    """Verify RFC 4514 escaped characters and hex octets in RDNs are correctly decoded."""
+    assert _extract_cn(r"CN=Smith\, John,OU=Users,DC=example,DC=com") == "Smith, John"
+    assert _extract_cn(r"CN=Engineering\+Admins,OU=Groups,DC=example,DC=com") == "Engineering+Admins"
+    assert _extract_cn(r"CN=L\<D\>A\=P\;Group\"\\\#,DC=example,DC=com") == 'L<D>A=P;Group"\\#'
+    assert _extract_cn(r"CN=Hex\2BGroup,DC=example,DC=com") == "Hex+Group"
+    assert _extract_cn(r"CN=Space\ Group\ ,DC=example,DC=com") == "Space Group "
+    assert _extract_cn("GNS3-Admins") == "GNS3-Admins"
+    assert _extract_cn("") == ""

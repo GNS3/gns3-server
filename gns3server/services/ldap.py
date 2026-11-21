@@ -92,18 +92,29 @@ class LDAPUserProfile:
     is_superadmin: bool = False
 
 
+def _unescape_rfc4514(val: str) -> str:
+    """
+    Unescape RFC 4514 escaped characters and hex octets in an RDN attribute value.
+    Handles \\+, \\", \\\\, \\<, \\>, \\;, \\=, escaped spaces, and \\XX hex octets.
+    """
+    val = re.sub(r"\\([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), val)
+    val = re.sub(r"\\([ +\",;<=>\\#])", r"\1", val)
+    return val
+
+
 def _extract_cn(dn_or_name: str) -> str:
     """
     Extract the Common Name (CN) from an LDAP Distinguished Name,
-    or return the input unchanged if it is not a DN. Handles escaped
-    commas per RFC 4514.
+    or return the input unchanged if it is not a DN. Handles RFC 4514
+    character and hex octet escapes.
     """
     if not dn_or_name:
         return ""
     clean = dn_or_name.strip()
-    match = re.search(r"(?:^|,\s*)cn=((?:\\,|[^,])+)", clean, re.IGNORECASE)
+    match = re.search(r"(?:^|,\s*)cn=((?:\\.|[^,])+)", clean, re.IGNORECASE)
     if match:
-        return match.group(1).replace(r"\,", ",").strip()
+        raw = re.sub(r"(?<!\\) +$", "", match.group(1).lstrip(" "))
+        return _unescape_rfc4514(raw)
     return clean
 
 
