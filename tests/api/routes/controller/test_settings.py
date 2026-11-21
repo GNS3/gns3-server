@@ -25,7 +25,7 @@ from httpx import AsyncClient
 
 from gns3server.config import Config
 from gns3server.schemas.controller.settings import SECRET_MASK
-from gns3server.services import auth_service
+from gns3server.services import auth_service, ldap_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
@@ -308,8 +308,6 @@ class TestSettingsRoutes:
     async def test_post_test_ldap_connection(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
         from ldap3 import ALL, MOCK_SYNC, Connection, Server
 
-        from gns3server.services import ldap_service
-
         server = Server("mock_ldap_test", get_info=ALL)
         conn = Connection(
             server,
@@ -355,18 +353,24 @@ class TestSettingsRoutes:
             ldap_service._client_strategy = orig_strategy
 
     async def test_update_settings_warns_when_ldap_enabled_without_ssl(
-        self, app: FastAPI, client: AsyncClient, caplog: pytest.LogCaptureFixture
+        self, app: FastAPI, client: AsyncClient, config: Config, caplog: pytest.LogCaptureFixture
     ) -> None:
         """
         Verify that enabling LDAP while native SSL is disabled logs a prominent security warning.
         """
-        with caplog.at_level(logging.WARNING):
-            response = await client.put(
+        try:
+            with caplog.at_level(logging.WARNING):
+                response = await client.put(
+                    app.url_path_for("update_server_settings"),
+                    json={"LDAP": {"enabled": True}},
+                )
+                assert response.status_code == status.HTTP_200_OK
+                assert any(
+                    "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP" in record.message
+                    for record in caplog.records
+                )
+        finally:
+            await client.put(
                 app.url_path_for("update_server_settings"),
-                json={"LDAP": {"enabled": True}},
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert any(
-                "SECURITY WARNING: LDAP authentication is active over unencrypted HTTP" in record.message
-                for record in caplog.records
+                json={"LDAP": {"enabled": False}},
             )

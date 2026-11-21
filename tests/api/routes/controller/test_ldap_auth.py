@@ -30,6 +30,7 @@ from gns3server.db import models
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service, ldap_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
+from gns3server.services.ldap import LDAPUserProfile, _extract_cn
 
 pytestmark = pytest.mark.asyncio
 
@@ -220,13 +221,16 @@ class TestLdapAuthentication:
             ),
         )
         assert resp.status_code == status.HTTP_201_CREATED
-
-        response = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "local_user", "password": "mock_local_password"},
-            headers=FORM_HEADERS,
-        )
-        assert response.status_code == status.HTTP_200_OK
+        user_id = resp.json()["user_id"]
+        try:
+            response = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "local_user", "password": "mock_local_password"},
+                headers=FORM_HEADERS,
+            )
+            assert response.status_code == status.HTTP_200_OK
+        finally:
+            await client.delete(app.url_path_for("delete_user", user_id=user_id))
 
     async def test_local_user_fallback_rejected_when_disabled(
         self,
@@ -241,22 +245,31 @@ class TestLdapAuthentication:
         Local users not in LDAP cannot log in when fallback_to_local is False.
         """
         config.settings.LDAP.fallback_to_local = False
-
-        resp = await client.post(
-            app.url_path_for("create_user"),
-            json=self._user_payload(
-                {"username": "local_only_user", "email": "local_only@example.com", "password": "mock_local_password"},
-                users_group_id,
-            ),
-        )
-        assert resp.status_code == status.HTTP_201_CREATED
-
-        response = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "local_only_user", "password": "mock_local_password"},
-            headers=FORM_HEADERS,
-        )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        try:
+            resp = await client.post(
+                app.url_path_for("create_user"),
+                json=self._user_payload(
+                    {
+                        "username": "local_only_user",
+                        "email": "local_only@example.com",
+                        "password": "mock_local_password",
+                    },
+                    users_group_id,
+                ),
+            )
+            assert resp.status_code == status.HTTP_201_CREATED
+            user_id = resp.json()["user_id"]
+            try:
+                response = await unauthorized_client.post(
+                    app.url_path_for("login"),
+                    data={"username": "local_only_user", "password": "mock_local_password"},
+                    headers=FORM_HEADERS,
+                )
+                assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            finally:
+                await client.delete(app.url_path_for("delete_user", user_id=user_id))
+        finally:
+            config.settings.LDAP.fallback_to_local = True
 
     async def test_ldap_cannot_adopt_or_demote_local_superadmin(
         self, app: FastAPI, unauthorized_client: AsyncClient, db_session: AsyncSession, mock_ldap_directory
@@ -357,6 +370,7 @@ class TestLdapAuthentication:
             assert success_login.status_code == status.HTTP_200_OK
         finally:
             Config.instance().settings.LDAP.enabled = True
+            await users_repo.delete_user(user.user_id)
 
     async def test_put_user_cannot_arbitrarily_change_auth_source(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
@@ -369,14 +383,21 @@ class TestLdapAuthentication:
         user = await users_repo.get_user_by_username("admin")
         assert user.auth_source == "local"
 
-        response = await client.put(
-            app.url_path_for("update_user", user_id=user.user_id),
-            json={"auth_source": "ldap", "full_name": "Admin Changed"},
-        )
-        assert response.status_code == status.HTTP_200_OK
-        updated_user = await users_repo.get_user(user.user_id)
-        assert updated_user.auth_source == "local"
-        assert updated_user.full_name == "Admin Changed"
+        orig_full_name = user.full_name
+        try:
+            response = await client.put(
+                app.url_path_for("update_user", user_id=user.user_id),
+                json={"auth_source": "ldap", "full_name": "Admin Changed"},
+            )
+            assert response.status_code == status.HTTP_200_OK
+            updated_user = await users_repo.get_user(user.user_id)
+            assert updated_user.auth_source == "local"
+            assert updated_user.full_name == "Admin Changed"
+        finally:
+            await client.put(
+                app.url_path_for("update_user", user_id=user.user_id),
+                json={"full_name": orig_full_name},
+            )
 
     async def test_ldap_login_returns_canonical_username_in_token(
         self, app: FastAPI, unauthorized_client: AsyncClient, mock_ldap_directory
@@ -418,22 +439,27 @@ class TestLdapAuthentication:
         assert first_user is not None
         first_user_id = first_user.user_id
 
-        # 2. Login with short username
-        resp2 = await unauthorized_client.post(
-            app.url_path_for("login"), data={"username": "alice", "password": "mock_alice_secret"}, headers=FORM_HEADERS
-        )
-        assert resp2.status_code == status.HTTP_200_OK
+        try:
+            # 2. Login with short username
+            resp2 = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp2.status_code == status.HTTP_200_OK
 
-        # 3. Verify user was linked to the same account and no duplicate user exists
-        linked_user = await users_repo.get_user(first_user_id)
-        assert linked_user is not None
-        assert linked_user.username == "alice"
-        assert linked_user.email == "alice@example.com"
-        assert resp2.json().get("username") == "alice"
+            # 3. Verify user was linked to the same account and no duplicate user exists
+            linked_user = await users_repo.get_user(first_user_id)
+            assert linked_user is not None
+            assert linked_user.username == "alice"
+            assert linked_user.email == "alice@example.com"
+            assert resp2.json().get("username") == "alice"
 
-        # Ensure only 1 user exists for Alice in database
-        all_alices = [u for u in await users_repo.get_users() if u.email == "alice@example.com"]
-        assert len(all_alices) == 1
+            # Ensure only 1 user exists for Alice in database
+            all_alices = [u for u in await users_repo.get_users() if u.email == "alice@example.com"]
+            assert len(all_alices) == 1
+        finally:
+            await users_repo.delete_user(first_user_id)
 
     async def test_ldap_account_linking_preserves_existing_username_against_project_cutoff(
         self,
@@ -476,19 +502,22 @@ class TestLdapAuthentication:
         assert pre_user.username == "frank_legacy"
         pre_user_id = pre_user.user_id
 
-        # 2. Frank logs in with LDAP credentials where canonical name is 'frank_canonical'
-        resp = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "frank_canonical", "password": "mock_frank_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert resp.status_code == status.HTTP_200_OK
+        try:
+            # 2. Frank logs in with LDAP credentials where canonical name is 'frank_canonical'
+            resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "frank_canonical", "password": "mock_frank_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp.status_code == status.HTTP_200_OK
 
-        # 3. Verify that the account was linked, but the username was NOT renamed to frank_canonical
-        db_user = await users_repo.get_user(pre_user_id)
-        assert db_user is not None
-        assert db_user.username == "frank_legacy"
-        assert db_user.email == "frank@example.com"
+            # 3. Verify that the account was linked, but the username was NOT renamed to frank_canonical
+            db_user = await users_repo.get_user(pre_user_id)
+            assert db_user is not None
+            assert db_user.username == "frank_legacy"
+            assert db_user.email == "frank@example.com"
+        finally:
+            await users_repo.delete_user(pre_user_id)
 
     async def test_ldap_login_matching_local_user_email_does_not_adopt_local_account(
         self,
@@ -518,25 +547,28 @@ class TestLdapAuthentication:
             },
         )
 
-        resp = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "ldap_attacker", "password": "placeholder_password"},
-            headers=FORM_HEADERS,
-        )
-        assert resp.status_code == status.HTTP_200_OK
+        try:
+            resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "ldap_attacker", "password": "placeholder_password"},
+                headers=FORM_HEADERS,
+            )
+            assert resp.status_code == status.HTTP_200_OK
 
-        victim_refreshed = await users_repo.get_user(local_user.user_id)
-        assert victim_refreshed.auth_source == "local"
-        assert victim_refreshed.username == "local_victim"
-        assert victim_refreshed.user_id == local_user.user_id
+            victim_refreshed = await users_repo.get_user(local_user.user_id)
+            assert victim_refreshed.auth_source == "local"
+            assert victim_refreshed.username == "local_victim"
+            assert victim_refreshed.user_id == local_user.user_id
 
-        attacker = await users_repo.get_user_by_username("ldap_attacker")
-        assert attacker is not None
-        assert attacker.user_id != local_user.user_id
-        assert attacker.auth_source == "ldap"
-
-        await users_repo.delete_user(local_user.user_id)
-        await users_repo.delete_user(attacker.user_id)
+            attacker = await users_repo.get_user_by_username("ldap_attacker")
+            assert attacker is not None
+            assert attacker.user_id != local_user.user_id
+            assert attacker.auth_source == "ldap"
+        finally:
+            await users_repo.delete_user(local_user.user_id)
+            attacker_cleanup = await users_repo.get_user_by_username("ldap_attacker")
+            if attacker_cleanup:
+                await users_repo.delete_user(attacker_cleanup.user_id)
 
     async def test_ldap_user_without_matching_groups_receives_fallback_users_group(
         self,
@@ -562,25 +594,28 @@ class TestLdapAuthentication:
         )
 
         users_repo = UsersRepository(db_session)
-        resp = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "edward", "password": "mock_edward_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert resp.status_code == status.HTTP_200_OK
+        try:
+            resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "edward", "password": "mock_edward_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp.status_code == status.HTTP_200_OK
 
-        edward_user = await users_repo.get_user_by_username("edward")
-        assert edward_user is not None
-        memberships = await users_repo.get_user_memberships(edward_user.user_id)
-        assert any(grp.name == "Users" for grp in memberships)
+            edward_user = await users_repo.get_user_by_username("edward")
+            assert edward_user is not None
+            memberships = await users_repo.get_user_memberships(edward_user.user_id)
+            assert any(grp.name == "Users" for grp in memberships)
+        finally:
+            edward_cleanup = await users_repo.get_user_by_username("edward")
+            if edward_cleanup:
+                await users_repo.delete_user(edward_cleanup.user_id)
 
     async def test_concurrent_ldap_user_provisioning_idempotency(self, app: FastAPI, db_session: AsyncSession) -> None:
         """
         Verify that if two concurrent requests attempt to provision the same LDAP user,
         the IntegrityError is handled gracefully via savepoint and returns the existing user.
         """
-        from gns3server.services.ldap import LDAPUserProfile
-
         users_repo = UsersRepository(db_session)
         profile = LDAPUserProfile(
             username="concurrent_user",
@@ -593,12 +628,13 @@ class TestLdapAuthentication:
         user1 = await users_repo.sync_ldap_user(profile)
         assert user1 is not None
 
-        user2 = await users_repo._create_or_adopt_ldap_user(profile)
-        assert user2 is not None
-        assert user2.user_id == user1.user_id
-        assert user2.username == "concurrent_user"
-
-        await users_repo.delete_user(user1.user_id)
+        try:
+            user2 = await users_repo._create_or_adopt_ldap_user(profile)
+            assert user2 is not None
+            assert user2.user_id == user1.user_id
+            assert user2.username == "concurrent_user"
+        finally:
+            await users_repo.delete_user(user1.user_id)
 
     async def test_ldap_group_revocation_reconciles_removed_mappings_and_preserves_local_groups(
         self,
@@ -619,36 +655,49 @@ class TestLdapAuthentication:
         if not local_grp:
             local_grp = await users_repo.create_user_group(schemas.UserGroupCreate(name="LocalOnlyGroup"))
 
-        config.settings.LDAP.group_mapping = {"GNS3-Admins": "Administrators"}
+        orig_mapping = config.settings.LDAP.group_mapping
+        try:
+            config.settings.LDAP.group_mapping = {"GNS3-Admins": "Administrators"}
 
-        resp1 = await unauthorized_client.post(
-            app.url_path_for("login"), data={"username": "alice", "password": "mock_alice_secret"}, headers=FORM_HEADERS
-        )
-        assert resp1.status_code == status.HTTP_200_OK
+            resp1 = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp1.status_code == status.HTTP_200_OK
 
-        alice = await users_repo.get_user_by_username("alice")
-        assert alice is not None
-        groups1 = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
-        assert "Administrators" in groups1
+            alice = await users_repo.get_user_by_username("alice")
+            assert alice is not None
+            groups1 = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+            assert "Administrators" in groups1
 
-        await db_session.execute(
-            models.user_group_map.insert().values(user_id=alice.user_id, user_group_id=local_grp.user_group_id)
-        )
-        await db_session.commit()
-        groups_after_manual = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
-        assert "LocalOnlyGroup" in groups_after_manual
-        assert "Administrators" in groups_after_manual
+            await db_session.execute(
+                models.user_group_map.insert().values(user_id=alice.user_id, user_group_id=local_grp.user_group_id)
+            )
+            await db_session.commit()
+            groups_after_manual = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+            assert "LocalOnlyGroup" in groups_after_manual
+            assert "Administrators" in groups_after_manual
 
-        config.settings.LDAP.group_mapping = {}
+            config.settings.LDAP.group_mapping = {}
 
-        resp2 = await unauthorized_client.post(
-            app.url_path_for("login"), data={"username": "alice", "password": "mock_alice_secret"}, headers=FORM_HEADERS
-        )
-        assert resp2.status_code == status.HTTP_200_OK
+            resp2 = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp2.status_code == status.HTTP_200_OK
 
-        groups_after_reconciliation = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
-        assert "Administrators" not in groups_after_reconciliation
-        assert "LocalOnlyGroup" in groups_after_reconciliation
+            groups_after_reconciliation = {g.name for g in await users_repo.get_user_memberships(alice.user_id)}
+            assert "Administrators" not in groups_after_reconciliation
+            assert "LocalOnlyGroup" in groups_after_reconciliation
+        finally:
+            config.settings.LDAP.group_mapping = orig_mapping
+            alice_cleanup = await users_repo.get_user_by_username("alice")
+            if alice_cleanup:
+                await users_repo.delete_user(alice_cleanup.user_id)
+            if local_grp:
+                await users_repo.delete_user_group(local_grp.user_group_id)
 
     async def test_ldap_superadmin_group_provisioning_and_revocation(
         self,
@@ -663,44 +712,53 @@ class TestLdapAuthentication:
         and users not in superadmin_groups receive is_superadmin=False.
         Also verify that removing the group revokes superadmin on next login.
         """
-        config.settings.LDAP.superadmin_groups = ["GNS3-Admins"]
+        orig_superadmins = config.settings.LDAP.superadmin_groups
         users_repo = UsersRepository(db_session)
 
-        # 1. Alice is in GNS3-Admins -> should be provisioned with is_superadmin=True
-        resp_alice = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "alice", "password": "mock_alice_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert resp_alice.status_code == status.HTTP_200_OK
-        alice_user = await users_repo.get_user_by_username("alice")
-        assert alice_user is not None
-        assert alice_user.is_superadmin is True
+        try:
+            config.settings.LDAP.superadmin_groups = ["GNS3-Admins"]
 
-        # 2. Bob is in GNS3-Users -> should be provisioned with is_superadmin=False
-        resp_bob = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "bob", "password": "mock_bob_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert resp_bob.status_code == status.HTTP_200_OK
-        bob_user = await users_repo.get_user_by_username("bob")
-        assert bob_user is not None
-        assert bob_user.is_superadmin is False
+            # 1. Alice is in GNS3-Admins -> should be provisioned with is_superadmin=True
+            resp_alice = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp_alice.status_code == status.HTTP_200_OK
+            alice_user = await users_repo.get_user_by_username("alice")
+            assert alice_user is not None
+            assert alice_user.is_superadmin is True
 
-        # 3. Remove GNS3-Admins from superadmin_groups -> Alice logs in again -> superadmin revoked
-        config.settings.LDAP.superadmin_groups = []
-        resp_alice2 = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "alice", "password": "mock_alice_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert resp_alice2.status_code == status.HTTP_200_OK
-        alice_user_updated = await users_repo.get_user_by_username("alice")
-        assert alice_user_updated is not None
-        assert alice_user_updated.is_superadmin is False
+            # 2. Bob is in GNS3-Users -> should be provisioned with is_superadmin=False
+            resp_bob = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "bob", "password": "mock_bob_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp_bob.status_code == status.HTTP_200_OK
+            bob_user = await users_repo.get_user_by_username("bob")
+            assert bob_user is not None
+            assert bob_user.is_superadmin is False
 
-        await users_repo.delete_user(bob_user.user_id)
+            # 3. Remove GNS3-Admins from superadmin_groups -> Alice logs in again -> superadmin revoked
+            config.settings.LDAP.superadmin_groups = []
+            resp_alice2 = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp_alice2.status_code == status.HTTP_200_OK
+            alice_user_updated = await users_repo.get_user_by_username("alice")
+            assert alice_user_updated is not None
+            assert alice_user_updated.is_superadmin is False
+        finally:
+            config.settings.LDAP.superadmin_groups = orig_superadmins
+            bob_cleanup = await users_repo.get_user_by_username("bob")
+            if bob_cleanup:
+                await users_repo.delete_user(bob_cleanup.user_id)
+            alice_cleanup = await users_repo.get_user_by_username("alice")
+            if alice_cleanup:
+                await users_repo.delete_user(alice_cleanup.user_id)
 
     async def test_existing_local_user_transitions_to_ldap_and_preserves_password_for_dr(
         self,
@@ -745,39 +803,44 @@ class TestLdapAuthentication:
         assert local_user.hashed_password is not None
         saved_hashed_password = local_user.hashed_password
 
-        # 2. Login with LDAP credentials
-        ldap_login = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "charlie", "password": "mock_charlie_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert ldap_login.status_code == status.HTTP_200_OK
-
-        # 3. Verify user transitioned to 'ldap' but preserved hashed_password
-        transitioned_user = await users_repo.get_user_by_username("charlie")
-        assert transitioned_user is not None
-        assert transitioned_user.auth_source == "ldap"
-        assert transitioned_user.hashed_password == saved_hashed_password
-
-        # 4. While LDAP is enabled, local password cannot be used by directory account
-        bad_local_login = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "charlie", "password": "mock_local_charlie_password"},
-            headers=FORM_HEADERS,
-        )
-        assert bad_local_login.status_code == status.HTTP_401_UNAUTHORIZED
-
-        # 5. Disaster Recovery: Admin disables LDAP globally -> local password works
-        Config.instance().settings.LDAP.enabled = False
         try:
-            dr_local_login = await unauthorized_client.post(
+            # 2. Login with LDAP credentials
+            ldap_login = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "charlie", "password": "mock_charlie_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert ldap_login.status_code == status.HTTP_200_OK
+
+            # 3. Verify user transitioned to 'ldap' but preserved hashed_password
+            transitioned_user = await users_repo.get_user_by_username("charlie")
+            assert transitioned_user is not None
+            assert transitioned_user.auth_source == "ldap"
+            assert transitioned_user.hashed_password == saved_hashed_password
+
+            # 4. While LDAP is enabled, local password cannot be used by directory account
+            bad_local_login = await unauthorized_client.post(
                 app.url_path_for("login"),
                 data={"username": "charlie", "password": "mock_local_charlie_password"},
                 headers=FORM_HEADERS,
             )
-            assert dr_local_login.status_code == status.HTTP_200_OK
+            assert bad_local_login.status_code == status.HTTP_401_UNAUTHORIZED
+
+            # 5. Disaster Recovery: Admin disables LDAP globally -> local password works
+            Config.instance().settings.LDAP.enabled = False
+            try:
+                dr_local_login = await unauthorized_client.post(
+                    app.url_path_for("login"),
+                    data={"username": "charlie", "password": "mock_local_charlie_password"},
+                    headers=FORM_HEADERS,
+                )
+                assert dr_local_login.status_code == status.HTTP_200_OK
+            finally:
+                Config.instance().settings.LDAP.enabled = True
         finally:
-            Config.instance().settings.LDAP.enabled = True
+            cleanup_charlie = await users_repo.get_user_by_username("charlie")
+            if cleanup_charlie:
+                await users_repo.delete_user(cleanup_charlie.user_id)
 
     async def test_managed_only_group_sync_preserves_local_groups(
         self,
@@ -815,43 +878,52 @@ class TestLdapAuthentication:
         ccie_group = await users_repo.get_user_group_by_name("CCIE-Study-Cohort-1")
         assert ccie_group is not None
 
-        # 2. Pre-create local user 'david' with membership in CCIE-Study-Cohort-1
-        create_resp = await client.post(
-            app.url_path_for("create_user"),
-            json=self._user_payload(
-                {"username": "david", "email": "david@local.dev", "password": "mock_david_password"},
-                users_group_id,
-            ),
-        )
-        assert create_resp.status_code == status.HTTP_201_CREATED
-        david_user = await users_repo.get_user_by_username("david")
-        assert david_user is not None
+        try:
+            # 2. Pre-create local user 'david' with membership in CCIE-Study-Cohort-1
+            create_resp = await client.post(
+                app.url_path_for("create_user"),
+                json=self._user_payload(
+                    {"username": "david", "email": "david@local.dev", "password": "mock_david_password"},
+                    users_group_id,
+                ),
+            )
+            assert create_resp.status_code == status.HTTP_201_CREATED
+            david_user = await users_repo.get_user_by_username("david")
+            assert david_user is not None
 
-        # Assign david to CCIE-Study-Cohort-1 manually via API
-        assign_resp = await client.put(
-            app.url_path_for("add_member_to_group", user_group_id=ccie_group.user_group_id, user_id=david_user.user_id),
-        )
-        assert assign_resp.status_code == status.HTTP_204_NO_CONTENT
+            # Assign david to CCIE-Study-Cohort-1 manually via API
+            assign_resp = await client.put(
+                app.url_path_for(
+                    "add_member_to_group", user_group_id=ccie_group.user_group_id, user_id=david_user.user_id
+                ),
+            )
+            assert assign_resp.status_code == status.HTTP_204_NO_CONTENT
 
-        # Verify initial membership has the local group
-        initial_memberships = await users_repo.get_user_memberships(david_user.user_id)
-        assert any(g.name == "CCIE-Study-Cohort-1" for g in initial_memberships)
+            # Verify initial membership has the local group
+            initial_memberships = await users_repo.get_user_memberships(david_user.user_id)
+            assert any(g.name == "CCIE-Study-Cohort-1" for g in initial_memberships)
 
-        # 3. David logs in via LDAP (David has memberOf: GNS3-Users -> mapped to Users in mock_ldap_directory)
-        login_resp = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "david", "password": "mock_david_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert login_resp.status_code == status.HTTP_200_OK
+            # 3. David logs in via LDAP (David has memberOf: GNS3-Users -> mapped to Users in mock_ldap_directory)
+            login_resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "david", "password": "mock_david_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert login_resp.status_code == status.HTTP_200_OK
 
-        # 4. Verify that David now has:
-        # - The managed group 'Users' (added by JIT)
-        # - AND RETAINS the local-only group 'CCIE-Study-Cohort-1' (NOT deleted by JIT)
-        updated_memberships = await users_repo.get_user_memberships(david_user.user_id)
-        group_names = {g.name for g in updated_memberships}
-        assert "Users" in group_names
-        assert "CCIE-Study-Cohort-1" in group_names
+            # 4. Verify that David now has:
+            # - The managed group 'Users' (added by JIT)
+            # - AND RETAINS the local-only group 'CCIE-Study-Cohort-1' (NOT deleted by JIT)
+            updated_memberships = await users_repo.get_user_memberships(david_user.user_id)
+            group_names = {g.name for g in updated_memberships}
+            assert "Users" in group_names
+            assert "CCIE-Study-Cohort-1" in group_names
+        finally:
+            cleanup_david = await users_repo.get_user_by_username("david")
+            if cleanup_david:
+                await users_repo.delete_user(cleanup_david.user_id)
+            if ccie_group:
+                await users_repo.delete_user_group(ccie_group.user_group_id)
 
     async def test_adversarial_email_collision_cannot_hijack_local_account(
         self,
@@ -895,26 +967,34 @@ class TestLdapAuthentication:
             },
         )
 
-        # 3. Attacker authenticates via LDAP
-        login_resp = await unauthorized_client.post(
-            app.url_path_for("login"),
-            data={"username": "attacker_ldap", "password": "mock_attacker_secret"},
-            headers=FORM_HEADERS,
-        )
-        assert login_resp.status_code == status.HTTP_200_OK
+        try:
+            # 3. Attacker authenticates via LDAP
+            login_resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "attacker_ldap", "password": "mock_attacker_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert login_resp.status_code == status.HTTP_200_OK
 
-        # 4. Verify local user remains intact and was NOT hijacked
-        intact_victim = await users_repo.get_user(original_victim_id)
-        assert intact_victim is not None
-        assert intact_victim.username == "victim_local"
-        assert intact_victim.auth_source == "local"
-        assert intact_victim.email == "victim@example.com"
+            # 4. Verify local user remains intact and was NOT hijacked
+            intact_victim = await users_repo.get_user(original_victim_id)
+            assert intact_victim is not None
+            assert intact_victim.username == "victim_local"
+            assert intact_victim.auth_source == "local"
+            assert intact_victim.email == "victim@example.com"
 
-        # 5. Verify the attacker was created as a separate user without stealing the email
-        attacker_user = await users_repo.get_user_by_username("attacker_ldap")
-        assert attacker_user is not None
-        assert attacker_user.user_id != original_victim_id
-        assert attacker_user.email is None
+            # 5. Verify the attacker was created as a separate user without stealing the email
+            attacker_user = await users_repo.get_user_by_username("attacker_ldap")
+            assert attacker_user is not None
+            assert attacker_user.user_id != original_victim_id
+            assert attacker_user.email is None
+        finally:
+            cleanup_victim = await users_repo.get_user_by_username("victim_local")
+            if cleanup_victim:
+                await users_repo.delete_user(cleanup_victim.user_id)
+            cleanup_attacker = await users_repo.get_user_by_username("attacker_ldap")
+            if cleanup_attacker:
+                await users_repo.delete_user(cleanup_attacker.user_id)
 
     @pytest.mark.parametrize(
         "group_dn,expected_cn",
@@ -933,8 +1013,6 @@ class TestLdapAuthentication:
         Adversarial test: Ensure group DN parsing cleanly extracts common names containing
         special characters (plus signs, slashes, spaces) and mixed casing without failure.
         """
-        from gns3server.services.ldap import _extract_cn
-
         extracted = _extract_cn(group_dn)
         assert extracted == expected_cn
 
@@ -976,9 +1054,14 @@ class TestLdapAuthentication:
         assert resp.status_code == status.HTTP_201_CREATED
 
         users_repo = UsersRepository(db_session)
-        created_user = await users_repo.get_user_by_username(username)
-        assert created_user is not None
-        if field_name == "is_superadmin":
-            assert created_user.is_superadmin is False
-        elif field_name == "auth_source":
-            assert created_user.auth_source == "local"
+        try:
+            created_user = await users_repo.get_user_by_username(username)
+            assert created_user is not None
+            if field_name == "is_superadmin":
+                assert created_user.is_superadmin is False
+            elif field_name == "auth_source":
+                assert created_user.auth_source == "local"
+        finally:
+            cleanup_user = await users_repo.get_user_by_username(username)
+            if cleanup_user:
+                await users_repo.delete_user(cleanup_user.user_id)
