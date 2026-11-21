@@ -267,14 +267,15 @@ async def update_user(
     if not existing_user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
+    extra_values = {}
     if existing_user.auth_source == "ldap" and user_update.password:
         from gns3server.config import Config
 
         if Config.instance().settings.LDAP.enabled:
             raise ControllerBadRequestError("Password cannot be changed for directory-authenticated users")
-        user_update.auth_source = "local"
+        extra_values["auth_source"] = "local"
 
-    user = await users_repo.update_user(user_id, user_update)
+    user = await users_repo.update_user(user_id, user_update, **extra_values)
     return user
 
 

@@ -50,7 +50,6 @@ class UserUpdate(PartialUpdateModel, UserBase):
     """
 
     password: Optional[SecretStr] = Field(None, min_length=8, max_length=100)
-    auth_source: Optional[str] = None
 
 
 class LoggedInUserUpdate(BaseModel):

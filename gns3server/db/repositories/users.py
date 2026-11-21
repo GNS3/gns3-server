@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import List, Optional, Union, cast
+from typing import Any, List, Optional, Union, cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
@@ -103,7 +103,10 @@ class UsersRepository(BaseRepository):
         return db_user
 
     async def update_user(
-        self, user_id: UUID, user_update: Union[schemas.UserUpdate, schemas.LoggedInUserUpdate]
+        self,
+        user_id: UUID,
+        user_update: Union[schemas.UserUpdate, schemas.LoggedInUserUpdate],
+        **extra_values: Any,
     ) -> Optional[models.User]:
         """
         Update a user.
@@ -113,6 +116,7 @@ class UsersRepository(BaseRepository):
         password = update_values.pop("password", None)
         if password:
             update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
+        update_values.update(extra_values)
 
         query = update(models.User).where(models.User.user_id == user_id).values(update_values)
 

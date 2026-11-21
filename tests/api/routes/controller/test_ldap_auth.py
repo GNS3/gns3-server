@@ -282,6 +282,26 @@ class TestLdapAuthentication:
         finally:
             Config.instance().settings.LDAP.enabled = True
 
+    async def test_put_user_cannot_arbitrarily_change_auth_source(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        Verify that auth_source is not accepted in public UserUpdate payload
+        and callers cannot arbitrarily change an account's auth_source.
+        """
+        users_repo = UsersRepository(db_session)
+        user = await users_repo.get_user_by_username("admin")
+        assert user.auth_source == "local"
+
+        response = await client.put(
+            app.url_path_for("update_user", user_id=user.user_id),
+            json={"auth_source": "ldap", "full_name": "Admin Changed"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        updated_user = await users_repo.get_user(user.user_id)
+        assert updated_user.auth_source == "local"
+        assert updated_user.full_name == "Admin Changed"
+
     async def test_ldap_login_returns_canonical_username_in_token(
         self, app: FastAPI, unauthorized_client: AsyncClient, mock_ldap_directory
     ) -> None:
