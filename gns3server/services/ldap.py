@@ -518,26 +518,45 @@ class LDAPService:
 
             user_search_ok = False
             users_found = 0
+            search_err_msg = None
             if settings.base_dn:
                 try:
                     test_filter = settings.user_search_filter.format(username="*")
-                    conn.search(
+                    search_res = conn.search(
                         search_base=settings.base_dn,
                         search_filter=test_filter,
                         attributes=[settings.user_attr_username],
                         size_limit=5,
                     )
-                    user_search_ok = True
-                    users_found = len(conn.entries)
+                    res_desc = str(conn.result.get("description", "")).lower() if conn.result else ""
+                    res_code = conn.result.get("result", -1) if conn.result else -1
+                    if (
+                        search_res or res_code in (0, 4) or res_desc in ("success", "sizelimitexceeded")
+                    ) and res_code not in (32, 34, 49, 50):
+                        user_search_ok = True
+                        users_found = len(conn.entries)
+                    else:
+                        user_search_ok = False
+                        search_err_msg = (
+                            conn.result.get("description", "Search query failed")
+                            if conn.result
+                            else "Search query failed"
+                        )
                 except Exception as e:
                     log.warning("LDAP test search error: %s", e)
                     user_search_ok = False
+                    search_err_msg = str(e)
 
             latency = round((time.perf_counter() - t0) * 1000, 2)
-            msg = "Directory server bind successful"
+            if not user_search_ok and settings.base_dn:
+                msg = f"Directory server bind successful, but canary search failed: {search_err_msg}"
+                status_str = "error"
+            else:
+                msg = "Directory server bind successful"
+                status_str = "success"
 
             return {
-                "status": "success",
+                "status": status_str,
                 "bind_successful": True,
                 "user_search_successful": user_search_ok,
                 "users_found": users_found,

@@ -232,6 +232,18 @@ async def test_ldap_test_connection_bind_failure(mock_ldap_server, default_setti
     assert "Failed to bind" in result["message"]
 
 
+async def test_ldap_test_connection_search_failure(mock_ldap_server, default_settings):
+    default_settings.base_dn = "ou=nonexistent,dc=example,dc=com"
+    service = LDAPService(server=mock_ldap_server, client_strategy=MOCK_SYNC)
+
+    result = await service.test_connection(default_settings)
+    assert result["status"] == "error"
+    assert result["bind_successful"] is True
+    assert result["user_search_successful"] is False
+    assert result["users_found"] == 0
+    assert "canary search failed" in result["message"]
+
+
 async def test_ldap_start_tls_failure_aborts_bind():
     """Verify that if start_tls returns False or fails, _bind_connection aborts without binding."""
     from unittest.mock import MagicMock
