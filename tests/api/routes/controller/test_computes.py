@@ -22,9 +22,17 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.controller import Controller
+from gns3server.db.models import User
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.computes import Compute
+from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.users import UserCreate
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
 
@@ -598,3 +606,190 @@ class TestComputeDisconnect:
 
         response = await client.post(app.url_path_for("disconnect_compute", compute_id=str(uuid.uuid4())))
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestComputeRuntimeState:
+    """
+    GET /computes merges the runtime state the controller keeps in memory
+    (connected, last error, usage) into the static database rows and appends
+    the built-in local compute, which never goes to the database: clients can
+    sense compute state through the REST list instead of the global
+    notification stream.
+    """
+
+    @staticmethod
+    async def _create_compute(client: AsyncClient, app: FastAPI, name: str, port: int) -> str:
+
+        params = {"name": name, "protocol": "http", "host": "localhost", "port": port}
+        response = await client.post(app.url_path_for("create_compute"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        return response.json()["compute_id"]
+
+    async def test_list_includes_local_compute(self, app: FastAPI, client: AsyncClient, controller) -> None:
+
+        await controller.add_compute(
+            compute_id="local", name="local", host="127.0.0.1", port=3080, force=True, connect=False
+        )
+
+        response = await client.get(app.url_path_for("get_computes"))
+        assert response.status_code == status.HTTP_200_OK
+        entry = next(compute for compute in response.json() if compute["compute_id"] == "local")
+        assert entry["name"] == "local"
+        assert "connected" in entry  # runtime state is part of the list
+        assert "capabilities" not in entry  # the payload is too large for a list
+
+        response = await client.get(app.url_path_for("get_computes"), params={"name": "local"})
+        assert [compute["compute_id"] for compute in response.json()] == ["local"]
+
+    async def test_list_overlays_runtime_state(self, app: FastAPI, client: AsyncClient, controller) -> None:
+
+        compute_id = await self._create_compute(client, app, "runtime-list-compute", 4910)
+        compute = controller.get_compute(compute_id)
+        compute._connected = True
+        compute._cpu_usage_percent = 12.5
+
+        response = await client.get(app.url_path_for("get_computes"))
+        entry = next(compute for compute in response.json() if compute["compute_id"] == compute_id)
+        assert entry["connected"] is True
+        assert entry["cpu_usage_percent"] == 12.5
+
+    async def test_get_overlays_runtime_state_and_capabilities(
+        self, app: FastAPI, client: AsyncClient, controller
+    ) -> None:
+
+        compute_id = await self._create_compute(client, app, "runtime-get-compute", 4911)
+        compute = controller.get_compute(compute_id)
+        compute._connected = True
+        compute._last_error = None
+        compute._capabilities = {
+            "version": "3.1.0",
+            "node_types": ["docker"],
+            "platform": "linux",
+            "cpus": 4,
+            "memory": 1024,
+            "disk_size": 2048,
+        }
+
+        response = await client.get(app.url_path_for("get_compute", compute_id=compute_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["connected"] is True
+        assert response.json()["capabilities"]["version"] == "3.1.0"
+
+    async def test_row_without_controller_state_stays_static(
+        self, app: FastAPI, client: AsyncClient, test_compute: Compute
+    ) -> None:
+
+        # the fixture only inserts the database row, the controller does not
+        # know the compute: the list falls back to the static registration
+        response = await client.get(app.url_path_for("get_computes"))
+        entry = next(compute for compute in response.json() if compute["compute_id"] == str(test_compute.compute_id))
+        assert "connected" not in entry
+        assert "capabilities" not in entry
+
+
+class TestComputePrivilegeEnforcement:
+    """
+    The compute read routes require Compute.Audit, and connect/disconnect require
+    Compute.Modify: they change the connection state, so reading the list must not
+    imply being able to disconnect a compute (disconnect even forces with force=true).
+    Users inserted directly (not via create_user) stay out of the "Users" group and
+    only hold the privileges the test grants them.
+    """
+
+    @staticmethod
+    async def _create_user_out_of_band(db_session: AsyncSession, username: str) -> User:
+
+        db_user = User(username=username, hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+        return db_user
+
+    async def test_compute_routes_deny_without_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user_out_of_band(db_session, "compute-no-privilege")
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # the privilege check runs as a route dependency and must deny before the handler is called
+        response = await client.get(app.url_path_for("get_computes"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.get(app.url_path_for("get_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("connect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("disconnect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_audit_alone_cannot_connect_or_disconnect(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # a user created in the "Users" group gets the "User" role (which
+        # contains Compute.Audit, not Compute.Modify) on "/computes" from the
+        # seeded default ACEs: the list works, the state-changing routes do not
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.get_user_group_by_name("Users")
+        user = await users_repo.create_user(
+            UserCreate(username="compute-audit-only-user", password="password", user_group_id=group.user_group_id)
+        )
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = await client.get(app.url_path_for("get_computes"), headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        response = await client.post(app.url_path_for("connect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("disconnect_compute", compute_id="local"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_connect_allowed_with_modify_ace(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user_out_of_band(db_session, "compute-modify-ace-user")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")  # holds every privilege
+        await rbac_repo.create_ace(
+            ACECreate(path="/computes", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # the privilege check passes and the handler runs: an unknown compute
+        # answers 404, a denied user would never get past the dependency (403)
+        response = await client.post(app.url_path_for("connect_compute", compute_id=str(uuid.uuid4())), headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_compute_list_allowed_with_ace(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        user = await self._create_user_out_of_band(db_session, "compute-ace-user")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        await rbac_repo.create_ace(
+            ACECreate(path="/computes", ace_type="user", user_id=user.user_id, role_id=role.role_id)
+        )
+
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_computes"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_new_user_can_list_computes_out_of_the_box(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # a user created in the "Users" group gets the "User" role (which
+        # contains Compute.Audit) on "/computes" from the seeded default ACEs
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.get_user_group_by_name("Users")
+        user = await users_repo.create_user(
+            UserCreate(username="compute-standard-user", password="password", user_group_id=group.user_group_id)
+        )
+        token = auth_service.create_access_token(user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("get_computes"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_200_OK

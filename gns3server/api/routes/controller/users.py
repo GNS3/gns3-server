@@ -20,22 +20,25 @@ API routes for users.
 """
 
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 import gns3server.db.models as models
 from gns3server import schemas
+from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerError,
     ControllerForbiddenError,
     ControllerNotFoundError,
 )
+from gns3server.controller.quota_usage import count_usage
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.user_quota_state import UserQuotaState
 from gns3server.services import auth_service
 
 from .dependencies.authentication import get_current_active_user
@@ -45,6 +48,10 @@ from .dependencies.rbac import has_privilege
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# The preferences document is client-controlled storage: cap it so a single
+# user cannot grow the controller database without bound.
+MAX_PREFERENCES_SIZE_BYTES = 256 * 1024
 
 
 @router.post("/login", response_model=schemas.Token)
@@ -190,6 +197,130 @@ async def get_logged_in_user_privileges(
     return schemas.UserPrivileges(is_superadmin=False, privileges=sorted(privilege_names))
 
 
+@router.get(
+    "/me/group-members",
+    response_model=schemas.UserGroupMembersResponse,
+    dependencies=[Depends(has_privilege("User.GroupMembers"))],
+)
+async def get_logged_in_user_group_members(
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> schemas.UserGroupMembersResponse:
+    """
+    List the members of every user group of the current user, as usernames
+    only. This is what a share or distribution dialog offers as candidate
+    recipients: a user sees the members of their own groups, never the whole
+    user base (that stays User.Audit).
+
+    Example: curl -X GET http://host:port/v3/access/users/me/group-members -H "Authorization: Bearer <token>"
+    """
+
+    groups = await users_repo.get_user_memberships(current_user.user_id)
+    entries = []
+    for group in sorted(groups, key=lambda group: str(group.name)):
+        members = sorted(str(user.username) for user in await users_repo.get_user_group_members(group.user_group_id))
+        entries.append(schemas.UserGroupMembers(group_name=str(group.name), members=members))
+    return schemas.UserGroupMembersResponse(groups=entries)
+
+
+@router.get("/me/quotas", response_model=schemas.UserQuotaUsage)
+async def get_logged_in_user_quotas(
+    current_user: schemas.User = Depends(get_current_active_user),
+) -> schemas.UserQuotaUsage:
+    """
+    Get the effective node quotas of the current user along with the current
+    usage across all the projects they own. A NULL limit means unlimited
+    (superadmins are never limited). The usage only counts the node types
+    that consume resources (Ethernet switches, hubs, clouds and NATs are
+    not counted).
+
+    Meant for rendering purposes (e.g. a quota bar in the web UI).
+
+    Example: curl -X GET http://host:port/v3/access/users/me/quotas -H "Authorization: Bearer <token>"
+    """
+
+    assert current_user.username is not None  # an authenticated user always has a name
+    if current_user.is_superadmin:
+        current_nodes, current_running_nodes = count_usage(current_user.username)
+        return schemas.UserQuotaUsage(current_nodes=current_nodes, current_running_nodes=current_running_nodes)
+
+    limits = UserQuotaState.instance().get(current_user.username)
+    current_nodes, current_running_nodes = count_usage(current_user.username)
+    if limits is None:
+        return schemas.UserQuotaUsage(current_nodes=current_nodes, current_running_nodes=current_running_nodes)
+    return schemas.UserQuotaUsage(
+        max_nodes=limits.max_nodes,
+        max_running_nodes=limits.max_running_nodes,
+        current_nodes=current_nodes,
+        current_running_nodes=current_running_nodes,
+    )
+
+
+@router.get("/me/preferences", response_model=schemas.UserPreferences)
+async def get_logged_in_user_preferences(
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> schemas.UserPreferences:
+    """
+    Get the preferences document of the current user.
+
+    The document is an arbitrary JSON object owned by the client (e.g. the web UI
+    stores its per-user settings there so they follow the user across machines).
+    The server stores it as-is and does not interpret its contents. Returns an
+    empty object when no preferences have been saved yet.
+
+    Example: curl -X GET http://host:port/v3/access/users/me/preferences -H "Authorization: Bearer <token>"
+    """
+
+    db_prefs = await users_repo.get_user_preferences(current_user.user_id)
+    if db_prefs is None:
+        return schemas.UserPreferences()
+    return schemas.UserPreferences(preferences=db_prefs.preferences, updated_at=db_prefs.updated_at)
+
+
+@router.put("/me/preferences", response_model=schemas.UserPreferences)
+async def update_logged_in_user_preferences(
+    request: Request,
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    preferences: Dict[str, Any] = Body(...),
+) -> schemas.UserPreferences:
+    """
+    Replace the preferences document of the current user.
+
+    The request body is the document itself (a JSON object) and replaces any
+    previously saved document as a whole (last write wins). Clients should keep
+    the document small (it is capped at 256 KiB) and carry their own schema
+    version inside it. Credentials must not be stored there.
+
+    Example: curl -X PUT http://host:port/v3/access/users/me/preferences -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d '{"version": 1, "theme": "dark"}'
+    """
+
+    body = await request.body()
+    if len(body) > MAX_PREFERENCES_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Preferences document is too large (maximum {MAX_PREFERENCES_SIZE_BYTES} bytes)",
+        )
+
+    db_prefs = await users_repo.save_user_preferences(current_user.user_id, preferences)
+    return schemas.UserPreferences(preferences=db_prefs.preferences, updated_at=db_prefs.updated_at)
+
+
+@router.delete("/me/preferences", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_logged_in_user_preferences(
+    current_user: schemas.User = Depends(get_current_active_user),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> None:
+    """
+    Reset the preferences document of the current user.
+
+    Example: curl -X DELETE http://host:port/v3/access/users/me/preferences -H "Authorization: Bearer <token>"
+    """
+
+    await users_repo.delete_user_preferences(current_user.user_id)
+
+
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(has_privilege("User.Audit"))])
 async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[models.User]:
     """
@@ -221,6 +352,9 @@ async def create_user(
 
     if user_create.email and await users_repo.get_user_by_email(user_create.email):
         raise ControllerBadRequestError(f"Email '{user_create.email}' is already registered")
+
+    if not await users_repo.get_user_group(user_create.user_group_id):
+        raise ControllerNotFoundError(f"User group '{user_create.user_group_id}' not found")
 
     return await users_repo.create_user(user_create)
 
@@ -254,8 +388,19 @@ async def update_user(
     Required privilege: User.Modify
     """
 
-    if user_update.username and await users_repo.get_user_by_username(user_update.username):
-        raise ControllerBadRequestError(f"Username '{user_update.username}' is already registered")
+    user = await users_repo.get_user(user_id)
+    if not user:
+        raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    if user_update.username and user_update.username != user.username:
+        # Ownership and quotas are keyed by the username (projects keep
+        # created_by as a string): a rename would cut the user off from
+        # their projects, so it is refused. Sending the current username
+        # is a no-op and stays allowed.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The username cannot be changed",
+        )
 
     if user_update.email and await users_repo.get_user_by_email(user_update.email):
         raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
@@ -287,10 +432,20 @@ async def delete_user(
     if user.is_superadmin:
         raise ControllerForbiddenError("The super admin cannot be deleted")
 
+    # Projects owned by the user lose their owner ACE when the user row is
+    # deleted (the ACE is removed by the foreign key cascade): warn so an
+    # administrator can grant access again through an explicit ACE.
+    owned_projects = [p.name for p in Controller.instance().projects.values() if p.created_by == user.username]
+
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerError(f"User '{user_id}' could not be deleted")
     await rbac_repo.delete_all_ace_starting_with_path(f"/access/users/{user_id}")
+    if owned_projects:
+        log.warning(
+            f"Deleted user '{user.username}' owned project(s) {', '.join(owned_projects)}: "
+            "they are now restricted to superadmins until an ACE is granted again"
+        )
 
 
 @router.get(

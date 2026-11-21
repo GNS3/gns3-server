@@ -150,3 +150,35 @@ async def test_restore(project, controller, config):
     project = controller.get_project(project.id)
     assert not os.path.exists(test_file)
     assert len(project.nodes) == 1
+
+
+@pytest.mark.asyncio
+async def test_restore_after_a_rename(project, controller, config):
+
+    compute = AsyncioMagicMock()
+    compute.id = "local"
+    controller._computes["local"] = compute
+    response = AsyncioMagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1_id = str(uuid4())
+    await project.add_node(compute, "test1", node1_id, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    snapshot = await project.snapshot(name="test")
+
+    # the project is renamed after the snapshot: the archive still carries
+    # the old name in its topology
+    project.name = "renamed"
+    await project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    assert len(project.nodes) == 2
+
+    controller._notification = MagicMock()
+    await snapshot.restore()
+
+    restored = controller.get_project(project.id)
+    # the restore is visible: the snapshot content is back under the
+    # current name, and no second .gns3 file is left behind
+    assert restored.name == "renamed"
+    assert list(restored.nodes.keys()) == [node1_id]
+    gns3_files = [f for f in os.listdir(project.path) if f.endswith(".gns3")]
+    assert gns3_files == ["renamed.gns3"]

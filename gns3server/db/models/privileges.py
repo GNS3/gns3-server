@@ -49,6 +49,7 @@ def create_default_roles(target, connection, **kw):
         {"description": "Create or delete a user", "name": "User.Allocate"},
         {"description": "View a user", "name": "User.Audit"},
         {"description": "Update a user", "name": "User.Modify"},
+        {"description": "List the members of your own user groups", "name": "User.GroupMembers"},
         {"description": "Create or delete a group", "name": "Group.Allocate"},
         {"description": "View a group", "name": "Group.Audit"},
         {"description": "Update a group", "name": "Group.Modify"},
@@ -67,6 +68,11 @@ def create_default_roles(target, connection, **kw):
         {"description": "Create or delete a project", "name": "Project.Allocate"},
         {"description": "View a project", "name": "Project.Audit"},
         {"description": "Update a project", "name": "Project.Modify"},
+        {"description": "Manage project-level marker definitions", "name": "Project.Marker"},
+        {"description": "Duplicate a project", "name": "Project.Duplicate"},
+        {"description": "Export a project as a portable archive", "name": "Project.Export"},
+        {"description": "Share a project with other users or groups", "name": "Project.Share"},
+        {"description": "Distribute a project as a frozen template", "name": "Project.Distribute"},
         {"description": "Create or delete project snapshots", "name": "Snapshot.Allocate"},
         {"description": "Restore a snapshot", "name": "Snapshot.Restore"},
         {"description": "View a snapshot", "name": "Snapshot.Audit"},
@@ -79,6 +85,7 @@ def create_default_roles(target, connection, **kw):
         {"description": "View a link", "name": "Link.Audit"},
         {"description": "Update a link", "name": "Link.Modify"},
         {"description": "Capture packets on a link", "name": "Link.Capture"},
+        {"description": "Manage traffic markers on a link", "name": "Link.Marker"},
         {"description": "Create or delete a drawing", "name": "Drawing.Allocate"},
         {"description": "View a drawing", "name": "Drawing.Audit"},
         {"description": "Update a drawing", "name": "Drawing.Modify"},
@@ -96,6 +103,7 @@ def create_default_roles(target, connection, **kw):
         {"description": "Update an LLM model configuration", "name": "LLMConfig.Modify"},
         {"description": "View server settings", "name": "Server.Audit"},
         {"description": "Update server settings", "name": "Server.Modify"},
+        {"description": "Receive global controller notifications", "name": "Notification.Audit"},
     ]
 
     stmt = target.insert().values(default_privileges)
@@ -143,9 +151,15 @@ def add_privileges_to_default_roles(target, connection, **kw):
 
     # add required privileges to the "User" role
     user_privileges = (
+        "User.GroupMembers",
         "Project.Allocate",
         "Project.Audit",
         "Project.Modify",
+        "Project.Marker",
+        "Project.Duplicate",
+        "Project.Export",
+        "Project.Share",
+        "Project.Distribute",
         "Snapshot.Allocate",
         "Snapshot.Audit",
         "Snapshot.Restore",
@@ -158,6 +172,7 @@ def add_privileges_to_default_roles(target, connection, **kw):
         "Link.Audit",
         "Link.Modify",
         "Link.Capture",
+        "Link.Marker",
         "Drawing.Allocate",
         "Drawing.Audit",
         "Drawing.Modify",
@@ -220,6 +235,31 @@ def add_privileges_to_default_roles(target, connection, **kw):
     acl_manager_privileges = ("Role.Allocate", "Role.Audit", "Role.Modify", "ACE.Allocate", "ACE.Audit", "ACE.Modify")
 
     add_privileges_to_role(target, connection, "ACL manager", acl_manager_privileges)
+
+    # add required privileges to the "Lab member" role: users who received a
+    # distributed lab project can use it (open it, console, power, capture,
+    # restore a snapshot, manage their own markers) but cannot modify the lab
+    # topology. Project.Allocate is needed to open the project and lets the
+    # recipient delete their copy; creating other projects is ruled by the
+    # collection ACE on /projects. Project.Share and Project.Distribute are
+    # deliberately absent: a shared user or a copy recipient must not pass
+    # the lab on to anyone else.
+    lab_member_privileges = (
+        "Project.Allocate",
+        "Project.Audit",
+        "Project.Marker",
+        "Snapshot.Audit",
+        "Snapshot.Restore",
+        "Node.Audit",
+        "Node.Console",
+        "Node.PowerMgmt",
+        "Link.Audit",
+        "Link.Capture",
+        "Link.Marker",
+        "Drawing.Audit",
+    )
+
+    add_privileges_to_role(target, connection, "Lab member", lab_member_privileges)
 
     connection.commit()
     log.debug("Privileges have been added to the default roles in the database")

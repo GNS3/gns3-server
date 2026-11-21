@@ -211,6 +211,12 @@ async def _patch_project_file(
     except (OSError, ValueError) as e:
         raise ControllerError(f"Project file '{path}' cannot be read: {e}")
 
+    # the distribution markers are server-local lifecycle state (a frozen
+    # template, a copy bound to its template): they mean nothing wherever the
+    # archive is imported
+    topology.pop("frozen", None)
+    topology.pop("distribution_master_id", None)
+
     if "topology" in topology:
         if "nodes" in topology["topology"]:
             for node in topology["topology"]["nodes"]:

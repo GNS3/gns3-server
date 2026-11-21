@@ -110,8 +110,11 @@ async def update_user_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    if user_group.is_builtin:
-        raise ControllerForbiddenError(f"Built-in user group '{user_group_id}' cannot be updated")
+    # A built-in group cannot be renamed, but its quota defaults stay
+    # editable: they are the natural place to set a limit for the default
+    # "Users" group everyone is created into.
+    if user_group.is_builtin and "name" in user_group_update.model_fields_set:
+        raise ControllerForbiddenError(f"Built-in user group '{user_group_id}' name cannot be changed")
 
     return await users_repo.update_user_group(user_group_id, user_group_update)
 
@@ -209,3 +212,115 @@ async def remove_member_from_group(
     user_group = await users_repo.remove_member_from_user_group(user_group_id, user)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+
+def _group_tool_candidates(group_privileges: set[str]) -> list[str]:
+    """
+    MCP tools the group's privileges could ever show, sorted for a stable UI.
+    """
+
+    from gns3server.agent.mcp.tool_access import TOOL_SPECS, tool_visible
+
+    return sorted(name for name in TOOL_SPECS if tool_visible(name, frozenset(group_privileges), is_superadmin=False))
+
+
+@router.get(
+    "/{user_group_id}/mcp_tools",
+    response_model=schemas.GroupMCPTools,
+    dependencies=[Depends(has_privilege("Group.Audit"))],
+)
+async def get_group_mcp_tools(
+    user_group_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> schemas.GroupMCPTools:
+    """
+    Get the MCP tool configuration of a user group.
+
+    Returns the candidate tools (everything the group's privileges could
+    ever show) and the configured whitelist, if any. The admin UI should
+    offer exactly the candidates for selection.
+
+    Required privilege: Group.Audit
+    """
+
+    if not await users_repo.get_user_group(user_group_id):
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    group_privileges = await rbac_repo.get_group_privileges(user_group_id)
+    tools = await rbac_repo.get_group_mcp_tools(user_group_id)
+    candidates = _group_tool_candidates(group_privileges)
+    from gns3server.agent.mcp.tool_access import all_tool_descriptions
+
+    descriptions = all_tool_descriptions()
+    return schemas.GroupMCPTools(
+        candidates=candidates,
+        tools=sorted(tools) if tools is not None else None,
+        bypass=await rbac_repo.get_group_mcp_bypass(user_group_id),
+        descriptions={name: descriptions.get(name, "") for name in candidates},
+    )
+
+
+@router.put(
+    "/{user_group_id}/mcp_tools",
+    response_model=schemas.GroupMCPTools,
+    dependencies=[Depends(has_privilege("Group.Modify"))],
+)
+async def update_group_mcp_tools(
+    user_group_id: UUID,
+    mcp_tools_update: schemas.GroupMCPToolsUpdate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> schemas.GroupMCPTools:
+    """
+    Replace the MCP tool whitelist of a user group.
+
+    Only candidate tools (those the group's privileges could ever show) are
+    accepted: a tool outside the candidates can never appear to the group
+    members anyway, so configuring it is rejected instead of silently doing
+    nothing. An empty list hides every MCP tool from the group members that
+    have no other group; use DELETE to lift the restriction entirely.
+
+    Required privilege: Group.Modify
+    """
+
+    if not await users_repo.get_user_group(user_group_id):
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    group_privileges = await rbac_repo.get_group_privileges(user_group_id)
+    candidates = _group_tool_candidates(group_privileges)
+    unknown = sorted(set(mcp_tools_update.tools) - set(candidates))
+    if unknown:
+        raise ControllerBadRequestError(
+            f"Tools are not available to user group '{user_group_id}': {', '.join(unknown)}"
+        )
+
+    await rbac_repo.set_group_mcp_tools(user_group_id, mcp_tools_update.tools)
+    return schemas.GroupMCPTools(
+        candidates=candidates,
+        tools=sorted(set(mcp_tools_update.tools)),
+        bypass=await rbac_repo.get_group_mcp_bypass(user_group_id),
+    )
+
+
+@router.delete(
+    "/{user_group_id}/mcp_tools",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Group.Modify"))],
+)
+async def delete_group_mcp_tools(
+    user_group_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> None:
+    """
+    Remove the MCP tool whitelist of a user group: every tool the group's
+    privileges allow becomes visible again.
+
+    Required privilege: Group.Modify
+    """
+
+    if not await users_repo.get_user_group(user_group_id):
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+    await rbac_repo.clear_group_mcp_tools(user_group_id)

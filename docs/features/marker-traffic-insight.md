@@ -208,20 +208,20 @@ All endpoints require a JWT bearer token (`POST /v3/access/users/authenticate`).
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | GET | `/v3/projects/{pid}/links/{lid}/markers` | List markers on a link | Link.Audit |
-| POST | `/v3/projects/{pid}/links/{lid}/markers` | Attach a marker | Link.Modify |
-| PUT | `/v3/projects/{pid}/links/{lid}/markers/{name}` | Update a marker | Link.Modify |
-| DELETE | `/v3/projects/{pid}/links/{lid}/markers/{name}` | Remove a marker | Link.Modify |
+| POST | `/v3/projects/{pid}/links/{lid}/markers` | Attach a marker | Link.Marker |
+| PUT | `/v3/projects/{pid}/links/{lid}/markers/{name}` | Update a marker | Link.Marker |
+| DELETE | `/v3/projects/{pid}/links/{lid}/markers/{name}` | Remove a marker | Link.Marker |
 
 ### Project-level definitions
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | GET | `/v3/projects/{pid}/marker-definitions` | List definitions + bound `link_ids` | Project.Audit |
-| POST | `/v3/projects/{pid}/marker-definitions` | Create definition (fans out to every link) | Project.Modify |
-| PUT | `/v3/projects/{pid}/marker-definitions/{name}` | Update definition (syncs all copies) | Project.Modify |
-| DELETE | `/v3/projects/{pid}/marker-definitions/{name}` | Delete definition (clears all copies) | Project.Modify |
-| POST | `/v3/projects/{pid}/marker-definitions/{name}/pause` | Pause every inherited copy (instant, persisted) | Project.Modify |
-| POST | `/v3/projects/{pid}/marker-definitions/{name}/resume` | Resume every inherited copy | Project.Modify |
+| POST | `/v3/projects/{pid}/marker-definitions` | Create definition (fans out to every link) | Project.Marker |
+| PUT | `/v3/projects/{pid}/marker-definitions/{name}` | Update definition (syncs all copies) | Project.Marker |
+| DELETE | `/v3/projects/{pid}/marker-definitions/{name}` | Delete definition (clears all copies) | Project.Marker |
+| POST | `/v3/projects/{pid}/marker-definitions/{name}/pause` | Pause every inherited copy (instant, persisted) | Project.Marker |
+| POST | `/v3/projects/{pid}/marker-definitions/{name}/resume` | Resume every inherited copy | Project.Marker |
 
 ### Aggregation
 
