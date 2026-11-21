@@ -274,7 +274,12 @@ class TestLdapAuthentication:
         assert refreshed_admin.is_superadmin is True
 
     async def test_ldap_user_cannot_change_password(
-        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, mock_ldap_directory
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        unauthorized_client: AsyncClient,
+        db_session: AsyncSession,
+        mock_ldap_directory,
     ) -> None:
         """
         Directory-authenticated users cannot change their password via /me or admin update.
@@ -303,9 +308,20 @@ class TestLdapAuthentication:
         assert admin_response.status_code == status.HTTP_400_BAD_REQUEST
         assert "Password cannot be changed for directory-authenticated users" in admin_response.json()["message"]
 
-        # 3. When LDAP is disabled, Administrator can reset password and user becomes local
+        # 3. When LDAP is disabled, Alice with hashed_password=None CANNOT log in without a password
         Config.instance().settings.LDAP.enabled = False
         try:
+            failed_login = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "arbitrary_password"},
+                headers=FORM_HEADERS,
+            )
+            assert failed_login.status_code == status.HTTP_401_UNAUTHORIZED
+
+            # Direct authenticate_user call with empty/arbitrary password also returns None
+            assert await users_repo.authenticate_user("alice", "") is None
+            assert await users_repo.authenticate_user("alice", "arbitrary_password") is None
+
             admin_reset = await client.put(
                 app.url_path_for("update_user", user_id=user.user_id),
                 json={"password": "mock_new_password_123"},
@@ -313,6 +329,13 @@ class TestLdapAuthentication:
             assert admin_reset.status_code == status.HTTP_200_OK
             updated_alice = await users_repo.get_user(user.user_id)
             assert updated_alice.auth_source == "local"
+
+            success_login = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "alice", "password": "mock_new_password_123"},
+                headers=FORM_HEADERS,
+            )
+            assert success_login.status_code == status.HTTP_200_OK
         finally:
             Config.instance().settings.LDAP.enabled = True
 

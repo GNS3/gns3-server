@@ -421,15 +421,21 @@ class UsersRepository(BaseRepository):
             return None
 
         # Directory-managed accounts cannot authenticate using local database fallback
-        # unless LDAP has been explicitly disabled globally (Disaster Recovery scenario)
-        if local_user.auth_source == "ldap" and Config.instance().settings.LDAP.enabled:
-            return None
+        # unless LDAP has been explicitly disabled globally (Disaster Recovery scenario).
+        # In disaster recovery mode, directory accounts require a local password hash to be explicitly
+        # set by an administrator before local authentication is permitted.
+        if local_user.auth_source == "ldap":
+            if Config.instance().settings.LDAP.enabled or local_user.hashed_password is None:
+                return None
 
+        # Only allow passwordless login for the built-in local administrator (first-boot bootstrap)
         if local_user.hashed_password is None:
-            log.warning(
-                f"User '{username}' has been authenticated without a password configured. Please set a new password."
-            )
-            return await self._update_last_login(local_user)
+            if local_user.username == "admin" and local_user.auth_source == "local" and local_user.is_superadmin:
+                log.warning(
+                    f"User '{username}' has been authenticated without a password configured. Please set a new password."
+                )
+                return await self._update_last_login(local_user)
+            return None
 
         if not self._auth_service.verify_password(password, local_user.hashed_password):
             return None
