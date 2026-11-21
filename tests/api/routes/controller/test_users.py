@@ -145,6 +145,32 @@ class TestUserRoutes:
         assert user_in_db.hashed_password != new_user["password"]
         assert auth_service.verify_password(new_user["password"], user_in_db.hashed_password)
 
+    async def test_exact_username_lookup_distinguishes_case(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        Verify that get_user_by_username preserves exact case-sensitive lookup
+        so that distinct accounts such as 'case_user' and 'Case_User' do not collide.
+        """
+        user_repo = UsersRepository(db_session)
+        user_lower = await user_repo.create_user(
+            UserCreate(username="case_user", email="case_lower@example.com", password="placeholder_password")
+        )
+        user_upper = await user_repo.create_user(
+            UserCreate(username="Case_User", email="case_upper@example.com", password="placeholder_password")
+        )
+
+        found_lower = await user_repo.get_user_by_username("case_user")
+        found_upper = await user_repo.get_user_by_username("Case_User")
+
+        assert found_lower is not None and found_lower.user_id == user_lower.user_id
+        assert found_upper is not None and found_upper.user_id == user_upper.user_id
+        assert found_lower.username == "case_user"
+        assert found_upper.username == "Case_User"
+
+        await user_repo.delete_user(user_lower.user_id)
+        await user_repo.delete_user(user_upper.user_id)
+
     async def test_get_users(self, app: FastAPI, client: AsyncClient) -> None:
 
         response = await client.get(app.url_path_for("get_users"))

@@ -65,7 +65,7 @@ class UsersRepository(BaseRepository):
         Get a user by its name.
         """
 
-        query = select(models.User).where(func.lower(models.User.username) == username.lower())
+        query = select(models.User).where(models.User.username == username)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
