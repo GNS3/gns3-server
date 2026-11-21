@@ -21,6 +21,7 @@ from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.engine import CursorResult
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -227,8 +228,21 @@ class UsersRepository(BaseRepository):
             is_active=True,
             is_superadmin=profile.is_superadmin,
         )
-        self._db_session.add(user)
-        await self._db_session.flush()
+        try:
+            async with self._db_session.begin_nested():
+                self._db_session.add(user)
+                await self._db_session.flush()
+        except IntegrityError:
+            log.info(
+                "Concurrent JIT provisioning detected for LDAP user '%s'; recovering existing record", profile.username
+            )
+            existing = await self._lookup_or_link_ldap_user(profile)
+            if existing:
+                return existing
+            existing_by_name = await self.get_user_by_username(profile.username)
+            if existing_by_name:
+                return existing_by_name
+            raise
         return user
 
     async def _sync_user_profile_fields(self, user: models.User, profile: LDAPUserProfile) -> None:

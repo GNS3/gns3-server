@@ -556,6 +556,32 @@ class TestLdapAuthentication:
         memberships = await users_repo.get_user_memberships(edward_user.user_id)
         assert any(grp.name == "Users" for grp in memberships)
 
+    async def test_concurrent_ldap_user_provisioning_idempotency(self, app: FastAPI, db_session: AsyncSession) -> None:
+        """
+        Verify that if two concurrent requests attempt to provision the same LDAP user,
+        the IntegrityError is handled gracefully via savepoint and returns the existing user.
+        """
+        from gns3server.services.ldap import LDAPUserProfile
+
+        users_repo = UsersRepository(db_session)
+        profile = LDAPUserProfile(
+            username="concurrent_user",
+            email="concurrent@example.com",
+            full_name="Concurrent User",
+            groups=["Users"],
+            external_id="uid=concurrent_user,ou=users,dc=example,dc=com",
+        )
+
+        user1 = await users_repo.sync_ldap_user(profile)
+        assert user1 is not None
+
+        user2 = await users_repo._create_or_adopt_ldap_user(profile)
+        assert user2 is not None
+        assert user2.user_id == user1.user_id
+        assert user2.username == "concurrent_user"
+
+        await users_repo.delete_user(user1.user_id)
+
     async def test_ldap_group_revocation_reconciles_removed_mappings_and_preserves_local_groups(
         self,
         app: FastAPI,
