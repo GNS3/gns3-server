@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import os
+import time
 import uuid
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -24,6 +26,7 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
+from gns3server.controller import qemu_overlay
 from gns3server.controller.controller_error import (
     ComputeConflictError,
     ControllerError,
@@ -1510,6 +1513,54 @@ async def test_distributed_copy_cannot_be_duplicated(project, controller, tmp_pa
     project.distribution_master_id = str(uuid.uuid4())
     with pytest.raises(ControllerForbiddenError, match="distributed copy cannot be duplicated"):
         await project.duplicate(name="derived")
+
+
+@pytest.mark.asyncio
+async def test_distribution_overlay_pass_runs_off_the_event_loop(project, monkeypatch):
+    """
+    The overlay pass of a distribution copy must not block the event loop:
+    a slow qemu-img slows down the copy, not the whole controller.
+    """
+
+    qemu_dir = os.path.join(project.path, "project-files", "qemu", "4b2b1e5a-0000-0000-0000-000000000001")
+    os.makedirs(qemu_dir)
+    for disk in ("hda_disk.qcow2", "hdb_disk.qcow2", "hdc_disk.qcow2"):
+        with open(os.path.join(qemu_dir, disk), "w+") as f:
+            f.write("disk")
+
+    def slow_probe(qemu_img, path):
+        # a slow qemu-img probe: 3 files x 0.25s of blocking work
+        time.sleep(0.25)
+        return {"format": "qcow2", "virtual-size": 1024}
+
+    def no_overlay(qemu_img, backing_file, overlay_file, info):
+        pass
+
+    monkeypatch.setattr(qemu_overlay, "find_qemu_img", lambda: "/fake/qemu-img")
+    monkeypatch.setattr(qemu_overlay, "_image_info", slow_probe)
+    monkeypatch.setattr(qemu_overlay, "_create_overlay", no_overlay)
+
+    # a ticker measures how long the event loop pauses between its ticks
+    stop = asyncio.Event()
+    pauses = []
+
+    async def ticker():
+        last = time.perf_counter()
+        while not stop.is_set():
+            await asyncio.sleep(0.01)
+            now = time.perf_counter()
+            pauses.append(now - last)
+            last = now
+
+    ticker_task = asyncio.ensure_future(ticker())
+    try:
+        await project.duplicate(name="distributed", user="student1", overlay_from_master=True)
+    finally:
+        stop.set()
+        await ticker_task
+
+    # one probe alone blocks for 0.25s: the loop must never pause that long
+    assert max(pauses) < 0.2
 
 
 async def _populate_scene(project):
