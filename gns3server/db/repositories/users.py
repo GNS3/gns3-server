@@ -175,6 +175,13 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         user = result.scalars().first()
 
+        if user and user.auth_source == "local" and user.is_superadmin:
+            log.warning(
+                "Refusing to adopt or overwrite local superadmin recovery account '%s' with LDAP profile",
+                profile.username,
+            )
+            return None
+
         # Link to existing LDAP account if user logged in previously with email/UPN vs shortname
         if not user and profile.email:
             email_query = (
@@ -397,6 +404,8 @@ class UsersRepository(BaseRepository):
                 return await self._update_last_login(local_user)
             if self._auth_service.verify_password(password, local_user.hashed_password):
                 return await self._update_last_login(local_user)
+            log.warning("Authentication failed for local superadmin recovery account '%s'", username)
+            return None
 
         # 2. LDAP authentication if enabled
         ldap_config = Config.instance().settings.LDAP

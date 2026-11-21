@@ -239,6 +239,40 @@ class TestLdapAuthentication:
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    async def test_ldap_cannot_adopt_or_demote_local_superadmin(
+        self, app: FastAPI, unauthorized_client: AsyncClient, db_session: AsyncSession, mock_ldap_directory
+    ) -> None:
+        """
+        Verify that an LDAP user attempting to log in as 'admin' with LDAP credentials
+        cannot adopt, overwrite, or demote the local emergency superadmin account.
+        """
+        users_repo = UsersRepository(db_session)
+        local_admin = await users_repo.get_user_by_username("admin")
+        assert local_admin is not None
+        assert local_admin.auth_source == "local"
+        assert local_admin.is_superadmin is True
+
+        mock_ldap_directory.strategy.add_entry(
+            "uid=admin,ou=users,dc=example,dc=com",
+            {
+                "objectClass": ["person", "inetOrgPerson"],
+                "uid": "admin",
+                "cn": "Directory Admin",
+                "userPassword": "ldap_admin_secret",
+            },
+        )
+
+        response = await unauthorized_client.post(
+            app.url_path_for("login"),
+            data={"username": "admin", "password": "ldap_admin_secret"},
+            headers=FORM_HEADERS,
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+        refreshed_admin = await users_repo.get_user_by_username("admin")
+        assert refreshed_admin.auth_source == "local"
+        assert refreshed_admin.is_superadmin is True
+
     async def test_ldap_user_cannot_change_password(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, mock_ldap_directory
     ) -> None:
