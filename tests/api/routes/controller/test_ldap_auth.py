@@ -117,6 +117,9 @@ class TestLdapAuthentication:
         Verify OAuth2 password form login via /v3/access/users/login creates user in SQLite and returns token.
         """
         users_repo = UsersRepository(db_session)
+        existing_alice = await users_repo.get_user_by_username("alice")
+        if existing_alice:
+            await users_repo.delete_user(existing_alice.user_id)
         assert await users_repo.get_user_by_username("alice") is None
 
         response = await unauthorized_client.post(
@@ -147,22 +150,37 @@ class TestLdapAuthentication:
         """
         Verify JSON authentication via /v3/access/users/authenticate.
         """
+        mock_ldap_directory.strategy.add_entry(
+            "uid=jit_json_user,ou=users,dc=example,dc=com",
+            {
+                "objectClass": ["person", "inetOrgPerson"],
+                "uid": "jit_json_user",
+                "cn": "JIT JSON User",
+                "mail": "jit_json@example.com",
+                "userPassword": "mock_jit_json_secret",
+                "memberOf": ["cn=GNS3-Users,ou=groups,dc=example,dc=com"],
+            },
+        )
+
         users_repo = UsersRepository(db_session)
-        assert await users_repo.get_user_by_username("bob") is None
+        assert await users_repo.get_user_by_username("jit_json_user") is None
 
         response = await unauthorized_client.post(
-            app.url_path_for("authenticate"), json={"username": "bob", "password": "mock_bob_secret"}
+            app.url_path_for("authenticate"), json={"username": "jit_json_user", "password": "mock_jit_json_secret"}
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "access_token" in data
 
         # Verify JIT provisioning in SQLite
-        db_user = await users_repo.get_user_by_username("bob")
+        db_user = await users_repo.get_user_by_username("jit_json_user")
         assert db_user is not None
         assert db_user.auth_source == "ldap"
         memberships = await users_repo.get_user_memberships(db_user.user_id)
         assert any(grp.name == "Users" for grp in memberships)
+
+        # Cleanup created user so order independence is preserved
+        await users_repo.delete_user(db_user.user_id)
 
     async def test_ldap_wrong_password_rejected(
         self, app: FastAPI, unauthorized_client: AsyncClient, mock_ldap_directory
@@ -681,6 +699,8 @@ class TestLdapAuthentication:
         alice_user_updated = await users_repo.get_user_by_username("alice")
         assert alice_user_updated is not None
         assert alice_user_updated.is_superadmin is False
+
+        await users_repo.delete_user(bob_user.user_id)
 
     async def test_existing_local_user_transitions_to_ldap_and_preserves_password_for_dr(
         self,
