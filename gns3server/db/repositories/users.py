@@ -167,75 +167,54 @@ class UsersRepository(BaseRepository):
         return user
 
     async def _lookup_or_link_ldap_user(self, profile: LDAPUserProfile) -> Optional[models.User]:
-        query = (
-            select(models.User)
-            .options(selectinload(models.User.groups))
-            .where(func.lower(models.User.username) == profile.username.lower())
-        )
-        result = await self._db_session.execute(query)
-        user = result.scalars().first()
+        user = None
 
-        if user and user.auth_source == "local" and user.is_superadmin:
-            log.warning(
-                "Refusing to adopt or overwrite local superadmin recovery account '%s' with LDAP profile",
-                profile.username,
-            )
-            return None
-
-        # Link to existing LDAP account if user logged in previously with email/UPN vs shortname
-        if not user and profile.email:
-            email_query = (
+        # 1. Primary lookup by immutable external directory identifier
+        if profile.external_id:
+            query_ext = (
                 select(models.User)
                 .options(selectinload(models.User.groups))
                 .where(
                     models.User.auth_source == "ldap",
-                    func.lower(models.User.email) == profile.email.lower(),
+                    models.User.external_id == profile.external_id,
                 )
             )
-            email_res = await self._db_session.execute(email_query)
-            existing_ldap_user = email_res.scalars().first()
-            if existing_ldap_user:
-                user = existing_ldap_user
-                log.info(
-                    "Linking LDAP login for '%s' to existing account '%s' (user_id: %s) via email '%s'",
+            res_ext = await self._db_session.execute(query_ext)
+            user = res_ext.scalars().first()
+
+        # 2. Secondary lookup by exact username
+        if not user:
+            query = (
+                select(models.User)
+                .options(selectinload(models.User.groups))
+                .where(models.User.username == profile.username)
+            )
+            result = await self._db_session.execute(query)
+            user = result.scalars().first()
+
+            if user and user.auth_source == "local" and user.is_superadmin:
+                log.warning(
+                    "Refusing to adopt or overwrite local superadmin recovery account '%s' with LDAP profile",
                     profile.username,
-                    user.username,
-                    user.user_id,
-                    profile.email,
                 )
-                if user.username.lower() != profile.username.lower():
-                    log.info(
-                        "LDAP login for '%s' linked to existing account '%s' (user_id: %s); retaining original username to preserve project ownership",
-                        profile.username,
-                        user.username,
-                        user.user_id,
-                    )
+                return None
+
+            if user and user.auth_source == "ldap" and profile.external_id and not user.external_id:
+                user.external_id = profile.external_id
+                await self._db_session.commit()
+
         return user
 
     async def _create_or_adopt_ldap_user(self, profile: LDAPUserProfile) -> models.User:
         email = profile.email
         if email:
             existing_email_user = await self.get_user_by_email(email)
-            if existing_email_user and existing_email_user.auth_source == "ldap":
-                log.info(
-                    "Adopting legacy LDAP account '%s' (user_id: %s) for canonical user '%s'",
-                    existing_email_user.username,
-                    existing_email_user.user_id,
-                    profile.username,
-                )
-                await self._db_session.execute(
-                    update(models.User)
-                    .where(models.User.user_id == existing_email_user.user_id)
-                    .values(
-                        full_name=profile.full_name,
-                        is_superadmin=profile.is_superadmin,
-                    )
-                )
-                existing_email_user.full_name = profile.full_name
-                existing_email_user.is_superadmin = profile.is_superadmin
-                return existing_email_user
             if existing_email_user:
-                log.warning("Email '%s' from LDAP is already in use by a local account", email)
+                log.warning(
+                    "Email '%s' from LDAP is already associated with account '%s'; omitting email to prevent adoption",
+                    email,
+                    existing_email_user.username,
+                )
                 email = None
 
         user = models.User(
@@ -244,6 +223,7 @@ class UsersRepository(BaseRepository):
             full_name=profile.full_name,
             hashed_password=None,
             auth_source="ldap",
+            external_id=profile.external_id,
             is_active=True,
             is_superadmin=profile.is_superadmin,
         )
@@ -260,6 +240,10 @@ class UsersRepository(BaseRepository):
             if user.username.lower() != Config.instance().settings.Controller.default_admin_username.lower():
                 log.info("Transitioning local user '%s' to LDAP authenticated account", user.username)
                 update_data["auth_source"] = "ldap"
+
+        if profile.external_id and user.external_id != profile.external_id:
+            user.external_id = profile.external_id
+            update_data["external_id"] = profile.external_id
 
         if profile.email and user.email != profile.email:
             existing_email_user = await self.get_user_by_email(profile.email)

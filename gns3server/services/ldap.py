@@ -121,6 +121,7 @@ class LDAPUserProfile:
     full_name: Optional[str] = None
     groups: List[str] = field(default_factory=list)
     is_superadmin: bool = False
+    external_id: Optional[str] = None
 
 
 def _unescape_rfc4514(val: str) -> str:
@@ -131,6 +132,32 @@ def _unescape_rfc4514(val: str) -> str:
     val = re.sub(r"\\([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), val)
     val = re.sub(r"\\([ +\",;<=>\\#])", r"\1", val)
     return val
+
+
+def _extract_external_id(user_entry: Any, user_dn: str) -> str:
+    """Extract immutable external directory identifier from entry."""
+    for id_attr in ("entryUUID", "objectGUID", "ipaUniqueID", "nsUniqueId"):
+        val = getattr(user_entry, id_attr, None)
+        if val:
+            raw_bytes = getattr(val, "raw_values", None)
+            if raw_bytes and isinstance(raw_bytes[0], bytes):
+                import uuid
+
+                try:
+                    ext_id = str(uuid.UUID(bytes_le=raw_bytes[0]))
+                    if ext_id:
+                        return ext_id
+                except Exception:
+                    try:
+                        ext_id = str(uuid.UUID(bytes=raw_bytes[0]))
+                        if ext_id:
+                            return ext_id
+                    except Exception:
+                        pass
+            s = _to_str(val)
+            if s:
+                return s
+    return user_dn
 
 
 def _extract_cn(dn_or_name: str) -> str:
@@ -398,14 +425,17 @@ class LDAPService:
         if s:
             full_name = s.strip()
 
+        external_id = _extract_external_id(user_entry, user_dn)
+
         groups, is_superadmin = self._resolve_groups(conn, user_entry, user_dn, clean_username, settings)
         log.info(
-            "Extracted LDAP profile for '%s': canonical_username='%s', email='%s', full_name='%s', is_superadmin=%s",
+            "Extracted LDAP profile for '%s': canonical_username='%s', email='%s', full_name='%s', is_superadmin=%s, external_id='%s'",
             username,
             canonical_username,
             email,
             full_name,
             is_superadmin,
+            external_id,
         )
         return LDAPUserProfile(
             username=canonical_username,
@@ -413,6 +443,7 @@ class LDAPService:
             full_name=full_name,
             groups=groups,
             is_superadmin=is_superadmin,
+            external_id=external_id,
         )
 
     def _sync_authenticate(self, username: str, password: str, settings: LDAPSettings) -> Optional[LDAPUserProfile]:
@@ -445,6 +476,10 @@ class LDAPService:
                     "displayName",
                     "memberOf",
                     "member",
+                    "objectGUID",
+                    "entryUUID",
+                    "ipaUniqueID",
+                    "nsUniqueId",
                 }
             )
             conn.search(search_base=settings.base_dn, search_filter=search_filter, attributes=attributes, size_limit=1)

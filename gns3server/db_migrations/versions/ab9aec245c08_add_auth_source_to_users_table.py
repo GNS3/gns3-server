@@ -20,7 +20,15 @@ def upgrade() -> None:
     existing = {column["name"] for column in sa.inspect(op.get_bind()).get_columns("users")}
     if "auth_source" not in existing:
         op.add_column("users", sa.Column("auth_source", sa.String(), nullable=False, server_default="local"))
+    if "external_id" not in existing:
+        op.add_column("users", sa.Column("external_id", sa.String(), nullable=True))
+        op.create_index("ix_users_external_id", "users", ["external_id"])
 
 
 def downgrade() -> None:
-    op.drop_column("users", "auth_source")
+    existing = {column["name"] for column in sa.inspect(op.get_bind()).get_columns("users")}
+    if "external_id" in existing:
+        op.drop_index("ix_users_external_id", table_name="users")
+        op.drop_column("users", "external_id")
+    if "auth_source" in existing:
+        op.drop_column("users", "auth_source")

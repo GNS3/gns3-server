@@ -24,6 +24,7 @@ from ldap3 import ALL, MOCK_SYNC, Connection, Server
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gns3server import schemas
 from gns3server.config import Config
 from gns3server.db import models
 from gns3server.db.repositories.users import UsersRepository
@@ -442,12 +443,13 @@ class TestLdapAuthentication:
 
         users_repo = UsersRepository(db_session)
 
-        # 1. Pre-create account with a legacy/existing username
+        # 1. Pre-create account with a legacy/existing username anchored by external_id
         pre_user = models.User(
             username="frank_legacy",
             email="frank@example.com",
             full_name="Frank Sinatra",
             auth_source="ldap",
+            external_id="uid=frank_canonical,ou=users,dc=example,dc=com",
             is_active=True,
         )
         db_session.add(pre_user)
@@ -469,6 +471,54 @@ class TestLdapAuthentication:
         assert db_user is not None
         assert db_user.username == "frank_legacy"
         assert db_user.email == "frank@example.com"
+
+    async def test_ldap_login_matching_local_user_email_does_not_adopt_local_account(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        db_session: AsyncSession,
+        mock_ldap_directory,
+    ) -> None:
+        """
+        Verify that an LDAP user with an email matching an existing local user's email
+        cannot take over or adopt the local account.
+        """
+        users_repo = UsersRepository(db_session)
+        local_user = await users_repo.create_user(
+            schemas.UserCreate(username="local_victim", email="shared@example.com", password="placeholder_password")
+        )
+        assert local_user.auth_source == "local"
+
+        mock_ldap_directory.strategy.add_entry(
+            "uid=ldap_attacker,ou=users,dc=example,dc=com",
+            {
+                "objectClass": ["person", "inetOrgPerson"],
+                "uid": "ldap_attacker",
+                "cn": "Attacker",
+                "mail": "shared@example.com",
+                "userPassword": "placeholder_password",
+            },
+        )
+
+        resp = await unauthorized_client.post(
+            app.url_path_for("login"),
+            data={"username": "ldap_attacker", "password": "placeholder_password"},
+            headers=FORM_HEADERS,
+        )
+        assert resp.status_code == status.HTTP_200_OK
+
+        victim_refreshed = await users_repo.get_user(local_user.user_id)
+        assert victim_refreshed.auth_source == "local"
+        assert victim_refreshed.username == "local_victim"
+        assert victim_refreshed.user_id == local_user.user_id
+
+        attacker = await users_repo.get_user_by_username("ldap_attacker")
+        assert attacker is not None
+        assert attacker.user_id != local_user.user_id
+        assert attacker.auth_source == "ldap"
+
+        await users_repo.delete_user(local_user.user_id)
+        await users_repo.delete_user(attacker.user_id)
 
     async def test_ldap_user_without_matching_groups_receives_fallback_users_group(
         self,
