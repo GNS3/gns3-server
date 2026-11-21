@@ -100,10 +100,51 @@ def _create_overlay(qemu_img: str, backing_file: str, overlay_file: str, info: d
         raise ControllerError(f"Could not create the overlay disk '{overlay_file}': {result.stderr.strip()}")
 
 
-def create_overlay_disks(source_project_dir: str, destination_project_dir: str, qemu_img: Optional[str] = None) -> int:
+def _qemu_node_disks(topology: dict) -> dict:
+    """
+    Map each QEMU node id of the topology to the set of file names that are
+    disk images in its node directory.
+
+    The topology is the authority on what a disk is, never the file content:
+    qemu-img reports any regular file as a raw image, so a log or a checksum
+    cache cannot be told apart from a raw disk by probing (the compute side
+    boots what the properties name, see QemuVM._build_command).
+    """
+
+    disks: dict = {}
+    for node in topology.get("topology", {}).get("nodes", []):
+        if node.get("node_type") != "qemu":
+            continue
+        properties = node.get("properties") or {}
+        names = set()
+        for drive in ("a", "b", "c", "d"):
+            image = properties.get(f"hd{drive}_disk_image")
+            if not image:
+                continue
+            # the disk living in the node directory when the property names a
+            # file there, plus the conventional overlay (hdX_disk.qcow2) the
+            # compute creates at startup when the property points at an image
+            # directory
+            names.add(os.path.basename(image))
+            names.add(f"hd{drive}_disk.qcow2")
+        if properties.get("create_config_disk"):
+            # the config disk the compute builds in the node directory
+            names.add("config.img")
+        node_id = node.get("node_id")
+        if node_id is not None:
+            disks[node_id] = names
+    return disks
+
+
+def create_overlay_disks(
+    source_project_dir: str,
+    destination_project_dir: str,
+    topology: dict,
+    qemu_img: Optional[str] = None,
+) -> int:
     """
     Cover the QEMU node directories of a freshly copied project with thin
-    overlays: every disk image of the source project becomes an overlay in
+    overlays: every file the topology names as a disk becomes an overlay in
     the destination, every other file of these directories (config files,
     logs) is copied verbatim. Returns the number of overlays created.
     """
@@ -111,13 +152,15 @@ def create_overlay_disks(source_project_dir: str, destination_project_dir: str, 
     source_qemu_dir = os.path.join(source_project_dir, QEMU_FILES_DIRECTORY)
     if not os.path.isdir(source_qemu_dir):
         return 0
-    qemu_img = qemu_img or find_qemu_img()
+    # resolved lazily: a pass without any named disk must not need qemu-img
+    node_disks = _qemu_node_disks(topology)
 
     overlays = 0
     for node_id in os.listdir(source_qemu_dir):
         source_node_dir = os.path.join(source_qemu_dir, node_id)
         if not os.path.isdir(source_node_dir):
             continue
+        disk_names = node_disks.get(node_id, set())
         destination_node_dir = os.path.join(destination_project_dir, QEMU_FILES_DIRECTORY, node_id)
         os.makedirs(destination_node_dir, exist_ok=True)
         for root, dirs, files in os.walk(source_node_dir):
@@ -127,8 +170,15 @@ def create_overlay_disks(source_project_dir: str, destination_project_dir: str, 
             for name in files:
                 source_file = os.path.join(root, name)
                 destination_file = os.path.join(target_root, name)
+                if name not in disk_names:
+                    shutil.copy2(source_file, destination_file)
+                    continue
+                if qemu_img is None:
+                    qemu_img = find_qemu_img()
                 info = _image_info(qemu_img, source_file)
                 if info is None:
+                    # a file the topology names as a disk but that qemu-img
+                    # cannot read: copy it verbatim rather than lose it
                     shutil.copy2(source_file, destination_file)
                 else:
                     _create_overlay(qemu_img, os.path.abspath(source_file), destination_file, info)

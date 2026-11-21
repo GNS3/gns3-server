@@ -2527,18 +2527,21 @@ class Project:
             )
             log.info(f"Project content copied from '{self.path}' to '{new_project_path}' in {time.time() - t0}s")
 
+            # Read the topology file using the actual filename (self._filename), not self.name
+            # This handles the case where a project has been renamed but we need to read the actual file
+            old_gns3_file = new_project_path.joinpath(self._filename)
+            topology = json.loads(old_gns3_file.read_bytes())
+
             if overlay_from_master:
                 # create the thin disks before the node ids are regenerated:
                 # the overlays land in the (still old) copied node directories
                 # and follow them to their new ids. Like the copy above, the
                 # qemu-img calls run in the executor: they must not block the
-                # event loop (a whole class is distributed in one controller)
-                await wait_run_in_executor(create_overlay_disks, self.path, new_project_path.as_posix())
-
-            # Read the topology file using the actual filename (self._filename), not self.name
-            # This handles the case where a project has been renamed but we need to read the actual file
-            old_gns3_file = new_project_path.joinpath(self._filename)
-            topology = json.loads(old_gns3_file.read_bytes())
+                # event loop (a whole class is distributed in one controller).
+                # The topology names the disks: qemu-img probes any regular
+                # file as raw, so the logs and checksum caches of the node
+                # directories must be copied verbatim, not overlaid
+                await wait_run_in_executor(create_overlay_disks, self.path, new_project_path.as_posix(), topology)
             project_name = name or topology["name"]
             # If the project name is already used we generate a new one
             project_name = self.controller.get_free_project_name(project_name)

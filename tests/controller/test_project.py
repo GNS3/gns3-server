@@ -1528,6 +1528,22 @@ async def test_distribution_overlay_pass_runs_off_the_event_loop(project, monkey
         with open(os.path.join(qemu_dir, disk), "w+") as f:
             f.write("disk")
 
+    # the node naming its disks: they are the files the overlay pass probes
+    local_compute = MagicMock()
+    local_compute.id = "local"
+    project._nodes["4b2b1e5a-0000-0000-0000-000000000001"] = Node(
+        project,
+        local_compute,
+        "Router",
+        node_id="4b2b1e5a-0000-0000-0000-000000000001",
+        node_type="qemu",
+        properties={
+            "hda_disk_image": "hda_disk.qcow2",
+            "hdb_disk_image": "hdb_disk.qcow2",
+            "hdc_disk_image": "hdc_disk.qcow2",
+        },
+    )
+
     def slow_probe(qemu_img, path):
         # a slow qemu-img probe: 3 files x 0.25s of blocking work
         time.sleep(0.25)
@@ -1561,6 +1577,71 @@ async def test_distribution_overlay_pass_runs_off_the_event_loop(project, monkey
 
     # one probe alone blocks for 0.25s: the loop must never pause that long
     assert max(pauses) < 0.2
+
+
+@pytest.mark.asyncio
+async def test_distribution_overlays_only_the_disks_named_by_the_topology(project, monkeypatch):
+    """
+    Only the disk images named by the node properties become overlays. Every
+    other file of the node directory (logs, checksum caches...) must be
+    copied verbatim: qemu-img cannot tell such a file apart from a raw disk
+    (it reports any file as raw), and a copy whose log is a qcow2 is not a
+    faithful copy.
+    """
+
+    node_id = "4b2b1e5a-0000-0000-0000-000000000002"
+    qemu_dir = os.path.join(project.path, "project-files", "qemu", node_id)
+    os.makedirs(qemu_dir)
+    with open(os.path.join(qemu_dir, "hda_disk.qcow2"), "w") as f:
+        f.write("disk image bytes")
+    with open(os.path.join(qemu_dir, "qemu-img.log"), "w") as f:
+        f.write("qemu-img check output\n")
+    with open(os.path.join(qemu_dir, "hda_disk.qcow2.md5sum"), "w") as f:
+        f.write("0123456789abcdef0123456789abcdef")
+
+    # the node of the topology naming its disk: what the overlay pass must
+    # trust instead of probing every file
+    local_compute = MagicMock()
+    local_compute.id = "local"
+    project._nodes[node_id] = Node(
+        project,
+        local_compute,
+        "Router",
+        node_id=node_id,
+        node_type="qemu",
+        properties={"hda_disk_image": "hda_disk.qcow2"},
+    )
+
+    probed = []
+
+    def fake_image_info(qemu_img, path):
+        probed.append(os.path.basename(path))
+        return {"format": "qcow2", "virtual-size": 1024}
+
+    def fake_create_overlay(qemu_img, backing_file, overlay_file, info):
+        with open(overlay_file, "w") as f:
+            f.write("overlay")
+
+    monkeypatch.setattr(qemu_overlay, "find_qemu_img", lambda: "/fake/qemu-img")
+    monkeypatch.setattr(qemu_overlay, "_image_info", fake_image_info)
+    monkeypatch.setattr(qemu_overlay, "_create_overlay", fake_create_overlay)
+
+    new_project = await project.duplicate(name="distributed", user="student1", overlay_from_master=True)
+
+    # the node ids are regenerated: the copied directory has a new id
+    copy_qemu_dir = os.path.join(new_project.path, "project-files", "qemu")
+    (copy_node_dir,) = os.listdir(copy_qemu_dir)
+
+    # exactly the topology's disk is probed and becomes an overlay
+    assert probed == ["hda_disk.qcow2"]
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "hda_disk.qcow2")) as f:
+        assert f.read() == "overlay"
+
+    # the log and the checksum cache ride along byte-identical
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "qemu-img.log")) as f:
+        assert f.read() == "qemu-img check output\n"
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "hda_disk.qcow2.md5sum")) as f:
+        assert f.read() == "0123456789abcdef0123456789abcdef"
 
 
 async def _populate_scene(project):

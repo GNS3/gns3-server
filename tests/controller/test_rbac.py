@@ -35,6 +35,7 @@ from gns3server.controller import Controller, qemu_overlay
 from gns3server.controller import project as project_module
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.distribution import DistributionRegistry
+from gns3server.controller.node import Node
 from gns3server.db.models import User
 from gns3server.db.project_acl import ensure_all_project_aces, ensure_project_owner_ace, upsert_project_share_ace
 from gns3server.db.repositories.distribution_records import DistributionRecordsRepository
@@ -2216,6 +2217,25 @@ class TestProjectDistribution:
         with open(os.path.join(snapshots_dir, "old-lab.gns3project"), "w") as f:
             f.write("an old snapshot zip")
 
+        # the node naming its disk in the topology: the overlay pass trusts
+        # the topology (not the file content) to tell disks from plain files.
+        # The local compute is a mock (the proven pattern of test_project.py):
+        # opening the copy for its template snapshot creates the node on it
+        local_compute = MagicMock()
+        local_compute.id = "local"
+        response = MagicMock()
+        response.json = {"console": 2048}
+        local_compute.post = AsyncioMagicMock(return_value=response)
+        controller._computes["local"] = local_compute
+        source._nodes[node_id] = Node(
+            source,
+            local_compute,
+            "Router",
+            node_id=node_id,
+            node_type="qemu",
+            properties={"hda_disk_image": "hda_disk.qcow2"},
+        )
+
         # stand-in disk plumbing: the overlay creation is unit-tested in
         # test_qemu_overlay.py, here only its placement matters
         created_overlays = []
@@ -2239,12 +2259,17 @@ class TestProjectDistribution:
         backing_file, overlay_file = created_overlays[0]
         assert backing_file == os.path.join(qemu_dir, "hda_disk.qcow2")
         assert overlay_file.startswith(os.path.join(controller.get_project(copy_id).path, "project-files", "qemu"))
-        with open(overlay_file) as f:
+
+        # the node ids are regenerated in the copy: the overlay file and the
+        # config file followed their node directory to the new id
+        copy = controller.get_project(copy_id)
+        copy_qemu_dir = os.path.join(copy.path, "project-files", "qemu")
+        (copy_node_dir,) = os.listdir(copy_qemu_dir)
+        with open(os.path.join(copy_qemu_dir, copy_node_dir, "hda_disk.qcow2")) as f:
             assert f.read() == "thin overlay"
 
         # the non-image files ride along verbatim
-        copy = controller.get_project(copy_id)
-        with open(os.path.join(copy.path, "project-files", "qemu", node_id, "config.txt")) as f:
+        with open(os.path.join(copy_qemu_dir, copy_node_dir, "config.txt")) as f:
             assert f.read() == "hostname r1"
 
         # the copy takes its own snapshot, it does not inherit the old ones
