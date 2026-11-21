@@ -54,7 +54,7 @@ try:
             return orig_verify(sock_or_sslobj, server_hostname=server_hostname)
 
         trust_api._verify_peercerts = _safe_verify_peercerts
-        trust_api._gns3_cert_none_patched = True
+        trust_api._gns3_cert_none_patched = True  # type: ignore[attr-defined]
 except Exception:
     pass
 

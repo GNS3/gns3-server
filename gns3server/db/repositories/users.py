@@ -33,7 +33,7 @@ from gns3server.db.rbac_state import RbacState
 try:
     from gns3server.db.user_quota_state import UserQuotaState
 except ImportError:
-    UserQuotaState = None  # type: ignore[assignment, misc]
+    UserQuotaState = None
 
 from gns3server.services import auth_service, ldap_service
 from gns3server.services.ldap import LDAPService, LDAPUserProfile
@@ -246,7 +246,7 @@ class UsersRepository(BaseRepository):
         return user
 
     async def _sync_user_profile_fields(self, user: models.User, profile: LDAPUserProfile) -> None:
-        update_data = {}
+        update_data: dict[str, Any] = {}
 
         if user.auth_source != "ldap":
             from gns3server.config import Config
@@ -256,7 +256,6 @@ class UsersRepository(BaseRepository):
                 update_data["auth_source"] = "ldap"
 
         if profile.external_id and user.external_id != profile.external_id:
-            user.external_id = profile.external_id
             update_data["external_id"] = profile.external_id
 
         if profile.email and user.email != profile.email:
@@ -296,14 +295,7 @@ class UsersRepository(BaseRepository):
             await self._db_session.execute(
                 update(models.User).where(models.User.user_id == user.user_id).values(update_data)
             )
-            if "email" in update_data:
-                user.email = update_data["email"]
-            if "full_name" in update_data:
-                user.full_name = update_data["full_name"]
-            if "is_superadmin" in update_data:
-                user.is_superadmin = update_data["is_superadmin"]
-            if "auth_source" in update_data:
-                user.auth_source = update_data["auth_source"]
+            await self._db_session.refresh(user)
 
     async def _sync_user_groups(self, user: models.User, profile: LDAPUserProfile) -> None:
         target_group_ids: List[UUID] = []
@@ -313,7 +305,7 @@ class UsersRepository(BaseRepository):
             grp = await self.get_user_group_by_name(group_name)
             if grp:
                 target_group_ids.append(grp.user_group_id)
-                target_group_names.add(grp.name)
+                target_group_names.add(str(grp.name))
                 log.info(
                     "Assigned user '%s' to GNS3 group '%s' (UUID: %s)", profile.username, grp.name, grp.user_group_id
                 )
@@ -352,8 +344,8 @@ class UsersRepository(BaseRepository):
                 fallback_grp = await self.get_user_group_by_name("Users")
             if fallback_grp:
                 unique_group_ids.append(fallback_grp.user_group_id)
-                target_group_names.add(fallback_grp.name)
-                managed_group_names.add(fallback_grp.name)
+                target_group_names.add(str(fallback_grp.name))
+                managed_group_names.add(str(fallback_grp.name))
                 log.info(
                     "Assigned fallback group '%s' to LDAP user '%s' to ensure base privileges",
                     fallback_grp.name,
