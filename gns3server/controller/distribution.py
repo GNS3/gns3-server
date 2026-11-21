@@ -176,7 +176,7 @@ class DistributionRegistry:
         stale = [
             distribution_id
             for distribution_id, job in self._jobs.items()
-            if job.status != "running" and job.created_at < cutoff
+            if job.status not in ("running", "cancelling") and job.created_at < cutoff
         ]
         for distribution_id in stale:
             del self._jobs[distribution_id]
