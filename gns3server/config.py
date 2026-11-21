@@ -256,6 +256,8 @@ class Config:
             return str(value)
         if isinstance(value, Enum):
             return str(value.value)
+        if option == "superadmin_groups" and isinstance(value, list):
+            return json.dumps(value)
         if isinstance(value, list):
             return LIST_OPTION_SEPARATORS.get(option, ",").join(value)
         if isinstance(value, dict):
