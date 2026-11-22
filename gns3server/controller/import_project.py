@@ -117,7 +117,7 @@ async def import_project(
         node_count = sum(
             1 for node in topology.get("topology", {}).get("nodes", []) if node.get("node_type") in QUOTA_COUNTED_TYPES
         )
-        reservation = reserve_import(user, node_count)
+        reservation = reserve_import(user, node_count, user_id)
     else:
         reservation = None
 

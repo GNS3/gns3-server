@@ -20,9 +20,11 @@ Node quota usage accounting and enforcement.
 
 Quotas are resolved per user (user columns over group defaults, see
 gns3server.db.user_quota_state) but accounted per project owner: every
-node counts against the quota of the user owning the project
-(``project.created_by``), including nodes created or started by someone
-else in a project shared with them. A project without an owner can only
+node counts against the quota of the user owning the project, including
+nodes created or started by someone else in a project shared with them.
+Ownership follows the stable owner id (``project.created_by_id``), never
+the username: a user created later under a deleted user's name must not
+be charged for their projects. A project without an owner can only
 be used by superadmins, who are never limited.
 
 Only the node types that consume resources are counted (a QEMU, Docker,
@@ -106,10 +108,16 @@ def _closed_project_count(project: Project) -> int:
     return count
 
 
-def count_usage(username: str) -> Tuple[int, int]:
+def count_usage(username: str, user_id: Optional[str] = None) -> Tuple[int, int]:
     """
     Return (total, running) quota-relevant node counts over every project
     owned by the user, opened or closed.
+
+    Ownership follows the stable owner id when the project has one: a
+    project of a deleted user (or of a user created later under the same
+    name) must not count for this user. Projects without an id are
+    pre-migration legacy ones and fall back to the username until the
+    startup migration classifies them.
     """
 
     from . import Controller  # local import: the controller package imports this module
@@ -117,7 +125,14 @@ def count_usage(username: str) -> Tuple[int, int]:
     total = 0
     running = 0
     for project in Controller.instance().projects.values():
-        if project.created_by != username:
+        if project.created_by_deleted:
+            # the owner is gone: the project counts for nobody
+            continue
+        if project.created_by_id is not None:
+            # the stable identity: match by id, never by the reusable name
+            if user_id is None or project.created_by_id != user_id:
+                continue
+        elif project.created_by != username:
             continue
         if project.status == "opened":
             for node in project._nodes.values():
@@ -188,7 +203,7 @@ def reserve_create(project: Project, count: int = 1) -> QuotaReservation:
         username,
         count,
         limits.max_nodes,
-        count_usage(username)[0],
+        count_usage(username, project.created_by_id)[0],
         f"Cannot create node in project '{project.name}': user '{username}' reached "
         f"the maximum number of nodes ({{limit}})",
     )
@@ -209,13 +224,13 @@ def reserve_start(project: Project) -> QuotaReservation:
         username,
         1,
         limits.max_running_nodes,
-        count_usage(username)[1],
+        count_usage(username, project.created_by_id)[1],
         f"Cannot start node in project '{project.name}': user '{username}' reached "
         f"the maximum number of running nodes ({{limit}})",
     )
 
 
-def reserve_import(username: Optional[str], node_count: int) -> QuotaReservation:
+def reserve_import(username: Optional[str], node_count: int, user_id: Optional[str] = None) -> QuotaReservation:
     """
     Reserve the nodes of a project being imported / duplicated /
     distributed to the user against its node quota. No reservation when
@@ -231,7 +246,7 @@ def reserve_import(username: Optional[str], node_count: int) -> QuotaReservation
         username,
         node_count,
         limits.max_nodes,
-        count_usage(username)[0],
+        count_usage(username, user_id)[0],
         f"Cannot import a project with {{limit}} node(s) or less for user '{username}': "
         f"the quota is already used ({{current}} nodes)",
     )

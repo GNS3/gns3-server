@@ -240,12 +240,15 @@ async def get_logged_in_user_quotas(
     """
 
     assert current_user.username is not None  # an authenticated user always has a name
+    # the usage follows the stable owner id: a deleted user's projects must
+    # not count for a user created later under the same name
+    user_id = str(current_user.user_id)
     if current_user.is_superadmin:
-        current_nodes, current_running_nodes = count_usage(current_user.username)
+        current_nodes, current_running_nodes = count_usage(current_user.username, user_id)
         return schemas.UserQuotaUsage(current_nodes=current_nodes, current_running_nodes=current_running_nodes)
 
     limits = UserQuotaState.instance().get(current_user.username)
-    current_nodes, current_running_nodes = count_usage(current_user.username)
+    current_nodes, current_running_nodes = count_usage(current_user.username, user_id)
     if limits is None:
         return schemas.UserQuotaUsage(current_nodes=current_nodes, current_running_nodes=current_running_nodes)
     return schemas.UserQuotaUsage(

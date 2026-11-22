@@ -2489,7 +2489,7 @@ class Project:
         # against its quota before any file is written. The export/import
         # fallback path is covered by the check in import_project().
         node_count = sum(1 for node in self._nodes.values() if node.node_type in QUOTA_COUNTED_TYPES)
-        reservation = reserve_import(user, node_count)
+        reservation = reserve_import(user, node_count, user_id)
         try:
             # work dir
             p_work = pathlib.Path(location or self.path).parent.absolute()

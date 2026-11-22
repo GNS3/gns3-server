@@ -197,6 +197,46 @@ async def test_quota_spans_projects_and_closed_projects(controller, project, com
         await other.add_node(compute, "n4", None, node_type="vpcs")
 
 
+async def test_same_name_replacement_user_is_not_charged_for_a_dead_owners_projects(
+    controller, project, compute, quota_state
+):
+    """
+    A deleted user's projects keep pointing at the dead owner id (legacy
+    ones without an id get the deleted marker from the startup migration).
+    A user created later under the same name must not be charged for them:
+    quota ownership follows the stable owner id, never the username.
+    """
+
+    # a project of a user who has been deleted: the name will be reused,
+    # the id never will
+    dead = await controller.add_project(name="Dead owners lab")
+    dead.created_by = "alice"
+    dead.created_by_id = str(uuid.uuid4())
+    await dead.add_node(compute, "leftover1", None, node_type="vpcs")
+    await dead.add_node(compute, "leftover2", None, node_type="vpcs")
+
+    # a legacy project of the dead user: no stable id, flagged as
+    # owner-deleted by the startup migration
+    legacy = await controller.add_project(name="Legacy lab")
+    legacy.created_by = "alice"
+    legacy.created_by_deleted = True
+    await legacy.add_node(compute, "leftover3", None, node_type="vpcs")
+
+    # the replacement alice: same name, her own stable id
+    alice_id = str(uuid.uuid4())
+    quota_state._limits = {"alice": QuotaLimits(max_nodes=1, max_running_nodes=None)}
+    project.created_by = "alice"
+    project.created_by_id = alice_id
+
+    # the dead owners' leftovers do not use the replacement alice's quota
+    assert count_usage("alice", alice_id) == (0, 0)
+
+    # her own single slot still works, a second node is refused
+    await project.add_node(compute, "mine", None, node_type="vpcs")
+    with pytest.raises(ControllerForbiddenError, match="maximum number of nodes"):
+        await project.add_node(compute, "mine2", None, node_type="vpcs")
+
+
 async def test_project_open_loading_bypasses_quota(controller, project, compute, quota_state):
     """
     Opening a project replays its existing nodes through add_node: they
