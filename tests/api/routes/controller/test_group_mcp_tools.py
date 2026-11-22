@@ -97,16 +97,21 @@ class TestGroupMCPToolsRoutes:
     async def test_put_and_get_roundtrip(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         group_id = await _get_group_id(db_session, "Users")
-        response = await client.put(
-            app.url_path_for("update_group_mcp_tools", user_group_id=group_id),
-            json={"tools": ["server_version"]},
-        )
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()["tools"] == ["server_version"]
+        try:
+            response = await client.put(
+                app.url_path_for("update_group_mcp_tools", user_group_id=group_id),
+                json={"tools": ["server_version"]},
+            )
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["tools"] == ["server_version"]
 
-        response = await client.get(app.url_path_for("get_group_mcp_tools", user_group_id=group_id))
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()["tools"] == ["server_version"]
+            response = await client.get(app.url_path_for("get_group_mcp_tools", user_group_id=group_id))
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["tools"] == ["server_version"]
+        finally:
+            # restore the unconfigured state: the class database is shared, and
+            # test_get_unconfigured_group asserts the Users group has no whitelist
+            await client.delete(app.url_path_for("delete_group_mcp_tools", user_group_id=group_id))
 
     async def test_delete_lifts_the_whitelist(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
@@ -175,12 +180,22 @@ class TestUserWhitelistSemantics:
         users_group_id = await _group_uuid(db_session, "Users")
         other_group = await users_repo.create_user_group(UserGroupCreate(name="mcp_extra_group"))
         await users_repo.add_member_to_user_group(other_group.user_group_id, test_user)
+        try:
+            await rbac_repo.set_group_mcp_tools(users_group_id, ["server_version"])
+            # the second group has no whitelist: still unrestricted
+            assert await rbac_repo.get_user_mcp_tool_whitelist(test_user.user_id) is None
 
-        await rbac_repo.set_group_mcp_tools(users_group_id, ["server_version"])
-        # the second group has no whitelist: still unrestricted
-        assert await rbac_repo.get_user_mcp_tool_whitelist(test_user.user_id) is None
-
-        await rbac_repo.set_group_mcp_tools(other_group.user_group_id, ["project_list"])
-        # both configured now: union of both sets
-        whitelist = await rbac_repo.get_user_mcp_tool_whitelist(test_user.user_id)
-        assert whitelist == {"server_version", "project_list"}
+            await rbac_repo.set_group_mcp_tools(other_group.user_group_id, ["project_list"])
+            # both configured now: union of both sets
+            whitelist = await rbac_repo.get_user_mcp_tool_whitelist(test_user.user_id)
+            assert whitelist == {"server_version", "project_list"}
+        finally:
+            # the class database is shared: no whitelist, no extra membership
+            # and no extra group must survive this test, or the union of a
+            # later test picks them up. Each step is explicit: the test engine
+            # does not turn on the SQLite foreign_keys pragma, so deleting the
+            # group alone would not cascade the whitelist and membership rows
+            await rbac_repo.clear_group_mcp_tools(users_group_id)
+            await rbac_repo.clear_group_mcp_tools(other_group.user_group_id)
+            await users_repo.remove_member_from_user_group(other_group.user_group_id, test_user)
+            await users_repo.delete_user_group(other_group.user_group_id)

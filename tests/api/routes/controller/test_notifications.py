@@ -244,19 +244,23 @@ class TestNotificationStreamPrivilege:
 
         rbac_repo = RbacRepository(db_session)
         role = await rbac_repo.get_role_by_name("Administrator")  # holds every privilege
-        await rbac_repo.create_ace(
+        ace = await rbac_repo.create_ace(
             ACECreate(
                 path="/notifications", ace_type="user", propagate=True, user_id=test_user.user_id, role_id=role.role_id
             )
         )
+        try:
+            websocket = _fake_websocket(app)
+            dependency = has_privilege_on_websocket("Notification.Audit")
+            result = await dependency(websocket, current_user=test_user, rbac_repo=rbac_repo)
 
-        websocket = _fake_websocket(app)
-        dependency = has_privilege_on_websocket("Notification.Audit")
-        result = await dependency(websocket, current_user=test_user, rbac_repo=rbac_repo)
-
-        assert result is test_user
-        websocket.send_json.assert_not_awaited()
-        websocket.close.assert_not_awaited()
+            assert result is test_user
+            websocket.send_json.assert_not_awaited()
+            websocket.close.assert_not_awaited()
+        finally:
+            # the class database is shared: the ACE must not leak into the
+            # denial tests of this class (their user is granted the privilege)
+            await rbac_repo.delete_ace(ace.asdict()["ace_id"])
 
     @pytest.mark.asyncio
     async def test_ws_closed_after_privilege_revoked(
