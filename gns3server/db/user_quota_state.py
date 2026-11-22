@@ -98,6 +98,7 @@ class UserQuotaState:
         self._limits: Dict[str, QuotaLimits] = {}
         self._engine: Optional[AsyncEngine] = None
         self._reload_task: Optional[asyncio.Task] = None
+        self._dirty = False
 
     @classmethod
     def instance(cls) -> "UserQuotaState":
@@ -145,24 +146,41 @@ class UserQuotaState:
 
     def mark_dirty(self) -> None:
         """
-        Schedule a background reload when an engine is bound. Repository
-        writes call this after committing a quota-relevant change.
+        Flag the snapshot as outdated and schedule a background reload
+        when an engine is bound. Repository writes call this after
+        committing a quota-relevant change.
         """
 
+        self._dirty = True
         if self._engine is None or (self._reload_task is not None and not self._reload_task.done()):
+            # a reload is already running: it re-checks the flag before it
+            # exits and repeats when a write landed while it was loading
             return
+        self._spawn_reload()
+
+    def _spawn_reload(self) -> None:
+
         try:
             self._reload_task = asyncio.create_task(self._reload())
         except RuntimeError:
-            # No running loop (should not happen: writes happen in requests)
+            # No running loop (should not happen: writes happen in requests):
+            # the flag stays set, the next mark_dirty() schedules the reload
             pass
 
     async def _reload(self) -> None:
 
         assert self._engine is not None
         try:
-            async with AsyncSession(self._engine) as db_session:
-                await self.reload(db_session)
+            while True:
+                # clear the flag before loading: a write that lands while the
+                # queries are awaited sets it again and the load repeats (the
+                # RBAC snapshot uses the same pattern). Without it the write
+                # was dropped and the old limits stayed cached forever.
+                self._dirty = False
+                async with AsyncSession(self._engine) as db_session:
+                    await self.reload(db_session)
+                if not self._dirty:
+                    return
         except Exception as e:
             log.error(f"Could not reload the user quota snapshot: {e}")
 

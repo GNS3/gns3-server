@@ -19,9 +19,11 @@ Quota configuration routes and the quota snapshot resolution.
 
 Every test builds its own rows and reloads the snapshot explicitly: the
 in-memory quota state has no bound engine in tests, so the write-through
-hook cannot fire.
+hook cannot fire. The one exception is the reload-race test, which binds
+the test engine on purpose.
 """
 
+import asyncio
 import uuid
 
 import pytest
@@ -293,6 +295,63 @@ class TestUserQuotaRoutes:
 
         # superadmins are never stored: not limited
         assert state.get("admin") is None
+
+    async def test_write_during_reload_is_not_lost(
+        self,
+        app: FastAPI,
+        db_session: AsyncSession,
+        db_engine,
+        monkeypatch: pytest.MonkeyPatch,
+        quota_user,
+    ) -> None:
+        """
+        A quota write that lands while a background reload is still running
+        must not be dropped: the old mark_dirty() saw the running task and
+        scheduled nothing, so the reload published the previous limits and
+        the snapshot stayed stale until the next write anywhere.
+        """
+
+        user, group = quota_user
+        repo = UsersRepository(db_session)
+        await repo.update_user(user.user_id, UserUpdate(max_nodes=10))
+        state = UserQuotaState.instance()
+        state.bind_engine(db_engine)
+        await state.reload(db_session)
+        assert state.get(user.username).max_nodes == 10
+
+        # hold the first background reload open after it published the old
+        # limits: the values are stale but the task is not done yet
+        original_reload = UserQuotaState.reload
+        published = asyncio.Event()
+        hold = asyncio.Event()
+
+        async def slow_reload(db_session: AsyncSession) -> None:
+
+            await original_reload(state, db_session)
+            published.set()
+            await hold.wait()
+
+        monkeypatch.setattr(state, "reload", slow_reload)
+
+        state.mark_dirty()
+        await published.wait()
+        assert state._reload_task is not None and not state._reload_task.done()
+
+        # the write lands inside the tail of the running reload
+        await repo.update_user(user.user_id, UserUpdate(max_nodes=1))
+        state.mark_dirty()
+
+        hold.set()
+        task = state._reload_task
+        while True:
+            await task
+            # the fix may repeat the load in the same task or schedule a
+            # new one: wait for every reload that appears
+            if state._reload_task is None or state._reload_task is task:
+                break
+            task = state._reload_task
+
+        assert state.get(user.username).max_nodes == 1
 
     async def test_me_quotas_requires_authentication(self, app: FastAPI, client: AsyncClient) -> None:
         """
