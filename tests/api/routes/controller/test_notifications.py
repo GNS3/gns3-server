@@ -298,3 +298,62 @@ class TestNotificationStreamPrivilege:
         websocket.send_text.assert_awaited_once()
         assert json.loads(websocket.send_text.await_args.args[0])["action"] == "ping"
         websocket.close.assert_awaited_once_with(code=1008)
+
+    @pytest.mark.asyncio
+    async def test_ws_stays_open_with_ace_on_the_endpoint_path(
+        self, app: FastAPI, db_session: AsyncSession, db_engine: AsyncEngine
+    ) -> None:
+        """
+        An ACE scoped to the WebSocket endpoint path alone must keep the
+        stream open: the send loop re-checks the same path as the
+        connection check, not the HTTP stream path.
+        """
+
+        # a dedicated user: the class database is shared, and an ACE left by
+        # another test for another user must not keep this stream alive
+        db_user = User(username="ws-ace-user", hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("Administrator")
+        # the privilege is granted on the WebSocket endpoint path only: it
+        # covers /notifications/ws, not /notifications
+        await rbac_repo.create_ace(
+            ACECreate(
+                path="/notifications/ws",
+                ace_type="user",
+                propagate=True,
+                user_id=db_user.user_id,
+                role_id=role.role_id,
+            )
+        )
+
+        websocket = _fake_websocket(app)
+
+        # the connection check runs against the endpoint path: the scoped
+        # ACE lets the WebSocket in
+        dependency = has_privilege_on_websocket("Notification.Audit")
+        assert await dependency(websocket, current_user=db_user, rbac_repo=rbac_repo) is db_user
+
+        async def send_then_exit(text: str) -> None:
+            # stop the loop after the first frame went out: nothing was
+            # revoked, so the stream must not be closed with a policy violation
+            app.state.exiting = True
+
+        websocket.send_text = AsyncMock(side_effect=send_then_exit)
+        # the re-check reloads the snapshot through its own session: point the
+        # app at the test engine (no lifespan runs under the test transport)
+        app.state._db_engine = db_engine
+        app.state.exiting = False
+        try:
+            await asyncio.wait_for(controller_ws_notifications(websocket, current_user=db_user), timeout=10)
+        finally:
+            app.state._db_engine = None
+
+        # the initial ping went out and the stream ended by exiting, not by
+        # a policy-violation close
+        websocket.send_text.assert_awaited_once()
+        assert json.loads(websocket.send_text.await_args.args[0])["action"] == "ping"
+        websocket.close.assert_not_awaited()

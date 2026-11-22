@@ -46,16 +46,23 @@ router = APIRouter()
 
 NOTIFICATION_PRIVILEGE = "Notification.Audit"
 NOTIFICATIONS_PATH = "/notifications"
+NOTIFICATIONS_WS_PATH = "/notifications/ws"
 
 
-async def _notification_privilege_valid(app: FastAPI, current_user: schemas.User) -> bool:
+async def _notification_privilege_valid(
+    app: FastAPI, current_user: schemas.User, path: str = NOTIFICATIONS_PATH
+) -> bool:
     """
     Re-check the stream privilege while the stream is open, so a user whose
     access was revoked is disconnected on the next ping tick (at most 5
     seconds) instead of receiving events until they disconnect themselves.
 
     The check runs against the in-memory RBAC snapshot; a database session
-    is opened only when an administrative write marked it outdated.
+    is opened only when an administrative write marked it outdated. The
+    path is the one the stream is served on: the WebSocket re-check must
+    use its endpoint path, the same path its connection check used, or an
+    ACE scoped to the WebSocket alone would let the client connect and be
+    closed on the first ping tick as if the privilege was revoked.
     """
 
     if current_user.is_superadmin:
@@ -64,7 +71,7 @@ async def _notification_privilege_valid(app: FastAPI, current_user: schemas.User
     if rbac_state.needs_reload:
         async with AsyncSession(app.state._db_engine) as db_session:
             await rbac_state.reload(db_session)
-    return rbac_state.user_has_privilege(current_user.user_id, NOTIFICATIONS_PATH, NOTIFICATION_PRIVILEGE)
+    return rbac_state.user_has_privilege(current_user.user_id, path, NOTIFICATION_PRIVILEGE)
 
 
 def get_server_uptime_seconds() -> int:
@@ -354,7 +361,7 @@ async def controller_ws_notifications(
     try:
         with Controller.instance().notification.controller_queue() as queue:
             while not websocket.app.state.exiting:
-                if not await _notification_privilege_valid(websocket.app, current_user):
+                if not await _notification_privilege_valid(websocket.app, current_user, NOTIFICATIONS_WS_PATH):
                     log.info(f"Client {client} has lost the {NOTIFICATION_PRIVILEGE} privilege: closing the WebSocket")
                     await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
                     return
