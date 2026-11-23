@@ -141,6 +141,10 @@ _JSON_SCHEMA_TYPE_MAP = {
     "object": dict,
 }
 
+# Every name adapted_mcp_tools() may return: the allowlist minus the names
+# served by copilot-native wrappers.
+ADAPTED_MCP_TOOL_NAMES = frozenset(MCP_ALLOWED_TOOLS - NATIVE_TOOL_NAMES)
+
 # Cache of adapted tools keyed by MCP tool name — the MCP registration is
 # immutable after import, so the wrap happens once per process.
 _adapted_cache: dict[str, BaseTool] = {}
@@ -246,6 +250,22 @@ def _adapt(mcp_tool: Any) -> BaseTool:
         description=mcp_tool.description or "",
         args_schema=_build_args_model(mcp_tool),
     )
+
+
+def bindable_tools(tools: list[BaseTool], visible_names: list[str] | set[str] | None) -> list[BaseTool]:
+    """Drop the adapted MCP tools the current user may not see.
+
+    ``visible_names`` is the set computed for the request (see
+    ``tool_access.visible_tool_names_for``), or None when unrestricted: a
+    superadmin or a failed lookup. Only tools adapted from the MCP server
+    are filtered — copilot-native wrappers reach the REST API directly,
+    which enforces the privileges itself.
+    """
+
+    if visible_names is None:
+        return list(tools)
+    allowed = set(visible_names)
+    return [tool for tool in tools if tool.name not in ADAPTED_MCP_TOOL_NAMES or tool.name in allowed]
 
 
 def adapted_mcp_tools(names: list[str] | None = None) -> list[BaseTool]:

@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import os
+import time
 import uuid
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -24,6 +26,7 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
+from gns3server.controller import qemu_overlay
 from gns3server.controller.controller_error import (
     ComputeConflictError,
     ControllerError,
@@ -88,6 +91,8 @@ async def test_json():
         "variables": None,
         "marker_definitions": {},
         "created_by": None,
+        "frozen": False,
+        "distribution_master_id": None,
     }
 
 
@@ -901,6 +906,21 @@ async def test_open_auto_start(controller):
         # assert project.start_all.called
 
 
+@pytest.mark.asyncio
+async def test_open_a_frozen_project_with_auto_start(controller):
+
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
+        project = Project(controller=controller, name="Test", auto_start=True)
+        project.dump()
+        await project.close()
+        project.frozen = True
+        # a frozen template never auto starts on open: the frozen guard is
+        # synchronous and would raise before a coroutine exists, breaking
+        # open() and the auto-open loop with it
+        await project.open()
+        assert project.status == "opened"
+
+
 def test_is_running(project, node):
     """
     If a node is started or paused return True
@@ -1417,6 +1437,211 @@ async def test_restore_deferred_links(project):
 
     assert link._deferred is False
     assert link.create.called is True
+
+
+@pytest.mark.asyncio
+async def test_frozen_project_rejects_modifications(project, compute):
+    """
+    A distributed template is frozen: every modification path raises, viewing
+    paths (open, dump, snapshot creation) stay available.
+    """
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+    await project.add_node(compute, "n1", None, node_type="vpcs", properties={})
+
+    project.frozen = True
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
+        project.dump()
+
+    # topology edits are refused
+    with pytest.raises(ControllerForbiddenError):
+        await project.update(name="renamed")
+    with pytest.raises(ControllerForbiddenError):
+        await project.add_node(compute, "n2", None, node_type="vpcs", properties={})
+    with pytest.raises(ControllerForbiddenError):
+        project.lock()
+    with pytest.raises(ControllerForbiddenError):
+        project.unlock()
+    with pytest.raises(ControllerForbiddenError):
+        await project.start_all()
+
+    # power operations are refused too: a running node writes its disks
+    node = next(iter(project.nodes.values()))
+    with pytest.raises(ControllerForbiddenError):
+        await node.start()
+    with pytest.raises(ControllerForbiddenError):
+        await node.reload()
+    with pytest.raises(ControllerForbiddenError):
+        await node.update(name="hacked")
+    with pytest.raises(ControllerForbiddenError):
+        await node.suspend()
+
+    # opening (and its replay of the existing nodes) stays allowed
+    project._status = "closed"
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
+        await project.open()
+    assert project.status == "opened"
+
+    # unfreezing restores the normal behavior
+    project.frozen = False
+    with patch("gns3server.controller.project.Project.emit_controller_notification"):
+        await project.update(name="renamed")
+    assert project.name == "renamed"
+
+
+@pytest.mark.asyncio
+async def test_locked_node_cannot_be_duplicated(project, node):
+    """
+    Duplicating a node would bypass its lock (the copy comes out unlocked):
+    like deletion and update, duplication is refused on a locked node.
+    """
+
+    node.locked = True
+    with pytest.raises(ControllerError, match="cannot be duplicated because it is locked"):
+        await project.duplicate_node(node, 10, 20, 0)
+
+
+@pytest.mark.asyncio
+async def test_distributed_copy_cannot_be_duplicated(project, controller, tmp_path):
+    """
+    A distributed copy depends on its template (thin overlay disks): it must
+    not be duplicated, whatever privileges the caller holds.
+    """
+
+    project.distribution_master_id = str(uuid.uuid4())
+    with pytest.raises(ControllerForbiddenError, match="distributed copy cannot be duplicated"):
+        await project.duplicate(name="derived")
+
+
+@pytest.mark.asyncio
+async def test_distribution_overlay_pass_runs_off_the_event_loop(project, monkeypatch):
+    """
+    The overlay pass of a distribution copy must not block the event loop:
+    a slow qemu-img slows down the copy, not the whole controller.
+    """
+
+    qemu_dir = os.path.join(project.path, "project-files", "qemu", "4b2b1e5a-0000-0000-0000-000000000001")
+    os.makedirs(qemu_dir)
+    for disk in ("hda_disk.qcow2", "hdb_disk.qcow2", "hdc_disk.qcow2"):
+        with open(os.path.join(qemu_dir, disk), "w+") as f:
+            f.write("disk")
+
+    # the node naming its disks: they are the files the overlay pass probes
+    local_compute = MagicMock()
+    local_compute.id = "local"
+    project._nodes["4b2b1e5a-0000-0000-0000-000000000001"] = Node(
+        project,
+        local_compute,
+        "Router",
+        node_id="4b2b1e5a-0000-0000-0000-000000000001",
+        node_type="qemu",
+        properties={
+            "hda_disk_image": "hda_disk.qcow2",
+            "hdb_disk_image": "hdb_disk.qcow2",
+            "hdc_disk_image": "hdc_disk.qcow2",
+        },
+    )
+
+    def slow_probe(qemu_img, path):
+        # a slow qemu-img probe: 3 files x 0.25s of blocking work
+        time.sleep(0.25)
+        return {"format": "qcow2", "virtual-size": 1024}
+
+    def no_overlay(qemu_img, backing_file, overlay_file, info):
+        pass
+
+    monkeypatch.setattr(qemu_overlay, "find_qemu_img", lambda: "/fake/qemu-img")
+    monkeypatch.setattr(qemu_overlay, "_image_info", slow_probe)
+    monkeypatch.setattr(qemu_overlay, "_create_overlay", no_overlay)
+
+    # a ticker measures how long the event loop pauses between its ticks
+    stop = asyncio.Event()
+    pauses = []
+
+    async def ticker():
+        last = time.perf_counter()
+        while not stop.is_set():
+            await asyncio.sleep(0.01)
+            now = time.perf_counter()
+            pauses.append(now - last)
+            last = now
+
+    ticker_task = asyncio.ensure_future(ticker())
+    try:
+        await project.duplicate(name="distributed", user="student1", overlay_from_master=True)
+    finally:
+        stop.set()
+        await ticker_task
+
+    # one probe alone blocks for 0.25s: the loop must never pause that long
+    assert max(pauses) < 0.2
+
+
+@pytest.mark.asyncio
+async def test_distribution_overlays_only_the_disks_named_by_the_topology(project, monkeypatch):
+    """
+    Only the disk images named by the node properties become overlays. Every
+    other file of the node directory (logs, checksum caches...) must be
+    copied verbatim: qemu-img cannot tell such a file apart from a raw disk
+    (it reports any file as raw), and a copy whose log is a qcow2 is not a
+    faithful copy.
+    """
+
+    node_id = "4b2b1e5a-0000-0000-0000-000000000002"
+    qemu_dir = os.path.join(project.path, "project-files", "qemu", node_id)
+    os.makedirs(qemu_dir)
+    with open(os.path.join(qemu_dir, "hda_disk.qcow2"), "w") as f:
+        f.write("disk image bytes")
+    with open(os.path.join(qemu_dir, "qemu-img.log"), "w") as f:
+        f.write("qemu-img check output\n")
+    with open(os.path.join(qemu_dir, "hda_disk.qcow2.md5sum"), "w") as f:
+        f.write("0123456789abcdef0123456789abcdef")
+
+    # the node of the topology naming its disk: what the overlay pass must
+    # trust instead of probing every file
+    local_compute = MagicMock()
+    local_compute.id = "local"
+    project._nodes[node_id] = Node(
+        project,
+        local_compute,
+        "Router",
+        node_id=node_id,
+        node_type="qemu",
+        properties={"hda_disk_image": "hda_disk.qcow2"},
+    )
+
+    probed = []
+
+    def fake_image_info(qemu_img, path):
+        probed.append(os.path.basename(path))
+        return {"format": "qcow2", "virtual-size": 1024}
+
+    def fake_create_overlay(qemu_img, backing_file, overlay_file, info):
+        with open(overlay_file, "w") as f:
+            f.write("overlay")
+
+    monkeypatch.setattr(qemu_overlay, "find_qemu_img", lambda: "/fake/qemu-img")
+    monkeypatch.setattr(qemu_overlay, "_image_info", fake_image_info)
+    monkeypatch.setattr(qemu_overlay, "_create_overlay", fake_create_overlay)
+
+    new_project = await project.duplicate(name="distributed", user="student1", overlay_from_master=True)
+
+    # the node ids are regenerated: the copied directory has a new id
+    copy_qemu_dir = os.path.join(new_project.path, "project-files", "qemu")
+    (copy_node_dir,) = os.listdir(copy_qemu_dir)
+
+    # exactly the topology's disk is probed and becomes an overlay
+    assert probed == ["hda_disk.qcow2"]
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "hda_disk.qcow2")) as f:
+        assert f.read() == "overlay"
+
+    # the log and the checksum cache ride along byte-identical
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "qemu-img.log")) as f:
+        assert f.read() == "qemu-img check output\n"
+    with open(os.path.join(copy_qemu_dir, copy_node_dir, "hda_disk.qcow2.md5sum")) as f:
+        assert f.read() == "0123456789abcdef0123456789abcdef"
 
 
 async def _populate_scene(project):

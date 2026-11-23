@@ -49,6 +49,11 @@ def create_default_roles(target, connection, **kw):
         {"name": "User manager", "description": "Role to manage users and groups", "is_builtin": True},
         {"name": "ACL manager", "description": "Role to manage other roles and the ACL", "is_builtin": True},
         {"name": "No Access", "description": "Role with no privileges (used to forbid access)", "is_builtin": True},
+        {
+            "name": "Lab member",
+            "description": "Role for users who received a distributed lab project",
+            "is_builtin": True,
+        },
     ]
 
     stmt = target.insert().values(default_roles)

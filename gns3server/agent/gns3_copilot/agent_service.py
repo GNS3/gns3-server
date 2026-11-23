@@ -599,6 +599,22 @@ class AgentService:
         """Convert a LangChain message to OpenAI-compatible dict format."""
         return convert_langchain_to_openai(msg)
 
+    async def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a chat session by thread ID.
+
+        Args:
+            session_id: Session/thread ID
+
+        Returns:
+            Session dictionary or None when the session does not exist
+        """
+
+        checkpointer = await self._get_checkpointer()
+        repo = ChatSessionsRepository(checkpointer.conn)
+        session = await repo.get_session_by_thread(session_id)
+        return session.to_dict() if session else None
+
     async def list_sessions(
         self, user_id: Optional[str] = None, copilot_mode: Optional[str] = None, limit: int = 100
     ) -> List[Dict[str, Any]]:

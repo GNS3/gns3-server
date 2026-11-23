@@ -35,6 +35,7 @@ from gns3server.config import Config
 from gns3server.db.rbac_state import RbacState
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.user_quota_state import UserQuotaState
 from gns3server.utils.images import read_image_info
 
 from .models import Base
@@ -144,6 +145,9 @@ async def connect_to_db(app: FastAPI) -> None:
                         from gns3server.db_migrations.versions.a6c8e1b2d490_add_second_qemu_cdrom import (
                             upgrade as upgrade_cdrom,
                         )
+                        from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
+                            upgrade as upgrade_multiuser,
+                        )
                         from gns3server.db_migrations.versions.d9e8a2b7c401_image_inventory_reconciliation import (
                             upgrade,
                         )
@@ -155,6 +159,11 @@ async def connect_to_db(app: FastAPI) -> None:
                             upgrade()
                             upgrade_cdrom()
                             upgrade_cdrom_interfaces()
+                            # this database is stamped to head without running the
+                            # migrations: apply the consolidated multi-user
+                            # migration (seed the default ACEs, the built-in
+                            # privileges and roles, and create the new tables)
+                            upgrade_multiuser()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
@@ -208,6 +217,18 @@ async def load_rbac_state(app: FastAPI) -> None:
 
     async with AsyncSession(app.state._db_engine) as db_session:
         await RbacState.instance().reload(db_session)
+
+
+async def load_user_quota_state(app: FastAPI) -> None:
+    """
+    Load the in-memory node quota snapshot at startup and bind the
+    engine used by its background reloads, so the quota checks on the
+    controller paths never open a database session themselves.
+    """
+
+    UserQuotaState.instance().bind_engine(app.state._db_engine)
+    async with AsyncSession(app.state._db_engine) as db_session:
+        await UserQuotaState.instance().reload(db_session)
 
 
 async def update_disk_checksums(updated_disks: List[str]) -> None:

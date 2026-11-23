@@ -192,6 +192,115 @@ def get_locked_project_handler(params: dict[str, Any], gns3_ctx: dict[str, Any])
     return {"project_id": project_id, "locked": locked}
 
 
+def get_project_privileges_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Instance-level privileges of the current user on one project."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    conn = _get_connector(gns3_ctx)
+    return conn.http_call("get", f"{conn.base_url}/projects/{project_id}/me/privileges").json()
+
+
+def distribute_project_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Start a distribution: one copy per recipient, owned by the recipient."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    name = params.get("name")
+    if not name:
+        return {"error": "name is required"}
+    json_data: dict[str, Any] = {"name": name}
+    for key in ("target_user", "target_users", "target_group", "owner_role"):
+        if params.get(key) is not None:
+            json_data[key] = params[key]
+    for key in ("reset_mac_addresses", "lock_topology"):
+        if params.get(key) is not None:
+            json_data[key] = params[key]
+    conn = _get_connector(gns3_ctx)
+    return conn.http_call("post", f"{conn.base_url}/projects/{project_id}/distribute", json_data=json_data).json()
+
+
+def get_project_distributions_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Distribution history of one project."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    conn = _get_connector(gns3_ctx)
+    distributions = conn.http_call("get", f"{conn.base_url}/projects/{project_id}/distributions").json()
+    return {"distributions": distributions, "count": len(distributions)}
+
+
+def cancel_project_distribution_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Cancel a running distribution on a project, or remove a finished record."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    distribution_id = params.get("distribution_id")
+    if not distribution_id:
+        return {"error": "distribution_id is required"}
+    conn = _get_connector(gns3_ctx)
+    url = f"{conn.base_url}/projects/{project_id}/distributions/{distribution_id}"
+    response = conn.http_call("delete", url)
+    if response.status_code == 204:
+        return {"message": f"Distribution record '{distribution_id}' removed", "distribution_id": distribution_id}
+    return response.json()
+
+
+def list_distributions_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Distribution history across every project (the caller's own)."""
+    conn = _get_connector(gns3_ctx)
+    distributions = conn.http_call("get", f"{conn.base_url}/distributions").json()
+    return {"distributions": distributions, "count": len(distributions)}
+
+
+def delete_distribution_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Remove one record from the cross-project distribution history."""
+    distribution_id = params.get("distribution_id")
+    if not distribution_id:
+        return {"error": "distribution_id is required"}
+    conn = _get_connector(gns3_ctx)
+    conn.http_call("delete", f"{conn.base_url}/distributions/{distribution_id}")
+    return {"message": f"Distribution record '{distribution_id}' removed", "distribution_id": distribution_id}
+
+
+def share_project_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Share a project with user(s) or a group through an ACE (no copy)."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    json_data: dict[str, Any] = {}
+    for key in ("role", "target_user", "target_users", "target_group"):
+        if params.get(key) is not None:
+            json_data[key] = params[key]
+    if not any(json_data.values()):
+        return {"error": "one of target_user, target_users or target_group is required"}
+    conn = _get_connector(gns3_ctx)
+    return conn.http_call("post", f"{conn.base_url}/projects/{project_id}/share", json_data=json_data).json()
+
+
+def get_project_shares_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """List who a project is shared with."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    conn = _get_connector(gns3_ctx)
+    shares = conn.http_call("get", f"{conn.base_url}/projects/{project_id}/shares").json()
+    return {"shares": shares, "count": len(shares)}
+
+
+def delete_project_share_handler(params: dict[str, Any], gns3_ctx: dict[str, Any]) -> dict[str, Any]:
+    """Remove one share (ACE) of a project."""
+    project_id = params.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    ace_id = params.get("ace_id")
+    if not ace_id:
+        return {"error": "ace_id is required"}
+    conn = _get_connector(gns3_ctx)
+    conn.http_call("delete", f"{conn.base_url}/projects/{project_id}/shares/{ace_id}")
+    return {"message": f"Share '{ace_id}' removed", "ace_id": ace_id}
+
+
 # ── Tool definitions (consumed by mcp/__init__.py) ─────────────────────────
 
 PROJECT_TOOLS = [

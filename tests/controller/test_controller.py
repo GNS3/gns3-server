@@ -548,3 +548,23 @@ async def test_find_projects_skips_unreadable_topology(controller):
     assert controller.find_projects_using_template(str(uuid.uuid4())) == []
     assert controller.find_projects_using_image("lost.qcow2") == []
     assert controller.collect_referenced_image_filenames() == set()
+
+
+@pytest.mark.asyncio
+async def test_auto_open_continues_after_a_failing_project(controller):
+    """
+    One project that fails to open must not stop the auto-open loop:
+    every project after it still opens.
+    """
+
+    failing = await controller.add_project(name="failing")
+    healthy = await controller.add_project(name="healthy")
+    failing.auto_open = True
+    healthy.auto_open = True
+    failing.open = AsyncioMagicMock(side_effect=ControllerError("cannot open"))
+    healthy.open = AsyncioMagicMock()
+
+    await controller._project_auto_open()
+
+    assert failing.open.called
+    assert healthy.open.called

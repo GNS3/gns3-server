@@ -739,6 +739,34 @@ class TestNodeRoutes:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    async def test_qemu_disk_routes_are_refused_on_a_frozen_project(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+        """
+        A frozen template's base QCOW2 files back every copy's thin overlay:
+        creating, resizing or deleting one would break the copies.
+        """
+
+        node._node_type = "qemu"  # force Qemu node type
+        project.frozen = True
+
+        response = await client.post(
+            app.url_path_for("create_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+            json={"format": "qcow2", "size": 30},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = await client.put(
+            app.url_path_for("update_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+            json={"extend": 10},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = await client.delete(
+            app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
     async def test_get_file(
         self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
     ) -> None:
@@ -796,6 +824,26 @@ class TestNodeRoutes:
 
         response = await client.get(f"/projects/{project.id}/nodes/{node.id}/files/../hello")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_node_file_writes_are_refused_on_a_frozen_project(
+        self, app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node
+    ) -> None:
+
+        compute.http_query = AsyncioMagicMock()
+        project.frozen = True
+
+        response = await client.post(
+            app.url_path_for("post_file", project_id=project.id, node_id=node.id, file_path="hello"), content=b"hello"
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = await client.delete(
+            app.url_path_for("delete_node_file", project_id=project.id, node_id=node.id, file_path="hello")
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        # the compute must never be reached
+        assert compute.http_query.called is False
 
     # @pytest.mark.asyncio
     # async def test_get_and_post_with_nested_paths_normalization(controller_api, project, node, compute):

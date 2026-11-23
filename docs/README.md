@@ -103,6 +103,21 @@ Cisco XRd as a GNS3 Docker router: vendor path + shm/device injection (`GNS3_SHM
 ### IOL Images with iol-runner (`features/iol-runner-docker.md`)
 Cisco CML containerized IOL (e.g. `iol-xe/iol-xe:17-18-02`) as GNS3 Docker routers: generic unix-socket NIO (`GNS3_UNIX_SOCKET_NIO` — adapters wired via AF_UNIX datagram socket pairs instead of TAP/netns) plus `IOLDockerVM` (`GNS3_IOL_RUNNER=1` — per-start config generation, `/tmp/run` preparation, stale-socket cleanup, console on PID 1 stdio).
 
+### RBAC Project Ownership (`features/rbac-project-ownership.md`)
+Projects are private to their creator: the seeded `/projects` ACE no longer propagates, project creation writes a per-project owner ACE, and access to an existing project comes only from an ACE on its path or a resource pool. Ownerless projects stay superadmin-only; a startup backfill covers projects created before the change.
+
+### Project Distribution (`features/project-distribution.md`)
+One frozen copy per recipient: `POST /projects/{project_id}/distribute` duplicates a lab on behalf of each target (a user, a list of users, or a whole group) in a background job (202 + polling), writes each copy's owner ACE with the reduced built-in "Lab member" role, and ships a "template state" snapshot so every recipient can reset their own copy.
+
+### Project Sharing (`features/project-sharing.md`)
+`POST /projects/{project_id}/share` gives other users or a whole group access to the very same project through an ACE (default role "Lab member" — use the lab, topology frozen). Re-sharing replaces the role, only the owner or a superadmin manages shares, and a share can never grant a role wider than the sharer holds on the project.
+
+### Global Notification Stream RBAC (`features/global-notification-stream-rbac.md`)
+The global notification stream (`/v3/notifications` NDJSON and WebSocket) requires the `Notification.Audit` privilege, held by superadmins only by default; a stream open on revocation is closed by the server within one ping tick.
+
+### User Node Quotas (`features/user-node-quotas.md`)
+Per-user limits on how many nodes a user can own (`max_nodes`) and run at once (`max_running_nodes`), across all their projects: user values override the group defaults, `-1` is explicitly unlimited, resource-free node types are not counted, and creation, start, import and distribution all reserve against the owner's quota. `GET /access/users/me/quotas` returns the effective limits plus current usage for the web UI.
+
 ---
 
 ## Design & Roadmaps (`design/`)

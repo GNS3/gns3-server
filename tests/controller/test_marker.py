@@ -30,7 +30,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.ports.serial_port import SerialPort
@@ -256,6 +256,27 @@ async def test_stop_marker_unknown_raises(project):
     link = await _make_link(project)
     with pytest.raises(ControllerNotFoundError):
         await link.stop_marker("nope")
+
+
+@pytest.mark.asyncio
+async def test_per_link_marker_changes_are_refused_on_a_frozen_project(project):
+    """A shared user has Link.Marker: on a frozen template it must not write markers."""
+
+    with _valid_bpf():
+        link = await _make_link(project)
+        await link.start_marker("icmp", "icmp")
+
+    project.frozen = True
+
+    with pytest.raises(ControllerForbiddenError):
+        await link.start_marker("arp", "arp")
+    with pytest.raises(ControllerForbiddenError):
+        await link.update_marker("icmp", bpf="arp")
+    with pytest.raises(ControllerForbiddenError):
+        await link.stop_marker("icmp")
+
+    # the template keeps its marker untouched
+    assert link.markers["icmp"]["bpf"] == "icmp"
 
 
 # ---------------------------------------------------------------------------
@@ -540,6 +561,30 @@ async def test_delete_marker_definition_clears(project):
     assert "global-arp" not in link1.markers
     assert "global-arp" not in link2.markers
     assert "arp" not in project.marker_definitions
+
+
+@pytest.mark.asyncio
+async def test_marker_definitions_are_refused_on_a_frozen_project(project):
+    """Project.Marker is granted to Lab members: a frozen template must stay read-only."""
+
+    with _valid_bpf():
+        await project.create_marker_definition("arp", "arp")
+
+    project.frozen = True
+
+    with pytest.raises(ControllerForbiddenError):
+        await project.create_marker_definition("icmp", "icmp")
+    with pytest.raises(ControllerForbiddenError):
+        await project.update_marker_definition("arp", tag=3)
+    with pytest.raises(ControllerForbiddenError):
+        await project.pause_marker_definition("arp")
+    with pytest.raises(ControllerForbiddenError):
+        await project.resume_marker_definition("arp")
+    with pytest.raises(ControllerForbiddenError):
+        await project.delete_marker_definition("arp")
+
+    # the definition is untouched
+    assert project.marker_definitions["arp"]["tag"] is None
 
 
 @pytest.mark.asyncio

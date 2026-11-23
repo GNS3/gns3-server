@@ -73,13 +73,13 @@ async def create_compute(
 @router.post(
     "/{compute_id}/connect",
     status_code=status.HTTP_204_NO_CONTENT,
-    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def connect_compute(compute_id: Union[str, UUID]) -> None:
     """
     Connect to compute on the controller.
 
-    Required privilege: Compute.Audit
+    Required privilege: Compute.Modify
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
@@ -91,7 +91,7 @@ async def connect_compute(compute_id: Union[str, UUID]) -> None:
     "/{compute_id}/disconnect",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={409: {"model": schemas.ErrorMessage, "description": "Compute is used by opened projects"}},
-    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    dependencies=[Depends(has_privilege("Compute.Modify"))],
 )
 async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool] = False) -> None:
     """
@@ -105,7 +105,7 @@ async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool]
     controller-side control channel (notification stream and HTTP session) is
     torn down, nodes keep running unmanaged.
 
-    Required privilege: Compute.Audit
+    Required privilege: Compute.Modify
     """
 
     if str(compute_id) == "local":
@@ -127,7 +127,7 @@ async def disconnect_compute(compute_id: Union[str, UUID], force: Optional[bool]
     "/{compute_id}",
     response_model=schemas.Compute,
     response_model_exclude_unset=True,
-    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    dependencies=[Depends(has_privilege("Compute.Audit"))],
 )
 async def get_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
@@ -145,14 +145,15 @@ async def get_compute(
     "",
     response_model=List[schemas.Compute],
     response_model_exclude_unset=True,
-    # dependencies=[Depends(has_privilege("Compute.Audit"))]  # FIXME: this is a temporary workaround due to a bug in the web-ui
+    dependencies=[Depends(has_privilege("Compute.Audit"))],
 )
 async def get_computes(
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
     name: Optional[str] = Query(None, description="Return only computes whose name exactly matches (case-sensitive)"),
-) -> List[models.Compute]:
+) -> List[Union[models.Compute, dict]]:
     """
-    Return all computes known by the controller.
+    Return all computes known by the controller: the registered computes with
+    their runtime state (connected, usage), plus the built-in local compute.
 
     Required privilege: Compute.Audit
 
@@ -160,10 +161,7 @@ async def get_computes(
     - name: Exact, case-sensitive match on the compute name.
     """
 
-    computes = await ComputesService(computes_repo).get_computes()
-    if name is not None:
-        computes = [compute for compute in computes if compute.name == name]
-    return computes
+    return await ComputesService(computes_repo).get_computes(name=name)
 
 
 @router.put(

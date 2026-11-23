@@ -35,6 +35,7 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.pools import ResourceCreate, ResourcePoolCreate
 from gns3server.schemas.controller.rbac import ACECreate, RoleCreate
 from gns3server.schemas.controller.users import UserGroupCreate
+from gns3server.services import auth_service
 
 pytestmark = pytest.mark.asyncio
 
@@ -45,9 +46,23 @@ class TestRbacStateWriteThrough:
     order-independent under --random-order.
     """
 
-    async def test_group_membership_change_is_visible(self, test_user: User, db_session: AsyncSession) -> None:
+    @staticmethod
+    async def _create_user_out_of_band(db_session: AsyncSession, username: str) -> User:
+        """
+        A user outside the "Users" group has no privileges from the default
+        seeded ACEs, so the only privilege source is what the test creates.
+        """
+
+        db_user = User(username=username, hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+        return db_user
+
+    async def test_group_membership_change_is_visible(self, db_session: AsyncSession) -> None:
 
         path = f"/projects/{uuid.uuid4()}"
+        user = await self._create_user_out_of_band(db_session, "group-write-user")
         rbac_repo = RbacRepository(db_session)
         users_repo = UsersRepository(db_session)
 
@@ -64,38 +79,37 @@ class TestRbacStateWriteThrough:
         )
 
         # the user is not a member of the group yet
-        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is False
+        assert await rbac_repo.check_user_has_privilege(user.user_id, path, "Project.Audit") is False
 
-        await users_repo.add_member_to_user_group(group.user_group_id, test_user)
-        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is True
+        await users_repo.add_member_to_user_group(group.user_group_id, user)
+        assert await rbac_repo.check_user_has_privilege(user.user_id, path, "Project.Audit") is True
 
-        await users_repo.remove_member_from_user_group(group.user_group_id, test_user)
-        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is False
+        await users_repo.remove_member_from_user_group(group.user_group_id, user)
+        assert await rbac_repo.check_user_has_privilege(user.user_id, path, "Project.Audit") is False
 
-    async def test_role_privilege_change_is_visible(self, test_user: User, db_session: AsyncSession) -> None:
+    async def test_role_privilege_change_is_visible(self, db_session: AsyncSession) -> None:
 
         path = f"/projects/{uuid.uuid4()}"
+        user = await self._create_user_out_of_band(db_session, "role-write-user")
         rbac_repo = RbacRepository(db_session)
-        users_repo = UsersRepository(db_session)
 
-        # a role without any privilege
+        # a role without any privilege, granted to the user itself
         role = await rbac_repo.create_role(RoleCreate(name=f"role-{uuid.uuid4().hex[:8]}"))
-        group_id = (await users_repo.get_user_group_by_name("Users")).user_group_id
         await rbac_repo.create_ace(
-            ACECreate(path=path, ace_type="group", propagate=False, group_id=str(group_id), role_id=str(role.role_id))
+            ACECreate(path=path, ace_type="user", propagate=False, user_id=str(user.user_id), role_id=str(role.role_id))
         )
 
-        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is False
+        assert await rbac_repo.check_user_has_privilege(user.user_id, path, "Project.Audit") is False
 
         privilege = await rbac_repo.get_privilege_by_name("Project.Audit")
         await rbac_repo.add_privilege_to_role(role.role_id, privilege)
-        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is True
+        assert await rbac_repo.check_user_has_privilege(user.user_id, path, "Project.Audit") is True
 
-    async def test_pool_membership_change_is_visible(self, test_user: User, db_session: AsyncSession) -> None:
+    async def test_pool_membership_change_is_visible(self, db_session: AsyncSession) -> None:
 
         project_id = str(uuid.uuid4())
+        user = await self._create_user_out_of_band(db_session, "pool-write-user")
         rbac_repo = RbacRepository(db_session)
-        users_repo = UsersRepository(db_session)
         pools_repo = ResourcePoolsRepository(db_session)
 
         pool = await pools_repo.create_resource_pool(ResourcePoolCreate(name=f"pool-{uuid.uuid4().hex[:8]}"))
@@ -103,28 +117,25 @@ class TestRbacStateWriteThrough:
             ResourceCreate(resource_id=uuid.UUID(project_id), resource_type="project", name=f"project-{project_id[:8]}")
         )
 
-        group_id = (await users_repo.get_user_group_by_name("Users")).user_group_id
         role = await rbac_repo.get_role_by_name("User")
         await rbac_repo.create_ace(
             ACECreate(
                 path=f"/pools/{pool.resource_pool_id}",
-                ace_type="group",
+                ace_type="user",
                 propagate=False,
-                group_id=str(group_id),
+                user_id=str(user.user_id),
                 role_id=str(role.role_id),
             )
         )
 
         # the resource is not in the pool yet
         assert (
-            await rbac_repo.check_user_has_privilege(test_user.user_id, f"/projects/{project_id}", "Project.Audit")
-            is False
+            await rbac_repo.check_user_has_privilege(user.user_id, f"/projects/{project_id}", "Project.Audit") is False
         )
 
         await pools_repo.add_resource_to_pool(pool.resource_pool_id, resource)
         assert (
-            await rbac_repo.check_user_has_privilege(test_user.user_id, f"/projects/{project_id}", "Project.Audit")
-            is True
+            await rbac_repo.check_user_has_privilege(user.user_id, f"/projects/{project_id}", "Project.Audit") is True
         )
 
     async def test_user_ace_denies_group_ace(self, test_user: User, db_session: AsyncSession) -> None:
@@ -152,6 +163,53 @@ class TestRbacStateWriteThrough:
             )
         )
         assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is False
+
+    async def test_user_ace_with_reduced_role_shadows_group_grant(
+        self, test_user: User, db_session: AsyncSession
+    ) -> None:
+        """
+        A user-level ACE decides alone whatever its role carries: a broad
+        group grant cannot widen it. This is what freezes a distributed
+        project copy for its recipient.
+        """
+
+        rbac_repo = RbacRepository(db_session)
+        users_repo = UsersRepository(db_session)
+
+        # a broad group grant: the full "User" role on every project
+        group_id = (await users_repo.get_user_group_by_name("Users")).user_group_id
+        user_role = await rbac_repo.get_role_by_name("User")
+        await rbac_repo.create_ace(
+            ACECreate(
+                path="/projects",
+                ace_type="group",
+                propagate=True,
+                group_id=str(group_id),
+                role_id=str(user_role.role_id),
+            )
+        )
+
+        # a user-level ACE carrying a role without Project.Modify ("Auditor"
+        # reads projects but cannot modify them)
+        path = f"/projects/{uuid.uuid4()}"
+        auditor_role = await rbac_repo.get_role_by_name("Auditor")
+        await rbac_repo.create_ace(
+            ACECreate(
+                path=path,
+                ace_type="user",
+                propagate=True,
+                user_id=str(test_user.user_id),
+                role_id=str(auditor_role.role_id),
+            )
+        )
+
+        # the group grant leaks in neither the check...
+        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Modify") is False
+        assert await rbac_repo.check_user_has_privilege(test_user.user_id, path, "Project.Audit") is True
+
+        # ...nor the role resolution: the user-level ACE is the effective one
+        role_id = await rbac_repo.get_effective_role_id(test_user.user_id, path, "Project.Audit")
+        assert str(role_id) == str(auditor_role.role_id)
 
 
 class TestRbacStateReload:

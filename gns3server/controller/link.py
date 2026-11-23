@@ -320,6 +320,7 @@ class Link:
         Filters with value 0 will be filtered out as inactive, with special
         handling for delay filter to distinguish between "disabled" and "invalid config".
         """
+        self._project.check_mutable("updating the link filters")
         # Filter out inactive filters using the utility function
         new_filters = filter_inactive_filters(filters)
 
@@ -357,6 +358,7 @@ class Link:
                 self._project.dump()
 
     async def update_suspend(self, value):
+        self._project.check_mutable("updating the link")
         if value != self._suspended:
             self._suspended = value
             await self.update()
@@ -369,12 +371,14 @@ class Link:
 
         :param value: Boolean indicating whether to show filters icon in Web UI
         """
+        self._project.check_mutable("updating the link")
         if value != self._show_filters_icon:
             self._show_filters_icon = value
             self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
 
     async def update_link_style(self, link_style):
+        self._project.check_mutable("updating the link")
         if link_style != self._link_style:
             self._link_style = link_style
             self._project.emit_notification("link.updated", self.asdict())
@@ -478,6 +482,7 @@ class Link:
             n["node"].links.discard(self)
 
     async def update_nodes(self, nodes):
+        self._project.check_mutable("updating the link")
         for node_data in nodes:
             node = self._project.get_node(node_data["node_id"])
             for port in self._nodes:

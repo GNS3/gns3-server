@@ -81,6 +81,7 @@ from gns3server.agent.gns3_copilot.tools_v2 import (
     GNS3WaitTool,
     PacketAnalysisTool,
     adapted_mcp_tools,
+    bindable_tools,
 )
 
 # Set up logger for GNS3-Copilot
@@ -419,6 +420,11 @@ def llm_call(state: dict, config: RunnableConfig | None = None):
     else:  # teaching_assistant mode (default)
         mode_tools = TEACHING_ASSISTANT_MODE_TOOLS
         logger.info("Using TEACHING_ASSISTANT mode tools (diagnostic tools only)")
+
+    # Bind only the MCP tools the request user may see: the chat route
+    # resolves the same visibility the MCP server applies (privileges and
+    # per-group tool whitelist) and stores it on the config.
+    mode_tools = bindable_tools(mode_tools, llm_config.get("visible_mcp_tools"))
 
     # Create pre_model_hook for automatic topology injection and trimming
     # Load system prompt based on copilot_mode configuration

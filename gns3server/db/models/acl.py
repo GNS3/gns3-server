@@ -17,7 +17,7 @@
 
 import logging
 
-from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, String
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, String, event
 from sqlalchemy.orm import relationship
 
 from .base import GUID, BaseTable, generate_uuid
@@ -43,3 +43,54 @@ class ACE(BaseTable):
     __table_args__ = (
         CheckConstraint("(user_id IS NOT NULL AND ace_type = 'user') OR (group_id IS NOT NULL AND ace_type = 'group')"),
     )
+
+
+@event.listens_for(ACE.__table__, "after_create")
+def create_default_aces(target, connection, **kw):
+
+    from .roles import Role
+    from .users import UserGroup
+
+    roles_table = Role.__table__
+    stmt = roles_table.select().where(roles_table.c.name == "User")
+    role_id = connection.execute(stmt).first().role_id
+
+    user_groups_table = UserGroup.__table__
+    stmt = user_groups_table.select().where(user_groups_table.c.name == "Users")
+    group_id = connection.execute(stmt).first().user_group_id
+
+    # Grant the "User" role to the "Users" group on each top-level resource path
+    # covered by that role, so new users can work out of the box (new users are
+    # added to the "Users" group). One ACE per resource path instead of a single
+    # ACE on "/": each entry can be tightened (e.g. "/projects/<uuid>") or
+    # removed on its own, without deny entries carved out of a blanket grant.
+    #
+    # The "/projects" ACE does not propagate: it covers the collection endpoints
+    # only (POST /projects). Access to a project itself comes from a per-project
+    # owner ACE created when the project is created, so a project is private to
+    # its creator until it is shared through an explicit ACE or a resource pool
+    # (see gns3server.db.project_acl).
+    default_aces = (
+        ("/projects", False),
+        # the cross-project distribution history: no per-record ACEs, access
+        # beyond it is scoped by the creator check in the routes
+        ("/distributions", True),
+        ("/templates", True),
+        ("/computes", True),
+        ("/symbols", True),
+        ("/appliances", True),
+        ("/images", True),
+        ("/access/users", True),
+    )
+    for path, propagate in default_aces:
+        stmt = target.insert().values(
+            ace_type="group",
+            path=path,
+            propagate=propagate,
+            allowed=True,
+            role_id=role_id,
+            group_id=group_id,
+        )
+        connection.execute(stmt)
+    connection.commit()
+    log.debug("The default ACEs granting the 'User' role to the 'Users' group have been created")

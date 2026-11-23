@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
 from typing import Optional
 
 import pytest
+import pytest_asyncio
 from fastapi import FastAPI, HTTPException, status
 from httpx import AsyncClient
 from joserfc import jwt
@@ -29,7 +31,7 @@ import gns3server.db.models as models
 from gns3server.config import Config
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
-from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.schemas.controller.rbac import ACECreate, RoleCreate
 from gns3server.schemas.controller.users import User, UserCreate, UserGroupCreate
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
@@ -38,18 +40,45 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestUserRoutes:
-    async def test_route_exist(self, app: FastAPI, client: AsyncClient) -> None:
+    @pytest_asyncio.fixture
+    async def users_group_id(self, db_session: AsyncSession) -> str:
 
-        new_user = {"username": "user1", "email": "user1@email.com", "password": "test_password"}
+        return str((await UsersRepository(db_session).get_user_group_by_name("Users")).user_group_id)
+
+    async def test_route_exist(self, app: FastAPI, client: AsyncClient, users_group_id: str) -> None:
+
+        new_user = {
+            "username": "user1",
+            "email": "user1@email.com",
+            "password": "test_password",
+            "user_group_id": users_group_id,
+        }
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code == status.HTTP_201_CREATED
 
+    async def test_create_user_requires_a_user_group(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_user = {"username": "no_group_user", "password": "test_password"}
+        response = await client.post(app.url_path_for("create_user"), json=new_user)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_create_user_with_unknown_user_group(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_user = {"username": "unknown_group_user", "password": "test_password", "user_group_id": str(uuid.uuid4())}
+        response = await client.post(app.url_path_for("create_user"), json=new_user)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
     async def test_users_can_register_successfully(
-        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        params = {"username": "user2", "email": "user2@email.com", "password": "test_password"}
+        params = {
+            "username": "user2",
+            "email": "user2@email.com",
+            "password": "test_password",
+            "user_group_id": users_group_id,
+        }
 
         # make sure the user doesn't exist in the database
         user_in_db = await user_repo.get_user_by_username(params["username"])
@@ -84,12 +113,18 @@ class TestUserRoutes:
         self,
         app: FastAPI,
         client: AsyncClient,
+        users_group_id: str,
         attr: str,
         value: str,
         status_code: int,
     ) -> None:
 
-        new_user = {"email": "not_taken@email.com", "username": "not_taken_username", "password": "test_password"}
+        new_user = {
+            "email": "not_taken@email.com",
+            "username": "not_taken_username",
+            "password": "test_password",
+            "user_group_id": users_group_id,
+        }
         new_user[attr] = value
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code == status_code
@@ -99,7 +134,7 @@ class TestUserRoutes:
         (
             ("email", "user@email.com", status.HTTP_200_OK),
             ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
-            ("username", "user2", status.HTTP_400_BAD_REQUEST),
+            ("username", "another-name", status.HTTP_409_CONFLICT),
             ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_CONTENT),
             ("password", "short", status.HTTP_422_UNPROCESSABLE_CONTENT),
             ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_CONTENT),
@@ -126,12 +161,66 @@ class TestUserRoutes:
         response = await client.put(app.url_path_for("update_user", user_id=user_in_db.user_id), json=update_user)
         assert response.status_code == status_code
 
+    async def test_update_user_cannot_change_the_username(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Ownership and quotas are keyed by the username: a rename would cut
+        the user off from their projects, so it is refused.
+        """
+
+        response = await client.post(
+            app.url_path_for("create_user"),
+            json={
+                "username": "rename-me",
+                "email": "rename-me@email.com",
+                "password": "test_password",
+                "user_group_id": users_group_id,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        user_id = response.json()["user_id"]
+
+        user_repo = UsersRepository(db_session)
+        response = await client.put(app.url_path_for("update_user", user_id=user_id), json={"username": "renamed-user"})
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert await user_repo.get_user_by_username("rename-me") is not None
+        assert await user_repo.get_user_by_username("renamed-user") is None
+
+    async def test_update_user_accepts_the_same_username(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Sending the current username is a no-op, not an error.
+        """
+
+        response = await client.post(
+            app.url_path_for("create_user"),
+            json={
+                "username": "same-name",
+                "email": "same-name@email.com",
+                "password": "test_password",
+                "user_group_id": users_group_id,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        user_id = response.json()["user_id"]
+
+        response = await client.put(app.url_path_for("update_user", user_id=user_id), json={"username": "same-name"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["username"] == "same-name"
+
     async def test_users_saved_password_is_hashed(
-        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        new_user = {"username": "user3", "email": "user3@email.com", "password": "test_password"}
+        new_user = {
+            "username": "user3",
+            "email": "user3@email.com",
+            "password": "test_password",
+            "user_group_id": users_group_id,
+        }
 
         # send post request to create user and ensure it is successful
         response = await client.post(app.url_path_for("create_user"), json=new_user)
@@ -148,17 +237,24 @@ class TestUserRoutes:
 
         response = await client.get(app.url_path_for("get_users"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 4  # admin, user1, user2 and user3 should exist
+        # admin, user1, user2, user3 and the two users created by the update
+        # tests above should exist
+        assert len(response.json()) == 6
 
     async def test_delete_user_removes_ace_on_user_path(
-        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
     ) -> None:
         """
         A group ACE on the user path is not covered by the user_id foreign key
         cascade: deleting the user must remove it by path.
         """
 
-        new_user = {"username": "ace_cleanup_user", "email": "ace_cleanup_user@email.com", "password": "test_password"}
+        new_user = {
+            "username": "ace_cleanup_user",
+            "email": "ace_cleanup_user@email.com",
+            "password": "test_password",
+            "user_group_id": users_group_id,
+        }
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code == status.HTTP_201_CREATED
         user_id = response.json()["user_id"]
@@ -321,7 +417,9 @@ class TestUnauthorizedUser:
         assert response.json().get("refresh_token") is not None
 
         token = response.json().get("access_token")
-        response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
+        # the probe endpoint only needs authentication, not a privilege: the
+        # test user is a regular user and statistics requires Server.Audit
+        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"), params={"token": token})
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -757,9 +855,29 @@ class TestUserPrivileges:
 
     async def _create_user(self, db_session: AsyncSession, username: str) -> models.User:
 
-        return await UsersRepository(db_session).create_user(
-            UserCreate(username=username, email=f"{username}@email.com", password="secret_password")
+        users_repo = UsersRepository(db_session)
+        group = await users_repo.get_user_group_by_name("Users")
+        return await users_repo.create_user(
+            UserCreate(
+                username=username,
+                email=f"{username}@email.com",
+                password="secret_password",
+                user_group_id=group.user_group_id,
+            )
         )
+
+    @staticmethod
+    async def _create_user_out_of_band(db_session: AsyncSession, username: str) -> models.User:
+        """
+        A user inserted directly (not via create_user) stays out of the "Users"
+        group and has no privileges from the default seeded ACEs.
+        """
+
+        db_user = models.User(username=username, hashed_password=auth_service.hash_password("secret_password"))
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)  # the id must be a UUID, not the str default
+        return db_user
 
     async def _create_group_with_member(
         self, db_session: AsyncSession, name: str, user: models.User
@@ -789,11 +907,11 @@ class TestUserPrivileges:
         assert data["is_superadmin"] is True
         assert data["privileges"] == expected
 
-    async def test_user_without_ace_has_no_privileges(
+    async def test_user_outside_groups_has_no_privileges(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        user = await self._create_user(db_session, "priv_no_ace")
+        user = await self._create_user_out_of_band(db_session, "priv_no_ace")
         response = await client.get(
             app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
         )
@@ -802,9 +920,28 @@ class TestUserPrivileges:
         assert data["is_superadmin"] is False
         assert data["privileges"] == []
 
+    async def test_new_user_gets_default_user_role_privileges(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # create_user adds the user to the "Users" group and the seeded default
+        # ACEs grant that group the "User" role on each top-level resource path
+        user = await self._create_user(db_session, "priv_default")
+        rbac_repo = RbacRepository(db_session)
+        role = await rbac_repo.get_role_by_name("User")
+        expected = sorted(privilege.name for privilege in await rbac_repo.get_role_privileges(role.role_id))
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["is_superadmin"] is False
+        assert data["privileges"] == expected
+
     async def test_privileges_from_user_ace(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
-        user = await self._create_user(db_session, "priv_user_ace")
+        user = await self._create_user_out_of_band(db_session, "priv_user_ace")
         rbac_repo = RbacRepository(db_session)
         role = await rbac_repo.get_role_by_name("Administrator")
         await rbac_repo.create_ace(
@@ -820,10 +957,10 @@ class TestUserPrivileges:
 
     async def test_privileges_from_group_ace(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
-        user = await self._create_user(db_session, "priv_group_ace")
+        user = await self._create_user_out_of_band(db_session, "priv_group_ace")
         group = await self._create_group_with_member(db_session, "priv_group", user)
         rbac_repo = RbacRepository(db_session)
-        role = await rbac_repo.get_role_by_name("Auditor")
+        role = await rbac_repo.get_role_by_name("User")
         await rbac_repo.create_ace(
             ACECreate(path="/projects", ace_type="group", group_id=group.user_group_id, role_id=role.role_id)
         )
@@ -839,19 +976,24 @@ class TestUserPrivileges:
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        user = await self._create_user(db_session, "priv_union")
+        user = await self._create_user_out_of_band(db_session, "priv_union")
         group = await self._create_group_with_member(db_session, "priv_union_group", user)
         rbac_repo = RbacRepository(db_session)
-        user_role = await rbac_repo.get_role_by_name("Auditor")
-        group_role = await rbac_repo.get_role_by_name("User")
+
+        # two roles with disjoint privileges
+        user_role = await rbac_repo.create_role(RoleCreate(name=f"union-user-{uuid.uuid4().hex[:8]}"))
+        await rbac_repo.add_privilege_to_role(user_role.role_id, await rbac_repo.get_privilege_by_name("Project.Audit"))
+        group_role = await rbac_repo.create_role(RoleCreate(name=f"union-group-{uuid.uuid4().hex[:8]}"))
+        await rbac_repo.add_privilege_to_role(
+            group_role.role_id, await rbac_repo.get_privilege_by_name("Template.Audit")
+        )
+
         await rbac_repo.create_ace(
             ACECreate(path="/projects", ace_type="user", user_id=user.user_id, role_id=user_role.role_id)
         )
         await rbac_repo.create_ace(
             ACECreate(path="/templates", ace_type="group", group_id=group.user_group_id, role_id=group_role.role_id)
         )
-        expected = set(privilege.name for privilege in await rbac_repo.get_role_privileges(user_role.role_id))
-        expected.update(privilege.name for privilege in await rbac_repo.get_role_privileges(group_role.role_id))
 
         response = await client.get(
             app.url_path_for("get_logged_in_user_privileges"), headers=self._headers(user.username)
@@ -859,13 +1001,13 @@ class TestUserPrivileges:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["is_superadmin"] is False
-        assert data["privileges"] == sorted(expected)
+        assert data["privileges"] == ["Project.Audit", "Template.Audit"]
 
     async def test_denial_ace_is_not_reported_as_a_privilege(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
     ) -> None:
 
-        user = await self._create_user(db_session, "priv_denied")
+        user = await self._create_user_out_of_band(db_session, "priv_denied")
         rbac_repo = RbacRepository(db_session)
         role = await rbac_repo.get_role_by_name("Administrator")
         await rbac_repo.create_ace(
@@ -884,3 +1026,63 @@ class TestUserPrivileges:
             app.url_path_for("get_logged_in_user_privileges"), headers={"Authorization": "Bearer invalid_token"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    async def test_group_members_lists_own_groups_only(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        The group-members endpoint feeds the share and distribution dialogs:
+        the usernames of the user's own groups, sorted, and nothing else — no
+        emails, no users from groups the user is not a member of.
+        """
+
+        users_repo = UsersRepository(db_session)
+        user = await self._create_user(db_session, f"gm-{uuid.uuid4().hex[:8]}")
+        colleague = await self._create_user(db_session, f"peer-{uuid.uuid4().hex[:8]}")
+        second_group = await self._create_group_with_member(db_session, f"class-{uuid.uuid4().hex[:8]}", user)
+        # a user the caller shares no group with
+        foreign_group = await users_repo.create_user_group(UserGroupCreate(name=f"other-{uuid.uuid4().hex[:8]}"))
+        foreign_user = await users_repo.create_user(
+            UserCreate(
+                username=f"foreign-{uuid.uuid4().hex[:8]}",
+                email=f"foreign-{uuid.uuid4().hex[:8]}@email.com",
+                password="secret_password",
+                user_group_id=foreign_group.user_group_id,
+            )
+        )
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_200_OK
+        groups = {group["group_name"]: group["members"] for group in response.json()["groups"]}
+        assert "Users" in groups
+        assert second_group.name in groups
+        assert foreign_group.name not in groups
+        assert user.username in groups["Users"]
+        assert colleague.username in groups["Users"]
+        assert all(foreign_user.username not in members for members in groups.values())
+        # usernames only: no email or other user detail leaks in the payload
+        assert "email" not in response.text
+
+    async def test_group_members_requires_the_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        """
+        A user outside the "Users" group has no ACE on /access/users: the
+        User.GroupMembers privilege check refuses them.
+        """
+
+        user = await self._create_user_out_of_band(db_session, f"gm-no-ace-{uuid.uuid4().hex[:8]}")
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers(user.username)
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_superadmin_can_list_group_members(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(
+            app.url_path_for("get_logged_in_user_group_members"), headers=self._headers("admin")
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "groups" in response.json()

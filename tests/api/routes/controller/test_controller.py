@@ -21,8 +21,12 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.config import Config
+from gns3server.db.models import User
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 pytestmark = pytest.mark.asyncio
 
@@ -70,6 +74,45 @@ class TestControllerRoutes:
 
         response = await client.get(app.url_path_for("statistics"))
         assert response.status_code == status.HTTP_200_OK
+
+    async def test_statistics_denied_without_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # the client fixture authenticates as the super admin; a user without
+        # Server.Audit must not read the server-wide statistics
+        db_user = User(username="statistics-no-privilege", hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+
+        token = auth_service.create_access_token(db_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        response = await client.get(app.url_path_for("statistics"), headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_server_control_denied_without_privilege(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+
+        # reload, shutdown and the IOU license endpoints change or expose
+        # server-level state: the privilege dependency denies before the
+        # handler runs, so nothing is reloaded, killed or written
+        db_user = User(username="server-control-no-privilege", hashed_password=auth_service.hash_password("password"))
+        db_session.add(db_user)
+        await db_session.commit()
+
+        token = auth_service.create_access_token(db_user.username, secret_key=DEFAULT_JWT_SECRET_KEY)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = await client.post(app.url_path_for("reload"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.post(app.url_path_for("shutdown"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.get(app.url_path_for("get_iou_license"), headers=headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.put(
+            app.url_path_for("update_iou_license"), headers=headers, json={"iourc_content": "", "license_check": False}
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_update_iou_license(self, app: FastAPI, client: AsyncClient) -> None:
 

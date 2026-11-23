@@ -19,6 +19,7 @@ from .acl import ACE
 from .api_keys import ApiKey
 from .base import Base
 from .computes import Compute
+from .distribution_records import DistributionRecord
 from .images import Image, ImageSyncJob
 from .llm_model_configs import LLMModelConfig
 from .pools import Resource, ResourcePool
@@ -37,7 +38,7 @@ from .templates import (
     VMwareTemplate,
     VPCSTemplate,
 )
-from .users import User, UserGroup
+from .users import MCPToolWhitelist, User, UserGroup, UserPreferences
 
 __all__ = [
     "ACE",
@@ -45,6 +46,7 @@ __all__ = [
     "Base",
     "CloudTemplate",
     "Compute",
+    "DistributionRecord",
     "DockerTemplate",
     "DynamipsTemplate",
     "EthernetHubTemplate",
@@ -53,6 +55,7 @@ __all__ = [
     "Image",
     "ImageSyncJob",
     "LLMModelConfig",
+    "MCPToolWhitelist",
     "Privilege",
     "QemuTemplate",
     "Resource",
@@ -61,6 +64,7 @@ __all__ = [
     "Template",
     "User",
     "UserGroup",
+    "UserPreferences",
     "VMwareTemplate",
     "VPCSTemplate",
     "VirtualBoxTemplate",
