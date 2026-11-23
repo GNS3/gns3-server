@@ -25,10 +25,12 @@ from httpx import AsyncClient
 from joserfc import jwt
 from joserfc.jwk import OctKey
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import gns3server.db.models as models
 from gns3server.config import Config
+from gns3server.db.models.users import user_group_map
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.schemas.controller.rbac import ACECreate, RoleCreate
@@ -250,25 +252,73 @@ class TestUserRoutes:
                 user_group_id=users_group_id,
             )
         )
-        user_upper = await user_repo.create_user(
-            UserCreate(
+        try:
+            # Simulate legacy database row
+            user_upper = models.User(
                 username="Case_User",
                 email="case_upper@example.com",
+                hashed_password=auth_service.hash_password("placeholder_password"),
+            )
+            db_session.add(user_upper)
+            await db_session.flush()
+            await db_session.execute(
+                user_group_map.insert().values(user_id=user_upper.user_id, user_group_id=uuid.UUID(users_group_id))
+            )
+            await db_session.commit()
+
+            try:
+                found_lower = await user_repo.get_user_by_username("case_user")
+                found_upper = await user_repo.get_user_by_username("Case_User")
+
+                assert found_lower is not None and str(found_lower.user_id) == str(user_lower.user_id)
+                assert found_upper is not None and str(found_upper.user_id) == str(user_upper.user_id)
+                assert found_lower.username == "case_user"
+                assert found_upper.username == "Case_User"
+            finally:
+                await user_repo.delete_user(user_upper.user_id)
+        finally:
+            await user_repo.delete_user(user_lower.user_id)
+
+    async def test_create_user_case_insensitive_collision_rejected(
+        self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, users_group_id: str
+    ) -> None:
+        """
+        Verify that creating a user with a username differing only in letter case is rejected.
+        """
+        user_repo = UsersRepository(db_session)
+        user1 = await user_repo.create_user(
+            UserCreate(
+                username="unique_case_user",
+                email="case1@example.com",
                 password="placeholder_password",
                 user_group_id=users_group_id,
             )
         )
+        try:
+            with pytest.raises(IntegrityError):
+                await user_repo.create_user(
+                    UserCreate(
+                        username="Unique_Case_User",
+                        email="case2@example.com",
+                        password="placeholder_password",
+                        user_group_id=users_group_id,
+                    )
+                )
 
-        found_lower = await user_repo.get_user_by_username("case_user")
-        found_upper = await user_repo.get_user_by_username("Case_User")
-
-        assert found_lower is not None and found_lower.user_id == user_lower.user_id
-        assert found_upper is not None and found_upper.user_id == user_upper.user_id
-        assert found_lower.username == "case_user"
-        assert found_upper.username == "Case_User"
-
-        await user_repo.delete_user(user_lower.user_id)
-        await user_repo.delete_user(user_upper.user_id)
+            # Also verify via HTTP API route
+            resp = await client.post(
+                app.url_path_for("create_user"),
+                json={
+                    "username": "UNIQUE_CASE_USER",
+                    "email": "case3@example.com",
+                    "password": "placeholder_password",
+                    "user_group_id": users_group_id,
+                },
+            )
+            assert resp.status_code == status.HTTP_400_BAD_REQUEST
+            assert "already registered" in resp.json()["message"]
+        finally:
+            await user_repo.delete_user(user1.user_id)
 
     async def test_get_users(self, app: FastAPI, client: AsyncClient) -> None:
 

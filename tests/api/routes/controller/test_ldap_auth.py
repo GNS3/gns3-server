@@ -519,6 +519,65 @@ class TestLdapAuthentication:
         finally:
             await users_repo.delete_user(pre_user_id)
 
+    async def test_ldap_account_adoption_is_case_insensitive(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        mock_ldap_directory,
+        users_group_id: str,
+    ) -> None:
+        """
+        Verify that directory account adoption uses case-insensitive lookup
+        so an existing pre-created account 'case_alice' is adopted by directory
+        user 'CASE_ALICE' without creating a split duplicate account.
+        """
+        mock_ldap_directory.strategy.add_entry(
+            "uid=CASE_ALICE,ou=users,dc=example,dc=com",
+            {
+                "objectClass": ["person", "inetOrgPerson"],
+                "uid": "CASE_ALICE",
+                "cn": "Case Sensitive Alice",
+                "mail": "case_alice@example.com",
+                "userPassword": "mock_case_alice_secret",
+                "memberOf": ["cn=GNS3-Users,ou=groups,dc=example,dc=com"],
+            },
+        )
+
+        users_repo = UsersRepository(db_session)
+        pre_user = await users_repo.create_user(
+            schemas.UserCreate(
+                username="case_alice",
+                email="case_alice@example.com",
+                password="placeholder_password",
+                user_group_id=users_group_id,
+            )
+        )
+        assert pre_user.auth_source == "local"
+        pre_user_id = pre_user.user_id
+
+        try:
+            # User authenticates with uppercase username
+            resp = await unauthorized_client.post(
+                app.url_path_for("login"),
+                data={"username": "CASE_ALICE", "password": "mock_case_alice_secret"},
+                headers=FORM_HEADERS,
+            )
+            assert resp.status_code == status.HTTP_200_OK
+
+            # Verify the pre-existing user was adopted
+            adopted = await users_repo.get_user(pre_user_id)
+            assert adopted is not None
+            assert adopted.auth_source == "ldap"
+            assert adopted.username == "case_alice"
+
+            # Verify no duplicate user was created
+            all_alices = [u for u in await users_repo.get_users() if "alice" in u.username.lower()]
+            assert len(all_alices) == 1
+        finally:
+            await users_repo.delete_user(pre_user_id)
+
     async def test_ldap_login_matching_local_user_email_does_not_adopt_local_account(
         self,
         app: FastAPI,

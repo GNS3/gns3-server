@@ -353,7 +353,7 @@ async def create_user(
     Required privilege: User.Allocate
     """
 
-    if await users_repo.get_user_by_username(user_create.username):
+    if await users_repo.get_user_by_username_case_insensitive(user_create.username):
         raise ControllerBadRequestError(f"Username '{user_create.username}' is already registered")
 
     if user_create.email and await users_repo.get_user_by_email(user_create.email):

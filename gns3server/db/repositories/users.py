@@ -66,6 +66,15 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
+    async def get_user_by_username_case_insensitive(self, username: str) -> Optional[models.User]:
+        """
+        Get a user by its name using case-insensitive matching.
+        """
+
+        query = select(models.User).where(func.lower(models.User.username) == username.lower())
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
     async def get_user_by_email(self, email: str) -> Optional[models.User]:
         """
         Get a user by its email.
@@ -88,6 +97,14 @@ class UsersRepository(BaseRepository):
         """
         Create a new user and add it to the given user group.
         """
+
+        existing_user = await self.get_user_by_username_case_insensitive(user.username)
+        if existing_user:
+            raise IntegrityError(
+                f"User with username '{user.username}' already exists (case-insensitive collision with '{existing_user.username}')",
+                params=None,
+                orig=Exception("UNIQUE constraint failed: users.username"),
+            )
 
         hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
@@ -191,12 +208,12 @@ class UsersRepository(BaseRepository):
             res_ext = await self._db_session.execute(query_ext)
             user = res_ext.scalars().first()
 
-        # 2. Secondary lookup by exact username
+        # 2. Secondary lookup by case-insensitive username match
         if not user:
             query = (
                 select(models.User)
                 .options(selectinload(models.User.groups))
-                .where(models.User.username == profile.username)
+                .where(func.lower(models.User.username) == profile.username.lower())
             )
             result = await self._db_session.execute(query)
             user = result.scalars().first()
@@ -247,7 +264,7 @@ class UsersRepository(BaseRepository):
             existing = await self._lookup_or_link_ldap_user(profile)
             if existing:
                 return existing
-            existing_by_name = await self.get_user_by_username(profile.username)
+            existing_by_name = await self.get_user_by_username_case_insensitive(profile.username)
             if existing_by_name:
                 return existing_by_name
             raise
