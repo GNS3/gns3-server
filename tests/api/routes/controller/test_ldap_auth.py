@@ -831,6 +831,64 @@ class TestLdapAuthentication:
             if alice_cleanup:
                 await users_repo.delete_user(alice_cleanup.user_id)
 
+    async def test_ldap_malformed_ledger_and_missing_default_group_logs_warnings(
+        self,
+        app: FastAPI,
+        unauthorized_client: AsyncClient,
+        db_session: AsyncSession,
+        config: Config,
+        mock_ldap_directory,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """
+        Verify that corrupted ldap_groups JSON emits a diagnostic warning,
+        and configured non-existent default_group logs a warning before falling back.
+        """
+        import logging
+
+        users_repo = UsersRepository(db_session)
+        orig_default = config.settings.LDAP.default_group
+        orig_mapping = config.settings.LDAP.group_mapping
+
+        try:
+            config.settings.LDAP.default_group = "NonExistentGhostGroup"
+            config.settings.LDAP.group_mapping = {}
+
+            with caplog.at_level(logging.WARNING):
+                resp = await unauthorized_client.post(
+                    app.url_path_for("login"),
+                    data={"username": "alice", "password": "mock_alice_secret"},
+                    headers=FORM_HEADERS,
+                )
+                assert resp.status_code == status.HTTP_200_OK
+                assert any(
+                    "Configured LDAP default_group 'NonExistentGhostGroup' not found in database; falling back to 'Users'"
+                    in r.message
+                    for r in caplog.records
+                )
+
+            alice_user = await users_repo.get_user_by_username("alice")
+            assert alice_user is not None
+
+            # Manually corrupt ldap_groups in DB
+            alice_user.ldap_groups = "not-valid-json{"
+            await db_session.commit()
+
+            with caplog.at_level(logging.WARNING):
+                resp2 = await unauthorized_client.post(
+                    app.url_path_for("login"),
+                    data={"username": "alice", "password": "mock_alice_secret"},
+                    headers=FORM_HEADERS,
+                )
+                assert resp2.status_code == status.HTTP_200_OK
+                assert any("Failed to parse ldap_groups JSON" in r.message for r in caplog.records)
+        finally:
+            config.settings.LDAP.default_group = orig_default
+            config.settings.LDAP.group_mapping = orig_mapping
+            alice_cleanup = await users_repo.get_user_by_username("alice")
+            if alice_cleanup:
+                await users_repo.delete_user(alice_cleanup.user_id)
+
     async def test_existing_local_user_transitions_to_ldap_and_preserves_password_for_dr(
         self,
         app: FastAPI,

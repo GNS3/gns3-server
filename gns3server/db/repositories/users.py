@@ -348,8 +348,8 @@ class UsersRepository(BaseRepository):
                 parsed = json.loads(user.ldap_groups)
                 if isinstance(parsed, list):
                     previously_granted_names = set(parsed)
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to parse ldap_groups JSON for user '%s': %s", user.username, e)
         managed_group_names.update(previously_granted_names)
 
         # Ensure base privileges: if no mapped groups matched, fallback to default_group or 'Users'
@@ -357,6 +357,9 @@ class UsersRepository(BaseRepository):
             fallback_name = ldap_config.default_group or "Users"
             fallback_grp = await self.get_user_group_by_name(fallback_name)
             if not fallback_grp and fallback_name != "Users":
+                log.warning(
+                    "Configured LDAP default_group '%s' not found in database; falling back to 'Users'", fallback_name
+                )
                 fallback_grp = await self.get_user_group_by_name("Users")
             if fallback_grp:
                 unique_group_ids.append(fallback_grp.user_group_id)

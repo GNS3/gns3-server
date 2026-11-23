@@ -1,7 +1,7 @@
 """add auth_source to users table
 
 Revision ID: ab9aec245c08
-Revises: e2a7c9d4b601
+Revises: b7d4c3f2a1e9
 Create Date: 2026-11-09 15:57:12.659920
 
 """
