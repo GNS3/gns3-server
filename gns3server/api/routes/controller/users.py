@@ -40,6 +40,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.user_quota_state import UserQuotaState
 from gns3server.services import auth_service
+from gns3server.services.login_rate_limiter import login_rate_limiter
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
@@ -56,6 +57,7 @@ MAX_PREFERENCES_SIZE_BYTES = 256 * 1024
 
 @router.post("/login", response_model=schemas.Token)
 async def login(
+    request: Request,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> schemas.Token:
@@ -64,19 +66,31 @@ async def login(
     Example: curl -X POST http://host:port/v3/access/users/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin"
     """
 
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(form_data.username, client_ip)
+    if is_limited:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
     if not user:
+        login_rate_limiter.record_failure(form_data.username, client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication was unsuccessful.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    login_rate_limiter.reset(form_data.username, client_ip)
     return auth_service.create_token_response(user)
 
 
 @router.post("/authenticate", response_model=schemas.Token)
 async def authenticate(
+    request: Request,
     user_credentials: schemas.Credentials,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.Token:
@@ -85,14 +99,25 @@ async def authenticate(
     Example: curl -X POST http://host:port/v3/access/users/authenticate -d '{"username": "admin", "password": "admin"}' -H "Content-Type: application/json"
     """
 
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(user_credentials.username, client_ip)
+    if is_limited:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Please try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)
     if not user:
+        login_rate_limiter.record_failure(user_credentials.username, client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication was unsuccessful.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    login_rate_limiter.reset(user_credentials.username, client_ip)
     return auth_service.create_token_response(user)
 
 
