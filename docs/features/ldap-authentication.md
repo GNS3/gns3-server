@@ -170,6 +170,33 @@ curl -X POST http://localhost:3080/v3/settings/ldap/test \
 5. **Credential Immutability (CWE-284):** Password update endpoints (`PUT /v3/access/users/{id}` and `PUT /v3/access/users/me`) reject password change attempts on directory users with `HTTP 400 Bad Request`.
 6. **Non-Blocking Concurrency:** All network I/O executes in background threads (`asyncio.to_thread`), preventing denial of service on FastAPI's async event loop.
 7. **Cleartext Transmission Warning (CWE-319):** If LDAP authentication is enabled while native SSL is disabled (`Server.enable_ssl = False`), `gns3server` emits a prominent warning at startup and settings modification, alerting administrators to front the server with an HTTPS reverse proxy.
+8. **Automated Lockout Protection (CWE-307):** Built-in in-memory sliding-window rate limiting tracks failed authentication attempts per `(username, client_ip)`. Exceeding 5 failures within 60 seconds immediately aborts with `HTTP 429 Too Many Requests` before hitting the directory server, preventing attackers from triggering enterprise Active Directory account lockout policies.
+
+---
+
+## Operational Lifecycle & Administration
+
+### 1. Dynamic Group Recomputation & Entitlement Revocation
+Group memberships for directory accounts are dynamically recomputed during every successful authentication:
+- **Membership Ledger (`ldap_groups`):** The server tracks groups explicitly granted by directory synchronization in a dedicated JSON ledger on the user record.
+- **Selective Revocation:** When an employee is removed from an Active Directory group (or when `group_mapping` is updated in GNS3), the recomputation routine compares current directory groups against previously granted groups. Removed entitlements are automatically revoked.
+- **Manual Overwrite Warning:** Managed groups are recomputed on *each* login. If an administrator manually adds a directory user to a group governed by `group_mapping` (or the `default_group`) in GNS3, that manual assignment will be wiped at their next login unless the user actually possesses that group in Active Directory. To grant persistent local privileges outside of directory sync, assign the user to a custom local GNS3 group that is *not* present in `group_mapping`.
+- **Local Group Preservation:** Manually assigned local GNS3 groups (such as ad-hoc project cohorts, lab distribution groups, or local study groups) that do not originate from directory mappings are preserved and will never be removed by JIT synchronization.
+
+### 2. Token Lifetimes vs. Directory Account Status
+- **Token Independence:** GNS3 authentication mints signed JSON Web Tokens (`access_token` valid for 24 hours; `refresh_token` valid for 30 days).
+- **Revocation Timing:** Revocation waits for the next login or token refresh. Because JWTs are stateless, disabling an account or removing a group in Active Directory does not kill an in-flight `access_token` until it expires. If an administrator requires immediate severance of an active session, they can deactivate the account via the GNS3 API, or the user's `token_version` can be incremented to immediately invalidate all outstanding access and refresh tokens.
+
+### 3. Username Immutability & Project Asset Integrity
+- **Immutable Identity Anchoring:** Directory accounts are anchored to an immutable unique identifier (`entryUUID` in OpenLDAP, `objectGUID` in Active Directory, or user DN) persisted in `external_id`.
+- **Directory Renames:** Directory account renames in Active Directory (e.g. changing an employee's `sAMAccountName` or UPN) do *not* follow through to rename the GNS3 `username`. Once provisioned, a user's `username` in GNS3 is strictly immutable. This ensures that on-disk project directories, ACL owner checks, and topology files stamped with the creator's username (`created_by`) are never severed.
+
+### 4. Disaster Recovery (DR) & Local Password Fallback
+During directory outages or network isolation:
+1. **Local Superadmin Exemption:** The emergency local superadmin (`admin`) is always evaluated against the local SQLite database first, guaranteeing administrative access even if the directory server is completely unreachable.
+2. **Local Accounts:** When `fallback_to_local = True`, local database users authenticate against their stored bcrypt password hashes.
+3. **Directory Accounts in DR:** By default, directory accounts cannot authenticate using local passwords while LDAP is enabled. In an extended disaster recovery scenario where LDAP is globally disabled (`enabled = False`), a former directory account can log in locally *only* if an administrator has explicitly provisioned a local password hash for that user (`PUT /v3/access/users/{id}`). Passwordless login is strictly prohibited for directory accounts under all circumstances.
+4. **Flipping Back to LDAP:** When disaster recovery ends and LDAP is toggled back on (`enabled = True`), any former directory user authenticating with their directory credentials automatically has their `auth_source` flipped back to `"ldap"`, and local password access is once again blocked.
 
 ---
 
