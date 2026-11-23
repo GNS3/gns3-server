@@ -178,6 +178,7 @@ class Drawing:
         :param kwargs: Drawing properties
         """
 
+        self._project.check_mutable("updating a drawing")
         # Update node properties with additional elements
         svg_changed = False
         for prop in kwargs:

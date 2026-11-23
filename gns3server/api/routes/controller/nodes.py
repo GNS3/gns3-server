@@ -620,6 +620,7 @@ async def create_disk_image(
     """
 
     _check_node_type(node, "qemu")
+    node.project.check_mutable("creating a QEMU disk image")
     await node.post(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
@@ -638,6 +639,7 @@ async def update_disk_image(
     """
 
     _check_node_type(node, "qemu")
+    node.project.check_mutable("resizing a QEMU disk image")
     await node.put(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
@@ -654,6 +656,7 @@ async def delete_disk_image(disk_name: str, node: Node = Depends(dep_node)) -> N
     """
 
     _check_node_type(node, "qemu")
+    node.project.check_mutable("deleting a QEMU disk image")
     await node.delete(f"/disk_image/{disk_name}")
 
 
@@ -747,6 +750,8 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
     Required privilege: Node.Modify
     """
 
+    node.project.check_mutable("writing node files")
+
     path = force_unix_path(file_path)
 
     # Raise error if user try to escape
@@ -773,6 +778,8 @@ async def delete_node_file(file_path: str, node: Node = Depends(dep_node)) -> No
 
     Required privilege: Node.Modify
     """
+
+    node.project.check_mutable("deleting node files")
 
     path = force_unix_path(file_path)
 

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Any, List, Optional, Set, Union, cast
+from typing import Any, Dict, List, Optional, Set, Union, cast
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
@@ -28,13 +28,9 @@ from sqlalchemy.orm import selectinload
 import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.config import Config
+from gns3server.db.models.users import user_group_map
 from gns3server.db.rbac_state import RbacState
-
-try:
-    from gns3server.db.user_quota_state import UserQuotaState
-except ImportError:
-    UserQuotaState = None
-
+from gns3server.db.user_quota_state import UserQuotaState
 from gns3server.services import auth_service, ldap_service
 from gns3server.services.ldap import LDAPService, LDAPUserProfile
 
@@ -50,7 +46,7 @@ class UsersRepository(BaseRepository):
         self._auth_service = auth_service
         self._ldap_service = ldap_service_instance or ldap_service
         self._rbac_state = RbacState.instance()
-        self._quota_state = UserQuotaState.instance() if UserQuotaState else None
+        self._quota_state = UserQuotaState.instance()
 
     async def get_user(self, user_id: UUID) -> Optional[models.User]:
         """
@@ -90,16 +86,26 @@ class UsersRepository(BaseRepository):
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
         """
-        Create a new user.
+        Create a new user and add it to the given user group.
         """
 
         hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
-            username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            hashed_password=hashed_password,
+            max_nodes=user.max_nodes,
+            max_running_nodes=user.max_running_nodes,
         )
         self._db_session.add(db_user)
+        await self._db_session.flush()  # assign the user id
+        await self._db_session.execute(
+            user_group_map.insert().values(user_id=db_user.user_id, user_group_id=user.user_group_id)
+        )
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         await self._db_session.refresh(db_user)
         return db_user
 
@@ -124,6 +130,7 @@ class UsersRepository(BaseRepository):
         await self._db_session.execute(query)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         user_db = await self.get_user(user_id)
         if user_db:
             await self._db_session.refresh(user_db)  # force refresh of updated_at value
@@ -152,6 +159,7 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def _update_last_login(self, user: models.User) -> models.User:
@@ -392,8 +400,7 @@ class UsersRepository(BaseRepository):
 
         user = await self._update_last_login(user)
         self._rbac_state.mark_dirty()
-        if self._quota_state:
-            self._quota_state.mark_dirty()
+        self._quota_state.mark_dirty()
         return user
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
@@ -450,6 +457,52 @@ class UsersRepository(BaseRepository):
 
         return await self._update_last_login(local_user)
 
+    async def get_user_preferences(self, user_id: UUID) -> Optional[models.UserPreferences]:
+        """
+        Get the preferences document of a user, or None if never saved.
+        """
+
+        query = select(models.UserPreferences).where(models.UserPreferences.user_id == user_id)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def save_user_preferences(self, user_id: UUID, preferences: Dict[str, Any]) -> models.UserPreferences:
+        """
+        Create or replace the preferences document of a user (last write wins).
+
+        Concurrent first saves (e.g. two tabs of the same user) race on the
+        single-row insert: the loser falls back to updating the winning row.
+        """
+
+        db_prefs = await self.get_user_preferences(user_id)
+        if db_prefs is None:
+            db_prefs = models.UserPreferences(user_id=user_id, preferences=preferences)
+            self._db_session.add(db_prefs)
+            try:
+                await self._db_session.commit()
+            except IntegrityError:
+                await self._db_session.rollback()
+                db_prefs = await self.get_user_preferences(user_id)
+                if db_prefs is None:
+                    raise
+                db_prefs.preferences = preferences
+                await self._db_session.commit()
+        else:
+            db_prefs.preferences = preferences
+            await self._db_session.commit()
+        await self._db_session.refresh(db_prefs)
+        return db_prefs
+
+    async def delete_user_preferences(self, user_id: UUID) -> bool:
+        """
+        Delete the preferences document of a user.
+        """
+
+        query = delete(models.UserPreferences).where(models.UserPreferences.user_id == user_id)
+        result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        return cast(CursorResult, result).rowcount > 0
+
     async def get_user_memberships(self, user_id: UUID) -> List[models.UserGroup]:
         """
         Get all user memberships (user groups).
@@ -492,10 +545,15 @@ class UsersRepository(BaseRepository):
         Create a new user group.
         """
 
-        db_user_group = models.UserGroup(name=user_group.name)
+        db_user_group = models.UserGroup(
+            name=user_group.name,
+            default_max_nodes=user_group.default_max_nodes,
+            default_max_running_nodes=user_group.default_max_running_nodes,
+        )
         self._db_session.add(db_user_group)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         await self._db_session.refresh(db_user_group)
         return db_user_group
 
@@ -512,6 +570,7 @@ class UsersRepository(BaseRepository):
         await self._db_session.execute(query)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         user_group_db = await self.get_user_group(user_group_id)
         if user_group_db:
             await self._db_session.refresh(user_group_db)  # force refresh of updated_at value
@@ -526,6 +585,7 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         return cast(CursorResult, result).rowcount > 0
 
     async def add_member_to_user_group(self, user_group_id: UUID, user: models.User) -> Union[None, models.UserGroup]:
@@ -546,6 +606,7 @@ class UsersRepository(BaseRepository):
         user_group_db.users.append(user)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         await self._db_session.refresh(user_group_db)
         return user_group_db
 
@@ -569,6 +630,7 @@ class UsersRepository(BaseRepository):
         user_group_db.users.remove(user)
         await self._db_session.commit()
         self._rbac_state.mark_dirty()
+        self._quota_state.mark_dirty()
         await self._db_session.refresh(user_group_db)
         return user_group_db
 

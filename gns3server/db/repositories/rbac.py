@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import List, Optional, Set, Union, cast
+import uuid
+from typing import Dict, List, Optional, Set, Union, cast
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
@@ -261,6 +262,24 @@ class RbacRepository(BaseRepository):
         await self._db_session.refresh(db_ace)
         return db_ace
 
+    async def create_aces(self, aces: List[schemas.ACECreate]) -> int:
+        """
+        Create several ACEs in a single transaction.
+        """
+
+        if not aces:
+            return 0
+        for ace_create in aces:
+            values = ace_create.model_dump(exclude_unset=True)
+            # The ACE id default returns a string while the GUID column returns
+            # a UUID object: assign it here so SQLAlchemy does not have to map
+            # a sentinel value in a batched insert.
+            values.setdefault("ace_id", uuid.uuid4())
+            self._db_session.add(models.ACE(**values))
+        await self._db_session.commit()
+        self._rbac_state.mark_dirty()
+        return len(aces)
+
     async def update_ace(self, ace_id: UUID, ace_update: schemas.ACEUpdate) -> Optional[models.ACE]:
         """
         Update an ACE
@@ -312,6 +331,18 @@ class RbacRepository(BaseRepository):
         await self._rbac_state.ensure_loaded(self._db_session)
         return self._rbac_state.accessible_project_ids(user_id, privilege_name, all_project_ids)
 
+    async def get_project_share_counts(self, owners: Dict[str, Optional[str]]) -> Dict[str, int]:
+        """
+        Count the share ACEs of the given projects.
+
+        ``owners`` maps project ids to the username of their creator. Returns
+        the project ids with at least one share (see the /shares endpoints for
+        what counts as a share).
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.project_share_counts(owners)
+
     async def check_user_has_privilege(self, user_id: UUID, path: str, privilege_name: str) -> bool:
         """
         Resource paths form a file system like tree and privileges can be inherited by paths down that tree
@@ -329,3 +360,83 @@ class RbacRepository(BaseRepository):
 
         await self._rbac_state.ensure_loaded(self._db_session)
         return self._rbac_state.user_has_privilege(user_id, path, privilege_name)
+
+    async def get_effective_role_id(self, user_id: UUID, path: str, privilege_name: str) -> Optional[UUID]:
+        """
+        Role id of the ACE that decides a privilege check for the user.
+
+        Returns None when the check is denied or when no ACE matches.
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.effective_role_id(user_id, path, privilege_name)
+
+    async def get_group_privileges(self, group_id: UUID) -> Set[str]:
+        """
+        Names of all privileges granted to a group through the roles carried
+        by its allowed ACEs (flattened view, ignores resource paths).
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.group_privilege_names(group_id)
+
+    async def get_group_mcp_tools(self, group_id: UUID) -> Optional[Set[str]]:
+        """
+        Whitelisted MCP tool names for a group, or None when the group has
+        no whitelist configured (every tool stays allowed).
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.group_mcp_tools(group_id)
+
+    async def get_group_mcp_bypass(self, group_id: UUID) -> bool:
+        """
+        Whether an MCP tool whitelist for this group cannot affect anyone
+        right now: no member that is not a superadmin (see
+        RbacState.group_mcp_bypass).
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.group_mcp_bypass(group_id)
+
+    async def get_user_mcp_tool_whitelist(self, user_id: UUID) -> Optional[Set[str]]:
+        """
+        Effective MCP tool whitelist for a user: union of the whitelists of
+        the groups the user belongs to. None means unrestricted (at least
+        one of the user's groups, or no group at all, has no whitelist).
+        """
+
+        await self._rbac_state.ensure_loaded(self._db_session)
+        return self._rbac_state.user_mcp_tool_whitelist(user_id)
+
+    async def set_group_mcp_tools(self, group_id: UUID, tool_names: List[str]) -> None:
+        """
+        Replace the MCP tool whitelist of a group.
+
+        An empty list means "hide every MCP tool": it is stored as a single
+        sentinel row with an empty tool name, so a configured-but-empty
+        whitelist stays distinct from no whitelist at all (absence of rows).
+        """
+
+        await self._db_session.execute(
+            delete(models.MCPToolWhitelist).where(models.MCPToolWhitelist.user_group_id == group_id)
+        )
+        unique_names = sorted(set(tool_names))
+        if not unique_names:
+            unique_names = [""]  # sentinel: configured, allows nothing
+        for tool_name in unique_names:
+            self._db_session.add(models.MCPToolWhitelist(user_group_id=group_id, tool_name=tool_name))
+        await self._db_session.commit()
+        self._rbac_state.mark_dirty()
+
+    async def clear_group_mcp_tools(self, group_id: UUID) -> bool:
+        """
+        Remove the MCP tool whitelist of a group (back to allow-all).
+        Returns whether any row was deleted.
+        """
+
+        query = delete(models.MCPToolWhitelist).where(models.MCPToolWhitelist.user_group_id == group_id)
+        result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        self._rbac_state.mark_dirty()
+        return cast(CursorResult, result).rowcount > 0

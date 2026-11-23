@@ -90,7 +90,7 @@ Response example (abbreviated):
 - **Secrets** — `SecretStr` fields are masked in responses. An empty secret (e.g. `compute_password` before the server generates one) serializes as `""` rather than the mask. On PUT, the mask or an empty string means "leave unchanged"; only an explicit new value is written, in clear text like a hand-edited file.
 - **`restart_required`** — options that only take effect after a server restart (bind host/port, protocol, TLS and certificates, port ranges, image/symbol/config paths, GNS3 VM credentials, skills paths, …). Everything else hot-reloads via `Config.instance().settings`.
 - **GET reflects runtime values** — in-memory settings may differ from disk (e.g. the generated `compute_password`, the resolved `secrets_dir`); the mask/empty skip rule guarantees PUT never writes echoed values back.
-- **Privileges** — `Server.Audit`/`Server.Modify` are seeded into the `Administrator` role at table creation only; existing databases need a manual grant. Superadmins bypass RBAC.
+- **Privileges** — `Server.Audit`/`Server.Modify` are seeded into the `Administrator` role at table creation; migration `a43d55900514` backfills both privileges and the `Administrator` grant on existing databases. Superadmins bypass RBAC.
 - **Hardening** — the file watcher callback is exception-guarded (`utils/file_watcher.py`): a callback failure is logged instead of silently killing the polling loop.
 
 ### Related Files
@@ -102,4 +102,5 @@ Response example (abbreviated):
 | `gns3server/schemas/controller/settings.py` | response/update models, `SECRET_MASK` |
 | `gns3server/api/routes/controller/settings.py` | GET/PUT endpoints, `restart_required`, notification |
 | `gns3server/db/models/privileges.py` | `Server.Audit` / `Server.Modify` privilege seeds |
+| `gns3server/db_migrations/versions/a43d55900514_add_server_settings_privileges.py` | backfill of both privileges on existing databases |
 | `gns3server/config_samples/gns3_server.conf` | annotated sample configuration, human-readable reference kept in sync with the schema |

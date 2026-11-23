@@ -112,6 +112,7 @@ router.include_router(images.router, prefix="/images", tags=["Images"])
 router.include_router(templates.router, prefix="/templates", tags=["Templates"])
 
 router.include_router(projects.router, prefix="/projects", tags=["Projects"])
+router.include_router(projects.distributions_router, prefix="/distributions", tags=["Projects"])
 
 router.include_router(nodes.router, prefix="/projects/{project_id}/nodes", tags=["Nodes"])
 

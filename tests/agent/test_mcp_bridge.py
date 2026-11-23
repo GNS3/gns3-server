@@ -98,6 +98,64 @@ def test_adapted_subset_preserves_order_and_drift_guard() -> None:
         adapted_mcp_tools(names=["node_start", "no_such_tool"])
 
 
+def test_bindable_tools_drop_hidden_mcp_tools() -> None:
+    """The copilot binds only the MCP tools the current user may see."""
+
+    from gns3server.agent.gns3_copilot.tools_v2 import GNS3WaitTool
+    from gns3server.agent.gns3_copilot.tools_v2.mcp_bridge import bindable_tools
+
+    mcp_tools = adapted_mcp_tools(names=["node_list", "node_start"])
+    native = GNS3WaitTool()
+
+    kept = bindable_tools([*mcp_tools, native], {"node_list"})
+    # node_start is hidden: the user has no Node.PowerMgmt
+    assert {tool.name for tool in kept} == {"node_list", "wait_seconds"}
+
+    # None means no restriction (superadmin, or the privilege lookup failed)
+    unrestricted = bindable_tools([*mcp_tools, native], None)
+    assert {tool.name for tool in unrestricted} == {"node_list", "node_start", "wait_seconds"}
+
+
+def test_llm_call_binds_only_visible_mcp_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The MCP visibility computed at request time filters the bound tools."""
+
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    from gns3server.agent.gns3_copilot.agent import gns3_copilot as agent_module
+
+    captured: dict[str, set[str]] = {}
+
+    class _FakeModel:
+        def invoke(self, messages):
+            return AIMessage(content="ok")
+
+    def _fake_create_with_tools(tools, llm_config=None):
+        captured["tools"] = {tool.name for tool in tools}
+        return _FakeModel()
+
+    monkeypatch.setattr(
+        agent_module,
+        "get_current_llm_config",
+        lambda: {
+            "provider": "fake",
+            "model": "fake",
+            "copilot_mode": "lab_automation_assistant",
+            # the user may see node_list only: node_start stays out
+            "visible_mcp_tools": ["node_list"],
+        },
+    )
+    monkeypatch.setattr(agent_module, "load_system_prompt", lambda config: "system")
+    monkeypatch.setattr(agent_module, "create_pre_model_hook", lambda **kwargs: lambda state: state)
+    monkeypatch.setattr(agent_module, "create_base_model_with_tools", _fake_create_with_tools)
+
+    agent_module.llm_call({"messages": [HumanMessage(content="hi")]})
+
+    assert "node_list" in captured["tools"]
+    assert "node_start" not in captured["tools"]  # hidden by the MCP privilege filter
+    assert "wait_seconds" in captured["tools"]  # copilot-native, not gated here
+    assert "link_create" in captured["tools"]  # copilot-native, not gated here
+
+
 def test_adapted_args_model_matches_mcp_schema() -> None:
     tool = next(t for t in adapted_mcp_tools() if t.name == "node_create")
     fields = tool.args_schema.model_fields

@@ -34,9 +34,11 @@ from gns3server.agent.gns3_copilot.project_agent_manager import get_project_agen
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerNotFoundError
 from gns3server.controller.project import Project
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.tasks import get_user_llm_config_full
 
 from .dependencies.authentication import get_current_active_user
+from .dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +47,11 @@ responses: dict[int | str, dict[str, Any]] = {404: {"model": schemas.ErrorMessag
 router = APIRouter(responses=responses)
 
 
-def dep_project(project_id: UUID) -> Project:
+async def dep_project(
+    project_id: UUID,
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> Project:
     """
     Dependency to retrieve a project.
 
@@ -57,12 +63,55 @@ def dep_project(project_id: UUID) -> Project:
 
     Raises:
         ControllerNotFoundError: If project not found
+        HTTPException: If the user is not allowed to access the project
     """
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
     if not project:
         raise ControllerNotFoundError(f"Project '{project_id}' not found")
+    if not current_user.is_superadmin and not await rbac_repo.check_user_has_privilege(
+        current_user.user_id, f"/projects/{project_id}", "Project.Audit"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied (privilege Project.Audit is required)",
+        )
     return project
+
+
+async def _visible_mcp_tools(username: Optional[str]) -> Optional[list[str]]:
+    """
+    MCP tools the user may see, as plain names (None = unrestricted).
+
+    The copilot binds its MCP tools to the LLM from the MCP registration,
+    so it must apply the same filter as the MCP server: privileges and the
+    per-group tool whitelist. A failed lookup fails open, like the gated
+    server itself (the REST endpoints stay the authority).
+    """
+
+    if not username:
+        return None
+    try:
+        from gns3server.agent.mcp.tool_access import visible_tool_names_for
+
+        visible = await visible_tool_names_for(username)
+    except Exception as e:
+        log.warning("Could not resolve the visible MCP tools for %s (%s); failing open", username, e)
+        return None
+    return sorted(visible) if visible is not None else None
+
+
+async def _check_session_owner(agent_service, session_id: str, user_id: str) -> None:
+    """
+    Refuse access to a chat session owned by another user.
+
+    A missing session is left to the caller (some operations create it on
+    demand), but an existing session must belong to the current user.
+    """
+
+    session = await agent_service.get_session(session_id)
+    if session is not None and session.get("user_id") != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
 
 
 @router.post(
@@ -134,6 +183,10 @@ async def stream_chat(
         llm_config.get("model"),
     )
 
+    # The LLM call binds MCP tools per request: carry the user's visibility
+    # so it can drop the tools the MCP server would hide from this user.
+    llm_config["visible_mcp_tools"] = await _visible_mcp_tools(current_user.username)
+
     # TODO: Support runtime temperature override from request.temperature
     # Currently, temperature is loaded from the user's LLM config in the database.
     # To enable runtime override, uncomment the following:
@@ -146,6 +199,8 @@ async def stream_chat(
     log.debug("AgentService obtained for project: %s", project.id)
 
     # Generate session_id if not provided
+    if request.session_id:
+        await _check_session_owner(agent_service, request.session_id, user_id)
     session_id = request.session_id or str(uuid.uuid4())
     if not request.session_id:
         log.debug("New session created: %s", session_id)
@@ -254,6 +309,8 @@ async def get_history(
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
 
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
+
     # Get history
     history = await agent_service.get_history(session_id, limit)
 
@@ -285,6 +342,8 @@ async def delete_session(
     # Get AgentService for this project
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
+
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
 
     # Delete session
     deleted = await agent_service.delete_session(session_id)
@@ -322,6 +381,8 @@ async def abort_session(
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
 
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
+
     # Abort the session
     agent_service.abort_session(session_id)
 
@@ -354,6 +415,8 @@ async def rename_session(
     # Get AgentService for this project
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
+
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
 
     # Rename session
     session = await agent_service.rename_session(session_id, request.title)
@@ -390,6 +453,8 @@ async def pin_session(
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
 
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
+
     # Pin session
     session = await agent_service.pin_session(session_id, pinned=True)
 
@@ -424,6 +489,8 @@ async def unpin_session(
     # Get AgentService for this project
     agent_manager = await get_project_agent_manager()
     agent_service = await agent_manager.get_agent(str(project.id), project.path)
+
+    await _check_session_owner(agent_service, session_id, str(current_user.user_id))
 
     # Unpin session
     session = await agent_service.pin_session(session_id, pinned=False)
@@ -500,6 +567,8 @@ async def inject_issue(
 
     # Override copilot_mode to troubleshooting_injection
     llm_config["copilot_mode"] = "troubleshooting_injection"
+    # same MCP visibility filter as the regular chat route
+    llm_config["visible_mcp_tools"] = await _visible_mcp_tools(current_user.username)
     log.debug(
         "LLM config loaded and mode set to troubleshooting_injection: user_id=%s, provider=%s, model=%s",
         user_id,
@@ -513,6 +582,8 @@ async def inject_issue(
     log.debug("AgentService obtained for project: %s", project.id)
 
     # Generate session_id if not provided
+    if request.session_id:
+        await _check_session_owner(agent_service, request.session_id, user_id)
     session_id = request.session_id or str(uuid.uuid4())
     if not request.session_id:
         log.debug("New session created for fault injection: %s", session_id)

@@ -525,6 +525,7 @@ class TestLdapAuthentication:
         unauthorized_client: AsyncClient,
         db_session: AsyncSession,
         mock_ldap_directory,
+        users_group_id: str,
     ) -> None:
         """
         Verify that an LDAP user with an email matching an existing local user's email
@@ -532,7 +533,12 @@ class TestLdapAuthentication:
         """
         users_repo = UsersRepository(db_session)
         local_user = await users_repo.create_user(
-            schemas.UserCreate(username="local_victim", email="shared@example.com", password="placeholder_password")
+            schemas.UserCreate(
+                username="local_victim",
+                email="shared@example.com",
+                password="placeholder_password",
+                user_group_id=users_group_id,
+            )
         )
         assert local_user.auth_source == "local"
 

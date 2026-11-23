@@ -20,6 +20,7 @@ API routes for ACL.
 """
 
 import logging
+import os
 import re
 from typing import Iterator, List, Optional, Sequence
 from uuid import UUID
@@ -104,7 +105,9 @@ async def endpoints(
 
     # projects
     add_to_endpoints("/projects", "All projects", "project")
-    projects = [p for p in controller.projects.values()]
+    # a project directory removed behind the controller's back (before the
+    # directory observer prunes it) must not break the listing
+    projects = [p for p in controller.projects.values() if os.path.exists(p.path)]
     for project in projects:
         add_to_endpoints(f"/projects/{project.id}", f'Project "{project.name}"', "project")
 

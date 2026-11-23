@@ -93,6 +93,8 @@ from gns3server.utils.request_utils import extract_client_info
 # Symbol tools are disabled for now: they require a vision-capable model to
 # be genuinely useful (the tools shuttle SVG content, which a text-only LLM
 # cannot inspect or produce). Revisit later.
+from .account import get_user_privileges_handler, get_user_quotas_handler
+
 # from .symbols import (
 #     get_symbols_handler, get_symbol_handler,
 #     get_symbol_dimensions_handler, get_default_symbols_handler,
@@ -129,17 +131,26 @@ from .images import (
 )
 from .locators import add_did_you_mean, resolve_locators
 from .projects import (
+    cancel_project_distribution_handler,
     close_project_handler,
     create_project_handler,
+    delete_distribution_handler,
     delete_project_handler,
+    delete_project_share_handler,
+    distribute_project_handler,
     duplicate_project_handler,
     get_locked_project_handler,
+    get_project_distributions_handler,
     get_project_handler,
+    get_project_privileges_handler,
     get_project_readme_handler,
+    get_project_shares_handler,
     get_project_stats_handler,
+    list_distributions_handler,
     list_projects_handler,
     lock_project_handler,
     open_project_handler,
+    share_project_handler,
     unlock_project_handler,
     update_project_handler,
     update_project_readme_handler,
@@ -351,8 +362,14 @@ def _server_url() -> str:
 
 
 def _create_mcp_server() -> MCPServer:
-    """Create the MCP server (transport security is applied when the HTTP app is built)."""
-    return MCPServer("GNS3 MCP Server")
+    """Create the MCP server (transport security is applied when the HTTP app is built).
+
+    The server is privilege gated: tools are hidden from users who lack the
+    privileges their endpoints require (see gns3server.agent.mcp.tool_access).
+    """
+    from .tool_access import PrivilegeGatedMCPServer
+
+    return PrivilegeGatedMCPServer("GNS3 MCP Server")
 
 
 def _transport_security() -> TransportSecuritySettings:
@@ -571,6 +588,149 @@ async def project_readme_update(
     return await asyncio.to_thread(
         _run_handler_sync, update_project_readme_handler, {"project_id": project_id, "content": content}
     )
+
+
+@mcp.tool()
+async def project_privileges(
+    project_id: Annotated[str, Field(description="Project name or UUID to check privileges on")],
+) -> list[dict[str, Any]]:
+    """Check YOUR effective privileges on one project (instance level).
+
+    Call this before acting on a project you do not own: the answer is the
+    exact set of privileges YOUR user holds on THIS project (owner ACE,
+    shares and resource pools all included), not the global tool list.
+    Tools visible in your session may still be denied (403) on a project
+    shared with a limited role — this check tells you beforehand.
+    """
+    return await asyncio.to_thread(_run_handler_sync, get_project_privileges_handler, {"project_id": project_id})
+
+
+@mcp.tool()
+async def project_distribute(
+    project_id: Annotated[str, Field(description="Project name or UUID to distribute (the source)")],
+    name: Annotated[str, Field(description="Name for the distributed copies (each recipient's own copy)")],
+    target_user: Annotated[str | None, Field(description="Distribute one copy to this user")] = None,
+    target_users: Annotated[
+        list[str] | None, Field(description='Distribute one copy to each of these users, e.g. ["alice","bob"]')
+    ] = None,
+    target_group: Annotated[
+        str | None, Field(description="Distribute one copy to every member of this user group")
+    ] = None,
+    reset_mac_addresses: Annotated[bool, Field(description="Reset MAC addresses in each copy")] = False,
+    owner_role: Annotated[
+        str | None, Field(description="Role of the owner ACE on each copy (default: built-in Lab member)")
+    ] = None,
+    lock_topology: Annotated[
+        bool, Field(description="Lock nodes and drawings in each copy (advisory, default: true)")
+    ] = True,
+) -> list[dict[str, Any]]:
+    """Distribute a project: every recipient gets their own copy (async job, 202).
+
+    Pass exactly one of target_user / target_users / target_group. The job
+    runs in the background; poll its status with project_distribution_list.
+    """
+    params: dict[str, Any] = {"project_id": project_id, "name": name}
+    for key, value in (
+        ("target_user", target_user),
+        ("target_users", target_users),
+        ("target_group", target_group),
+        ("owner_role", owner_role),
+    ):
+        if value is not None:
+            params[key] = value
+    params["reset_mac_addresses"] = reset_mac_addresses
+    params["lock_topology"] = lock_topology
+    return await asyncio.to_thread(_run_handler_sync, distribute_project_handler, params)
+
+
+@mcp.tool()
+async def project_distribution_list(
+    project_id: Annotated[str, Field(description="Project name or UUID whose distribution history to list")],
+) -> list[dict[str, Any]]:
+    """List the distribution history of one project (who, to whom, when, status)."""
+    return await asyncio.to_thread(_run_handler_sync, get_project_distributions_handler, {"project_id": project_id})
+
+
+@mcp.tool()
+async def project_distribution_cancel(
+    project_id: Annotated[str, Field(description="Project name or UUID the distribution belongs to")],
+    distribution_id: Annotated[str, Field(description="Distribution UUID to cancel or remove")],
+) -> list[dict[str, Any]]:
+    """Cancel a running distribution on a project, or remove its finished record.
+
+    A running job switches to "cancelling": the copy in flight completes,
+    the remaining recipients are skipped. A finished job only has its
+    history record removed — the copies already made stay untouched.
+    """
+    params: dict[str, Any] = {"project_id": project_id, "distribution_id": distribution_id}
+    return await asyncio.to_thread(_run_handler_sync, cancel_project_distribution_handler, params)
+
+
+@mcp.tool()
+async def distribution_list() -> list[dict[str, Any]]:
+    """List your distribution history across ALL projects (superadmin: everyone's).
+
+    Each entry names the distributed project (project_name, None when that
+    project no longer exists) and the per-recipient results.
+    """
+    return await asyncio.to_thread(_run_handler_sync, list_distributions_handler, {})
+
+
+@mcp.tool()
+async def distribution_delete(
+    distribution_id: Annotated[str, Field(description="Distribution record UUID to remove")],
+) -> list[dict[str, Any]]:
+    """Remove one record from the cross-project distribution history.
+
+    Works even when the source project is gone. A running distribution is
+    refused (409) — cancel it on its project instead. Copies are untouched.
+    """
+    return await asyncio.to_thread(_run_handler_sync, delete_distribution_handler, {"distribution_id": distribution_id})
+
+
+@mcp.tool()
+async def project_share(
+    project_id: Annotated[str, Field(description="Project name or UUID to share")],
+    target_user: Annotated[str | None, Field(description="Share with this user")] = None,
+    target_users: Annotated[list[str] | None, Field(description="Share with each of these users")] = None,
+    target_group: Annotated[str | None, Field(description="Share with this user group (one group ACE)")] = None,
+    role: Annotated[str | None, Field(description="Role carried by the share (default: built-in Lab member)")] = None,
+) -> list[dict[str, Any]]:
+    """Share a project: targets get access to THIS project (no copy, via an ACE).
+
+    Unlike distribution there is no copy — everyone works on the same
+    project. Sharing again with the same target replaces its role. Only the
+    project owner (or a superadmin) can share; a role with privileges you
+    do not hold on the project is refused.
+    """
+    params: dict[str, Any] = {"project_id": project_id}
+    for key, value in (
+        ("target_user", target_user),
+        ("target_users", target_users),
+        ("target_group", target_group),
+        ("role", role),
+    ):
+        if value is not None:
+            params[key] = value
+    return await asyncio.to_thread(_run_handler_sync, share_project_handler, params)
+
+
+@mcp.tool()
+async def project_share_list(
+    project_id: Annotated[str, Field(description="Project name or UUID whose shares to list")],
+) -> list[dict[str, Any]]:
+    """List who a project is shared with (user/group, role, ACE id)."""
+    return await asyncio.to_thread(_run_handler_sync, get_project_shares_handler, {"project_id": project_id})
+
+
+@mcp.tool()
+async def project_share_delete(
+    project_id: Annotated[str, Field(description="Project name or UUID the share belongs to")],
+    ace_id: Annotated[str, Field(description="ACE id of the share to remove (from project_share_list)")],
+) -> list[dict[str, Any]]:
+    """Remove one share of a project (revokes the target's access)."""
+    params: dict[str, Any] = {"project_id": project_id, "ace_id": ace_id}
+    return await asyncio.to_thread(_run_handler_sync, delete_project_share_handler, params)
 
 
 # ── Node tools ────────────────────────────────────────────────────────
@@ -1940,6 +2100,31 @@ async def server_version() -> list[dict[str, Any]]:
 async def server_statistics() -> list[dict[str, Any]]:
     """Get GNS3 server statistics including computes, projects, nodes, and links."""
     return await asyncio.to_thread(_run_handler_sync, get_statistics_handler, {})
+
+
+# ── Account tools (self-check) ────────────────────────────────────────
+
+
+@mcp.tool()
+async def user_privileges() -> list[dict[str, Any]]:
+    """List YOUR effective privileges, flattened across all resource paths.
+
+    This is the global view: a privilege granted on ANY project (owner ACE,
+    share, resource pool) appears here. It explains which tools your session
+    shows, but NOT what you may do on one specific project — for that use
+    project_privileges(project_id).
+    """
+    return await asyncio.to_thread(_run_handler_sync, get_user_privileges_handler, {})
+
+
+@mcp.tool()
+async def user_quotas() -> list[dict[str, Any]]:
+    """Get YOUR node quota limits and current usage.
+
+    Check this before creating many nodes: it shows the per-user (and
+    project-level, where applicable) limits and how much is already used.
+    """
+    return await asyncio.to_thread(_run_handler_sync, get_user_quotas_handler, {})
 
 
 # ── Symbol tools ──────────────────────────────────────────────────────

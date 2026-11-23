@@ -44,7 +44,7 @@ class TestRolesRoutes:
 
         response = await client.get(app.url_path_for("get_roles"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 8  # 7 default roles + role1
+        assert len(response.json()) == 9  # 8 default roles + role1
 
     async def test_update_role(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -98,7 +98,7 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 27  # 25 default privileges + 2 LLMConfig privileges
+        assert len(privileges) == 34  # 33 seeded privileges + Template.Allocate added here
 
     async def test_get_role_privileges(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -107,7 +107,7 @@ class TestRolesPrivilegesRoutes:
 
         response = await client.get(app.url_path_for("get_role_privileges", role_id=role_in_db.role_id))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 27  # 25 default privileges + 2 LLMConfig privileges
+        assert len(response.json()) == 34  # 33 seeded privileges + Template.Allocate added above
 
     async def test_remove_privilege_from_role(
         self, app: FastAPI, client: AsyncClient, db_session: AsyncSession
@@ -115,7 +115,7 @@ class TestRolesPrivilegesRoutes:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
-        privilege = await rbac_repo.get_privilege_by_name("Template.Allocate")
+        privilege = await rbac_repo.get_privilege_by_name("Symbol.Audit")
 
         response = await client.delete(
             app.url_path_for(
@@ -124,4 +124,4 @@ class TestRolesPrivilegesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
-        assert len(privileges) == 26  # 26 default privileges (24 + 2 LLMConfig)
+        assert len(privileges) == 33  # 34 above - Symbol.Audit removed

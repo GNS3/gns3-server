@@ -154,6 +154,9 @@ class Snapshot:
         Restore the snapshot
         """
 
+        # restoring replaces every project file, disks included: on a frozen
+        # template this would change what every distributed copy sees
+        self._project.check_mutable("restoring a snapshot")
         await self._project.delete_on_computes()
         # We don't send close notification to clients because the close / open dance is purely internal
         await self._project.close(ignore_notification=True)

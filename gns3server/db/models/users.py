@@ -20,7 +20,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, event
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Table, event, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from gns3server.config import Config
@@ -55,6 +55,10 @@ class User(BaseTable):
     ldap_groups: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
+    # Per-user node quotas. NULL means "inherit the group default" and -1 means
+    # "explicitly unlimited" (so a user can be freed from a group limit).
+    max_nodes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_running_nodes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
     acl_entries = relationship("ACE")
 
@@ -84,6 +88,10 @@ class UserGroup(BaseTable):
     user_group_id: Mapped[uuid.UUID] = mapped_column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
+    # Node quotas applied to the group members that do not override them.
+    # NULL means unlimited.
+    default_max_nodes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    default_max_running_nodes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     users = relationship("User", secondary=user_group_map, back_populates="groups")
     acl_entries = relationship("ACE")
 
@@ -97,3 +105,35 @@ def create_default_user_groups(target, connection, **kw):
     connection.execute(stmt)
     connection.commit()
     log.debug("The default user groups have been created in the database")
+
+
+class MCPToolWhitelist(BaseTable):
+    """
+    Admin-defined per-group whitelist of MCP tool names.
+
+    A group with no rows in this table exposes every MCP tool its members
+    may see through the normal privilege gating; rows narrow that set to
+    the listed tools. Kept in the RBAC in-memory snapshot like the other
+    RBAC tables.
+    """
+
+    __tablename__ = "mcp_tool_whitelist"
+
+    user_group_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"), primary_key=True
+    )
+    tool_name: Mapped[str] = mapped_column(String, primary_key=True)
+
+
+class UserPreferences(BaseTable):
+    """
+    Arbitrary JSON document stored per user, owned by the client (e.g. the web UI
+    keeps its per-user settings there so they follow the user across machines).
+    The server stores the document as-is and does not interpret its contents.
+    """
+
+    __tablename__ = "user_preferences"
+
+    user_id = Column(GUID, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    # Mapped style so type checkers see `dict` instead of `Column[dict]`
+    preferences: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default=text("'{}'"))
