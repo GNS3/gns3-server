@@ -233,7 +233,6 @@ class LDAPSettingsUpdate(BaseModel):
     group_search_base: Optional[str] = None
     group_search_filter: Optional[str] = None
     group_mapping: Optional[Dict[str, str]] = None
-    superadmin_groups: Optional[List[str]] = None
     default_group: Optional[str] = None
     start_tls: Optional[bool] = None
     verify_cert: Optional[bool] = None

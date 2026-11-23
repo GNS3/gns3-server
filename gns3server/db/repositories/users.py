@@ -234,7 +234,7 @@ class UsersRepository(BaseRepository):
             auth_source="ldap",
             external_id=profile.external_id,
             is_active=True,
-            is_superadmin=profile.is_superadmin,
+            is_superadmin=False,
         )
         try:
             async with self._db_session.begin_nested():
@@ -289,15 +289,6 @@ class UsersRepository(BaseRepository):
                 )
         if profile.full_name and user.full_name != profile.full_name:
             update_data["full_name"] = profile.full_name
-
-        if user.is_superadmin != profile.is_superadmin:
-            log.info(
-                "Updating superadmin status for LDAP user '%s' from %s to %s",
-                user.username,
-                user.is_superadmin,
-                profile.is_superadmin,
-            )
-            update_data["is_superadmin"] = profile.is_superadmin
 
         if update_data:
             await self._db_session.execute(

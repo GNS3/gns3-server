@@ -308,12 +308,3 @@ def test_ldap_settings_timeout_validation():
 
     with pytest.raises(ValidationError):
         ServerConfig(LDAP={"timeout": 150})
-
-
-def test_ldap_superadmin_groups_json_serialization_preserves_dn_commas():
-    dn_list = ["CN=Admins,OU=Groups,DC=example,DC=com", "GNS3-Admins"]
-    serialized = Config._stringify_option("superadmin_groups", dn_list)
-    assert serialized == '["CN=Admins,OU=Groups,DC=example,DC=com", "GNS3-Admins"]'
-
-    config = ServerConfig(LDAP={"superadmin_groups": serialized})
-    assert config.LDAP.superadmin_groups == dn_list

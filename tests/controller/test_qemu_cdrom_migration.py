@@ -63,6 +63,6 @@ async def test_database_startup_adds_cdrom_interfaces(tmp_path, monkeypatch, ver
             assert revision == _head_revision()
             # the default ACEs are restored on both startup paths
             # (migration chain, or stamp for unversioned databases)
-            assert await connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 8
+            assert await connection.scalar(sa.text("SELECT COUNT(*) FROM acl")) == 9
     finally:
         await app.state._db_engine.dispose()

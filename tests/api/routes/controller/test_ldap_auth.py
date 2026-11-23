@@ -705,7 +705,7 @@ class TestLdapAuthentication:
             if local_grp:
                 await users_repo.delete_user_group(local_grp.user_group_id)
 
-    async def test_ldap_superadmin_group_provisioning_and_revocation(
+    async def test_ldap_admin_group_mapping_grants_administrators_group_and_retains_superadmin_local_only(
         self,
         app: FastAPI,
         unauthorized_client: AsyncClient,
@@ -714,17 +714,16 @@ class TestLdapAuthentication:
         mock_ldap_directory,
     ) -> None:
         """
-        Verify users in configured superadmin_groups receive is_superadmin=True,
-        and users not in superadmin_groups receive is_superadmin=False.
-        Also verify that removing the group revokes superadmin on next login.
+        Verify users in directory groups mapped to 'Administrators' receive the Administrators group
+        and full RBAC privileges, but is_superadmin strictly remains False (decoupled from directory).
         """
-        orig_superadmins = config.settings.LDAP.superadmin_groups
+        orig_mapping = config.settings.LDAP.group_mapping
         users_repo = UsersRepository(db_session)
 
         try:
-            config.settings.LDAP.superadmin_groups = ["GNS3-Admins"]
+            config.settings.LDAP.group_mapping = {"GNS3-Admins": "Administrators", "GNS3-Users": "Users"}
 
-            # 1. Alice is in GNS3-Admins -> should be provisioned with is_superadmin=True
+            # 1. Alice is in GNS3-Admins -> should be provisioned with Administrators group and is_superadmin=False
             resp_alice = await unauthorized_client.post(
                 app.url_path_for("login"),
                 data={"username": "alice", "password": "mock_alice_secret"},
@@ -733,9 +732,11 @@ class TestLdapAuthentication:
             assert resp_alice.status_code == status.HTTP_200_OK
             alice_user = await users_repo.get_user_by_username("alice")
             assert alice_user is not None
-            assert alice_user.is_superadmin is True
+            assert alice_user.is_superadmin is False
+            alice_groups = {g.name for g in await users_repo.get_user_memberships(alice_user.user_id)}
+            assert "Administrators" in alice_groups
 
-            # 2. Bob is in GNS3-Users -> should be provisioned with is_superadmin=False
+            # 2. Bob is in GNS3-Users -> should be provisioned with Users group only
             resp_bob = await unauthorized_client.post(
                 app.url_path_for("login"),
                 data={"username": "bob", "password": "mock_bob_secret"},
@@ -745,9 +746,12 @@ class TestLdapAuthentication:
             bob_user = await users_repo.get_user_by_username("bob")
             assert bob_user is not None
             assert bob_user.is_superadmin is False
+            bob_groups = {g.name for g in await users_repo.get_user_memberships(bob_user.user_id)}
+            assert "Administrators" not in bob_groups
+            assert "Users" in bob_groups
 
-            # 3. Remove GNS3-Admins from superadmin_groups -> Alice logs in again -> superadmin revoked
-            config.settings.LDAP.superadmin_groups = []
+            # 3. Remove GNS3-Admins mapping -> Alice logs in again -> Administrators membership revoked
+            config.settings.LDAP.group_mapping = {"GNS3-Users": "Users"}
             resp_alice2 = await unauthorized_client.post(
                 app.url_path_for("login"),
                 data={"username": "alice", "password": "mock_alice_secret"},
@@ -757,8 +761,10 @@ class TestLdapAuthentication:
             alice_user_updated = await users_repo.get_user_by_username("alice")
             assert alice_user_updated is not None
             assert alice_user_updated.is_superadmin is False
+            alice_groups2 = {g.name for g in await users_repo.get_user_memberships(alice_user.user_id)}
+            assert "Administrators" not in alice_groups2
         finally:
-            config.settings.LDAP.superadmin_groups = orig_superadmins
+            config.settings.LDAP.group_mapping = orig_mapping
             bob_cleanup = await users_repo.get_user_by_username("bob")
             if bob_cleanup:
                 await users_repo.delete_user(bob_cleanup.user_id)

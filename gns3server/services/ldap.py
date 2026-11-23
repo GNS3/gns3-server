@@ -28,7 +28,7 @@ import os
 import re
 import ssl
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 from ldap3 import ALL, Connection, Server, Tls
 from ldap3.core.exceptions import LDAPException
@@ -120,7 +120,6 @@ class LDAPUserProfile:
     email: Optional[str] = None
     full_name: Optional[str] = None
     groups: List[str] = field(default_factory=list)
-    is_superadmin: bool = False
     external_id: Optional[str] = None
 
 
@@ -269,20 +268,6 @@ def _map_to_user_groups(raw_groups: Set[str], group_mapping: Dict[str, str], def
     return mapped_groups
 
 
-def _is_superadmin_member(raw_groups: Set[str], superadmin_groups: List[str]) -> bool:
-    """
-    Check if any raw group or its CN matches configured superadmin directory groups.
-    """
-    if not superadmin_groups:
-        return False
-    targets = {s.strip().lower() for s in superadmin_groups if s.strip()}
-    for raw_group in raw_groups:
-        cn = _extract_cn(raw_group).lower()
-        if raw_group.strip().lower() in targets or cn in targets:
-            return True
-    return False
-
-
 class LDAPService:
     """
     Asynchronous LDAP/Active Directory service.
@@ -342,25 +327,22 @@ class LDAPService:
         user_dn: str,
         clean_username: str,
         settings: LDAPSettings,
-    ) -> Tuple[List[str], bool]:
+    ) -> List[str]:
         raw_groups = _extract_entry_groups(user_entry)
         searched_groups = _search_directory_groups(conn, user_dn, clean_username, settings)
         all_raw_groups = raw_groups | searched_groups
         mapped = _map_to_user_groups(all_raw_groups, settings.group_mapping or {}, settings.default_group)
-        is_superadmin = _is_superadmin_member(all_raw_groups, settings.superadmin_groups or [])
         log.info(
-            "LDAP group resolution for user '%s': memberOf=%s, directory_search=%s -> total_raw=%s -> mapped_to_gns3=%s, is_superadmin=%s (configured mapping: %s, default: '%s', superadmin_groups: %s)",
+            "LDAP group resolution for user '%s': memberOf=%s, directory_search=%s -> total_raw=%s -> mapped_to_gns3=%s (configured mapping: %s, default: '%s')",
             clean_username,
             raw_groups,
             searched_groups,
             all_raw_groups,
             mapped,
-            is_superadmin,
             settings.group_mapping,
             settings.default_group,
-            settings.superadmin_groups,
         )
-        return mapped, is_superadmin
+        return mapped
 
     def _verify_user_credentials(self, server: Server, user_dn: str, password: str, settings: LDAPSettings) -> bool:
         user_conn = self._create_connection(server, user_dn, password, settings.timeout)
@@ -427,14 +409,13 @@ class LDAPService:
 
         external_id = _extract_external_id(user_entry, user_dn)
 
-        groups, is_superadmin = self._resolve_groups(conn, user_entry, user_dn, clean_username, settings)
+        groups = self._resolve_groups(conn, user_entry, user_dn, clean_username, settings)
         log.info(
-            "Extracted LDAP profile for '%s': canonical_username='%s', email='%s', full_name='%s', is_superadmin=%s, external_id='%s'",
+            "Extracted LDAP profile for '%s': canonical_username='%s', email='%s', full_name='%s', external_id='%s'",
             username,
             canonical_username,
             email,
             full_name,
-            is_superadmin,
             external_id,
         )
         return LDAPUserProfile(
@@ -442,7 +423,6 @@ class LDAPService:
             email=email,
             full_name=full_name,
             groups=groups,
-            is_superadmin=is_superadmin,
             external_id=external_id,
         )
 

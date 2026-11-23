@@ -75,10 +75,6 @@ class LDAPSettings(BaseModel):
         default_factory=dict,
         description="Map of LDAP Group DN/Name to GNS3 UserGroup (e.g. {'GNS3-Admins': 'Administrators'})",
     )
-    superadmin_groups: List[str] = Field(
-        default_factory=list,
-        description="Directory group names or DNs whose members are automatically granted superadministrator privileges",
-    )
     default_group: str = Field("Users", description="Default GNS3 UserGroup assigned to provisioned users")
     start_tls: bool = Field(False, description="Use StartTLS on cleartext connection")
     verify_cert: bool = Field(True, description="Verify SSL/TLS certificate when connecting via LDAPS or StartTLS")
@@ -88,23 +84,6 @@ class LDAPSettings(BaseModel):
     )
     timeout: int = Field(10, ge=1, le=120, description="Network timeout in seconds for LDAP operations")
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
-
-    @field_validator("superadmin_groups", mode="before")
-    @classmethod
-    def parse_superadmin_groups(cls, v):
-        if isinstance(v, str):
-            v = v.strip()
-            if not v:
-                return []
-            try:
-                parsed = json.loads(v)
-                if isinstance(parsed, list):
-                    return [str(x).strip() for x in parsed if str(x).strip()]
-            except Exception:
-                return [x.strip() for x in v.split(",") if x.strip()]
-        if isinstance(v, (list, set, tuple)):
-            return [str(x).strip() for x in v if str(x).strip()]
-        return []
 
     @field_validator("group_mapping", mode="before")
     @classmethod
