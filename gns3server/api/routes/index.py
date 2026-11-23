@@ -30,7 +30,7 @@ templates = Jinja2Templates(directory=os.path.join("gns3server", "templates"))
 @router.get("/", include_in_schema=False)
 async def root():
 
-    return RedirectResponse("/static/web-ui/bundled", status_code=308)  # permanent redirect
+    return RedirectResponse("/static/web-ui/bundled", status_code=status.HTTP_308_PERMANENT_REDIRECT)
 
 
 @router.get("/debug", response_class=HTMLResponse, deprecated=True, include_in_schema=False)
@@ -42,7 +42,7 @@ def debug(request: Request):
 
 @router.get("/static/web-ui", include_in_schema=False)
 async def web_ui_redirect():
-    return RedirectResponse("/static/web-ui/bundled", status_code=308)
+    return RedirectResponse("/static/web-ui/bundled", status_code=status.HTTP_308_PERMANENT_REDIRECT)
 
 
 @router.get("/static/web-ui/{file_path:path}", description="Web user interface", include_in_schema=False)
