@@ -392,6 +392,22 @@ async def test_create_with_empty_extra_hosts(compute_project, manager):
 
 
 @pytest.mark.asyncio
+async def test_create_with_ipv6_extra_hosts(compute_project, manager):
+    """IPv6 addresses contain colons themselves: entries are split on the first colon only."""
+
+    extra_hosts = "test:2001:db8::1"
+    response = {"Id": "e90e34656806", "Warnings": []}
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu", extra_hosts=extra_hosts)
+            await vm.create()
+            called_kwargs = mock.call_args[1]
+            assert "GNS3_EXTRA_HOSTS=2001:db8::1\ttest" in called_kwargs["data"]["Env"]
+    assert vm._extra_hosts == extra_hosts
+
+
+@pytest.mark.asyncio
 async def test_create_with_project_variables(compute_project, manager):
     response = {"Id": "e90e34656806", "Warnings": []}
 

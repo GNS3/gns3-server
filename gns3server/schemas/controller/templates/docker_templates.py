@@ -17,14 +17,19 @@
 
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
-from ...common import AuxType, ConsoleType, CustomAdapter, ExtraConfig
+from ...common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, validate_extra_hosts
 from ...update import PartialUpdateModel
 from . import Category, TemplateBase
 
 
 class DockerTemplateBase(TemplateBase):
+    @field_validator("extra_hosts")
+    @classmethod
+    def _validate_extra_hosts(cls, value):
+        return validate_extra_hosts(value)
+
     category: Optional[Category] = Category.guest
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = "docker_guest"

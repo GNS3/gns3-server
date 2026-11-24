@@ -19,7 +19,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from ..common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, NodeStatus
+from ..common import AuxType, ConsoleType, CustomAdapter, ExtraConfig, NodeStatus, validate_extra_hosts
 from ..update import PartialUpdateModel
 
 
@@ -78,6 +78,11 @@ class DockerCreate(DockerBase):
     Properties to create a Docker node.
     """
 
+    @field_validator("extra_hosts")
+    @classmethod
+    def _validate_extra_hosts(cls, value):
+        return validate_extra_hosts(value)
+
     name: str
     image: str = Field(..., description="Docker image name")
     application_id: Optional[int] = Field(
@@ -96,6 +101,11 @@ class DockerUpdate(PartialUpdateModel, DockerBase):
     """
     Properties to update a Docker node.
     """
+
+    @field_validator("extra_hosts")
+    @classmethod
+    def _validate_extra_hosts(cls, value):
+        return validate_extra_hosts(value)
 
     update_excluded_fields = ("node_id",)
 

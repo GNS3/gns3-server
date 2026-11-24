@@ -1115,6 +1115,55 @@ class TestDockerTemplate:
         for item, value in expected_response.items():
             assert response.json().get(item) == value
 
+    async def test_docker_template_create_rejects_invalid_extra_hosts(self, app: FastAPI, client: AsyncClient) -> None:
+        """
+        extra_hosts entries must be 'hostname:IP' pairs with a real IPv4/IPv6
+        address: GNS3 containers have no default Docker network, so special
+        values such as 'host-gateway' cannot resolve to anything.
+        """
+
+        params = {
+            "name": "Docker template bad hosts",
+            "compute_id": "local",
+            "image": "gns3/endhost:latest",
+            "template_type": "docker",
+            "extra_hosts": "host.docker.internal:host-gateway",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "host-gateway" in response.text
+
+    async def test_docker_template_create_with_ipv6_extra_hosts(self, app: FastAPI, client: AsyncClient) -> None:
+        """IPv6 addresses (which contain colons themselves) are valid extra_hosts addresses."""
+
+        params = {
+            "name": "Docker template ipv6 hosts",
+            "compute_id": "local",
+            "image": "gns3/endhost:latest",
+            "template_type": "docker",
+            "extra_hosts": "test:2001:db8::1",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["extra_hosts"] == "test:2001:db8::1"
+
+    async def test_docker_template_update_rejects_invalid_extra_hosts(self, app: FastAPI, client: AsyncClient) -> None:
+
+        params = {
+            "name": "Docker template hosts update",
+            "compute_id": "local",
+            "image": "gns3/endhost:latest",
+            "template_type": "docker",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        template_id = response.json()["template_id"]
+
+        response = await client.put(
+            app.url_path_for("update_template", template_id=template_id), json={"extra_hosts": "test:not-an-ip"}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 class TestQemuTemplate:
     async def test_cdrom_interfaces_persist_on_template_update(self, app, client):
