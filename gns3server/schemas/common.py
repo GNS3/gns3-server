@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import ipaddress
 from enum import StrEnum
 from typing import Any, Optional
 
@@ -109,3 +110,45 @@ class AuxType(StrEnum):
     telnet = "telnet"
     ssh = "ssh"
     none = "none"
+
+
+def validate_extra_hosts(value: Any) -> Any:
+    """
+    Validate the Docker `extra_hosts` setting: one `hostname:IP` entry per line.
+
+    Each entry must have a non-empty hostname without whitespace and an address
+    that parses as an IPv4 or IPv6 address. Entries are split on the first
+    colon only, so IPv6 addresses (which contain colons themselves) are
+    supported.
+
+    Docker special values such as 'host-gateway' are rejected: GNS3 containers
+    are created with networking disabled and only get interfaces from the GNS3
+    topology, so there is no default Docker network for such a value to
+    resolve to. Use a real, routable address instead.
+    """
+    if value is None:
+        return value
+    if not isinstance(value, str):
+        raise ValueError("extra_hosts must be a string")
+    for raw_line in value.split("\n"):
+        line = raw_line.strip()
+        if not line:
+            continue
+        hostname, separator, address = line.partition(":")
+        hostname = hostname.strip()
+        address = address.strip()
+        if not separator or not hostname or not address:
+            raise ValueError(
+                f"Invalid extra_hosts entry '{line}': expected format is 'hostname:IP' (one entry per line)"
+            )
+        if any(character.isspace() for character in hostname):
+            raise ValueError(f"Invalid extra_hosts entry '{line}': hostname must not contain whitespace")
+        try:
+            ipaddress.ip_address(address)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid extra_hosts entry '{line}': '{address}' is not a valid IPv4 or IPv6 address. "
+                "GNS3 containers have no default Docker network, so special values such as "
+                "'host-gateway' are not supported: use a real, routable address instead"
+            ) from exc
+    return value

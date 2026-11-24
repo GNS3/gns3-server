@@ -86,6 +86,37 @@ class TestDockerNodesRoutes:
         assert response.json()["console_resolution"] == "1280x1024"
         assert response.json()["extra_hosts"] == "test:127.0.0.1"
 
+    async def test_docker_create_with_invalid_extra_hosts(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict
+    ) -> None:
+        """
+        extra_hosts entries must be 'hostname:IP' pairs with a real IPv4/IPv6
+        address. GNS3 containers have no default Docker network, so special
+        values such as 'host-gateway' cannot resolve to anything and must be
+        rejected instead of being silently written into /etc/hosts.
+        """
+
+        base_params["extra_hosts"] = "host.docker.internal:host-gateway"
+        response = await compute_client.post(
+            app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=base_params
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert "host-gateway" in response.text
+
+    async def test_docker_create_with_ipv6_extra_hosts(
+        self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict
+    ) -> None:
+        """IPv6 addresses (which contain colons themselves) are valid extra_hosts addresses."""
+
+        base_params["extra_hosts"] = "test:2001:db8::1"
+        with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
+            with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
+                response = await compute_client.post(
+                    app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=base_params
+                )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["extra_hosts"] == "test:2001:db8::1"
+
     async def test_docker_create_iol_startup_config(
         self, app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict
     ) -> None:
@@ -355,6 +386,17 @@ class TestDockerNodesRoutes:
         assert response.json()["start_command"] == "yes"
         assert response.json()["environment"] == "GNS3=1\nGNS4=0"
         assert response.json()["extra_hosts"] == "test:127.0.0.1"
+
+    async def test_docker_update_with_invalid_extra_hosts(
+        self, app: FastAPI, compute_client: AsyncClient, vm: dict
+    ) -> None:
+
+        params = {"extra_hosts": "test:not-an-ip"}
+        response = await compute_client.put(
+            app.url_path_for("compute:update_docker_node", project_id=vm["project_id"], node_id=vm["node_id"]),
+            json=params,
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     async def test_docker_update_empty_strings_do_not_recreate_container(
         self, app: FastAPI, compute_client: AsyncClient, compute_project: Project

@@ -853,17 +853,18 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
         return env
 
     def _format_extra_hosts(self, extra_hosts):
+        # Split on the first colon only: the hostname cannot contain colons,
+        # while IPv6 addresses do. A plain split(":") would break on IPv6.
         lines = [h.strip() for h in self._extra_hosts.split("\n") if h.strip() != ""]
         hosts = []
-        try:
-            for host in lines:
-                hostname, ip = host.split(":")
-                hostname = hostname.strip()
-                ip = ip.strip()
-                if hostname and ip:
-                    hosts.append((hostname, ip))
-        except ValueError:
-            raise DockerError(f"Can't apply `ExtraHosts`, wrong format: {extra_hosts}")
+        for host in lines:
+            hostname, separator, ip = host.partition(":")
+            if not separator:
+                raise DockerError(f"Can't apply `ExtraHosts`, wrong format: {extra_hosts}")
+            hostname = hostname.strip()
+            ip = ip.strip()
+            if hostname and ip:
+                hosts.append((hostname, ip))
         return "\n".join([f"{h[1]}\t{h[0]}" for h in hosts])
 
     def _format_devices(self, devices_value):
