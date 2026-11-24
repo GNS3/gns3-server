@@ -146,10 +146,12 @@ class DockerKernelDatapathMixin(KernelDatapathMixin):
 
     async def _remove_kernel_veths(self):
         """
-        Delete the root-namespace veth host ends. Unlike relay TAPs (which die
-        with the container network namespace) the host end outlives the
-        container and must be removed explicitly. Deleting an enslaved veth
-        detaches it from its bridge automatically.
+        Delete the root-namespace veth host ends. The kernel deletes the
+        whole pair when the container network namespace goes away, so once
+        the container died these sends fail with "no such device" and are
+        suppressed per-veth below; the explicit removal covers the
+        container-still-alive case while the uBridge channel is still up.
+        Deleting an enslaved veth detaches it from its bridge automatically.
 
         The per-link kernel bridges go too (``_remove_kernel_bridges``), since
         deleting a node or closing a project never runs the link-teardown

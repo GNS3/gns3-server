@@ -1497,8 +1497,12 @@ class DockerVM(DockerKernelDatapathMixin, BaseNode):
             # "bridge create" for them (the gate checks the name's presence)
             # and fail on "bridge add_nio_udp: bridge doesn't exist".
             self._bridges.clear()
-            # veth host ends live in the root namespace and survive container
-            # death — remove them while the uBridge control channel is still up.
+            # veth host ends live in the root namespace but do NOT survive
+            # container death: the kernel deletes the whole pair when the
+            # container network namespace goes away. Remove them here so the
+            # container-still-alive case is cleaned in a controlled way while
+            # the uBridge channel is up; if the container is already dead the
+            # sends fail with "no such device" and are suppressed inside.
             await self._remove_kernel_veths()
             await self._stop_ubridge()
 

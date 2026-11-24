@@ -1317,6 +1317,13 @@ class Project:
         except Exception:
             if force_delete is False:
                 raise
+            # The compute-side teardown failed, but the controller state
+            # must stay consistent: clear the port back-references that
+            # Link.delete() would have cleared, or the "Port is already
+            # used" guard in Link.add_node would block the port forever.
+            # release_ports() is idempotent, so this is safe after a
+            # partial teardown.
+            link.release_ports()
         self.dump()
         self.emit_notification("link.deleted", link.asdict())
 

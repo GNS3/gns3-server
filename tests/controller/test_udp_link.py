@@ -243,6 +243,76 @@ async def test_delete_uncreated_non_deferred_link_preserves_existing_behavior(pr
 
 
 @pytest.mark.asyncio
+async def test_delete_link_force_clears_ports_when_compute_delete_fails(project):
+    """
+    A compute-side failure during the NIO removal (issue #3105: uBridge
+    answers 409 because the container died and its veth is gone) must not
+    leave stale port back-references behind: with force_delete=True the
+    controller clears them itself, or the "Port is already used" guard
+    would block the port for the rest of the session.
+    """
+
+    compute1 = MagicMock()
+    compute2 = MagicMock()
+
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    link = await project.add_link()
+    link.create = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 3, 1)
+    project.emit_notification = MagicMock()
+
+    # UDPLink.delete only tolerates ControllerNotFoundError: anything
+    # else aborts it before the switch-side cleanup and release_ports()
+    compute1.delete = AsyncioMagicMock(side_effect=ControllerError("HTTP 409: No such device"))
+
+    await project.delete_link(link.id, force_delete=True)
+
+    assert link.id not in project._links
+    assert node1.get_port(0, 4).link is None
+    assert node2.get_port(3, 1).link is None
+    assert link not in node1.links
+    assert link not in node2.links
+    project.emit_notification.assert_any_call("link.deleted", link.asdict())
+
+
+@pytest.mark.asyncio
+async def test_delete_link_without_force_keeps_existing_behavior(project):
+    """
+    Without force_delete a failing compute teardown still raises: the
+    controller removes the link from the project but leaves the port
+    back-references alone (a later project reload rebuilds them from the
+    topology file, which was not dumped).
+    """
+
+    compute1 = MagicMock()
+    compute2 = MagicMock()
+
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    link = await project.add_link()
+    link.create = AsyncioMagicMock()
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 3, 1)
+
+    compute1.delete = AsyncioMagicMock(side_effect=ControllerError("HTTP 409: No such device"))
+
+    with pytest.raises(ControllerError):
+        await project.delete_link(link.id)
+
+    assert link.id not in project._links
+    assert node1.get_port(0, 4).link is link
+    assert node2.get_port(3, 1).link is link
+
+
+@pytest.mark.asyncio
 async def test_reset(project):
     """
     reset() re-creates the link on the same object: the fresh port pair must
