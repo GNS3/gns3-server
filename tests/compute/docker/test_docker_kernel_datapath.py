@@ -439,6 +439,42 @@ async def test_remove_kernel_nio_tolerates_peer_winning_bridge_delete(vm):
     await vm.adapter_remove_nio_binding(0)  # must not raise
 
 
+@pytest.mark.asyncio
+async def test_remove_kernel_nio_tolerates_missing_anchor(vm):
+
+    # A container death deletes the whole veth pair with its network
+    # namespace, so the teardown can target a device that no longer
+    # exists. The whole removal path must tolerate it — the carrier-down
+    # call included: it used to raise and the compute answered 409, which
+    # aborted the controller's cleanup and left the peer port stuck
+    # (issue #3105).
+    vm._ubridge_hypervisor = MagicMock()
+
+    async def send(command):
+        if "link set" in command:
+            raise UbridgeError("No such device")
+
+    vm._ubridge_send = AsyncioMagicMock(side_effect=send)
+    vm.status = "started"
+    host_ifc, _ = vm._veth_names(0, 0)
+    vm._kernel_veths[(0, 0)] = host_ifc
+    vm._ethernet_adapters[0].add_nio(0, vm.manager.create_nio({"type": "nio_bridge", "bridge": BRIDGE}))
+
+    await vm.adapter_remove_nio_binding(0)  # must not raise
+
+    assert vm._ethernet_adapters[0].get_nio(0) is None
+    # the rest of the teardown still ran despite the carrier failure
+    vm._ubridge_send.assert_has_calls(
+        [
+            call(f'tc reset "{host_ifc}"'),
+            call(f'link set "{host_ifc}" down'),
+            call(f'brctl delif "{BRIDGE}" "{host_ifc}"'),
+            call(f'brctl delete "{BRIDGE}"'),
+        ],
+        any_order=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Carrier / suspend
 # ---------------------------------------------------------------------------

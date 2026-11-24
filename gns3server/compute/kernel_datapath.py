@@ -492,7 +492,12 @@ class KernelDatapathMixin:
             with contextlib.suppress(UbridgeError):
                 await self._ubridge_send(f'tc reset "{host_ifc}"')
             if self.status == "started":
-                await self._set_adapter_carrier(adapter_number, False, port_number)
+                # Same best-effort contract as the neighbors: the anchor
+                # device may already be gone (a Docker container death
+                # deletes the whole veth pair with its namespace), and a
+                # missing device during teardown means "already down".
+                with contextlib.suppress(UbridgeError):
+                    await self._set_adapter_carrier(adapter_number, False, port_number)
             if nio.bridge is not None:
                 with contextlib.suppress(UbridgeError):
                     await self._ubridge_send(f'brctl delif "{nio.bridge}" "{host_ifc}"')
