@@ -27,6 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server import schemas
 from gns3server.config import Config
 from gns3server.db import models
+from gns3server.db.rbac_state import RbacState
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service, ldap_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
@@ -700,6 +701,46 @@ class TestLdapAuthentication:
             assert user2.username == "concurrent_user"
         finally:
             await users_repo.delete_user(user1.user_id)
+
+    async def test_ldap_group_sync_marks_rbac_snapshot_dirty(self, db_session: AsyncSession) -> None:
+        """
+        Verify that a LDAP membership sync invalidates the RBAC snapshot. The
+        snapshot holds group membership in memory and is only rebuilt after a
+        mark_dirty(): without it, a directory-provisioned user keeps failing
+        privilege checks even though the user_group_map rows are correct.
+        """
+        users_repo = UsersRepository(db_session)
+        users_group = await users_repo.get_user_group_by_name("Users")
+        user = await users_repo.create_user(
+            schemas.UserCreate(
+                username="snapshot_dirty_user",
+                email="snapshot_dirty@example.com",
+                password="placeholder_password",
+                user_group_id=users_group.user_group_id,
+            )
+        )
+
+        rbac_state = RbacState.instance()
+        rbac_state.reset()
+        # Pretend the snapshot is loaded and clean: needs_reload must become
+        # True because of the sync itself, not because of a prior reset.
+        rbac_state._loaded = True
+        rbac_state._dirty = False
+
+        profile = LDAPUserProfile(
+            username="snapshot_dirty_user",
+            email="snapshot_dirty@example.com",
+            full_name="Snapshot Dirty User",
+            groups=["Administrators"],
+            external_id=f"uid={user.username},ou=users,dc=example,dc=com",
+        )
+        try:
+            assert rbac_state.needs_reload is False
+            await users_repo._sync_user_groups(user, profile)
+            assert rbac_state.needs_reload is True
+        finally:
+            await users_repo.delete_user(user.user_id)
+            rbac_state.reset()
 
     async def test_ldap_group_revocation_reconciles_removed_mappings_and_preserves_local_groups(
         self,

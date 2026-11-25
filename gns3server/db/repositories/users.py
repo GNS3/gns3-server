@@ -392,6 +392,12 @@ class UsersRepository(BaseRepository):
 
         user.ldap_groups = json.dumps(list(target_group_names))
 
+        # Membership changes must invalidate the RBAC snapshot, same as the
+        # local create/update paths, or the next privilege check runs against
+        # stale group membership and directory-provisioned users keep getting
+        # "privilege ... is required" even though their rows are correct.
+        self._rbac_state.mark_dirty()
+
         if not unique_group_ids:
             log.warning(
                 "No GNS3 groups were assigned to LDAP user '%s' (profile.groups: %s)", profile.username, profile.groups
