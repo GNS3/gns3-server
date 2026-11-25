@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from ldap3 import ALL, MOCK_SYNC, Connection, Server
+from ldap3 import MOCK_SYNC, NONE, Connection, Server
 from pydantic import SecretStr
 
 from gns3server.schemas.config import LDAPSettings
@@ -26,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def mock_ldap_server():
-    server = Server("mock_ldap_server", get_info=ALL)
+    server = Server("mock_ldap_server", get_info=NONE)
     admin_conn = Connection(
         server,
         user="cn=admin,dc=example,dc=com",
@@ -274,3 +274,15 @@ async def test_ldap_connection_disables_check_names():
     server = Server("mock_server")
     conn = service._create_connection(server, "cn=admin", "password", timeout=5)
     assert conn.check_names is False
+
+
+async def test_ldap_server_uses_get_info_none(config):
+    """
+    Verify that ldap3.Server is created with get_info=NONE to prevent
+    client-side schema validation from failing on plain OpenLDAP directories
+    lacking Active Directory-specific schema attributes.
+    """
+    service = LDAPService()
+    server = service._create_server(config.settings.LDAP)
+    assert server.get_info == NONE
+    assert server.schema is None

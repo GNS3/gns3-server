@@ -306,9 +306,9 @@ class TestSettingsRoutes:
         assert json.loads(parsed["LDAP"]["group_mapping"]) == {"GNS3-Admins": "Administrators"}
 
     async def test_post_test_ldap_connection(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
-        from ldap3 import ALL, MOCK_SYNC, Connection, Server
+        from ldap3 import MOCK_SYNC, NONE, Connection, Server
 
-        server = Server("mock_ldap_test", get_info=ALL)
+        server = Server("mock_ldap_test", get_info=NONE)
         conn = Connection(
             server,
             user="cn=admin,dc=example,dc=com",

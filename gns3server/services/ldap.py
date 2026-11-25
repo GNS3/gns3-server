@@ -30,7 +30,7 @@ import ssl
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from ldap3 import ALL, Connection, Server, Tls
+from ldap3 import NONE, Connection, Server, Tls
 from ldap3.core.exceptions import LDAPException
 from ldap3.utils.conv import escape_filter_chars
 
@@ -291,7 +291,7 @@ class LDAPService:
             use_ssl=use_ssl,
             tls=tls_config,
             connect_timeout=settings.timeout,
-            get_info=ALL,
+            get_info=NONE,
         )
 
     def _create_connection(

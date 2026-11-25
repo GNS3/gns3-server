@@ -20,7 +20,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from ldap3 import ALL, MOCK_SYNC, Connection, Server
+from ldap3 import MOCK_SYNC, NONE, Connection, Server
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,7 +39,7 @@ FORM_HEADERS = {"content-type": "application/x-www-form-urlencoded"}
 
 @pytest.fixture
 def mock_ldap_directory(config: Config):
-    server = Server("mock_ldap_controller", get_info=ALL)
+    server = Server("mock_ldap_controller", get_info=NONE)
     conn = Connection(
         server, user="cn=admin,dc=example,dc=com", password="placeholder_password", client_strategy=MOCK_SYNC
     )
