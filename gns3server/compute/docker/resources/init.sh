@@ -40,7 +40,19 @@ do
     # Copy original files if destination is empty (first start)
     if [ ! -f "/gns3volumes$i/.gns3_perms" ]; then
         cp -a "$i/." "/gns3volumes$i"
-        touch "/gns3volumes$i/.gns3_perms"
+    fi
+    if [ ! -s "/gns3volumes$i/.gns3_perms" ]; then
+        # Record the image-side ownership of the whole tree; the bind
+        # mount below is not in place yet, so "$i" still shows the
+        # image's own directory. This is the first-start counterpart of
+        # the stop-time record: without it a brand-new node has no
+        # record at all and images running as a non-root USER find
+        # their volumes owned by the server user inside the container.
+        # A file that exists but is empty (e.g. a failed stop-time
+        # record) is refreshed the same way; existing data is never
+        # re-copied over.
+        find "$i" -depth -print0 | xargs -0 stat -c '%a:%u:%g:%n' \
+            > "/gns3volumes$i/.gns3_perms"
     fi
 
     mount --bind "/gns3volumes$i" "$i"
@@ -95,13 +107,47 @@ done
 ifup -a -f
 
 # continue normal docker startup
+# Docker allows USER user:group and USER uid:gid; su only takes one
+# account, so keep the user part (the declared group is ignored).
+if [ -n "${GNS3_USER:-}" ]; then
+    GNS3_USER=${GNS3_USER%%:*}
+fi
 case "$GNS3_USER" in
-  [1-9][0-9]*)
-    # for when the user field defined in the Docker container is an ID
-    export GNS3_USER=$(cat /etc/passwd | grep ${GNS3_USER-root} | awk -F: '{print $1}')
+  [0-9]*)
+    # numeric UID: resolve it to an account name with an exact match on
+    # the UID field (a loose grep could pick a wrong account)
+    mapped=$(awk -F: -v u="$GNS3_USER" '$3 == u { print $1; exit }' /etc/passwd)
+    if [ -n "$mapped" ]; then
+        export GNS3_USER="$mapped"
+    else
+        # no passwd entry: create one so su can drop to this UID/GID,
+        # then su must use that new name (it looks accounts up by name)
+        echo "gns3uid${GNS3_USER}:x:${GNS3_USER}:${GNS3_USER}::/tmp:/bin/sh" >> /etc/passwd
+        export GNS3_USER="gns3uid${GNS3_USER}"
+    fi
     ;;
   *)
     ;;
 esac
 eval HOME="$(echo ~${GNS3_USER-root})"
-exec su ${GNS3_USER-root} -p -- /gns3/run-cmd.sh "$OLD_PATH" "$@"
+
+# An image may declare a user whose login shell refuses commands,
+# e.g. osixia/openldap 2.x declares USER ldap with /sbin/nologin.
+# su then exits 1 right away and the container never boots.
+# Docker's USER never uses a login shell, so pick a real shell here.
+SU_SHELL_ARG=""
+if [ -n "${GNS3_USER:-}" ]; then
+    user_shell=$(awk -F: -v u="$GNS3_USER" '$1 == u { print $7; exit }' /etc/passwd)
+    case "$user_shell" in
+        */nologin|*/false|*/true)
+            SU_SHELL_ARG="-s /bin/sh"
+            ;;
+        "")
+            # account not in /etc/passwd: let su report its own error
+            ;;
+        *)
+            [ -x "$user_shell" ] || SU_SHELL_ARG="-s /bin/sh"
+            ;;
+    esac
+fi
+exec su ${GNS3_USER-root} ${SU_SHELL_ARG} -p -- /gns3/run-cmd.sh "$OLD_PATH" "$@"
