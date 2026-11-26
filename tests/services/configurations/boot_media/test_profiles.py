@@ -66,6 +66,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosxrv9k",
         "cisco-nxosv9k",
         "cisco-viptela",
+        "juniper-vsrx",
         "paloalto-panos",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
@@ -77,6 +78,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-iosxrv9k": "cisco_xr",
         "cisco-nxosv9k": "cisco_nxos",
         "cisco-viptela": "cisco_viptela",
+        "juniper-vsrx": "juniper_junos",
         "paloalto-panos": "paloalto_panos",
     }
     assert all(
@@ -536,3 +538,25 @@ def test_panos_init_cfg_declares_the_operational_modes_the_configuration_needs()
     assert panos_init_cfg(extra=ordinary) == ["type=dhcp-client"]
     routing = "<setting><advanced-routing>yes</advanced-routing></setting>"
     assert panos_init_cfg(routing) == ["type=dhcp-client", "plugin-op-commands=advance-routing:enable"]
+
+
+def test_vsrx_stores_the_configuration_as_juniper_conf_on_a_cdrom_with_lf_endings():
+    profile = get_profile("juniper-vsrx")
+    text = "## Last commit: x\r\nversion 23.2R1.13;\r\nsystem {\r\n    host-name vsrx;\r\n}"
+    assert profile.files(text, CONTEXT) == {"juniper.conf": text.replace("\r\n", "\n").encode() + b"\n"}
+    assert profile.device_types == ("juniper_junos",) and profile.media == "cdrom" and profile.volume_label == "CONFIG"
+    assert profile.files("system {\n    host-name vsrx;\n}\n", CONTEXT)["juniper.conf"].endswith(b"}\n")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "set system host-name vsrx\nset interfaces fxp0 unit 0\n",  # The first boot is the only time the file is read.
+        "system {\n    host-name vsrx;\n",
+        "hostname vsrx",
+        "",
+    ],
+)
+def test_vsrx_refuses_text_the_loader_could_not_read(text):
+    with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
+        get_profile("juniper-vsrx").files(text, CONTEXT)
