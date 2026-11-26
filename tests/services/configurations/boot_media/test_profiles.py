@@ -38,6 +38,11 @@ BOOTSTRAP = (
     'Content-Type: multipart/mixed; boundary="==BOUNDARY=="\nMIME-Version: 1.0\n\n'
     "--==BOUNDARY==\nContent-Type: text/cloud-config\n\n#cloud-config\nvinitparam:\n - uuid : abc\n--==BOUNDARY==--\n"
 )
+XR_ADMIN = "username admin\n group root-lr\n group cisco-support\n secret 0 cisco123\n!\n"
+XR_LISTING = (
+    "!! IOS XR Configuration 26.1.1\nhostname XR1\n"
+    "username lab\n group root-lr\n group cisco-support\n secret 10 $6$abc$def\n!\nend\n"
+)
 
 
 def test_registry_lists_the_supported_profiles():
@@ -46,6 +51,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-c8000v-autonomous",
         "cisco-c8000v-controller",
         "cisco-iosv",
+        "cisco-iosxrv9k",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
@@ -53,6 +59,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-c8000v-autonomous": "cisco_ios_telnet",
         "cisco-c8000v-controller": "cisco_ios_telnet",
         "cisco-iosv": "cisco_ios_telnet",
+        "cisco-iosxrv9k": "cisco_xr",
     }
     assert all(
         set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
@@ -97,6 +104,38 @@ def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, te
     assert profile.volume_label == "GNS3_BOOT"
     assert profile.media == "cdrom"
     assert profile.device_types == ("cisco_ios_telnet",)
+
+
+def xr_text(content, password=None):
+    context = MediaContext(node_id=NODE, admin_password=password)
+    return get_profile("cisco-iosxrv9k").files(content, context)["iosxr_config.txt"].decode()
+
+
+def test_iosxrv9k_stores_the_text_as_iosxr_config_with_lf_line_endings():
+    profile = get_profile("cisco-iosxrv9k")
+    assert profile.files("hostname XR1\r\nend\r\n", CONTEXT) == {"iosxr_config.txt": b"hostname XR1\nend\n"}
+    assert profile.device_types == ("cisco_xr",) and profile.volume_label == "config-1"
+
+
+def test_iosxrv9k_keeps_the_user_of_a_captured_listing():
+    assert xr_text(XR_LISTING, "Lab#Pass1") == XR_LISTING
+
+
+def test_iosxrv9k_uses_the_saved_password_when_the_text_has_no_usable_user():
+    assert xr_text("hostname XR1\nend\n", "cisco123") == XR_ADMIN + "hostname XR1\nend\n"
+    # A user without a loadable secret (masked, or no secret at all) is replaced by the admin user.
+    masked = "hostname XR1\nusername lab\n group root-lr\n secret 10 *****\n!\nend\n"
+    assert xr_text(masked, "cisco123") == XR_ADMIN + "hostname XR1\nend\n"
+
+
+def test_iosxrv9k_counts_the_older_password_line_as_a_usable_secret():
+    listing = "hostname XR1\nusername lab\n group root-lr\n password 7 0822455D0A16\n!\nend\n"
+    assert xr_text(listing, "cisco123") == listing
+
+
+def test_iosxrv9k_without_a_usable_password_leaves_the_text_alone():
+    assert xr_text("hostname XR1\nend\n") == "hostname XR1\nend\n"
+    assert xr_text("hostname XR1\nend\n", "with space") == "hostname XR1\nend\n"
 
 
 def iosv_files(content):
