@@ -31,16 +31,22 @@ def upgrade() -> None:
     # 3.1, so it is the correct carrier for the backfill: the equivalent
     # wiring must not be added by editing the already-applied b7d4c3f2a1e9
     # migration, which alembic never re-runs.
-    from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
-        PROJECT_ACTION_PRIVILEGES,
-        PROJECT_ACTION_ROLE_NAMES,
-        _add_privileges,
-        _seed_default_aces,
-    )
+    #
+    # Skip databases without the RBAC tables: they are always present on a
+    # real upgrade path (b7d4c3f2a1e9 creates them), but not on the bare
+    # in-memory schema used by the migration unit test.
+    tables = set(sa.inspect(op.get_bind()).get_table_names())
+    if "privileges" in tables:
+        from gns3server.db_migrations.versions.b7d4c3f2a1e9_multiuser_rbac_distribution_quotas_mcp import (
+            PROJECT_ACTION_PRIVILEGES,
+            PROJECT_ACTION_ROLE_NAMES,
+            _add_privileges,
+            _seed_default_aces,
+        )
 
-    connection = op.get_bind()
-    _add_privileges(connection, PROJECT_ACTION_PRIVILEGES, PROJECT_ACTION_ROLE_NAMES)
-    _seed_default_aces(connection)
+        connection = op.get_bind()
+        _add_privileges(connection, PROJECT_ACTION_PRIVILEGES, PROJECT_ACTION_ROLE_NAMES)
+        _seed_default_aces(connection)
 
 
 def downgrade() -> None:
