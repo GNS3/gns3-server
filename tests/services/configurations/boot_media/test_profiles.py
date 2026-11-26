@@ -2,6 +2,7 @@
 
 import base64
 import email
+import hashlib
 import json
 from email import policy
 
@@ -44,12 +45,14 @@ def test_registry_lists_the_supported_profiles():
         "cisco-cat9kv",
         "cisco-c8000v-autonomous",
         "cisco-c8000v-controller",
+        "cisco-iosv",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
         "cisco-cat9kv": "cisco_ios_telnet",
         "cisco-c8000v-autonomous": "cisco_ios_telnet",
         "cisco-c8000v-controller": "cisco_ios_telnet",
+        "cisco-iosv": "cisco_ios_telnet",
     }
     assert all(
         set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
@@ -94,6 +97,50 @@ def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, te
     assert profile.volume_label == "GNS3_BOOT"
     assert profile.media == "cdrom"
     assert profile.device_types == ("cisco_ios_telnet",)
+
+
+def iosv_files(content):
+    return get_profile("cisco-iosv").files(content, CONTEXT)
+
+
+def test_iosv_puts_the_text_and_its_md5_on_a_disk_with_lf_line_endings():
+    profile = get_profile("cisco-iosv")
+    files = iosv_files("hostname R1\r\nend")
+    assert files["ios_config.txt"] == b"hostname R1\nend\n"
+    # The checksum file is the MD5 of the configuration file, as on the vendor's own startup disk.
+    expected = hashlib.md5(b"hostname R1\nend\n", usedforsecurity=False).hexdigest()
+    assert files["ios_config_checksum"] == expected.encode() + b"\n"
+    assert profile.media == "disk" and profile.device_types == ("cisco_ios_telnet",)
+
+
+def test_iosv_rewrites_the_caret_c_banner_delimiter_of_a_captured_listing():
+    listing = "hostname R1\nbanner exec ^C\nline one\nline two\n^C\nbanner motd ^Chello lab^C\nend\n"
+    text = iosv_files(listing)["ios_config.txt"].decode()
+    assert text == "hostname R1\nbanner exec %\nline one\nline two\n%\nbanner motd %hello lab%\nend\n"
+
+
+def test_iosv_picks_a_delimiter_that_is_not_in_the_banner_text():
+    text = iosv_files("banner motd ^C100% sure~|^C\nend\n")["ios_config.txt"].decode()
+    assert text == "banner motd @100% sure~|@\nend\n"
+
+
+@pytest.mark.parametrize("banner", ["banner motd ^Cnever closed\nend\n", "banner motd ^C%~|@^C\nend\n"])
+def test_iosv_refuses_a_banner_it_cannot_write_safely(banner):
+    with pytest.raises(ConfigurationError, match="configuration_invalid_content"):
+        iosv_files(banner)
+
+
+def test_iosv_drops_the_header_lines_of_a_pasted_listing():
+    listing = "Building configuration...\n\nCurrent configuration : 1234 bytes\n!\nhostname R1\nend\n"
+    assert iosv_files(listing)["ios_config.txt"].decode() == "\n!\nhostname R1\nend\n"
+    more = "Using 1234 out of 262144 bytes\n!\nhostname R1\nend\n"
+    assert iosv_files(more)["ios_config.txt"].decode() == "!\nhostname R1\nend\n"
+
+
+def test_iosv_does_not_use_the_saved_password():
+    context = MediaContext(node_id=NODE, admin_password="cisco123")
+    profile = get_profile("cisco-iosv")
+    assert profile.files("hostname R1\n", context) == profile.files("hostname R1\n", CONTEXT)
 
 
 def test_a_mime_bootstrap_is_used_as_is():

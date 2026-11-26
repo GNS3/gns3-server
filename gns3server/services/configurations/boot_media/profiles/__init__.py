@@ -8,6 +8,7 @@ from . import (
     cisco_c8000v_autonomous,
     cisco_c8000v_controller,
     cisco_cat9kv,
+    cisco_iosv,
 )
 
 PROFILES: dict[str, BootMediaProfile] = {
@@ -16,6 +17,7 @@ PROFILES: dict[str, BootMediaProfile] = {
         cisco_cat9kv.PROFILE,
         cisco_c8000v_autonomous.PROFILE,
         cisco_c8000v_controller.PROFILE,
+        cisco_iosv.PROFILE,
     )
 }
 
