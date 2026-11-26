@@ -1,6 +1,6 @@
 # GNS3 Server Core Dependencies
 uvicorn==0.54.0
-pydantic==2.14.2
+pydantic==2.14.4
 fastapi==0.162.0
 python-multipart==0.0.33
 websockets==17.4
