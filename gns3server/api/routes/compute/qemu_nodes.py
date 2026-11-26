@@ -29,7 +29,9 @@ from fastapi.responses import StreamingResponse
 
 from gns3server import schemas
 from gns3server.compute.qemu import Qemu
+from gns3server.compute.qemu.qemu_error import QemuError
 from gns3server.compute.qemu.qemu_vm import QemuVM
+from gns3server.services.configurations.shared.node_lease import node_lease
 
 from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
@@ -134,6 +136,16 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
     Update a Qemu node.
     """
 
+    lock = getattr(node, "_startup_lifecycle_lock", None)
+    if lock is not None and lock.locked():
+        raise QemuError(
+            "Another operation (start, stop or a configuration change) is in progress on this node. Wait for it to finish before applying node settings."
+        )
+    async with node_lease(node):
+        return await _update_qemu_node(node_data, node)
+
+
+async def _update_qemu_node(node_data, node):
     data = jsonable_encoder(node_data, exclude_unset=True)
     # Reject interface changes before applying any other property or changing live media.
     for name in ("cdrom_interface", "cdrom2_interface"):

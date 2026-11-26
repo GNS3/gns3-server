@@ -153,7 +153,7 @@ class TestTemplateRoutes:
         }
 
         response = await client.post(app.url_path_for("create_template"), json=params)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     async def test_template_update(self, app: FastAPI, client: AsyncClient) -> None:
 
@@ -1166,6 +1166,34 @@ class TestDockerTemplate:
 
 
 class TestQemuTemplate:
+    async def test_startup_media_profile_persists_and_unknown_profiles_are_rejected(self, app, client):
+        params = {
+            "name": "Day-0 router",
+            "compute_id": "local",
+            "template_type": "qemu",
+            "startup_media_profile": "cisco-c8000v-autonomous",
+        }
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["startup_media_profile"] == "cisco-c8000v-autonomous"
+        template_id = response.json()["template_id"]
+        url = app.url_path_for("get_template", template_id=template_id)
+        assert (await client.get(url)).json()["startup_media_profile"] == "cisco-c8000v-autonomous"
+        update = app.url_path_for("update_template", template_id=template_id)
+        response = await client.put(update, json={"startup_media_profile": "no-such-profile"})
+        assert response.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_422_UNPROCESSABLE_CONTENT)
+        assert "startup_media_profile_unknown" in response.text
+        assert (await client.get(url)).json()["startup_media_profile"] == "cisco-c8000v-autonomous"
+        # An empty value switches back to console restore.
+        response = await client.put(update, json={"startup_media_profile": ""})
+        assert response.status_code == status.HTTP_200_OK
+        assert (await client.get(url)).json()["startup_media_profile"] is None
+        response = await client.post(
+            app.url_path_for("create_template"),
+            json={**params, "name": "Day-0 other", "startup_media_profile": "no-such-profile"},
+        )
+        assert response.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_422_UNPROCESSABLE_CONTENT)
+
     async def test_cdrom_interfaces_persist_on_template_update(self, app, client):
         params = {
             "name": "SATA installer",

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import shutil
 import stat
@@ -369,6 +370,30 @@ class TestQemuNodesRoutes:
         assert response.json()["console"] == free_console_port
         assert response.json()["hdb_disk_image"] == "linux载.img"
         assert response.json()["ram"] == 1024
+
+    async def test_settings_save_refuses_active_configuration_work_without_waiting(self, app, compute_client, qemu_vm):
+        from gns3server.compute.qemu import Qemu
+        from gns3server.services.configurations.shared.node_lease import node_lease
+
+        vm = Qemu.instance().get_node(qemu_vm["node_id"], project_id=qemu_vm["project_id"])
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def active_operation():
+            async with node_lease(vm):
+                entered.set()
+                await release.wait()
+
+        task = asyncio.create_task(active_operation())
+        try:
+            await asyncio.wait_for(entered.wait(), timeout=2)
+            url = app.url_path_for("compute:update_qemu_node", project_id=vm.project.id, node_id=vm.id)
+            response = await asyncio.wait_for(compute_client.put(url, json={"ram": 2048}), timeout=1)
+            assert response.status_code == 409, response.text
+            assert "Another operation" in response.json()["message"]
+            assert vm.ram != 2048
+        finally:
+            release.set()
+            await task
 
     async def test_cdrom_interfaces_update_and_read_back(
         self, app: FastAPI, compute_client: AsyncClient, qemu_vm: dict

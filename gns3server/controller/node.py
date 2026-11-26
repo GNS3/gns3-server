@@ -24,6 +24,7 @@ import re
 import uuid
 from os.path import commonpath
 
+from gns3server.services.configurations.boot_media.profiles import profile_fits_device
 from gns3server.services.configurations.shared.node_lease import lifecycle_action, node_lease
 
 from ..config import Config
@@ -31,7 +32,13 @@ from ..utils import int_to_macaddress, macaddress_to_int
 from ..utils.application_id import is_iol_runner_environment
 from ..utils.images import images_directories
 from ..utils.vxlan import vxlan_device_name
-from .controller_error import ComputeConflictError, ComputeError, ControllerError, ControllerTimeoutError
+from .controller_error import (
+    ComputeConflictError,
+    ComputeError,
+    ControllerBadRequestError,
+    ControllerError,
+    ControllerTimeoutError,
+)
 from .node_types import BUILTIN_NODE_TYPES
 from .ports.port_factory import DynamipsPortFactory, PortFactory, StandardPortFactory
 from .quota_usage import reserve_start
@@ -717,6 +724,20 @@ class Node:
             new_properties.pop("md5sum", None)
         return replaced_properties
 
+    def _check_startup_media_profile(self, changes):
+        """Refuse a startup boot media profile of another appliance than the node's device type."""
+        if self._node_type != "qemu":
+            return
+        properties = changes.get("properties") or {}
+        if "netmiko_device_type" not in changes and "startup_media_profile" not in properties:
+            return
+        profile = properties.get("startup_media_profile", self._properties.get("startup_media_profile"))
+        device_type = changes.get("netmiko_device_type", self._netmiko_device_type)
+        if profile and not profile_fits_device(profile, device_type):
+            raise ControllerBadRequestError(
+                f"The startup configuration profile '{profile}' does not fit the node's device type '{device_type}'"
+            )
+
     async def update(self, **kwargs):
         """
         Update the node on the compute
@@ -733,6 +754,8 @@ class Node:
     async def _update(self, **kwargs):
 
         self.project.check_mutable(f"updating node '{self._name}'")
+        self._check_startup_media_profile(kwargs)
+
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
         old_json = self.asdict()

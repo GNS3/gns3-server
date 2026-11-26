@@ -46,10 +46,22 @@ log = logging.getLogger(__name__)
 def run_upgrade(connection, cfg):
 
     cfg.attributes["connection"] = connection
+    current_rev = MigrationContext.configure(connection).get_current_revision()
+    if current_rev is not None:
+        try:
+            ScriptDirectory.from_config(cfg).get_revision(current_rev)
+        except CommandError:
+            log.error(
+                f"The database is at revision '{current_rev}', which this version does not know "
+                f"(it was probably created by a newer or a modified version). Not upgrading it."
+            )
+            return False
     try:
         command.upgrade(cfg, "head")
     except CommandError as e:
         log.error(f"Could not upgrade database: {e}")
+        return False
+    return True
 
 
 def run_stamp(connection, cfg):
@@ -142,6 +154,9 @@ async def connect_to_db(app: FastAPI) -> None:
                     def upgrade_inventory(connection):
                         from alembic.operations import Operations
 
+                        from gns3server.db_migrations.versions.a4d1f6b83c52_add_startup_media_profile_to_qemu_templates import (
+                            upgrade as upgrade_startup_media,
+                        )
                         from gns3server.db_migrations.versions.a6c8e1b2d490_add_second_qemu_cdrom import (
                             upgrade as upgrade_cdrom,
                         )
@@ -164,6 +179,7 @@ async def connect_to_db(app: FastAPI) -> None:
                             # migration (seed the default ACEs, the built-in
                             # privileges and roles, and create the new tables)
                             upgrade_multiuser()
+                            upgrade_startup_media()
 
                     await conn.run_sync(upgrade_inventory)
                     await conn.run_sync(run_stamp, alembic_cfg)
@@ -172,15 +188,15 @@ async def connect_to_db(app: FastAPI) -> None:
                 else:
                     # Old database without llm_model_configs table: run migrations
                     log.info("Old database detected, running migrations to add llm_model_configs table...")
-                    await conn.run_sync(run_upgrade, alembic_cfg)
-                    await conn.commit()
-                    log.info("Database migrations completed successfully")
+                    if await conn.run_sync(run_upgrade, alembic_cfg):
+                        await conn.commit()
+                        log.info("Database migrations completed successfully")
             elif current_rev != head_rev:
                 # upgrade the database if needed
                 log.info(f"Upgrading database from revision {current_rev} to {head_rev}...")
-                await conn.run_sync(run_upgrade, alembic_cfg)
-                await conn.commit()
-                log.info("Database upgrade completed successfully")
+                if await conn.run_sync(run_upgrade, alembic_cfg):
+                    await conn.commit()
+                    log.info("Database upgrade completed successfully")
         app.state._db_engine = engine
     except SQLAlchemyError as e:
         log.fatal(f"Error while connecting to database '{db_url}: {e}")

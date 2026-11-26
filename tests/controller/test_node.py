@@ -1321,6 +1321,49 @@ async def test_port_link_survives_port_rebuild(node):
     assert rebuilt.link is link
 
 
+@pytest.mark.parametrize(
+    ("netmiko", "profile", "fits"),
+    [
+        ("cisco_xe", "cisco-c8000v-autonomous", True),
+        ("cisco_ios", "cisco-c8000v-controller", True),
+        ("cisco_viptela", "cisco-viptela", True),
+        (None, "cisco-viptela", True),
+        ("cisco_xe", "cisco-viptela", False),
+        ("cisco_viptela", "cisco-c8000v-autonomous", False),
+    ],
+)
+@pytest.mark.asyncio
+async def test_update_refuses_a_startup_media_profile_of_another_appliance(project, compute, netmiko, profile, fits):
+    from gns3server.controller.controller_error import ControllerBadRequestError
+
+    qemu_node = Node(project, compute, "q", node_id=str(uuid.uuid4()), node_type="qemu", properties={})
+    qemu_node.netmiko_device_type = netmiko
+    compute.put = AsyncioMagicMock(return_value=MagicMock(json={}))
+    update = qemu_node.update(properties={"startup_media_profile": profile})
+    if fits:
+        await update
+    else:
+        with pytest.raises(ControllerBadRequestError, match="does not fit"):
+            await update
+        assert qemu_node.properties.get("startup_media_profile") is None
+
+
+@pytest.mark.asyncio
+async def test_update_refuses_a_device_type_that_does_not_fit_the_saved_profile(project, compute):
+    from gns3server.controller.controller_error import ControllerBadRequestError
+
+    qemu_node = Node(
+        project,
+        compute,
+        "q",
+        node_id=str(uuid.uuid4()),
+        node_type="qemu",
+        properties={"startup_media_profile": "cisco-viptela"},
+    )
+    with pytest.raises(ControllerBadRequestError, match="does not fit"):
+        await qemu_node.update(netmiko_device_type="cisco_xe")
+
+
 async def _held_lease(node):
     """Another task holds the node's lifecycle lease, as a running start or stop does."""
     held, release = asyncio.Event(), asyncio.Event()
