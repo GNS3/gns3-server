@@ -27,10 +27,13 @@ import shlex
 import shutil
 import subprocess
 
+from gns3server.services.configurations.shared.startup_journal import mark_new_runtime
+
 from ...utils.asyncio import subprocess_check_output
 from ...utils.get_resource import get_resource
 from ..base_manager import BaseManager
 from ..error import ImageMissingError, NodeError
+from ..project_manager import ProjectManager
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
 from .utils.guest_cid import get_next_guest_cid
@@ -50,14 +53,21 @@ class Qemu(BaseManager):
         self.config_disk = "config.img"
         self._init_config_disk()
 
-    async def create_node(self, *args, **kwargs):
+    def _node_folder_exists(self, project_id, node_id):
+        project = ProjectManager.instance().get_project(project_id)
+        return os.path.isdir(os.path.join(project.module_working_path(self.module_name.lower()), node_id))
+
+    async def create_node(self, name, project_id, node_id, *args, **kwargs):
         """
         Creates a new Qemu VM.
 
         :returns: QemuVM instance
         """
 
-        node = await super().create_node(*args, **kwargs)
+        new = node_id not in self._nodes and not (node_id and self._node_folder_exists(project_id, node_id))
+        node = await super().create_node(name, project_id, node_id, *args, **kwargs)
+        if new:
+            mark_new_runtime(node)
 
         # allocate a guest console ID (CID)
         if node.console_type != "none" and node.console:

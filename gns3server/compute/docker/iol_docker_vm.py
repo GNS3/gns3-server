@@ -66,6 +66,7 @@ from gns3server.compute.kernel_datapath import KernelDatapathMixin
 from gns3server.compute.nios.nio_bridge import NIOBridge
 from gns3server.compute.ubridge.tc_probe import probe_bridge_tap_support, probe_tap_support
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
 from gns3server.utils.kernel_anchor import kernel_anchor_name
 
 log = logging.getLogger(__name__)
@@ -300,11 +301,13 @@ class IOLDockerVM(VendorDockerVM):
                 volumes.append(needed)
         return volumes
 
+    @lifecycle_action
     async def start(self):
 
         await self._prepare_iol_runtime()
         await super().start()
 
+    @lifecycle_action
     async def restart(self):
         """
         Override: the base restart is a bare ``docker restart`` — the runner

@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import shutil
 import uuid
-from unittest.mock import ANY, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 
 import pytest
 
@@ -26,6 +27,7 @@ from gns3server.compute.docker.docker_error import DockerError
 from gns3server.controller.controller_error import ComputeConflictError, ControllerError
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
+from gns3server.services.configurations.shared.node_lease import node_lease
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
@@ -1317,3 +1319,33 @@ async def test_port_link_survives_port_rebuild(node):
     rebuilt = node.get_port(0, 0)
     assert rebuilt is not port  # the rebuild really does replace the objects
     assert rebuilt.link is link
+
+
+async def _held_lease(node):
+    """Another task holds the node's lifecycle lease, as a running start or stop does."""
+    held, release = asyncio.Event(), asyncio.Event()
+
+    async def hold():
+        async with node_lease(node):
+            held.set()
+            await release.wait()
+
+    task = asyncio.create_task(hold())
+    await held.wait()
+    return task, release
+
+
+@pytest.mark.asyncio
+async def test_link_cleanup_and_map_edits_do_not_wait_for_a_running_lifecycle_action(node, compute):
+    compute.delete = AsyncMock()
+    node.project.dump = MagicMock()
+    task, release = await _held_lease(node)
+    try:
+        async with asyncio.timeout(2):
+            # NIO removal is part of link rollback, which runs inside a start; moving a node never reaches the compute.
+            await node.delete("/adapters/0/ports/0/nio")
+            await node.update(x=42)
+        assert node.x == 42
+    finally:
+        release.set()
+        await task

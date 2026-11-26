@@ -32,6 +32,13 @@ import time
 
 log = logging.getLogger(__name__)
 
+from gns3server.services.configurations.shared.node_lease import lifecycle_action
+from gns3server.services.configurations.shared.startup_journal import (
+    journal_path,
+    mark_started,
+    native_runtime_owned,
+    native_save_allowed,
+)
 from gns3server.utils.asyncio import monitor_process, wait_run_in_executor
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.hostname import is_ios_hostname_valid
@@ -113,6 +120,7 @@ class Router(KernelDatapathMixin, BaseNode):
         self._image = ""
         self._ram = 128  # Megabytes
         self._nvram = 128  # Kilobytes
+        self._configuration_save_tasks = set()
         self._mmap = True
         self._sparsemem = True
         self._clock_divisor = 8
@@ -234,7 +242,9 @@ class Router(KernelDatapathMixin, BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        asyncio.ensure_future(self.save_configs())
+        task = asyncio.ensure_future(self.save_configs())
+        self._configuration_save_tasks.add(task)
+        task.add_done_callback(self._configuration_save_tasks.discard)
 
     @property
     def dynamips_id(self):
@@ -291,6 +301,7 @@ class Router(KernelDatapathMixin, BaseNode):
             raise DynamipsError(f"Can't get vm {self._name} status")
         return self._status[int(status[0])]
 
+    @lifecycle_action
     async def start(self):
         """
         Starts this router.
@@ -301,6 +312,7 @@ class Router(KernelDatapathMixin, BaseNode):
         if status == "suspended":
             await self.resume()
         elif status == "inactive":
+            native_runtime_owned(self)
             if not os.path.isfile(self._image) or not os.path.exists(self._image):
                 if os.path.islink(self._image):
                     raise DynamipsError(
@@ -327,6 +339,11 @@ class Router(KernelDatapathMixin, BaseNode):
             # config paths are relative to the working directory configured on Dynamips hypervisor
             startup_config_path = os.path.join("configs", f"i{self._dynamips_id}_startup-config.cfg")
             private_config_path = os.path.join("configs", f"i{self._dynamips_id}_private-config.cfg")
+            if journal_path(self).exists():
+                # A shared hypervisor may have another router's working dir.
+                # Pin only this router's files without changing global cwd.
+                startup_config_path = self.startup_config_path if os.path.exists(self.startup_config_path) else ""
+                private_config_path = self.private_config_path
 
             if not os.path.exists(os.path.join(self._working_directory, private_config_path)) or not os.path.getsize(
                 os.path.join(self._working_directory, private_config_path)
@@ -340,6 +357,7 @@ class Router(KernelDatapathMixin, BaseNode):
             await self._prepare_tap_datapath()
 
             await self._hypervisor.send(f'vm set_config "{self._name}" "{startup_config_path}" "{private_config_path}"')
+            mark_started(self)
             await self._hypervisor.send(f'vm start "{self._name}"')
             self.status = "started"
             log.debug(f'router "{self._name}" [{self._id}] has been started')
@@ -371,6 +389,7 @@ class Router(KernelDatapathMixin, BaseNode):
                     },
                 )
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops this router.
@@ -387,9 +406,14 @@ class Router(KernelDatapathMixin, BaseNode):
         if self._memory_watcher:
             self._memory_watcher.close()
             self._memory_watcher = None
+        saves = list(self._configuration_save_tasks)
+        for task in saves:
+            task.cancel()
+        await asyncio.gather(*saves, return_exceptions=True)
         await self.save_configs()
         await self.stop_wrap_console()
 
+    @lifecycle_action
     async def reload(self):
         """
         Reload this router.
@@ -398,6 +422,7 @@ class Router(KernelDatapathMixin, BaseNode):
         await self.stop()
         await self.start()
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspends this router.
@@ -409,6 +434,7 @@ class Router(KernelDatapathMixin, BaseNode):
             self.status = "suspended"
             log.debug(f'Router "{self._name}" [{self._id}] has been suspended')
 
+    @lifecycle_action
     async def resume(self):
         """
         Resumes this suspended router
@@ -432,6 +458,7 @@ class Router(KernelDatapathMixin, BaseNode):
             return True
         return False
 
+    @lifecycle_action
     async def close(self):
 
         if not (await super().close()):
@@ -1859,11 +1886,14 @@ class Router(KernelDatapathMixin, BaseNode):
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
         return startup_config, private_config
 
+    @lifecycle_action
     async def save_configs(self):
         """
         Saves the startup-config and private-config to files.
         """
 
+        if not native_save_allowed(self):
+            return
         try:
             config_path = os.path.join(self._working_directory, "configs")
             os.makedirs(config_path, exist_ok=True)
@@ -1894,6 +1924,7 @@ class Router(KernelDatapathMixin, BaseNode):
             except (binascii.Error, OSError) as e:
                 raise DynamipsError(f"Could not save the private configuration {config_path}: {e}")
 
+    @lifecycle_action
     async def delete(self):
         """
         Deletes this VM (including all its files).

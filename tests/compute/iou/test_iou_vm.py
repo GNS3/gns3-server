@@ -115,6 +115,28 @@ async def test_start(vm):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("state,imports", [("prepared", True), ("clean", False), ("initialized", False)])
+async def test_only_a_prepared_set_is_imported_into_an_enrolled_nvram(vm, state, imports):
+    from gns3server.services.configurations.shared.safe_io import write_json
+    from gns3server.services.configurations.shared.startup_journal import journal_path, runtime
+
+    write_json(journal_path(vm), {"version": 1, "generation": 1, "state": state})
+    vm._push_configs_to_nvram = MagicMock()
+    vm._check_requirements = AsyncioMagicMock(return_value=True)
+    vm._check_iou_license = AsyncioMagicMock(return_value=True)
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
+    process = MagicMock()
+    process.returncode = None
+    process.communicate = AsyncioMagicMock(return_value=(None, None))
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+        await vm.start()
+    assert vm._push_configs_to_nvram.called is imports
+    assert runtime(vm)["state"] == "initialized"
+    vm._nvram_watcher.close()
+
+
+@pytest.mark.asyncio
 async def test_start_does_not_start_l1_responder_without_l_option(vm):
 
     process = MagicMock(returncode=None)

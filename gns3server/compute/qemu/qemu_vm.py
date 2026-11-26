@@ -38,6 +38,7 @@ import psutil
 
 import gns3server
 from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, while_current_process
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import cancellable_wait_run_in_executor, subprocess_check_output
 from gns3server.utils.kernel_anchor import kernel_anchor_name
@@ -1172,6 +1173,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
         await cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image, self.working_dir)
         super().create()
 
+    @lifecycle_action
     async def start(self):
         """
         Starts this QEMU VM.
@@ -1237,7 +1239,9 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                 log.debug(f'QEMU VM "{self._name}" started PID={self._process.pid}')
                 self._command_line_changed = False
                 self.status = "started"
-                monitor_process(self._process, self._termination_callback)
+                monitor_process(
+                    self._process, while_current_process(self, "_process", self._process, self._termination_callback)
+                )
             except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
                 stdout = self.read_stdout()
                 log.error(f"Could not start QEMU {self.qemu_path}: {e}\n{stdout}")
@@ -1322,6 +1326,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     {"message": f"QEMU process has stopped, return code: {returncode}\n{qemu_stdout}"},
                 )
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops this QEMU VM.
@@ -1504,6 +1509,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
                     log.warning(f"Could not write to QEMU monitor: {e}")
             writer.close()
 
+    @lifecycle_action
     async def close(self):
         """
         Closes this QEMU VM.
@@ -1575,6 +1581,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             self.status = "stopped"
         return status
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspends this QEMU VM.
@@ -1591,6 +1598,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             else:
                 log.debug(f"QEMU VM is not running to be suspended, current status is {vm_status}")
 
+    @lifecycle_action
     async def reload(self):
         """
         Reloads this QEMU VM.
@@ -1603,6 +1611,7 @@ class QemuVM(KernelDatapathMixin, BaseNode):
             await self._control_vm("system_reset")
         log.debug("QEMU VM has been reset")
 
+    @lifecycle_action
     async def resume(self):
         """
         Resumes this QEMU VM.

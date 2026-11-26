@@ -24,6 +24,8 @@ import re
 import uuid
 from os.path import commonpath
 
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, node_lease
+
 from ..config import Config
 from ..utils import int_to_macaddress, macaddress_to_int
 from ..utils.application_id import is_iol_runner_environment
@@ -722,6 +724,14 @@ class Node:
         :param kwargs: Node properties
         """
 
+        if all(prop in self.CONTROLLER_ONLY_PROPERTIES for prop in kwargs):
+            # Never reaches the compute: moving a node must not wait for it to finish starting or stopping.
+            return await self._update(**kwargs)
+        async with node_lease(self):
+            return await self._update(**kwargs)
+
+    async def _update(self, **kwargs):
+
         self.project.check_mutable(f"updating node '{self._name}'")
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
@@ -952,6 +962,7 @@ class Node:
             self._status_changed.clear()
             await self._status_changed.wait()
 
+    @lifecycle_action
     async def start(self, data=None):
         """
         Start a node
@@ -1062,6 +1073,10 @@ class Node:
         return None
 
     async def stop(self, strict=False):
+        async with node_lease(self):
+            await self._stop(strict=strict)
+
+    async def _stop(self, strict=False):
         """
         Stop a node
 
@@ -1096,6 +1111,7 @@ class Node:
             self._set_status(status)
         self.project.emit_notification("node.updated", self.asdict())
 
+    @lifecycle_action
     async def suspend(self):
         """
         Suspend a node
@@ -1107,6 +1123,7 @@ class Node:
             raise ControllerTimeoutError(f"Timeout when suspending {self._name}")
         self._confirm_status("suspended")
 
+    @lifecycle_action
     async def reload(self):
         """
         Suspend a node
@@ -1173,18 +1190,20 @@ class Node:
         """
         HTTP post on the node
         """
-        if self.missing_image and path is None:
-            # The node was never created on the compute (missing image). Any
-            # partial object there is cleaned up when the project is closed.
-            return None
-        if path is None:
-            return await self._compute.delete(
-                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs
-            )
-        else:
+        if path is not None:
+            # NIO removal is part of link rollback, which can run inside a lifecycle action of this node.
             return await self._compute.delete(
                 f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
             )
+        async with node_lease(self):
+            return await self._delete(**kwargs)
+
+    async def _delete(self, **kwargs):
+        if self.missing_image:
+            # The node was never created on the compute (missing image). Any
+            # partial object there is cleaned up when the project is closed.
+            return None
+        return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs)
 
     async def _upload_missing_image(self, type, img, image_digest=None):
         """

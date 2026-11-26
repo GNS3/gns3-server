@@ -27,6 +27,8 @@ import shutil
 import socket
 import subprocess
 
+from gns3server.services.configurations.shared.node_lease import lifecycle_action, while_current_process
+from gns3server.services.configurations.shared.startup_journal import mark_started
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import monitor_process, subprocess_check_output, wait_for_process_termination
 from gns3server.utils.kernel_anchor import kernel_anchor_name
@@ -90,6 +92,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
 
         return [self._ethernet_adapter]
 
+    @lifecycle_action
     async def close(self):
         """
         Closes this VPCS VM.
@@ -236,6 +239,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError(f"Error while looking for the VPCS version: {e}")
 
+    @lifecycle_action
     async def start(self):
         """
         Starts the VPCS process.
@@ -256,6 +260,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
                 await self._prepare_tap_datapath()
 
                 command = self._build_command()
+                mark_started(self)
                 try:
                     log.info(f"Starting VPCS: {command}")
                     self._vpcs_stdout_file = os.path.join(self.working_dir, "vpcs.log")
@@ -265,7 +270,10 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
                         self._process = await asyncio.create_subprocess_exec(
                             *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
                         )
-                        monitor_process(self._process, self._termination_callback)
+                        monitor_process(
+                            self._process,
+                            while_current_process(self, "_process", self._process, self._termination_callback),
+                        )
 
                     if nio:
                         # a link that outlived a stop is re-attached from its NIO
@@ -305,6 +313,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
                     {"message": f"VPCS process has stopped, return code: {returncode}\n{self.read_vpcs_stdout()}"},
                 )
 
+    @lifecycle_action
     async def stop(self):
         """
         Stops the VPCS process.
@@ -461,6 +470,7 @@ class VPCSVM(KernelDatapathMixin, BaseNode):
             return
         await self._relay_attach(anchor, bridge_name, nio)
 
+    @lifecycle_action
     async def reload(self):
         """
         Reloads the VPCS process (stop & start).
