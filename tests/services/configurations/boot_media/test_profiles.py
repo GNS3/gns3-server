@@ -52,6 +52,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-c8000v-controller",
         "cisco-iosv",
         "cisco-iosxrv9k",
+        "cisco-nxosv9k",
     }
     assert all(profile.id == key for key, profile in PROFILES.items())
     assert {entry["id"]: entry["device_type"] for entry in list_profiles()} == {
@@ -60,6 +61,7 @@ def test_registry_lists_the_supported_profiles():
         "cisco-c8000v-controller": "cisco_ios_telnet",
         "cisco-iosv": "cisco_ios_telnet",
         "cisco-iosxrv9k": "cisco_xr",
+        "cisco-nxosv9k": "cisco_nxos",
     }
     assert all(
         set(entry) == {"id", "title", "device_type", "description"} and entry["title"] for entry in list_profiles()
@@ -104,6 +106,37 @@ def test_ios_xe_profiles_store_the_text_unchanged_as_iosxe_config(profile_id, te
     assert profile.volume_label == "GNS3_BOOT"
     assert profile.media == "cdrom"
     assert profile.device_types == ("cisco_ios_telnet",)
+
+
+def nxos_text(content, password=None):
+    context = MediaContext(node_id=NODE, admin_password=password)
+    return get_profile("cisco-nxosv9k").files(content, context)["nxos_config.txt"].decode()
+
+
+def test_nxosv9k_stores_the_text_as_nxos_config_with_lf_line_endings():
+    profile = get_profile("cisco-nxosv9k")
+    assert profile.files("hostname N9K\r\ninterface mgmt0\r\n", CONTEXT) == {
+        "nxos_config.txt": b"hostname N9K\ninterface mgmt0\n"
+    }
+    assert profile.device_types == ("cisco_nxos",) and profile.volume_label == "CONFIG"
+
+
+def test_nxosv9k_keeps_the_admin_account_of_a_captured_listing():
+    text = "hostname N9K\nusername admin password 5 $5$abc$def  role network-admin\n"
+    assert nxos_text(text, "Lab#Pass1") == text
+
+
+def test_nxosv9k_uses_the_saved_password_when_the_text_has_no_usable_admin():
+    expected = "no password strength-check\nusername admin password cisco123 role network-admin\nhostname N9K\n"
+    assert nxos_text("hostname N9K\n", "cisco123") == expected
+    # A factory account (empty ``!`` hash) or a masked secret cannot be loaded back: it is replaced.
+    assert nxos_text("hostname N9K\nusername admin password 5 !  role network-admin\n", "cisco123") == expected
+    assert nxos_text("hostname N9K\nusername admin password ***** role network-admin\n", "cisco123") == expected
+
+
+def test_nxosv9k_without_a_usable_password_leaves_the_text_alone():
+    assert nxos_text("hostname N9K\n") == "hostname N9K\n"
+    assert nxos_text("hostname N9K\n", "with space") == "hostname N9K\n"
 
 
 def xr_text(content, password=None):
